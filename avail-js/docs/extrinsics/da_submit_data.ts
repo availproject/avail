@@ -1,4 +1,4 @@
-import { SDK, WaitFor, Keyring } from "avail-js-sdk"
+import { SDK, WaitFor, Keyring, TransactionOptions } from "avail-js-sdk"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -8,7 +8,8 @@ const main = async () => {
   const account = new Keyring({ type: "sr25519" }).addFromUri("//Alice")
   const data = "My Awesome Data"
 
-  const result = await sdk.tx.dataAvailability.submitData(data, WaitFor.BlockInclusion, account)
+  const options: TransactionOptions = { app_id: 1 }
+  const result = await sdk.tx.dataAvailability.submitData(data, WaitFor.BlockInclusion, account, options)
   if (result.isErr) {
     console.log(result.reason)
     process.exit(1)

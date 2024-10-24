@@ -4,7 +4,7 @@ import { Staking } from "./staking"
 import { DataAvailability } from "./da"
 import { NominationPools } from "./nomination_pools"
 
-export { WaitFor } from "./common"
+export { WaitFor, TransactionOptions } from "./common"
 export { DispatchFeeModifier } from "./da"
 export { StakingRewardDestination } from "./staking"
 export { BondExtra, ClaimPermission, NewCommission, PoolState } from "./nomination_pools"
