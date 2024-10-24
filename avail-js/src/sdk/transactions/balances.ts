@@ -5,9 +5,8 @@ import { BN } from "@polkadot/util"
 import { KeyringPair } from "@polkadot/keyring/types"
 import { err, Result } from "neverthrow"
 
-import { SignerOptions } from "@polkadot/api/types"
 import { decodeError } from "../../helpers"
-import { WaitFor, GenericFailure, standardCallback, getBlockHashAndTxHash } from "./common"
+import { WaitFor, GenericFailure, standardCallback, getBlockHashAndTxHash, TransactionOptions } from "./common"
 
 type TransferKeepAliveTxSuccess = {
   isErr: false
@@ -51,7 +50,7 @@ export class Balances {
     keepAlive: boolean,
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<TransferAllTxSuccess | GenericFailure> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
@@ -96,7 +95,7 @@ export class Balances {
     value: BN,
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<TransferAllowDeathTxSuccess | GenericFailure> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
@@ -150,7 +149,7 @@ export class Balances {
     value: BN,
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<TransferKeepAliveTxSuccess | GenericFailure> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {

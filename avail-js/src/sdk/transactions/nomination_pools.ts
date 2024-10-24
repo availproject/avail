@@ -4,10 +4,8 @@ import { H256, EventRecord } from "@polkadot/types/interfaces/types"
 import { BN } from "@polkadot/util"
 import { KeyringPair } from "@polkadot/keyring/types"
 import { err, Result } from "neverthrow"
-
-import { SignerOptions } from "@polkadot/api/types"
 import { decodeError } from "../../helpers"
-import { WaitFor, GenericFailure, standardCallback, getBlockHashAndTxHash } from "./common"
+import { WaitFor, GenericFailure, standardCallback, getBlockHashAndTxHash, TransactionOptions } from "./common"
 import { commissionNumberToPerbill } from "../utils"
 
 export interface BondExtra {
@@ -185,7 +183,7 @@ export class NominationPools {
     bouncer: string,
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<PoolCreateTxSuccess | GenericFailure> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
@@ -237,7 +235,7 @@ export class NominationPools {
     poolId: number,
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<PoolCreateWithPoolIdTxSuccess | GenericFailure> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
@@ -295,7 +293,7 @@ export class NominationPools {
     poolId: number,
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<PoolJoinTxSuccess | GenericFailure> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
@@ -339,7 +337,7 @@ export class NominationPools {
     validators: string[],
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<PoolNominateTxSuccess | GenericFailure> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
@@ -377,7 +375,7 @@ export class NominationPools {
     extra: BondExtra,
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<PoolBondExtraTxSuccess | GenericFailure> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
@@ -421,7 +419,7 @@ export class NominationPools {
     metadata: string,
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<PoolSetMetadataTxSuccess | GenericFailure> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
@@ -460,7 +458,7 @@ export class NominationPools {
     unbondingPoints: BN,
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<PoolUnbondTxSuccess | GenericFailure> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
@@ -499,7 +497,7 @@ export class NominationPools {
     poolId: number,
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<PoolChillTxSuccess | GenericFailure> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
@@ -537,7 +535,7 @@ export class NominationPools {
     poolId: number,
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<PoolClaimCommissionTxSuccess | GenericFailure> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
@@ -579,7 +577,7 @@ export class NominationPools {
   async claimPayout(
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<PoolClaimPayoutTxSuccess | GenericFailure> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
@@ -618,7 +616,7 @@ export class NominationPools {
     other: string,
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<PoolClaimPayoutOtherTxSuccess | GenericFailure> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
@@ -657,7 +655,7 @@ export class NominationPools {
     permission: ClaimPermission,
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<PoolSetClaimPermissionOtherTxSuccess | GenericFailure> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
@@ -696,7 +694,7 @@ export class NominationPools {
     newCommission: NewCommission | null,
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<PoolSetCommissionTxSuccess | GenericFailure> {
     const optionWrapper = options || {}
 
@@ -749,7 +747,7 @@ export class NominationPools {
     numSlashingSpans: number,
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<PoolWithdrawUnbodedTxSuccess | GenericFailure> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
@@ -793,7 +791,7 @@ export class NominationPools {
     state: PoolState,
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<PoolSetStateTxSuccess | GenericFailure> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
