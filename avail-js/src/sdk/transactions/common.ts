@@ -47,3 +47,10 @@ export async function getBlockHashAndTxHash(
 }
 
 export type GenericFailure = { isErr: true; reason: string }
+
+export interface TransactionOptions {
+  app_id?: number
+  nonce?: number
+  era?: number
+  blockHash?: H256
+}
