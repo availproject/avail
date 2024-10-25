@@ -4,11 +4,9 @@ import { H256, EventRecord } from "@polkadot/types/interfaces/types"
 import { BN } from "@polkadot/util"
 import { KeyringPair } from "@polkadot/keyring/types"
 import { err, Result } from "neverthrow"
-
 import * as TransactionData from "./../transaction_data"
-import { SignerOptions } from "@polkadot/api/types"
 import { decodeError } from "../../helpers"
-import { WaitFor, GenericFailure, standardCallback, getBlockHashAndTxHash } from "./common"
+import { WaitFor, GenericFailure, standardCallback, getBlockHashAndTxHash, TransactionOptions } from "./common"
 import { commissionNumberToPerbill } from "../utils"
 
 type ValidatorPerfs = { commission: string; blocked: boolean }
@@ -90,7 +88,7 @@ export class Staking {
     payee: StakingRewardDestination,
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<BondTxSuccess | GenericFailure> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
@@ -133,7 +131,7 @@ export class Staking {
     maxAdditional: BN,
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<BondExtraTxSuccess | GenericFailure> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
@@ -175,7 +173,7 @@ export class Staking {
   async chill(
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<ChillTxSuccess | GenericFailure> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
@@ -218,7 +216,7 @@ export class Staking {
     stash: string,
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<ChillOtherTxSuccess | GenericFailure> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
@@ -261,7 +259,7 @@ export class Staking {
     targets: string[],
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<NominateTxSuccess | GenericFailure> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
@@ -312,7 +310,7 @@ export class Staking {
     value: BN,
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<UnbondTxSuccess | GenericFailure> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
@@ -356,7 +354,7 @@ export class Staking {
     blocked: boolean,
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<ValidatexSuccess | GenericFailure> {
     const maybeCommission = commissionNumberToPerbill(commission)
     if (maybeCommission.isErr()) {
