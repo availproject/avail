@@ -32,6 +32,8 @@ use sp_runtime::{
 };
 use sp_staking::{currency_to_vote::CurrencyToVote, EraIndex};
 use sp_std::{vec, vec::Vec};
+use sp_std::collections::btree_set::BTreeSet;
+
 pub use traits::{FusionExt, StakingFusionDataProvider};
 pub use weights::WeightInfo;
 
@@ -460,6 +462,12 @@ pub mod pallet {
 			slash_era: EraIndex,
 			amount: FusionCurrencyBalance,
 		},
+		/// Event triggered when pools extra allocations have been set for a user
+		UserExtraApyAllocationsOptimized {
+			evm_address: EvmAddress,
+			pools_added: Vec<PoolId>,
+			pools_removed: Vec<PoolId>,
+		},
 	}
 
 	#[pallet::error]
@@ -568,6 +576,12 @@ pub mod pallet {
 		PendingSlashLimitReached,
 		/// Slash not found in pool
 		SlashNotFound,
+		/// The user does not have a membership in the AVAIL pool.
+		NoAvailMembership,
+		/// The pool does not have extra APY configured.
+		PoolHasNoExtraApy,
+		/// The user does not have enough AVAIL to allocate to the extra APY pools.
+		NotEnoughAvailForExtraApy,
 		/// TODO Temp, we'll see when bridge com is done
 		CannotDepositAvailCurrency,
 	}
@@ -1191,6 +1205,20 @@ pub mod pallet {
 			let who = ensure_signed(origin)?;
 			Self::ensure_valid_fusion_origin(who, evm_address)?;
 			Self::do_withdraw_avail_to_controller(evm_address)?;
+			Ok(())
+		}
+
+		/// Extrinsic to allow user to setup extra apy pool allocations
+		#[pallet::call_index(20)]
+		#[pallet::weight(T::WeightInfo::create_currency())]
+		pub fn set_pool_extra_apy_allocations(
+			origin: OriginFor<T>,
+			evm_address: EvmAddress,
+			pool_ids: BoundedVec<PoolId, T::MaxMembersPerPool>,
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+			Self::ensure_valid_fusion_origin(who, evm_address)?;
+			Self::do_set_pool_extra_apy_allocations(evm_address, pool_ids)?;
 			Ok(())
 		}
 	}
@@ -2376,6 +2404,123 @@ impl<T: Config> Pallet<T> {
 			user_extra_rewards_balance = Self::balance(user_extra_reward);
 		}
 		Ok(user_extra_rewards_balance)
+	}
+
+	fn do_set_pool_extra_apy_allocations(
+		evm_address: EvmAddress,
+		pool_ids: BoundedVec<PoolId, T::MaxMembersPerPool>,
+	) -> DispatchResult {
+		// Get user's AVAIL balance in pool 0
+		let avail_pool_id = AVAIL_POOL_ID;
+		let avail_membership = FusionMemberships::<T>::get(evm_address, avail_pool_id)
+			.ok_or(Error::<T>::NoAvailMembership)?;
+		let avail_currency = FusionCurrencies::<T>::get(AVAIL_CURRENCY_ID)
+			.ok_or(Error::<T>::CurrencyNotFound)?;
+		let avail_pool = FusionPools::<T>::get(avail_pool_id)
+			.ok_or(Error::<T>::PoolNotFound)?;
+		let user_avail_balance = avail_pool.points_to_currency(
+			avail_membership.active_points,
+			Some(&avail_currency),
+		)?;
+	
+		// Calculate total minimum AVAIL required
+		let mut total_min_avail_required: FusionCurrencyBalance = 0;
+		for pool_id in pool_ids.iter() {
+			let min_avail_to_earn = FusionPoolsWithExtraApy::<T>::get(*pool_id)
+				.ok_or(Error::<T>::PoolHasNoExtraApy)?;
+			total_min_avail_required = total_min_avail_required.saturating_add(min_avail_to_earn);
+		}
+	
+		// Ensure user has enough AVAIL
+		ensure!(
+			user_avail_balance >= total_min_avail_required,
+			Error::<T>::NotEnoughAvailForExtraApy
+		);
+	
+		// Get user's current extra APY allocations
+		let user_memberships: Vec<PoolId> = FusionMemberships::<T>::iter_key_prefix(evm_address)
+			.collect();
+		let mut current_extra_apy_pools: Vec<PoolId> = Vec::new();
+		for pool_id in user_memberships.iter() {
+			if HasExtraApy::<T>::get(*pool_id, evm_address) {
+				current_extra_apy_pools.push(*pool_id);
+			}
+		}
+	
+		// Create sets for efficient comparison
+		let selected_pools: BTreeSet<PoolId> = pool_ids.iter().cloned().collect();
+		let current_extra_apy_pools_set: BTreeSet<PoolId> = current_extra_apy_pools.iter().cloned().collect();
+	
+		// Pools to remove extra APY from: in current but not in selected
+		let pools_to_remove: Vec<PoolId> = current_extra_apy_pools_set
+			.difference(&selected_pools)
+			.cloned()
+			.collect();
+	
+		// Pools to add extra APY to: in selected but not in current
+		let pools_to_add: Vec<PoolId> = selected_pools
+			.difference(&current_extra_apy_pools_set)
+			.cloned()
+			.collect();
+	
+		// Remove user from extra APY in pools_to_remove
+		for pool_id in pools_to_remove.iter() {
+			// Remove HasExtraApy entry
+			HasExtraApy::<T>::remove(*pool_id, evm_address);
+	
+			// Update pool's extra_apy_data
+			FusionPools::<T>::try_mutate(*pool_id, |maybe_pool| -> DispatchResult {
+				let pool = maybe_pool.as_mut().ok_or(Error::<T>::PoolNotFound)?;
+				if let Some(ref mut extra_apy_data) = pool.extra_apy_data {
+					// Get the user's active points in the pool
+					let membership = FusionMemberships::<T>::get(evm_address, *pool_id)
+						.ok_or(Error::<T>::MembershipNotFound)?;
+					extra_apy_data.elligible_total_points = extra_apy_data
+						.elligible_total_points
+						.saturating_sub(membership.active_points);
+					extra_apy_data
+						.elligible_members
+						.retain(|addr| *addr != evm_address);
+				}
+				Ok(())
+			})?;
+		}
+	
+		// Add user to extra APY in pools_to_add
+		for pool_id in pools_to_add.iter() {
+			// Insert HasExtraApy entry
+			HasExtraApy::<T>::insert(*pool_id, evm_address, true);
+	
+			// Update pool's extra_apy_data
+			FusionPools::<T>::try_mutate(*pool_id, |maybe_pool| -> DispatchResult {
+				let pool = maybe_pool.as_mut().ok_or(Error::<T>::PoolNotFound)?;
+				if let Some(ref mut extra_apy_data) = pool.extra_apy_data {
+					// Get the user's active points in the pool
+					let membership = FusionMemberships::<T>::get(evm_address, *pool_id)
+						.ok_or(Error::<T>::MembershipNotFound)?;
+					extra_apy_data.elligible_total_points = extra_apy_data
+						.elligible_total_points
+						.saturating_add(membership.active_points);
+					extra_apy_data
+						.elligible_members
+						.try_push(evm_address)
+						.map_err(|_| Error::<T>::PoolMemberLimitReached)?;
+				} else {
+					// Pool does not have extra APY data
+					return Err(Error::<T>::PoolHasNoExtraApy.into());
+				}
+				Ok(())
+			})?;
+		}
+	
+		// Emit event indicating the optimization result
+		Self::deposit_event(Event::<T>::UserExtraApyAllocationsOptimized {
+			evm_address,
+			pools_added: pools_to_add,
+			pools_removed: pools_to_remove,
+		});
+	
+		Ok(())
 	}
 }
 

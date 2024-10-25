@@ -206,8 +206,8 @@ impl<T: Config> FusionCurrency<T> {
 	) -> Result<BalanceOf<T>, Error<T>> {
 		let rate = rate.unwrap_or(
 			FusionCurrencyRates::<T>::get(
-				self.currency_id,
 				era.unwrap_or_else(T::StakingFusionDataProvider::current_era),
+				self.currency_id,
 			)
 			.ok_or(Error::<T>::CurrencyRateNotFound)?,
 		);
@@ -232,7 +232,7 @@ impl<T: Config> FusionCurrency<T> {
 	) -> Result<FusionCurrencyBalance, Error<T>> {
 		let era = era.unwrap_or_else(T::StakingFusionDataProvider::current_era);
 
-		let rate = FusionCurrencyRates::<T>::get(self.currency_id, era)
+		let rate = FusionCurrencyRates::<T>::get(era, self.currency_id)
 			.ok_or(Error::<T>::CurrencyRateNotFound)?;
 
 		let rate = Pallet::<T>::u256(rate.try_into().map_err(|_| Error::<T>::ArithmeticError)?);
