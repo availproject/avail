@@ -1901,20 +1901,25 @@ impl<T: Config> Pallet<T> {
 				return Ok(());
 			};
 
-			// Fetch avail pool
+			// Checks before calling stake
 			let avail_pool =
 				FusionPools::<T>::get(AVAIL_POOL_ID).ok_or(Error::<T>::PoolNotFound)?;
+			let has_avail_membership =
+				FusionMemberships::<T>::get(evm_address, AVAIL_POOL_ID).is_some();
+			let can_stake_to_pool = avail_pool.state == FusionPoolState::Open
+				|| (avail_pool.state == FusionPoolState::Blocked && has_avail_membership);
+			let wont_overflow_maximum_amount = avail_currency
+				.total_staked_native
+				.saturating_add(avail_in_currency)
+				<= avail_currency.max_amount;
+			let wont_overflow_maximum_members = has_avail_membership
+				|| (avail_pool.members.len() as u32) < T::MaxMembersPerPool::get();
 
 			if membership.is_compounding
-				&& (avail_pool.state == FusionPoolState::Open
-					|| (avail_pool.state == FusionPoolState::Blocked
-						&& FusionMemberships::<T>::get(evm_address, AVAIL_POOL_ID).is_some()))
-				&& !avail_currency.is_destroyed
-				&& avail_currency
-					.total_staked_native
-					.saturating_add(avail_in_currency)
-					<= avail_currency.max_amount
 				&& avail_in_currency > 0
+				&& can_stake_to_pool
+				&& wont_overflow_maximum_amount
+				&& wont_overflow_maximum_members
 			{
 				// At this point this should never fail except in case of arithmetic errors which is ok
 				Self::do_stake(evm_address, AVAIL_POOL_ID, avail_in_currency, true)?;
@@ -2371,101 +2376,6 @@ impl<T: Config> Pallet<T> {
 			user_extra_rewards_balance = Self::balance(user_extra_reward);
 		}
 		Ok(user_extra_rewards_balance)
-	}
-
-	// FusionApi implementation
-	pub fn api_pending_rewards(
-		evm_address: EvmAddress,
-		pool_id: PoolId,
-		era: EraIndex,
-	) -> Result<BalanceOf<T>, DispatchError> {
-		ensure!(
-			!ClaimedRewards::<T>::contains_key(era, (pool_id, evm_address)),
-			Error::<T>::AlreadyClaimed
-		);
-
-		let Some(era_rewards) = FusionEraRewards::<T>::get(era, pool_id) else {
-			return Ok(BalanceOf::<T>::zero());
-		};
-
-		let Some(exposure) = FusionExposures::<T>::get(era, pool_id) else {
-			return Ok(BalanceOf::<T>::zero());
-		};
-
-		let (user_reward_balance, user_points) =
-			Self::compute_basic_rewards(evm_address, &exposure, &era_rewards)?;
-
-		let extra_rewards =
-			Self::compute_extra_rewards(evm_address, &exposure, &era_rewards, user_points)?;
-
-		// Using pools Ids,
-		Ok(user_reward_balance.saturating_add(extra_rewards))
-	}
-
-	pub fn api_avail_to_currency(
-		currency_id: CurrencyId,
-		avail_amount: BalanceOf<T>,
-		era: Option<EraIndex>,
-	) -> Result<FusionCurrencyBalance, DispatchError> {
-		let currency =
-			FusionCurrencies::<T>::get(currency_id).ok_or(Error::<T>::CurrencyNotFound)?;
-		let currency_value = currency.avail_to_currency(avail_amount, era)?;
-
-		Ok(currency_value)
-	}
-
-	pub fn api_currency_to_avail(
-		currency_id: CurrencyId,
-		currency_amount: FusionCurrencyBalance,
-		era: Option<EraIndex>,
-	) -> Result<BalanceOf<T>, DispatchError> {
-		let currency =
-			FusionCurrencies::<T>::get(currency_id).ok_or(Error::<T>::CurrencyNotFound)?;
-		let avail_value = currency.currency_to_avail(currency_amount, era, None)?;
-
-		Ok(avail_value)
-	}
-
-	pub fn api_points_to_currency(
-		pool_id: PoolId,
-		points: Points,
-	) -> Result<FusionCurrencyBalance, DispatchError> {
-		let pool = FusionPools::<T>::get(pool_id).ok_or(Error::<T>::PoolNotFound)?;
-		let currency_value = pool.points_to_currency(points, None)?;
-
-		Ok(currency_value)
-	}
-
-	pub fn api_currency_to_points(
-		pool_id: PoolId,
-		currency_amount: FusionCurrencyBalance,
-	) -> Result<Points, DispatchError> {
-		let pool = FusionPools::<T>::get(pool_id).ok_or(Error::<T>::PoolNotFound)?;
-		let points_value = pool.currency_to_points(currency_amount, None)?;
-
-		Ok(points_value)
-	}
-
-	pub fn api_points_to_avail(
-		pool_id: PoolId,
-		points: Points,
-		era: Option<EraIndex>,
-	) -> Result<BalanceOf<T>, DispatchError> {
-		let pool = FusionPools::<T>::get(pool_id).ok_or(Error::<T>::PoolNotFound)?;
-		let avail_value = pool.points_to_avail(points, None, era)?;
-
-		Ok(avail_value)
-	}
-
-	pub fn api_avail_to_points(
-		pool_id: PoolId,
-		avail_amount: BalanceOf<T>,
-		era: Option<EraIndex>,
-	) -> Result<Points, DispatchError> {
-		let pool = FusionPools::<T>::get(pool_id).ok_or(Error::<T>::PoolNotFound)?;
-		let points_value = pool.avail_to_points(avail_amount, None, era)?;
-
-		Ok(points_value)
 	}
 }
 

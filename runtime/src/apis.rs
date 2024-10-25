@@ -1,9 +1,9 @@
 use super::kate::{Error as RTKateError, GDataProof, GRow};
 use crate::{
 	constants, mmr, version::VERSION, AccountId, AuthorityDiscovery, Babe, Block, BlockNumber,
-	EpochDuration, Executive, Fusion, Grandpa, Historical, Index, InherentDataExt, Mmr,
-	NominationPools, OpaqueMetadata, Runtime, RuntimeCall, RuntimeGenesisConfig, SessionKeys,
-	Staking, System, TransactionPayment, LOG_TARGET,
+	EpochDuration, Executive, Grandpa, Historical, Index, InherentDataExt, Mmr, NominationPools,
+	OpaqueMetadata, Runtime, RuntimeCall, RuntimeGenesisConfig, SessionKeys, Staking, System,
+	TransactionPayment, LOG_TARGET,
 };
 use avail_base::{HeaderExtensionBuilderData, ProvidePostInherent};
 use avail_core::{
@@ -20,7 +20,6 @@ use frame_support::{
 	traits::KeyOwnerProofSystem,
 	weights::Weight,
 };
-use pallet_fusion::types::*;
 use pallet_transaction_payment::{FeeDetails, RuntimeDispatchInfo};
 use sp_api::{decl_runtime_apis, impl_runtime_apis};
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
@@ -570,40 +569,6 @@ impl_runtime_apis! {
 
 		fn build_config(config: Vec<u8>) -> sp_genesis_builder::Result {
 			build_config::<RuntimeGenesisConfig>(config)
-		}
-	}
-
-	impl pallet_fusion_runtime_api::FusionApi<Block, AccountId, Balance> for Runtime {
-		fn api_pending_rewards(who: EvmAddress, pool_id: PoolId, era: EraIndex) -> Balance {
-			Fusion::api_pending_rewards(who, pool_id, era).unwrap_or(Balance::default())
-		}
-
-		fn api_avail_to_currency(
-			currency_id: CurrencyId,
-			avail_amount: Balance,
-			era: Option<EraIndex>,
-		) -> FusionCurrencyBalance {
-			Fusion::api_avail_to_currency(currency_id, avail_amount, era).unwrap_or_default()
-		}
-
-		fn api_currency_to_avail(currency_id: CurrencyId, currency_amount: FusionCurrencyBalance, era: Option<EraIndex>) -> Balance {
-			Fusion::api_currency_to_avail(currency_id, currency_amount, era).unwrap_or_default()
-		}
-
-		fn api_points_to_currency(pool_id: PoolId, points: Points) -> FusionCurrencyBalance {
-			Fusion::api_points_to_currency(pool_id, points).unwrap_or_default()
-		}
-
-		fn api_currency_to_points(pool_id: PoolId, currency_amount: FusionCurrencyBalance) -> Points {
-			Fusion::api_currency_to_points(pool_id, currency_amount).unwrap_or_default()
-		}
-
-		fn api_points_to_avail(pool_id: PoolId, points: Points, era: Option<EraIndex>) -> Balance {
-			Fusion::api_points_to_avail(pool_id, points, era).unwrap_or_default()
-		}
-
-		fn api_avail_to_points(pool_id: PoolId, avail_amount: Balance, era: Option<EraIndex>) -> Points {
-			Fusion::api_avail_to_points(pool_id, avail_amount, era).unwrap_or_default()
 		}
 	}
 }

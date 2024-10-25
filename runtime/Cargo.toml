@@ -20,7 +20,6 @@ kate = { workspace = true, default-features = false }
 
 da-control = { workspace = true, default-features = false }
 pallet-fusion = { workspace = true, default-features = false }
-pallet-fusion-runtime-api = { workspace = true, default-features = false }
 pallet-mandate = { workspace = true, default-features = false }
 pallet-vector = { workspace = true, default-features = false }
 
@@ -166,7 +165,6 @@ std = [
 	"pallet-collective/std",
 	"pallet-election-provider-multi-phase/std",
 	"pallet-fusion/std",
-	"pallet-fusion-runtime-api/std",
 	"pallet-grandpa/std",
 	"pallet-identity/std",
 	"pallet-im-online/std",

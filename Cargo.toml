@@ -4,7 +4,6 @@ members = [
 	"base",
 	"pallets/dactr",
 	"pallets/fusion",
-	"pallets/fusion/runtime-api",
 	"pallets/mandate",
 	"pallets/system",
 	"pallets/vector",
@@ -36,7 +35,6 @@ kate-recovery = { git = "https://github.com/availproject/avail-core", tag = "cor
 avail-base = { path = "base", default-features = false }
 da-control = { path = "pallets/dactr", default-features = false }
 pallet-fusion = { path = "pallets/fusion", default-features = false }
-pallet-fusion-runtime-api = { path = "pallets/fusion/runtime-api", default-features = false }
 pallet-mandate = { path = "pallets/mandate", default-features = false }
 pallet-vector = { path = "pallets/vector", default-features = false }
 da-runtime = { path = "runtime", default-features = false }
