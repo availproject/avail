@@ -4,11 +4,9 @@ import { H256, EventRecord } from "@polkadot/types/interfaces/types"
 import { BN } from "@polkadot/util"
 import { KeyringPair } from "@polkadot/keyring/types"
 import { err, Result } from "neverthrow"
-
 import * as TransactionData from "./../transaction_data"
-import { SignerOptions } from "@polkadot/api/types"
 import { decodeError, fromHexToAscii } from "../../helpers"
-import { WaitFor, GenericFailure, standardCallback, getBlockHashAndTxHash } from "./common"
+import { WaitFor, GenericFailure, standardCallback, getBlockHashAndTxHash, TransactionOptions } from "./common"
 
 export type DispatchFeeModifier = {
   weightMaximumFee: BN | null
@@ -74,7 +72,7 @@ export class DataAvailability {
     data: string,
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<SubmitDataTxSuccess | GenericFailure> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
@@ -131,7 +129,7 @@ export class DataAvailability {
     key: string,
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<CreateApplicationKeyTxSuccess | GenericFailure> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
@@ -175,7 +173,7 @@ export class DataAvailability {
     newKey: string,
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<SetApplicationKeyTxSuccess | GenericFailure> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
@@ -230,7 +228,7 @@ export class DataAvailability {
     cols: number,
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<SubmitBlockLengthProposalTxSuccess | GenericFailure> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
@@ -292,7 +290,7 @@ export class DataAvailability {
     modifier: DispatchFeeModifier,
     waitFor: WaitFor,
     account: KeyringPair,
-    options?: Partial<SignerOptions>,
+    options?: TransactionOptions,
   ): Promise<SetSubmitDataFeeModifierTxSuccess | GenericFailure> {
     const optionWrapper = options || {}
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {

@@ -16,6 +16,7 @@ export {
   ClaimPermission,
   NewCommission,
   PoolState,
+  TransactionOptions,
 } from "./transactions"
 
 export class SDK {

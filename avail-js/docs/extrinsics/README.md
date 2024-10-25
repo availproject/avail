@@ -11,17 +11,17 @@ Origin Level: Signed
 ### Interface
 
 ```js
-function createApplicationKey(key: string, waitFor: WaitFor, account: KeyringPair, options?: Partial<SignerOptions>): Promise<CreateApplicationKeyTxSuccess | GenericFailure>;
+function createApplicationKey(key: string, waitFor: WaitFor, account: KeyringPair, options?: TransactionOptions): Promise<CreateApplicationKeyTxSuccess | GenericFailure>;
 ```
 
 #### Parameters
 
-| parameter | type          | optional | description                                     |
-| --------- | ------------- | -------- | ----------------------------------------------- |
-| key       | string        | false    | name of the application key                     |
-| waitFor   | WaitFor       | false    | wait for block inclusion or finalization        |
-| account   | KeyringPair   | false    | account that will send and sign the transaction |
-| options   | SignerOptions | true     | used to overwrite existing signer options       |
+| parameter | type               | optional | description                                                  |
+| --------- | ------------------ | -------- | ------------------------------------------------------------ |
+| key       | string             | false    | name of the application key                                  |
+| waitFor   | WaitFor            | false    | wait for block inclusion or finalization                     |
+| account   | KeyringPair        | false    | account that will send and sign the transaction              |
+| options   | TransactionOptions | true     | an be used to set nonce, app id or other transaction options |
 
 ### Minimal Example
 
@@ -82,17 +82,17 @@ Origin Level: Signed
 ### Interface
 
 ```js
-function submitData(data: string, waitFor: WaitFor, account: KeyringPair, options?: Partial<SignerOptions>): Promise<SubmitDataTxSuccess | GenericFailure>;
+function submitData(data: string, waitFor: WaitFor, account: KeyringPair, options?: TransactionOptions): Promise<SubmitDataTxSuccess | GenericFailure>;
 ```
 
 #### Parameters
 
-| parameter | type          | optional | description                                     |
-| --------- | ------------- | -------- | ----------------------------------------------- |
-| data      | string        | false    | data to be submitted                            |
-| waitFor   | WaitFor       | false    | wait for block inclusion or finalization        |
-| account   | KeyringPair   | false    | account that will send and sign the transaction |
-| options   | SignerOptions | true     | used to overwrite existing signer options       |
+| parameter | type               | optional | description                                                  |
+| --------- | ------------------ | -------- | ------------------------------------------------------------ |
+| data      | string             | false    | data to be submitted                                         |
+| waitFor   | WaitFor            | false    | wait for block inclusion or finalization                     |
+| account   | KeyringPair        | false    | account that will send and sign the transaction              |
+| options   | TransactionOptions | true     | an be used to set nonce, app id or other transaction options |
 
 ### Minimal Example
 
@@ -154,18 +154,18 @@ Origin Level: Root
 ### Interface
 
 ```js
-function submitBlockLengthProposal(rows: number, cols: number, waitFor: WaitFor, account: KeyringPair, options?: Partial<SignerOptions>): Promise<SubmitBlockLengthProposalTxSuccess | GenericFailure>;
+function submitBlockLengthProposal(rows: number, cols: number, waitFor: WaitFor, account: KeyringPair, options?: TransactionOptions): Promise<SubmitBlockLengthProposalTxSuccess | GenericFailure>;
 ```
 
 #### Parameters
 
-| parameter | type          | optional | description                                     |
-| --------- | ------------- | -------- | ----------------------------------------------- |
-| rows      | number        | false    | number of rows in block                         |
-| cols      | number        | false    | number of cols in block                         |
-| waitFor   | WaitFor       | false    | wait for block inclusion or finalization        |
-| account   | KeyringPair   | false    | account that will send and sign the transaction |
-| options   | SignerOptions | true     | used to overwrite existing signer options       |
+| parameter | type               | optional | description                                                  |
+| --------- | ------------------ | -------- | ------------------------------------------------------------ |
+| rows      | number             | false    | number of rows in block                                      |
+| cols      | number             | false    | number of cols in block                                      |
+| waitFor   | WaitFor            | false    | wait for block inclusion or finalization                     |
+| account   | KeyringPair        | false    | account that will send and sign the transaction              |
+| options   | TransactionOptions | true     | an be used to set nonce, app id or other transaction options |
 
 ### Minimal Example
 
@@ -215,18 +215,18 @@ Origin Level: Root
 ### Interface
 
 ```js
-function setApplicationKey(oldKey: string, newKey: string, waitFor: WaitFor, account: KeyringPair, options?: Partial<SignerOptions>): Promise<SetApplicationKeyTxSuccess | GenericFailure>;
+function setApplicationKey(oldKey: string, newKey: string, waitFor: WaitFor, account: KeyringPair, options?: TransactionOptions): Promise<SetApplicationKeyTxSuccess | GenericFailure>;
 ```
 
 #### Parameters
 
-| parameter | type          | optional | description                                     |
-| --------- | ------------- | -------- | ----------------------------------------------- |
-| oldKey    | string        | false    | application key to be replaced                  |
-| newKey    | string        | false    | application key that will replace the old one   |
-| waitFor   | WaitFor       | false    | wait for block inclusion or finalization        |
-| account   | KeyringPair   | false    | account that will send and sign the transaction |
-| options   | SignerOptions | true     | used to overwrite existing signer options       |
+| parameter | type               | optional | description                                                  |
+| --------- | ------------------ | -------- | ------------------------------------------------------------ |
+| oldKey    | string             | false    | application key to be replaced                               |
+| newKey    | string             | false    | application key that will replace the old one                |
+| waitFor   | WaitFor            | false    | wait for block inclusion or finalization                     |
+| account   | KeyringPair        | false    | account that will send and sign the transaction              |
+| options   | TransactionOptions | true     | an be used to set nonce, app id or other transaction options |
 
 ### Minimal Example
 
@@ -276,17 +276,17 @@ Origin Level: Root
 ### Interface
 
 ```js
-function setSubmitDataFeeModifier(modifier: DispatchFeeModifier, waitFor: WaitFor, account: KeyringPair, options?: Partial<SignerOptions>): Promise<SetSubmitDataFeeModifierTxSuccess | GenericFailure>;
+function setSubmitDataFeeModifier(modifier: DispatchFeeModifier, waitFor: WaitFor, account: KeyringPair, options?: TransactionOptions): Promise<SetSubmitDataFeeModifierTxSuccess | GenericFailure>;
 ```
 
 #### Parameters
 
-| parameter | type                | optional | description                                     |
-| --------- | ------------------- | -------- | ----------------------------------------------- |
-| modifier  | DispatchFeeModifier | false    | new fee modifier values                         |
-| waitFor   | WaitFor             | false    | wait for block inclusion or finalization        |
-| account   | KeyringPair         | false    | account that will send and sign the transaction |
-| options   | SignerOptions       | true     | used to overwrite existing signer options       |
+| parameter | type                | optional | description                                                  |
+| --------- | ------------------- | -------- | ------------------------------------------------------------ |
+| modifier  | DispatchFeeModifier | false    | new fee modifier values                                      |
+| waitFor   | WaitFor             | false    | wait for block inclusion or finalization                     |
+| account   | KeyringPair         | false    | account that will send and sign the transaction              |
+| options   | TransactionOptions  | true     | an be used to set nonce, app id or other transaction options |
 
 ### Minimal Example
 
@@ -357,18 +357,18 @@ Origin Level: Signed
 ### Interface
 
 ```js
-function transferKeepAlive(dest: string, value: BN,  waitFor: WaitFor, account: KeyringPair, options?: Partial<SignerOptions>): Promise<TransferKeepAliveTxSuccess | GenericFailure>;
+function transferKeepAlive(dest: string, value: BN,  waitFor: WaitFor, account: KeyringPair, options?: TransactionOptions): Promise<TransferKeepAliveTxSuccess | GenericFailure>;
 ```
 
 #### Parameters
 
-| parameter | type          | optional | description                                     |
-| --------- | ------------- | -------- | ----------------------------------------------- |
-| dest      | string        | false    | account that will receive funds                 |
-| value     | BN            | false    | amount that is send. 10^18 is equal to 1 AVL    |
-| waitFor   | WaitFor       | false    | wait for block inclusion or finalization        |
-| account   | KeyringPair   | false    | account that will send and sign the transaction |
-| options   | SignerOptions | true     | used to overwrite existing signer options       |
+| parameter | type               | optional | description                                                  |
+| --------- | ------------------ | -------- | ------------------------------------------------------------ |
+| dest      | string             | false    | account that will receive funds                              |
+| value     | BN                 | false    | amount that is send. 10^18 is equal to 1 AVL                 |
+| waitFor   | WaitFor            | false    | wait for block inclusion or finalization                     |
+| account   | KeyringPair        | false    | account that will send and sign the transaction              |
+| options   | TransactionOptions | true     | an be used to set nonce, app id or other transaction options |
 
 ### Minimal Example
 
@@ -430,18 +430,18 @@ Origin Level: Signed
 ### Interface
 
 ```js
-function transferAllowDeath(dest: string, value: BN, waitFor: WaitFor, account: KeyringPair, options?: Partial<SignerOptions>): Promise<TransferAllowDeathTxSuccess | GenericFailure>;
+function transferAllowDeath(dest: string, value: BN, waitFor: WaitFor, account: KeyringPair, options?: TransactionOptions): Promise<TransferAllowDeathTxSuccess | GenericFailure>;
 ```
 
 #### Parameters
 
-| parameter | type          | optional | description                                     |
-| --------- | ------------- | -------- | ----------------------------------------------- |
-| dest      | string        | false    | account that will receive funds                 |
-| value     | BN            | false    | amount that is send. 10^18 is equal to 1 AVL    |
-| waitFor   | WaitFor       | false    | wait for block inclusion or finalization        |
-| account   | KeyringPair   | false    | account that will send and sign the transaction |
-| options   | SignerOptions | true     | used to overwrite existing signer options       |
+| parameter | type               | optional | description                                                  |
+| --------- | ------------------ | -------- | ------------------------------------------------------------ |
+| dest      | string             | false    | account that will receive funds                              |
+| value     | BN                 | false    | amount that is send. 10^18 is equal to 1 AVL                 |
+| waitFor   | WaitFor            | false    | wait for block inclusion or finalization                     |
+| account   | KeyringPair        | false    | account that will send and sign the transaction              |
+| options   | TransactionOptions | true     | an be used to set nonce, app id or other transaction options |
 
 ### Minimal Example
 
@@ -503,18 +503,18 @@ Origin Level: Signed
 ### Interface
 
 ```js
-function transferAll(dest: string, keepAlive: boolean, waitFor: WaitFor, account: KeyringPair, options?: Partial<SignerOptions>): Promise<TransferAllTxSuccess | GenericFailure>;
+function transferAll(dest: string, keepAlive: boolean, waitFor: WaitFor, account: KeyringPair, options?: TransactionOptions): Promise<TransferAllTxSuccess | GenericFailure>;
 ```
 
 #### Parameters
 
-| parameter | type          | optional | description                                      |
-| --------- | ------------- | -------- | ------------------------------------------------ |
-| dest      | string        | false    | account that will receive funds                  |
-| keepAlive | boolean       | false    | if set to false it will reap the account as well |
-| waitFor   | WaitFor       | false    | wait for block inclusion or finalization         |
-| account   | KeyringPair   | false    | account that will send and sign the transaction  |
-| options   | SignerOptions | true     | used to overwrite existing signer options        |
+| parameter | type               | optional | description                                                  |
+| --------- | ------------------ | -------- | ------------------------------------------------------------ |
+| dest      | string             | false    | account that will receive funds                              |
+| keepAlive | boolean            | false    | if set to false it will reap the account as well             |
+| waitFor   | WaitFor            | false    | wait for block inclusion or finalization                     |
+| account   | KeyringPair        | false    | account that will send and sign the transaction              |
+| options   | TransactionOptions | true     | an be used to set nonce, app id or other transaction options |
 
 ### Minimal Example
 
@@ -582,18 +582,18 @@ Origin Level: Signed
 ### Interface
 
 ```js
-function bond(value: BN, payee: StakingRewardDestination, waitFor: WaitFor, account: KeyringPair, options?: Partial<SignerOptions>): Promise<BondTxSuccess | GenericFailure>;
+function bond(value: BN, payee: StakingRewardDestination, waitFor: WaitFor, account: KeyringPair, options?: TransactionOptions): Promise<BondTxSuccess | GenericFailure>;
 ```
 
 #### Parameters
 
-| parameter | type                     | optional | description                                             |
-| --------- | ------------------------ | -------- | ------------------------------------------------------- |
-| value     | BN                       | false    | amount that is bond. 10^18 is equal to 1 AVL            |
-| payee     | StakingRewardDestination | false    | Can be: "Staked", "Stash", "None" or an account address |
-| waitFor   | WaitFor                  | false    | wait for block inclusion or finalization                |
-| account   | KeyringPair              | false    | account that will send and sign the transaction         |
-| options   | SignerOptions            | true     | used to overwrite existing signer options               |
+| parameter | type                     | optional | description                                                  |
+| --------- | ------------------------ | -------- | ------------------------------------------------------------ |
+| value     | BN                       | false    | amount that is bond. 10^18 is equal to 1 AVL                 |
+| payee     | StakingRewardDestination | false    | Can be: "Staked", "Stash", "None" or an account address      |
+| waitFor   | WaitFor                  | false    | wait for block inclusion or finalization                     |
+| account   | KeyringPair              | false    | account that will send and sign the transaction              |
+| options   | TransactionOptions       | true     | an be used to set nonce, app id or other transaction options |
 
 ### Minimal Example
 
@@ -654,17 +654,17 @@ Origin Level: Signed
 ### Interface
 
 ```js
-function bondExtra(maxAdditional: BN, waitFor: WaitFor, account: KeyringPair, options?: Partial<SignerOptions>): Promise<BondExtraTxSuccess | GenericFailure>;
+function bondExtra(maxAdditional: BN, waitFor: WaitFor, account: KeyringPair, options?: TransactionOptions): Promise<BondExtraTxSuccess | GenericFailure>;
 ```
 
 #### Parameters
 
-| parameter     | type          | optional | description                                             |
-| ------------- | ------------- | -------- | ------------------------------------------------------- |
-| maxAdditional | BN            | false    | additional amount that is bond. 10^18 is equal to 1 AVL |
-| waitFor       | WaitFor       | false    | wait for block inclusion or finalization                |
-| account       | KeyringPair   | false    | account that will send and sign the transaction         |
-| options       | SignerOptions | true     | used to overwrite existing signer options               |
+| parameter     | type               | optional | description                                                  |
+| ------------- | ------------------ | -------- | ------------------------------------------------------------ |
+| maxAdditional | BN                 | false    | additional amount that is bond. 10^18 is equal to 1 AVL      |
+| waitFor       | WaitFor            | false    | wait for block inclusion or finalization                     |
+| account       | KeyringPair        | false    | account that will send and sign the transaction              |
+| options       | TransactionOptions | true     | an be used to set nonce, app id or other transaction options |
 
 ### Minimal Example
 
@@ -724,16 +724,16 @@ Origin Level: Signed
 ### Interface
 
 ```js
-function chill(waitFor: WaitFor, account: KeyringPair, options?: Partial<SignerOptions>): Promise<ChillTxSuccess | GenericFailure>;
+function chill(waitFor: WaitFor, account: KeyringPair, options?: TransactionOptions): Promise<ChillTxSuccess | GenericFailure>;
 ```
 
 #### Parameters
 
-| parameter | type          | optional | description                                     |
-| --------- | ------------- | -------- | ----------------------------------------------- |
-| waitFor   | WaitFor       | false    | wait for block inclusion or finalization        |
-| account   | KeyringPair   | false    | account that will send and sign the transaction |
-| options   | SignerOptions | true     | used to overwrite existing signer options       |
+| parameter | type               | optional | description                                                  |
+| --------- | ------------------ | -------- | ------------------------------------------------------------ |
+| waitFor   | WaitFor            | false    | wait for block inclusion or finalization                     |
+| account   | KeyringPair        | false    | account that will send and sign the transaction              |
+| options   | TransactionOptions | true     | an be used to set nonce, app id or other transaction options |
 
 ### Minimal Example
 
@@ -790,17 +790,17 @@ Origin Level: Signed
 ### Interface
 
 ```js
-function chillOther(stash: string, waitFor: WaitFor, account: KeyringPair, options?: Partial<SignerOptions>): Promise<ChillOtherTxSuccess | GenericFailure>;
+function chillOther(stash: string, waitFor: WaitFor, account: KeyringPair, options?: TransactionOptions): Promise<ChillOtherTxSuccess | GenericFailure>;
 ```
 
 #### Parameters
 
-| parameter | type          | optional | description                                     |
-| --------- | ------------- | -------- | ----------------------------------------------- |
-| stash     | string        | false    | address of stash account to chill               |
-| waitFor   | WaitFor       | false    | wait for block inclusion or finalization        |
-| account   | KeyringPair   | false    | account that will send and sign the transaction |
-| options   | SignerOptions | true     | used to overwrite existing signer options       |
+| parameter | type               | optional | description                                                  |
+| --------- | ------------------ | -------- | ------------------------------------------------------------ |
+| stash     | string             | false    | address of stash account to chill                            |
+| waitFor   | WaitFor            | false    | wait for block inclusion or finalization                     |
+| account   | KeyringPair        | false    | account that will send and sign the transaction              |
+| options   | TransactionOptions | true     | an be used to set nonce, app id or other transaction options |
 
 ### Minimal Example
 
@@ -848,17 +848,17 @@ Origin Level: Signed
 ### Interface
 
 ```js
-function nominate(targets: string[], waitFor: WaitFor, account: KeyringPair, options?: Partial<SignerOptions>): Promise<NominateTxSuccess | GenericFailure>;
+function nominate(targets: string[], waitFor: WaitFor, account: KeyringPair, options?: TransactionOptions): Promise<NominateTxSuccess | GenericFailure>;
 ```
 
 #### Parameters
 
-| parameter | type          | optional | description                                     |
-| --------- | ------------- | -------- | ----------------------------------------------- |
-| targets   | string[]      | false    | list od addresses to nominate                   |
-| waitFor   | WaitFor       | false    | wait for block inclusion or finalization        |
-| account   | KeyringPair   | false    | account that will send and sign the transaction |
-| options   | SignerOptions | true     | used to overwrite existing signer options       |
+| parameter | type               | optional | description                                                  |
+| --------- | ------------------ | -------- | ------------------------------------------------------------ |
+| targets   | string[]           | false    | list od addresses to nominate                                |
+| waitFor   | WaitFor            | false    | wait for block inclusion or finalization                     |
+| account   | KeyringPair        | false    | account that will send and sign the transaction              |
+| options   | TransactionOptions | true     | an be used to set nonce, app id or other transaction options |
 
 ### Minimal Example
 
@@ -923,17 +923,17 @@ Origin Level: Signed
 ### Interface
 
 ```js
-function unbond(value: BN, waitFor: WaitFor, account: KeyringPair, options?: Partial<SignerOptions>): Promise<UnbondTxSuccess | GenericFailure>;
+function unbond(value: BN, waitFor: WaitFor, account: KeyringPair, options?: TransactionOptions): Promise<UnbondTxSuccess | GenericFailure>;
 ```
 
 #### Parameters
 
-| parameter | type          | optional | description                                     |
-| --------- | ------------- | -------- | ----------------------------------------------- |
-| value     | BN            | false    | amount of tokens to unbond                      |
-| waitFor   | WaitFor       | false    | wait for block inclusion or finalization        |
-| account   | KeyringPair   | false    | account that will send and sign the transaction |
-| options   | SignerOptions | true     | used to overwrite existing signer options       |
+| parameter | type               | optional | description                                                  |
+| --------- | ------------------ | -------- | ------------------------------------------------------------ |
+| value     | BN                 | false    | amount of tokens to unbond                                   |
+| waitFor   | WaitFor            | false    | wait for block inclusion or finalization                     |
+| account   | KeyringPair        | false    | account that will send and sign the transaction              |
+| options   | TransactionOptions | true     | an be used to set nonce, app id or other transaction options |
 
 ### Minimal Example
 
@@ -992,18 +992,18 @@ Origin Level: Signed
 ### Interface
 
 ```js
-function validate(commission: number, blocked: boolean, waitFor: WaitFor, account: KeyringPair, options?: Partial<SignerOptions>): Promise<ValidateTxSuccess | GenericFailure>;
+function validate(commission: number, blocked: boolean, waitFor: WaitFor, account: KeyringPair, options?: TransactionOptions): Promise<ValidateTxSuccess | GenericFailure>;
 ```
 
 #### Parameters
 
-| parameter  | type          | optional | description                                           |
-| ---------- | ------------- | -------- | ----------------------------------------------------- |
-| commission | number        | false    | how much validator charge nominators in 0 - 100 range |
-| blocked    | boolean       | false    | whether or not this validator accepts nominations     |
-| waitFor    | WaitFor       | false    | wait for block inclusion or finalization              |
-| account    | KeyringPair   | false    | account that will send and sign the transaction       |
-| options    | SignerOptions | true     | used to overwrite existing signer options             |
+| parameter  | type               | optional | description                                                  |
+| ---------- | ------------------ | -------- | ------------------------------------------------------------ |
+| commission | number             | false    | how much validator charge nominators in 0 - 100 range        |
+| blocked    | boolean            | false    | whether or not this validator accepts nominations            |
+| waitFor    | WaitFor            | false    | wait for block inclusion or finalization                     |
+| account    | KeyringPair        | false    | account that will send and sign the transaction              |
+| options    | TransactionOptions | true     | an be used to set nonce, app id or other transaction options |
 
 ### Minimal Example
 
@@ -1071,20 +1071,20 @@ Origin Level: Signed
 ### Interface
 
 ```js
-function create(amount: BN, root: string, nominator: string, bouncer: string, waitFor: WaitFor, account: KeyringPair, options?: Partial<SignerOptions>): Promise<PoolCreateTxSuccess | GenericFailure>;
+function create(amount: BN, root: string, nominator: string, bouncer: string, waitFor: WaitFor, account: KeyringPair, options?: TransactionOptions): Promise<PoolCreateTxSuccess | GenericFailure>;
 ```
 
 #### Parameters
 
-| parameter | type          | optional | description                                        |
-| --------- | ------------- | -------- | -------------------------------------------------- |
-| amount    | BN            | false    | The amount of funds to delegate to the pool        |
-| root      | string        | false    | The account to set as [`PoolRoles::root`]          |
-| nominator | string        | false    | The account to set as the [`PoolRoles::nominator`] |
-| bouncer   | string        | false    | The account to set as the [`PoolRoles::bouncer`]   |
-| waitFor   | WaitFor       | false    | wait for block inclusion or finalization           |
-| account   | KeyringPair   | false    | account that will send and sign the transaction    |
-| options   | SignerOptions | true     | used to overwrite existing signer options          |
+| parameter | type               | optional | description                                                  |
+| --------- | ------------------ | -------- | ------------------------------------------------------------ |
+| amount    | BN                 | false    | The amount of funds to delegate to the pool                  |
+| root      | string             | false    | The account to set as [`PoolRoles::root`]                    |
+| nominator | string             | false    | The account to set as the [`PoolRoles::nominator`]           |
+| bouncer   | string             | false    | The account to set as the [`PoolRoles::bouncer`]             |
+| waitFor   | WaitFor            | false    | wait for block inclusion or finalization                     |
+| account   | KeyringPair        | false    | account that will send and sign the transaction              |
+| options   | TransactionOptions | true     | an be used to set nonce, app id or other transaction options |
 
 ### Minimal Example
 
@@ -1153,21 +1153,21 @@ Origin Level: Signed
 ### Interface
 
 ```js
-function createWithPoolId(amount: BN, root: string, nominator: string, bouncer: string, poolId: number, waitFor: WaitFor, account: KeyringPair, options?: Partial<SignerOptions>): Promise<PoolCreateWithPoolIdTxSuccess | GenericFailure>;
+function createWithPoolId(amount: BN, root: string, nominator: string, bouncer: string, poolId: number, waitFor: WaitFor, account: KeyringPair, options?: TransactionOptions): Promise<PoolCreateWithPoolIdTxSuccess | GenericFailure>;
 ```
 
 #### Parameters
 
-| parameter | type          | optional | description                                        |
-| --------- | ------------- | -------- | -------------------------------------------------- |
-| amount    | BN            | false    | The amount of funds to delegate to the pool        |
-| root      | string        | false    | The account to set as [`PoolRoles::root`]          |
-| nominator | string        | false    | The account to set as the [`PoolRoles::nominator`] |
-| bouncer   | string        | false    | The account to set as the [`PoolRoles::bouncer`]   |
-| poolId    | number        | false    | pool id                                            |
-| waitFor   | WaitFor       | false    | wait for block inclusion or finalization           |
-| account   | KeyringPair   | false    | account that will send and sign the transaction    |
-| options   | SignerOptions | true     | used to overwrite existing signer options          |
+| parameter | type               | optional | description                                                  |
+| --------- | ------------------ | -------- | ------------------------------------------------------------ |
+| amount    | BN                 | false    | The amount of funds to delegate to the pool                  |
+| root      | string             | false    | The account to set as [`PoolRoles::root`]                    |
+| nominator | string             | false    | The account to set as the [`PoolRoles::nominator`]           |
+| bouncer   | string             | false    | The account to set as the [`PoolRoles::bouncer`]             |
+| poolId    | number             | false    | pool id                                                      |
+| waitFor   | WaitFor            | false    | wait for block inclusion or finalization                     |
+| account   | KeyringPair        | false    | account that will send and sign the transaction              |
+| options   | TransactionOptions | true     | an be used to set nonce, app id or other transaction options |
 
 ### Minimal Example
 
@@ -1245,18 +1245,18 @@ Origin Level: Signed
 ### Interface
 
 ```js
-function join(amount: BN, poolId: number, waitFor: WaitFor, account: KeyringPair, options?: Partial<SignerOptions>): Promise<PoolJoinTxSuccess | GenericFailure>;
+function join(amount: BN, poolId: number, waitFor: WaitFor, account: KeyringPair, options?: TransactionOptions): Promise<PoolJoinTxSuccess | GenericFailure>;
 ```
 
 #### Parameters
 
-| parameter | type          | optional | description                                     |
-| --------- | ------------- | -------- | ----------------------------------------------- |
-| amount    | BN            | false    | The amount of funds to delegate to the pool     |
-| poolId    | number        | false    | pool id                                         |
-| waitFor   | WaitFor       | false    | wait for block inclusion or finalization        |
-| account   | KeyringPair   | false    | account that will send and sign the transaction |
-| options   | SignerOptions | true     | used to overwrite existing signer options       |
+| parameter | type               | optional | description                                                  |
+| --------- | ------------------ | -------- | ------------------------------------------------------------ |
+| amount    | BN                 | false    | The amount of funds to delegate to the pool                  |
+| poolId    | number             | false    | pool id                                                      |
+| waitFor   | WaitFor            | false    | wait for block inclusion or finalization                     |
+| account   | KeyringPair        | false    | account that will send and sign the transaction              |
+| options   | TransactionOptions | true     | an be used to set nonce, app id or other transaction options |
 
 ### Minimal Example
 
@@ -1318,18 +1318,18 @@ Origin Level: Signed
 ### Interface
 
 ```js
-function nominate(poolId: number, validators: string[], waitFor: WaitFor, account: KeyringPair, options?: Partial<SignerOptions>): Promise<PoolNominateTxSuccess | GenericFailure>;
+function nominate(poolId: number, validators: string[], waitFor: WaitFor, account: KeyringPair, options?: TransactionOptions): Promise<PoolNominateTxSuccess | GenericFailure>;
 ```
 
 #### Parameters
 
-| parameter  | type          | optional | description                                     |
-| ---------- | ------------- | -------- | ----------------------------------------------- |
-| poolId     | number        | false    | pool id                                         |
-| validators | string[]      | false    | list of validators to nominate                  |
-| waitFor    | WaitFor       | false    | wait for block inclusion or finalization        |
-| account    | KeyringPair   | false    | account that will send and sign the transaction |
-| options    | SignerOptions | true     | used to overwrite existing signer options       |
+| parameter  | type               | optional | description                                                  |
+| ---------- | ------------------ | -------- | ------------------------------------------------------------ |
+| poolId     | number             | false    | pool id                                                      |
+| validators | string[]           | false    | list of validators to nominate                               |
+| waitFor    | WaitFor            | false    | wait for block inclusion or finalization                     |
+| account    | KeyringPair        | false    | account that will send and sign the transaction              |
+| options    | TransactionOptions | true     | an be used to set nonce, app id or other transaction options |
 
 ### Minimal Example
 
@@ -1388,17 +1388,17 @@ Origin Level: Signed
 ### Interface
 
 ```js
-function bondExtra(extra: BondExtra, waitFor: WaitFor, account: KeyringPair, options?: Partial<SignerOptions>): Promise<PoolBondExtraTxSuccess | GenericFailure>;
+function bondExtra(extra: BondExtra, waitFor: WaitFor, account: KeyringPair, options?: TransactionOptions): Promise<PoolBondExtraTxSuccess | GenericFailure>;
 ```
 
 #### Parameters
 
-| parameter | type          | optional | description                                                                                            |
-| --------- | ------------- | -------- | ------------------------------------------------------------------------------------------------------ |
-| extra     | BondExtra     | false    | Additional funds can come from either the free balance of the account, of from the accumulated rewards |
-| waitFor   | WaitFor       | false    | wait for block inclusion or finalization                                                               |
-| account   | KeyringPair   | false    | account that will send and sign the transaction                                                        |
-| options   | SignerOptions | true     | used to overwrite existing signer options                                                              |
+| parameter | type               | optional | description                                                                                            |
+| --------- | ------------------ | -------- | ------------------------------------------------------------------------------------------------------ |
+| extra     | BondExtra          | false    | Additional funds can come from either the free balance of the account, of from the accumulated rewards |
+| waitFor   | WaitFor            | false    | wait for block inclusion or finalization                                                               |
+| account   | KeyringPair        | false    | account that will send and sign the transaction                                                        |
+| options   | TransactionOptions | true     | an be used to set nonce, app id or other transaction options                                           |
 
 ### Minimal Example
 
@@ -1460,18 +1460,18 @@ Origin Level: Signed
 ### Interface
 
 ```js
-function setMetadata(poolId: number, metadata: string, waitFor: WaitFor, account: KeyringPair, options?: Partial<SignerOptions>): Promise<PoolSetMetadataTxSuccess | GenericFailure>;
+function setMetadata(poolId: number, metadata: string, waitFor: WaitFor, account: KeyringPair, options?: TransactionOptions): Promise<PoolSetMetadataTxSuccess | GenericFailure>;
 ```
 
 #### Parameters
 
-| parameter | type          | optional | description                                     |
-| --------- | ------------- | -------- | ----------------------------------------------- |
-| poolId    | number        | false    | pool id                                         |
-| metadata  | string        | false    | metadata                                        |
-| waitFor   | WaitFor       | false    | wait for block inclusion or finalization        |
-| account   | KeyringPair   | false    | account that will send and sign the transaction |
-| options   | SignerOptions | true     | used to overwrite existing signer options       |
+| parameter | type               | optional | description                                                  |
+| --------- | ------------------ | -------- | ------------------------------------------------------------ |
+| poolId    | number             | false    | pool id                                                      |
+| metadata  | string             | false    | metadata                                                     |
+| waitFor   | WaitFor            | false    | wait for block inclusion or finalization                     |
+| account   | KeyringPair        | false    | account that will send and sign the transaction              |
+| options   | TransactionOptions | true     | an be used to set nonce, app id or other transaction options |
 
 ### Minimal Example
 
@@ -1527,18 +1527,18 @@ Origin Level: Signed
 ### Interface
 
 ```js
-function unbond(memberAccount: string, unbondingPoints: BN, waitFor: WaitFor, account: KeyringPair, options?: Partial<SignerOptions>): Promise<PoolUnbondTxSuccess | GenericFailure>;
+function unbond(memberAccount: string, unbondingPoints: BN, waitFor: WaitFor, account: KeyringPair, options?: TransactionOptions): Promise<PoolUnbondTxSuccess | GenericFailure>;
 ```
 
 #### Parameters
 
-| parameter       | type          | optional | description                                     |
-| --------------- | ------------- | -------- | ----------------------------------------------- |
-| memberAccount   | string        | false    | member account                                  |
-| unbondingPoints | BN            | false    | defines how many tokens will be unbond          |
-| waitFor         | WaitFor       | false    | wait for block inclusion or finalization        |
-| account         | KeyringPair   | false    | account that will send and sign the transaction |
-| options         | SignerOptions | true     | used to overwrite existing signer options       |
+| parameter       | type               | optional | description                                                  |
+| --------------- | ------------------ | -------- | ------------------------------------------------------------ |
+| memberAccount   | string             | false    | member account                                               |
+| unbondingPoints | BN                 | false    | defines how many tokens will be unbond                       |
+| waitFor         | WaitFor            | false    | wait for block inclusion or finalization                     |
+| account         | KeyringPair        | false    | account that will send and sign the transaction              |
+| options         | TransactionOptions | true     | an be used to set nonce, app id or other transaction options |
 
 ### Minimal Example
 
@@ -1601,17 +1601,17 @@ Origin Level: Signed
 ### Interface
 
 ```js
-function chill(poolId: number, waitFor: WaitFor, account: KeyringPair, options?: Partial<SignerOptions>): Promise<PoolChillTxSuccess | GenericFailure>;
+function chill(poolId: number, waitFor: WaitFor, account: KeyringPair, options?: TransactionOptions): Promise<PoolChillTxSuccess | GenericFailure>;
 ```
 
 #### Parameters
 
-| parameter | type          | optional | description                                     |
-| --------- | ------------- | -------- | ----------------------------------------------- |
-| poolId    | number        | false    | pool id                                         |
-| waitFor   | WaitFor       | false    | wait for block inclusion or finalization        |
-| account   | KeyringPair   | false    | account that will send and sign the transaction |
-| options   | SignerOptions | true     | used to overwrite existing signer options       |
+| parameter | type               | optional | description                                                  |
+| --------- | ------------------ | -------- | ------------------------------------------------------------ |
+| poolId    | number             | false    | pool id                                                      |
+| waitFor   | WaitFor            | false    | wait for block inclusion or finalization                     |
+| account   | KeyringPair        | false    | account that will send and sign the transaction              |
+| options   | TransactionOptions | true     | an be used to set nonce, app id or other transaction options |
 
 ### Minimal Example
 
@@ -1666,17 +1666,17 @@ Origin Level: Signed
 ### Interface
 
 ```js
-function setClaimPermission(permission: ClaimPermission, waitFor: WaitFor, account: KeyringPair, options?: Partial<SignerOptions>): Promise<PoolSetClaimPermissionOtherTxSuccess | GenericFailure>;
+function setClaimPermission(permission: ClaimPermission, waitFor: WaitFor, account: KeyringPair, options?: TransactionOptions): Promise<PoolSetClaimPermissionOtherTxSuccess | GenericFailure>;
 ```
 
 #### Parameters
 
-| parameter  | type            | optional | description                                     |
-| ---------- | --------------- | -------- | ----------------------------------------------- |
-| permission | ClaimPermission | false    | permission type                                 |
-| waitFor    | WaitFor         | false    | wait for block inclusion or finalization        |
-| account    | KeyringPair     | false    | account that will send and sign the transaction |
-| options    | SignerOptions   | true     | used to overwrite existing signer options       |
+| parameter  | type               | optional | description                                                  |
+| ---------- | ------------------ | -------- | ------------------------------------------------------------ |
+| permission | ClaimPermission    | false    | permission type                                              |
+| waitFor    | WaitFor            | false    | wait for block inclusion or finalization                     |
+| account    | KeyringPair        | false    | account that will send and sign the transaction              |
+| options    | TransactionOptions | true     | an be used to set nonce, app id or other transaction options |
 
 ### Minimal Example
 
@@ -1731,17 +1731,17 @@ Origin Level: Signed
 ### Interface
 
 ```js
-function claimCommission(poolId: number, waitFor: WaitFor, account: KeyringPair, options?: Partial<SignerOptions>): Promise<PoolClaimCommissionTxSuccess | GenericFailure>;
+function claimCommission(poolId: number, waitFor: WaitFor, account: KeyringPair, options?: TransactionOptions): Promise<PoolClaimCommissionTxSuccess | GenericFailure>;
 ```
 
 #### Parameters
 
-| parameter | type          | optional | description                                     |
-| --------- | ------------- | -------- | ----------------------------------------------- |
-| poolId    | number        | false    | pool id                                         |
-| waitFor   | WaitFor       | false    | wait for block inclusion or finalization        |
-| account   | KeyringPair   | false    | account that will send and sign the transaction |
-| options   | SignerOptions | true     | used to overwrite existing signer options       |
+| parameter | type               | optional | description                                                  |
+| --------- | ------------------ | -------- | ------------------------------------------------------------ |
+| poolId    | number             | false    | pool id                                                      |
+| waitFor   | WaitFor            | false    | wait for block inclusion or finalization                     |
+| account   | KeyringPair        | false    | account that will send and sign the transaction              |
+| options   | TransactionOptions | true     | an be used to set nonce, app id or other transaction options |
 
 ### Minimal Example
 
@@ -1800,16 +1800,16 @@ Origin Level: Signed
 ### Interface
 
 ```js
-function claimPayout(waitFor: WaitFor, account: KeyringPair, options?: Partial<SignerOptions>): Promise<PoolClaimPayoutTxSuccess | GenericFailure>;
+function claimPayout(waitFor: WaitFor, account: KeyringPair, options?: TransactionOptions): Promise<PoolClaimPayoutTxSuccess | GenericFailure>;
 ```
 
 #### Parameters
 
-| parameter | type          | optional | description                                     |
-| --------- | ------------- | -------- | ----------------------------------------------- |
-| waitFor   | WaitFor       | false    | wait for block inclusion or finalization        |
-| account   | KeyringPair   | false    | account that will send and sign the transaction |
-| options   | SignerOptions | true     | used to overwrite existing signer options       |
+| parameter | type               | optional | description                                                  |
+| --------- | ------------------ | -------- | ------------------------------------------------------------ |
+| waitFor   | WaitFor            | false    | wait for block inclusion or finalization                     |
+| account   | KeyringPair        | false    | account that will send and sign the transaction              |
+| options   | TransactionOptions | true     | an be used to set nonce, app id or other transaction options |
 
 ### Minimal Example
 
@@ -1868,17 +1868,17 @@ Origin Level: Signed
 ### Interface
 
 ```js
-function claimPayoutOther(other: string, waitFor: WaitFor, account: KeyringPair, options?: Partial<SignerOptions>): Promise<PoolClaimPayoutOtherTxSuccess | GenericFailure>;
+function claimPayoutOther(other: string, waitFor: WaitFor, account: KeyringPair, options?: TransactionOptions): Promise<PoolClaimPayoutOtherTxSuccess | GenericFailure>;
 ```
 
 #### Parameters
 
-| parameter | type          | optional | description                                     |
-| --------- | ------------- | -------- | ----------------------------------------------- |
-| other     | &str          | false    | other account to claim payout                   |
-| waitFor   | WaitFor       | false    | wait for block inclusion or finalization        |
-| account   | KeyringPair   | false    | account that will send and sign the transaction |
-| options   | SignerOptions | true     | used to overwrite existing signer options       |
+| parameter | type               | optional | description                                                  |
+| --------- | ------------------ | -------- | ------------------------------------------------------------ |
+| other     | &str               | false    | other account to claim payout                                |
+| waitFor   | WaitFor            | false    | wait for block inclusion or finalization                     |
+| account   | KeyringPair        | false    | account that will send and sign the transaction              |
+| options   | TransactionOptions | true     | an be used to set nonce, app id or other transaction options |
 
 ### Minimal Example
 
@@ -1938,7 +1938,7 @@ Origin Level: Signed
 ### Interface
 
 ```js
-function setCommission(poolId: number, newCommission: NewCommission | null, waitFor: WaitFor, account: KeyringPair, options?: Partial<SignerOptions>): Promise<PoolSetCommissionTxSuccess | GenericFailure>;
+function setCommission(poolId: number, newCommission: NewCommission | null, waitFor: WaitFor, account: KeyringPair, options?: TransactionOptions): Promise<PoolSetCommissionTxSuccess | GenericFailure>;
 ```
 
 #### Parameters
@@ -1949,7 +1949,7 @@ function setCommission(poolId: number, newCommission: NewCommission | null, wait
 | newCommission | NewCommission or Null | false    | if empty it removes the existing commission otherwise it sets it |
 | waitFor       | WaitFor               | false    | wait for block inclusion or finalization                         |
 | account       | KeyringPair           | false    | account that will send and sign the transaction                  |
-| options       | SignerOptions         | true     | used to overwrite existing signer options                        |
+| options       | TransactionOptions    | true     | an be used to set nonce, app id or other transaction options     |
 
 ### Minimal Example
 
@@ -2009,18 +2009,18 @@ Origin Level: Signed
 ### Interface
 
 ```js
-function withdrawUnbonded(memberAccount: string, numSlashingSpans: number, waitFor: WaitFor, account: KeyringPair, options?: Partial<SignerOptions>): Promise<PoolWithdrawUnbodedTxSuccess | GenericFailure>;
+function withdrawUnbonded(memberAccount: string, numSlashingSpans: number, waitFor: WaitFor, account: KeyringPair, options?: TransactionOptions): Promise<PoolWithdrawUnbodedTxSuccess | GenericFailure>;
 ```
 
 #### Parameters
 
-| parameter        | type          | optional | description                                     |
-| ---------------- | ------------- | -------- | ----------------------------------------------- |
-| memberAccount    | string        | false    | member account                                  |
-| numSlashingSpans | number        | false    | number of slashing spans                        |
-| waitFor          | WaitFor       | false    | wait for block inclusion or finalization        |
-| account          | KeyringPair   | false    | account that will send and sign the transaction |
-| options          | SignerOptions | true     | used to overwrite existing signer options       |
+| parameter        | type               | optional | description                                                  |
+| ---------------- | ------------------ | -------- | ------------------------------------------------------------ |
+| memberAccount    | string             | false    | member account                                               |
+| numSlashingSpans | number             | false    | number of slashing spans                                     |
+| waitFor          | WaitFor            | false    | wait for block inclusion or finalization                     |
+| account          | KeyringPair        | false    | account that will send and sign the transaction              |
+| options          | TransactionOptions | true     | an be used to set nonce, app id or other transaction options |
 
 ### Minimal Example
 
@@ -2087,18 +2087,18 @@ Origin Level: Signed
 ### Interface
 
 ```js
-function setState(poolId: number, state: PoolState, waitFor: WaitFor, account: KeyringPair, options?: Partial<SignerOptions>): Promise<PoolSetStateTxSuccess | GenericFailure>;
+function setState(poolId: number, state: PoolState, waitFor: WaitFor, account: KeyringPair, options?: TransactionOptions): Promise<PoolSetStateTxSuccess | GenericFailure>;
 ```
 
 #### Parameters
 
-| parameter | type          | optional | description                                     |
-| --------- | ------------- | -------- | ----------------------------------------------- |
-| poolId    | number        | false    | pool id                                         |
-| state     | PoolState     | false    | "Open" or "Blocked" or "Destroying"             |
-| waitFor   | WaitFor       | false    | wait for block inclusion or finalization        |
-| account   | KeyringPair   | false    | account that will send and sign the transaction |
-| options   | SignerOptions | true     | used to overwrite existing signer options       |
+| parameter | type               | optional | description                                                  |
+| --------- | ------------------ | -------- | ------------------------------------------------------------ |
+| poolId    | number             | false    | pool id                                                      |
+| state     | PoolState          | false    | "Open" or "Blocked" or "Destroying"                          |
+| waitFor   | WaitFor            | false    | wait for block inclusion or finalization                     |
+| account   | KeyringPair        | false    | account that will send and sign the transaction              |
+| options   | TransactionOptions | true     | an be used to set nonce, app id or other transaction options |
 
 ### Minimal Example
 
