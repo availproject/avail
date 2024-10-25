@@ -42,8 +42,8 @@
     "typescript": "^5.2.2"
   },
   "dependencies": {
-    "@polkadot/api": "^10.11.3",
-    "neverthrow": "^7.0.0"
+    "@polkadot/api": "^14.1.1",
+    "neverthrow": "^8.1.1"
   },
   "resolutions": {
     "ws": ">=8.17.1"
