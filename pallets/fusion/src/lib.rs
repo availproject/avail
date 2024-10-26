@@ -102,6 +102,10 @@ pub mod pallet {
 		#[pallet::constant]
 		type MaxSlashesPerPool: Get<u32>;
 
+		/// Maximum number of pools behind a validator, mostly used to set bounds
+		#[pallet::constant]
+		type MaxPoolsPerValidator: Get<u32>;
+
 		/// Period for funds to be available after unbonding
 		#[pallet::constant]
 		type BondingDuration: Get<EraIndex>;
@@ -231,7 +235,7 @@ pub mod pallet {
 		EraIndex,
 		Twox64Concat,
 		T::AccountId,
-		BoundedVec<PoolId, T::MaxTargets>,
+		BoundedVec<PoolId, T::MaxPoolsPerValidator>,
 		ValueQuery,
 	>;
 
@@ -885,7 +889,7 @@ pub mod pallet {
 				}
 
 				if let Some(extra_apy_data) = extra_apy_data {
-					pool.set_extra_apy(pool_id, extra_apy_data)?;
+					pool.set_extra_apy(extra_apy_data)?;
 				}
 
 				if pool.is_active() {
@@ -1214,7 +1218,7 @@ pub mod pallet {
 		pub fn set_pool_extra_apy_allocations(
 			origin: OriginFor<T>,
 			evm_address: EvmAddress,
-			pool_ids: BoundedVec<PoolId, T::MaxMembersPerPool>,
+			pool_ids: BoundedVec<PoolId, ConstU32<50>>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 			Self::ensure_valid_fusion_origin(who, evm_address)?;
@@ -2333,6 +2337,7 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
+	/// Function to remove all extra apy for everyone in case the Avail pool is slashed
 	fn shutdown_pools_extra_apy() -> () {
 		for (pool_id, _) in FusionPoolsWithExtraApy::<T>::iter() {
 			let _ = HasExtraApy::<T>::clear_prefix(pool_id, u32::MAX, None);
@@ -2348,6 +2353,7 @@ impl<T: Config> Pallet<T> {
 		}
 	}
 
+	/// Helper to compute the rewards for a pool member, return the rewards and the user points to avoid iterating to compute extra rewards
 	fn compute_basic_rewards(
 		evm_address: EvmAddress,
 		exposure: &FusionExposure<T>,
@@ -2379,6 +2385,7 @@ impl<T: Config> Pallet<T> {
 		Ok((user_reward_balance, user_points))
 	}
 
+	/// Helper to compute the extra apy reward for a pool member
 	fn compute_extra_rewards(
 		evm_address: EvmAddress,
 		exposure: &FusionExposure<T>,
@@ -2408,7 +2415,7 @@ impl<T: Config> Pallet<T> {
 
 	fn do_set_pool_extra_apy_allocations(
 		evm_address: EvmAddress,
-		pool_ids: BoundedVec<PoolId, T::MaxMembersPerPool>,
+		pool_ids: BoundedVec<PoolId, ConstU32<50>>,
 	) -> DispatchResult {
 		// Get user's AVAIL balance in pool 0
 		let avail_pool_id = AVAIL_POOL_ID;

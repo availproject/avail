@@ -43,19 +43,6 @@ pub enum FusionPoolState {
 
 #[derive(Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[scale_info(skip_type_params(T))]
-pub struct EraReward<T: Config> {
-	/// The total rewards
-	pub rewards: BalanceOf<T>,
-	/// The actual amount of reward claimed
-	pub claimed_rewards: BalanceOf<T>,
-	/// The total rewards from extra apy
-	pub additional_rewards: BalanceOf<T>,
-	/// The actual amount of reward claimed form extra apy
-	pub additional_claimed_rewards: BalanceOf<T>,
-}
-
-#[derive(Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-#[scale_info(skip_type_params(T))]
 pub struct FusionCurrency<T: Config> {
 	/// Id of the fusion currency
 	pub currency_id: CurrencyId,
@@ -119,7 +106,7 @@ pub struct ExtraApyData<T: Config> {
 	pub additional_apy: Perbill,
 	/// The minimum avail that needs to be allocated to this pool to earn extra
 	pub min_avail_to_earn: FusionCurrencyBalance,
-	/// The points in the pool getting extra
+	/// The amount of points in the pool getting extra
 	pub elligible_total_points: Points,
 	/// Vector with elligible members
 	pub elligible_members: BoundedVec<EvmAddress, T::MaxMembersPerPool>,
@@ -174,6 +161,19 @@ pub struct FusionExposure<T: Config> {
 	pub extra_apy_total_points: Points,
 	/// The avail equivalent of extra_apy_total_points
 	pub extra_apy_total_avail: BalanceOf<T>,
+}
+
+#[derive(Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[scale_info(skip_type_params(T))]
+pub struct EraReward<T: Config> {
+	/// The total rewards
+	pub rewards: BalanceOf<T>,
+	/// The actual amount of reward claimed
+	pub claimed_rewards: BalanceOf<T>,
+	/// The total rewards from extra apy
+	pub additional_rewards: BalanceOf<T>,
+	/// The actual amount of reward claimed form extra apy
+	pub additional_claimed_rewards: BalanceOf<T>,
 }
 
 #[derive(Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
@@ -396,9 +396,9 @@ impl<T: Config> FusionPool<T> {
 
 	pub fn set_extra_apy(
 		&mut self,
-		pool_id: PoolId,
 		extra_apy_data: Option<(Perbill, FusionCurrencyBalance)>,
 	) -> DispatchResult {
+		let pool_id = self.pool_id;
 		match (&self.extra_apy_data, extra_apy_data) {
 			(None, None) => {
 				// There is no current apy data, nothing to do

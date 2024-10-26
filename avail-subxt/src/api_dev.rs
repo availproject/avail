@@ -345,9 +345,9 @@ pub mod api {
 			.hash();
 		runtime_metadata_hash
 			== [
-				123u8, 153u8, 194u8, 8u8, 116u8, 102u8, 72u8, 239u8, 87u8, 38u8, 49u8, 170u8, 62u8,
-				13u8, 111u8, 231u8, 50u8, 181u8, 67u8, 67u8, 90u8, 95u8, 128u8, 119u8, 90u8, 201u8,
-				59u8, 178u8, 190u8, 11u8, 193u8, 190u8,
+				193u8, 161u8, 52u8, 10u8, 180u8, 53u8, 102u8, 192u8, 45u8, 135u8, 179u8, 152u8,
+				133u8, 117u8, 60u8, 40u8, 83u8, 109u8, 40u8, 74u8, 198u8, 133u8, 199u8, 183u8,
+				104u8, 118u8, 146u8, 65u8, 42u8, 177u8, 10u8, 105u8,
 			]
 	}
 	pub mod system {
@@ -28614,6 +28614,21 @@ pub mod api {
 					::subxt::constants::Address::new_static(
 						"Fusion",
 						"MaxSlashesPerPool",
+						[
+							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
+							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
+							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
+							145u8,
+						],
+					)
+				}
+				#[doc = " Maximum number of pools behind a validator, mostly used to set bounds"]
+				pub fn max_pools_per_validator(
+					&self,
+				) -> ::subxt::constants::Address<::core::primitive::u32> {
+					::subxt::constants::Address::new_static(
+						"Fusion",
+						"MaxPoolsPerValidator",
 						[
 							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
 							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,

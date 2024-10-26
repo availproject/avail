@@ -49,6 +49,7 @@ parameter_types! {
 	pub const BondingDuration: EraIndex = 3;
 	pub const HistoryDepth: u32 = 20;
 	pub const MaxSlashesPerPool: u32 = 100;
+	pub const MaxPoolsPerValidator: u32 = 100;
 }
 impl pallet_fusion::Config for Test {
 	type Currency = Balances;
@@ -61,6 +62,7 @@ impl pallet_fusion::Config for Test {
 	type MaxMembersPerPool = MaxMembersPerPool;
 	type MaxTargets = MaxTargets;
 	type MaxUnbonding = MaxUnbonding;
+	type MaxPoolsPerValidator = MaxPoolsPerValidator;
 	type MaxSlashesPerPool = MaxSlashesPerPool;
 	type BondingDuration = BondingDuration;
 	type RewardRemainder = ();

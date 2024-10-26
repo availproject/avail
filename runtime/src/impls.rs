@@ -151,6 +151,7 @@ parameter_types! {
 	pub const MinimumBalanceToOperate: Balance = 100 * AVAIL;
 	pub const MaxSlashes: u32 = 1000;
 	pub const MaxSlashesPerPool: u32 = 100; // If we have 100 slashes during 27 eras, we have bigger problems
+	pub const MaxPoolsPerValidator: u32 = 100;
 }
 impl pallet_fusion::Config for Runtime {
 	type Currency = Balances;
@@ -167,6 +168,7 @@ impl pallet_fusion::Config for Runtime {
 	type MaxTargets = MaxTargets;
 	type MaxUnbonding = MaxUnbonding;
 	type MaxSlashesPerPool = MaxSlashesPerPool;
+	type MaxPoolsPerValidator = MaxPoolsPerValidator;
 	type BondingDuration = constants::staking::BondingDuration;
 	type RewardRemainder = Treasury;
 	type HistoryDepth = HistoryDepth;

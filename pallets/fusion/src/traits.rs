@@ -34,10 +34,10 @@ pub trait FusionExt<AccountId, Balance> {
 	/// Return the fusion voters to add to the staking pallet
 	fn get_fusion_voters() -> Vec<(AccountId, u64, Vec<AccountId>)>;
 
-	/// Return the fusion voters count for the last era
+	/// Return the fusion voters count
 	fn get_active_pool_count() -> usize;
 
-	/// Returns the pool if the account is a pool funds account
+	/// Returns the pool id if the account is a pool funds account
 	fn get_pool_id_from_funds_account(account: &AccountId) -> Option<PoolId>;
 
 	/// Updates the Fusion exposure with election data result
@@ -47,8 +47,7 @@ pub trait FusionExt<AccountId, Balance> {
 		value: Balance,
 	) -> ();
 
-	/// In the staking pallet, if a pool was slashed
-	/// we lock the funds meaning they cannot be unbond until the slash decision is made
+	/// In the staking pallet, if a pool was slashed, we record an unapplied slash
 	fn add_fusion_slash(
 		era: EraIndex,
 		validator: &AccountId,
@@ -58,14 +57,14 @@ pub trait FusionExt<AccountId, Balance> {
 	/// If a slash was cancelled and it concerned a Fusion pool, we need to cancel it there too
 	fn cancel_fusion_slash(era: EraIndex, slash_validators: &Vec<AccountId>) -> ();
 
-	/// If a slash is applied, we need to take the previously locked funds and mint reportes rewards
-	/// Returns true if the nominator is a fusion pool (and was slashed)
+	/// If a slash is applied, we need to intercept it and take the corresponding fusion currencies
+	/// Returns true if the nominator is a fusion pool (regardless if it succeed to get slashed)
 	/// In this function we will give 100% of the slash amount to the treasury,
 	/// the rewards for validator are going to get minted in the staking pallet like before
 	fn apply_fusion_slash(
-		_slash_era: EraIndex,
-		_validator: &AccountId,
-		_funds_account: &AccountId,
+		slash_era: EraIndex,
+		validator: &AccountId,
+		funds_account: &AccountId,
 	) -> bool;
 }
 impl<AccountId, Balance> FusionExt<AccountId, Balance> for () {
