@@ -1223,8 +1223,8 @@ pub mod pallet {
 			pool_ids: BoundedVec<PoolId, ConstU32<50>>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
-			Self::ensure_valid_fusion_origin(who, evm_address)?;
-			Self::do_set_pool_boost_allocations(evm_address, pool_ids)?;
+			let is_valid_origin = Self::ensure_valid_fusion_origin(who, evm_address).is_ok();
+			Self::do_set_pool_boost_allocations(evm_address, pool_ids, is_valid_origin)?;
 			Ok(())
 		}
 	}
@@ -1814,7 +1814,7 @@ impl<T: Config> Pallet<T> {
 				if HasBoost::<T>::get(pool_id, evm_address) {
 					// We add the additional points to the elligible points
 					boost_data.elligible_total_points =
-					boost_data.elligible_total_points.saturating_add(points);
+						boost_data.elligible_total_points.saturating_add(points);
 				}
 			}
 
@@ -2418,7 +2418,24 @@ impl<T: Config> Pallet<T> {
 	fn do_set_pool_boost_allocations(
 		evm_address: EvmAddress,
 		pool_ids: BoundedVec<PoolId, ConstU32<50>>,
+		is_valid_origin: bool,
 	) -> DispatchResult {
+		// Get user's current boost allocations to check for permission
+		let user_memberships: Vec<PoolId> =
+			FusionMemberships::<T>::iter_key_prefix(evm_address).collect();
+		let mut current_boost_pools: Vec<PoolId> = Vec::new();
+		for pool_id in user_memberships.iter() {
+			if HasBoost::<T>::get(*pool_id, evm_address) {
+				current_boost_pools.push(*pool_id);
+			}
+		}
+
+		// This extrinsic is permissionless only if the user has no current boost allocation
+		ensure!(
+			current_boost_pools.is_empty() || is_valid_origin,
+			Error::<T>::NotAuthorized
+		);
+
 		// Get user's AVAIL balance in pool 0
 		let avail_pool_id = AVAIL_POOL_ID;
 		let avail_membership = FusionMemberships::<T>::get(evm_address, avail_pool_id)
@@ -2442,16 +2459,6 @@ impl<T: Config> Pallet<T> {
 			user_avail_balance >= total_min_avail_required,
 			Error::<T>::NotEnoughAvailForBoost
 		);
-
-		// Get user's current boost allocations
-		let user_memberships: Vec<PoolId> =
-			FusionMemberships::<T>::iter_key_prefix(evm_address).collect();
-		let mut current_boost_pools: Vec<PoolId> = Vec::new();
-		for pool_id in user_memberships.iter() {
-			if HasBoost::<T>::get(*pool_id, evm_address) {
-				current_boost_pools.push(*pool_id);
-			}
-		}
 
 		// Create sets for efficient comparison
 		let selected_pools: BTreeSet<PoolId> = pool_ids.iter().cloned().collect();
@@ -2568,31 +2575,27 @@ impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
 				};
 
 				// Set boost data in the exposure
-				let (
-					boost_value,
-					boost_total_points,
-					boost_total_avail,
-					boost_members,
-				) = pool.boost_data.as_ref().map_or(
-					(
-						Perbill::zero(),
-						Points::default(),
-						BalanceOf::<T>::default(),
-						BoundedVec::default(),
-					),
-					|data| {
-						let boost_points = data.elligible_total_points;
-						let boost_avail = pool
-							.points_to_avail(boost_points, Some(&currency), Some(era))
-							.unwrap_or(BalanceOf::<T>::default());
+				let (boost_value, boost_total_points, boost_total_avail, boost_members) =
+					pool.boost_data.as_ref().map_or(
 						(
-							data.additional_apy,
-							boost_points,
-							boost_avail,
-							data.elligible_members.clone(),
-						)
-					},
-				);
+							Perbill::zero(),
+							Points::default(),
+							BalanceOf::<T>::default(),
+							BoundedVec::default(),
+						),
+						|data| {
+							let boost_points = data.elligible_total_points;
+							let boost_avail = pool
+								.points_to_avail(boost_points, Some(&currency), Some(era))
+								.unwrap_or(BalanceOf::<T>::default());
+							(
+								data.additional_apy,
+								boost_points,
+								boost_avail,
+								data.elligible_members.clone(),
+							)
+						},
+					);
 
 				// We set the exposure for era + 1
 				// The data must be available for the snapshot and next elections
@@ -2604,9 +2607,9 @@ impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
 					targets: pool.targets.clone(),
 					apy: pool.apy,
 					native_exposure_data: None,
-					boost_members: boost_members,
-					boost_total_points: boost_total_points,
-					boost_total_avail: boost_total_avail,
+					boost_members,
+					boost_total_points,
+					boost_total_avail,
 					boost_additional_apy: boost_value,
 				};
 				FusionExposures::<T>::insert(era, pool_id, fusion_exposure);

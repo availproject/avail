@@ -345,9 +345,9 @@ pub mod api {
 			.hash();
 		runtime_metadata_hash
 			== [
-				193u8, 161u8, 52u8, 10u8, 180u8, 53u8, 102u8, 192u8, 45u8, 135u8, 179u8, 152u8,
-				133u8, 117u8, 60u8, 40u8, 83u8, 109u8, 40u8, 74u8, 198u8, 133u8, 199u8, 183u8,
-				104u8, 118u8, 146u8, 65u8, 42u8, 177u8, 10u8, 105u8,
+				206u8, 44u8, 19u8, 204u8, 49u8, 27u8, 200u8, 224u8, 30u8, 169u8, 194u8, 47u8,
+				216u8, 40u8, 9u8, 165u8, 84u8, 9u8, 87u8, 50u8, 86u8, 217u8, 6u8, 208u8, 52u8,
+				81u8, 94u8, 15u8, 180u8, 111u8, 22u8, 11u8,
 			]
 	}
 	pub mod system {
@@ -1461,10 +1461,9 @@ pub mod api {
 						"Events",
 						(),
 						[
-							52u8, 147u8, 218u8, 60u8, 4u8, 76u8, 57u8, 184u8, 198u8, 112u8, 222u8,
-							250u8, 206u8, 43u8, 0u8, 144u8, 50u8, 227u8, 200u8, 255u8, 180u8,
-							142u8, 27u8, 77u8, 100u8, 155u8, 228u8, 243u8, 36u8, 141u8, 236u8,
-							75u8,
+							180u8, 62u8, 34u8, 242u8, 221u8, 90u8, 254u8, 5u8, 185u8, 118u8, 155u8,
+							242u8, 25u8, 104u8, 197u8, 78u8, 46u8, 55u8, 15u8, 116u8, 145u8, 15u8,
+							189u8, 213u8, 230u8, 157u8, 232u8, 231u8, 109u8, 147u8, 199u8, 232u8,
 						],
 					)
 				}
@@ -2047,10 +2046,10 @@ pub mod api {
 						"batch",
 						types::Batch { calls },
 						[
-							192u8, 87u8, 116u8, 233u8, 117u8, 71u8, 250u8, 27u8, 102u8, 241u8,
-							229u8, 131u8, 160u8, 90u8, 188u8, 71u8, 188u8, 197u8, 164u8, 198u8,
-							201u8, 60u8, 123u8, 122u8, 72u8, 129u8, 10u8, 58u8, 32u8, 218u8, 211u8,
-							182u8,
+							112u8, 248u8, 112u8, 199u8, 188u8, 14u8, 113u8, 4u8, 176u8, 176u8,
+							171u8, 231u8, 156u8, 142u8, 112u8, 71u8, 63u8, 145u8, 166u8, 186u8,
+							37u8, 46u8, 52u8, 21u8, 214u8, 25u8, 209u8, 39u8, 246u8, 241u8, 70u8,
+							103u8,
 						],
 					)
 				}
@@ -2068,10 +2067,9 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							111u8, 153u8, 197u8, 100u8, 9u8, 88u8, 123u8, 139u8, 157u8, 118u8,
-							147u8, 199u8, 134u8, 69u8, 216u8, 110u8, 66u8, 251u8, 234u8, 249u8,
-							93u8, 37u8, 55u8, 82u8, 75u8, 150u8, 15u8, 169u8, 115u8, 41u8, 198u8,
-							202u8,
+							80u8, 143u8, 120u8, 64u8, 222u8, 229u8, 56u8, 206u8, 34u8, 202u8,
+							221u8, 78u8, 204u8, 152u8, 76u8, 152u8, 6u8, 112u8, 91u8, 68u8, 113u8,
+							5u8, 157u8, 114u8, 220u8, 184u8, 33u8, 21u8, 155u8, 169u8, 194u8, 20u8,
 						],
 					)
 				}
@@ -2085,9 +2083,10 @@ pub mod api {
 						"batch_all",
 						types::BatchAll { calls },
 						[
-							3u8, 65u8, 168u8, 203u8, 56u8, 46u8, 51u8, 144u8, 82u8, 55u8, 156u8,
-							0u8, 225u8, 199u8, 158u8, 46u8, 95u8, 136u8, 35u8, 108u8, 173u8, 49u8,
-							77u8, 205u8, 125u8, 235u8, 70u8, 220u8, 98u8, 87u8, 163u8, 93u8,
+							231u8, 144u8, 14u8, 153u8, 115u8, 24u8, 235u8, 35u8, 208u8, 207u8,
+							83u8, 84u8, 13u8, 138u8, 237u8, 214u8, 66u8, 17u8, 33u8, 236u8, 6u8,
+							158u8, 56u8, 125u8, 33u8, 159u8, 143u8, 43u8, 10u8, 247u8, 179u8,
+							193u8,
 						],
 					)
 				}
@@ -2105,9 +2104,10 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							140u8, 25u8, 214u8, 149u8, 28u8, 119u8, 128u8, 11u8, 90u8, 75u8, 39u8,
-							13u8, 67u8, 180u8, 28u8, 195u8, 37u8, 211u8, 129u8, 170u8, 71u8, 46u8,
-							254u8, 120u8, 195u8, 105u8, 5u8, 215u8, 62u8, 172u8, 226u8, 54u8,
+							18u8, 106u8, 168u8, 146u8, 122u8, 104u8, 34u8, 29u8, 118u8, 30u8,
+							230u8, 59u8, 170u8, 38u8, 147u8, 238u8, 202u8, 55u8, 73u8, 160u8, 28u8,
+							103u8, 136u8, 244u8, 44u8, 183u8, 132u8, 233u8, 217u8, 173u8, 34u8,
+							32u8,
 						],
 					)
 				}
@@ -2121,10 +2121,9 @@ pub mod api {
 						"force_batch",
 						types::ForceBatch { calls },
 						[
-							5u8, 216u8, 152u8, 245u8, 119u8, 1u8, 72u8, 42u8, 104u8, 26u8, 144u8,
-							205u8, 157u8, 251u8, 78u8, 178u8, 127u8, 34u8, 244u8, 232u8, 113u8,
-							53u8, 100u8, 15u8, 30u8, 88u8, 222u8, 130u8, 239u8, 154u8, 172u8,
-							184u8,
+							136u8, 88u8, 20u8, 18u8, 123u8, 157u8, 2u8, 29u8, 117u8, 246u8, 215u8,
+							130u8, 133u8, 250u8, 0u8, 215u8, 204u8, 244u8, 101u8, 4u8, 5u8, 44u8,
+							85u8, 187u8, 249u8, 150u8, 102u8, 194u8, 117u8, 233u8, 160u8, 146u8,
 						],
 					)
 				}
@@ -2142,9 +2141,10 @@ pub mod api {
 							weight,
 						},
 						[
-							118u8, 107u8, 19u8, 85u8, 75u8, 50u8, 58u8, 73u8, 32u8, 221u8, 141u8,
-							247u8, 254u8, 88u8, 218u8, 156u8, 16u8, 121u8, 169u8, 44u8, 205u8,
-							81u8, 65u8, 47u8, 104u8, 8u8, 36u8, 67u8, 62u8, 236u8, 124u8, 56u8,
+							187u8, 134u8, 171u8, 54u8, 126u8, 32u8, 48u8, 115u8, 244u8, 200u8,
+							233u8, 166u8, 239u8, 215u8, 133u8, 241u8, 34u8, 26u8, 252u8, 209u8,
+							210u8, 51u8, 214u8, 197u8, 179u8, 198u8, 39u8, 88u8, 112u8, 170u8,
+							233u8, 75u8,
 						],
 					)
 				}
@@ -11478,10 +11478,10 @@ pub mod api {
 							length_bound,
 						},
 						[
-							128u8, 24u8, 249u8, 106u8, 83u8, 212u8, 225u8, 255u8, 143u8, 213u8,
-							94u8, 158u8, 157u8, 75u8, 88u8, 33u8, 42u8, 167u8, 232u8, 69u8, 81u8,
-							60u8, 31u8, 172u8, 61u8, 122u8, 93u8, 190u8, 160u8, 157u8, 192u8,
-							139u8,
+							129u8, 12u8, 57u8, 156u8, 180u8, 188u8, 132u8, 20u8, 143u8, 56u8,
+							107u8, 5u8, 112u8, 115u8, 69u8, 195u8, 43u8, 167u8, 94u8, 73u8, 167u8,
+							191u8, 166u8, 71u8, 181u8, 182u8, 170u8, 32u8, 193u8, 17u8, 127u8,
+							12u8,
 						],
 					)
 				}
@@ -11501,10 +11501,9 @@ pub mod api {
 							length_bound,
 						},
 						[
-							10u8, 246u8, 151u8, 122u8, 156u8, 113u8, 43u8, 46u8, 58u8, 117u8,
-							216u8, 56u8, 17u8, 52u8, 98u8, 169u8, 155u8, 195u8, 221u8, 189u8,
-							162u8, 177u8, 104u8, 15u8, 202u8, 179u8, 10u8, 93u8, 172u8, 75u8, 17u8,
-							46u8,
+							13u8, 174u8, 126u8, 184u8, 212u8, 69u8, 163u8, 167u8, 13u8, 82u8, 73u8,
+							32u8, 206u8, 137u8, 70u8, 60u8, 224u8, 148u8, 219u8, 192u8, 144u8,
+							99u8, 70u8, 89u8, 20u8, 134u8, 98u8, 210u8, 132u8, 229u8, 34u8, 121u8,
 						],
 					)
 				}
@@ -11857,10 +11856,9 @@ pub mod api {
 						"ProposalOf",
 						(),
 						[
-							249u8, 78u8, 114u8, 173u8, 248u8, 230u8, 57u8, 226u8, 130u8, 235u8,
-							74u8, 25u8, 132u8, 252u8, 99u8, 233u8, 115u8, 12u8, 4u8, 177u8, 214u8,
-							248u8, 104u8, 186u8, 130u8, 136u8, 189u8, 176u8, 203u8, 113u8, 22u8,
-							240u8,
+							49u8, 207u8, 167u8, 91u8, 254u8, 85u8, 32u8, 149u8, 134u8, 17u8, 253u8,
+							14u8, 194u8, 11u8, 121u8, 248u8, 100u8, 241u8, 177u8, 241u8, 56u8,
+							224u8, 241u8, 4u8, 30u8, 187u8, 241u8, 16u8, 199u8, 162u8, 75u8, 161u8,
 						],
 					)
 				}
@@ -11884,10 +11882,9 @@ pub mod api {
 							_0.borrow(),
 						),
 						[
-							249u8, 78u8, 114u8, 173u8, 248u8, 230u8, 57u8, 226u8, 130u8, 235u8,
-							74u8, 25u8, 132u8, 252u8, 99u8, 233u8, 115u8, 12u8, 4u8, 177u8, 214u8,
-							248u8, 104u8, 186u8, 130u8, 136u8, 189u8, 176u8, 203u8, 113u8, 22u8,
-							240u8,
+							49u8, 207u8, 167u8, 91u8, 254u8, 85u8, 32u8, 149u8, 134u8, 17u8, 253u8,
+							14u8, 194u8, 11u8, 121u8, 248u8, 100u8, 241u8, 177u8, 241u8, 56u8,
+							224u8, 241u8, 4u8, 30u8, 187u8, 241u8, 16u8, 199u8, 162u8, 75u8, 161u8,
 						],
 					)
 				}
@@ -13987,9 +13984,9 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							236u8, 84u8, 46u8, 206u8, 38u8, 213u8, 39u8, 155u8, 102u8, 112u8,
-							252u8, 251u8, 58u8, 142u8, 1u8, 179u8, 95u8, 233u8, 135u8, 57u8, 75u8,
-							88u8, 249u8, 192u8, 68u8, 179u8, 24u8, 93u8, 51u8, 155u8, 126u8, 158u8,
+							6u8, 138u8, 230u8, 197u8, 21u8, 146u8, 110u8, 238u8, 98u8, 69u8, 33u8,
+							45u8, 67u8, 54u8, 140u8, 165u8, 147u8, 235u8, 71u8, 106u8, 197u8,
+							147u8, 169u8, 56u8, 37u8, 129u8, 67u8, 243u8, 21u8, 18u8, 155u8, 252u8,
 						],
 					)
 				}
@@ -14008,9 +14005,9 @@ pub mod api {
 							weight,
 						},
 						[
-							216u8, 243u8, 125u8, 119u8, 45u8, 30u8, 238u8, 166u8, 21u8, 58u8,
-							134u8, 188u8, 70u8, 187u8, 28u8, 3u8, 220u8, 167u8, 181u8, 45u8, 213u8,
-							120u8, 126u8, 61u8, 238u8, 237u8, 112u8, 10u8, 74u8, 239u8, 65u8, 22u8,
+							80u8, 83u8, 184u8, 113u8, 176u8, 6u8, 81u8, 251u8, 150u8, 137u8, 181u8,
+							226u8, 219u8, 99u8, 213u8, 20u8, 199u8, 70u8, 13u8, 183u8, 172u8,
+							192u8, 209u8, 2u8, 143u8, 67u8, 39u8, 92u8, 232u8, 0u8, 253u8, 243u8,
 						],
 					)
 				}
@@ -14045,10 +14042,10 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							184u8, 118u8, 187u8, 194u8, 137u8, 183u8, 140u8, 99u8, 16u8, 145u8,
-							67u8, 207u8, 250u8, 69u8, 206u8, 249u8, 1u8, 46u8, 57u8, 48u8, 4u8,
-							126u8, 193u8, 218u8, 48u8, 116u8, 226u8, 49u8, 234u8, 145u8, 99u8,
-							47u8,
+							21u8, 42u8, 202u8, 129u8, 183u8, 133u8, 198u8, 253u8, 232u8, 186u8,
+							204u8, 198u8, 127u8, 166u8, 57u8, 9u8, 27u8, 112u8, 130u8, 75u8, 108u8,
+							33u8, 171u8, 182u8, 115u8, 92u8, 232u8, 110u8, 68u8, 232u8, 31u8,
+							230u8,
 						],
 					)
 				}
@@ -15258,10 +15255,10 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							152u8, 153u8, 115u8, 75u8, 62u8, 119u8, 207u8, 32u8, 142u8, 184u8,
-							192u8, 223u8, 81u8, 36u8, 206u8, 134u8, 248u8, 26u8, 202u8, 194u8,
-							75u8, 190u8, 28u8, 101u8, 86u8, 169u8, 122u8, 60u8, 120u8, 142u8, 29u8,
-							7u8,
+							74u8, 174u8, 237u8, 130u8, 194u8, 242u8, 225u8, 94u8, 32u8, 204u8,
+							167u8, 77u8, 74u8, 251u8, 32u8, 92u8, 219u8, 166u8, 139u8, 65u8, 113u8,
+							105u8, 158u8, 19u8, 155u8, 158u8, 51u8, 208u8, 212u8, 207u8, 166u8,
+							198u8,
 						],
 					)
 				}
@@ -15303,9 +15300,9 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							174u8, 71u8, 10u8, 66u8, 37u8, 230u8, 153u8, 168u8, 43u8, 99u8, 199u8,
-							226u8, 58u8, 69u8, 177u8, 99u8, 41u8, 141u8, 95u8, 1u8, 147u8, 117u8,
-							164u8, 149u8, 11u8, 103u8, 160u8, 120u8, 14u8, 103u8, 28u8, 29u8,
+							49u8, 123u8, 62u8, 217u8, 115u8, 121u8, 223u8, 178u8, 111u8, 116u8,
+							77u8, 103u8, 21u8, 49u8, 106u8, 113u8, 12u8, 8u8, 40u8, 174u8, 201u8,
+							18u8, 63u8, 205u8, 143u8, 181u8, 181u8, 130u8, 77u8, 44u8, 254u8, 71u8,
 						],
 					)
 				}
@@ -15343,10 +15340,9 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							140u8, 11u8, 114u8, 46u8, 161u8, 136u8, 142u8, 9u8, 249u8, 135u8,
-							127u8, 108u8, 190u8, 71u8, 108u8, 236u8, 243u8, 250u8, 130u8, 148u8,
-							143u8, 38u8, 186u8, 162u8, 188u8, 75u8, 114u8, 25u8, 217u8, 164u8,
-							106u8, 83u8,
+							20u8, 154u8, 254u8, 51u8, 9u8, 81u8, 244u8, 242u8, 165u8, 136u8, 30u8,
+							148u8, 171u8, 127u8, 29u8, 201u8, 110u8, 125u8, 29u8, 16u8, 149u8,
+							166u8, 59u8, 213u8, 80u8, 160u8, 97u8, 2u8, 194u8, 1u8, 160u8, 122u8,
 						],
 					)
 				}
@@ -15371,10 +15367,9 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							238u8, 208u8, 88u8, 212u8, 248u8, 250u8, 23u8, 104u8, 170u8, 62u8,
-							151u8, 97u8, 252u8, 43u8, 49u8, 209u8, 104u8, 252u8, 191u8, 39u8,
-							113u8, 169u8, 113u8, 209u8, 73u8, 88u8, 178u8, 206u8, 84u8, 220u8,
-							240u8, 113u8,
+							158u8, 42u8, 53u8, 20u8, 209u8, 41u8, 170u8, 23u8, 103u8, 183u8, 107u8,
+							10u8, 150u8, 176u8, 25u8, 35u8, 134u8, 9u8, 29u8, 79u8, 97u8, 192u8,
+							208u8, 177u8, 220u8, 62u8, 130u8, 172u8, 111u8, 97u8, 40u8, 214u8,
 						],
 					)
 				}
@@ -17231,10 +17226,10 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							136u8, 94u8, 116u8, 24u8, 202u8, 200u8, 114u8, 202u8, 243u8, 32u8,
-							237u8, 131u8, 240u8, 30u8, 68u8, 223u8, 79u8, 95u8, 82u8, 100u8, 131u8,
-							112u8, 149u8, 56u8, 105u8, 76u8, 189u8, 141u8, 132u8, 172u8, 186u8,
-							6u8,
+							252u8, 68u8, 87u8, 87u8, 92u8, 200u8, 163u8, 231u8, 233u8, 107u8,
+							233u8, 219u8, 58u8, 249u8, 86u8, 186u8, 170u8, 209u8, 223u8, 195u8,
+							41u8, 208u8, 222u8, 189u8, 3u8, 212u8, 19u8, 211u8, 152u8, 108u8, 80u8,
+							5u8,
 						],
 					)
 				}
@@ -17258,9 +17253,9 @@ pub mod api {
 							max_weight,
 						},
 						[
-							55u8, 28u8, 211u8, 173u8, 220u8, 137u8, 200u8, 246u8, 147u8, 40u8,
-							171u8, 237u8, 87u8, 78u8, 41u8, 45u8, 209u8, 40u8, 130u8, 153u8, 241u8,
-							20u8, 210u8, 63u8, 212u8, 190u8, 74u8, 47u8, 144u8, 199u8, 108u8, 16u8,
+							140u8, 223u8, 210u8, 106u8, 142u8, 63u8, 172u8, 101u8, 40u8, 70u8,
+							57u8, 43u8, 242u8, 239u8, 237u8, 20u8, 239u8, 9u8, 172u8, 4u8, 148u8,
+							142u8, 57u8, 127u8, 32u8, 97u8, 169u8, 193u8, 48u8, 106u8, 36u8, 213u8,
 						],
 					)
 				}
@@ -22901,9 +22896,10 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							110u8, 87u8, 136u8, 18u8, 62u8, 47u8, 2u8, 7u8, 152u8, 5u8, 204u8,
-							45u8, 158u8, 45u8, 108u8, 99u8, 0u8, 166u8, 139u8, 68u8, 142u8, 76u8,
-							129u8, 106u8, 127u8, 25u8, 144u8, 187u8, 52u8, 24u8, 67u8, 107u8,
+							195u8, 136u8, 145u8, 105u8, 61u8, 207u8, 166u8, 169u8, 153u8, 19u8,
+							129u8, 198u8, 245u8, 216u8, 94u8, 207u8, 99u8, 135u8, 107u8, 82u8,
+							146u8, 226u8, 176u8, 199u8, 163u8, 226u8, 232u8, 93u8, 154u8, 113u8,
+							243u8, 102u8,
 						],
 					)
 				}
@@ -25118,10 +25114,10 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							0u8, 244u8, 65u8, 218u8, 155u8, 160u8, 251u8, 17u8, 169u8, 74u8, 226u8,
-							213u8, 87u8, 47u8, 23u8, 253u8, 163u8, 137u8, 231u8, 127u8, 57u8,
-							250u8, 145u8, 17u8, 186u8, 93u8, 195u8, 221u8, 67u8, 82u8, 243u8,
-							238u8,
+							181u8, 38u8, 148u8, 114u8, 157u8, 249u8, 36u8, 244u8, 77u8, 53u8,
+							128u8, 181u8, 25u8, 64u8, 44u8, 3u8, 222u8, 54u8, 105u8, 13u8, 100u8,
+							163u8, 24u8, 149u8, 234u8, 190u8, 97u8, 232u8, 174u8, 142u8, 198u8,
+							68u8,
 						],
 					)
 				}
@@ -25309,10 +25305,9 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							102u8, 209u8, 104u8, 92u8, 166u8, 141u8, 216u8, 37u8, 91u8, 249u8,
-							237u8, 243u8, 125u8, 41u8, 117u8, 236u8, 228u8, 218u8, 107u8, 226u8,
-							23u8, 181u8, 57u8, 98u8, 32u8, 235u8, 188u8, 33u8, 50u8, 118u8, 142u8,
-							231u8,
+							213u8, 7u8, 116u8, 31u8, 201u8, 123u8, 173u8, 90u8, 90u8, 246u8, 132u8,
+							127u8, 181u8, 234u8, 174u8, 208u8, 227u8, 105u8, 106u8, 118u8, 116u8,
+							165u8, 79u8, 170u8, 7u8, 194u8, 114u8, 113u8, 204u8, 49u8, 192u8, 67u8,
 						],
 					)
 				}
@@ -26304,10 +26299,10 @@ pub mod api {
 							length_bound,
 						},
 						[
-							128u8, 24u8, 249u8, 106u8, 83u8, 212u8, 225u8, 255u8, 143u8, 213u8,
-							94u8, 158u8, 157u8, 75u8, 88u8, 33u8, 42u8, 167u8, 232u8, 69u8, 81u8,
-							60u8, 31u8, 172u8, 61u8, 122u8, 93u8, 190u8, 160u8, 157u8, 192u8,
-							139u8,
+							129u8, 12u8, 57u8, 156u8, 180u8, 188u8, 132u8, 20u8, 143u8, 56u8,
+							107u8, 5u8, 112u8, 115u8, 69u8, 195u8, 43u8, 167u8, 94u8, 73u8, 167u8,
+							191u8, 166u8, 71u8, 181u8, 182u8, 170u8, 32u8, 193u8, 17u8, 127u8,
+							12u8,
 						],
 					)
 				}
@@ -26327,10 +26322,9 @@ pub mod api {
 							length_bound,
 						},
 						[
-							10u8, 246u8, 151u8, 122u8, 156u8, 113u8, 43u8, 46u8, 58u8, 117u8,
-							216u8, 56u8, 17u8, 52u8, 98u8, 169u8, 155u8, 195u8, 221u8, 189u8,
-							162u8, 177u8, 104u8, 15u8, 202u8, 179u8, 10u8, 93u8, 172u8, 75u8, 17u8,
-							46u8,
+							13u8, 174u8, 126u8, 184u8, 212u8, 69u8, 163u8, 167u8, 13u8, 82u8, 73u8,
+							32u8, 206u8, 137u8, 70u8, 60u8, 224u8, 148u8, 219u8, 192u8, 144u8,
+							99u8, 70u8, 89u8, 20u8, 134u8, 98u8, 210u8, 132u8, 229u8, 34u8, 121u8,
 						],
 					)
 				}
@@ -26683,10 +26677,9 @@ pub mod api {
 						"ProposalOf",
 						(),
 						[
-							249u8, 78u8, 114u8, 173u8, 248u8, 230u8, 57u8, 226u8, 130u8, 235u8,
-							74u8, 25u8, 132u8, 252u8, 99u8, 233u8, 115u8, 12u8, 4u8, 177u8, 214u8,
-							248u8, 104u8, 186u8, 130u8, 136u8, 189u8, 176u8, 203u8, 113u8, 22u8,
-							240u8,
+							49u8, 207u8, 167u8, 91u8, 254u8, 85u8, 32u8, 149u8, 134u8, 17u8, 253u8,
+							14u8, 194u8, 11u8, 121u8, 248u8, 100u8, 241u8, 177u8, 241u8, 56u8,
+							224u8, 241u8, 4u8, 30u8, 187u8, 241u8, 16u8, 199u8, 162u8, 75u8, 161u8,
 						],
 					)
 				}
@@ -26710,10 +26703,9 @@ pub mod api {
 							_0.borrow(),
 						),
 						[
-							249u8, 78u8, 114u8, 173u8, 248u8, 230u8, 57u8, 226u8, 130u8, 235u8,
-							74u8, 25u8, 132u8, 252u8, 99u8, 233u8, 115u8, 12u8, 4u8, 177u8, 214u8,
-							248u8, 104u8, 186u8, 130u8, 136u8, 189u8, 176u8, 203u8, 113u8, 22u8,
-							240u8,
+							49u8, 207u8, 167u8, 91u8, 254u8, 85u8, 32u8, 149u8, 134u8, 17u8, 253u8,
+							14u8, 194u8, 11u8, 121u8, 248u8, 100u8, 241u8, 177u8, 241u8, 56u8,
+							224u8, 241u8, 4u8, 30u8, 187u8, 241u8, 16u8, 199u8, 162u8, 75u8, 161u8,
 						],
 					)
 				}
@@ -27100,7 +27092,7 @@ pub mod api {
 					pub apy: set_pool::Apy,
 					pub state: set_pool::State,
 					pub nominator: set_pool::Nominator,
-					pub extra_apy_data: set_pool::ExtraApyData,
+					pub boost_data: set_pool::BoostData,
 					pub retry_rewards_for_eras: set_pool::RetryRewardsForEras,
 				}
 				pub mod set_pool {
@@ -27114,7 +27106,7 @@ pub mod api {
 					pub type Nominator = ::core::option::Option<
 						::core::option::Option<::subxt::ext::subxt_core::utils::AccountId32>,
 					>;
-					pub type ExtraApyData = ::core::option::Option<
+					pub type BoostData = ::core::option::Option<
 						::core::option::Option<(
 							runtime_types::sp_arithmetic::per_things::Perbill,
 							::core::primitive::u128,
@@ -27591,21 +27583,21 @@ pub mod api {
 				#[encode_as_type(
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
 				)]
-				#[doc = "See [`Pallet::set_pool_extra_apy_allocations`]."]
-				pub struct SetPoolExtraApyAllocations {
-					pub evm_address: set_pool_extra_apy_allocations::EvmAddress,
-					pub pool_ids: set_pool_extra_apy_allocations::PoolIds,
+				#[doc = "See [`Pallet::set_pool_boost_allocations`]."]
+				pub struct SetPoolBoostAllocations {
+					pub evm_address: set_pool_boost_allocations::EvmAddress,
+					pub pool_ids: set_pool_boost_allocations::PoolIds,
 				}
-				pub mod set_pool_extra_apy_allocations {
+				pub mod set_pool_boost_allocations {
 					use super::runtime_types;
 					pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
 					pub type PoolIds = runtime_types::bounded_collections::bounded_vec::BoundedVec<
 						::core::primitive::u32,
 					>;
 				}
-				impl ::subxt::ext::subxt_core::blocks::StaticExtrinsic for SetPoolExtraApyAllocations {
+				impl ::subxt::ext::subxt_core::blocks::StaticExtrinsic for SetPoolBoostAllocations {
 					const PALLET: &'static str = "Fusion";
-					const CALL: &'static str = "set_pool_extra_apy_allocations";
+					const CALL: &'static str = "set_pool_boost_allocations";
 				}
 			}
 			pub struct TransactionApi;
@@ -27756,7 +27748,7 @@ pub mod api {
 					apy: types::set_pool::Apy,
 					state: types::set_pool::State,
 					nominator: types::set_pool::Nominator,
-					extra_apy_data: types::set_pool::ExtraApyData,
+					boost_data: types::set_pool::BoostData,
 					retry_rewards_for_eras: types::set_pool::RetryRewardsForEras,
 				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::SetPool> {
 					::subxt::ext::subxt_core::tx::payload::StaticPayload::new_static(
@@ -27767,13 +27759,14 @@ pub mod api {
 							apy,
 							state,
 							nominator,
-							extra_apy_data,
+							boost_data,
 							retry_rewards_for_eras,
 						},
 						[
-							36u8, 38u8, 15u8, 112u8, 50u8, 207u8, 49u8, 6u8, 190u8, 173u8, 66u8,
-							204u8, 179u8, 208u8, 5u8, 190u8, 254u8, 136u8, 232u8, 57u8, 38u8, 52u8,
-							78u8, 186u8, 120u8, 210u8, 203u8, 188u8, 120u8, 160u8, 82u8, 0u8,
+							254u8, 74u8, 218u8, 144u8, 146u8, 19u8, 57u8, 23u8, 33u8, 86u8, 52u8,
+							237u8, 93u8, 172u8, 139u8, 125u8, 0u8, 53u8, 116u8, 190u8, 245u8,
+							134u8, 253u8, 236u8, 127u8, 158u8, 155u8, 85u8, 164u8, 4u8, 138u8,
+							141u8,
 						],
 					)
 				}
@@ -28069,26 +28062,25 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::set_pool_extra_apy_allocations`]."]
-				pub fn set_pool_extra_apy_allocations(
+				#[doc = "See [`Pallet::set_pool_boost_allocations`]."]
+				pub fn set_pool_boost_allocations(
 					&self,
-					evm_address: types::set_pool_extra_apy_allocations::EvmAddress,
-					pool_ids: types::set_pool_extra_apy_allocations::PoolIds,
+					evm_address: types::set_pool_boost_allocations::EvmAddress,
+					pool_ids: types::set_pool_boost_allocations::PoolIds,
 				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<
-					types::SetPoolExtraApyAllocations,
+					types::SetPoolBoostAllocations,
 				> {
 					::subxt::ext::subxt_core::tx::payload::StaticPayload::new_static(
 						"Fusion",
-						"set_pool_extra_apy_allocations",
-						types::SetPoolExtraApyAllocations {
+						"set_pool_boost_allocations",
+						types::SetPoolBoostAllocations {
 							evm_address,
 							pool_ids,
 						},
 						[
-							166u8, 88u8, 222u8, 15u8, 182u8, 174u8, 54u8, 141u8, 47u8, 85u8, 210u8,
-							225u8, 210u8, 161u8, 242u8, 178u8, 139u8, 176u8, 3u8, 85u8, 193u8,
-							227u8, 223u8, 232u8, 104u8, 29u8, 201u8, 146u8, 227u8, 33u8, 155u8,
-							94u8,
+							127u8, 29u8, 216u8, 159u8, 66u8, 95u8, 198u8, 59u8, 76u8, 150u8, 148u8,
+							112u8, 4u8, 126u8, 210u8, 69u8, 150u8, 197u8, 12u8, 78u8, 131u8, 19u8,
+							88u8, 46u8, 175u8, 144u8, 212u8, 16u8, 202u8, 60u8, 159u8, 85u8,
 						],
 					)
 				}
@@ -28486,6 +28478,7 @@ pub mod api {
 				pub apy: pool_set::Apy,
 				pub state: pool_set::State,
 				pub nominator: pool_set::Nominator,
+				pub boost_data: pool_set::BoostData,
 			}
 			pub mod pool_set {
 				use super::runtime_types;
@@ -28496,6 +28489,12 @@ pub mod api {
 					::core::option::Option<runtime_types::pallet_fusion::types::FusionPoolState>;
 				pub type Nominator = ::core::option::Option<
 					::core::option::Option<::subxt::ext::subxt_core::utils::AccountId32>,
+				>;
+				pub type BoostData = ::core::option::Option<
+					::core::option::Option<(
+						runtime_types::sp_arithmetic::per_things::Perbill,
+						::core::primitive::u128,
+					)>,
 				>;
 			}
 			impl ::subxt::ext::subxt_core::events::StaticEvent for PoolSet {
@@ -28953,13 +28952,13 @@ pub mod api {
 			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
-			#[doc = "Event triggered when pools extra allocations have been set for a user"]
-			pub struct UserExtraApyAllocationsOptimized {
-				pub evm_address: user_extra_apy_allocations_optimized::EvmAddress,
-				pub pools_added: user_extra_apy_allocations_optimized::PoolsAdded,
-				pub pools_removed: user_extra_apy_allocations_optimized::PoolsRemoved,
+			#[doc = "Event triggered when pools boost allocations have been set for a user"]
+			pub struct UserBoostAllocationsOptimized {
+				pub evm_address: user_boost_allocations_optimized::EvmAddress,
+				pub pools_added: user_boost_allocations_optimized::PoolsAdded,
+				pub pools_removed: user_boost_allocations_optimized::PoolsRemoved,
 			}
-			pub mod user_extra_apy_allocations_optimized {
+			pub mod user_boost_allocations_optimized {
 				use super::runtime_types;
 				pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
 				pub type PoolsAdded =
@@ -28967,9 +28966,9 @@ pub mod api {
 				pub type PoolsRemoved =
 					::subxt::ext::subxt_core::alloc::vec::Vec<::core::primitive::u32>;
 			}
-			impl ::subxt::ext::subxt_core::events::StaticEvent for UserExtraApyAllocationsOptimized {
+			impl ::subxt::ext::subxt_core::events::StaticEvent for UserBoostAllocationsOptimized {
 				const PALLET: &'static str = "Fusion";
-				const EVENT: &'static str = "UserExtraApyAllocationsOptimized";
+				const EVENT: &'static str = "UserBoostAllocationsOptimized";
 			}
 		}
 		pub mod storage {
@@ -29084,14 +29083,14 @@ pub mod api {
 					pub type Param0 = ::core::primitive::u32;
 					pub type Param1 = ::core::primitive::u32;
 				}
-				pub mod fusion_pools_with_extra_apy {
+				pub mod fusion_pools_with_boost {
 					use super::runtime_types;
-					pub type FusionPoolsWithExtraApy = ::core::primitive::u128;
+					pub type FusionPoolsWithBoost = ::core::primitive::u128;
 					pub type Param0 = ::core::primitive::u32;
 				}
-				pub mod has_extra_apy {
+				pub mod has_boost {
 					use super::runtime_types;
-					pub type HasExtraApy = ::core::primitive::bool;
+					pub type HasBoost = ::core::primitive::bool;
 					pub type Param0 = ::core::primitive::u32;
 					pub type Param1 = ::subxt::ext::subxt_core::utils::H160;
 				}
@@ -29182,9 +29181,10 @@ pub mod api {
 						"FusionPools",
 						(),
 						[
-							222u8, 222u8, 91u8, 87u8, 124u8, 23u8, 132u8, 71u8, 127u8, 77u8, 20u8,
-							59u8, 200u8, 245u8, 72u8, 203u8, 231u8, 30u8, 158u8, 120u8, 34u8, 76u8,
-							200u8, 255u8, 238u8, 205u8, 158u8, 37u8, 129u8, 226u8, 194u8, 149u8,
+							162u8, 76u8, 186u8, 97u8, 107u8, 208u8, 237u8, 152u8, 35u8, 105u8,
+							230u8, 115u8, 34u8, 115u8, 79u8, 133u8, 43u8, 108u8, 171u8, 81u8,
+							212u8, 28u8, 123u8, 166u8, 207u8, 218u8, 249u8, 224u8, 154u8, 58u8,
+							34u8, 98u8,
 						],
 					)
 				}
@@ -29208,9 +29208,10 @@ pub mod api {
 							_0.borrow(),
 						),
 						[
-							222u8, 222u8, 91u8, 87u8, 124u8, 23u8, 132u8, 71u8, 127u8, 77u8, 20u8,
-							59u8, 200u8, 245u8, 72u8, 203u8, 231u8, 30u8, 158u8, 120u8, 34u8, 76u8,
-							200u8, 255u8, 238u8, 205u8, 158u8, 37u8, 129u8, 226u8, 194u8, 149u8,
+							162u8, 76u8, 186u8, 97u8, 107u8, 208u8, 237u8, 152u8, 35u8, 105u8,
+							230u8, 115u8, 34u8, 115u8, 79u8, 133u8, 43u8, 108u8, 171u8, 81u8,
+							212u8, 28u8, 123u8, 166u8, 207u8, 218u8, 249u8, 224u8, 154u8, 58u8,
+							34u8, 98u8,
 						],
 					)
 				}
@@ -29765,10 +29766,9 @@ pub mod api {
 						"FusionExposures",
 						(),
 						[
-							68u8, 149u8, 227u8, 152u8, 237u8, 248u8, 37u8, 8u8, 107u8, 225u8,
-							158u8, 61u8, 132u8, 204u8, 176u8, 186u8, 50u8, 215u8, 242u8, 121u8,
-							184u8, 68u8, 171u8, 47u8, 42u8, 207u8, 213u8, 104u8, 176u8, 163u8,
-							252u8, 247u8,
+							185u8, 39u8, 57u8, 158u8, 209u8, 251u8, 121u8, 148u8, 113u8, 62u8,
+							199u8, 122u8, 7u8, 120u8, 37u8, 120u8, 189u8, 16u8, 32u8, 84u8, 213u8,
+							126u8, 13u8, 72u8, 244u8, 12u8, 253u8, 28u8, 32u8, 72u8, 114u8, 134u8,
 						],
 					)
 				}
@@ -29792,10 +29792,9 @@ pub mod api {
 							_0.borrow(),
 						),
 						[
-							68u8, 149u8, 227u8, 152u8, 237u8, 248u8, 37u8, 8u8, 107u8, 225u8,
-							158u8, 61u8, 132u8, 204u8, 176u8, 186u8, 50u8, 215u8, 242u8, 121u8,
-							184u8, 68u8, 171u8, 47u8, 42u8, 207u8, 213u8, 104u8, 176u8, 163u8,
-							252u8, 247u8,
+							185u8, 39u8, 57u8, 158u8, 209u8, 251u8, 121u8, 148u8, 113u8, 62u8,
+							199u8, 122u8, 7u8, 120u8, 37u8, 120u8, 189u8, 16u8, 32u8, 84u8, 213u8,
+							126u8, 13u8, 72u8, 244u8, 12u8, 253u8, 28u8, 32u8, 72u8, 114u8, 134u8,
 						],
 					)
 				}
@@ -29830,10 +29829,9 @@ pub mod api {
 							),
 						),
 						[
-							68u8, 149u8, 227u8, 152u8, 237u8, 248u8, 37u8, 8u8, 107u8, 225u8,
-							158u8, 61u8, 132u8, 204u8, 176u8, 186u8, 50u8, 215u8, 242u8, 121u8,
-							184u8, 68u8, 171u8, 47u8, 42u8, 207u8, 213u8, 104u8, 176u8, 163u8,
-							252u8, 247u8,
+							185u8, 39u8, 57u8, 158u8, 209u8, 251u8, 121u8, 148u8, 113u8, 62u8,
+							199u8, 122u8, 7u8, 120u8, 37u8, 120u8, 189u8, 16u8, 32u8, 84u8, 213u8,
+							126u8, 13u8, 72u8, 244u8, 12u8, 253u8, 28u8, 32u8, 72u8, 114u8, 134u8,
 						],
 					)
 				}
@@ -30211,124 +30209,122 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = " Stores the pool ids of pool having an extra APY alongside the minimum to get the extra apy"]
-				pub fn fusion_pools_with_extra_apy_iter(
+				#[doc = " Stores the pool ids of pool having an boost alongside the minimum to get the boost"]
+				pub fn fusion_pools_with_boost_iter(
 					&self,
 				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
 					(),
-					types::fusion_pools_with_extra_apy::FusionPoolsWithExtraApy,
+					types::fusion_pools_with_boost::FusionPoolsWithBoost,
 					(),
 					(),
 					::subxt::ext::subxt_core::utils::Yes,
 				> {
 					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
 						"Fusion",
-						"FusionPoolsWithExtraApy",
+						"FusionPoolsWithBoost",
 						(),
 						[
-							189u8, 20u8, 126u8, 34u8, 231u8, 50u8, 163u8, 192u8, 129u8, 51u8,
-							219u8, 60u8, 177u8, 96u8, 12u8, 29u8, 248u8, 122u8, 191u8, 159u8, 16u8,
-							210u8, 148u8, 34u8, 78u8, 169u8, 22u8, 22u8, 236u8, 34u8, 107u8, 237u8,
+							248u8, 21u8, 102u8, 38u8, 44u8, 67u8, 28u8, 195u8, 147u8, 10u8, 137u8,
+							122u8, 122u8, 148u8, 81u8, 119u8, 53u8, 35u8, 176u8, 51u8, 160u8,
+							131u8, 74u8, 236u8, 31u8, 121u8, 222u8, 188u8, 52u8, 91u8, 4u8, 63u8,
 						],
 					)
 				}
-				#[doc = " Stores the pool ids of pool having an extra APY alongside the minimum to get the extra apy"]
-				pub fn fusion_pools_with_extra_apy(
+				#[doc = " Stores the pool ids of pool having an boost alongside the minimum to get the boost"]
+				pub fn fusion_pools_with_boost(
 					&self,
-					_0: impl ::core::borrow::Borrow<types::fusion_pools_with_extra_apy::Param0>,
+					_0: impl ::core::borrow::Borrow<types::fusion_pools_with_boost::Param0>,
 				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
 					::subxt::ext::subxt_core::storage::address::StaticStorageKey<
-						types::fusion_pools_with_extra_apy::Param0,
+						types::fusion_pools_with_boost::Param0,
 					>,
-					types::fusion_pools_with_extra_apy::FusionPoolsWithExtraApy,
+					types::fusion_pools_with_boost::FusionPoolsWithBoost,
 					::subxt::ext::subxt_core::utils::Yes,
 					(),
 					(),
 				> {
 					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
 						"Fusion",
-						"FusionPoolsWithExtraApy",
+						"FusionPoolsWithBoost",
 						::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
 							_0.borrow(),
 						),
 						[
-							189u8, 20u8, 126u8, 34u8, 231u8, 50u8, 163u8, 192u8, 129u8, 51u8,
-							219u8, 60u8, 177u8, 96u8, 12u8, 29u8, 248u8, 122u8, 191u8, 159u8, 16u8,
-							210u8, 148u8, 34u8, 78u8, 169u8, 22u8, 22u8, 236u8, 34u8, 107u8, 237u8,
+							248u8, 21u8, 102u8, 38u8, 44u8, 67u8, 28u8, 195u8, 147u8, 10u8, 137u8,
+							122u8, 122u8, 148u8, 81u8, 119u8, 53u8, 35u8, 176u8, 51u8, 160u8,
+							131u8, 74u8, 236u8, 31u8, 121u8, 222u8, 188u8, 52u8, 91u8, 4u8, 63u8,
 						],
 					)
 				}
-				#[doc = " Stores true if the user has extra apy in the pool"]
-				pub fn has_extra_apy_iter(
+				#[doc = " Stores true if the user has boost in the pool"]
+				pub fn has_boost_iter(
 					&self,
 				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
 					(),
-					types::has_extra_apy::HasExtraApy,
+					types::has_boost::HasBoost,
 					(),
 					::subxt::ext::subxt_core::utils::Yes,
 					::subxt::ext::subxt_core::utils::Yes,
 				> {
 					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
 						"Fusion",
-						"HasExtraApy",
+						"HasBoost",
 						(),
 						[
-							14u8, 88u8, 140u8, 45u8, 175u8, 249u8, 211u8, 5u8, 67u8, 113u8, 177u8,
-							57u8, 129u8, 124u8, 207u8, 212u8, 64u8, 35u8, 238u8, 102u8, 187u8,
-							48u8, 129u8, 41u8, 123u8, 101u8, 189u8, 149u8, 54u8, 230u8, 134u8,
-							130u8,
+							125u8, 214u8, 146u8, 121u8, 110u8, 91u8, 63u8, 27u8, 120u8, 67u8, 17u8,
+							88u8, 57u8, 54u8, 59u8, 14u8, 92u8, 104u8, 51u8, 193u8, 26u8, 186u8,
+							186u8, 69u8, 250u8, 213u8, 43u8, 95u8, 40u8, 94u8, 245u8, 37u8,
 						],
 					)
 				}
-				#[doc = " Stores true if the user has extra apy in the pool"]
-				pub fn has_extra_apy_iter1(
+				#[doc = " Stores true if the user has boost in the pool"]
+				pub fn has_boost_iter1(
 					&self,
-					_0: impl ::core::borrow::Borrow<types::has_extra_apy::Param0>,
+					_0: impl ::core::borrow::Borrow<types::has_boost::Param0>,
 				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
 					::subxt::ext::subxt_core::storage::address::StaticStorageKey<
-						types::has_extra_apy::Param0,
+						types::has_boost::Param0,
 					>,
-					types::has_extra_apy::HasExtraApy,
+					types::has_boost::HasBoost,
 					(),
 					::subxt::ext::subxt_core::utils::Yes,
 					::subxt::ext::subxt_core::utils::Yes,
 				> {
 					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
 						"Fusion",
-						"HasExtraApy",
+						"HasBoost",
 						::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
 							_0.borrow(),
 						),
 						[
-							14u8, 88u8, 140u8, 45u8, 175u8, 249u8, 211u8, 5u8, 67u8, 113u8, 177u8,
-							57u8, 129u8, 124u8, 207u8, 212u8, 64u8, 35u8, 238u8, 102u8, 187u8,
-							48u8, 129u8, 41u8, 123u8, 101u8, 189u8, 149u8, 54u8, 230u8, 134u8,
-							130u8,
+							125u8, 214u8, 146u8, 121u8, 110u8, 91u8, 63u8, 27u8, 120u8, 67u8, 17u8,
+							88u8, 57u8, 54u8, 59u8, 14u8, 92u8, 104u8, 51u8, 193u8, 26u8, 186u8,
+							186u8, 69u8, 250u8, 213u8, 43u8, 95u8, 40u8, 94u8, 245u8, 37u8,
 						],
 					)
 				}
-				#[doc = " Stores true if the user has extra apy in the pool"]
-				pub fn has_extra_apy(
+				#[doc = " Stores true if the user has boost in the pool"]
+				pub fn has_boost(
 					&self,
-					_0: impl ::core::borrow::Borrow<types::has_extra_apy::Param0>,
-					_1: impl ::core::borrow::Borrow<types::has_extra_apy::Param1>,
+					_0: impl ::core::borrow::Borrow<types::has_boost::Param0>,
+					_1: impl ::core::borrow::Borrow<types::has_boost::Param1>,
 				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
 					(
 						::subxt::ext::subxt_core::storage::address::StaticStorageKey<
-							types::has_extra_apy::Param0,
+							types::has_boost::Param0,
 						>,
 						::subxt::ext::subxt_core::storage::address::StaticStorageKey<
-							types::has_extra_apy::Param1,
+							types::has_boost::Param1,
 						>,
 					),
-					types::has_extra_apy::HasExtraApy,
+					types::has_boost::HasBoost,
 					::subxt::ext::subxt_core::utils::Yes,
 					::subxt::ext::subxt_core::utils::Yes,
 					(),
 				> {
 					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
 						"Fusion",
-						"HasExtraApy",
+						"HasBoost",
 						(
 							::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
 								_0.borrow(),
@@ -30338,10 +30334,9 @@ pub mod api {
 							),
 						),
 						[
-							14u8, 88u8, 140u8, 45u8, 175u8, 249u8, 211u8, 5u8, 67u8, 113u8, 177u8,
-							57u8, 129u8, 124u8, 207u8, 212u8, 64u8, 35u8, 238u8, 102u8, 187u8,
-							48u8, 129u8, 41u8, 123u8, 101u8, 189u8, 149u8, 54u8, 230u8, 134u8,
-							130u8,
+							125u8, 214u8, 146u8, 121u8, 110u8, 91u8, 63u8, 27u8, 120u8, 67u8, 17u8,
+							88u8, 57u8, 54u8, 59u8, 14u8, 92u8, 104u8, 51u8, 193u8, 26u8, 186u8,
+							186u8, 69u8, 250u8, 213u8, 43u8, 95u8, 40u8, 94u8, 245u8, 37u8,
 						],
 					)
 				}
@@ -34029,7 +34024,7 @@ pub mod api {
 						nominator: ::core::option::Option<
 							::core::option::Option<::subxt::ext::subxt_core::utils::AccountId32>,
 						>,
-						extra_apy_data: ::core::option::Option<
+						boost_data: ::core::option::Option<
 							::core::option::Option<(
 								runtime_types::sp_arithmetic::per_things::Perbill,
 								::core::primitive::u128,
@@ -34133,8 +34128,8 @@ pub mod api {
 						evm_address: ::subxt::ext::subxt_core::utils::H160,
 					},
 					#[codec(index = 20)]
-					#[doc = "See [`Pallet::set_pool_extra_apy_allocations`]."]
-					set_pool_extra_apy_allocations {
+					#[doc = "See [`Pallet::set_pool_boost_allocations`]."]
+					set_pool_boost_allocations {
 						evm_address: ::subxt::ext::subxt_core::utils::H160,
 						pool_ids: runtime_types::bounded_collections::bounded_vec::BoundedVec<
 							::core::primitive::u32,
@@ -34320,11 +34315,11 @@ pub mod api {
 					#[doc = "The user does not have a membership in the AVAIL pool."]
 					NoAvailMembership,
 					#[codec(index = 53)]
-					#[doc = "The pool does not have extra APY configured."]
-					PoolHasNoExtraApy,
+					#[doc = "The pool does not have boost configured."]
+					PoolHasNoBoost,
 					#[codec(index = 54)]
-					#[doc = "The user does not have enough AVAIL to allocate to the extra APY pools."]
-					NotEnoughAvailForExtraApy,
+					#[doc = "The user does not have enough AVAIL to allocate to the boosted pools."]
+					NotEnoughAvailForBoost,
 					#[codec(index = 55)]
 					#[doc = "TODO Temp, we'll see when bridge com is done"]
 					CannotDepositAvailCurrency,
@@ -34458,6 +34453,12 @@ pub mod api {
 						nominator: ::core::option::Option<
 							::core::option::Option<::subxt::ext::subxt_core::utils::AccountId32>,
 						>,
+						boost_data: ::core::option::Option<
+							::core::option::Option<(
+								runtime_types::sp_arithmetic::per_things::Perbill,
+								::core::primitive::u128,
+							)>,
+						>,
 					},
 					#[codec(index = 13)]
 					#[doc = "Event triggered when a user joins a pool"]
@@ -34563,8 +34564,8 @@ pub mod api {
 						amount: ::core::primitive::u128,
 					},
 					#[codec(index = 28)]
-					#[doc = "Event triggered when pools extra allocations have been set for a user"]
-					UserExtraApyAllocationsOptimized {
+					#[doc = "Event triggered when pools boost allocations have been set for a user"]
+					UserBoostAllocationsOptimized {
 						evm_address: ::subxt::ext::subxt_core::utils::H160,
 						pools_added:
 							::subxt::ext::subxt_core::alloc::vec::Vec<::core::primitive::u32>,
@@ -34592,11 +34593,14 @@ pub mod api {
 				#[encode_as_type(
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
 				)]
-				pub struct EraReward {
-					pub rewards: ::core::primitive::u128,
-					pub claimed_rewards: ::core::primitive::u128,
-					pub additional_rewards: ::core::primitive::u128,
-					pub additional_claimed_rewards: ::core::primitive::u128,
+				pub struct BoostData {
+					pub additional_apy: runtime_types::sp_arithmetic::per_things::Perbill,
+					pub min_avail_to_earn: ::core::primitive::u128,
+					pub elligible_total_points: ::core::primitive::u128,
+					pub elligible_members:
+						runtime_types::bounded_collections::bounded_vec::BoundedVec<
+							::subxt::ext::subxt_core::utils::H160,
+						>,
 				}
 				#[derive(
 					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
@@ -34615,14 +34619,11 @@ pub mod api {
 				#[encode_as_type(
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
 				)]
-				pub struct ExtraApyData {
-					pub additional_apy: runtime_types::sp_arithmetic::per_things::Perbill,
-					pub min_avail_to_earn: ::core::primitive::u128,
-					pub elligible_total_points: ::core::primitive::u128,
-					pub elligible_members:
-						runtime_types::bounded_collections::bounded_vec::BoundedVec<
-							::subxt::ext::subxt_core::utils::H160,
-						>,
+				pub struct EraReward {
+					pub rewards: ::core::primitive::u128,
+					pub claimed_rewards: ::core::primitive::u128,
+					pub additional_rewards: ::core::primitive::u128,
+					pub additional_claimed_rewards: ::core::primitive::u128,
 				}
 				#[derive(
 					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
@@ -34689,13 +34690,12 @@ pub mod api {
 							::core::primitive::u128,
 						)>,
 					>,
-					pub extra_apy_value: runtime_types::sp_arithmetic::per_things::Perbill,
-					pub extra_apy_members:
-						runtime_types::bounded_collections::bounded_vec::BoundedVec<
-							::subxt::ext::subxt_core::utils::H160,
-						>,
-					pub extra_apy_total_points: ::core::primitive::u128,
-					pub extra_apy_total_avail: ::core::primitive::u128,
+					pub boost_additional_apy: runtime_types::sp_arithmetic::per_things::Perbill,
+					pub boost_members: runtime_types::bounded_collections::bounded_vec::BoundedVec<
+						::subxt::ext::subxt_core::utils::H160,
+					>,
+					pub boost_total_points: ::core::primitive::u128,
+					pub boost_total_avail: ::core::primitive::u128,
 				}
 				#[derive(
 					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
@@ -34785,8 +34785,8 @@ pub mod api {
 						runtime_types::bounded_collections::bounded_vec::BoundedVec<
 							runtime_types::pallet_fusion::types::FusionPendingSlash,
 						>,
-					pub extra_apy_data:
-						::core::option::Option<runtime_types::pallet_fusion::types::ExtraApyData>,
+					pub boost_data:
+						::core::option::Option<runtime_types::pallet_fusion::types::BoostData>,
 				}
 				#[derive(
 					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
