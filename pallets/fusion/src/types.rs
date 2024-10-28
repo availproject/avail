@@ -95,18 +95,18 @@ pub struct FusionPool<T: Config> {
 	pub state: FusionPoolState,
 	/// Vector of pending slashes
 	pub pending_slashes: BoundedVec<FusionPendingSlash<T>, T::MaxSlashesPerPool>,
-	/// Data about extra apy
-	pub extra_apy_data: Option<ExtraApyData<T>>,
+	/// Data about boost
+	pub boost_data: Option<BoostData<T>>,
 }
 
 #[derive(Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[scale_info(skip_type_params(T))]
-pub struct ExtraApyData<T: Config> {
+pub struct BoostData<T: Config> {
 	/// The additional apy on the pool
 	pub additional_apy: Perbill,
-	/// The minimum avail that needs to be allocated to this pool to earn extra
+	/// The minimum avail that needs to be allocated to this pool to earn boost
 	pub min_avail_to_earn: FusionCurrencyBalance,
-	/// The amount of points in the pool getting extra
+	/// The amount of points in the pool getting boost
 	pub elligible_total_points: Points,
 	/// Vector with elligible members
 	pub elligible_members: BoundedVec<EvmAddress, T::MaxMembersPerPool>,
@@ -153,14 +153,14 @@ pub struct FusionExposure<T: Config> {
 	/// Used to store the validator(s) actually backed alongside the amount
 	/// This is populated when exposure are collected
 	pub native_exposure_data: Option<BoundedVec<(T::AccountId, BalanceOf<T>), T::MaxTargets>>,
-	/// The additional apy
-	pub extra_apy_value: Perbill,
-	/// The members having extra apy
-	pub extra_apy_members: BoundedVec<EvmAddress, T::MaxMembersPerPool>,
-	/// The total points elligible to extra apy
-	pub extra_apy_total_points: Points,
-	/// The avail equivalent of extra_apy_total_points
-	pub extra_apy_total_avail: BalanceOf<T>,
+	/// Boost additional APY
+	pub boost_additional_apy: Perbill,
+	/// The members having boost
+	pub boost_members: BoundedVec<EvmAddress, T::MaxMembersPerPool>,
+	/// The total points elligible to boost
+	pub boost_total_points: Points,
+	/// The avail equivalent of boost_total_points
+	pub boost_total_avail: BalanceOf<T>,
 }
 
 #[derive(Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
@@ -170,9 +170,9 @@ pub struct EraReward<T: Config> {
 	pub rewards: BalanceOf<T>,
 	/// The actual amount of reward claimed
 	pub claimed_rewards: BalanceOf<T>,
-	/// The total rewards from extra apy
+	/// The total rewards from boost
 	pub additional_rewards: BalanceOf<T>,
-	/// The actual amount of reward claimed form extra apy
+	/// The actual amount of reward claimed from boost
 	pub additional_claimed_rewards: BalanceOf<T>,
 }
 
@@ -394,53 +394,53 @@ impl<T: Config> FusionPool<T> {
 		Ok(points)
 	}
 
-	pub fn set_extra_apy(
+	pub fn set_boost(
 		&mut self,
-		extra_apy_data: Option<(Perbill, FusionCurrencyBalance)>,
+		boost_data: Option<(Perbill, FusionCurrencyBalance)>,
 	) -> DispatchResult {
 		let pool_id = self.pool_id;
-		match (&self.extra_apy_data, extra_apy_data) {
+		match (&self.boost_data, boost_data) {
 			(None, None) => {
-				// There is no current apy data, nothing to do
+				// There is no current boost, nothing to do
 			},
-			(Some(_old_apy_data), None) => {
-				// There is some extra apy data, we remove it
-				// We remove the pool id from the storage of pools with extra
-				FusionPoolsWithExtraApy::<T>::remove(pool_id);
+			(Some(_old_boost), None) => {
+				// There is some boost, we remove it
+				// We remove the pool id from the storage of pools with boost
+				FusionPoolsWithBoost::<T>::remove(pool_id);
 
-				// We remove all the users for this pool in HasExtraApy
-				let _ = HasExtraApy::<T>::clear_prefix(pool_id, u32::MAX, None);
+				// We remove all the users for this pool in HasBoost
+				let _ = HasBoost::<T>::clear_prefix(pool_id, u32::MAX, None);
 
 				// We update the pool
-				self.extra_apy_data = None
+				self.boost_data = None
 			},
 			(None, Some((apy, min_to_earn))) => {
-				// There is no current extra_apy, we add it
-				// We add the pool the to vec with pools habing extra
-				FusionPoolsWithExtraApy::<T>::insert(pool_id, min_to_earn);
+				// There is no current boost, we add it
+				// We add the pool the to vec of pools having boost
+				FusionPoolsWithBoost::<T>::insert(pool_id, min_to_earn);
 
 				// We update the pool
-				self.extra_apy_data = Some(ExtraApyData {
+				self.boost_data = Some(BoostData {
 					additional_apy: apy,
 					min_avail_to_earn: min_to_earn,
 					elligible_total_points: 0,
 					elligible_members: BoundedVec::default(),
 				});
 			},
-			(Some(old_apy_data), Some((apy, min_to_earn))) => {
-				// There is already an apy data, we update it
-				FusionPoolsWithExtraApy::<T>::insert(pool_id, min_to_earn);
+			(Some(old_boost), Some((apy, min_to_earn))) => {
+				// There is already a boost, we update it
+				FusionPoolsWithBoost::<T>::insert(pool_id, min_to_earn);
 
-				// For each users having extra, if minimum to earn has
+				// For each users having boost,
 				// we need to check if they still belong.
 				// But it's too expensive to do onchain so we leave them in.
-				// If we need to clean it, we can remove the extra apy
+				// If we need to clean it, we can remove the boost
 				// and call the permissionless extrinsic to optimize
-				self.extra_apy_data = Some(ExtraApyData {
+				self.boost_data = Some(BoostData {
 					additional_apy: apy,
 					min_avail_to_earn: min_to_earn,
-					elligible_total_points: old_apy_data.elligible_total_points,
-					elligible_members: old_apy_data.elligible_members.clone(),
+					elligible_total_points: old_boost.elligible_total_points,
+					elligible_members: old_boost.elligible_members.clone(),
 				});
 			},
 		};

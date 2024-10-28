@@ -287,16 +287,16 @@ pub mod pallet {
 		ValueQuery,
 	>;
 
-	/// Stores the pool ids of pool having an extra APY alongside the minimum to get the extra apy
+	/// Stores the pool ids of pool having an boost alongside the minimum to get the boost
 	#[pallet::storage]
-	#[pallet::getter(fn fusion_pools_with_extra_apy)]
-	pub type FusionPoolsWithExtraApy<T: Config> =
+	#[pallet::getter(fn fusion_pools_with_boost)]
+	pub type FusionPoolsWithBoost<T: Config> =
 		StorageMap<_, Twox64Concat, PoolId, FusionCurrencyBalance, OptionQuery>;
 
-	/// Stores true if the user has extra apy in the pool
+	/// Stores true if the user has boost in the pool
 	#[pallet::storage]
-	#[pallet::getter(fn has_extra_apy)]
-	pub type HasExtraApy<T: Config> =
+	#[pallet::getter(fn has_boost)]
+	pub type HasBoost<T: Config> =
 		StorageDoubleMap<_, Twox64Concat, PoolId, Twox64Concat, EvmAddress, bool, ValueQuery>;
 
 	#[pallet::event]
@@ -384,6 +384,7 @@ pub mod pallet {
 			apy: Option<Perbill>,
 			state: Option<FusionPoolState>,
 			nominator: Option<Option<T::AccountId>>,
+			boost_data: Option<Option<(Perbill, FusionCurrencyBalance)>>,
 		},
 		/// Event triggered when a user joins a pool
 		PoolJoined {
@@ -466,8 +467,8 @@ pub mod pallet {
 			slash_era: EraIndex,
 			amount: FusionCurrencyBalance,
 		},
-		/// Event triggered when pools extra allocations have been set for a user
-		UserExtraApyAllocationsOptimized {
+		/// Event triggered when pools boost allocations have been set for a user
+		UserBoostAllocationsOptimized {
 			evm_address: EvmAddress,
 			pools_added: Vec<PoolId>,
 			pools_removed: Vec<PoolId>,
@@ -582,10 +583,10 @@ pub mod pallet {
 		SlashNotFound,
 		/// The user does not have a membership in the AVAIL pool.
 		NoAvailMembership,
-		/// The pool does not have extra APY configured.
-		PoolHasNoExtraApy,
-		/// The user does not have enough AVAIL to allocate to the extra APY pools.
-		NotEnoughAvailForExtraApy,
+		/// The pool does not have boost configured.
+		PoolHasNoBoost,
+		/// The user does not have enough AVAIL to allocate to the boosted pools.
+		NotEnoughAvailForBoost,
 		/// TODO Temp, we'll see when bridge com is done
 		CannotDepositAvailCurrency,
 	}
@@ -819,7 +820,7 @@ pub mod pallet {
 				total_slashed_native: 0,
 				total_unbonding_native: 0,
 				pending_slashes: BoundedVec::default(),
-				extra_apy_data: None,
+				boost_data: None,
 			};
 
 			FusionPoolsAccountToId::<T>::insert(&new_pool.funds_account, pool_id);
@@ -849,7 +850,7 @@ pub mod pallet {
 			apy: Option<Perbill>,
 			state: Option<FusionPoolState>,
 			nominator: Option<Option<T::AccountId>>,
-			extra_apy_data: Option<Option<(Perbill, FusionCurrencyBalance)>>, // Additional apy, min to earn
+			boost_data: Option<Option<(Perbill, FusionCurrencyBalance)>>, // Additional apy, min to earn
 			retry_rewards_for_eras: Option<BoundedVec<EraIndex, T::HistoryDepth>>,
 		) -> DispatchResult {
 			ensure_root(origin)?;
@@ -888,8 +889,8 @@ pub mod pallet {
 					pool.nominator = nominator;
 				}
 
-				if let Some(extra_apy_data) = extra_apy_data {
-					pool.set_extra_apy(extra_apy_data)?;
+				if let Some(boost_data) = boost_data {
+					pool.set_boost(boost_data)?;
 				}
 
 				if pool.is_active() {
@@ -918,6 +919,7 @@ pub mod pallet {
 				apy,
 				state,
 				nominator,
+				boost_data,
 			});
 
 			Ok(())
@@ -1212,17 +1214,17 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Extrinsic to allow user to setup extra apy pool allocations
+		/// Extrinsic to allow user to setup boost pool allocations
 		#[pallet::call_index(20)]
 		#[pallet::weight(T::WeightInfo::create_currency())]
-		pub fn set_pool_extra_apy_allocations(
+		pub fn set_pool_boost_allocations(
 			origin: OriginFor<T>,
 			evm_address: EvmAddress,
 			pool_ids: BoundedVec<PoolId, ConstU32<50>>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 			Self::ensure_valid_fusion_origin(who, evm_address)?;
-			Self::do_set_pool_extra_apy_allocations(evm_address, pool_ids)?;
+			Self::do_set_pool_boost_allocations(evm_address, pool_ids)?;
 			Ok(())
 		}
 	}
@@ -1384,7 +1386,7 @@ impl<T: Config> Pallet<T> {
 
 		FusionPoolsAccountToId::<T>::remove(&pool.funds_account);
 		FusionPools::<T>::remove(pool_id);
-		FusionPoolsWithExtraApy::<T>::remove(pool_id);
+		FusionPoolsWithBoost::<T>::remove(pool_id);
 
 		Self::deposit_event(Event::PoolDeleted { pool_id, leftover });
 
@@ -1524,16 +1526,16 @@ impl<T: Config> Pallet<T> {
 			let total_avail = fusion_exposure.total_avail;
 			let pool_era_reward = fraction_of_year * apy * total_avail;
 
-			// Extra era reward computation for a pool
-			let mut extra_apy_era_reward = BalanceOf::<T>::default();
-			if fusion_exposure.extra_apy_members.len() > 0
-				&& fusion_exposure.extra_apy_total_points > 0
-				&& fusion_exposure.extra_apy_value > Perbill::zero()
-				&& fusion_exposure.extra_apy_total_avail > BalanceOf::<T>::zero()
+			// Boost era reward computation for a pool
+			let mut boost_reward = BalanceOf::<T>::default();
+			if fusion_exposure.boost_members.len() > 0
+				&& fusion_exposure.boost_total_points > 0
+				&& fusion_exposure.boost_additional_apy > Perbill::zero()
+				&& fusion_exposure.boost_total_avail > BalanceOf::<T>::zero()
 			{
-				let extra_apy = fusion_exposure.extra_apy_value;
-				let extra_total_avail = fusion_exposure.extra_apy_total_avail;
-				extra_apy_era_reward = fraction_of_year * extra_apy * extra_total_avail;
+				let boost_additional_apy = fusion_exposure.boost_additional_apy;
+				let boost_total_avail = fusion_exposure.boost_total_avail;
+				boost_reward = fraction_of_year * boost_additional_apy * boost_total_avail;
 			}
 
 			// Check that the pool actually backed a validator and that this validator has earned points during the era
@@ -1561,18 +1563,18 @@ impl<T: Config> Pallet<T> {
 
 			// Get the pool funds balances
 			let pool_funds_balance = T::Currency::free_balance(&pool.funds_account);
-			let era_rewards_with_extra = pool_era_reward.saturating_add(extra_apy_era_reward);
+			let era_rewards_with_boost = pool_era_reward.saturating_add(boost_reward);
 
 			// In case of insufficient balance in pool account, we pause the pool
 			// This means the reward won't get paid for this era.
-			if era_rewards_with_extra > pool_funds_balance.saturating_sub(existential_deposit) {
+			if era_rewards_with_boost > pool_funds_balance.saturating_sub(existential_deposit) {
 				Self::pause_pool(
 					pool_id,
 					&mut pool,
 					&"Insufficient funds in fusion pool account.",
 					&mut paused_pools,
 					&mut paused_pools_missed_rewards,
-					era_rewards_with_extra,
+					era_rewards_with_boost,
 				);
 				continue;
 			}
@@ -1580,7 +1582,7 @@ impl<T: Config> Pallet<T> {
 			if let Err(e) = T::Currency::transfer(
 				&pool.funds_account,
 				&pool.claimable_account,
-				era_rewards_with_extra,
+				era_rewards_with_boost,
 				ExistenceRequirement::KeepAlive,
 			) {
 				Self::pause_pool(
@@ -1589,13 +1591,13 @@ impl<T: Config> Pallet<T> {
 					&"An error has occured during transfer",
 					&mut paused_pools,
 					&mut paused_pools_missed_rewards,
-					era_rewards_with_extra,
+					era_rewards_with_boost,
 				);
 				log::error!("Error detail: {e:?}");
 				continue;
 			}
 
-			total_rewarded = total_rewarded.saturating_add(era_rewards_with_extra);
+			total_rewarded = total_rewarded.saturating_add(era_rewards_with_boost);
 
 			FusionEraRewards::<T>::insert(
 				era,
@@ -1603,7 +1605,7 @@ impl<T: Config> Pallet<T> {
 				EraReward {
 					rewards: pool_era_reward,
 					claimed_rewards: BalanceOf::<T>::default(),
-					additional_rewards: extra_apy_era_reward,
+					additional_rewards: boost_reward,
 					additional_claimed_rewards: BalanceOf::<T>::default(),
 				},
 			);
@@ -1807,12 +1809,12 @@ impl<T: Config> Pallet<T> {
 				member.1 = member.1.saturating_add(points);
 			}
 
-			// Check if the user has extra apy in the pool
-			if let Some(ref mut extra_apy_data) = pool.extra_apy_data {
-				if HasExtraApy::<T>::get(pool_id, evm_address) {
+			// Check if the user has boost in the pool
+			if let Some(ref mut boost_data) = pool.boost_data {
+				if HasBoost::<T>::get(pool_id, evm_address) {
 					// We add the additional points to the elligible points
-					extra_apy_data.elligible_total_points =
-						extra_apy_data.elligible_total_points.saturating_add(points);
+					boost_data.elligible_total_points =
+					boost_data.elligible_total_points.saturating_add(points);
 				}
 			}
 
@@ -1880,10 +1882,10 @@ impl<T: Config> Pallet<T> {
 			let (user_reward_balance, user_points) =
 				Self::compute_basic_rewards(evm_address, &exposure, &era_rewards)?;
 
-			let extra_rewards =
-				Self::compute_extra_rewards(evm_address, &exposure, &era_rewards, user_points)?;
+			let boost_rewards =
+				Self::compute_boost_rewards(evm_address, &exposure, &era_rewards, user_points)?;
 
-			let total_user_rewards = user_reward_balance.saturating_add(extra_rewards);
+			let total_user_rewards = user_reward_balance.saturating_add(boost_rewards);
 
 			ensure!(
 				total_user_rewards > BalanceOf::<T>::zero(),
@@ -2068,11 +2070,11 @@ impl<T: Config> Pallet<T> {
 			}
 		}
 
-		// Check if the user has extra apy in the pool
-		if let Some(ref mut extra_apy_data) = pool.extra_apy_data {
-			if HasExtraApy::<T>::get(pool_id, evm_address) {
+		// Check if the user has boost in the pool
+		if let Some(ref mut boost_data) = pool.boost_data {
+			if HasBoost::<T>::get(pool_id, evm_address) {
 				// We substract the additional points to the elligible points
-				extra_apy_data.elligible_total_points = extra_apy_data
+				boost_data.elligible_total_points = boost_data
 					.elligible_total_points
 					.saturating_sub(requested_points);
 			}
@@ -2097,9 +2099,9 @@ impl<T: Config> Pallet<T> {
 		FusionPools::<T>::insert(pool_id, &pool);
 		FusionCurrencies::<T>::insert(pool.currency_id, &currency);
 
-		// If the user has unbonded from Avail pool, we need to check if we need to remove him from some extras apy pools
+		// If the user has unbonded from Avail pool, we need to check if we need to remove him from some boost pools
 		if pool_id == AVAIL_POOL_ID {
-			Self::check_pool_allocation_removal(evm_address, new_avail_balance)?;
+			Self::check_boost_allocation_removal(evm_address, new_avail_balance)?;
 		}
 
 		// Emit event
@@ -2197,12 +2199,12 @@ impl<T: Config> Pallet<T> {
 			// Remove the user's membership from the pool
 			FusionMemberships::<T>::remove(evm_address, pool_id);
 
-			// If we remove the membership and the user had extra in pool, we need to clean it
-			if HasExtraApy::<T>::get(pool_id, evm_address) {
-				HasExtraApy::<T>::remove(pool_id, evm_address);
+			// If we remove the membership and the user had boost in pool, we need to clean it
+			if HasBoost::<T>::get(pool_id, evm_address) {
+				HasBoost::<T>::remove(pool_id, evm_address);
 
-				if let Some(ref mut extra_apy_data) = pool.extra_apy_data {
-					extra_apy_data
+				if let Some(ref mut boost_data) = pool.boost_data {
+					boost_data
 						.elligible_members
 						.retain(|address| *address != evm_address);
 				}
@@ -2284,16 +2286,16 @@ impl<T: Config> Pallet<T> {
 			.into_sub_account_truncating((FusionAccountType::PoolClaimableAccount, id))
 	}
 
-	/// Checks if the user extra allocation need to be removed
-	fn check_pool_allocation_removal(
+	/// Checks if the user boost allocation need to be removed
+	fn check_boost_allocation_removal(
 		evm_address: EvmAddress,
 		new_avail_balance: FusionCurrencyBalance,
 	) -> DispatchResult {
 		let mut total_avail_required: FusionCurrencyBalance = 0;
 		let mut user_pool_ids: Vec<(PoolId, FusionCurrencyBalance)> = Vec::new();
 
-		for (pool_id, min_avail_to_earn) in FusionPoolsWithExtraApy::<T>::iter() {
-			if HasExtraApy::<T>::get(pool_id, evm_address) {
+		for (pool_id, min_avail_to_earn) in FusionPoolsWithBoost::<T>::iter() {
+			if HasBoost::<T>::get(pool_id, evm_address) {
 				user_pool_ids.push((pool_id, min_avail_to_earn));
 				total_avail_required = total_avail_required.saturating_add(min_avail_to_earn);
 			}
@@ -2303,24 +2305,24 @@ impl<T: Config> Pallet<T> {
 			return Ok(());
 		}
 
-		// If we're here, we need to remove the user extra apy from some pool
+		// If we're here, we need to remove the user boost from some pool
 		// Sort pools by min_avail_to_earn in descending order
 		user_pool_ids.sort_by(|a, b| b.1.cmp(&a.1));
 
 		// Remove pools until the total required Avail is within the new balance
 		for (pool_id, min_avail_to_earn) in user_pool_ids {
-			// Remove the user's extra APY status from the pool
-			HasExtraApy::<T>::remove(pool_id, evm_address);
+			// Remove the user's boost status from the pool
+			HasBoost::<T>::remove(pool_id, evm_address);
 
 			FusionPools::<T>::try_mutate(pool_id, |pool_opt| -> DispatchResult {
 				let pool = pool_opt.as_mut().ok_or(Error::<T>::PoolNotFound)?;
-				if let Some(ref mut extra_apy_data) = pool.extra_apy_data {
+				if let Some(ref mut boost_data) = pool.boost_data {
 					let membership = FusionMemberships::<T>::get(evm_address, pool_id)
 						.ok_or(Error::<T>::MembershipNotFound)?;
-					extra_apy_data.elligible_total_points = extra_apy_data
+					boost_data.elligible_total_points = boost_data
 						.elligible_total_points
 						.saturating_sub(membership.active_points);
-					extra_apy_data
+					boost_data
 						.elligible_members
 						.retain(|address| *address != evm_address);
 				}
@@ -2337,15 +2339,15 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	/// Function to remove all extra apy for everyone in case the Avail pool is slashed
-	fn shutdown_pools_extra_apy() -> () {
-		for (pool_id, _) in FusionPoolsWithExtraApy::<T>::iter() {
-			let _ = HasExtraApy::<T>::clear_prefix(pool_id, u32::MAX, None);
+	/// Function to remove all boost for everyone in case the Avail pool is slashed
+	fn shutdown_pools_boost() -> () {
+		for (pool_id, _) in FusionPoolsWithBoost::<T>::iter() {
+			let _ = HasBoost::<T>::clear_prefix(pool_id, u32::MAX, None);
 			let _ = FusionPools::<T>::try_mutate(pool_id, |pool_opt| -> DispatchResult {
 				if let Some(pool) = pool_opt.as_mut() {
-					if let Some(ref mut extra_apy_data) = pool.extra_apy_data {
-						extra_apy_data.elligible_total_points = 0;
-						extra_apy_data.elligible_members = BoundedVec::default();
+					if let Some(ref mut boost_data) = pool.boost_data {
+						boost_data.elligible_total_points = 0;
+						boost_data.elligible_members = BoundedVec::default();
 					}
 				};
 				Ok(())
@@ -2353,7 +2355,7 @@ impl<T: Config> Pallet<T> {
 		}
 	}
 
-	/// Helper to compute the rewards for a pool member, return the rewards and the user points to avoid iterating to compute extra rewards
+	/// Helper to compute the rewards for a pool member, return the rewards and the user points to avoid iterating to compute boost rewards
 	fn compute_basic_rewards(
 		evm_address: EvmAddress,
 		exposure: &FusionExposure<T>,
@@ -2385,35 +2387,35 @@ impl<T: Config> Pallet<T> {
 		Ok((user_reward_balance, user_points))
 	}
 
-	/// Helper to compute the extra apy reward for a pool member
-	fn compute_extra_rewards(
+	/// Helper to compute the boost reward for a pool member
+	fn compute_boost_rewards(
 		evm_address: EvmAddress,
 		exposure: &FusionExposure<T>,
 		era_rewards: &EraReward<T>,
 		user_points: U256,
 	) -> Result<BalanceOf<T>, DispatchError> {
-		// Calculate the extra apy rewards
-		let mut user_extra_rewards_balance = BalanceOf::<T>::zero();
-		if exposure.extra_apy_members.contains(&evm_address) {
-			let total_extra_points = Self::u256(exposure.extra_apy_total_points);
+		// Calculate the boost rewards
+		let mut user_boost_rewards_balance = BalanceOf::<T>::zero();
+		if exposure.boost_members.contains(&evm_address) {
+			let total_boost_points = Self::u256(exposure.boost_total_points);
 
-			let extra_rewards_u128: u128 = era_rewards
+			let boost_rewards_u128: u128 = era_rewards
 				.additional_rewards
 				.try_into()
 				.map_err(|_| Error::<T>::ArithmeticError)?;
-			let extra_rewards = Self::u256(extra_rewards_u128);
+			let boost_rewards = Self::u256(boost_rewards_u128);
 
-			let user_extra_reward = extra_rewards
+			let user_boost_reward = boost_rewards
 				.saturating_mul(user_points)
-				.checked_div(total_extra_points)
+				.checked_div(total_boost_points)
 				.ok_or(Error::<T>::ArithmeticError)?;
 
-			user_extra_rewards_balance = Self::balance(user_extra_reward);
+			user_boost_rewards_balance = Self::balance(user_boost_reward);
 		}
-		Ok(user_extra_rewards_balance)
+		Ok(user_boost_rewards_balance)
 	}
 
-	fn do_set_pool_extra_apy_allocations(
+	fn do_set_pool_boost_allocations(
 		evm_address: EvmAddress,
 		pool_ids: BoundedVec<PoolId, ConstU32<50>>,
 	) -> DispatchResult {
@@ -2431,59 +2433,59 @@ impl<T: Config> Pallet<T> {
 		let mut total_min_avail_required: FusionCurrencyBalance = 0;
 		for pool_id in pool_ids.iter() {
 			let min_avail_to_earn =
-				FusionPoolsWithExtraApy::<T>::get(*pool_id).ok_or(Error::<T>::PoolHasNoExtraApy)?;
+				FusionPoolsWithBoost::<T>::get(*pool_id).ok_or(Error::<T>::PoolHasNoBoost)?;
 			total_min_avail_required = total_min_avail_required.saturating_add(min_avail_to_earn);
 		}
 
 		// Ensure user has enough AVAIL
 		ensure!(
 			user_avail_balance >= total_min_avail_required,
-			Error::<T>::NotEnoughAvailForExtraApy
+			Error::<T>::NotEnoughAvailForBoost
 		);
 
-		// Get user's current extra APY allocations
+		// Get user's current boost allocations
 		let user_memberships: Vec<PoolId> =
 			FusionMemberships::<T>::iter_key_prefix(evm_address).collect();
-		let mut current_extra_apy_pools: Vec<PoolId> = Vec::new();
+		let mut current_boost_pools: Vec<PoolId> = Vec::new();
 		for pool_id in user_memberships.iter() {
-			if HasExtraApy::<T>::get(*pool_id, evm_address) {
-				current_extra_apy_pools.push(*pool_id);
+			if HasBoost::<T>::get(*pool_id, evm_address) {
+				current_boost_pools.push(*pool_id);
 			}
 		}
 
 		// Create sets for efficient comparison
 		let selected_pools: BTreeSet<PoolId> = pool_ids.iter().cloned().collect();
-		let current_extra_apy_pools_set: BTreeSet<PoolId> =
-			current_extra_apy_pools.iter().cloned().collect();
+		let current_boost_pools_set: BTreeSet<PoolId> =
+			current_boost_pools.iter().cloned().collect();
 
-		// Pools to remove extra APY from: in current but not in selected
-		let pools_to_remove: Vec<PoolId> = current_extra_apy_pools_set
+		// Pools to remove boost from: in current but not in selected
+		let pools_to_remove: Vec<PoolId> = current_boost_pools_set
 			.difference(&selected_pools)
 			.cloned()
 			.collect();
 
-		// Pools to add extra APY to: in selected but not in current
+		// Pools to add boost to: in selected but not in current
 		let pools_to_add: Vec<PoolId> = selected_pools
-			.difference(&current_extra_apy_pools_set)
+			.difference(&current_boost_pools_set)
 			.cloned()
 			.collect();
 
-		// Remove user from extra APY in pools_to_remove
+		// Remove user from boost in pools_to_remove
 		for pool_id in pools_to_remove.iter() {
-			// Remove HasExtraApy entry
-			HasExtraApy::<T>::remove(*pool_id, evm_address);
+			// Remove HasBoost entry
+			HasBoost::<T>::remove(*pool_id, evm_address);
 
-			// Update pool's extra_apy_data
+			// Update pool's boost_data
 			FusionPools::<T>::try_mutate(*pool_id, |maybe_pool| -> DispatchResult {
 				let pool = maybe_pool.as_mut().ok_or(Error::<T>::PoolNotFound)?;
-				if let Some(ref mut extra_apy_data) = pool.extra_apy_data {
+				if let Some(ref mut boost_data) = pool.boost_data {
 					// Get the user's active points in the pool
 					let membership = FusionMemberships::<T>::get(evm_address, *pool_id)
 						.ok_or(Error::<T>::MembershipNotFound)?;
-					extra_apy_data.elligible_total_points = extra_apy_data
+					boost_data.elligible_total_points = boost_data
 						.elligible_total_points
 						.saturating_sub(membership.active_points);
-					extra_apy_data
+					boost_data
 						.elligible_members
 						.retain(|addr| *addr != evm_address);
 				}
@@ -2491,35 +2493,35 @@ impl<T: Config> Pallet<T> {
 			})?;
 		}
 
-		// Add user to extra APY in pools_to_add
+		// Add user to boost in pools_to_add
 		for pool_id in pools_to_add.iter() {
-			// Insert HasExtraApy entry
-			HasExtraApy::<T>::insert(*pool_id, evm_address, true);
+			// Insert HasBoost entry
+			HasBoost::<T>::insert(*pool_id, evm_address, true);
 
-			// Update pool's extra_apy_data
+			// Update pool's boost data
 			FusionPools::<T>::try_mutate(*pool_id, |maybe_pool| -> DispatchResult {
 				let pool = maybe_pool.as_mut().ok_or(Error::<T>::PoolNotFound)?;
-				if let Some(ref mut extra_apy_data) = pool.extra_apy_data {
+				if let Some(ref mut boost_data) = pool.boost_data {
 					// Get the user's active points in the pool
 					let membership = FusionMemberships::<T>::get(evm_address, *pool_id)
 						.ok_or(Error::<T>::MembershipNotFound)?;
-					extra_apy_data.elligible_total_points = extra_apy_data
+					boost_data.elligible_total_points = boost_data
 						.elligible_total_points
 						.saturating_add(membership.active_points);
-					extra_apy_data
+					boost_data
 						.elligible_members
 						.try_push(evm_address)
 						.map_err(|_| Error::<T>::PoolMemberLimitReached)?;
 				} else {
-					// Pool does not have extra APY data
-					return Err(Error::<T>::PoolHasNoExtraApy.into());
+					// Pool does not have boost data
+					return Err(Error::<T>::PoolHasNoBoost.into());
 				}
 				Ok(())
 			})?;
 		}
 
 		// Emit event indicating the optimization result
-		Self::deposit_event(Event::<T>::UserExtraApyAllocationsOptimized {
+		Self::deposit_event(Event::<T>::UserBoostAllocationsOptimized {
 			evm_address,
 			pools_added: pools_to_add,
 			pools_removed: pools_to_remove,
@@ -2565,13 +2567,13 @@ impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
 					continue;
 				};
 
-				// Set extra apy data in the exposure
+				// Set boost data in the exposure
 				let (
-					extra_apy_value,
-					extra_apy_total_points,
-					extra_apy_total_avail,
-					extra_apy_members,
-				) = pool.extra_apy_data.as_ref().map_or(
+					boost_value,
+					boost_total_points,
+					boost_total_avail,
+					boost_members,
+				) = pool.boost_data.as_ref().map_or(
 					(
 						Perbill::zero(),
 						Points::default(),
@@ -2579,14 +2581,14 @@ impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
 						BoundedVec::default(),
 					),
 					|data| {
-						let extra_points = data.elligible_total_points;
-						let extra_avail = pool
-							.points_to_avail(extra_points, Some(&currency), Some(era))
+						let boost_points = data.elligible_total_points;
+						let boost_avail = pool
+							.points_to_avail(boost_points, Some(&currency), Some(era))
 							.unwrap_or(BalanceOf::<T>::default());
 						(
 							data.additional_apy,
-							extra_points,
-							extra_avail,
+							boost_points,
+							boost_avail,
 							data.elligible_members.clone(),
 						)
 					},
@@ -2602,10 +2604,10 @@ impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
 					targets: pool.targets.clone(),
 					apy: pool.apy,
 					native_exposure_data: None,
-					extra_apy_members,
-					extra_apy_total_points,
-					extra_apy_total_avail,
-					extra_apy_value,
+					boost_members: boost_members,
+					boost_total_points: boost_total_points,
+					boost_total_avail: boost_total_avail,
+					boost_additional_apy: boost_value,
 				};
 				FusionExposures::<T>::insert(era, pool_id, fusion_exposure);
 				at_least_one = true;
@@ -2969,10 +2971,10 @@ impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
 				FusionCurrencies::<T>::insert(pool.currency_id, currency);
 				HasPendingSlash::<T>::remove(slash_era, (removed_slash.validator, funds_account));
 
-				// If the avail pool is slashed, we remove all extras cause we cannot compute the correct values anymore
-				// We can call the permissionless extrinsic to re-optimize the pools extra apy allocations
+				// If the avail pool is slashed, we remove all boosts cause we cannot compute the correct values anymore
+				// We can call the permissionless extrinsic to re-optimize the pools boost allocations
 				if pool_id == AVAIL_POOL_ID {
-					Self::shutdown_pools_extra_apy();
+					Self::shutdown_pools_boost();
 				}
 
 				Self::deposit_event(Event::<T>::FusionPoolSlashed {
