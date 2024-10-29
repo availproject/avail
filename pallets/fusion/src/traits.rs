@@ -1,9 +1,11 @@
 use crate::*;
 use sp_staking::EraIndex;
 
-// A trait that provides the current era.
+// A trait that provides data from the staking pallet.
 pub trait StakingFusionDataProvider<AccountId> {
-	/// Returns the current era.
+	/// Returns the active era.
+	fn active_era() -> EraIndex;
+	/// Returns the currently planned era.
 	fn current_era() -> EraIndex;
 	/// Checks if an account is a validator.
 	fn is_valid_validator(account: &AccountId) -> bool;
@@ -11,6 +13,9 @@ pub trait StakingFusionDataProvider<AccountId> {
 	fn has_earned_era_points(era: EraIndex, accounts: &Vec<AccountId>) -> bool;
 }
 impl<AccountId> StakingFusionDataProvider<AccountId> for () {
+	fn active_era() -> EraIndex {
+		0
+	}
 	fn current_era() -> EraIndex {
 		0
 	}
@@ -25,7 +30,7 @@ impl<AccountId> StakingFusionDataProvider<AccountId> for () {
 // A trait for Fusion operations with a generic `AccountId`.
 pub trait FusionExt<AccountId, Balance> {
 	/// Handles the change of an era, which includes operations like distributing rewards and cleaning up old data.
-	fn handle_end_era(era_duration: u64) -> ();
+	fn handle_end_era(era: EraIndex, era_duration: u64) -> ();
 
 	/// Set the exposure for each pool for reward computation
 	/// Exposure is set at the beginning of the era N for era N using stake from era N-1
@@ -45,6 +50,7 @@ pub trait FusionExt<AccountId, Balance> {
 		maybe_pool_account: &AccountId,
 		validator: &AccountId,
 		value: Balance,
+		era: EraIndex,
 	) -> ();
 
 	/// In the staking pallet, if a pool was slashed, we record an unapplied slash
@@ -68,7 +74,7 @@ pub trait FusionExt<AccountId, Balance> {
 	) -> bool;
 }
 impl<AccountId, Balance> FusionExt<AccountId, Balance> for () {
-	fn handle_end_era(_era_duration: u64) {
+	fn handle_end_era(_era: EraIndex, _era_duration: u64) {
 		()
 	}
 
@@ -92,6 +98,7 @@ impl<AccountId, Balance> FusionExt<AccountId, Balance> for () {
 		_maybe_pool_account: &AccountId,
 		_validator: &AccountId,
 		_value: Balance,
+		_era: EraIndex,
 	) {
 		()
 	}

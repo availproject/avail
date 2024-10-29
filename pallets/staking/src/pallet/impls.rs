@@ -556,7 +556,7 @@ impl<T: Config> Pallet<T> {
 			T::RewardRemainder::on_unbalanced(T::Currency::issue(remainder));
 
 			// FUSION CHANGE
-			T::FusionExt::handle_end_era(era_duration);
+			T::FusionExt::handle_end_era(active_era.index, era_duration);
 
 			// Clear offending validators.
 			<OffendingValidators<T>>::kill();
@@ -719,6 +719,9 @@ impl<T: Config> Pallet<T> {
 				let mut others = Vec::with_capacity(support.voters.len());
 				let mut own: BalanceOf<T> = Zero::zero();
 				let mut total: BalanceOf<T> = Zero::zero();
+				let active_era = ActiveEra::<T>::get()
+					.map(|era_info| era_info.index)
+					.unwrap_or(0);
 				support
 					.voters
 					.into_iter()
@@ -729,8 +732,9 @@ impl<T: Config> Pallet<T> {
 						} else {
 							// FUSION CHANGE
 							// This will update the fusion exposure in case the nominator is a fusion pool.
-							let _ =
-								T::FusionExt::update_pool_exposure(&nominator, &validator, stake);
+							let _ = T::FusionExt::update_pool_exposure(
+								&nominator, &validator, stake, active_era,
+							);
 
 							others.push(IndividualExposure {
 								who: nominator,

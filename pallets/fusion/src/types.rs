@@ -202,15 +202,12 @@ impl<T: Config> FusionCurrency<T> {
 		&self,
 		amount: FusionCurrencyBalance,
 		era: Option<EraIndex>,
-		rate: Option<BalanceOf<T>>,
 	) -> Result<BalanceOf<T>, Error<T>> {
-		let rate = rate.unwrap_or(
-			FusionCurrencyRates::<T>::get(
-				era.unwrap_or_else(T::StakingFusionDataProvider::current_era),
-				self.currency_id,
-			)
-			.ok_or(Error::<T>::CurrencyRateNotFound)?,
-		);
+		let rate = FusionCurrencyRates::<T>::get(
+			era.unwrap_or_else(T::StakingFusionDataProvider::active_era),
+			self.currency_id,
+		)
+		.ok_or(Error::<T>::CurrencyRateNotFound)?;
 
 		let rate = Pallet::<T>::u256(rate.try_into().map_err(|_| Error::<T>::ArithmeticError)?);
 		let amount = Pallet::<T>::u256(amount);
@@ -230,7 +227,7 @@ impl<T: Config> FusionCurrency<T> {
 		avail_amount: BalanceOf<T>,
 		era: Option<EraIndex>,
 	) -> Result<FusionCurrencyBalance, Error<T>> {
-		let era = era.unwrap_or_else(T::StakingFusionDataProvider::current_era);
+		let era = era.unwrap_or_else(T::StakingFusionDataProvider::active_era);
 
 		let rate = FusionCurrencyRates::<T>::get(era, self.currency_id)
 			.ok_or(Error::<T>::CurrencyRateNotFound)?;
@@ -366,11 +363,11 @@ impl<T: Config> FusionPool<T> {
 		let currency_value = self.points_to_currency(points, currency)?;
 
 		let avail_value = if let Some(currency) = currency {
-			currency.currency_to_avail(currency_value, era, None)?
+			currency.currency_to_avail(currency_value, era)?
 		} else {
 			let currency =
 				FusionCurrencies::<T>::get(self.currency_id).ok_or(Error::<T>::CurrencyNotFound)?;
-			currency.currency_to_avail(currency_value, era, None)?
+			currency.currency_to_avail(currency_value, era)?
 		};
 
 		Ok(avail_value)

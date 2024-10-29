@@ -114,7 +114,7 @@ pub mod pallet {
 		#[pallet::constant]
 		type HistoryDepth: Get<u32>;
 
-		/// A provider that gives the current era.
+		/// A provider that gives the information from the staking pallet.
 		type StakingFusionDataProvider: StakingFusionDataProvider<Self::AccountId>;
 	}
 
@@ -652,7 +652,7 @@ pub mod pallet {
 
 			FusionCurrencies::<T>::insert(currency_id, new_currency);
 			FusionCurrencyRates::<T>::insert(
-				T::StakingFusionDataProvider::current_era(),
+				T::StakingFusionDataProvider::active_era(),
 				currency_id,
 				initial_conversion_rate,
 			);
@@ -1646,7 +1646,7 @@ impl<T: Config> Pallet<T> {
 	/// Increase total value locked in avail
 	fn add_to_tvl(currency: &FusionCurrency<T>, value: FusionCurrencyBalance) -> DispatchResult {
 		let mut tvl_data = TotalValueLockedData::<T>::get();
-		let avail_value = currency.currency_to_avail(value, None, None)?;
+		let avail_value = currency.currency_to_avail(value, None)?;
 		tvl_data.add(avail_value)?;
 		TotalValueLockedData::<T>::put(tvl_data);
 		Ok(())
@@ -1655,7 +1655,7 @@ impl<T: Config> Pallet<T> {
 	/// Decrease total value locked in avail
 	fn sub_from_tvl(currency: &FusionCurrency<T>, value: FusionCurrencyBalance) -> DispatchResult {
 		let mut tvl_data = TotalValueLockedData::<T>::get();
-		let avail_value = currency.currency_to_avail(value, None, None)?;
+		let avail_value = currency.currency_to_avail(value, None)?;
 		tvl_data.sub(avail_value);
 		TotalValueLockedData::<T>::put(tvl_data);
 		Ok(())
@@ -1897,9 +1897,6 @@ impl<T: Config> Pallet<T> {
 				.claimed_rewards
 				.saturating_add(total_user_rewards);
 
-			// Mark rewards as claimed
-			ClaimedRewards::<T>::insert(era, (pool_id, evm_address), total_user_rewards);
-
 			// Fetch avail currency
 			let avail_currency = FusionCurrencies::<T>::get(AVAIL_CURRENCY_ID)
 				.ok_or(Error::<T>::CurrencyNotFound)?;
@@ -1918,6 +1915,9 @@ impl<T: Config> Pallet<T> {
 				total_user_rewards <= pool_claimable_balance.saturating_sub(existential_deposit),
 				Error::<T>::NotEnoughClaimableBalanceInPool
 			);
+
+			// Mark rewards as claimed
+			ClaimedRewards::<T>::insert(era, (pool_id, evm_address), total_user_rewards);
 
 			// Send the funds to the avail holdings account
 			T::Currency::transfer(
@@ -2144,15 +2144,15 @@ impl<T: Config> Pallet<T> {
 			Error::<T>::NoFundsToWithdraw
 		);
 
-		// Get current era
-		let current_era = T::StakingFusionDataProvider::current_era();
+		// Get active era
+		let active_era = T::StakingFusionDataProvider::active_era();
 
 		// Check if there are any unbonded chunks that are now withdrawable
 		let mut total_withdrawable: FusionCurrencyBalance = 0;
 		let mut remaining_unbonding_eras = BoundedVec::default();
 
 		for era in membership.unbonding_eras.iter() {
-			if era + T::BondingDuration::get() <= current_era {
+			if era + T::BondingDuration::get() <= active_era {
 				// This chunk is now withdrawable
 				let mut pool_era_unbonding_chunks = UnbondingChunks::<T>::get(pool_id, era);
 				let maybe_unbonding_chunk_index = pool_era_unbonding_chunks
@@ -2253,7 +2253,7 @@ impl<T: Config> Pallet<T> {
 		ensure!(balance > 0, Error::<T>::NoFundsToWithdraw);
 
 		// Fusion currency in avail
-		let balance_avail = currency.currency_to_avail(balance, None, None)?;
+		let balance_avail = currency.currency_to_avail(balance, None)?;
 
 		T::Currency::transfer(
 			&Self::avail_account(),
@@ -2541,6 +2541,7 @@ impl<T: Config> Pallet<T> {
 impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
 	fn set_fusion_exposures() -> () {
 		let era = T::StakingFusionDataProvider::current_era();
+		let planned_era = era.saturating_add(1);
 		let mut at_least_one = false;
 		// Iterate over all pools
 		for (pool_id, pool) in FusionPools::<T>::iter() {
@@ -2553,8 +2554,8 @@ impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
 				// Get currency
 				let Some(currency) = FusionCurrencies::<T>::get(pool.currency_id) else {
 					log::error!(
-						"Error while setting exposure for era {:?} and pool {:?} - Could not get related currency.",
-						era,
+						"Error while setting exposure for planned_era {:?} and pool {:?} - Could not get related currency.",
+						planned_era,
 						pool_id,
 					);
 					continue;
@@ -2566,8 +2567,8 @@ impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
 
 				let Ok(total_avail) = total_avail_result else {
 					log::error!(
-						"Error while setting exposure for era {:?} and pool {:?} - Could not compute avail amount from pool points. - Details: {:?}",
-						era,
+						"Error while setting exposure for planned_era {:?} and pool {:?} - Could not compute avail amount from pool points. - Details: {:?}",
+						planned_era,
 						pool_id,
 						total_avail_result
 					);
@@ -2600,7 +2601,7 @@ impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
 				// We set the exposure for era + 1
 				// The data must be available for the snapshot and next elections
 				let fusion_exposure = FusionExposure::<T> {
-					era,
+					era: planned_era,
 					total_avail,
 					total_points: pool.total_staked_points,
 					user_points: pool.members.clone(),
@@ -2612,18 +2613,16 @@ impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
 					boost_total_avail,
 					boost_additional_apy: boost_value,
 				};
-				FusionExposures::<T>::insert(era, pool_id, fusion_exposure);
+				FusionExposures::<T>::insert(planned_era, pool_id, fusion_exposure);
 				at_least_one = true;
 			}
 		}
 		if at_least_one {
-			Self::deposit_event(Event::<T>::ExposuresSet { era });
+			Self::deposit_event(Event::<T>::ExposuresSet { era: planned_era });
 		}
 	}
 
-	fn handle_end_era(era_duration: u64) -> () {
-		let era = T::StakingFusionDataProvider::current_era();
-
+	fn handle_end_era(era: EraIndex, era_duration: u64) -> () {
 		fn log_if_error<T>(
 			result: Result<T, DispatchError>,
 			function_name: &str,
@@ -2676,12 +2675,12 @@ impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
 		maybe_pool_account: &T::AccountId,
 		validator: &T::AccountId,
 		value: BalanceOf<T>,
+		era: EraIndex,
 	) -> () {
 		let Some(pool_id) = Self::get_pool_id_from_funds_account(maybe_pool_account) else {
 			return;
 		};
 
-		let era = T::StakingFusionDataProvider::current_era();
 		let _ = FusionExposures::<T>::try_mutate(
 			era,
 			pool_id,
@@ -2908,15 +2907,13 @@ impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
 
 				total_slashed = total_slashed.saturating_add(slashed_amount_from_pool);
 
-				let current_era = T::StakingFusionDataProvider::current_era();
-
 				// Slash the slashable unbonding chunks of the pool
 				let mut slashed_amount_from_chunks: FusionCurrencyBalance = 0;
 
 				// Iterate over all unbonding chunks for the specified pool
 				for (unbond_era, chunks) in UnbondingChunks::<T>::iter_prefix(pool_id) {
 					let mut updated_chunks = BoundedVec::default();
-					if unbond_era >= slash_era && slash_era <= current_era {
+					if unbond_era >= slash_era {
 						// Iterate over the chunks in the BoundedVec
 						for (evm_address, balance) in chunks {
 							// Calculate the slashed amount for this chunk

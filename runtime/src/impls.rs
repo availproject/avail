@@ -177,6 +177,11 @@ impl pallet_fusion::Config for Runtime {
 }
 
 impl pallet_fusion::StakingFusionDataProvider<AccountId> for Runtime {
+	fn active_era() -> EraIndex {
+		pallet_staking::Pallet::<Self>::active_era()
+			.map(|era_info| era_info.index)
+			.unwrap_or(0)
+	}
 	fn current_era() -> EraIndex {
 		pallet_staking::Pallet::<Self>::current_era().unwrap_or_default()
 	}
