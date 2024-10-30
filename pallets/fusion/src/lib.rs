@@ -307,6 +307,10 @@ pub mod pallet {
 			sender: T::AccountId,
 			amount: BalanceOf<T>,
 		},
+		FundsAccountWithdrawn {
+			recipient: T::AccountId,
+			amount: BalanceOf<T>,
+		},
 		/// Event triggered when a new currency is created
 		CurrencyCreated {
 			currency_id: CurrencyId,
@@ -1227,6 +1231,38 @@ pub mod pallet {
 			Self::do_set_pool_boost_allocations(evm_address, pool_ids, is_valid_origin)?;
 			Ok(())
 		}
+
+		/// Retrieve funds from a pool account.
+		#[pallet::call_index(21)]
+		#[pallet::weight(T::WeightInfo::create_currency())]
+		pub fn withdraw_pool_account(
+			origin: OriginFor<T>,
+			pool_id: PoolId,
+			amount: BalanceOf<T>,
+			dest: T::AccountId,
+		) -> DispatchResult {
+			ensure_root(origin)?;
+
+			ensure!(amount > BalanceOf::<T>::zero(), Error::<T>::InvalidAmount);
+
+			let funds_account = Self::get_pool_funds_account(pool_id);
+
+			let existence_requirement =
+				if FusionPools::<T>::get(pool_id).map_or(false, |pool| !pool.is_destroying()) {
+					ExistenceRequirement::KeepAlive
+				} else {
+					ExistenceRequirement::AllowDeath
+				};
+
+			T::Currency::transfer(&funds_account, &dest, amount, existence_requirement)?;
+
+			Self::deposit_event(Event::FundsAccountWithdrawn {
+				recipient: dest,
+				amount,
+			});
+
+			Ok(())
+		}
 	}
 }
 
@@ -1842,6 +1878,7 @@ impl<T: Config> Pallet<T> {
 			// Insert new membership for user
 			let new_membership = FusionMembership::<T> {
 				evm_address,
+				joined_era: T::StakingFusionDataProvider::current_era(),
 				active_points: points,
 				unbonding_eras: BoundedVec::default(),
 				is_compounding: true,

@@ -117,6 +117,8 @@ pub struct BoostData<T: Config> {
 pub struct FusionMembership<T: Config> {
 	/// Evm address of the user
 	pub evm_address: EvmAddress,
+	/// Era where the membership was created
+	pub joined_era: EraIndex,
 	/// The stake of the user represented by points
 	pub active_points: Points,
 	/// Unbonding eras of the user
