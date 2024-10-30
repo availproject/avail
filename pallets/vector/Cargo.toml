@@ -20,6 +20,22 @@ sp-runtime = { workspace = true, default-features = false }
 sp-std = { workspace = true, default-features = false }
 sp-core = { workspace = true, default-features = false }
 frame-benchmarking = { workspace = true, default-features = false, optional = true }
+# snark-bn254-verifier = { git = "https://github.com/succinctlabs/snark-bn254-verifier" }
+# sp1-sdk = "3.0.0"
+sp1-sdk = { git = "https://github.com/succinctlabs/sp1", branch = "yuwen/verifier-crate" }
+sp1-verifier = { git = "https://github.com/succinctlabs/sp1", branch = "yuwen/verifier-crate" }
+sp1-helios-primitives = { git = "https://github.com/succinctlabs/sp1-helios", branch = "umadayal/helios-0.7.0" }
+# helios = { git = "https://github.com/a16z/helios", version = "0.6.1" }
+# consensus-core = { git = "https://github.com/a16z/helios" }
+helios-consensus-core = { git = "https://github.com/a16z/helios" }
+alloy-primitives = "0.7.7"
+# common = { git = "https://github.com/a16z/helios", version = "0.6.1" }
+# sp1-sdk = { git = "https://github.com/sp1-patches/sp1-sdk", branch = "yuwen/verifier-crate" }
+# bn = { git = "https://github.com/sp1-patches/bn", branch = "patch-v0.7.0", package = "substrate-bn" }
+hex = "0.4.3"
+num-bigint = "0.4.6"
+num-traits = "0.2.19"
+# tokio = { version = "1", features = ["full"] }
 
 ark-bn254.workspace = true
 ark-groth16.workspace = true

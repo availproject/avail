@@ -28,7 +28,7 @@ kate-recovery = { git = "https://github.com/availproject/avail-core", tag = "cor
 # avail-core = { path = "../avail-core/core", default-features = false, features = [ "runtime"] }
 # kate = { path = "../avail-core/kate/", default-features = false }
 # kate-recovery = { path = "../avail-core/kate/recovery/", default-features = false}
-
+# sp1-helios-primitives = { git = "https://github.com/succinctlabs/sp1-helios.git" }
 avail-base = { path = "base", default-features = false }
 da-control = { path = "pallets/dactr", default-features = false }
 pallet-mandate = { path = "pallets/mandate", default-features = false }

@@ -20,13 +20,24 @@ use frame_support::{
 };
 use frame_system::RawOrigin;
 use hex_literal::hex;
+use num_bigint::BigUint;
+use num_traits::Num;
 use primitive_types::U256;
 use sp_core::{crypto::AccountId32, keccak_256, ByteArray};
 use sp_runtime::{testing::H256, traits::BadOrigin};
+// use snark_bn254_verifier::Groth16Verifier;
+// use bn::Fr;
+use sp1_sdk::SP1ProofWithPublicValues;
+use sp1_verifier::{Groth16Verifier, GROTH16_VK_BYTES};
 
 const TEST_SENDER_VEC: [u8; 32] =
 	hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d");
 const TEST_SENDER_ACCOUNT: AccountId32 = AccountId32::new(TEST_SENDER_VEC);
+
+// const REQUEST_ID: &str = "0x01jb00csmqe3tax204y8pe6crr";
+// const REQUEST_ID: &str = "0x01jb02hf25e3tanvqfhr2yrz7d";
+// const GROTH16_VK_BYTES: &[u8] = include_bytes!("../bn254-vk/groth16_vk.bin");
+const PROOF_FILE: &str = "proof.bin";
 
 fn get_valid_step_input() -> FunctionInput {
 	BoundedVec::truncate_from(
@@ -177,6 +188,26 @@ fn get_valid_amb_message() -> AddressedMessage {
 		destination_domain: 1,
 		id: 0,
 	}
+}
+
+#[test]
+fn test_sp1_helios_proof() {
+	let sp1_proof_with_public_values = SP1ProofWithPublicValues::load(PROOF_FILE).unwrap();
+
+    let proof = sp1_proof_with_public_values.bytes();
+    let public_inputs = sp1_proof_with_public_values.public_values.to_vec();
+
+
+    // This vkey hash was derived by calling `vk.bytes32()` on the verifying key.
+	let vkey_hash = "0x00788ce8dc2970920a3d3c072c8c07843d15f1307a53b3dd31b113c3e71c28e8";
+
+    let is_valid =
+        Groth16Verifier::verify(&proof, &public_inputs, vkey_hash, &GROTH16_VK_BYTES)
+            .expect("Groth16 proof is invalid");
+
+    if !is_valid {
+        panic!("Groth16 proof is invalid");
+    }
 }
 
 #[test]
