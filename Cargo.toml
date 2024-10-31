@@ -20,14 +20,21 @@ repository = "https://github.com/availproject/avail"
 license = "GNU GPLv3"
 homepage = "https://www.availproject.org/"
 
+# toufeeq/bridge-lc
 
 [workspace.dependencies]
-avail-core = { git = "https://github.com/availproject/avail-core", tag = "core-node-3", default-features = false, features = [ "runtime"] }
-kate = { git = "https://github.com/availproject/avail-core", tag = "core-node-3", default-features = false }
-kate-recovery = { git = "https://github.com/availproject/avail-core", tag = "core-node-3", default-features = false  }
+# avail-core = { git = "https://github.com/availproject/avail-core", tag = "core-node-3", default-features = false, features = [ "runtime"] }
+# kate = { git = "https://github.com/availproject/avail-core", tag = "core-node-3", default-features = false }
+# kate-recovery = { git = "https://github.com/availproject/avail-core", tag = "core-node-3", default-features = false  }
+# avail-core = { git = "https://github.com/availproject/avail-core", branch = "toufeeq/bridge-lc", default-features = false, features = [ "runtime"] }
+# kate = { git = "https://github.com/availproject/avail-core", branch = "toufeeq/bridge-lc", default-features = false }
+# kate-recovery = { git = "https://github.com/availproject/avail-core", branch = "toufeeq/bridge-lc", default-features = false  }
 # avail-core = { path = "../avail-core/core", default-features = false, features = [ "runtime"] }
 # kate = { path = "../avail-core/kate/", default-features = false }
 # kate-recovery = { path = "../avail-core/kate/recovery/", default-features = false}
+avail-core = { git = "https://github.com/availproject/avail-core", rev = "3ccb3910b3b5f070de7350a038b1b16e1becc294", default-features = false, features = ["runtime"] }
+kate = { git = "https://github.com/availproject/avail-core", rev = "3ccb3910b3b5f070de7350a038b1b16e1becc294", default-features = false }
+kate-recovery = { git = "https://github.com/availproject/avail-core", rev = "3ccb3910b3b5f070de7350a038b1b16e1becc294", default-features = false  }
 # sp1-helios-primitives = { git = "https://github.com/succinctlabs/sp1-helios.git" }
 avail-base = { path = "base", default-features = false }
 da-control = { path = "pallets/dactr", default-features = false }
@@ -248,6 +255,14 @@ sp-crypto-ec-utils = { git = "https://github.com/availproject/polkadot-sdk.git",
 # Other stuff
 uint = { git = "https://github.com/paritytech/parity-common.git", tag = "uint-v0.9.5" }
 rlp = { git = "https://github.com/paritytech/parity-common.git", tag = "rlp-v0.5.2" }
+# poly-multiproof = { git = "https://github.com/availproject/poly-multiproof", rev = "e17285c264d7acd6faea0da5950677e8beebe14e" }
+blst = { git = "https://github.com/ToufeeqP/blst", rev = "afdb0a4b7d98d4ff22c3a1d35faca223cde0ef3a" }
+
+# [patch."https://github.com/availproject/poly-multiproof.git"]
+# poly-multiproof = { git = "https://github.com/availproject/poly-multiproof", rev = "e17285c264d7acd6faea0da5950677e8beebe14e" }
+# poly-multiproof = { git = "https://github.com/availproject/poly-multiproof.git", branch = "toufeeq/blst-0.3.11" }
+# blst = { version = "0.3.13", optional = false }
+# blst = { git = "https://github.com/ToufeeqP/blst", rev = "afdb0a4b7d98d4ff22c3a1d35faca223cde0ef3a" }
 
 [workspace.lints.rust]
 suspicious_double_ref_op = { level = "allow", priority = 2 }

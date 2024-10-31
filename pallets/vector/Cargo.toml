@@ -27,7 +27,7 @@ sp1-verifier = { git = "https://github.com/succinctlabs/sp1", branch = "yuwen/ve
 sp1-helios-primitives = { git = "https://github.com/succinctlabs/sp1-helios", branch = "umadayal/helios-0.7.0" }
 # helios = { git = "https://github.com/a16z/helios", version = "0.6.1" }
 # consensus-core = { git = "https://github.com/a16z/helios" }
-helios-consensus-core = { git = "https://github.com/a16z/helios" }
+# helios-consensus-core = { git = "https://github.com/a16z/helios" }
 alloy-primitives = "0.7.7"
 # common = { git = "https://github.com/a16z/helios", version = "0.6.1" }
 # sp1-sdk = { git = "https://github.com/sp1-patches/sp1-sdk", branch = "yuwen/verifier-crate" }
