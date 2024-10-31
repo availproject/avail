@@ -67,7 +67,7 @@ std = [
 	"serde_json",
 	"sp-arithmetic/std",
 	"sp-core/std",
-	# "poly-multiproof?/std",
+	"poly-multiproof?/std",
 	# "hex?/std",
 	# "log?/std",
 	# "once_cell?/std",
