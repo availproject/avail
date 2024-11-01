@@ -22,12 +22,12 @@ sp-core = { workspace = true, default-features = false }
 frame-benchmarking = { workspace = true, default-features = false, optional = true }
 # snark-bn254-verifier = { git = "https://github.com/succinctlabs/snark-bn254-verifier" }
 # sp1-sdk = "3.0.0"
-sp1-sdk = { git = "https://github.com/succinctlabs/sp1", branch = "yuwen/verifier-crate", default-features = false }
-sp1-verifier = { git = "https://github.com/succinctlabs/sp1", branch = "yuwen/verifier-crate", default-features = false }
+sp1-sdk = { git = "https://github.com/succinctlabs/sp1", branch = "dev", default-features = false }
+sp1-verifier = { git = "https://github.com/succinctlabs/sp1", branch = "dev", default-features = false }
 sp1-helios-primitives = { git = "https://github.com/succinctlabs/sp1-helios", branch = "umadayal/helios-0.7.0", default-features = false }
 # helios = { git = "https://github.com/a16z/helios", version = "0.6.1" }
 # consensus-core = { git = "https://github.com/a16z/helios" }
-# helios-consensus-core = { git = "https://github.com/a16z/helios" }
+helios-consensus-core = { git = "https://github.com/a16z/helios" }
 alloy-primitives = "0.7.7"
 # common = { git = "https://github.com/a16z/helios", version = "0.6.1" }
 # sp1-sdk = { git = "https://github.com/sp1-patches/sp1-sdk", branch = "yuwen/verifier-crate" }
@@ -69,6 +69,7 @@ std = [
 	"sp-io/std",
 	"sp-runtime/std",
 	"sp-std/std",
+	"sp1-verifier/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",

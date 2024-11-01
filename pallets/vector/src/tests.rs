@@ -20,8 +20,8 @@ use frame_support::{
 };
 use frame_system::RawOrigin;
 use hex_literal::hex;
-use num_bigint::BigUint;
-use num_traits::Num;
+// use num_bigint::BigUint;
+// use num_traits::Num;
 use primitive_types::U256;
 use sp_core::{crypto::AccountId32, keccak_256, ByteArray};
 use sp_runtime::{testing::H256, traits::BadOrigin};

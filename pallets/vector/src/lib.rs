@@ -14,6 +14,10 @@ use frame_support::{
 use sp_core::H256;
 use sp_runtime::SaturatedConversion;
 use sp_std::{vec, vec::Vec};
+use helios_consensus_core::{
+    apply_finality_update, apply_update, verify_finality_update, verify_update,
+};
+use sp1_helios_primitives::types::{ProofInputs, ProofOutputs};
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
