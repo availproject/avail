@@ -74,7 +74,7 @@ std = [
 	"proptest/std",
 	"serde?/std",
 	"serde_json?/std",
-	"thiserror-no-std/std"
+	# "thiserror-no-std/std"
 ]
 
 serde = [ "dep:serde" ]
