@@ -68,13 +68,13 @@ std = [
 	"sp-arithmetic/std",
 	"sp-core/std",
 	"poly-multiproof?/std",
-	# "hex?/std",
-	# "log?/std",
-	# "once_cell?/std",
-	# "proptest/std",
-	# "serde?/std",
-	# "serde_json?/std",
-	# "thiserror-no-std/std"
+	"hex?/std",
+	"log?/std",
+	"once_cell?/std",
+	"proptest/std",
+	"serde?/std",
+	"serde_json?/std",
+	"thiserror-no-std/std"
 ]
 
 serde = [ "dep:serde" ]
