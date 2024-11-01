@@ -32,9 +32,13 @@ homepage = "https://www.availproject.org/"
 # avail-core = { path = "../avail-core/core", default-features = false, features = [ "runtime"] }
 # kate = { path = "../avail-core/kate/", default-features = false }
 # kate-recovery = { path = "../avail-core/kate/recovery/", default-features = false}
-avail-core = { git = "https://github.com/availproject/avail-core", rev = "3ccb3910b3b5f070de7350a038b1b16e1becc294", default-features = false, features = ["runtime"] }
-kate = { git = "https://github.com/availproject/avail-core", rev = "3ccb3910b3b5f070de7350a038b1b16e1becc294", default-features = false }
-kate-recovery = { git = "https://github.com/availproject/avail-core", rev = "3ccb3910b3b5f070de7350a038b1b16e1becc294", default-features = false  }
+# avail-core = { git = "https://github.com/availproject/avail-core", rev = "3ccb3910b3b5f070de7350a038b1b16e1becc294", default-features = false, features = ["runtime"] }
+# kate = { git = "https://github.com/availproject/avail-core", rev = "3ccb3910b3b5f070de7350a038b1b16e1becc294", default-features = false }
+# kate-recovery = { git = "https://github.com/availproject/avail-core", rev = "3ccb3910b3b5f070de7350a038b1b16e1becc294", default-features = false  }
+avail-core = { git = "https://github.com/succinctlabs/avail-core.git", branch = "umadayal/bump-polkadot-sdk", default-features = false, features = ["runtime"] }
+kate = { git = "https://github.com/succinctlabs/avail-core.git", branch = "umadayal/bump-polkadot-sdk", default-features = false }
+kate-recovery = { git = "https://github.com/succinctlabs/avail-core.git", branch = "umadayal/bump-polkadot-sdk", default-features = false  }
+
 # sp1-helios-primitives = { git = "https://github.com/succinctlabs/sp1-helios.git" }
 avail-base = { path = "base", default-features = false }
 da-control = { path = "pallets/dactr", default-features = false }
@@ -44,6 +48,7 @@ da-runtime = { path = "runtime", default-features = false }
 kate-rpc = { path = "rpc/kate-rpc" }
 testing-rpc = { path = "rpc/testing-rpc" }
 patricia-merkle-trie = { path = "patricia-merkle-trie", default-features = false }
+
 
 sc-basic-authorship = { path = "client/basic-authorship", default-features = false }
 frame-system = { path = "pallets/system", default-features = false }

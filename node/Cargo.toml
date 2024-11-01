@@ -21,11 +21,13 @@ name = "avail-node"
 # Internals
 avail-base.workspace = true
 avail-core = { workspace = true, features = ["std"] }
+# avail-core.workspace = true
 kate.workspace = true
 da-runtime.workspace = true
 da-control.workspace = true
 kate-rpc.workspace = true
 testing-rpc.workspace = true
+# pallet-vector = { workspace = true, features = ["std"] }
 pallet-vector.workspace = true
 frame-system-rpc-runtime-api.workspace = true
 frame-system = { workspace = true, default-features = false }
