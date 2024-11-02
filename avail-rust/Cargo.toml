@@ -47,3 +47,6 @@ sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "pol
 sp-io = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10" }
 sp-runtime = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10" }
 sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10" }
+
+[features]
+reconnecting-rpc-client = ["subxt/reconnecting-rpc-client"]
