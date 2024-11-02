@@ -13,10 +13,9 @@ pub use session::*;
 pub use staking::*;
 
 use crate::{
-	rpcs::Rpc, utils_raw::progress_transaction, Api, AvailBlocksClient, AvailConfig, BlockHash,
-	TransactionInBlock, WaitFor,
+	rpcs::Rpc, utils_raw::progress_transaction, Api, AvailBlocksClient, AvailConfig,
+	TransactionInBlock, WaitFor, H256,
 };
-use sp_core::H256;
 use subxt::{blocks::ExtrinsicEvents, tx::TxProgress};
 
 pub type Params =
@@ -65,10 +64,7 @@ async fn block_and_tx_hash(
 	Ok((block_hash, block_number, tx_hash, tx_index))
 }
 
-async fn get_block_number(
-	blocks: &AvailBlocksClient,
-	block_hash: BlockHash,
-) -> Result<u32, String> {
+async fn get_block_number(blocks: &AvailBlocksClient, block_hash: H256) -> Result<u32, String> {
 	let block_number = blocks
 		.at(block_hash)
 		.await
@@ -106,10 +102,9 @@ mod tests {
 	#[tokio::test]
 	async fn testing_function() {
 		let sdk = crate::sdk::SDK::new("ws://127.0.0.1:9944").await.unwrap();
-		let h = BlockHash::from_str(
-			"0x6c5ebed687ed008b76028072fe1ad0a06ecf3c00dd9067aa049ea14e180702f8",
-		)
-		.unwrap();
+		let h =
+			H256::from_str("0x6c5ebed687ed008b76028072fe1ad0a06ecf3c00dd9067aa049ea14e180702f8")
+				.unwrap();
 		match sdk.rpc.kate.query_rows(vec![0], Some(h)).await {
 			Ok(a) => {
 				dbg!(a);

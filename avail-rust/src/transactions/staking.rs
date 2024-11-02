@@ -3,9 +3,7 @@ use crate::api_dev::api::runtime_types::sp_arithmetic::per_things::Perbill;
 use crate::rpcs::Rpc;
 use crate::sdk::WaitFor;
 use crate::utils_raw::fetch_transaction;
-use crate::{
-	avail, AccountId, AvailBlocksClient, AvailConfig, BlockHash, RewardDestination, TxApi,
-};
+use crate::{avail, AccountId, AvailBlocksClient, AvailConfig, RewardDestination, TxApi, H256};
 
 use std::str::FromStr;
 use subxt::blocks::ExtrinsicEvents;
@@ -22,9 +20,9 @@ use super::progress_transaction_ex;
 pub struct BondTxSuccess {
 	pub event: StakingEvents::Bonded,
 	pub events: ExtrinsicEvents<AvailConfig>,
-	pub tx_hash: BlockHash,
+	pub tx_hash: H256,
 	pub tx_index: u32,
-	pub block_hash: BlockHash,
+	pub block_hash: H256,
 	pub block_number: u32,
 }
 
@@ -32,9 +30,9 @@ pub struct BondTxSuccess {
 pub struct BondExtraTxSuccess {
 	pub event: StakingEvents::Bonded,
 	pub events: ExtrinsicEvents<AvailConfig>,
-	pub tx_hash: BlockHash,
+	pub tx_hash: H256,
 	pub tx_index: u32,
-	pub block_hash: BlockHash,
+	pub block_hash: H256,
 	pub block_number: u32,
 }
 
@@ -42,9 +40,9 @@ pub struct BondExtraTxSuccess {
 pub struct ChillTxSuccess {
 	pub event: Option<StakingEvents::Chilled>,
 	pub events: ExtrinsicEvents<AvailConfig>,
-	pub tx_hash: BlockHash,
+	pub tx_hash: H256,
 	pub tx_index: u32,
-	pub block_hash: BlockHash,
+	pub block_hash: H256,
 	pub block_number: u32,
 }
 
@@ -52,9 +50,9 @@ pub struct ChillTxSuccess {
 pub struct ChillOtherTxSuccess {
 	pub event: StakingEvents::Chilled,
 	pub events: ExtrinsicEvents<AvailConfig>,
-	pub tx_hash: BlockHash,
+	pub tx_hash: H256,
 	pub tx_index: u32,
-	pub block_hash: BlockHash,
+	pub block_hash: H256,
 	pub block_number: u32,
 }
 
@@ -62,9 +60,9 @@ pub struct ChillOtherTxSuccess {
 pub struct NominateTxSuccess {
 	pub events: ExtrinsicEvents<AvailConfig>,
 	pub tx_data: StakingCalls::Nominate,
-	pub tx_hash: BlockHash,
+	pub tx_hash: H256,
 	pub tx_index: u32,
-	pub block_hash: BlockHash,
+	pub block_hash: H256,
 	pub block_number: u32,
 }
 
@@ -72,9 +70,9 @@ pub struct NominateTxSuccess {
 pub struct UnbondTxSuccess {
 	pub event: StakingEvents::Unbonded,
 	pub events: ExtrinsicEvents<AvailConfig>,
-	pub tx_hash: BlockHash,
+	pub tx_hash: H256,
 	pub tx_index: u32,
-	pub block_hash: BlockHash,
+	pub block_hash: H256,
 	pub block_number: u32,
 }
 
@@ -82,9 +80,9 @@ pub struct UnbondTxSuccess {
 pub struct ValidateTxSuccess {
 	pub event: StakingEvents::ValidatorPrefsSet,
 	pub events: ExtrinsicEvents<AvailConfig>,
-	pub tx_hash: BlockHash,
+	pub tx_hash: H256,
 	pub tx_index: u32,
-	pub block_hash: BlockHash,
+	pub block_hash: H256,
 	pub block_number: u32,
 }
 
@@ -375,8 +373,8 @@ impl Staking {
 }
 
 pub async fn tx_data_staking_nominate(
-	block_hash: BlockHash,
-	tx_hash: BlockHash,
+	block_hash: H256,
+	tx_hash: H256,
 	blocks: &AvailBlocksClient,
 ) -> Result<StakingCalls::Nominate, String> {
 	let transaction =

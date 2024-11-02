@@ -1,31 +1,30 @@
-use crate::avail::nomination_pools::calls::types::set_claim_permission::Permission;
-use crate::avail::nomination_pools::calls::types::set_commission::NewCommission as NewCommissionOriginal;
-use crate::avail::nomination_pools::calls::types::set_state::State;
-use crate::avail::runtime_types::pallet_nomination_pools::BondExtra;
-use crate::avail::runtime_types::sp_arithmetic::per_things::Perbill;
+use super::options::{from_options_to_params, Options};
+use super::progress_transaction_ex;
+use crate::avail::{
+	nomination_pools::calls::types as NominationPoolsCalls,
+	nomination_pools::calls::types::set_claim_permission::Permission,
+	nomination_pools::calls::types::set_commission::NewCommission as NewCommissionOriginal,
+	nomination_pools::calls::types::set_state::State,
+	nomination_pools::events as NominationPoolsEvents,
+	runtime_types::pallet_nomination_pools::BondExtra,
+	runtime_types::sp_arithmetic::per_things::Perbill,
+};
 use crate::rpcs::Rpc;
 use crate::sdk::WaitFor;
 use crate::utils_raw::fetch_transaction;
-use crate::{avail, AccountId, AvailBlocksClient, AvailConfig, BlockHash, TxApi};
-
+use crate::{avail, AccountId, AvailBlocksClient, AvailConfig, TxApi, H256};
 use std::str::FromStr;
 use subxt::blocks::ExtrinsicEvents;
 use subxt_signer::sr25519::Keypair;
-
-use avail::nomination_pools::calls::types as NominationPoolsCalls;
-use avail::nomination_pools::events as NominationPoolsEvents;
-
-use super::options::{from_options_to_params, Options};
-use super::progress_transaction_ex;
 
 #[derive(Debug)]
 pub struct PoolCreateTxSuccess {
 	pub event: NominationPoolsEvents::Created,
 	pub event2: NominationPoolsEvents::Bonded,
 	pub events: ExtrinsicEvents<AvailConfig>,
-	pub tx_hash: BlockHash,
+	pub tx_hash: H256,
 	pub tx_index: u32,
-	pub block_hash: BlockHash,
+	pub block_hash: H256,
 	pub block_number: u32,
 }
 
@@ -34,9 +33,9 @@ pub struct PoolCreateWithPoolIdTxSuccess {
 	pub event: NominationPoolsEvents::Created,
 	pub event2: NominationPoolsEvents::Bonded,
 	pub events: ExtrinsicEvents<AvailConfig>,
-	pub tx_hash: BlockHash,
+	pub tx_hash: H256,
 	pub tx_index: u32,
-	pub block_hash: BlockHash,
+	pub block_hash: H256,
 	pub block_number: u32,
 }
 
@@ -44,9 +43,9 @@ pub struct PoolCreateWithPoolIdTxSuccess {
 pub struct PoolJoinTxSuccess {
 	pub event: NominationPoolsEvents::Bonded,
 	pub events: ExtrinsicEvents<AvailConfig>,
-	pub tx_hash: BlockHash,
+	pub tx_hash: H256,
 	pub tx_index: u32,
-	pub block_hash: BlockHash,
+	pub block_hash: H256,
 	pub block_number: u32,
 }
 
@@ -54,9 +53,9 @@ pub struct PoolJoinTxSuccess {
 pub struct PoolNominateTxSuccess {
 	pub events: ExtrinsicEvents<AvailConfig>,
 	pub tx_data: NominationPoolsCalls::Nominate,
-	pub tx_hash: BlockHash,
+	pub tx_hash: H256,
 	pub tx_index: u32,
-	pub block_hash: BlockHash,
+	pub block_hash: H256,
 	pub block_number: u32,
 }
 
@@ -64,9 +63,9 @@ pub struct PoolNominateTxSuccess {
 pub struct PoolBondExtraTxSuccess {
 	pub event: NominationPoolsEvents::Bonded,
 	pub events: ExtrinsicEvents<AvailConfig>,
-	pub tx_hash: BlockHash,
+	pub tx_hash: H256,
 	pub tx_index: u32,
-	pub block_hash: BlockHash,
+	pub block_hash: H256,
 	pub block_number: u32,
 }
 
@@ -74,9 +73,9 @@ pub struct PoolBondExtraTxSuccess {
 pub struct PoolSetCommissionTxSuccess {
 	pub event: NominationPoolsEvents::PoolCommissionUpdated,
 	pub events: ExtrinsicEvents<AvailConfig>,
-	pub tx_hash: BlockHash,
+	pub tx_hash: H256,
 	pub tx_index: u32,
-	pub block_hash: BlockHash,
+	pub block_hash: H256,
 	pub block_number: u32,
 }
 
@@ -84,9 +83,9 @@ pub struct PoolSetCommissionTxSuccess {
 pub struct PoolSetStateTxSuccess {
 	pub event: Option<NominationPoolsEvents::StateChanged>,
 	pub events: ExtrinsicEvents<AvailConfig>,
-	pub tx_hash: BlockHash,
+	pub tx_hash: H256,
 	pub tx_index: u32,
-	pub block_hash: BlockHash,
+	pub block_hash: H256,
 	pub block_number: u32,
 }
 
@@ -94,27 +93,27 @@ pub struct PoolSetStateTxSuccess {
 pub struct PoolClaimPayoutTxSuccess {
 	pub event: Option<NominationPoolsEvents::PaidOut>,
 	pub events: ExtrinsicEvents<AvailConfig>,
-	pub tx_hash: BlockHash,
+	pub tx_hash: H256,
 	pub tx_index: u32,
-	pub block_hash: BlockHash,
+	pub block_hash: H256,
 	pub block_number: u32,
 }
 
 #[derive(Debug)]
 pub struct PoolChillTxSuccess {
 	pub events: ExtrinsicEvents<AvailConfig>,
-	pub tx_hash: BlockHash,
+	pub tx_hash: H256,
 	pub tx_index: u32,
-	pub block_hash: BlockHash,
+	pub block_hash: H256,
 	pub block_number: u32,
 }
 
 #[derive(Debug)]
 pub struct PoolSetClaimPermissionTxSuccess {
 	pub events: ExtrinsicEvents<AvailConfig>,
-	pub tx_hash: BlockHash,
+	pub tx_hash: H256,
 	pub tx_index: u32,
-	pub block_hash: BlockHash,
+	pub block_hash: H256,
 	pub block_number: u32,
 }
 
@@ -122,9 +121,9 @@ pub struct PoolSetClaimPermissionTxSuccess {
 pub struct PoolClaimCommissionTxSuccess {
 	pub event: NominationPoolsEvents::PoolCommissionClaimed,
 	pub events: ExtrinsicEvents<AvailConfig>,
-	pub tx_hash: BlockHash,
+	pub tx_hash: H256,
 	pub tx_index: u32,
-	pub block_hash: BlockHash,
+	pub block_hash: H256,
 	pub block_number: u32,
 }
 
@@ -132,9 +131,9 @@ pub struct PoolClaimCommissionTxSuccess {
 pub struct PoolClaimPayoutOtherTxSuccess {
 	pub event: Option<NominationPoolsEvents::PaidOut>,
 	pub events: ExtrinsicEvents<AvailConfig>,
-	pub tx_hash: BlockHash,
+	pub tx_hash: H256,
 	pub tx_index: u32,
-	pub block_hash: BlockHash,
+	pub block_hash: H256,
 	pub block_number: u32,
 }
 
@@ -142,18 +141,18 @@ pub struct PoolClaimPayoutOtherTxSuccess {
 pub struct PoolUnbondTxSuccess {
 	pub event: Option<NominationPoolsEvents::Unbonded>,
 	pub events: ExtrinsicEvents<AvailConfig>,
-	pub tx_hash: BlockHash,
+	pub tx_hash: H256,
 	pub tx_index: u32,
-	pub block_hash: BlockHash,
+	pub block_hash: H256,
 	pub block_number: u32,
 }
 
 #[derive(Debug)]
 pub struct PoolSetMetadataTxSuccess {
 	pub events: ExtrinsicEvents<AvailConfig>,
-	pub tx_hash: BlockHash,
+	pub tx_hash: H256,
 	pub tx_index: u32,
-	pub block_hash: BlockHash,
+	pub block_hash: H256,
 	pub block_number: u32,
 }
 
@@ -161,9 +160,9 @@ pub struct PoolSetMetadataTxSuccess {
 pub struct PoolWithdrawUnbondedTxSuccess {
 	pub event: Option<NominationPoolsEvents::Withdrawn>,
 	pub events: ExtrinsicEvents<AvailConfig>,
-	pub tx_hash: BlockHash,
+	pub tx_hash: H256,
 	pub tx_index: u32,
-	pub block_hash: BlockHash,
+	pub block_hash: H256,
 	pub block_number: u32,
 }
 
@@ -773,8 +772,8 @@ impl NominationPools {
 }
 
 pub async fn tx_data_pool_nominate(
-	block_hash: BlockHash,
-	tx_hash: BlockHash,
+	block_hash: H256,
+	tx_hash: H256,
 	blocks: &AvailBlocksClient,
 ) -> Result<NominationPoolsCalls::Nominate, String> {
 	let transaction =
