@@ -42,7 +42,7 @@
     "typescript": "^5.2.2"
   },
   "dependencies": {
-    "@polkadot/api": "^14.1.1",
+    "@polkadot/api": "^14.2.2",
     "neverthrow": "^8.1.1"
   },
   "resolutions": {
