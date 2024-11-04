@@ -20,23 +20,15 @@ use frame_support::{
 };
 use frame_system::RawOrigin;
 use hex_literal::hex;
-// use num_bigint::BigUint;
-// use num_traits::Num;
 use primitive_types::U256;
 use sp_core::{crypto::AccountId32, keccak_256, ByteArray};
 use sp_runtime::{testing::H256, traits::BadOrigin};
-// use snark_bn254_verifier::Groth16Verifier;
-// use bn::Fr;
 use sp1_sdk::SP1ProofWithPublicValues;
 use sp1_verifier::{Groth16Verifier, GROTH16_VK_BYTES};
 
 const TEST_SENDER_VEC: [u8; 32] =
 	hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d");
 const TEST_SENDER_ACCOUNT: AccountId32 = AccountId32::new(TEST_SENDER_VEC);
-
-// const REQUEST_ID: &str = "0x01jb00csmqe3tax204y8pe6crr";
-// const REQUEST_ID: &str = "0x01jb02hf25e3tanvqfhr2yrz7d";
-// const GROTH16_VK_BYTES: &[u8] = include_bytes!("../bn254-vk/groth16_vk.bin");
 const PROOF_FILE: &str = "proof.bin";
 
 fn get_valid_step_input() -> FunctionInput {

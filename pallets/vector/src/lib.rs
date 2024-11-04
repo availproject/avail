@@ -14,14 +14,9 @@ use frame_support::{
 use sp_core::H256;
 use sp_runtime::SaturatedConversion;
 use sp_std::{vec, vec::Vec};
-use helios_consensus_core::{
-    apply_finality_update, apply_update, verify_finality_update, verify_update,
-};
-use alloy_primitives::{B256, U256};
 use alloy_sol_types::SolValue;
-use sp1_helios_primitives::types::{ProofInputs, ProofOutputs};
+use sp1_helios_primitives::types::ProofOutputs;
 use sp1_verifier::{Groth16Verifier, GROTH16_VK_BYTES};
-use sp1_sdk::SP1ProofWithPublicValues;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 pub mod constants;
@@ -47,6 +42,8 @@ pub const FAILED_SEND_MSG_ID: &[u8] = b"vector:failed_send_msg_txs";
 pub const LOG_TARGET: &str = "runtime::vector";
 pub const ROTATE_POSEIDON_OUTPUT_LENGTH: u32 = 32;
 pub const STEP_OUTPUT_LENGTH: u32 = 74;
+
+const SP1_HELIOS_VKEY: &str = "0x00788ce8dc2970920a3d3c072c8c07843d15f1307a53b3dd31b113c3e71c28e8";
 
 pub type BalanceOf<T> =
 	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -431,24 +428,21 @@ pub mod pallet {
 			let new_head = u64::from_le_bytes(new_head[..8].try_into().unwrap());
 			ensure!(new_head <= head, Error::<T>::SlotBehindHead);
 
-			let vkey_hash = "0x00788ce8dc2970920a3d3c072c8c07843d15f1307a53b3dd31b113c3e71c28e8";
-			let is_valid = Groth16Verifier::verify(&proof_bytes, &public_values, vkey_hash, &GROTH16_VK_BYTES)
+			
+			let is_valid = Groth16Verifier::verify(&proof_bytes, &public_values, SP1_HELIOS_VKEY, &GROTH16_VK_BYTES)
 				.expect("Groth16 proof is invalid");
 			ensure!(is_valid, Error::<T>::VerificationFailed);
 
-
-			// head = proof_outputs.newHead;
 			Head::<T>::set(new_head);
 
 			let header = Headers::<T>::get(new_head);
 			let new_header = H256::from_slice(proof_outputs.newHeader.as_slice());
 			ensure!(header == H256::zero(), Error::<T>::HeaderRootAlreadySet);
-			// Headers::<T>::set(proof_outputs.newHead, proof_outputs.newHeader);
 
 			let execution_state_root = ExecutionStateRoots::<T>::get(new_head);
 			let new_execution_state_root = H256::from_slice(proof_outputs.executionStateRoot.as_slice());
 			ensure!(execution_state_root == H256::zero(), Error::<T>::StateRootAlreadySet);
-			// ExecutionStateRoots::<T>::set(proof_outputs.newHead, proof_outputs.newExecutionStateRoot);
+			
 			Headers::<T>::insert(
 				new_head,
 				new_header,
