@@ -6,7 +6,7 @@ const main = async () => {
 
   // Input
   const account = new Keyring({ type: "sr25519" }).addFromUri("//Bob")
-  const amount = new BN(10).pow(new BN(18)).mul(new BN(10000)) // 10_000 Avail
+  const amount = SDK.oneAvail().mul(new BN(10000)) // 10_000 Avail
 
   const root: string = "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY" // Alice
   const nominator: string = "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY" // Alice

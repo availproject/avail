@@ -205,7 +205,7 @@ export namespace Events {
     constructor(
       public from: string,
       public to: string,
-      public amount: string,
+      public amount: BN,
     ) {}
     static New(events: EventRecord[]): TransferEvent | undefined {
       const ed: any = events.find((e) => e.event.method == "Transfer")?.event.data
@@ -213,7 +213,7 @@ export namespace Events {
         return undefined
       }
 
-      return new TransferEvent(ed["from"].toString(), ed["to"].toString(), ed["amount"].toString())
+      return new TransferEvent(ed["from"].toString(), ed["to"].toString(), ed["amount"])
     }
   }
 

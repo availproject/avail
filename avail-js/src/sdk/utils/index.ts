@@ -56,6 +56,9 @@ export class Utils {
   hexStringToHash(value: string): Result<H256, string> {
     return hexStringToHash(this.api, value)
   }
+  hexStringToHashUnsafe(value: string): H256 {
+    return hexStringToHashUnsafe(this.api, value)
+  }
 }
 
 export async function parseTransactionResult(
@@ -124,17 +127,25 @@ export async function getNonceNode(api: ApiPromise, address: string): Promise<nu
 
 export function hexStringToHash(api: ApiPromise, value: string): Result<H256, string> {
   if (!value.startsWith("0x")) {
-    return err("Hash needs to start with 0x")
+    return err("Failed to convert hex string to H256. Hash needs to start with 0x")
   }
 
   const hexString = value.slice(2)
   if (hexString.length != 64) {
-    return err(`Failed to convert string to H256. Expected 64 bytes got ${hexString.length}.`)
+    return err(`Failed to convert hex string to H256. Expected length 64 got ${hexString.length}.`)
   }
 
   const u8a = hexToU8a(hexString)
   const hex = new U8aFixed(api.registry, u8a)
   return ok(hex)
+}
+
+export function hexStringToHashUnsafe(api: ApiPromise, value: string): H256 {
+  const hash = hexStringToHash(api, value)
+  if (hash.isErr()) {
+    throw new Error(hash.error)
+  }
+  return hash.value
 }
 
 /**

@@ -36,6 +36,10 @@ export class Account {
     this.waitFor = value
   }
 
+  address(): string {
+    return this.keyring.address
+  }
+
   async balanceTransfer(dest: string, value: BN): Promise<TransferKeepAliveTxSuccess | GenericFailure> {
     const options = this.buildOptions()
     return await this.sdk.tx.balances.transferKeepAlive(dest, value, this.waitFor, this.keyring, options)

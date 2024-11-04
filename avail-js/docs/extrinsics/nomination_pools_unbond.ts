@@ -7,7 +7,7 @@ const main = async () => {
   // Input
   const account = new Keyring({ type: "sr25519" }).addFromUri("//Alice")
   const memberAccount = "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY" // Alice
-  const unbondingPoints = new BN(10).pow(new BN(18)).mul(new BN(100)) // 100 Avail
+  const unbondingPoints = SDK.oneAvail().mul(new BN(100)) // 100 Avail
 
   const result = await sdk.tx.nominationPools.unbond(memberAccount, unbondingPoints, WaitFor.BlockInclusion, account)
   if (result.isErr) {

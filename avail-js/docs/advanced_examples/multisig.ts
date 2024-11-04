@@ -56,7 +56,7 @@ const main = async () => {
 
 async function fundMultisigAccount(sdk: SDK, alice: KeyringPair, multisigAddress: string): Promise<string> {
   console.log("Funding multisig account...")
-  const amount = new BN(10).pow(new BN(18)).mul(new BN(100)) // 100 Avail
+  const amount = SDK.oneAvail().mul(new BN(100)) // 100 Avail
   const result = await sdk.tx.balances.transferKeepAlive(multisigAddress, amount, WaitFor.BlockInclusion, alice)
   if (result.isErr) {
     console.log(result.reason)

@@ -1,4 +1,4 @@
-import { SDK, WaitFor, Keyring, BN } from "avail-js-sdk"
+import { SDK, WaitFor, Keyring } from "avail-js-sdk"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -6,7 +6,7 @@ const main = async () => {
 
   // Input
   const account = new Keyring({ type: "sr25519" }).addFromUri("//Alice")
-  const value = new BN(10).pow(new BN(18)) // one Avail
+  const value = SDK.oneAvail()
 
   const result = await sdk.tx.staking.unbond(value, WaitFor.BlockInclusion, account)
   if (result.isErr) {

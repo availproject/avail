@@ -16,24 +16,44 @@ export class Block {
     this.signedBlock = block
   }
 
-  getSubmitDataAll(): DataSubmission[] {
-    return getSubmitDataAll(this.signedBlock)
+  submitDataAll(): DataSubmission[] {
+    return submitDataAll(this.signedBlock)
   }
 
-  getSubmitDataHash(txHash: H256): Result<DataSubmission, string> {
-    return getSubmitDataHash(this.signedBlock, txHash)
+  submitDataBySigner(signer: string): DataSubmission[] {
+    return submitDataBySigner(this.signedBlock, signer)
   }
 
-  getSubmitDataIndex(txIndex: number): Result<DataSubmission, string> {
-    return getSubmitDataIndex(this.signedBlock, txIndex)
+  submitDataByIndex(txIndex: number): Result<DataSubmission, string> {
+    return submitDataByIndex(this.signedBlock, txIndex)
+  }
+
+  submitDataByHash(txHash: H256): Result<DataSubmission, string> {
+    return submitDataByHash(this.signedBlock, txHash)
+  }
+
+  transactionCount(): number {
+    return transactionCount(this.signedBlock)
+  }
+
+  transactionBySigner(signer: string): GenericExtrinsic[] {
+    return transactionBySigner(this.signedBlock, signer)
+  }
+
+  transactionByIndex(txIndex: number): Result<GenericExtrinsic, string> {
+    return transactionByIndex(this.signedBlock, txIndex)
+  }
+
+  transactionByHash(txHash: H256): GenericExtrinsic[] {
+    return transactionByHash(this.signedBlock, txHash)
   }
 }
 
-export function getSubmitDataAll(block: SignedBlock): DataSubmission[] {
+export function submitDataAll(block: SignedBlock): DataSubmission[] {
   const dataSubmissions = []
   const txs = block.block.extrinsics
   for (let i = 0; i < txs.length; i += 1) {
-    const maybeDataSubmission = getSubmitDataIndex(block, i)
+    const maybeDataSubmission = submitDataByIndex(block, i)
     if (maybeDataSubmission.isOk()) {
       dataSubmissions.push(maybeDataSubmission.value)
     }
@@ -42,7 +62,15 @@ export function getSubmitDataAll(block: SignedBlock): DataSubmission[] {
   return dataSubmissions
 }
 
-export function getSubmitDataHash(block: SignedBlock, txHash: H256): Result<DataSubmission, string> {
+export function submitDataBySigner(block: SignedBlock, signer: string): DataSubmission[] {
+  const allSubmissions = submitDataAll(block)
+
+  return allSubmissions.filter((sub) => {
+    return sub.txSigner == signer
+  })
+}
+
+export function submitDataByHash(block: SignedBlock, txHash: H256): Result<DataSubmission, string> {
   const index = block.block.extrinsics.findIndex((tx) => {
     return tx.hash.toHex() == txHash.toHex()
   })
@@ -50,10 +78,10 @@ export function getSubmitDataHash(block: SignedBlock, txHash: H256): Result<Data
     return err("Failed to extract data. Transaction has not been found")
   }
 
-  return getSubmitDataIndex(block, index)
+  return submitDataByIndex(block, index)
 }
 
-export function getSubmitDataIndex(block: SignedBlock, txIndex: number): Result<DataSubmission, string> {
+export function submitDataByIndex(block: SignedBlock, txIndex: number): Result<DataSubmission, string> {
   const transactions = block.block.extrinsics
   if (transactions.length < txIndex) {
     return err("Failed to extract data. Transaction has not been found")
@@ -70,7 +98,32 @@ export function getSubmitDataIndex(block: SignedBlock, txIndex: number): Result<
   return ok(new DataSubmission(txHash, txIndex, data, txSigner))
 }
 
-function extractDADataFromTx(tx: GenericExtrinsic): Result<string, string> {
+export function transactionCount(block: SignedBlock): number {
+  return block.block.extrinsics.length
+}
+
+export function transactionBySigner(block: SignedBlock, signer: string): GenericExtrinsic[] {
+  return block.block.extrinsics.filter((tx) => {
+    return tx.signer.toString() == signer
+  })
+}
+
+export function transactionByIndex(block: SignedBlock, txIndex: number): Result<GenericExtrinsic, string> {
+  const transactions = block.block.extrinsics
+  if (transactions.length < txIndex) {
+    return err("Failed to find transaction. Index is out of bounds.")
+  }
+
+  return ok(transactions[txIndex])
+}
+
+export function transactionByHash(block: SignedBlock, txHash: H256): GenericExtrinsic[] {
+  return block.block.extrinsics.filter((tx) => {
+    return tx.hash.toHex() == txHash.toHex()
+  })
+}
+
+export function extractDADataFromTx(tx: GenericExtrinsic): Result<string, string> {
   const {
     method: { args, method, section },
   } = tx

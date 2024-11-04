@@ -1,4 +1,4 @@
-import { SDK, WaitFor, Keyring, BN, sdkTransactions } from "avail-js-sdk"
+import { SDK, WaitFor, Keyring, sdkTransactions } from "../../src/index"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -7,7 +7,7 @@ const main = async () => {
   // Input
   const account = new Keyring({ type: "sr25519" }).addFromUri("//Alice")
   const modifier = {
-    weightMaximumFee: new BN("10").pow(new BN("18")),
+    weightMaximumFee: SDK.oneAvail(),
     weightFeeDivider: 20,
   } as sdkTransactions.DispatchFeeModifier
 

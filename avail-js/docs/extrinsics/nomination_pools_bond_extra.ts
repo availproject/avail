@@ -6,7 +6,7 @@ const main = async () => {
 
   // Input
   const account = new Keyring({ type: "sr25519" }).addFromUri("//Alice")
-  const amount = new BN(10).pow(new BN(18)).mul(new BN(10000)) // 10_000 Avail
+  const amount = SDK.oneAvail().mul(new BN(10000)) // 10_000 Avail
   const bondExtra = { FreeBalance: amount } as BondExtra
 
   const result = await sdk.tx.nominationPools.bondExtra(bondExtra, WaitFor.BlockInclusion, account)
