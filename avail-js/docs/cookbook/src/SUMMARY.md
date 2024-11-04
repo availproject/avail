@@ -20,4 +20,7 @@
 - [Hex String | Block Hash | H256](./hex_string/index.md)
   - [From Hex String to H256](./hex_string/to_h256.md)
   - [From H256 to Hex String](./hex_string/from_h256.md)
-- [Questions](./questions.md)
+- [Examples](./examples/index.md)
+  - [Account Abstraction](./examples/account_abstraction.md)
+  - [Transaction Options](./examples/transaction_options.md)
+  - [Multisig](./examples/multisig.md)

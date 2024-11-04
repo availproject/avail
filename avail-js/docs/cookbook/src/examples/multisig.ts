@@ -1,4 +1,13 @@
-import { SDK, WaitFor, Keyring, BN, KeyringPair, Weight, TxResultDetails, MultisigTimepoint } from "./../../src/index"
+import {
+  SDK,
+  WaitFor,
+  Keyring,
+  BN,
+  KeyringPair,
+  Weight,
+  TxResultDetails,
+  MultisigTimepoint,
+} from "./../../../../src/index"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"

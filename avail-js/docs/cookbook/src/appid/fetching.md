@@ -6,19 +6,19 @@
 {{#include ./fetching.ts:8:11}}
 ```
 
-#### All App Ids in Use
+#### All App Ids in use
 
 ```ts
 {{#include ./fetching.ts:13:20}}
 ```
 
-#### App Id from Transaction
+#### App Id from transaction
 
 ```ts
 {{#include ./fetching.ts:22:27}}
 ```
 
-#### App Id from Account Instance Transaction
+#### App Id from Account instance transaction
 
 ```ts
 {{#include ./fetching.ts:29:34}}

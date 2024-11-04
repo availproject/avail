@@ -30,17 +30,22 @@ const main = async () => {
   })
 
   // Setting nonce for each transaction individually
-  const nonce3 = await sdk.util.getNonceNode(alice.address)
-  await sdk.tx.dataAvailability.submitDataNoWait(data, alice, { nonce: nonce3 })
-  await sdk.tx.dataAvailability.submitDataNoWait(data, alice, { nonce: nonce3 + 1 })
-  await sdk.tx.dataAvailability.submitDataNoWait(data, alice, { nonce: nonce3 + 2 })
-  await sdk.tx.dataAvailability.submitDataNoWait(data, alice, { nonce: nonce3 + 3 })
+  let nonce3 = await sdk.util.getNonceNode(alice.address)
+  for (let i = 0; i < 4; ++i) {
+    await sdk.tx.dataAvailability.submitDataNoWait(data, alice, { nonce: nonce3 })
+    nonce3 += 1
+  }
 
   // Setting nonce for each transaction individually
-  await sdk.tx.dataAvailability.submitDataNoWait(data, alice, { nonce: await sdk.util.getNonceNode(alice.address) })
-  await sdk.tx.dataAvailability.submitDataNoWait(data, alice, { nonce: await sdk.util.getNonceNode(alice.address) })
-  await sdk.tx.dataAvailability.submitDataNoWait(data, alice, { nonce: await sdk.util.getNonceNode(alice.address) })
-  await sdk.tx.dataAvailability.submitDataNoWait(data, alice, { nonce: await sdk.util.getNonceNode(alice.address) })
+  for (let i = 0; i < 4; ++i) {
+    await sdk.tx.dataAvailability.submitDataNoWait(data, alice, { nonce: await sdk.util.getNonceNode(alice.address) })
+  }
+
+  // Can be done as well with Account instance
+  for (let i = 0; i < 4; ++i) {
+    account.setNonce(await sdk.util.getNonceNode(alice.address))
+    await account.submitDataNoWait(data)
+  }
 
   process.exit()
 }

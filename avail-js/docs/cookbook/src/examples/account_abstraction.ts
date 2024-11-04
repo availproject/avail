@@ -1,4 +1,4 @@
-import { SDK, Keyring, Account, WaitFor } from "./../../src/index"
+import { SDK, Keyring, Account, WaitFor } from "./../../../../src/index"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -37,7 +37,7 @@ const main = async () => {
   
       These values are sticky which means they will persist until you change them again.
     */
-  account.setAppId(parseInt(r2.event.id))
+  account.setAppId(r2.event.id)
   account.setNonce(await account.getNonceNode())
   account.setWaitFor(WaitFor.BlockInclusion)
   const _r3 = await account.submitData("My Data")

@@ -1,6 +1,6 @@
 # Managing App Id
 
-## Using App Id in Transactions
+## Using App Id in transactions
 
 To utilize a nonce in a transaction, it should be included in the last argument of the transaction call.
 
