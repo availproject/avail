@@ -19,6 +19,7 @@ export type SubmitDataTxSuccess = {
   isErr: false
   txData: TransactionData.SubmitData
   event: Events.DataSubmittedEvent
+  appId: number
   events: EventRecord[]
   txHash: H256
   txIndex: number
@@ -80,6 +81,7 @@ export class DataAvailability {
     options?: TransactionOptions,
   ): Promise<SubmitDataTxSuccess | GenericFailure> {
     const optionWrapper = options || {}
+    const appId = optionWrapper.app_id || 0
     const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
       this.api.tx.dataAvailability
         .submitData(data)
@@ -115,6 +117,7 @@ export class DataAvailability {
       isErr: false,
       txData: maybeTxData.value,
       event,
+      appId,
       events,
       txHash,
       txIndex,
@@ -341,7 +344,7 @@ export namespace Events {
     constructor(
       public key: string,
       public owner: string,
-      public id: string,
+      public id: number,
     ) {}
     static New(events: EventRecord[]): ApplicationKeyCreatedEvent | undefined {
       const ed: any = events.find((e) => e.event.method == "ApplicationKeyCreated")?.event.data
@@ -349,7 +352,7 @@ export namespace Events {
         return undefined
       }
 
-      return new ApplicationKeyCreatedEvent(ed["key"].toString(), ed["owner"].toString(), ed["id"].toString())
+      return new ApplicationKeyCreatedEvent(ed["key"].toString(), ed["owner"].toString(), parseInt(ed["id"].toString()))
     }
   }
 

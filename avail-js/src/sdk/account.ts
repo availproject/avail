@@ -1,6 +1,6 @@
 import { BN } from "@polkadot/util"
 import { KeyringPair } from "@polkadot/keyring/types"
-import { H256, SDK, WaitFor } from "."
+import { H256, SDK, sdkUtil, WaitFor } from "."
 import { TransferKeepAliveTxSuccess } from "./transactions/balances"
 import { GenericFailure } from "./transactions/common"
 import { CreateApplicationKeyTxSuccess, SubmitDataTxSuccess } from "./transactions/da"
@@ -84,18 +84,7 @@ export class Account {
   }
 
   async getAppKeys(): Promise<number[]> {
-    const appKeys: number[] = []
-    const entries = await this.sdk.api.query.dataAvailability.appKeys.entries()
-    entries.forEach((entry: any) => {
-      if (entry[1].isSome) {
-        const { owner, id } = entry[1].unwrap()
-        if (owner.toString() == this.keyring.address) {
-          appKeys.push(parseInt(id.toString()))
-        }
-      }
-    })
-
-    return appKeys.sort((a, b) => a - b)
+    return sdkUtil.getAppKeys(this.sdk.api, this.keyring.address)
   }
 
   oneAvail(): BN {

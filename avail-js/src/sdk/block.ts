@@ -16,6 +16,10 @@ export class Block {
     this.signedBlock = block
   }
 
+  submitDataCount(): number {
+    return submitDataCount(this.signedBlock)
+  }
+
   submitDataAll(): DataSubmission[] {
     return submitDataAll(this.signedBlock)
   }
@@ -36,6 +40,10 @@ export class Block {
     return transactionCount(this.signedBlock)
   }
 
+  transactionAll(): GenericExtrinsic[] {
+    return transactionAll(this.signedBlock)
+  }
+
   transactionBySigner(signer: string): GenericExtrinsic[] {
     return transactionBySigner(this.signedBlock, signer)
   }
@@ -47,6 +55,10 @@ export class Block {
   transactionByHash(txHash: H256): GenericExtrinsic[] {
     return transactionByHash(this.signedBlock, txHash)
   }
+}
+
+export function submitDataCount(block: SignedBlock): number {
+  return submitDataAll(block).length
 }
 
 export function submitDataAll(block: SignedBlock): DataSubmission[] {
@@ -95,11 +107,16 @@ export function submitDataByIndex(block: SignedBlock, txIndex: number): Result<D
   const txHash = tx.hash
   const data = maybeData.value
   const txSigner = tx.signer.toString()
-  return ok(new DataSubmission(txHash, txIndex, data, txSigner))
+  const appId = extractAppIdFromTx(tx)
+  return ok(new DataSubmission(txHash, txIndex, data, txSigner, appId))
 }
 
 export function transactionCount(block: SignedBlock): number {
   return block.block.extrinsics.length
+}
+
+export function transactionAll(block: SignedBlock): GenericExtrinsic[] {
+  return block.block.extrinsics
 }
 
 export function transactionBySigner(block: SignedBlock, signer: string): GenericExtrinsic[] {
@@ -139,12 +156,17 @@ export function extractDADataFromTx(tx: GenericExtrinsic): Result<string, string
   return ok(dataHex)
 }
 
+export function extractAppIdFromTx(tx: GenericExtrinsic): number {
+  return parseInt((tx as any).__internal__raw.signature.appId.toString())
+}
+
 export class DataSubmission {
   constructor(
     public txHash: H256,
     public txIndex: number,
     public hexData: string,
     public txSigner: string,
+    public appId: number,
   ) {}
 
   toAscii(): string {

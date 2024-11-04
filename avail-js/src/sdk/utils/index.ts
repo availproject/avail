@@ -140,6 +140,21 @@ export function hexStringToHash(api: ApiPromise, value: string): Result<H256, st
   return ok(hex)
 }
 
+export async function getAppKeys(api: ApiPromise, address: string): Promise<number[]> {
+  const appKeys: number[] = []
+  const entries = await api.query.dataAvailability.appKeys.entries()
+  entries.forEach((entry: any) => {
+    if (entry[1].isSome) {
+      const { owner, id } = entry[1].unwrap()
+      if (owner.toString() == address) {
+        appKeys.push(parseInt(id.toString()))
+      }
+    }
+  })
+
+  return appKeys.sort((a, b) => a - b)
+}
+
 export function hexStringToHashUnsafe(api: ApiPromise, value: string): H256 {
   const hash = hexStringToHash(api, value)
   if (hash.isErr()) {
