@@ -10,6 +10,7 @@ export { KeyringPair } from "@polkadot/keyring/types"
 export { Bytes } from "@polkadot/types-codec"
 export { H256, Weight } from "@polkadot/types/interfaces"
 export { Account } from "./account"
+export { DataSubmission } from "./block"
 export {
   WaitFor,
   StakingRewardDestination,

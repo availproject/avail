@@ -58,7 +58,7 @@
 {{#include ./code/block_hash_conversion.ts:34:37}}
 ```
 
-### Full Example
+## Source Code
 
 ```ts
 {{#include ./code/block_hash_conversion.ts}}

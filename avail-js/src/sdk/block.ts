@@ -99,16 +99,7 @@ export function submitDataByIndex(block: SignedBlock, txIndex: number): Result<D
     return err("Failed to extract data. Transaction has not been found")
   }
   const tx = block.block.extrinsics[txIndex]
-  const maybeData = extractDADataFromTx(tx)
-  if (maybeData.isErr()) {
-    return err(maybeData.error)
-  }
-
-  const txHash = tx.hash
-  const data = maybeData.value
-  const txSigner = tx.signer.toString()
-  const appId = extractAppIdFromTx(tx)
-  return ok(new DataSubmission(txHash, txIndex, data, txSigner, appId))
+  return extractDataSubmissionFromTx(tx, txIndex)
 }
 
 export function transactionCount(block: SignedBlock): number {
@@ -140,11 +131,11 @@ export function transactionByHash(block: SignedBlock, txHash: H256): GenericExtr
   })
 }
 
-export function extractDADataFromTx(tx: GenericExtrinsic): Result<string, string> {
+export function extractDataSubmissionDataFromTx(tx: GenericExtrinsic): Result<string, string> {
   const {
     method: { args, method, section },
   } = tx
-  if (section != "dataAvailability" || method != "submitData") {
+  if (!isTransactionDataSubmission(tx)) {
     return err("Failed to extract data. The transaction is not of type Data Submit")
   }
 
@@ -156,8 +147,28 @@ export function extractDADataFromTx(tx: GenericExtrinsic): Result<string, string
   return ok(dataHex)
 }
 
+export function extractDataSubmissionFromTx(tx: GenericExtrinsic, txIndex: number): Result<DataSubmission, string> {
+  const maybeData = extractDataSubmissionDataFromTx(tx)
+  if (maybeData.isErr()) {
+    return err(maybeData.error)
+  }
+
+  const txHash = tx.hash
+  const data = maybeData.value
+  const txSigner = tx.signer.toString()
+  const appId = extractAppIdFromTx(tx)
+  return ok(new DataSubmission(txHash, txIndex, data, txSigner, appId))
+}
+
 export function extractAppIdFromTx(tx: GenericExtrinsic): number {
   return parseInt((tx as any).__internal__raw.signature.appId.toString())
+}
+
+export function isTransactionDataSubmission(tx: GenericExtrinsic): boolean {
+  const {
+    method: { method, section },
+  } = tx
+  return section == "dataAvailability" && method == "submitData"
 }
 
 export class DataSubmission {
