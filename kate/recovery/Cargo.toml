@@ -46,7 +46,7 @@ std = [
 	"once_cell?/std",
 	"codec/std",
 	"serde?/std",
-	# "thiserror-no-std/std"
+	"thiserror-no-std/std"
 ]
 
 serde = [ "dep:serde" ]

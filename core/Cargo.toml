@@ -65,7 +65,7 @@ std = [
 	"hex?/std",
 	"rand/std",
 	"serde_json/std",
-	# "thiserror-no-std/std"
+	"thiserror-no-std/std"
 ]
 runtime = [
 	"binary-merkle-tree",
