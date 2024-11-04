@@ -17,8 +17,11 @@ use sp_std::{vec, vec::Vec};
 use helios_consensus_core::{
     apply_finality_update, apply_update, verify_finality_update, verify_update,
 };
+use alloy_primitives::{B256, U256};
+use alloy_sol_types::SolValue;
 use sp1_helios_primitives::types::{ProofInputs, ProofOutputs};
-
+use sp1_verifier::{Groth16Verifier, GROTH16_VK_BYTES};
+use sp1_sdk::SP1ProofWithPublicValues;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 pub mod constants;
@@ -193,6 +196,11 @@ pub mod pallet {
 	#[pallet::getter(fn sync_committee_poseidons)]
 	pub type SyncCommitteePoseidons<T> = StorageMap<_, Identity, u64, U256, ValueQuery>;
 
+	/// Maps from a period to the Sha256 commitment for the sync committee.
+	#[pallet::storage]
+	#[pallet::getter(fn sync_committee_hashes)]
+	pub type SyncCommitteeHashes<T> = StorageMap<_, Identity, u64, U256, ValueQuery>;
+
 	/// Storage for a config of finality threshold and slots per period.
 	#[pallet::storage]
 	pub type ConfigurationStorage<T: Config> = StorageValue<_, Configuration, ValueQuery>;
@@ -327,7 +335,7 @@ pub mod pallet {
 		pub slots_per_period: u64,
 		pub finality_threshold: u16,
 		pub function_ids: (H256, H256),
-		pub sync_committee_poseidon: U256,
+		pub sync_committee_hash: U256,
 		pub period: u64,
 		pub broadcaster: H256,
 		pub broadcaster_domain: u32,
@@ -372,7 +380,8 @@ pub mod pallet {
 					.expect("Rotate verification key should be valid at genesis.");
 			RotateVerificationKey::<T>::set(Some(rotate_verification_key));
 
-			SyncCommitteePoseidons::<T>::insert(self.period, self.sync_committee_poseidon);
+			// SyncCommitteePoseidons::<T>::insert(self.period, self.sync_committee_poseidon);
+			SyncCommitteeHashes::<T>::insert(self.period, self.sync_committee_hash);
 
 			GenesisValidatorRoot::<T>::set(self.genesis_validator_root);
 
@@ -411,65 +420,138 @@ pub mod pallet {
 		/// output Function output.
 		/// proof  Function proof.
 		/// slot  Function slot to update.
+		// #[pallet::call_index(0)]
+		// #[pallet::weight(weight_helper::fulfill_call::<T>(* function_id))]
+		// pub fn fulfill_call(
+		// 	origin: OriginFor<T>,
+		// 	function_id: H256,
+		// 	input: FunctionInput,
+		// 	output: FunctionOutput,
+		// 	proof: FunctionProof,
+		// 	#[pallet::compact] slot: u64,
+		// ) -> DispatchResultWithPostInfo {
+		// 	let sender: [u8; 32] = ensure_signed(origin)?.into();
+		// 	let updater = Updater::<T>::get();
+		// 	// ensure sender is preconfigured
+		// 	ensure!(H256(sender) == updater, Error::<T>::UpdaterMisMatch);
+
+		// 	let config = ConfigurationStorage::<T>::get();
+		// 	let input_hash = H256(sha2_256(input.as_slice()));
+		// 	let output_hash = H256(sha2_256(output.as_slice()));
+		// 	let (step_function_id, rotate_function_id) = Self::get_function_ids()?;
+		// 	let verifier = Self::get_verifier(function_id, step_function_id, rotate_function_id)?;
+
+		// 	let is_success = verifier
+		// 		.verify(input_hash, output_hash, proof.to_vec())
+		// 		.map_err(|_| Error::<T>::VerificationError)?;
+
+		// 	// make sure that verification call is valid
+		// 	ensure!(is_success, Error::<T>::VerificationFailed);
+
+		// 	// verification is success and, we can safely parse and validate output
+		// 	if function_id == step_function_id {
+		// 		let step_output = parse_step_output(output.to_vec())
+		// 			.map_err(|_| Error::<T>::CannotParseOutputData)?;
+
+		// 		let vs = VerifiedStep::new(function_id, input_hash, step_output);
+
+		// 		if Self::step_into(slot, &config, &vs, step_function_id)? {
+		// 			Self::deposit_event(Event::HeadUpdated {
+		// 				slot: vs.verified_output.finalized_slot,
+		// 				finalization_root: vs.verified_output.finalized_header_root,
+		// 				execution_state_root: vs.verified_output.execution_state_root,
+		// 			});
+		// 		}
+		// 	} else if function_id == rotate_function_id {
+		// 		let rotate_output = parse_rotate_output(output.to_vec())
+		// 			.map_err(|_| Error::<T>::CannotParseOutputData)?;
+
+		// 		let vr = VerifiedRotate::new(function_id, input_hash, rotate_output);
+
+		// 		let period = Self::rotate_into(slot, &config, &vr, rotate_function_id)?;
+		// 		Self::deposit_event(Event::SyncCommitteeUpdated {
+		// 			period,
+		// 			root: vr.sync_committee_poseidon,
+		// 		});
+		// 	} else {
+		// 		return Err(Error::<T>::FunctionIdNotKnown.into());
+		// 	}
+
+		// 	Ok(().into())
+		// }
+
 		#[pallet::call_index(0)]
+		// Unused parameter that's hard to remove, would mess up traits
 		#[pallet::weight(weight_helper::fulfill_call::<T>(* function_id))]
 		pub fn fulfill_call(
 			origin: OriginFor<T>,
 			function_id: H256,
-			input: FunctionInput,
-			output: FunctionOutput,
-			proof: FunctionProof,
+			proof_bytes: Vec<u8>,
+			public_values: Vec<u8>,
 			#[pallet::compact] slot: u64,
 		) -> DispatchResultWithPostInfo {
-			let sender: [u8; 32] = ensure_signed(origin)?.into();
-			let updater = Updater::<T>::get();
-			// ensure sender is preconfigured
-			ensure!(H256(sender) == updater, Error::<T>::UpdaterMisMatch);
+			
+			let proof_outputs: ProofOutputs = SolValue::abi_decode(&public_values, true).unwrap();
+			let head = Head::<T>::get();
+			let new_head: [u8; 8] = proof_outputs.newHead.to_le_bytes(); 
+			let new_head = u64::from_le_bytes(new_head[..8].try_into().unwrap());
+			ensure!(new_head <= head, Error::<T>::SlotBehindHead);
 
+			let vkey_hash = "0x00788ce8dc2970920a3d3c072c8c07843d15f1307a53b3dd31b113c3e71c28e8";
+			let is_valid = Groth16Verifier::verify(&proof_bytes, &public_values, vkey_hash, &GROTH16_VK_BYTES)
+				.expect("Groth16 proof is invalid");
+			ensure!(is_valid, Error::<T>::VerificationFailed);
+
+
+			// head = proof_outputs.newHead;
+			Head::<T>::set(new_head);
+
+			let header = Headers::<T>::get(new_head);
+			let new_header = H256::from_slice(proof_outputs.newHeader.as_slice());
+			ensure!(header == H256::zero(), Error::<T>::HeaderRootAlreadySet);
+			// Headers::<T>::set(proof_outputs.newHead, proof_outputs.newHeader);
+
+			let execution_state_root = ExecutionStateRoots::<T>::get(new_head);
+			let new_execution_state_root = H256::from_slice(proof_outputs.executionStateRoot.as_slice());
+			ensure!(execution_state_root == H256::zero(), Error::<T>::StateRootAlreadySet);
+			// ExecutionStateRoots::<T>::set(proof_outputs.newHead, proof_outputs.newExecutionStateRoot);
+			Headers::<T>::insert(
+				new_head,
+				new_header,
+			);
+			ExecutionStateRoots::<T>::insert(
+				new_head,
+				new_execution_state_root,
+			);
+			Self::deposit_event(Event::HeadUpdated {
+				slot: new_head,
+				finalization_root: new_header,
+				execution_state_root: new_execution_state_root,
+			});
 			let config = ConfigurationStorage::<T>::get();
-			let input_hash = H256(sha2_256(input.as_slice()));
-			let output_hash = H256(sha2_256(output.as_slice()));
-			let (step_function_id, rotate_function_id) = Self::get_function_ids()?;
-			let verifier = Self::get_verifier(function_id, step_function_id, rotate_function_id)?;
+			let period = new_head
+				.checked_div(config.slots_per_period)
+				.ok_or(Error::<T>::ConfigurationNotSet)?;
+			let next_period = period + 1;
 
-			let is_success = verifier
-				.verify(input_hash, output_hash, proof.to_vec())
-				.map_err(|_| Error::<T>::VerificationError)?;
-
-			// make sure that verification call is valid
-			ensure!(is_success, Error::<T>::VerificationFailed);
-
-			// verification is success and, we can safely parse and validate output
-			if function_id == step_function_id {
-				let step_output = parse_step_output(output.to_vec())
-					.map_err(|_| Error::<T>::CannotParseOutputData)?;
-
-				let vs = VerifiedStep::new(function_id, input_hash, step_output);
-
-				if Self::step_into(slot, &config, &vs, step_function_id)? {
-					Self::deposit_event(Event::HeadUpdated {
-						slot: vs.verified_output.finalized_slot,
-						finalization_root: vs.verified_output.finalized_header_root,
-						execution_state_root: vs.verified_output.execution_state_root,
+			ensure!(SyncCommitteeHashes::<T>::get(period) == U256::zero(), Error::<T>::SyncCommitteeAlreadySet);
+			let next_sync_committee_hash = U256::from(proof_outputs.nextSyncCommitteeHash.as_slice());
+			if next_sync_committee_hash != U256::zero() {
+				let sync_committee_hash = SyncCommitteeHashes::<T>::get(next_period);
+				if sync_committee_hash != next_sync_committee_hash {
+					ensure!(sync_committee_hash == U256::zero(), Error::<T>::SyncCommitteeAlreadySet);
+					SyncCommitteeHashes::<T>::set(next_period, next_sync_committee_hash);
+					Self::deposit_event(Event::SyncCommitteeUpdated {
+						period: next_period,
+						root: next_sync_committee_hash,
 					});
 				}
-			} else if function_id == rotate_function_id {
-				let rotate_output = parse_rotate_output(output.to_vec())
-					.map_err(|_| Error::<T>::CannotParseOutputData)?;
-
-				let vr = VerifiedRotate::new(function_id, input_hash, rotate_output);
-
-				let period = Self::rotate_into(slot, &config, &vr, rotate_function_id)?;
-				Self::deposit_event(Event::SyncCommitteeUpdated {
-					period,
-					root: vr.sync_committee_poseidon,
-				});
-			} else {
-				return Err(Error::<T>::FunctionIdNotKnown.into());
 			}
 
 			Ok(().into())
 		}
+
+		
 
 		/// Executes message if a valid proofs are provided for the supported message type, assets and domains.
 		#[pallet::call_index(1)]
@@ -971,6 +1053,19 @@ pub mod pallet {
 			);
 
 			SyncCommitteePoseidons::<T>::set(period, poseidon);
+
+			Ok(())
+		}
+
+		/// Sets the sync committee hash for a given period.
+		fn set_sync_committee_hash(period: u64, hash: U256) -> Result<(), DispatchError> {
+			let sync_committee_hashes = SyncCommitteeHashes::<T>::get(period);
+			ensure!(
+				sync_committee_hashes == U256::zero(),
+				Error::<T>::SyncCommitteeAlreadySet
+			);
+
+			SyncCommitteeHashes::<T>::set(period, hash);
 
 			Ok(())
 		}

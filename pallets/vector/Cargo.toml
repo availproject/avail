@@ -29,6 +29,8 @@ sp1-helios-primitives = { git = "https://github.com/succinctlabs/sp1-helios", br
 # consensus-core = { git = "https://github.com/a16z/helios" }
 helios-consensus-core = { git = "https://github.com/a16z/helios" }
 alloy-primitives = "0.7.7"
+alloy-sol-types = "0.7.7"
+
 # common = { git = "https://github.com/a16z/helios", version = "0.6.1" }
 # sp1-sdk = { git = "https://github.com/sp1-patches/sp1-sdk", branch = "yuwen/verifier-crate" }
 # bn = { git = "https://github.com/sp1-patches/bn", branch = "patch-v0.7.0", package = "substrate-bn" }

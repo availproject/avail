@@ -8388,6 +8388,7 @@ name = "pallet-vector"
 version = "1.0.0"
 dependencies = [
  "alloy-primitives 0.7.7",
+ "alloy-sol-types",
  "ark-bn254",
  "ark-ff 0.3.0",
  "ark-groth16",
