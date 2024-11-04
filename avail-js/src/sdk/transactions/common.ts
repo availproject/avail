@@ -1,6 +1,6 @@
 import { ApiPromise } from "@polkadot/api"
 import { ISubmittableResult } from "@polkadot/types/types/extrinsic"
-import { H256 } from "@polkadot/types/interfaces/types"
+import { EventRecord, H256 } from "@polkadot/types/interfaces/types"
 import { ok, Result } from "neverthrow"
 
 export enum WaitFor {
@@ -53,4 +53,34 @@ export interface TransactionOptions {
   nonce?: number
   era?: number
   blockHash?: H256
+}
+
+export class TransactionFailed {
+  constructor(
+    public reason: string,
+    public details: TxResultDetails | null,
+  ) {}
+}
+
+export class TxResultDetails {
+  constructor(
+    public txResult: ISubmittableResult,
+    public events: EventRecord[],
+    public txHash: H256,
+    public txIndex: number,
+    public blockHash: H256,
+    public blockNumber: number,
+  ) {}
+}
+
+export class FailedTxResult {
+  constructor(
+    public reason: string,
+    public details: TxResultDetails | null,
+  ) {}
+}
+
+export interface MultisigTimepoint {
+  height: number
+  index: number
 }
