@@ -43,6 +43,7 @@ pub const LOG_TARGET: &str = "runtime::vector";
 pub const ROTATE_POSEIDON_OUTPUT_LENGTH: u32 = 32;
 pub const STEP_OUTPUT_LENGTH: u32 = 74;
 
+// The vkey_hash was obtained by running cargo prove key —elf (corresponding sp1 helios elf) in SP1 Helios
 const SP1_HELIOS_VKEY: &str = "0x00788ce8dc2970920a3d3c072c8c07843d15f1307a53b3dd31b113c3e71c28e8";
 
 pub type BalanceOf<T> =
@@ -442,7 +443,7 @@ pub mod pallet {
 			let execution_state_root = ExecutionStateRoots::<T>::get(new_head);
 			let new_execution_state_root = H256::from_slice(proof_outputs.executionStateRoot.as_slice());
 			ensure!(execution_state_root == H256::zero(), Error::<T>::StateRootAlreadySet);
-			
+
 			Headers::<T>::insert(
 				new_head,
 				new_header,
