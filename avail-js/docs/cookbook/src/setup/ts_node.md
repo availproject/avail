@@ -1,7 +1,7 @@
 # TS-Node
 
 1. Install [Node](https://nodejs.org/en/download/package-manager)
-2. Install [TS-Node](https://www.npmjs.com/package/ts-node)
+2. Install [TS-Node](https://www.npmjs.com/package/ts-node) globally
 
 Save to `index.ts`
 

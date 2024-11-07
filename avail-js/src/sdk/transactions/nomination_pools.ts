@@ -1,11 +1,16 @@
 import { ApiPromise } from "@polkadot/api"
-import { ISubmittableResult } from "@polkadot/types/types/extrinsic"
-import { H256, EventRecord } from "@polkadot/types/interfaces/types"
+import { EventRecord } from "@polkadot/types/interfaces/types"
 import { BN } from "@polkadot/util"
 import { KeyringPair } from "@polkadot/keyring/types"
-import { err, Result } from "neverthrow"
-import { WaitFor, GenericFailure, standardCallback, TransactionOptions } from "./common"
-import { commissionNumberToPerbill, parseTransactionResult } from "../utils"
+import {
+  WaitFor,
+  TransactionOptions,
+  singAndSendAndParseTransaction,
+  TxResultDetails,
+  TransactionFailed,
+} from "./common"
+import { commissionNumberToPerbill } from "../utils"
+import { err, ok, Result } from "neverthrow"
 
 export interface BondExtra {
   FreeBalance?: BN
@@ -20,152 +25,99 @@ export interface NewCommission {
   payee: string
 }
 
-export type PoolCreateTxSuccess = {
-  isErr: false
-  event: Events.Created
-  event2: Events.Bonded
-  events: EventRecord[]
-  txHash: H256
-  txIndex: number
-  blockHash: H256
-  blockNumber: number
+export class CreateTx {
+  constructor(
+    public event: Events.Created,
+    public event2: Events.Bonded,
+    public details: TxResultDetails,
+  ) {}
 }
 
-export type PoolCreateWithPoolIdTxSuccess = {
-  isErr: false
-  event: Events.Created
-  event2: Events.Bonded
-  events: EventRecord[]
-  txHash: H256
-  txIndex: number
-  blockHash: H256
-  blockNumber: number
+export class CreateWithPoolIdTx {
+  constructor(
+    public event: Events.Created,
+    public event2: Events.Bonded,
+    public details: TxResultDetails,
+  ) {}
 }
 
-export type PoolJoinTxSuccess = {
-  isErr: false
-  event: Events.Bonded
-  events: EventRecord[]
-  txHash: H256
-  txIndex: number
-  blockHash: H256
-  blockNumber: number
+export class JoinTx {
+  constructor(
+    public event: Events.Bonded,
+    public details: TxResultDetails,
+  ) {}
 }
 
-export type PoolNominateTxSuccess = {
-  isErr: false
-  events: EventRecord[]
-  txHash: H256
-  txIndex: number
-  blockHash: H256
-  blockNumber: number
+export class NominateTx {
+  constructor(public details: TxResultDetails) {}
 }
 
-export type PoolBondExtraTxSuccess = {
-  isErr: false
-  event: Events.Bonded
-  events: EventRecord[]
-  txHash: H256
-  txIndex: number
-  blockHash: H256
-  blockNumber: number
+export class BondExtraTx {
+  constructor(
+    public event: Events.Bonded,
+    public details: TxResultDetails,
+  ) {}
 }
 
-export type PoolSetMetadataTxSuccess = {
-  isErr: false
-  events: EventRecord[]
-  txHash: H256
-  txIndex: number
-  blockHash: H256
-  blockNumber: number
+export class SetMetadataTx {
+  constructor(public details: TxResultDetails) {}
 }
 
-export type PoolUnbondTxSuccess = {
-  isErr: false
-  event?: Events.Unbonded
-  events: EventRecord[]
-  txHash: H256
-  txIndex: number
-  blockHash: H256
-  blockNumber: number
+export class UnbondTx {
+  constructor(
+    public event: Events.Unbonded | undefined,
+    public details: TxResultDetails,
+  ) {}
 }
 
-export type PoolChillTxSuccess = {
-  isErr: false
-  events: EventRecord[]
-  txHash: H256
-  txIndex: number
-  blockHash: H256
-  blockNumber: number
+export class ChillTx {
+  constructor(public details: TxResultDetails) {}
 }
 
-export type PoolClaimCommissionTxSuccess = {
-  isErr: false
-  event: Events.PoolCommissionClaimed
-  events: EventRecord[]
-  txHash: H256
-  txIndex: number
-  blockHash: H256
-  blockNumber: number
+export class ClaimCommissionTx {
+  constructor(
+    public event: Events.PoolCommissionClaimed,
+    public details: TxResultDetails,
+  ) {}
 }
 
-export type PoolClaimPayoutTxSuccess = {
-  isErr: false
-  event?: Events.PaidOut
-  events: EventRecord[]
-  txHash: H256
-  txIndex: number
-  blockHash: H256
-  blockNumber: number
+export class ClaimPayoutTx {
+  constructor(
+    public event: Events.PaidOut | undefined,
+    public details: TxResultDetails,
+  ) {}
 }
 
-export type PoolClaimPayoutOtherTxSuccess = {
-  isErr: false
-  event?: Events.PaidOut
-  events: EventRecord[]
-  txHash: H256
-  txIndex: number
-  blockHash: H256
-  blockNumber: number
+export class ClaimPayoutOtherTx {
+  constructor(
+    public event: Events.PaidOut | undefined,
+    public details: TxResultDetails,
+  ) {}
 }
 
-export type PoolSetClaimPermissionOtherTxSuccess = {
-  isErr: false
-  events: EventRecord[]
-  txHash: H256
-  txIndex: number
-  blockHash: H256
-  blockNumber: number
+export class SetClaimPermissionTx {
+  constructor(public details: TxResultDetails) {}
 }
 
-export type PoolSetCommissionTxSuccess = {
-  isErr: false
-  event: Events.PoolCommissionUpdated
-  events: EventRecord[]
-  txHash: H256
-  txIndex: number
-  blockHash: H256
-  blockNumber: number
+export class SetCommissionTx {
+  constructor(
+    public event: Events.PoolCommissionUpdated,
+    public details: TxResultDetails,
+  ) {}
 }
 
-export type PoolWithdrawUnbodedTxSuccess = {
-  isErr: false
-  event: Events.Withdrawn
-  events: EventRecord[]
-  txHash: H256
-  txIndex: number
-  blockHash: H256
-  blockNumber: number
+export class WithdrawUnbodedTx {
+  constructor(
+    public event: Events.Withdrawn,
+    public details: TxResultDetails,
+  ) {}
 }
 
-export type PoolSetStateTxSuccess = {
-  isErr: false
-  event?: Events.StateChanged
-  events: EventRecord[]
-  txHash: H256
-  txIndex: number
-  blockHash: H256
-  blockNumber: number
+export class SetStateTx {
+  constructor(
+    public event: Events.StateChanged | undefined,
+    public details: TxResultDetails,
+  ) {}
 }
 
 export class NominationPools {
@@ -183,40 +135,20 @@ export class NominationPools {
     waitFor: WaitFor,
     account: KeyringPair,
     options?: TransactionOptions,
-  ): Promise<PoolCreateTxSuccess | GenericFailure> {
-    const optionWrapper = options || {}
-    const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
-      this.api.tx.nominationPools
-        .create(amount, root, nominator, bouncer)
-        .signAndSend(account, optionWrapper, (result: ISubmittableResult) => {
-          standardCallback(result, res, waitFor)
-        })
-        .catch((reason) => {
-          res(err(reason))
-        })
-    })
+  ): Promise<Result<CreateTx, TransactionFailed>> {
+    const tx = this.api.tx.nominationPools.create(amount, root, nominator, bouncer)
+    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    if (maybeParsed.isErr()) return err(maybeParsed.error)
 
-    if (maybeTxResult.isErr()) {
-      return { isErr: true, reason: maybeTxResult.error }
-    }
-    const maybeParsed = await parseTransactionResult(this.api, maybeTxResult.value, waitFor)
-    if (maybeParsed.isErr()) {
-      return { isErr: true, reason: maybeParsed.error.reason }
-    }
     const details = maybeParsed.value
-    const { events, txHash, txIndex, blockHash, blockNumber } = details
 
-    const event = Events.Created.New(events)
-    if (event == undefined) {
-      return { isErr: true, reason: "Failed to find Created event." }
-    }
+    const event = Events.Created.New(details.events)
+    if (event == undefined) return err(new TransactionFailed("Failed to find Created event", details))
 
-    const event2 = Events.Bonded.New(events)
-    if (event2 == undefined) {
-      return { isErr: true, reason: "Failed to find Bonded event." }
-    }
+    const event2 = Events.Bonded.New(details.events)
+    if (event2 == undefined) return err(new TransactionFailed("Failed to find Bonded event", details))
 
-    return { isErr: false, event, event2, events, txHash, txIndex, blockHash, blockNumber }
+    return ok(new CreateTx(event, event2, details))
   }
 
   async createWithPoolId(
@@ -228,49 +160,20 @@ export class NominationPools {
     waitFor: WaitFor,
     account: KeyringPair,
     options?: TransactionOptions,
-  ): Promise<PoolCreateWithPoolIdTxSuccess | GenericFailure> {
-    const optionWrapper = options || {}
-    const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
-      this.api.tx.nominationPools
-        .createWithPoolId(amount, root, nominator, bouncer, poolId)
-        .signAndSend(account, optionWrapper, (result: ISubmittableResult) => {
-          standardCallback(result, res, waitFor)
-        })
-        .catch((reason) => {
-          res(err(reason))
-        })
-    })
+  ): Promise<Result<CreateWithPoolIdTx, TransactionFailed>> {
+    const tx = this.api.tx.nominationPools.createWithPoolId(amount, root, nominator, bouncer, poolId)
+    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    if (maybeParsed.isErr()) return err(maybeParsed.error)
 
-    if (maybeTxResult.isErr()) {
-      return { isErr: true, reason: maybeTxResult.error }
-    }
-    const maybeParsed = await parseTransactionResult(this.api, maybeTxResult.value, waitFor)
-    if (maybeParsed.isErr()) {
-      return { isErr: true, reason: maybeParsed.error.reason }
-    }
     const details = maybeParsed.value
-    const { events, txHash, txIndex, blockHash, blockNumber } = details
 
-    const event = Events.Created.New(events)
-    if (event == undefined) {
-      return { isErr: true, reason: "Failed to find Created event." }
-    }
+    const event = Events.Created.New(details.events)
+    if (event == undefined) return err(new TransactionFailed("Failed to find Created event", details))
 
-    const event2 = Events.Bonded.New(events)
-    if (event2 == undefined) {
-      return { isErr: true, reason: "Failed to find Bonded event." }
-    }
+    const event2 = Events.Bonded.New(details.events)
+    if (event2 == undefined) return err(new TransactionFailed("Failed to find Bonded event", details))
 
-    return {
-      isErr: false,
-      event,
-      event2,
-      events,
-      txHash,
-      txIndex,
-      blockHash,
-      blockNumber,
-    }
+    return ok(new CreateWithPoolIdTx(event, event2, details))
   }
 
   async join(
@@ -279,35 +182,17 @@ export class NominationPools {
     waitFor: WaitFor,
     account: KeyringPair,
     options?: TransactionOptions,
-  ): Promise<PoolJoinTxSuccess | GenericFailure> {
-    const optionWrapper = options || {}
-    const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
-      this.api.tx.nominationPools
-        .join(amount, poolId)
-        .signAndSend(account, optionWrapper, (result: ISubmittableResult) => {
-          standardCallback(result, res, waitFor)
-        })
-        .catch((reason) => {
-          res(err(reason))
-        })
-    })
+  ): Promise<Result<JoinTx, TransactionFailed>> {
+    const tx = this.api.tx.nominationPools.join(amount, poolId)
+    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    if (maybeParsed.isErr()) return err(maybeParsed.error)
 
-    if (maybeTxResult.isErr()) {
-      return { isErr: true, reason: maybeTxResult.error }
-    }
-    const maybeParsed = await parseTransactionResult(this.api, maybeTxResult.value, waitFor)
-    if (maybeParsed.isErr()) {
-      return { isErr: true, reason: maybeParsed.error.reason }
-    }
     const details = maybeParsed.value
-    const { events, txHash, txIndex, blockHash, blockNumber } = details
 
-    const event = Events.Bonded.New(events)
-    if (event == undefined) {
-      return { isErr: true, reason: "Failed to find Bonded event." }
-    }
+    const event = Events.Bonded.New(details.events)
+    if (event == undefined) return err(new TransactionFailed("Failed to find Bonded event", details))
 
-    return { isErr: false, event, events, txHash, txIndex, blockHash, blockNumber }
+    return ok(new JoinTx(event, details))
   }
 
   async nominate(
@@ -316,30 +201,14 @@ export class NominationPools {
     waitFor: WaitFor,
     account: KeyringPair,
     options?: TransactionOptions,
-  ): Promise<PoolNominateTxSuccess | GenericFailure> {
-    const optionWrapper = options || {}
-    const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
-      this.api.tx.nominationPools
-        .nominate(poolId, validators)
-        .signAndSend(account, optionWrapper, (result: ISubmittableResult) => {
-          standardCallback(result, res, waitFor)
-        })
-        .catch((reason) => {
-          res(err(reason))
-        })
-    })
+  ): Promise<Result<NominateTx, TransactionFailed>> {
+    const tx = this.api.tx.nominationPools.nominate(poolId, validators)
+    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    if (maybeParsed.isErr()) return err(maybeParsed.error)
 
-    if (maybeTxResult.isErr()) {
-      return { isErr: true, reason: maybeTxResult.error }
-    }
-    const maybeParsed = await parseTransactionResult(this.api, maybeTxResult.value, waitFor)
-    if (maybeParsed.isErr()) {
-      return { isErr: true, reason: maybeParsed.error.reason }
-    }
     const details = maybeParsed.value
-    const { events, txHash, txIndex, blockHash, blockNumber } = details
 
-    return { isErr: false, events, txHash, txIndex, blockHash, blockNumber }
+    return ok(new NominateTx(details))
   }
 
   async bondExtra(
@@ -347,35 +216,17 @@ export class NominationPools {
     waitFor: WaitFor,
     account: KeyringPair,
     options?: TransactionOptions,
-  ): Promise<PoolBondExtraTxSuccess | GenericFailure> {
-    const optionWrapper = options || {}
-    const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
-      this.api.tx.nominationPools
-        .bondExtra(extra)
-        .signAndSend(account, optionWrapper, (result: ISubmittableResult) => {
-          standardCallback(result, res, waitFor)
-        })
-        .catch((reason) => {
-          res(err(reason))
-        })
-    })
+  ): Promise<Result<BondExtraTx, TransactionFailed>> {
+    const tx = this.api.tx.nominationPools.bondExtra(extra)
+    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    if (maybeParsed.isErr()) return err(maybeParsed.error)
 
-    if (maybeTxResult.isErr()) {
-      return { isErr: true, reason: maybeTxResult.error }
-    }
-    const maybeParsed = await parseTransactionResult(this.api, maybeTxResult.value, waitFor)
-    if (maybeParsed.isErr()) {
-      return { isErr: true, reason: maybeParsed.error.reason }
-    }
     const details = maybeParsed.value
-    const { events, txHash, txIndex, blockHash, blockNumber } = details
 
-    const event = Events.Bonded.New(events)
-    if (event == undefined) {
-      return { isErr: true, reason: "Failed to find Bonded event." }
-    }
+    const event = Events.Bonded.New(details.events)
+    if (event == undefined) return err(new TransactionFailed("Failed to find Bonded event", details))
 
-    return { isErr: false, event, events, txHash, txIndex, blockHash, blockNumber }
+    return ok(new BondExtraTx(event, details))
   }
 
   async setMetadata(
@@ -384,30 +235,14 @@ export class NominationPools {
     waitFor: WaitFor,
     account: KeyringPair,
     options?: TransactionOptions,
-  ): Promise<PoolSetMetadataTxSuccess | GenericFailure> {
-    const optionWrapper = options || {}
-    const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
-      this.api.tx.nominationPools
-        .setMetadata(poolId, metadata)
-        .signAndSend(account, optionWrapper, (result: ISubmittableResult) => {
-          standardCallback(result, res, waitFor)
-        })
-        .catch((reason) => {
-          res(err(reason))
-        })
-    })
+  ): Promise<Result<SetMetadataTx, TransactionFailed>> {
+    const tx = this.api.tx.nominationPools.setMetadata(poolId, metadata)
+    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    if (maybeParsed.isErr()) return err(maybeParsed.error)
 
-    if (maybeTxResult.isErr()) {
-      return { isErr: true, reason: maybeTxResult.error }
-    }
-    const maybeParsed = await parseTransactionResult(this.api, maybeTxResult.value, waitFor)
-    if (maybeParsed.isErr()) {
-      return { isErr: true, reason: maybeParsed.error.reason }
-    }
     const details = maybeParsed.value
-    const { events, txHash, txIndex, blockHash, blockNumber } = details
 
-    return { isErr: false, events, txHash, txIndex, blockHash, blockNumber }
+    return ok(new SetMetadataTx(details))
   }
 
   async unbond(
@@ -416,32 +251,15 @@ export class NominationPools {
     waitFor: WaitFor,
     account: KeyringPair,
     options?: TransactionOptions,
-  ): Promise<PoolUnbondTxSuccess | GenericFailure> {
-    const optionWrapper = options || {}
-    const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
-      this.api.tx.nominationPools
-        .unbond(memberAccount, unbondingPoints)
-        .signAndSend(account, optionWrapper, (result: ISubmittableResult) => {
-          standardCallback(result, res, waitFor)
-        })
-        .catch((reason) => {
-          res(err(reason))
-        })
-    })
+  ): Promise<Result<UnbondTx, TransactionFailed>> {
+    const tx = this.api.tx.nominationPools.unbond(memberAccount, unbondingPoints)
+    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    if (maybeParsed.isErr()) return err(maybeParsed.error)
 
-    if (maybeTxResult.isErr()) {
-      return { isErr: true, reason: maybeTxResult.error }
-    }
-    const maybeParsed = await parseTransactionResult(this.api, maybeTxResult.value, waitFor)
-    if (maybeParsed.isErr()) {
-      return { isErr: true, reason: maybeParsed.error.reason }
-    }
     const details = maybeParsed.value
-    const { events, txHash, txIndex, blockHash, blockNumber } = details
+    const event = Events.Unbonded.New(details.events)
 
-    const event = Events.Unbonded.New(events)
-
-    return { isErr: false, event, events, txHash, txIndex, blockHash, blockNumber }
+    return ok(new UnbondTx(event, details))
   }
 
   async chill(
@@ -449,30 +267,14 @@ export class NominationPools {
     waitFor: WaitFor,
     account: KeyringPair,
     options?: TransactionOptions,
-  ): Promise<PoolChillTxSuccess | GenericFailure> {
-    const optionWrapper = options || {}
-    const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
-      this.api.tx.nominationPools
-        .chill(poolId)
-        .signAndSend(account, optionWrapper, (result: ISubmittableResult) => {
-          standardCallback(result, res, waitFor)
-        })
-        .catch((reason) => {
-          res(err(reason))
-        })
-    })
+  ): Promise<Result<ChillTx, TransactionFailed>> {
+    const tx = this.api.tx.nominationPools.chill(poolId)
+    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    if (maybeParsed.isErr()) return err(maybeParsed.error)
 
-    if (maybeTxResult.isErr()) {
-      return { isErr: true, reason: maybeTxResult.error }
-    }
-    const maybeParsed = await parseTransactionResult(this.api, maybeTxResult.value, waitFor)
-    if (maybeParsed.isErr()) {
-      return { isErr: true, reason: maybeParsed.error.reason }
-    }
     const details = maybeParsed.value
-    const { events, txHash, txIndex, blockHash, blockNumber } = details
 
-    return { isErr: false, events, txHash, txIndex, blockHash, blockNumber } as PoolChillTxSuccess
+    return ok(new ChillTx(details))
   }
 
   async claimCommission(
@@ -480,67 +282,32 @@ export class NominationPools {
     waitFor: WaitFor,
     account: KeyringPair,
     options?: TransactionOptions,
-  ): Promise<PoolClaimCommissionTxSuccess | GenericFailure> {
-    const optionWrapper = options || {}
-    const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
-      this.api.tx.nominationPools
-        .claimCommission(poolId)
-        .signAndSend(account, optionWrapper, (result: ISubmittableResult) => {
-          standardCallback(result, res, waitFor)
-        })
-        .catch((reason) => {
-          res(err(reason))
-        })
-    })
+  ): Promise<Result<ClaimCommissionTx, TransactionFailed>> {
+    const tx = this.api.tx.nominationPools.claimCommission(poolId)
+    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    if (maybeParsed.isErr()) return err(maybeParsed.error)
 
-    if (maybeTxResult.isErr()) {
-      return { isErr: true, reason: maybeTxResult.error }
-    }
-    const maybeParsed = await parseTransactionResult(this.api, maybeTxResult.value, waitFor)
-    if (maybeParsed.isErr()) {
-      return { isErr: true, reason: maybeParsed.error.reason }
-    }
     const details = maybeParsed.value
-    const { events, txHash, txIndex, blockHash, blockNumber } = details
 
-    const event = Events.PoolCommissionClaimed.New(events)
-    if (event == undefined) {
-      return { isErr: true, reason: "Failed to find PoolCommissionClaimed event." }
-    }
+    const event = Events.PoolCommissionClaimed.New(details.events)
+    if (event == undefined) return err(new TransactionFailed("Failed to find PoolCommissionClaimed event", details))
 
-    return { isErr: false, event, events, txHash, txIndex, blockHash, blockNumber }
+    return ok(new ClaimCommissionTx(event, details))
   }
 
   async claimPayout(
     waitFor: WaitFor,
     account: KeyringPair,
     options?: TransactionOptions,
-  ): Promise<PoolClaimPayoutTxSuccess | GenericFailure> {
-    const optionWrapper = options || {}
-    const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
-      this.api.tx.nominationPools
-        .claimPayout()
-        .signAndSend(account, optionWrapper, (result: ISubmittableResult) => {
-          standardCallback(result, res, waitFor)
-        })
-        .catch((reason) => {
-          res(err(reason))
-        })
-    })
+  ): Promise<Result<ClaimPayoutTx, TransactionFailed>> {
+    const tx = this.api.tx.nominationPools.claimPayout()
+    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    if (maybeParsed.isErr()) return err(maybeParsed.error)
 
-    if (maybeTxResult.isErr()) {
-      return { isErr: true, reason: maybeTxResult.error }
-    }
-    const maybeParsed = await parseTransactionResult(this.api, maybeTxResult.value, waitFor)
-    if (maybeParsed.isErr()) {
-      return { isErr: true, reason: maybeParsed.error.reason }
-    }
     const details = maybeParsed.value
-    const { events, txHash, txIndex, blockHash, blockNumber } = details
+    const event = Events.PaidOut.New(details.events)
 
-    const event = Events.PaidOut.New(events)
-
-    return { isErr: false, event, events, txHash, txIndex, blockHash, blockNumber }
+    return ok(new ClaimPayoutTx(event, details))
   }
 
   async claimPayoutOther(
@@ -548,32 +315,15 @@ export class NominationPools {
     waitFor: WaitFor,
     account: KeyringPair,
     options?: TransactionOptions,
-  ): Promise<PoolClaimPayoutOtherTxSuccess | GenericFailure> {
-    const optionWrapper = options || {}
-    const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
-      this.api.tx.nominationPools
-        .claimPayoutOther(other)
-        .signAndSend(account, optionWrapper, (result: ISubmittableResult) => {
-          standardCallback(result, res, waitFor)
-        })
-        .catch((reason) => {
-          res(err(reason))
-        })
-    })
+  ): Promise<Result<ClaimPayoutOtherTx, TransactionFailed>> {
+    const tx = this.api.tx.nominationPools.claimPayoutOther(other)
+    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    if (maybeParsed.isErr()) return err(maybeParsed.error)
 
-    if (maybeTxResult.isErr()) {
-      return { isErr: true, reason: maybeTxResult.error }
-    }
-    const maybeParsed = await parseTransactionResult(this.api, maybeTxResult.value, waitFor)
-    if (maybeParsed.isErr()) {
-      return { isErr: true, reason: maybeParsed.error.reason }
-    }
     const details = maybeParsed.value
-    const { events, txHash, txIndex, blockHash, blockNumber } = details
+    const event = Events.PaidOut.New(details.events)
 
-    const event = Events.PaidOut.New(events)
-
-    return { isErr: false, event, events, txHash, txIndex, blockHash, blockNumber }
+    return ok(new ClaimPayoutOtherTx(event, details))
   }
 
   async setClaimPermission(
@@ -581,30 +331,14 @@ export class NominationPools {
     waitFor: WaitFor,
     account: KeyringPair,
     options?: TransactionOptions,
-  ): Promise<PoolSetClaimPermissionOtherTxSuccess | GenericFailure> {
-    const optionWrapper = options || {}
-    const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
-      this.api.tx.nominationPools
-        .setClaimPermission(permission)
-        .signAndSend(account, optionWrapper, (result: ISubmittableResult) => {
-          standardCallback(result, res, waitFor)
-        })
-        .catch((reason) => {
-          res(err(reason))
-        })
-    })
+  ): Promise<Result<SetClaimPermissionTx, TransactionFailed>> {
+    const tx = this.api.tx.nominationPools.setClaimPermission(permission)
+    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    if (maybeParsed.isErr()) return err(maybeParsed.error)
 
-    if (maybeTxResult.isErr()) {
-      return { isErr: true, reason: maybeTxResult.error }
-    }
-    const maybeParsed = await parseTransactionResult(this.api, maybeTxResult.value, waitFor)
-    if (maybeParsed.isErr()) {
-      return { isErr: true, reason: maybeParsed.error.reason }
-    }
     const details = maybeParsed.value
-    const { events, txHash, txIndex, blockHash, blockNumber } = details
 
-    return { isErr: false, events, txHash, txIndex, blockHash, blockNumber }
+    return ok(new SetClaimPermissionTx(details))
   }
 
   async setCommission(
@@ -613,43 +347,25 @@ export class NominationPools {
     waitFor: WaitFor,
     account: KeyringPair,
     options?: TransactionOptions,
-  ): Promise<PoolSetCommissionTxSuccess | GenericFailure> {
-    const optionWrapper = options || {}
-
+  ): Promise<Result<SetCommissionTx, TransactionFailed>> {
     let commission: string[] | null = null
     if (newCommission != null) {
       const amount = commissionNumberToPerbill(newCommission.amount)
-      if (amount.isErr()) {
-        return { isErr: true, reason: amount.error } as GenericFailure
-      }
+      if (amount.isErr()) return err(new TransactionFailed(amount.error, null))
+
       commission = [amount.value, newCommission.payee]
     }
-    const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
-      this.api.tx.nominationPools
-        .setCommission(poolId, commission)
-        .signAndSend(account, optionWrapper, (result: ISubmittableResult) => {
-          standardCallback(result, res, waitFor)
-        })
-        .catch((reason) => {
-          res(err(reason))
-        })
-    })
 
-    if (maybeTxResult.isErr()) {
-      return { isErr: true, reason: maybeTxResult.error }
-    }
-    const maybeParsed = await parseTransactionResult(this.api, maybeTxResult.value, waitFor)
-    if (maybeParsed.isErr()) {
-      return { isErr: true, reason: maybeParsed.error.reason }
-    }
+    const tx = this.api.tx.nominationPools.setCommission(poolId, commission)
+    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    if (maybeParsed.isErr()) return err(maybeParsed.error)
+
     const details = maybeParsed.value
-    const { events, txHash, txIndex, blockHash, blockNumber } = details
 
-    const event = Events.PoolCommissionUpdated.New(events)
-    if (event == undefined) {
-      return { isErr: true, reason: "Failed to find PoolCommissionUpdated event." }
-    }
-    return { isErr: false, event, events, txHash, txIndex, blockHash, blockNumber }
+    const event = Events.PoolCommissionUpdated.New(details.events)
+    if (event == undefined) return err(new TransactionFailed("Failed to find PoolCommissionUpdated event", details))
+
+    return ok(new SetCommissionTx(event, details))
   }
 
   async withdrawUnbonded(
@@ -658,35 +374,17 @@ export class NominationPools {
     waitFor: WaitFor,
     account: KeyringPair,
     options?: TransactionOptions,
-  ): Promise<PoolWithdrawUnbodedTxSuccess | GenericFailure> {
-    const optionWrapper = options || {}
-    const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
-      this.api.tx.nominationPools
-        .withdrawUnbonded(memberAccount, numSlashingSpans)
-        .signAndSend(account, optionWrapper, (result: ISubmittableResult) => {
-          standardCallback(result, res, waitFor)
-        })
-        .catch((reason) => {
-          res(err(reason))
-        })
-    })
+  ): Promise<Result<WithdrawUnbodedTx, TransactionFailed>> {
+    const tx = this.api.tx.nominationPools.withdrawUnbonded(memberAccount, numSlashingSpans)
+    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    if (maybeParsed.isErr()) return err(maybeParsed.error)
 
-    if (maybeTxResult.isErr()) {
-      return { isErr: true, reason: maybeTxResult.error }
-    }
-    const maybeParsed = await parseTransactionResult(this.api, maybeTxResult.value, waitFor)
-    if (maybeParsed.isErr()) {
-      return { isErr: true, reason: maybeParsed.error.reason }
-    }
     const details = maybeParsed.value
-    const { events, txHash, txIndex, blockHash, blockNumber } = details
 
-    const event = Events.Withdrawn.New(events)
-    if (event == undefined) {
-      return { isErr: true, reason: "Failed to find Withdraw event." } as GenericFailure
-    }
+    const event = Events.Withdrawn.New(details.events)
+    if (event == undefined) return err(new TransactionFailed("Failed to find Withdrawn event", details))
 
-    return { isErr: false, event, events, txHash, txIndex, blockHash, blockNumber }
+    return ok(new WithdrawUnbodedTx(event, details))
   }
 
   async setState(
@@ -695,32 +393,15 @@ export class NominationPools {
     waitFor: WaitFor,
     account: KeyringPair,
     options?: TransactionOptions,
-  ): Promise<PoolSetStateTxSuccess | GenericFailure> {
-    const optionWrapper = options || {}
-    const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
-      this.api.tx.nominationPools
-        .setState(poolId, state)
-        .signAndSend(account, optionWrapper, (result: ISubmittableResult) => {
-          standardCallback(result, res, waitFor)
-        })
-        .catch((reason) => {
-          res(err(reason))
-        })
-    })
+  ): Promise<Result<SetStateTx, TransactionFailed>> {
+    const tx = this.api.tx.nominationPools.setState(poolId, state)
+    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    if (maybeParsed.isErr()) return err(maybeParsed.error)
 
-    if (maybeTxResult.isErr()) {
-      return { isErr: true, reason: maybeTxResult.error }
-    }
-    const maybeParsed = await parseTransactionResult(this.api, maybeTxResult.value, waitFor)
-    if (maybeParsed.isErr()) {
-      return { isErr: true, reason: maybeParsed.error.reason }
-    }
     const details = maybeParsed.value
-    const { events, txHash, txIndex, blockHash, blockNumber } = details
+    const event = Events.StateChanged.New(details.events)
 
-    const event = Events.StateChanged.New(events)
-
-    return { isErr: false, event, events, txHash, txIndex, blockHash, blockNumber }
+    return ok(new SetStateTx(event, details))
   }
 }
 
@@ -734,9 +415,7 @@ namespace Events {
     ) {}
     static New(events: EventRecord[]): Bonded | undefined {
       const ed: any = events.find((e) => e.event.method == "Bonded" && e.event.section == "nominationPools")?.event.data
-      if (ed == undefined) {
-        return undefined
-      }
+      if (ed == undefined) return undefined
 
       return new Bonded(
         ed["member"].toString(),
@@ -755,9 +434,7 @@ namespace Events {
     static New(events: EventRecord[]): Created | undefined {
       const ed: any = events.find((e) => e.event.method == "Created" && e.event.section == "nominationPools")?.event
         .data
-      if (ed == undefined) {
-        return undefined
-      }
+      if (ed == undefined) return undefined
 
       return new Created(ed["depositor"].toString(), ed["poolId"].toString())
     }
@@ -774,9 +451,7 @@ namespace Events {
     static New(events: EventRecord[]): Unbonded | undefined {
       const ed: any = events.find((e) => e.event.method == "Unbonded" && e.event.section == "nominationPools")?.event
         .data
-      if (ed == undefined) {
-        return undefined
-      }
+      if (ed == undefined) return undefined
 
       return new Unbonded(
         ed["member"].toString(),
@@ -797,9 +472,7 @@ namespace Events {
       const ed: any = events.find(
         (e) => e.event.method == "PoolCommissionClaimed" && e.event.section == "nominationPools",
       )?.event.data
-      if (ed == undefined) {
-        return undefined
-      }
+      if (ed == undefined) return undefined
 
       return new PoolCommissionClaimed(ed["poolId"].toString(), ed["commission"].toString())
     }
@@ -814,9 +487,7 @@ namespace Events {
     static New(events: EventRecord[]): PaidOut | undefined {
       const ed: any = events.find((e) => e.event.method == "PaidOut" && e.event.section == "nominationPools")?.event
         .data
-      if (ed == undefined) {
-        return undefined
-      }
+      if (ed == undefined) return undefined
 
       return new PaidOut(ed["member"].toString(), ed["poolId"].toString(), ed["payout"].toString())
     }
@@ -831,9 +502,7 @@ namespace Events {
       const ed: any = events.find(
         (e) => e.event.method == "PoolCommissionUpdated" && e.event.section == "nominationPools",
       )?.event.data
-      if (ed == undefined) {
-        return undefined
-      }
+      if (ed == undefined) return undefined
 
       return new PoolCommissionUpdated(ed["poolId"].toString(), ed["current"].toString())
     }
@@ -849,9 +518,7 @@ namespace Events {
     static New(events: EventRecord[]): Withdrawn | undefined {
       const ed: any = events.find((e) => e.event.method == "Withdrawn" && e.event.section == "nominationPools")?.event
         .data
-      if (ed == undefined) {
-        return undefined
-      }
+      if (ed == undefined) return undefined
 
       return new Withdrawn(
         ed["member"].toString(),
@@ -870,9 +537,7 @@ namespace Events {
     static New(events: EventRecord[]): StateChanged | undefined {
       const ed: any = events.find((e) => e.event.method == "StateChanged" && e.event.section == "nominationPools")
         ?.event.data
-      if (ed == undefined) {
-        return undefined
-      }
+      if (ed == undefined) return undefined
 
       return new StateChanged(ed["poolId"].toString(), ed["newState"].toString())
     }

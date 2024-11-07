@@ -22,4 +22,5 @@ You should now have the following files
 
 Run the following commands:
 
+- `deno install`
 - `deno run -A ./index.ts`

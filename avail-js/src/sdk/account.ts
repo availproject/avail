@@ -1,11 +1,12 @@
 import { BN } from "@polkadot/util"
 import { KeyringPair } from "@polkadot/keyring/types"
-import { H256, SDK, sdkUtil, WaitFor } from "."
-import { TransferKeepAliveTxSuccess } from "./transactions/balances"
-import { GenericFailure } from "./transactions/common"
-import { CreateApplicationKeyTxSuccess, SubmitDataTxSuccess } from "./transactions/da"
+import { H256, Keyring, SDK, sdkUtil, WaitFor } from "."
+import { CreateApplicationKeyTx, SubmitDataTx } from "./transactions/da"
 import { Bytes } from "@polkadot/types-codec"
 import { getNonceState, getNonceNode } from "./utils"
+import { TransferKeepAliveTx } from "./transactions/balances"
+import { TransactionFailed } from "./transactions/common"
+import { Result } from "neverthrow"
 
 export interface AccountBalance {
   free: BN
@@ -24,6 +25,10 @@ export class Account {
     public keyring: KeyringPair,
   ) {}
 
+  static alice(sdk: SDK): Account {
+    return new Account(sdk, new Keyring({ type: "sr25519" }).addFromUri("//Alice"))
+  }
+
   setNonce(value: number | null) {
     this.nonce = value
   }
@@ -40,34 +45,28 @@ export class Account {
     return this.keyring.address
   }
 
-  async balanceTransfer(dest: string, value: BN): Promise<TransferKeepAliveTxSuccess | GenericFailure> {
-    const options = this.buildOptions()
-    return await this.sdk.tx.balances.transferKeepAlive(dest, value, this.waitFor, this.keyring, options)
+  async balanceTransfer(dest: string, value: BN): Promise<Result<TransferKeepAliveTx, TransactionFailed>> {
+    return await this.sdk.tx.balances.transferKeepAlive(dest, value, this.waitFor, this.keyring, this.buildOptions())
   }
 
   async balanceTransferNoWait(dest: string, value: BN): Promise<H256> {
-    const options = this.buildOptions()
-    return await this.sdk.tx.balances.transferKeepAliveNoWait(dest, value, this.keyring, options)
+    return await this.sdk.tx.balances.transferKeepAliveNoWait(dest, value, this.keyring, this.buildOptions())
   }
 
-  async submitData(data: string | Bytes): Promise<SubmitDataTxSuccess | GenericFailure> {
-    const options = this.buildOptions()
-    return await this.sdk.tx.dataAvailability.submitData(data, this.waitFor, this.keyring, options)
+  async submitData(data: string | Bytes): Promise<Result<SubmitDataTx, TransactionFailed>> {
+    return await this.sdk.tx.dataAvailability.submitData(data, this.waitFor, this.keyring, this.buildOptions())
   }
 
   async submitDataNoWait(data: string | Bytes): Promise<H256> {
-    const options = this.buildOptions()
-    return await this.sdk.tx.dataAvailability.submitDataNoWait(data, this.keyring, options)
+    return await this.sdk.tx.dataAvailability.submitDataNoWait(data, this.keyring, this.buildOptions())
   }
 
-  async createApplicationKey(key: string): Promise<CreateApplicationKeyTxSuccess | GenericFailure> {
-    const options = this.buildOptions()
-    return await this.sdk.tx.dataAvailability.createApplicationKey(key, this.waitFor, this.keyring, options)
+  async createApplicationKey(key: string): Promise<Result<CreateApplicationKeyTx, TransactionFailed>> {
+    return await this.sdk.tx.dataAvailability.createApplicationKey(key, this.waitFor, this.keyring, this.buildOptions())
   }
 
   async createApplicationKeyNoWait(key: string): Promise<H256> {
-    const options = this.buildOptions()
-    return await this.sdk.tx.dataAvailability.createApplicationKeyNoWait(key, this.keyring, options)
+    return await this.sdk.tx.dataAvailability.createApplicationKeyNoWait(key, this.keyring, this.buildOptions())
   }
 
   async getBalance(): Promise<AccountBalance> {

@@ -1,81 +1,67 @@
 import { ApiPromise } from "@polkadot/api"
-import { ISubmittableResult } from "@polkadot/types/types/extrinsic"
 import { H256, EventRecord } from "@polkadot/types/interfaces/types"
 import { BN } from "@polkadot/util"
 import { KeyringPair } from "@polkadot/keyring/types"
 import { err, Result, ok } from "neverthrow"
-import { WaitFor, GenericFailure, standardCallback, TransactionOptions } from "./common"
-import { commissionNumberToPerbill, parseTransactionResult } from "../utils"
+import {
+  WaitFor,
+  TransactionOptions,
+  singAndSendAndParseTransaction,
+  TxResultDetails,
+  TransactionFailed,
+} from "./common"
+import { commissionNumberToPerbill } from "../utils"
 
 type ValidatorPerfs = { commission: string; blocked: boolean }
 export type StakingRewardDestination = "Staked" | "Stash" | "None" | { account: string }
 
-export type BondTxSuccess = {
-  isErr: false
-  event: Events.Bonded
-  events: EventRecord[]
-  txHash: H256
-  txIndex: number
-  blockHash: H256
-  blockNumber: number
-}
-export type BondExtraTxSuccess = {
-  isErr: false
-  event: Events.Bonded
-  events: EventRecord[]
-  txHash: H256
-  txIndex: number
-  blockHash: H256
-  blockNumber: number
-}
-export type ChillTxSuccess = {
-  isErr: false
-  event: Events.Chilled
-  events: EventRecord[]
-  txHash: H256
-  txIndex: number
-  blockHash: H256
-  blockNumber: number
+export class BondTx {
+  constructor(
+    public event: Events.Bonded,
+    public details: TxResultDetails,
+  ) {}
 }
 
-export type ChillOtherTxSuccess = {
-  isErr: false
-  event: Events.Chilled
-  events: EventRecord[]
-  txHash: H256
-  txIndex: number
-  blockHash: H256
-  blockNumber: number
+export class BondExtraTx {
+  constructor(
+    public event: Events.Bonded,
+    public details: TxResultDetails,
+  ) {}
 }
 
-export type UnbondTxSuccess = {
-  isErr: false
-  event: Events.Unbonded
-  events: EventRecord[]
-  txHash: H256
-  txIndex: number
-  blockHash: H256
-  blockNumber: number
+export class ChillTx {
+  constructor(
+    public event: Events.Chilled,
+    public details: TxResultDetails,
+  ) {}
 }
 
-export type ValidatexSuccess = {
-  isErr: false
-  event: Events.ValidatorPrefsSet
-  events: EventRecord[]
-  txHash: H256
-  txIndex: number
-  blockHash: H256
-  blockNumber: number
+export class ChillOtherTx {
+  constructor(
+    public event: Events.Chilled,
+    public details: TxResultDetails,
+  ) {}
 }
 
-export type NominateTxSuccess = {
-  isErr: false
-  txData: TransactionData.Nominate
-  events: EventRecord[]
-  txHash: H256
-  txIndex: number
-  blockHash: H256
-  blockNumber: number
+export class UnbondTx {
+  constructor(
+    public event: Events.Unbonded,
+    public details: TxResultDetails,
+  ) {}
+}
+
+export class ValidateTx {
+  constructor(
+    public event: Events.ValidatorPrefsSet,
+    public details: TxResultDetails,
+  ) {}
+}
+
+export class NominateTx {
+  constructor(
+    public txData: TransactionData.Nominate,
+    public details: TxResultDetails,
+  ) {}
 }
 
 export class Staking {
@@ -91,35 +77,17 @@ export class Staking {
     waitFor: WaitFor,
     account: KeyringPair,
     options?: TransactionOptions,
-  ): Promise<BondTxSuccess | GenericFailure> {
-    const optionWrapper = options || {}
-    const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
-      this.api.tx.staking
-        .bond(value, payee)
-        .signAndSend(account, optionWrapper, (result: ISubmittableResult) => {
-          standardCallback(result, res, waitFor)
-        })
-        .catch((reason) => {
-          res(err(reason))
-        })
-    })
+  ): Promise<Result<BondTx, TransactionFailed>> {
+    const tx = this.api.tx.staking.bond(value, payee)
+    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    if (maybeParsed.isErr()) return err(maybeParsed.error)
 
-    if (maybeTxResult.isErr()) {
-      return { isErr: true, reason: maybeTxResult.error }
-    }
-    const maybeParsed = await parseTransactionResult(this.api, maybeTxResult.value, waitFor)
-    if (maybeParsed.isErr()) {
-      return { isErr: true, reason: maybeParsed.error.reason }
-    }
     const details = maybeParsed.value
-    const { events, txHash, txIndex, blockHash, blockNumber } = details
 
-    const event = Events.Bonded.New(events)
-    if (event == undefined) {
-      return { isErr: true, reason: "Failed to find Bonded event." }
-    }
+    const event = Events.Bonded.New(details.events)
+    if (event == undefined) return err(new TransactionFailed("Failed to find Bonded event", details))
 
-    return { isErr: false, event, events, txHash, txIndex, blockHash, blockNumber }
+    return ok(new BondTx(event, details))
   }
 
   async bondExtra(
@@ -127,70 +95,34 @@ export class Staking {
     waitFor: WaitFor,
     account: KeyringPair,
     options?: TransactionOptions,
-  ): Promise<BondExtraTxSuccess | GenericFailure> {
-    const optionWrapper = options || {}
-    const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
-      this.api.tx.staking
-        .bondExtra(maxAdditional)
-        .signAndSend(account, optionWrapper, (result: ISubmittableResult) => {
-          standardCallback(result, res, waitFor)
-        })
-        .catch((reason) => {
-          res(err(reason))
-        })
-    })
+  ): Promise<Result<BondExtraTx, TransactionFailed>> {
+    const tx = this.api.tx.staking.bondExtra(maxAdditional)
+    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    if (maybeParsed.isErr()) return err(maybeParsed.error)
 
-    if (maybeTxResult.isErr()) {
-      return { isErr: true, reason: maybeTxResult.error }
-    }
-    const maybeParsed = await parseTransactionResult(this.api, maybeTxResult.value, waitFor)
-    if (maybeParsed.isErr()) {
-      return { isErr: true, reason: maybeParsed.error.reason }
-    }
     const details = maybeParsed.value
-    const { events, txHash, txIndex, blockHash, blockNumber } = details
 
-    const event = Events.Bonded.New(events)
-    if (event == undefined) {
-      return { isErr: true, reason: "Failed to find Bonded event." }
-    }
+    const event = Events.Bonded.New(details.events)
+    if (event == undefined) return err(new TransactionFailed("Failed to find Bonded event", details))
 
-    return { isErr: false, event, events, txHash, txIndex, blockHash, blockNumber }
+    return ok(new BondExtraTx(event, details))
   }
 
   async chill(
     waitFor: WaitFor,
     account: KeyringPair,
     options?: TransactionOptions,
-  ): Promise<ChillTxSuccess | GenericFailure> {
-    const optionWrapper = options || {}
-    const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
-      this.api.tx.staking
-        .chill()
-        .signAndSend(account, optionWrapper, (result: ISubmittableResult) => {
-          standardCallback(result, res, waitFor)
-        })
-        .catch((reason) => {
-          res(err(reason))
-        })
-    })
+  ): Promise<Result<ChillTx, TransactionFailed>> {
+    const tx = this.api.tx.staking.chill()
+    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    if (maybeParsed.isErr()) return err(maybeParsed.error)
 
-    if (maybeTxResult.isErr()) {
-      return { isErr: true, reason: maybeTxResult.error }
-    }
-    const maybeParsed = await parseTransactionResult(this.api, maybeTxResult.value, waitFor)
-    if (maybeParsed.isErr()) {
-      return { isErr: true, reason: maybeParsed.error.reason }
-    }
     const details = maybeParsed.value
-    const { events, txHash, txIndex, blockHash, blockNumber } = details
 
-    const event = Events.Chilled.New(events)
-    if (event == undefined) {
-      return { isErr: true, reason: "Failed to find Chilled event." }
-    }
+    const event = Events.Chilled.New(details.events)
+    if (event == undefined) return err(new TransactionFailed("Failed to find Chilled event", details))
 
-    return { isErr: false, event, events, txHash, txIndex, blockHash, blockNumber }
+    return ok(new ChillTx(event, details))
   }
 
   async chillOther(
@@ -198,35 +130,17 @@ export class Staking {
     waitFor: WaitFor,
     account: KeyringPair,
     options?: TransactionOptions,
-  ): Promise<ChillOtherTxSuccess | GenericFailure> {
-    const optionWrapper = options || {}
-    const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
-      this.api.tx.staking
-        .chillOther(stash)
-        .signAndSend(account, optionWrapper, (result: ISubmittableResult) => {
-          standardCallback(result, res, waitFor)
-        })
-        .catch((reason) => {
-          res(err(reason))
-        })
-    })
+  ): Promise<Result<ChillOtherTx, TransactionFailed>> {
+    const tx = this.api.tx.staking.chillOther(stash)
+    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    if (maybeParsed.isErr()) return err(maybeParsed.error)
 
-    if (maybeTxResult.isErr()) {
-      return { isErr: true, reason: maybeTxResult.error }
-    }
-    const maybeParsed = await parseTransactionResult(this.api, maybeTxResult.value, waitFor)
-    if (maybeParsed.isErr()) {
-      return { isErr: true, reason: maybeParsed.error.reason }
-    }
     const details = maybeParsed.value
-    const { events, txHash, txIndex, blockHash, blockNumber } = details
 
-    const event = Events.Chilled.New(events)
-    if (event == undefined) {
-      return { isErr: true, reason: "Failed to find Chilled event." }
-    }
+    const event = Events.Chilled.New(details.events)
+    if (event == undefined) return err(new TransactionFailed("Failed to find Chilled event", details))
 
-    return { isErr: false, event, events, txHash, txIndex, blockHash, blockNumber }
+    return ok(new ChillOtherTx(event, details))
   }
 
   async nominate(
@@ -234,43 +148,17 @@ export class Staking {
     waitFor: WaitFor,
     account: KeyringPair,
     options?: TransactionOptions,
-  ): Promise<NominateTxSuccess | GenericFailure> {
-    const optionWrapper = options || {}
-    const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
-      this.api.tx.staking
-        .nominate(targets)
-        .signAndSend(account, optionWrapper, (result: ISubmittableResult) => {
-          standardCallback(result, res, waitFor)
-        })
-        .catch((reason) => {
-          res(err(reason))
-        })
-    })
+  ): Promise<Result<NominateTx, TransactionFailed>> {
+    const tx = this.api.tx.staking.nominate(targets)
+    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    if (maybeParsed.isErr()) return err(maybeParsed.error)
 
-    if (maybeTxResult.isErr()) {
-      return { isErr: true, reason: maybeTxResult.error }
-    }
-    const maybeParsed = await parseTransactionResult(this.api, maybeTxResult.value, waitFor)
-    if (maybeParsed.isErr()) {
-      return { isErr: true, reason: maybeParsed.error.reason }
-    }
     const details = maybeParsed.value
-    const { events, txHash, txIndex, blockHash, blockNumber } = details
 
-    const maybeTxData = await TransactionData.Nominate.New(this.api, txHash, blockHash)
-    if (maybeTxData.isErr()) {
-      return { isErr: true, reason: maybeTxData.error }
-    }
+    const maybeTxData = await TransactionData.Nominate.New(this.api, details.txHash, details.blockHash)
+    if (maybeTxData.isErr()) return err(new TransactionFailed(maybeTxData.error, details))
 
-    return {
-      isErr: false,
-      txData: maybeTxData.value,
-      events,
-      txHash,
-      txIndex,
-      blockHash,
-      blockNumber,
-    }
+    return ok(new NominateTx(maybeTxData.value, details))
   }
 
   async unbond(
@@ -278,35 +166,17 @@ export class Staking {
     waitFor: WaitFor,
     account: KeyringPair,
     options?: TransactionOptions,
-  ): Promise<UnbondTxSuccess | GenericFailure> {
-    const optionWrapper = options || {}
-    const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
-      this.api.tx.staking
-        .unbond(value)
-        .signAndSend(account, optionWrapper, (result: ISubmittableResult) => {
-          standardCallback(result, res, waitFor)
-        })
-        .catch((reason) => {
-          res(err(reason))
-        })
-    })
+  ): Promise<Result<UnbondTx, TransactionFailed>> {
+    const tx = this.api.tx.staking.unbond(value)
+    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    if (maybeParsed.isErr()) return err(maybeParsed.error)
 
-    if (maybeTxResult.isErr()) {
-      return { isErr: true, reason: maybeTxResult.error }
-    }
-    const maybeParsed = await parseTransactionResult(this.api, maybeTxResult.value, waitFor)
-    if (maybeParsed.isErr()) {
-      return { isErr: true, reason: maybeParsed.error.reason }
-    }
     const details = maybeParsed.value
-    const { events, txHash, txIndex, blockHash, blockNumber } = details
 
-    const event = Events.Unbonded.New(events)
-    if (event == undefined) {
-      return { isErr: true, reason: "Failed to find Unbonded event." }
-    }
+    const event = Events.Unbonded.New(details.events)
+    if (event == undefined) return err(new TransactionFailed("Failed to find Unbonded event", details))
 
-    return { isErr: false, event, events, txHash, txIndex, blockHash, blockNumber }
+    return ok(new UnbondTx(event, details))
   }
 
   async validate(
@@ -315,41 +185,21 @@ export class Staking {
     waitFor: WaitFor,
     account: KeyringPair,
     options?: TransactionOptions,
-  ): Promise<ValidatexSuccess | GenericFailure> {
+  ): Promise<Result<ValidateTx, TransactionFailed>> {
     const maybeCommission = commissionNumberToPerbill(commission)
-    if (maybeCommission.isErr()) {
-      return { isErr: true, reason: maybeCommission.error } as GenericFailure
-    }
+    if (maybeCommission.isErr()) return err(new TransactionFailed(maybeCommission.error, null))
 
     const validatorPerfs = { commission: maybeCommission.value, blocked } as ValidatorPerfs
-    const optionWrapper = options || {}
-    const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
-      this.api.tx.staking
-        .validate(validatorPerfs)
-        .signAndSend(account, optionWrapper, (result: ISubmittableResult) => {
-          standardCallback(result, res, waitFor)
-        })
-        .catch((reason) => {
-          res(err(reason))
-        })
-    })
+    const tx = this.api.tx.staking.validate(validatorPerfs)
+    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    if (maybeParsed.isErr()) return err(maybeParsed.error)
 
-    if (maybeTxResult.isErr()) {
-      return { isErr: true, reason: maybeTxResult.error }
-    }
-    const maybeParsed = await parseTransactionResult(this.api, maybeTxResult.value, waitFor)
-    if (maybeParsed.isErr()) {
-      return { isErr: true, reason: maybeParsed.error.reason }
-    }
     const details = maybeParsed.value
-    const { events, txHash, txIndex, blockHash, blockNumber } = details
 
-    const event = Events.ValidatorPrefsSet.New(events)
-    if (event == undefined) {
-      return { isErr: true, reason: "Failed to find ValidatorPrefsSet event." } as GenericFailure
-    }
+    const event = Events.ValidatorPrefsSet.New(details.events)
+    if (event == undefined) return err(new TransactionFailed("Failed to find Chilled ValidatorPrefsSet", details))
 
-    return { isErr: false, event, events, txHash, txIndex, blockHash, blockNumber } as ValidatexSuccess
+    return ok(new ValidateTx(event, details))
   }
 }
 
@@ -361,9 +211,7 @@ export namespace Events {
     ) {}
     static New(events: EventRecord[]): Bonded | undefined {
       const ed: any = events.find((e) => e.event.method == "Bonded")?.event.data
-      if (ed == undefined) {
-        return undefined
-      }
+      if (ed == undefined) return undefined
 
       const amountString = ed["amount"].toString()
       const amount = new BN(amountString).div(new BN(10).pow(new BN(18))).toString()
@@ -376,9 +224,7 @@ export namespace Events {
     constructor(public stash: string) {}
     static New(events: EventRecord[]): Chilled | undefined {
       const ed: any = events.find((e) => e.event.method == "Chilled")?.event.data
-      if (ed == undefined) {
-        return undefined
-      }
+      if (ed == undefined) return undefined
 
       return new Chilled(ed["stash"].toString())
     }
@@ -391,9 +237,7 @@ export namespace Events {
     ) {}
     static New(events: EventRecord[]): Unbonded | undefined {
       const ed: any = events.find((e) => e.event.method == "Unbonded")?.event.data
-      if (ed == undefined) {
-        return undefined
-      }
+      if (ed == undefined) return undefined
 
       return new Unbonded(ed["stash"].toString(), ed["amount"].toString())
     }
@@ -407,9 +251,7 @@ export namespace Events {
     ) {}
     static New(events: EventRecord[]): ValidatorPrefsSet | undefined {
       const ed: any = events.find((e) => e.event.method == "ValidatorPrefsSet")?.event.data
-      if (ed == undefined) {
-        return undefined
-      }
+      if (ed == undefined) return undefined
 
       return new ValidatorPrefsSet(
         ed["stash"].toString(),
@@ -427,9 +269,7 @@ export namespace TransactionData {
     static async New(api: ApiPromise, txHash: H256, blockHash: H256): Promise<Result<Nominate, string>> {
       const block = await api.rpc.chain.getBlock(blockHash)
       const tx = block.block.extrinsics.find((tx) => tx.hash.toHex() == txHash.toHex())
-      if (tx == undefined) {
-        return err("Failed to find nominate transaction.")
-      }
+      if (tx == undefined) return err("Failed to find nominate transaction.")
 
       const targets = []
       const txTargets = tx.method.args[0] as any

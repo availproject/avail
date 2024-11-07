@@ -1,17 +1,15 @@
 import { ApiPromise } from "@polkadot/api"
-import { ISubmittableResult } from "@polkadot/types/types/extrinsic"
 import { EventRecord, Weight } from "@polkadot/types/interfaces/types"
 import { KeyringPair } from "@polkadot/keyring/types"
 import { err, Result, ok } from "neverthrow"
 import {
   WaitFor,
-  standardCallback,
   TransactionFailed,
   TransactionOptions,
   TxResultDetails,
   MultisigTimepoint,
+  singAndSendAndParseTransaction,
 } from "./common"
-import { parseTransactionResult } from "../utils"
 
 export class AsMultiTx {
   constructor(
@@ -46,25 +44,10 @@ export class Multisig {
     account: KeyringPair,
     options?: TransactionOptions,
   ): Promise<Result<AsMultiTx, TransactionFailed>> {
-    const optionWrapper = options || {}
-    const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
-      this.api.tx.multisig
-        .asMulti(threshold, otherSignatures, timepoint, call, maxWeight)
-        .signAndSend(account, optionWrapper, (result: ISubmittableResult) => {
-          standardCallback(result, res, waitFor)
-        })
-        .catch((reason) => {
-          res(err(reason))
-        })
-    })
+    const tx = this.api.tx.multisig.asMulti(threshold, otherSignatures, timepoint, call, maxWeight)
+    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    if (maybeParsed.isErr()) return err(maybeParsed.error)
 
-    if (maybeTxResult.isErr()) {
-      return err(new TransactionFailed(maybeTxResult.error, null))
-    }
-    const maybeParsed = await parseTransactionResult(this.api, maybeTxResult.value, waitFor)
-    if (maybeParsed.isErr()) {
-      return err(maybeParsed.error)
-    }
     const details = maybeParsed.value
 
     const event = Events.MultisigExecuted.New(details.events)
@@ -83,25 +66,10 @@ export class Multisig {
     account: KeyringPair,
     options?: TransactionOptions,
   ): Promise<Result<ApproveAsMultiTx, TransactionFailed>> {
-    const optionWrapper = options || {}
-    const maybeTxResult = await new Promise<Result<ISubmittableResult, string>>((res, _) => {
-      this.api.tx.multisig
-        .approveAsMulti(threshold, otherSignatures, timepoint, callHash, maxWeight)
-        .signAndSend(account, optionWrapper, (result: ISubmittableResult) => {
-          standardCallback(result, res, waitFor)
-        })
-        .catch((reason) => {
-          res(err(reason))
-        })
-    })
+    const tx = this.api.tx.multisig.approveAsMulti(threshold, otherSignatures, timepoint, callHash, maxWeight)
+    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    if (maybeParsed.isErr()) return err(maybeParsed.error)
 
-    if (maybeTxResult.isErr()) {
-      return err(new TransactionFailed(maybeTxResult.error, null))
-    }
-    const maybeParsed = await parseTransactionResult(this.api, maybeTxResult.value, waitFor)
-    if (maybeParsed.isErr()) {
-      return err(maybeParsed.error)
-    }
     const details = maybeParsed.value
 
     const event = Events.NewMultisig.New(details.events)

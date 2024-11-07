@@ -1,8 +1,7 @@
 import { SDK, sdkUtil } from "./../../../../src/index"
 
 const main = async () => {
-  const providerEndpoint = "ws://127.0.0.1:9944"
-  const sdk = await SDK.New(providerEndpoint)
+  const sdk = await SDK.New(SDK.localEndpoint())
   const api = sdk.api
 
   // Converting hex string to H256 (BlockHash) via SDK safe

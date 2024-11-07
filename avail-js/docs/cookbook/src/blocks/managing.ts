@@ -1,15 +1,13 @@
-import { SDK, Block, sdkBlock, Keyring, Account } from "./../../../../src/index"
+import { SDK, Block, sdkBlock, Account } from "./../../../../src/index"
 
 const main = async () => {
-  const providerEndpoint = "ws://127.0.0.1:9944"
-  const sdk = await SDK.New(providerEndpoint)
+  const sdk = await SDK.New(SDK.localEndpoint())
   const api = sdk.api
 
   // Submitting data that we will query later
-  const alice = new Account(sdk, new Keyring({ type: "sr25519" }).addFromUri("//Alice"))
-  const tx = await alice.submitData("My Data")
-  if (tx.isErr == true) throw Error() // We expect that the call will succeed
-  const { blockHash, txHash, txIndex } = tx
+  const alice = Account.alice(sdk)
+  const tx = (await alice.submitData("My Data"))._unsafeUnwrap()
+  const { blockHash, txHash, txIndex } = tx.details
   console.log("Reference hex value: " + tx.txData.data)
 
   // SDK

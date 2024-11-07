@@ -1,8 +1,7 @@
 import { SDK, Keyring, Account, WaitFor } from "./../../../../src/index"
 
 const main = async () => {
-  const providerEndpoint = "ws://127.0.0.1:9944"
-  const sdk = await SDK.New(providerEndpoint)
+  const sdk = await SDK.New(SDK.localEndpoint())
   const alice = new Keyring({ type: "sr25519" }).addFromUri("//Alice")
 
   /*
@@ -26,10 +25,7 @@ const main = async () => {
       `submitData` (`submitDataNoWait`)
     */
   const _r1 = await account.balanceTransfer("5HGjWAeFDfFCWPsjFQdVV2Msvz2XtMktvgocEZcCj68kUMaw", account.oneAvail())
-  const r2 = await account.createApplicationKey("Alice Key")
-  if (r2.isErr) {
-    process.exit(1)
-  }
+  const r2 = (await account.createApplicationKey("Alice Key"))._unsafeUnwrap()
 
   /*
       Setting app id, nonce, and the waitfor method can be easily done by calling

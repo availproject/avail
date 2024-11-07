@@ -1,0 +1,3 @@
+```ts
+{{#include ./system.ts}}
+```

@@ -1,8 +1,7 @@
-import { SDK, Keyring, Account, sdkUtil } from "./../../../../src/index"
+import { SDK, Account, sdkUtil } from "./../../../../src/index"
 
 const main = async () => {
-  const providerEndpoint = "ws://127.0.0.1:9944"
-  const sdk = await SDK.New(providerEndpoint)
+  const sdk = await SDK.New(SDK.localEndpoint())
   const api = sdk.api
 
   // Fetching the state nonce via chain state query
@@ -20,7 +19,7 @@ const main = async () => {
   console.log(nonce3) // 1
 
   // Fetching the state nonce via Account instance
-  const account = new Account(sdk, new Keyring({ type: "sr25519" }).addFromUri("//Alice"))
+  const account = Account.alice(sdk)
   console.log(await account.getNonceState()) // 1
 
   // Fetching the state node nonce via RPC call

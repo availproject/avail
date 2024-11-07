@@ -1,9 +1,8 @@
-import { SDK, WaitFor, Keyring, TransactionOptions } from "./../../../../src/index"
+import { SDK, WaitFor, TransactionOptions } from "./../../../../src/index"
 
 const main = async () => {
-  const providerEndpoint = "ws://127.0.0.1:9944"
-  const sdk = await SDK.New(providerEndpoint)
-  const alice = new Keyring({ type: "sr25519" }).addFromUri("//Alice")
+  const sdk = await SDK.New(SDK.localEndpoint())
+  const alice = SDK.alice()
 
   /*
       Setting up application id and/or nonce for any transaction is as simple as just defining them
@@ -15,9 +14,9 @@ const main = async () => {
         - era?: number
         - blockHash?: H256
     */
-  let nonce = await sdk.util.getNonceNode(alice.address)
-  let options: TransactionOptions = { app_id: 1, nonce }
-  let result = await sdk.tx.dataAvailability.submitData("Data", WaitFor.BlockInclusion, alice, options)
+  const nonce = await sdk.util.getNonceNode(alice.address)
+  const options: TransactionOptions = { app_id: 1, nonce }
+  const result = await sdk.tx.dataAvailability.submitData("Data", WaitFor.BlockInclusion, alice, options)
 
   console.log(JSON.stringify(result, null, 2))
 

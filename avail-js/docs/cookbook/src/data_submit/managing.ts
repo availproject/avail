@@ -1,4 +1,4 @@
-import { SubmitDataTxSuccess } from "../../../../src/sdk/transactions/da"
+import { SubmitDataTx } from "../../../../src/sdk/transactions/da"
 import { SDK, Keyring, Account, Block, sdkBlock, WaitFor, DataSubmission } from "./../../../../src/index"
 
 const main = async () => {
@@ -8,14 +8,13 @@ const main = async () => {
   const alice = new Keyring({ type: "sr25519" }).addFromUri("//Alice")
   const account = new Account(sdk, alice)
 
-  const tx1 = await account.createApplicationKey("My Key")
-  if (tx1.isErr) throw Error(tx1.reason)
+  const tx1 = (await account.createApplicationKey("My Key"))._unsafeUnwrap()
   const appId = tx1.event.id
 
   // Calling Submit Data transaction via SDK
   const data = "My Data"
-  const tx2 = await sdk.tx.dataAvailability.submitData(data, WaitFor.BlockInclusion, alice, { app_id: appId })
-  if (tx2.isErr) throw Error(tx2.reason)
+  const mtx2 = await sdk.tx.dataAvailability.submitData(data, WaitFor.BlockInclusion, alice, { app_id: appId })
+  const tx2 = mtx2._unsafeUnwrap()
   displayTx(tx2)
   /*
     Block Hash: 0x0b41bdac4d23dbb9deff74875f01c7666d8153239112e4fdd99735de437be982, Block Number: 3, 
@@ -45,8 +44,7 @@ const main = async () => {
 
   // Calling Submit Data transaction via Account Instance
   account.setAppId(appId)
-  const tx3 = await account.submitData(data)
-  if (tx3.isErr) throw Error(tx3.reason)
+  const tx3 = (await account.submitData(data))._unsafeUnwrap()
   displayTx(tx3)
   /*
     Block Hash: 0x1f6dc25004db61e52ac571b9f30fdf34f3f5c03e8355e928734c31ca0c0c6b01, Block Number: 4, 
@@ -56,7 +54,7 @@ const main = async () => {
   */
 
   // Dissecting Data Submission Object via Block instance
-  const block = await Block.New(api, tx3.blockHash)
+  const block = await Block.New(api, tx3.details.blockHash)
   block.submitDataAll().forEach((ds) => displayDataSubmission(ds)) // You can use `submitDataBySigner`, `submitDataByIndex`, `submitDataByHash` as well here. Check the `Block` section
   /*
     Transaction Hash: 0x65d60b24c5a5e4fd2ad8779896a5108ff516dd8eade0cfeeaf4b565aa512cef6, Transaction Index: 1, 
@@ -75,7 +73,7 @@ const main = async () => {
   */
 
   // Dissecting Data Submission Object via free function
-  const signedBlock = await api.rpc.chain.getBlock(tx3.blockHash)
+  const signedBlock = await api.rpc.chain.getBlock(tx3.details.blockHash)
   sdkBlock.submitDataAll(signedBlock).forEach((ds) => displayDataSubmission(ds)) // You can use `submitDataBySigner`, `submitDataByIndex`, `submitDataByHash` as well here. Check the `Block` section
   /*
     Transaction Hash: 0x65d60b24c5a5e4fd2ad8779896a5108ff516dd8eade0cfeeaf4b565aa512cef6, Transaction Index: 1, 
@@ -86,14 +84,15 @@ const main = async () => {
   process.exit()
 }
 
-function displayTx(tx: SubmitDataTxSuccess) {
+function displayTx(tx: SubmitDataTx) {
+  const { blockHash, blockNumber, txHash, txIndex, events } = tx.details
   console.log(
-    `Block Hash: ${tx.blockHash}, Block Number: ${tx.blockNumber}, Transaction Hash: ${tx.txHash}, Transaction Index: ${tx.txIndex}`,
+    `Block Hash: ${blockHash}, Block Number: ${blockNumber}, Transaction Hash: ${txHash}, Transaction Index: ${txIndex}`,
   )
   console.log(
     `App Id: ${tx.appId}, Submitted Data (in Hex): ${tx.txData.data}, Data Hash: ${tx.event.dataHash}, Author: ${tx.event.who}`,
   )
-  console.log("Events count: " + tx.events.length) // We have access to all events that were generated for that transaction
+  console.log("Events count: " + events.length) // We have access to all events that were generated for that transaction
 }
 
 function displayDataSubmission(ds: DataSubmission) {

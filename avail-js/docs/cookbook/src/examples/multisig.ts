@@ -1,22 +1,10 @@
-import {
-  SDK,
-  WaitFor,
-  Keyring,
-  BN,
-  KeyringPair,
-  Weight,
-  TxResultDetails,
-  MultisigTimepoint,
-} from "./../../../../src/index"
+import { SDK, WaitFor, BN, KeyringPair, Weight, TxResultDetails, MultisigTimepoint } from "./../../../../src/index"
 
 const main = async () => {
-  const providerEndpoint = "ws://127.0.0.1:9944"
-  const sdk = await SDK.New(providerEndpoint)
+  const sdk = await SDK.New(SDK.localEndpoint())
 
   // Multisig Signatures
-  const alice = new Keyring({ type: "sr25519" }).addFromUri("//Alice")
-  const bob = new Keyring({ type: "sr25519" }).addFromUri("//Bob")
-  const charlie = new Keyring({ type: "sr25519" }).addFromUri("//Charlie")
+  const [alice, bob, charlie] = [SDK.alice(), SDK.bob(), SDK.charlie()]
 
   // Create Multisig Account
   const threshold = 3
@@ -67,8 +55,8 @@ async function fundMultisigAccount(sdk: SDK, alice: KeyringPair, multisigAddress
   console.log("Funding multisig account...")
   const amount = SDK.oneAvail().mul(new BN(100)) // 100 Avail
   const result = await sdk.tx.balances.transferKeepAlive(multisigAddress, amount, WaitFor.BlockInclusion, alice)
-  if (result.isErr) {
-    console.log(result.reason)
+  if (result.isErr()) {
+    console.log(result.error.reason)
     process.exit(1)
   }
 

@@ -17,11 +17,8 @@ export class Utils {
 
   /// Parses a transaction result. Helper function to get transaction details on
   /// transaction success or an error if the transaction failed
-  async parseTransactionResult(
-    txResult: ISubmittableResult,
-    waitFor: WaitFor,
-  ): Promise<Result<TxResultDetails, FailedTxResult>> {
-    return await parseTransactionResult(this.api, txResult, waitFor)
+  async parseTransactionResult(txResult: ISubmittableResult): Promise<Result<TxResultDetails, FailedTxResult>> {
+    return await parseTransactionResult(this.api, txResult)
   }
 
   /**
@@ -64,20 +61,33 @@ export class Utils {
 export async function parseTransactionResult(
   api: ApiPromise,
   txResult: ISubmittableResult,
-  waitFor: WaitFor,
 ): Promise<Result<TxResultDetails, FailedTxResult>> {
   if (txResult.isError) {
-    return err({ reason: "The transaction was dropped or something.", details: null })
+    if (txResult.status.isDropped) {
+      return err(new FailedTxResult("Dropped", null))
+    }
+
+    if (txResult.status.isFinalityTimeout) {
+      return err(new FailedTxResult("FinalityTimeout", null))
+    }
+
+    if (txResult.status.isInvalid) {
+      return err(new FailedTxResult("Invalid", null))
+    }
+
+    if (txResult.status.isUsurped) {
+      return err(new FailedTxResult("Usurped", null))
+    }
+
+    return err(new FailedTxResult("Error", null))
   }
 
   const events = txResult.events
-  const [txHash, txIndex, blockHash, blockNumber] = await getBlockHashAndTxHash(txResult, waitFor, api)
+  const [txHash, txIndex, blockHash, blockNumber] = await getBlockHashAndTxHash(txResult, api)
   const details = new TxResultDetails(txResult, events, txHash, txIndex, blockHash, blockNumber)
 
   const failed = txResult.events.find((e) => api.events.system.ExtrinsicFailed.is(e.event))
-  if (failed != undefined) {
-    return err({ reason: decodeError(api, failed.event.data[0]), details })
-  }
+  if (failed != undefined) return err({ reason: decodeError(api, failed.event.data[0]), details })
 
   return ok(details)
 }

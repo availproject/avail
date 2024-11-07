@@ -1,0 +1,3 @@
+```ts
+{{#include ./kate.ts}}
+```

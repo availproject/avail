@@ -1,0 +1,3 @@
+```ts
+{{#include ./chain.ts}}
+```

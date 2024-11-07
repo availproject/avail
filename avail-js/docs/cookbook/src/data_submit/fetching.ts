@@ -1,16 +1,15 @@
-import { SDK, Keyring, Account, Block, sdkBlock, WaitFor } from "./../../../../src/index"
+import { SDK, Account, Block, sdkBlock, WaitFor } from "./../../../../src/index"
 
 const main = async () => {
-  const providerEndpoint = "ws://127.0.0.1:9944"
-  const sdk = await SDK.New(providerEndpoint)
+  const sdk = await SDK.New(SDK.localEndpoint())
   const api = sdk.api
-  const alice = new Keyring({ type: "sr25519" }).addFromUri("//Alice")
+  const alice = SDK.alice()
 
   // Submitting data that we will query later
   const data = "My Data"
-  const tx = await sdk.tx.dataAvailability.submitData(data, WaitFor.BlockInclusion, alice, { app_id: 1 })
-  if (tx.isErr == true) throw Error() // We expect that the call will succeed
-  const { blockHash, txHash, txIndex } = tx
+  const mtx = await sdk.tx.dataAvailability.submitData(data, WaitFor.BlockInclusion, alice, { app_id: 1 })
+  const tx = mtx._unsafeUnwrap()
+  const { blockHash, txHash, txIndex } = tx.details
 
   // Data
 
@@ -77,15 +76,14 @@ const main = async () => {
   tx2.forEach((tx) => console.log(sdkBlock.extractDataSubmissionDataFromTx(tx)._unsafeUnwrap())) // `4d792044617461`,...
 
   // Extracting only the data from a new data-submission transaction
-  const tx3 = await sdk.tx.dataAvailability.submitData(data, WaitFor.BlockInclusion, alice, { app_id: 1 })
-  if (tx3.isErr) throw Error(tx3.reason)
+  const mtx3 = await sdk.tx.dataAvailability.submitData(data, WaitFor.BlockInclusion, alice, { app_id: 1 })
+  const tx3 = mtx3._unsafeUnwrap()
   console.log(tx3.txData.data) // `4d792044617461`
 
   // Extracting only the data from a new data-submission transaction via Account instance
   const account = new Account(sdk, alice)
   account.setAppId(1)
-  const tx4 = await account.submitData(data)
-  if (tx4.isErr) throw Error(tx4.reason)
+  const tx4 = (await account.submitData(data))._unsafeUnwrap()
   console.log(tx4.txData.data) // `4d792044617461`
 
   process.exit()

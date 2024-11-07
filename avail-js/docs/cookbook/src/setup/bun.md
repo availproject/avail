@@ -22,4 +22,5 @@ You should now have the following files
 
 Run the following commands:
 
+- `bun install`
 - `bun run ./index.ts`

@@ -1,8 +1,9 @@
-import { ApiPromise } from "@polkadot/api"
+import { ApiPromise, Keyring } from "@polkadot/api"
 import { initialize } from "../chain"
 import { Transactions } from "./transactions"
 import { Utils } from "./utils"
 import { BN } from "@polkadot/util"
+import { KeyringPair } from "@polkadot/keyring/types"
 
 export { BN } from "@polkadot/util"
 export { Keyring } from "@polkadot/api"
@@ -47,5 +48,29 @@ export class SDK {
 
   static oneAvail(): BN {
     return new BN(10).pow(new BN(18))
+  }
+
+  static localEndpoint(): string {
+    return "ws://127.0.0.1:9944"
+  }
+
+  static turingEndpoint(): string {
+    return "wss://turing-rpc.avail.so/ws"
+  }
+
+  static mainnetEndpoint(): string {
+    return "wss://mainnet-rpc.avail.so/ws"
+  }
+
+  static alice(): KeyringPair {
+    return new Keyring({ type: "sr25519" }).addFromUri("//Alice")
+  }
+
+  static bob(): KeyringPair {
+    return new Keyring({ type: "sr25519" }).addFromUri("//Bob")
+  }
+
+  static charlie(): KeyringPair {
+    return new Keyring({ type: "sr25519" }).addFromUri("//Charlie")
   }
 }
