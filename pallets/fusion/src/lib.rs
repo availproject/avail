@@ -591,6 +591,8 @@ pub mod pallet {
 		PoolHasNoBoost,
 		/// The user does not have enough AVAIL to allocate to the boosted pools.
 		NotEnoughAvailForBoost,
+		/// The TC canno't set a controller address for a user, it can only remove (to clean)
+		RootCanOnlyRemoveController,
 		/// TODO Temp, we'll see when bridge com is done
 		CannotDepositAvailCurrency,
 	}
@@ -1047,6 +1049,11 @@ pub mod pallet {
 				// TODO - commented for tests only
 				// Self::ensure_valid_fusion_origin(who, evm_address)?;
 				let _ = Self::ensure_valid_fusion_origin(who, evm_address);
+			} else {
+				ensure!(
+					new_controller_address.is_none(),
+					Error::<T>::RootCanOnlyRemoveController
+				);
 			}
 
 			let slash_destination = SlashDestination::<T>::get();

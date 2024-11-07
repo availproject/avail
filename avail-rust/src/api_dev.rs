@@ -345,9 +345,9 @@ pub mod api {
 			.hash();
 		runtime_metadata_hash
 			== [
-				78u8, 195u8, 54u8, 93u8, 5u8, 158u8, 5u8, 205u8, 184u8, 26u8, 143u8, 198u8, 146u8,
-				58u8, 217u8, 26u8, 47u8, 112u8, 173u8, 10u8, 213u8, 21u8, 195u8, 143u8, 84u8, 39u8,
-				124u8, 253u8, 124u8, 198u8, 158u8, 238u8,
+				125u8, 238u8, 55u8, 119u8, 11u8, 67u8, 30u8, 241u8, 236u8, 154u8, 70u8, 3u8, 174u8,
+				217u8, 146u8, 134u8, 116u8, 129u8, 23u8, 30u8, 94u8, 109u8, 104u8, 169u8, 20u8,
+				74u8, 19u8, 217u8, 129u8, 205u8, 82u8, 162u8,
 			]
 	}
 	pub mod system {
@@ -34409,6 +34409,9 @@ pub mod api {
 					#[doc = "The user does not have enough AVAIL to allocate to the boosted pools."]
 					NotEnoughAvailForBoost,
 					#[codec(index = 55)]
+					#[doc = "The TC canno't set a controller address for a user, it can only remove (to clean)"]
+					RootCanOnlyRemoveController,
+					#[codec(index = 56)]
 					#[doc = "TODO Temp, we'll see when bridge com is done"]
 					CannotDepositAvailCurrency,
 				}
