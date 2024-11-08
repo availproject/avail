@@ -5,7 +5,7 @@ import { KeyringPair } from "@polkadot/keyring/types"
 import {
   WaitFor,
   TransactionOptions,
-  singAndSendAndParseTransaction,
+  signAndSendAndParseTransaction,
   TxResultDetails,
   TransactionFailed,
 } from "./common"
@@ -49,7 +49,7 @@ export class Balances {
     options?: TransactionOptions,
   ): Promise<Result<TransferAllTx, TransactionFailed>> {
     const tx = this.api.tx.balances.transferAll(dest, keepAlive)
-    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    const maybeParsed = await signAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
     if (maybeParsed.isErr()) return err(maybeParsed.error)
 
     const details = maybeParsed.value
@@ -78,7 +78,7 @@ export class Balances {
     options?: TransactionOptions,
   ): Promise<Result<TransferAllowDeathTx, TransactionFailed>> {
     const tx = this.api.tx.balances.transferAllowDeath(dest, value)
-    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    const maybeParsed = await signAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
     if (maybeParsed.isErr()) return err(maybeParsed.error)
 
     const details = maybeParsed.value
@@ -107,7 +107,7 @@ export class Balances {
     options?: TransactionOptions,
   ): Promise<Result<TransferKeepAliveTx, TransactionFailed>> {
     const tx = this.api.tx.balances.transferKeepAlive(dest, value)
-    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    const maybeParsed = await signAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
     if (maybeParsed.isErr()) return err(maybeParsed.error)
 
     const details = maybeParsed.value

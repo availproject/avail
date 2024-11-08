@@ -51,7 +51,7 @@ export async function signAndSendTransaction(
   })
 }
 
-export async function singAndSendAndParseTransaction(
+export async function signAndSendAndParseTransaction(
   api: ApiPromise,
   tx: SubmittableExtrinsic<"promise">,
   account: KeyringPair,

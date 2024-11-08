@@ -5,8 +5,8 @@ use subxt::{
 };
 
 use crate::{
-	avail::runtime_types::da_runtime::primitives::SessionKeys, Api, AppUncheckedExtrinsic,
-	AvailBlocksClient, AvailConfig, BlockHash, TransactionInBlock, WaitFor,
+	avail::runtime_types::da_runtime::primitives::SessionKeys, ABlocksClient, AOnlineClient,
+	AppUncheckedExtrinsic, AvailConfig, BlockHash, TransactionInBlock, WaitFor,
 };
 use utils_raw::*;
 
@@ -33,33 +33,33 @@ impl FetchTransactionError {
 
 #[derive(Clone)]
 pub struct Util {
-	blocks_api: AvailBlocksClient,
+	blocks_client: ABlocksClient,
 }
 
 impl Util {
-	pub fn new(api: Api) -> Self {
-		let blocks_api = api.blocks();
-		Self { blocks_api }
+	pub fn new(online_client: AOnlineClient) -> Self {
+		let blocks_client = online_client.blocks();
+		Self { blocks_client }
 	}
 
 	pub async fn fetch_transactions(
 		&self,
 		block_hash: BlockHash,
-	) -> Result<Extrinsics<AvailConfig, Api>, FetchTransactionError> {
-		fetch_transactions(block_hash, &self.blocks_api).await
+	) -> Result<Extrinsics<AvailConfig, AOnlineClient>, FetchTransactionError> {
+		fetch_transactions(&self.blocks_client, block_hash).await
 	}
 
 	pub async fn fetch_transaction<E: StaticExtrinsic>(
 		&self,
 		block_hash: BlockHash,
 		tx_hash: BlockHash,
-	) -> Result<FoundExtrinsic<AvailConfig, Api, E>, FetchTransactionError> {
-		fetch_transaction(block_hash, tx_hash, &self.blocks_api).await
+	) -> Result<FoundExtrinsic<AvailConfig, AOnlineClient, E>, FetchTransactionError> {
+		fetch_transaction(&self.blocks_client, block_hash, tx_hash).await
 	}
 
 	pub async fn progress_transaction(
 		&self,
-		maybe_tx_progress: Result<TxProgress<AvailConfig, Api>, subxt::Error>,
+		maybe_tx_progress: Result<TxProgress<AvailConfig, AOnlineClient>, subxt::Error>,
 		wait_for: WaitFor,
 	) -> Result<TransactionInBlock, String> {
 		progress_transaction(maybe_tx_progress, wait_for).await
@@ -118,10 +118,10 @@ pub mod utils_raw {
 	pub use super::*;
 
 	pub async fn fetch_transactions(
+		client: &ABlocksClient,
 		block_hash: BlockHash,
-		blocks_api: &AvailBlocksClient,
-	) -> Result<Extrinsics<AvailConfig, Api>, FetchTransactionError> {
-		let block = blocks_api.at(block_hash).await;
+	) -> Result<Extrinsics<AvailConfig, AOnlineClient>, FetchTransactionError> {
+		let block = client.at(block_hash).await;
 		let block = match block {
 			Ok(b) => b,
 			Err(_) => return Err(FetchTransactionError::FailedToFetchBlock),
@@ -137,11 +137,11 @@ pub mod utils_raw {
 	}
 
 	pub async fn fetch_transaction<E: StaticExtrinsic>(
+		client: &ABlocksClient,
 		block_hash: BlockHash,
 		tx_hash: BlockHash,
-		blocks_api: &AvailBlocksClient,
-	) -> Result<FoundExtrinsic<AvailConfig, Api, E>, FetchTransactionError> {
-		let extrinsics = fetch_transactions(block_hash, blocks_api).await?;
+	) -> Result<FoundExtrinsic<AvailConfig, AOnlineClient, E>, FetchTransactionError> {
+		let extrinsics = fetch_transactions(client, block_hash).await?;
 
 		let found_extrinsics = extrinsics.find::<E>();
 
@@ -164,7 +164,7 @@ pub mod utils_raw {
 	}
 
 	pub async fn progress_transaction(
-		maybe_tx_progress: Result<TxProgress<AvailConfig, Api>, subxt::Error>,
+		maybe_tx_progress: Result<TxProgress<AvailConfig, AOnlineClient>, subxt::Error>,
 		wait_for: WaitFor,
 	) -> Result<TransactionInBlock, String> {
 		if let Err(error) = maybe_tx_progress {

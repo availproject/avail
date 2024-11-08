@@ -6,7 +6,7 @@ import { err, Result, ok } from "neverthrow"
 import {
   WaitFor,
   TransactionOptions,
-  singAndSendAndParseTransaction,
+  signAndSendAndParseTransaction,
   TxResultDetails,
   TransactionFailed,
 } from "./common"
@@ -79,7 +79,7 @@ export class Staking {
     options?: TransactionOptions,
   ): Promise<Result<BondTx, TransactionFailed>> {
     const tx = this.api.tx.staking.bond(value, payee)
-    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    const maybeParsed = await signAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
     if (maybeParsed.isErr()) return err(maybeParsed.error)
 
     const details = maybeParsed.value
@@ -97,7 +97,7 @@ export class Staking {
     options?: TransactionOptions,
   ): Promise<Result<BondExtraTx, TransactionFailed>> {
     const tx = this.api.tx.staking.bondExtra(maxAdditional)
-    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    const maybeParsed = await signAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
     if (maybeParsed.isErr()) return err(maybeParsed.error)
 
     const details = maybeParsed.value
@@ -114,7 +114,7 @@ export class Staking {
     options?: TransactionOptions,
   ): Promise<Result<ChillTx, TransactionFailed>> {
     const tx = this.api.tx.staking.chill()
-    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    const maybeParsed = await signAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
     if (maybeParsed.isErr()) return err(maybeParsed.error)
 
     const details = maybeParsed.value
@@ -132,7 +132,7 @@ export class Staking {
     options?: TransactionOptions,
   ): Promise<Result<ChillOtherTx, TransactionFailed>> {
     const tx = this.api.tx.staking.chillOther(stash)
-    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    const maybeParsed = await signAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
     if (maybeParsed.isErr()) return err(maybeParsed.error)
 
     const details = maybeParsed.value
@@ -150,7 +150,7 @@ export class Staking {
     options?: TransactionOptions,
   ): Promise<Result<NominateTx, TransactionFailed>> {
     const tx = this.api.tx.staking.nominate(targets)
-    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    const maybeParsed = await signAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
     if (maybeParsed.isErr()) return err(maybeParsed.error)
 
     const details = maybeParsed.value
@@ -168,7 +168,7 @@ export class Staking {
     options?: TransactionOptions,
   ): Promise<Result<UnbondTx, TransactionFailed>> {
     const tx = this.api.tx.staking.unbond(value)
-    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    const maybeParsed = await signAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
     if (maybeParsed.isErr()) return err(maybeParsed.error)
 
     const details = maybeParsed.value
@@ -191,7 +191,7 @@ export class Staking {
 
     const validatorPerfs = { commission: maybeCommission.value, blocked } as ValidatorPerfs
     const tx = this.api.tx.staking.validate(validatorPerfs)
-    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    const maybeParsed = await signAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
     if (maybeParsed.isErr()) return err(maybeParsed.error)
 
     const details = maybeParsed.value

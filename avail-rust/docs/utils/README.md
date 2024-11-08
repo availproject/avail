@@ -5,7 +5,7 @@
 ### Interface
 
 ```rust
-async fn fetch_transaction<E: StaticExtrinsic>(&self, block_hash: H256, tx_hash: H256) -> Result<FoundExtrinsic<AvailConfig, Api, E>, FetchTransactionError>;
+async fn fetch_transaction<E: StaticExtrinsic>(&self, block_hash: H256, tx_hash: H256) -> Result<FoundExtrinsic<AvailConfig, AOnlineClient, E>, FetchTransactionError>;
 ```
 
 #### Parameters
@@ -75,7 +75,7 @@ async fn main() -> Result<(), String> {
 ### Interface
 
 ```rust
-async fn fetch_transactions(&self, block_hash: H256) -> Result<Extrinsics<AvailConfig, Api>, FetchTransactionError> ;
+async fn fetch_transactions(&self, block_hash: H256) -> Result<Extrinsics<AvailConfig, AOnlineClient>, FetchTransactionError> ;
 ```
 
 #### Parameters
@@ -153,14 +153,14 @@ async fn main() -> Result<(), String> {
 ### Interface
 
 ```rust
-async fn progress_transaction(&self, maybe_tx_progress: Result<TxProgress<AvailConfig, Api>, subxt::Error>, wait_for: WaitFor) -> Result<TransactionInBlock, String>;
+async fn progress_transaction(&self, maybe_tx_progress: Result<TxProgress<AvailConfig, AOnlineClient>, subxt::Error>, wait_for: WaitFor) -> Result<TransactionInBlock, String>;
 ```
 
 #### Parameters
 
 | parameter         | type                                               | optional | description                              |
 | ----------------- | -------------------------------------------------- | -------- | ---------------------------------------- |
-| maybe_tx_progress | Result<TxProgress<AvailConfig, Api>, subxt::Error> | false    | transaction in progress                  |
+| maybe_tx_progress | Result<TxProgress<AvailConfig, AOnlineClient>, subxt::Error> | false    | transaction in progress                  |
 | waitFor           | WaitFor                                            | false    | wait for block inclusion or finalization |
 
 #### Return value

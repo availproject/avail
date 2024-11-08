@@ -7,7 +7,7 @@ import { decodeError, fromHexToAscii } from "../../helpers"
 import {
   WaitFor,
   TransactionOptions,
-  singAndSendAndParseTransaction,
+  signAndSendAndParseTransaction,
   TxResultDetails,
   TransactionFailed,
 } from "./common"
@@ -73,7 +73,7 @@ export class DataAvailability {
     const appId = optionWrapper.app_id || 0
 
     const tx = this.api.tx.dataAvailability.submitData(data)
-    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    const maybeParsed = await signAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
     if (maybeParsed.isErr()) return err(maybeParsed.error)
 
     const details = maybeParsed.value
@@ -99,7 +99,7 @@ export class DataAvailability {
     options?: TransactionOptions,
   ): Promise<Result<CreateApplicationKeyTx, TransactionFailed>> {
     const tx = this.api.tx.dataAvailability.createApplicationKey(key)
-    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    const maybeParsed = await signAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
     if (maybeParsed.isErr()) return err(maybeParsed.error)
 
     const details = maybeParsed.value
@@ -125,7 +125,7 @@ export class DataAvailability {
   ): Promise<Result<SetApplicationKeyTx, TransactionFailed>> {
     const call = this.api.tx.dataAvailability.setApplicationKey(oldKey, newKey)
     const tx = this.api.tx.sudo.sudo(call)
-    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    const maybeParsed = await signAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
     if (maybeParsed.isErr()) return err(maybeParsed.error)
 
     const details = maybeParsed.value
@@ -151,7 +151,7 @@ export class DataAvailability {
   ): Promise<Result<SubmitBlockLengthProposalTx, TransactionFailed>> {
     const call = this.api.tx.dataAvailability.submitBlockLengthProposal(rows, cols)
     const tx = this.api.tx.sudo.sudo(call)
-    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    const maybeParsed = await signAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
     if (maybeParsed.isErr()) return err(maybeParsed.error)
 
     const details = maybeParsed.value
@@ -177,7 +177,7 @@ export class DataAvailability {
   ): Promise<Result<SetSubmitDataFeeModifierTx, TransactionFailed>> {
     const call = this.api.tx.dataAvailability.setSubmitDataFeeModifier(modifier)
     const tx = this.api.tx.sudo.sudo(call)
-    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    const maybeParsed = await signAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
     if (maybeParsed.isErr()) return err(maybeParsed.error)
 
     const details = maybeParsed.value

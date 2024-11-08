@@ -142,11 +142,7 @@ impl System {
 	}
 
 	pub async fn account_next_index(&self, account: String) -> Result<u32, subxt::Error> {
-		let value: u32 = self
-			.client
-			.request("system_accountNextIndex", rpc_params![account])
-			.await?;
-		Ok(value)
+		account_next_index(&self.client, account).await
 	}
 
 	pub async fn chain(&self) -> Result<String, subxt::Error> {
@@ -223,6 +219,13 @@ impl System {
 	}
 }
 
+pub async fn account_next_index(client: &RpcClient, account: String) -> Result<u32, subxt::Error> {
+	let value: u32 = client
+		.request("system_accountNextIndex", rpc_params![account])
+		.await?;
+	Ok(value)
+}
+
 #[derive(Clone)]
 pub struct Chain {
 	client: RpcClient,
@@ -237,39 +240,56 @@ impl Chain {
 		&self,
 		at: Option<BlockHash>,
 	) -> Result<AvailBlockDetailsRPC, subxt::Error> {
-		let value: AvailBlockDetailsRPC = self
-			.client
-			.request("chain_getBlock", rpc_params![at])
-			.await?;
-		Ok(value)
+		get_block(&self.client, at).await
 	}
 
 	pub async fn get_block_hash(
 		&self,
 		block_number: Option<BlockNumber>,
 	) -> Result<BlockHash, subxt::Error> {
-		let value: BlockHash = self
-			.client
-			.request("chain_getBlockHash", rpc_params![block_number])
-			.await?;
-		Ok(value)
+		get_block_hash(&self.client, block_number).await
 	}
 
 	pub async fn get_finalized_head(&self) -> Result<BlockHash, subxt::Error> {
-		let value: BlockHash = self
-			.client
-			.request("chain_getFinalizedHead", rpc_params![])
-			.await?;
-		Ok(value)
+		get_finalized_head(&self.client).await
 	}
 
 	pub async fn get_header(&self, at: Option<BlockHash>) -> Result<AvailHeader, subxt::Error> {
-		let value: AvailHeader = self
-			.client
-			.request("chain_getHeader", rpc_params![at])
-			.await?;
-		Ok(value)
+		get_header(&self.client, at).await
 	}
+}
+
+pub async fn get_block(
+	client: &RpcClient,
+	at: Option<BlockHash>,
+) -> Result<AvailBlockDetailsRPC, subxt::Error> {
+	let value: AvailBlockDetailsRPC = client.request("chain_getBlock", rpc_params![at]).await?;
+	Ok(value)
+}
+
+pub async fn get_block_hash(
+	client: &RpcClient,
+	block_number: Option<BlockNumber>,
+) -> Result<BlockHash, subxt::Error> {
+	let value: BlockHash = client
+		.request("chain_getBlockHash", rpc_params![block_number])
+		.await?;
+	Ok(value)
+}
+
+pub async fn get_finalized_head(client: &RpcClient) -> Result<BlockHash, subxt::Error> {
+	let value: BlockHash = client
+		.request("chain_getFinalizedHead", rpc_params![])
+		.await?;
+	Ok(value)
+}
+
+pub async fn get_header(
+	client: &RpcClient,
+	at: Option<BlockHash>,
+) -> Result<AvailHeader, subxt::Error> {
+	let value: AvailHeader = client.request("chain_getHeader", rpc_params![at]).await?;
+	Ok(value)
 }
 
 #[derive(Clone)]

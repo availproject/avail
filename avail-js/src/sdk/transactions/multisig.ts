@@ -8,7 +8,7 @@ import {
   TransactionOptions,
   TxResultDetails,
   MultisigTimepoint,
-  singAndSendAndParseTransaction,
+  signAndSendAndParseTransaction,
 } from "./common"
 
 export class AsMultiTx {
@@ -45,7 +45,7 @@ export class Multisig {
     options?: TransactionOptions,
   ): Promise<Result<AsMultiTx, TransactionFailed>> {
     const tx = this.api.tx.multisig.asMulti(threshold, otherSignatures, timepoint, call, maxWeight)
-    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    const maybeParsed = await signAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
     if (maybeParsed.isErr()) return err(maybeParsed.error)
 
     const details = maybeParsed.value
@@ -67,7 +67,7 @@ export class Multisig {
     options?: TransactionOptions,
   ): Promise<Result<ApproveAsMultiTx, TransactionFailed>> {
     const tx = this.api.tx.multisig.approveAsMulti(threshold, otherSignatures, timepoint, callHash, maxWeight)
-    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    const maybeParsed = await signAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
     if (maybeParsed.isErr()) return err(maybeParsed.error)
 
     const details = maybeParsed.value

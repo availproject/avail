@@ -5,7 +5,7 @@ import { KeyringPair } from "@polkadot/keyring/types"
 import {
   WaitFor,
   TransactionOptions,
-  singAndSendAndParseTransaction,
+  signAndSendAndParseTransaction,
   TxResultDetails,
   TransactionFailed,
 } from "./common"
@@ -137,7 +137,7 @@ export class NominationPools {
     options?: TransactionOptions,
   ): Promise<Result<CreateTx, TransactionFailed>> {
     const tx = this.api.tx.nominationPools.create(amount, root, nominator, bouncer)
-    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    const maybeParsed = await signAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
     if (maybeParsed.isErr()) return err(maybeParsed.error)
 
     const details = maybeParsed.value
@@ -162,7 +162,7 @@ export class NominationPools {
     options?: TransactionOptions,
   ): Promise<Result<CreateWithPoolIdTx, TransactionFailed>> {
     const tx = this.api.tx.nominationPools.createWithPoolId(amount, root, nominator, bouncer, poolId)
-    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    const maybeParsed = await signAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
     if (maybeParsed.isErr()) return err(maybeParsed.error)
 
     const details = maybeParsed.value
@@ -184,7 +184,7 @@ export class NominationPools {
     options?: TransactionOptions,
   ): Promise<Result<JoinTx, TransactionFailed>> {
     const tx = this.api.tx.nominationPools.join(amount, poolId)
-    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    const maybeParsed = await signAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
     if (maybeParsed.isErr()) return err(maybeParsed.error)
 
     const details = maybeParsed.value
@@ -203,7 +203,7 @@ export class NominationPools {
     options?: TransactionOptions,
   ): Promise<Result<NominateTx, TransactionFailed>> {
     const tx = this.api.tx.nominationPools.nominate(poolId, validators)
-    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    const maybeParsed = await signAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
     if (maybeParsed.isErr()) return err(maybeParsed.error)
 
     const details = maybeParsed.value
@@ -218,7 +218,7 @@ export class NominationPools {
     options?: TransactionOptions,
   ): Promise<Result<BondExtraTx, TransactionFailed>> {
     const tx = this.api.tx.nominationPools.bondExtra(extra)
-    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    const maybeParsed = await signAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
     if (maybeParsed.isErr()) return err(maybeParsed.error)
 
     const details = maybeParsed.value
@@ -237,7 +237,7 @@ export class NominationPools {
     options?: TransactionOptions,
   ): Promise<Result<SetMetadataTx, TransactionFailed>> {
     const tx = this.api.tx.nominationPools.setMetadata(poolId, metadata)
-    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    const maybeParsed = await signAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
     if (maybeParsed.isErr()) return err(maybeParsed.error)
 
     const details = maybeParsed.value
@@ -253,7 +253,7 @@ export class NominationPools {
     options?: TransactionOptions,
   ): Promise<Result<UnbondTx, TransactionFailed>> {
     const tx = this.api.tx.nominationPools.unbond(memberAccount, unbondingPoints)
-    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    const maybeParsed = await signAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
     if (maybeParsed.isErr()) return err(maybeParsed.error)
 
     const details = maybeParsed.value
@@ -269,7 +269,7 @@ export class NominationPools {
     options?: TransactionOptions,
   ): Promise<Result<ChillTx, TransactionFailed>> {
     const tx = this.api.tx.nominationPools.chill(poolId)
-    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    const maybeParsed = await signAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
     if (maybeParsed.isErr()) return err(maybeParsed.error)
 
     const details = maybeParsed.value
@@ -284,7 +284,7 @@ export class NominationPools {
     options?: TransactionOptions,
   ): Promise<Result<ClaimCommissionTx, TransactionFailed>> {
     const tx = this.api.tx.nominationPools.claimCommission(poolId)
-    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    const maybeParsed = await signAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
     if (maybeParsed.isErr()) return err(maybeParsed.error)
 
     const details = maybeParsed.value
@@ -301,7 +301,7 @@ export class NominationPools {
     options?: TransactionOptions,
   ): Promise<Result<ClaimPayoutTx, TransactionFailed>> {
     const tx = this.api.tx.nominationPools.claimPayout()
-    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    const maybeParsed = await signAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
     if (maybeParsed.isErr()) return err(maybeParsed.error)
 
     const details = maybeParsed.value
@@ -317,7 +317,7 @@ export class NominationPools {
     options?: TransactionOptions,
   ): Promise<Result<ClaimPayoutOtherTx, TransactionFailed>> {
     const tx = this.api.tx.nominationPools.claimPayoutOther(other)
-    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    const maybeParsed = await signAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
     if (maybeParsed.isErr()) return err(maybeParsed.error)
 
     const details = maybeParsed.value
@@ -333,7 +333,7 @@ export class NominationPools {
     options?: TransactionOptions,
   ): Promise<Result<SetClaimPermissionTx, TransactionFailed>> {
     const tx = this.api.tx.nominationPools.setClaimPermission(permission)
-    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    const maybeParsed = await signAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
     if (maybeParsed.isErr()) return err(maybeParsed.error)
 
     const details = maybeParsed.value
@@ -357,7 +357,7 @@ export class NominationPools {
     }
 
     const tx = this.api.tx.nominationPools.setCommission(poolId, commission)
-    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    const maybeParsed = await signAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
     if (maybeParsed.isErr()) return err(maybeParsed.error)
 
     const details = maybeParsed.value
@@ -376,7 +376,7 @@ export class NominationPools {
     options?: TransactionOptions,
   ): Promise<Result<WithdrawUnbodedTx, TransactionFailed>> {
     const tx = this.api.tx.nominationPools.withdrawUnbonded(memberAccount, numSlashingSpans)
-    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    const maybeParsed = await signAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
     if (maybeParsed.isErr()) return err(maybeParsed.error)
 
     const details = maybeParsed.value
@@ -395,7 +395,7 @@ export class NominationPools {
     options?: TransactionOptions,
   ): Promise<Result<SetStateTx, TransactionFailed>> {
     const tx = this.api.tx.nominationPools.setState(poolId, state)
-    const maybeParsed = await singAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
+    const maybeParsed = await signAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
     if (maybeParsed.isErr()) return err(maybeParsed.error)
 
     const details = maybeParsed.value

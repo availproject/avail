@@ -6,6 +6,7 @@ mod sdk;
 mod utils;
 
 // Export types for internal and external consumption
+pub mod block;
 pub mod primitives;
 pub mod transactions;
 

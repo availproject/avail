@@ -17,7 +17,7 @@ const main = async () => {
   // Payment Query Free Details
   const mtx2 = await alice.balanceTransfer("5HGjWAeFDfFCWPsjFQdVV2Msvz2XtMktvgocEZcCj68kUMaw", SDK.oneAvail())
   const tx2 = mtx2._unsafeUnwrap()
-  const gtx2 = await tx2.details.fetchGenericTransaction(api)
+  const gtx2 = (await tx2.details.fetchBlock(api)).transactionByIndex(tx2.details.txIndex)._unsafeUnwrap()
   const queryFeeDetails: any = await api.call.transactionPaymentApi.queryFeeDetails(gtx2.toHex(), null)
 
   const baseFee: BN = queryFeeDetails.inclusionFee.__internal__raw.baseFee

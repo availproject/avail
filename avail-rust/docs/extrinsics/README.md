@@ -11,7 +11,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn create_application_key(&self, key: Key, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<CreateApplicationKeyTxSuccess, String>;
+async fn create_application_key(&self, key: Key, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<CreateApplicationKeyTx, String>;
 ```
 
 #### Parameters
@@ -79,10 +79,10 @@ Error: "Runtime error: Pallet error: DataAvailability::AppKeyAlreadyExists"
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `CreateApplicationKeyTxSuccess`.
+If the operation is successful, the function will return a object of type `CreateApplicationKeyTx`.
 
 ```rust
-CreateApplicationKeyTxSuccess {
+CreateApplicationKeyTx {
     event: ApplicationKeyCreated {
         key: BoundedVec(...),
         owner: AccountId32(...),
@@ -111,7 +111,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn submit_data(&self, data: Data, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<SubmitDataTxSuccess, String>;
+async fn submit_data(&self, data: Data, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<SubmitDataTx, String>;
 ```
 
 #### Parameters
@@ -175,10 +175,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `SubmitDataTxSuccess`.
+If the operation is successful, the function will return a object of type `SubmitDataTx`.
 
 ```rust
-SubmitDataTxSuccess {
+SubmitDataTx {
     event: DataSubmitted {
         who: AccountId32(...),
         data_hash: 0x8846d900ea89aab9bce96402846c0ac74a853acc00cb99ff5ddb1a0f052594bd,
@@ -209,7 +209,7 @@ Origin Level: Root
 ### Interface
 
 ```rust
-async fn submit_block_length_proposal(&self, rows: u32, cols: u32, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<SubmitBlockLengthProposalTxSuccess, String>;
+async fn submit_block_length_proposal(&self, rows: u32, cols: u32, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<SubmitBlockLengthProposalTx, String>;
 ```
 
 #### Parameters
@@ -278,7 +278,7 @@ Origin Level: Root
 ### Interface
 
 ```rust
-async fn set_application_key(&self, old_key: Key, new_key: Key, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<SetApplicationKeyTxSuccess, String>;
+async fn set_application_key(&self, old_key: Key, new_key: Key, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<SetApplicationKeyTx, String>;
 ```
 
 #### Parameters
@@ -352,7 +352,7 @@ Origin Level: Root
 ### Interface
 
 ```rust
-async fn set_submit_data_fee_modifier(&self, modifier: DispatchFeeModifier, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<SetSubmitDataFeeModifierTxSuccess, String>;
+async fn set_submit_data_fee_modifier(&self, modifier: DispatchFeeModifier, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<SetSubmitDataFeeModifierTx, String>;
 ```
 
 #### Parameters
@@ -420,10 +420,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `SetSubmitDataFeeModifierTxSuccess`.
+If the operation is successful, the function will return a object of type `SetSubmitDataFeeModifierTx`.
 
 ```rust
-SetSubmitDataFeeModifierTxSuccess {
+SetSubmitDataFeeModifierTx {
     event: SubmitDataFeeModifierSet {
         value: DispatchFeeModifier {
             weight_maximum_fee: None,
@@ -462,7 +462,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn transfer_keep_alive(&self, dest: &str, value: u128, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<TransferKeepAliveTxSuccess, String>;
+async fn transfer_keep_alive(&self, dest: &str, value: u128, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<TransferKeepAliveTx, String>;
 ```
 
 #### Parameters
@@ -527,10 +527,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `TransferKeepAliveTxSuccess`.
+If the operation is successful, the function will return a object of type `TransferKeepAliveTx`.
 
 ```rust
-TransferKeepAliveTxSuccess {
+TransferKeepAliveTx {
     event: Transfer {
         from: AccountId32(...),
         to: AccountId32(...),
@@ -559,7 +559,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn transfer_allow_death(&self, dest: &str, value: u128, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<TransferAllowDeathTxSuccess, String>;
+async fn transfer_allow_death(&self, dest: &str, value: u128, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<TransferAllowDeathTx, String>;
 ```
 
 #### Parameters
@@ -628,10 +628,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `TransferAllowDeathTxSuccess`.
+If the operation is successful, the function will return a object of type `TransferAllowDeathTx`.
 
 ```rust
-TransferAllowDeathTxSuccess {
+TransferAllowDeathTx {
     event: Transfer {
         from: AccountId32(...),
         to: AccountId32(...),
@@ -661,7 +661,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn transfer_all(&self, dest: &str, keep_alive: bool, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<TransferAllTxSuccess, String>;
+async fn transfer_all(&self, dest: &str, keep_alive: bool, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<TransferAllTx, String>;
 ```
 
 #### Parameters
@@ -730,10 +730,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `TransferAllTxSuccess`.
+If the operation is successful, the function will return a object of type `TransferAllTx`.
 
 ```rust
-TransferAllTxSuccess {
+TransferAllTx {
     event: Transfer {
         from: AccountId32(...),
         to: AccountId32(...),
@@ -1536,7 +1536,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn create(&self, amount: u128, root: &str, nominator: &str, bouncer: &str, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolCreateWithPoolIdTxSuccess, String>;
+async fn create(&self, amount: u128, root: &str, nominator: &str, bouncer: &str, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<CreateWithPoolIdTx, String>;
 ```
 
 #### Parameters
@@ -1613,10 +1613,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `PoolCreateTxSuccess`.
+If the operation is successful, the function will return a object of type `CreateTx`.
 
 ```rust
-PoolCreateTxSuccess {
+CreateTx {
     event: Created {
         depositor: AccountId32(...),
         pool_id: 1,
@@ -1650,7 +1650,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn create_with_pool_id(&self, amount: u128, root: &str, nominator: &str, bouncer: &str, pool_id: u32, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolCreateWithPoolIdTxSuccess, String>;
+async fn create_with_pool_id(&self, amount: u128, root: &str, nominator: &str, bouncer: &str, pool_id: u32, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<CreateWithPoolIdTx, String>;
 ```
 
 #### Parameters
@@ -1730,10 +1730,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `PoolCreateWithPoolIdTxSuccess`.
+If the operation is successful, the function will return a object of type `CreateWithPoolIdTx`.
 
 ```rust
-PoolCreateWithPoolIdTxSuccess {
+CreateWithPoolIdTx {
     event: Created {
         depositor: AccountId32(...),
         pool_id: 0,
@@ -1767,7 +1767,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn join(&self, amount: u128, pool_id: u32, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolJoinTxSuccess, String>;
+async fn join(&self, amount: u128, pool_id: u32, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<JoinTx, String>;
 ```
 
 #### Parameters
@@ -1832,10 +1832,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `PoolJoinTxSuccess`.
+If the operation is successful, the function will return a object of type `JoinTx`.
 
 ```rust
-PoolJoinTxSuccess {
+JoinTx {
     event: Bonded {
         member: AccountId32(...),
         pool_id: 1,
@@ -1865,7 +1865,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn nominate(&self, pool_id: u32, validators: Vec<String>, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolNominateTxSuccess, String>;
+async fn nominate(&self, pool_id: u32, validators: Vec<String>, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<NominateTx, String>;
 ```
 
 #### Parameters
@@ -1933,10 +1933,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `PoolNominateTxSuccess`.
+If the operation is successful, the function will return a object of type `NominateTx`.
 
 ```rust
-PoolNominateTxSuccess {
+NominateTx {
     events: ExtrinsicEvents {
         ext_hash: 0xde74e9df59143b84ed216e4e52fd58ec8bd557fae4b54d992a9abb1adf750446,
         idx: 1,
@@ -1967,7 +1967,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn bond_extra(&self, extra: BondExtra<u128>, wait_for: WaitFor, account: &Keypair, options: Option<Options>,) -> Result<PoolBondExtraTxSuccess, String>;
+async fn bond_extra(&self, extra: BondExtra<u128>, wait_for: WaitFor, account: &Keypair, options: Option<Options>,) -> Result<BondExtraTx, String>;
 ```
 
 #### Parameters
@@ -2030,10 +2030,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `PoolBondExtraTxSuccess`.
+If the operation is successful, the function will return a object of type `BondExtraTx`.
 
 ```rust
-PoolBondExtraTxSuccess {
+BondExtraTx {
     event: Bonded {
         member: AccountId32(...),
         pool_id: 1,
@@ -2063,7 +2063,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn set_commission(&self, pool_id: u32, new_commission: Option<NewCommission>, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolSetCommissionTxSuccess, String>;
+async fn set_commission(&self, pool_id: u32, new_commission: Option<NewCommission>, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<SetCommissionTx, String>;
 ```
 
 #### Parameters
@@ -2137,10 +2137,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `PoolSetCommissionTxSuccess`.
+If the operation is successful, the function will return a object of type `SetCommissionTx`.
 
 ```rust
-PoolSetCommissionTxSuccess {
+SetCommissionTx {
     event: PoolCommissionUpdated {
         pool_id: 1,
         current: Some(
@@ -2175,7 +2175,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn set_metadata(&self, pool_id: u32, metadata: Vec<u8>, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolSetMetadataTxSuccess, String>;
+async fn set_metadata(&self, pool_id: u32, metadata: Vec<u8>, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<SetMetadataTx, String>;
 ```
 
 #### Parameters
@@ -2240,10 +2240,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `PoolSetMetadataTxSuccess`.
+If the operation is successful, the function will return a object of type `SetMetadataTx`.
 
 ```rust
-PoolSetMetadataTxSuccess {
+SetMetadataTx {
     events: ExtrinsicEvents {
         ext_hash: 0x0b4c5b4dbc573e88fa96729622c8f3a303ae35db2144365ed951b55c9a9a0f9e,
         idx: 1,
@@ -2267,7 +2267,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn set_claim_permission(&self, permission: Permission, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolSetClaimPermissionTxSuccess, String>;
+async fn set_claim_permission(&self, permission: Permission, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<SetClaimPermissionTx, String>;
 ```
 
 #### Parameters
@@ -2332,10 +2332,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `PoolSetClaimPermissionTxSuccess`.
+If the operation is successful, the function will return a object of type `SetClaimPermissionTx`.
 
 ```rust
-PoolSetClaimPermissionTxSuccess {
+SetClaimPermissionTx {
     events: ExtrinsicEvents {
         ext_hash: 0xf69cea124fe7823532821f73d3cb4c93dac58951b3bc28b770c54fc323b94bc0,
         idx: 1,
@@ -2359,7 +2359,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn set_state(&self, pool_id: u32, state: State, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolSetStateTxSuccess, String>;
+async fn set_state(&self, pool_id: u32, state: State, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<SetStateTx, String>;
 ```
 
 #### Parameters
@@ -2424,10 +2424,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `PoolSetStateTxSuccess`.
+If the operation is successful, the function will return a object of type `SetStateTx`.
 
 ```rust
-PoolSetStateTxSuccess {
+SetStateTx {
     event: None,
     events: ExtrinsicEvents {
         ext_hash: 0xa5745e02a0a257e79b193efc66c9ac85138cb2a454eb52235687013430e1b932,
@@ -2452,7 +2452,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn unbond(&self, member_account: &str, unbonding_points: u128, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolUnbondTxSuccess, String>;
+async fn unbond(&self, member_account: &str, unbonding_points: u128, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<UnbondTx, String>;
 ```
 
 #### Parameters
@@ -2523,10 +2523,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `PoolUnbondTxSuccess`.
+If the operation is successful, the function will return a object of type `UnbondTx`.
 
 ```rust
-PoolUnbondTxSuccess {
+UnbondTx {
     event: Some(
         Unbonded {
             member: AccountId32(...),
@@ -2559,7 +2559,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn withdraw_unbonded(&self, member_account: &str, num_slashing_spans: u32, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolWithdrawUnbondedTxSuccess, String>;
+async fn withdraw_unbonded(&self, member_account: &str, num_slashing_spans: u32, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<WithdrawUnbondedTx, String>;
 ```
 
 #### Parameters
@@ -2630,10 +2630,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `PoolWithdrawUnbondedTxSuccess`.
+If the operation is successful, the function will return a object of type `WithdrawUnbondedTx`.
 
 ```rust
-PoolWithdrawUnbondedTxSuccess {
+WithdrawUnbondedTx {
     event: Some(
         Withdrawn {
             member: AccountId32(...),
@@ -2665,7 +2665,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn chill(&self, pool_id: u32, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolChillTxSuccess, String>;
+async fn chill(&self, pool_id: u32, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<ChillTx, String>;
 ```
 
 #### Parameters
@@ -2728,10 +2728,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `PoolChillTxSuccess`.
+If the operation is successful, the function will return a object of type `ChillTx`.
 
 ```rust
-PoolChillTxSuccess {
+ChillTx {
     events: ExtrinsicEvents {
         ext_hash: 0xef47e23b303005a010bfc854a73143596849fc6e2b3db4b01d4b1f53800cde94,
         idx: 1,
@@ -2755,7 +2755,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn claim_payout(&self, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolClaimPayoutTxSuccess, String>;
+async fn claim_payout(&self, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<ClaimPayoutTx, String>;
 ```
 
 #### Parameters
@@ -2816,10 +2816,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `PoolClaimPayoutTxSuccess`.
+If the operation is successful, the function will return a object of type `ClaimPayoutTx`.
 
 ```rust
-PoolClaimPayoutTxSuccess {
+ClaimPayoutTx {
     event: Some(
         PaidOut {
             member: AccountId32(...),
@@ -2850,7 +2850,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn claim_commission(&self, pool_id: u32, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolClaimCommissionTxSuccess, String>;
+async fn claim_commission(&self, pool_id: u32, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<ClaimCommissionTx, String>;
 ```
 
 #### Parameters
@@ -2913,10 +2913,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `PoolClaimCommissionTxSuccess`.
+If the operation is successful, the function will return a object of type `ClaimCommissionTx`.
 
 ```rust
-PoolClaimCommissionTxSuccess {
+ClaimCommissionTx {
     event: PoolCommissionClaimed {
         pool_id: 1,
         commission: 2952048955361375559,
@@ -2944,7 +2944,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn claim_payout_other(&self, other: &str, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolClaimPayoutOtherTxSuccess, String>;
+async fn claim_payout_other(&self, other: &str, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<ClaimPayoutOtherTx, String>;
 ```
 
 #### Parameters
@@ -3007,10 +3007,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `PoolClaimPayoutOtherTxSuccess`.
+If the operation is successful, the function will return a object of type `ClaimPayoutOtherTx`.
 
 ```rust
-PoolClaimPayoutOtherTxSuccess {
+ClaimPayoutOtherTx {
     event: Some(
         PaidOut {
             member: AccountId32(...),
