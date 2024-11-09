@@ -14,7 +14,7 @@ let proposer = proposer_factory.init(
 // The proposer is created asynchronously.
 let proposer = futures::executor::block_on(proposer).unwrap();
 
-// This `Proposer` allows us to create a block proposition.
+// This `Proposer` allows us to create a block proposal.
 // The proposer will grab transactions from the transaction pool, and put them into the block.
 let future = proposer.propose(
 	Default::default(),
@@ -22,7 +22,7 @@ let future = proposer.propose(
 	Duration::from_secs(2),
 );
 
-// We wait until the proposition is performed.
+// We wait until the proposal is performed.
 let block = futures::executor::block_on(future).unwrap();
 println!("Generated block: {:?}", block.block);
 ```
