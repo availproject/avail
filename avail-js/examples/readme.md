@@ -57,7 +57,7 @@ npm run query-block-length
 npm run query-rows
 npm run submit-proposal
 npm run staking-nominate
-npm run staking validate
+npm run staking-validate
 npm run estimate-transaction-fees
 npm run validium
 ```
