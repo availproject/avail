@@ -1,4 +1,4 @@
-FROM debian:12.5-slim as builder
+FROM debian:12.7-slim as builder
 
 # This installs all dependencies that we need (besides Rust).
 RUN apt update -y && \
