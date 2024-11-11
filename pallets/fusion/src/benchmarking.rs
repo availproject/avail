@@ -16,7 +16,7 @@ mod benchmarks {
 		let origin = RawOrigin::Root;
 
 		#[extrinsic_call]
-		_(origin, Some(EvmAddress::zero()), None);
+		_(origin, Some(FusionAddress::zero()), None);
 
 		Ok(())
 	}

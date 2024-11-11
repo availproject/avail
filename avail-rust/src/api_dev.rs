@@ -345,9 +345,9 @@ pub mod api {
 			.hash();
 		runtime_metadata_hash
 			== [
-				125u8, 238u8, 55u8, 119u8, 11u8, 67u8, 30u8, 241u8, 236u8, 154u8, 70u8, 3u8, 174u8,
-				217u8, 146u8, 134u8, 116u8, 129u8, 23u8, 30u8, 94u8, 109u8, 104u8, 169u8, 20u8,
-				74u8, 19u8, 217u8, 129u8, 205u8, 82u8, 162u8,
+				117u8, 214u8, 45u8, 170u8, 51u8, 64u8, 10u8, 132u8, 164u8, 180u8, 186u8, 91u8,
+				151u8, 112u8, 153u8, 173u8, 134u8, 147u8, 130u8, 140u8, 237u8, 72u8, 3u8, 205u8,
+				205u8, 17u8, 181u8, 204u8, 72u8, 40u8, 3u8, 156u8,
 			]
 	}
 	pub mod system {
@@ -1461,10 +1461,9 @@ pub mod api {
 						"Events",
 						(),
 						[
-							175u8, 156u8, 75u8, 186u8, 71u8, 215u8, 82u8, 97u8, 125u8, 181u8, 6u8,
-							123u8, 85u8, 167u8, 117u8, 235u8, 82u8, 249u8, 37u8, 123u8, 62u8,
-							198u8, 182u8, 145u8, 140u8, 36u8, 93u8, 131u8, 34u8, 204u8, 179u8,
-							150u8,
+							77u8, 1u8, 183u8, 238u8, 125u8, 186u8, 239u8, 3u8, 246u8, 170u8, 47u8,
+							133u8, 20u8, 92u8, 62u8, 24u8, 170u8, 122u8, 209u8, 28u8, 87u8, 213u8,
+							251u8, 141u8, 153u8, 153u8, 142u8, 95u8, 227u8, 73u8, 16u8, 21u8,
 						],
 					)
 				}
@@ -2047,10 +2046,10 @@ pub mod api {
 						"batch",
 						types::Batch { calls },
 						[
-							144u8, 24u8, 187u8, 203u8, 86u8, 188u8, 102u8, 30u8, 176u8, 117u8,
-							248u8, 221u8, 107u8, 163u8, 51u8, 205u8, 42u8, 5u8, 233u8, 180u8,
-							215u8, 45u8, 100u8, 104u8, 59u8, 152u8, 99u8, 99u8, 91u8, 226u8, 87u8,
-							164u8,
+							179u8, 202u8, 36u8, 235u8, 141u8, 53u8, 222u8, 243u8, 118u8, 254u8,
+							179u8, 213u8, 246u8, 201u8, 140u8, 82u8, 4u8, 200u8, 105u8, 175u8,
+							189u8, 173u8, 204u8, 127u8, 250u8, 52u8, 19u8, 205u8, 208u8, 36u8,
+							214u8, 16u8,
 						],
 					)
 				}
@@ -2068,9 +2067,10 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							13u8, 47u8, 71u8, 186u8, 0u8, 234u8, 217u8, 24u8, 77u8, 227u8, 209u8,
-							52u8, 60u8, 155u8, 81u8, 214u8, 50u8, 74u8, 188u8, 239u8, 166u8, 134u8,
-							251u8, 250u8, 155u8, 195u8, 38u8, 16u8, 32u8, 167u8, 254u8, 244u8,
+							239u8, 137u8, 106u8, 229u8, 217u8, 167u8, 57u8, 199u8, 120u8, 112u8,
+							204u8, 169u8, 47u8, 195u8, 154u8, 14u8, 229u8, 60u8, 177u8, 201u8,
+							229u8, 98u8, 16u8, 164u8, 241u8, 84u8, 4u8, 240u8, 160u8, 18u8, 82u8,
+							138u8,
 						],
 					)
 				}
@@ -2084,10 +2084,9 @@ pub mod api {
 						"batch_all",
 						types::BatchAll { calls },
 						[
-							218u8, 230u8, 116u8, 188u8, 17u8, 249u8, 136u8, 169u8, 213u8, 117u8,
-							12u8, 160u8, 243u8, 204u8, 224u8, 100u8, 176u8, 58u8, 251u8, 128u8,
-							166u8, 37u8, 9u8, 33u8, 2u8, 112u8, 70u8, 43u8, 106u8, 155u8, 128u8,
-							58u8,
+							11u8, 97u8, 84u8, 144u8, 255u8, 21u8, 184u8, 150u8, 53u8, 90u8, 5u8,
+							235u8, 238u8, 40u8, 238u8, 223u8, 187u8, 140u8, 47u8, 105u8, 35u8,
+							132u8, 177u8, 2u8, 77u8, 254u8, 64u8, 167u8, 108u8, 41u8, 33u8, 189u8,
 						],
 					)
 				}
@@ -2105,10 +2104,9 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							19u8, 71u8, 234u8, 177u8, 85u8, 56u8, 96u8, 191u8, 145u8, 251u8, 228u8,
-							181u8, 161u8, 27u8, 45u8, 245u8, 112u8, 87u8, 164u8, 163u8, 191u8,
-							111u8, 83u8, 57u8, 167u8, 182u8, 189u8, 74u8, 221u8, 112u8, 182u8,
-							129u8,
+							159u8, 29u8, 193u8, 254u8, 147u8, 242u8, 33u8, 255u8, 166u8, 163u8,
+							151u8, 171u8, 145u8, 54u8, 55u8, 121u8, 187u8, 8u8, 2u8, 232u8, 42u8,
+							184u8, 118u8, 81u8, 135u8, 191u8, 63u8, 35u8, 105u8, 91u8, 1u8, 74u8,
 						],
 					)
 				}
@@ -2122,9 +2120,9 @@ pub mod api {
 						"force_batch",
 						types::ForceBatch { calls },
 						[
-							59u8, 170u8, 149u8, 58u8, 137u8, 85u8, 68u8, 230u8, 8u8, 10u8, 124u8,
-							185u8, 92u8, 171u8, 180u8, 81u8, 93u8, 46u8, 188u8, 81u8, 63u8, 230u8,
-							6u8, 170u8, 244u8, 199u8, 247u8, 95u8, 125u8, 197u8, 141u8, 254u8,
+							167u8, 152u8, 145u8, 147u8, 118u8, 60u8, 171u8, 231u8, 86u8, 148u8,
+							69u8, 204u8, 59u8, 43u8, 148u8, 105u8, 195u8, 96u8, 49u8, 28u8, 236u8,
+							226u8, 79u8, 231u8, 174u8, 55u8, 33u8, 95u8, 55u8, 192u8, 235u8, 75u8,
 						],
 					)
 				}
@@ -2142,10 +2140,9 @@ pub mod api {
 							weight,
 						},
 						[
-							122u8, 221u8, 18u8, 156u8, 66u8, 226u8, 222u8, 248u8, 29u8, 166u8,
-							23u8, 193u8, 217u8, 147u8, 229u8, 208u8, 124u8, 145u8, 55u8, 27u8,
-							211u8, 143u8, 27u8, 25u8, 72u8, 13u8, 178u8, 176u8, 219u8, 240u8,
-							243u8, 188u8,
+							253u8, 23u8, 50u8, 173u8, 177u8, 230u8, 13u8, 46u8, 237u8, 41u8, 176u8,
+							152u8, 123u8, 181u8, 221u8, 124u8, 79u8, 153u8, 76u8, 49u8, 67u8, 3u8,
+							10u8, 98u8, 215u8, 39u8, 107u8, 25u8, 95u8, 148u8, 114u8, 65u8,
 						],
 					)
 				}
@@ -11479,9 +11476,9 @@ pub mod api {
 							length_bound,
 						},
 						[
-							84u8, 22u8, 53u8, 219u8, 176u8, 185u8, 145u8, 91u8, 125u8, 0u8, 49u8,
-							176u8, 125u8, 227u8, 226u8, 176u8, 87u8, 53u8, 103u8, 187u8, 78u8,
-							60u8, 62u8, 91u8, 108u8, 14u8, 12u8, 65u8, 83u8, 217u8, 102u8, 60u8,
+							123u8, 151u8, 69u8, 18u8, 129u8, 179u8, 218u8, 135u8, 140u8, 220u8,
+							25u8, 174u8, 43u8, 45u8, 175u8, 157u8, 44u8, 200u8, 193u8, 59u8, 87u8,
+							50u8, 145u8, 4u8, 107u8, 89u8, 131u8, 64u8, 157u8, 63u8, 200u8, 94u8,
 						],
 					)
 				}
@@ -11501,9 +11498,10 @@ pub mod api {
 							length_bound,
 						},
 						[
-							114u8, 136u8, 70u8, 1u8, 80u8, 25u8, 89u8, 140u8, 172u8, 29u8, 255u8,
-							64u8, 182u8, 14u8, 235u8, 149u8, 186u8, 218u8, 77u8, 61u8, 49u8, 22u8,
-							171u8, 127u8, 121u8, 72u8, 249u8, 185u8, 225u8, 119u8, 173u8, 1u8,
+							103u8, 33u8, 116u8, 218u8, 222u8, 114u8, 103u8, 199u8, 91u8, 254u8,
+							194u8, 121u8, 49u8, 188u8, 90u8, 211u8, 156u8, 26u8, 63u8, 106u8,
+							144u8, 17u8, 155u8, 7u8, 113u8, 150u8, 247u8, 10u8, 3u8, 97u8, 70u8,
+							223u8,
 						],
 					)
 				}
@@ -11856,9 +11854,9 @@ pub mod api {
 						"ProposalOf",
 						(),
 						[
-							193u8, 252u8, 207u8, 78u8, 223u8, 60u8, 70u8, 181u8, 72u8, 169u8, 21u8,
-							151u8, 83u8, 129u8, 65u8, 20u8, 121u8, 106u8, 38u8, 173u8, 144u8, 22u8,
-							54u8, 16u8, 13u8, 248u8, 30u8, 115u8, 151u8, 199u8, 146u8, 171u8,
+							249u8, 1u8, 48u8, 197u8, 21u8, 77u8, 179u8, 103u8, 128u8, 141u8, 143u8,
+							14u8, 227u8, 136u8, 89u8, 38u8, 57u8, 77u8, 189u8, 231u8, 61u8, 205u8,
+							105u8, 190u8, 22u8, 114u8, 189u8, 56u8, 50u8, 71u8, 184u8, 95u8,
 						],
 					)
 				}
@@ -11882,9 +11880,9 @@ pub mod api {
 							_0.borrow(),
 						),
 						[
-							193u8, 252u8, 207u8, 78u8, 223u8, 60u8, 70u8, 181u8, 72u8, 169u8, 21u8,
-							151u8, 83u8, 129u8, 65u8, 20u8, 121u8, 106u8, 38u8, 173u8, 144u8, 22u8,
-							54u8, 16u8, 13u8, 248u8, 30u8, 115u8, 151u8, 199u8, 146u8, 171u8,
+							249u8, 1u8, 48u8, 197u8, 21u8, 77u8, 179u8, 103u8, 128u8, 141u8, 143u8,
+							14u8, 227u8, 136u8, 89u8, 38u8, 57u8, 77u8, 189u8, 231u8, 61u8, 205u8,
+							105u8, 190u8, 22u8, 114u8, 189u8, 56u8, 50u8, 71u8, 184u8, 95u8,
 						],
 					)
 				}
@@ -13984,10 +13982,10 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							215u8, 122u8, 183u8, 14u8, 249u8, 25u8, 114u8, 182u8, 232u8, 207u8,
-							4u8, 137u8, 239u8, 227u8, 151u8, 70u8, 146u8, 254u8, 150u8, 201u8,
-							54u8, 179u8, 14u8, 16u8, 214u8, 163u8, 161u8, 226u8, 93u8, 62u8, 112u8,
-							108u8,
+							85u8, 30u8, 160u8, 155u8, 141u8, 229u8, 162u8, 243u8, 102u8, 251u8,
+							155u8, 128u8, 80u8, 12u8, 71u8, 210u8, 245u8, 184u8, 94u8, 33u8, 128u8,
+							164u8, 202u8, 161u8, 72u8, 223u8, 120u8, 223u8, 5u8, 89u8, 154u8,
+							191u8,
 						],
 					)
 				}
@@ -14006,9 +14004,9 @@ pub mod api {
 							weight,
 						},
 						[
-							41u8, 142u8, 147u8, 255u8, 216u8, 72u8, 93u8, 214u8, 243u8, 166u8,
-							69u8, 180u8, 40u8, 28u8, 194u8, 147u8, 54u8, 104u8, 79u8, 96u8, 82u8,
-							213u8, 200u8, 176u8, 185u8, 3u8, 91u8, 224u8, 121u8, 46u8, 89u8, 47u8,
+							95u8, 184u8, 244u8, 129u8, 140u8, 233u8, 243u8, 118u8, 80u8, 134u8,
+							184u8, 67u8, 29u8, 206u8, 43u8, 34u8, 254u8, 0u8, 0u8, 187u8, 165u8,
+							55u8, 108u8, 162u8, 240u8, 217u8, 93u8, 26u8, 143u8, 78u8, 107u8, 26u8,
 						],
 					)
 				}
@@ -14043,9 +14041,10 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							234u8, 227u8, 239u8, 48u8, 80u8, 82u8, 21u8, 147u8, 182u8, 8u8, 46u8,
-							51u8, 135u8, 147u8, 83u8, 244u8, 97u8, 169u8, 8u8, 32u8, 68u8, 166u8,
-							176u8, 120u8, 253u8, 76u8, 121u8, 163u8, 180u8, 48u8, 160u8, 30u8,
+							95u8, 141u8, 153u8, 169u8, 207u8, 151u8, 163u8, 11u8, 21u8, 206u8,
+							121u8, 80u8, 240u8, 30u8, 129u8, 146u8, 154u8, 112u8, 187u8, 19u8,
+							100u8, 181u8, 228u8, 123u8, 125u8, 246u8, 82u8, 56u8, 148u8, 110u8,
+							255u8, 60u8,
 						],
 					)
 				}
@@ -15255,9 +15254,10 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							184u8, 88u8, 193u8, 134u8, 138u8, 34u8, 194u8, 27u8, 12u8, 69u8, 10u8,
-							85u8, 114u8, 57u8, 4u8, 52u8, 216u8, 222u8, 41u8, 101u8, 237u8, 47u8,
-							191u8, 104u8, 83u8, 35u8, 209u8, 211u8, 138u8, 225u8, 250u8, 88u8,
+							154u8, 85u8, 55u8, 251u8, 17u8, 76u8, 50u8, 2u8, 30u8, 168u8, 255u8,
+							237u8, 74u8, 243u8, 131u8, 239u8, 10u8, 37u8, 182u8, 229u8, 130u8,
+							133u8, 224u8, 129u8, 179u8, 179u8, 214u8, 50u8, 183u8, 73u8, 62u8,
+							78u8,
 						],
 					)
 				}
@@ -15299,10 +15299,9 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							253u8, 44u8, 22u8, 83u8, 125u8, 45u8, 232u8, 124u8, 208u8, 169u8, 6u8,
-							93u8, 226u8, 169u8, 125u8, 51u8, 230u8, 159u8, 76u8, 137u8, 85u8,
-							187u8, 156u8, 31u8, 242u8, 83u8, 243u8, 241u8, 185u8, 220u8, 99u8,
-							240u8,
+							100u8, 81u8, 163u8, 225u8, 239u8, 63u8, 155u8, 243u8, 2u8, 68u8, 214u8,
+							57u8, 202u8, 125u8, 118u8, 224u8, 120u8, 132u8, 187u8, 65u8, 154u8,
+							175u8, 5u8, 9u8, 43u8, 43u8, 183u8, 220u8, 165u8, 174u8, 189u8, 223u8,
 						],
 					)
 				}
@@ -15340,9 +15339,9 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							126u8, 28u8, 62u8, 92u8, 32u8, 25u8, 203u8, 95u8, 139u8, 32u8, 81u8,
-							0u8, 252u8, 117u8, 219u8, 103u8, 112u8, 152u8, 23u8, 27u8, 121u8,
-							190u8, 55u8, 187u8, 76u8, 55u8, 35u8, 6u8, 80u8, 186u8, 209u8, 76u8,
+							92u8, 166u8, 234u8, 202u8, 65u8, 151u8, 255u8, 239u8, 30u8, 102u8,
+							38u8, 103u8, 195u8, 13u8, 204u8, 10u8, 142u8, 43u8, 100u8, 8u8, 14u8,
+							22u8, 140u8, 92u8, 78u8, 71u8, 86u8, 40u8, 220u8, 86u8, 231u8, 115u8,
 						],
 					)
 				}
@@ -15367,9 +15366,10 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							109u8, 82u8, 33u8, 27u8, 159u8, 177u8, 250u8, 9u8, 46u8, 96u8, 35u8,
-							172u8, 175u8, 178u8, 177u8, 177u8, 71u8, 147u8, 212u8, 245u8, 219u8,
-							85u8, 75u8, 13u8, 21u8, 86u8, 103u8, 181u8, 120u8, 224u8, 248u8, 106u8,
+							213u8, 188u8, 41u8, 62u8, 88u8, 100u8, 182u8, 11u8, 184u8, 226u8, 11u8,
+							248u8, 254u8, 126u8, 163u8, 113u8, 136u8, 78u8, 38u8, 212u8, 248u8,
+							126u8, 207u8, 201u8, 115u8, 33u8, 23u8, 220u8, 164u8, 228u8, 207u8,
+							147u8,
 						],
 					)
 				}
@@ -17226,10 +17226,9 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							83u8, 131u8, 225u8, 248u8, 76u8, 46u8, 106u8, 161u8, 99u8, 220u8,
-							187u8, 197u8, 250u8, 169u8, 168u8, 76u8, 62u8, 163u8, 168u8, 123u8,
-							125u8, 105u8, 120u8, 44u8, 166u8, 21u8, 184u8, 101u8, 49u8, 19u8, 95u8,
-							173u8,
+							199u8, 144u8, 161u8, 112u8, 236u8, 21u8, 83u8, 1u8, 18u8, 74u8, 51u8,
+							186u8, 49u8, 102u8, 210u8, 42u8, 245u8, 101u8, 119u8, 241u8, 184u8,
+							45u8, 54u8, 9u8, 245u8, 63u8, 211u8, 34u8, 156u8, 106u8, 38u8, 29u8,
 						],
 					)
 				}
@@ -17253,9 +17252,10 @@ pub mod api {
 							max_weight,
 						},
 						[
-							171u8, 106u8, 235u8, 114u8, 57u8, 26u8, 94u8, 82u8, 49u8, 172u8, 131u8,
-							123u8, 162u8, 159u8, 181u8, 32u8, 188u8, 139u8, 90u8, 82u8, 112u8,
-							111u8, 117u8, 161u8, 12u8, 143u8, 1u8, 17u8, 155u8, 143u8, 35u8, 122u8,
+							116u8, 46u8, 150u8, 42u8, 14u8, 228u8, 154u8, 212u8, 96u8, 101u8,
+							177u8, 225u8, 164u8, 140u8, 66u8, 240u8, 26u8, 155u8, 207u8, 86u8,
+							198u8, 100u8, 97u8, 192u8, 246u8, 30u8, 198u8, 250u8, 229u8, 232u8,
+							132u8, 2u8,
 						],
 					)
 				}
@@ -22896,9 +22896,10 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							106u8, 179u8, 70u8, 93u8, 106u8, 59u8, 82u8, 171u8, 161u8, 49u8, 74u8,
-							62u8, 3u8, 248u8, 165u8, 189u8, 223u8, 226u8, 128u8, 162u8, 41u8, 54u8,
-							159u8, 178u8, 34u8, 103u8, 13u8, 42u8, 14u8, 70u8, 227u8, 22u8,
+							204u8, 44u8, 125u8, 194u8, 124u8, 150u8, 79u8, 99u8, 155u8, 183u8,
+							83u8, 226u8, 224u8, 25u8, 83u8, 87u8, 101u8, 178u8, 120u8, 181u8, 68u8,
+							31u8, 135u8, 142u8, 217u8, 231u8, 81u8, 93u8, 193u8, 179u8, 186u8,
+							15u8,
 						],
 					)
 				}
@@ -25113,10 +25114,9 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							131u8, 91u8, 150u8, 139u8, 251u8, 63u8, 90u8, 242u8, 206u8, 176u8,
-							117u8, 179u8, 232u8, 36u8, 137u8, 11u8, 248u8, 164u8, 47u8, 193u8,
-							245u8, 167u8, 106u8, 146u8, 67u8, 60u8, 112u8, 203u8, 115u8, 73u8,
-							158u8, 213u8,
+							155u8, 50u8, 113u8, 75u8, 63u8, 140u8, 229u8, 200u8, 21u8, 11u8, 192u8,
+							172u8, 33u8, 196u8, 186u8, 230u8, 223u8, 5u8, 221u8, 100u8, 24u8, 69u8,
+							121u8, 196u8, 1u8, 239u8, 99u8, 170u8, 90u8, 197u8, 163u8, 214u8,
 						],
 					)
 				}
@@ -25304,9 +25304,9 @@ pub mod api {
 							call: ::subxt::ext::subxt_core::alloc::boxed::Box::new(call),
 						},
 						[
-							249u8, 58u8, 235u8, 196u8, 174u8, 99u8, 129u8, 133u8, 166u8, 236u8,
-							231u8, 56u8, 40u8, 42u8, 187u8, 69u8, 101u8, 87u8, 194u8, 222u8, 148u8,
-							77u8, 10u8, 45u8, 158u8, 45u8, 136u8, 25u8, 166u8, 250u8, 13u8, 111u8,
+							219u8, 17u8, 17u8, 108u8, 158u8, 237u8, 29u8, 252u8, 20u8, 68u8, 76u8,
+							171u8, 205u8, 234u8, 144u8, 138u8, 18u8, 120u8, 18u8, 13u8, 202u8,
+							49u8, 46u8, 213u8, 180u8, 156u8, 10u8, 232u8, 216u8, 52u8, 6u8, 132u8,
 						],
 					)
 				}
@@ -26298,9 +26298,9 @@ pub mod api {
 							length_bound,
 						},
 						[
-							84u8, 22u8, 53u8, 219u8, 176u8, 185u8, 145u8, 91u8, 125u8, 0u8, 49u8,
-							176u8, 125u8, 227u8, 226u8, 176u8, 87u8, 53u8, 103u8, 187u8, 78u8,
-							60u8, 62u8, 91u8, 108u8, 14u8, 12u8, 65u8, 83u8, 217u8, 102u8, 60u8,
+							123u8, 151u8, 69u8, 18u8, 129u8, 179u8, 218u8, 135u8, 140u8, 220u8,
+							25u8, 174u8, 43u8, 45u8, 175u8, 157u8, 44u8, 200u8, 193u8, 59u8, 87u8,
+							50u8, 145u8, 4u8, 107u8, 89u8, 131u8, 64u8, 157u8, 63u8, 200u8, 94u8,
 						],
 					)
 				}
@@ -26320,9 +26320,10 @@ pub mod api {
 							length_bound,
 						},
 						[
-							114u8, 136u8, 70u8, 1u8, 80u8, 25u8, 89u8, 140u8, 172u8, 29u8, 255u8,
-							64u8, 182u8, 14u8, 235u8, 149u8, 186u8, 218u8, 77u8, 61u8, 49u8, 22u8,
-							171u8, 127u8, 121u8, 72u8, 249u8, 185u8, 225u8, 119u8, 173u8, 1u8,
+							103u8, 33u8, 116u8, 218u8, 222u8, 114u8, 103u8, 199u8, 91u8, 254u8,
+							194u8, 121u8, 49u8, 188u8, 90u8, 211u8, 156u8, 26u8, 63u8, 106u8,
+							144u8, 17u8, 155u8, 7u8, 113u8, 150u8, 247u8, 10u8, 3u8, 97u8, 70u8,
+							223u8,
 						],
 					)
 				}
@@ -26675,9 +26676,9 @@ pub mod api {
 						"ProposalOf",
 						(),
 						[
-							193u8, 252u8, 207u8, 78u8, 223u8, 60u8, 70u8, 181u8, 72u8, 169u8, 21u8,
-							151u8, 83u8, 129u8, 65u8, 20u8, 121u8, 106u8, 38u8, 173u8, 144u8, 22u8,
-							54u8, 16u8, 13u8, 248u8, 30u8, 115u8, 151u8, 199u8, 146u8, 171u8,
+							249u8, 1u8, 48u8, 197u8, 21u8, 77u8, 179u8, 103u8, 128u8, 141u8, 143u8,
+							14u8, 227u8, 136u8, 89u8, 38u8, 57u8, 77u8, 189u8, 231u8, 61u8, 205u8,
+							105u8, 190u8, 22u8, 114u8, 189u8, 56u8, 50u8, 71u8, 184u8, 95u8,
 						],
 					)
 				}
@@ -26701,9 +26702,9 @@ pub mod api {
 							_0.borrow(),
 						),
 						[
-							193u8, 252u8, 207u8, 78u8, 223u8, 60u8, 70u8, 181u8, 72u8, 169u8, 21u8,
-							151u8, 83u8, 129u8, 65u8, 20u8, 121u8, 106u8, 38u8, 173u8, 144u8, 22u8,
-							54u8, 16u8, 13u8, 248u8, 30u8, 115u8, 151u8, 199u8, 146u8, 171u8,
+							249u8, 1u8, 48u8, 197u8, 21u8, 77u8, 179u8, 103u8, 128u8, 141u8, 143u8,
+							14u8, 227u8, 136u8, 89u8, 38u8, 57u8, 77u8, 189u8, 231u8, 61u8, 205u8,
+							105u8, 190u8, 22u8, 114u8, 189u8, 56u8, 50u8, 71u8, 184u8, 95u8,
 						],
 					)
 				}
@@ -26877,13 +26878,13 @@ pub mod api {
 				)]
 				#[doc = "See [`Pallet::deposit_currency_dummy`]."]
 				pub struct DepositCurrencyDummy {
-					pub evm_address: deposit_currency_dummy::EvmAddress,
+					pub fusion_address: deposit_currency_dummy::FusionAddress,
 					pub currency_id: deposit_currency_dummy::CurrencyId,
 					pub amount: deposit_currency_dummy::Amount,
 				}
 				pub mod deposit_currency_dummy {
 					use super::runtime_types;
-					pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+					pub type FusionAddress = ::subxt::ext::subxt_core::utils::H160;
 					pub type CurrencyId = ::core::primitive::u32;
 					pub type Amount = ::core::primitive::u128;
 				}
@@ -27235,12 +27236,12 @@ pub mod api {
 				)]
 				#[doc = "See [`Pallet::set_controller_address`]."]
 				pub struct SetControllerAddress {
-					pub evm_address: set_controller_address::EvmAddress,
+					pub fusion_address: set_controller_address::FusionAddress,
 					pub new_controller_address: set_controller_address::NewControllerAddress,
 				}
 				pub mod set_controller_address {
 					use super::runtime_types;
-					pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+					pub type FusionAddress = ::subxt::ext::subxt_core::utils::H160;
 					pub type NewControllerAddress =
 						::core::option::Option<::subxt::ext::subxt_core::utils::AccountId32>;
 				}
@@ -27267,12 +27268,12 @@ pub mod api {
 				)]
 				#[doc = "See [`Pallet::set_slash_destination`]."]
 				pub struct SetSlashDestination {
-					pub evm_address: set_slash_destination::EvmAddress,
+					pub fusion_address: set_slash_destination::FusionAddress,
 					pub controller_address: set_slash_destination::ControllerAddress,
 				}
 				pub mod set_slash_destination {
 					use super::runtime_types;
-					pub type EvmAddress =
+					pub type FusionAddress =
 						::core::option::Option<::subxt::ext::subxt_core::utils::H160>;
 					pub type ControllerAddress =
 						::core::option::Option<::subxt::ext::subxt_core::utils::AccountId32>;
@@ -27329,13 +27330,13 @@ pub mod api {
 				)]
 				#[doc = "See [`Pallet::set_compounding`]."]
 				pub struct SetCompounding {
-					pub evm_address: set_compounding::EvmAddress,
+					pub fusion_address: set_compounding::FusionAddress,
 					pub pool_id: set_compounding::PoolId,
 					pub compound: set_compounding::Compound,
 				}
 				pub mod set_compounding {
 					use super::runtime_types;
-					pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+					pub type FusionAddress = ::subxt::ext::subxt_core::utils::H160;
 					pub type PoolId = ::core::primitive::u32;
 					pub type Compound = ::core::primitive::bool;
 				}
@@ -27362,13 +27363,13 @@ pub mod api {
 				)]
 				#[doc = "See [`Pallet::stake`]."]
 				pub struct Stake {
-					pub evm_address: stake::EvmAddress,
+					pub fusion_address: stake::FusionAddress,
 					pub pool_id: stake::PoolId,
 					pub amount: stake::Amount,
 				}
 				pub mod stake {
 					use super::runtime_types;
-					pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+					pub type FusionAddress = ::subxt::ext::subxt_core::utils::H160;
 					pub type PoolId = ::core::primitive::u32;
 					pub type Amount = ::core::primitive::u128;
 				}
@@ -27397,13 +27398,13 @@ pub mod api {
 				pub struct ClaimRewards {
 					pub era: claim_rewards::Era,
 					pub pool_id: claim_rewards::PoolId,
-					pub evm_address: claim_rewards::EvmAddress,
+					pub fusion_address: claim_rewards::FusionAddress,
 				}
 				pub mod claim_rewards {
 					use super::runtime_types;
 					pub type Era = ::core::primitive::u32;
 					pub type PoolId = ::core::primitive::u32;
-					pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+					pub type FusionAddress = ::subxt::ext::subxt_core::utils::H160;
 				}
 				impl ::subxt::ext::subxt_core::blocks::StaticExtrinsic for ClaimRewards {
 					const PALLET: &'static str = "Fusion";
@@ -27428,13 +27429,13 @@ pub mod api {
 				)]
 				#[doc = "See [`Pallet::unbond_currency`]."]
 				pub struct UnbondCurrency {
-					pub evm_address: unbond_currency::EvmAddress,
+					pub fusion_address: unbond_currency::FusionAddress,
 					pub pool_id: unbond_currency::PoolId,
 					pub unbond_amount: unbond_currency::UnbondAmount,
 				}
 				pub mod unbond_currency {
 					use super::runtime_types;
-					pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+					pub type FusionAddress = ::subxt::ext::subxt_core::utils::H160;
 					pub type PoolId = ::core::primitive::u32;
 					pub type UnbondAmount = ::core::primitive::u128;
 				}
@@ -27461,12 +27462,12 @@ pub mod api {
 				)]
 				#[doc = "See [`Pallet::withdraw_unbonded_currency`]."]
 				pub struct WithdrawUnbondedCurrency {
-					pub evm_address: withdraw_unbonded_currency::EvmAddress,
+					pub fusion_address: withdraw_unbonded_currency::FusionAddress,
 					pub pool_id: withdraw_unbonded_currency::PoolId,
 				}
 				pub mod withdraw_unbonded_currency {
 					use super::runtime_types;
-					pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+					pub type FusionAddress = ::subxt::ext::subxt_core::utils::H160;
 					pub type PoolId = ::core::primitive::u32;
 				}
 				impl ::subxt::ext::subxt_core::blocks::StaticExtrinsic for WithdrawUnbondedCurrency {
@@ -27492,12 +27493,12 @@ pub mod api {
 				)]
 				#[doc = "See [`Pallet::unbond_currency_other`]."]
 				pub struct UnbondCurrencyOther {
-					pub evm_address: unbond_currency_other::EvmAddress,
+					pub fusion_address: unbond_currency_other::FusionAddress,
 					pub pool_id: unbond_currency_other::PoolId,
 				}
 				pub mod unbond_currency_other {
 					use super::runtime_types;
-					pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+					pub type FusionAddress = ::subxt::ext::subxt_core::utils::H160;
 					pub type PoolId = ::core::primitive::u32;
 				}
 				impl ::subxt::ext::subxt_core::blocks::StaticExtrinsic for UnbondCurrencyOther {
@@ -27523,12 +27524,12 @@ pub mod api {
 				)]
 				#[doc = "See [`Pallet::withdraw_unbonded_currency_other`]."]
 				pub struct WithdrawUnbondedCurrencyOther {
-					pub evm_address: withdraw_unbonded_currency_other::EvmAddress,
+					pub fusion_address: withdraw_unbonded_currency_other::FusionAddress,
 					pub pool_id: withdraw_unbonded_currency_other::PoolId,
 				}
 				pub mod withdraw_unbonded_currency_other {
 					use super::runtime_types;
-					pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+					pub type FusionAddress = ::subxt::ext::subxt_core::utils::H160;
 					pub type PoolId = ::core::primitive::u32;
 				}
 				impl ::subxt::ext::subxt_core::blocks::StaticExtrinsic for WithdrawUnbondedCurrencyOther {
@@ -27554,11 +27555,11 @@ pub mod api {
 				)]
 				#[doc = "See [`Pallet::withdraw_avail_to_controller`]."]
 				pub struct WithdrawAvailToController {
-					pub evm_address: withdraw_avail_to_controller::EvmAddress,
+					pub fusion_address: withdraw_avail_to_controller::FusionAddress,
 				}
 				pub mod withdraw_avail_to_controller {
 					use super::runtime_types;
-					pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+					pub type FusionAddress = ::subxt::ext::subxt_core::utils::H160;
 				}
 				impl ::subxt::ext::subxt_core::blocks::StaticExtrinsic for WithdrawAvailToController {
 					const PALLET: &'static str = "Fusion";
@@ -27583,12 +27584,12 @@ pub mod api {
 				)]
 				#[doc = "See [`Pallet::set_pool_boost_allocations`]."]
 				pub struct SetPoolBoostAllocations {
-					pub evm_address: set_pool_boost_allocations::EvmAddress,
+					pub fusion_address: set_pool_boost_allocations::FusionAddress,
 					pub pool_ids: set_pool_boost_allocations::PoolIds,
 				}
 				pub mod set_pool_boost_allocations {
 					use super::runtime_types;
-					pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+					pub type FusionAddress = ::subxt::ext::subxt_core::utils::H160;
 					pub type PoolIds = runtime_types::bounded_collections::bounded_vec::BoundedVec<
 						::core::primitive::u32,
 					>;
@@ -27636,7 +27637,7 @@ pub mod api {
 				#[doc = "See [`Pallet::deposit_currency_dummy`]."]
 				pub fn deposit_currency_dummy(
 					&self,
-					evm_address: types::deposit_currency_dummy::EvmAddress,
+					fusion_address: types::deposit_currency_dummy::FusionAddress,
 					currency_id: types::deposit_currency_dummy::CurrencyId,
 					amount: types::deposit_currency_dummy::Amount,
 				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::DepositCurrencyDummy>
@@ -27645,15 +27646,15 @@ pub mod api {
 						"Fusion",
 						"deposit_currency_dummy",
 						types::DepositCurrencyDummy {
-							evm_address,
+							fusion_address,
 							currency_id,
 							amount,
 						},
 						[
-							147u8, 49u8, 72u8, 214u8, 230u8, 55u8, 241u8, 186u8, 4u8, 195u8, 15u8,
-							158u8, 195u8, 62u8, 148u8, 17u8, 218u8, 51u8, 164u8, 151u8, 201u8,
-							222u8, 66u8, 203u8, 138u8, 148u8, 126u8, 107u8, 249u8, 148u8, 153u8,
-							208u8,
+							252u8, 45u8, 16u8, 21u8, 79u8, 218u8, 178u8, 192u8, 131u8, 214u8,
+							234u8, 27u8, 158u8, 69u8, 150u8, 96u8, 157u8, 113u8, 206u8, 226u8,
+							56u8, 236u8, 195u8, 7u8, 29u8, 61u8, 36u8, 121u8, 103u8, 6u8, 98u8,
+							18u8,
 						],
 					)
 				}
@@ -27861,7 +27862,7 @@ pub mod api {
 				#[doc = "See [`Pallet::set_controller_address`]."]
 				pub fn set_controller_address(
 					&self,
-					evm_address: types::set_controller_address::EvmAddress,
+					fusion_address: types::set_controller_address::FusionAddress,
 					new_controller_address: types::set_controller_address::NewControllerAddress,
 				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::SetControllerAddress>
 				{
@@ -27869,20 +27870,20 @@ pub mod api {
 						"Fusion",
 						"set_controller_address",
 						types::SetControllerAddress {
-							evm_address,
+							fusion_address,
 							new_controller_address,
 						},
 						[
-							118u8, 137u8, 188u8, 112u8, 200u8, 41u8, 96u8, 83u8, 225u8, 90u8, 47u8,
-							205u8, 238u8, 134u8, 47u8, 97u8, 100u8, 10u8, 165u8, 255u8, 29u8, 72u8,
-							132u8, 235u8, 74u8, 229u8, 146u8, 25u8, 166u8, 124u8, 92u8, 228u8,
+							21u8, 86u8, 88u8, 243u8, 99u8, 117u8, 161u8, 143u8, 68u8, 254u8, 20u8,
+							41u8, 22u8, 66u8, 107u8, 230u8, 146u8, 139u8, 238u8, 73u8, 255u8,
+							208u8, 153u8, 31u8, 24u8, 59u8, 22u8, 68u8, 145u8, 82u8, 243u8, 94u8,
 						],
 					)
 				}
 				#[doc = "See [`Pallet::set_slash_destination`]."]
 				pub fn set_slash_destination(
 					&self,
-					evm_address: types::set_slash_destination::EvmAddress,
+					fusion_address: types::set_slash_destination::FusionAddress,
 					controller_address: types::set_slash_destination::ControllerAddress,
 				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::SetSlashDestination>
 				{
@@ -27890,14 +27891,13 @@ pub mod api {
 						"Fusion",
 						"set_slash_destination",
 						types::SetSlashDestination {
-							evm_address,
+							fusion_address,
 							controller_address,
 						},
 						[
-							144u8, 69u8, 138u8, 247u8, 163u8, 213u8, 248u8, 138u8, 140u8, 210u8,
-							14u8, 29u8, 161u8, 177u8, 23u8, 90u8, 216u8, 193u8, 132u8, 226u8,
-							255u8, 125u8, 218u8, 95u8, 60u8, 255u8, 114u8, 232u8, 198u8, 239u8,
-							204u8, 155u8,
+							137u8, 153u8, 155u8, 37u8, 93u8, 15u8, 125u8, 212u8, 238u8, 220u8,
+							89u8, 14u8, 17u8, 250u8, 233u8, 50u8, 159u8, 163u8, 153u8, 68u8, 8u8,
+							2u8, 159u8, 125u8, 183u8, 53u8, 187u8, 193u8, 5u8, 86u8, 24u8, 3u8,
 						],
 					)
 				}
@@ -27920,7 +27920,7 @@ pub mod api {
 				#[doc = "See [`Pallet::set_compounding`]."]
 				pub fn set_compounding(
 					&self,
-					evm_address: types::set_compounding::EvmAddress,
+					fusion_address: types::set_compounding::FusionAddress,
 					pool_id: types::set_compounding::PoolId,
 					compound: types::set_compounding::Compound,
 				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::SetCompounding> {
@@ -27928,22 +27928,22 @@ pub mod api {
 						"Fusion",
 						"set_compounding",
 						types::SetCompounding {
-							evm_address,
+							fusion_address,
 							pool_id,
 							compound,
 						},
 						[
-							180u8, 19u8, 248u8, 251u8, 174u8, 28u8, 86u8, 101u8, 108u8, 144u8,
-							170u8, 174u8, 72u8, 101u8, 237u8, 55u8, 228u8, 73u8, 226u8, 68u8, 81u8,
-							138u8, 119u8, 143u8, 239u8, 45u8, 141u8, 209u8, 58u8, 84u8, 45u8,
-							189u8,
+							191u8, 149u8, 156u8, 253u8, 88u8, 79u8, 189u8, 222u8, 234u8, 173u8,
+							214u8, 204u8, 32u8, 131u8, 150u8, 155u8, 196u8, 113u8, 112u8, 126u8,
+							193u8, 245u8, 170u8, 69u8, 243u8, 240u8, 173u8, 248u8, 44u8, 36u8,
+							222u8, 69u8,
 						],
 					)
 				}
 				#[doc = "See [`Pallet::stake`]."]
 				pub fn stake(
 					&self,
-					evm_address: types::stake::EvmAddress,
+					fusion_address: types::stake::FusionAddress,
 					pool_id: types::stake::PoolId,
 					amount: types::stake::Amount,
 				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::Stake> {
@@ -27951,15 +27951,15 @@ pub mod api {
 						"Fusion",
 						"stake",
 						types::Stake {
-							evm_address,
+							fusion_address,
 							pool_id,
 							amount,
 						},
 						[
-							114u8, 7u8, 118u8, 36u8, 141u8, 119u8, 93u8, 32u8, 124u8, 161u8, 233u8,
-							89u8, 182u8, 120u8, 186u8, 117u8, 88u8, 190u8, 199u8, 231u8, 208u8,
-							107u8, 228u8, 237u8, 70u8, 4u8, 239u8, 115u8, 36u8, 224u8, 135u8,
-							167u8,
+							197u8, 166u8, 247u8, 114u8, 224u8, 215u8, 125u8, 253u8, 2u8, 41u8,
+							184u8, 45u8, 175u8, 203u8, 176u8, 247u8, 175u8, 31u8, 47u8, 190u8,
+							167u8, 121u8, 98u8, 146u8, 88u8, 242u8, 78u8, 218u8, 246u8, 185u8,
+							204u8, 66u8,
 						],
 					)
 				}
@@ -27968,7 +27968,7 @@ pub mod api {
 					&self,
 					era: types::claim_rewards::Era,
 					pool_id: types::claim_rewards::PoolId,
-					evm_address: types::claim_rewards::EvmAddress,
+					fusion_address: types::claim_rewards::FusionAddress,
 				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::ClaimRewards> {
 					::subxt::ext::subxt_core::tx::payload::StaticPayload::new_static(
 						"Fusion",
@@ -27976,19 +27976,20 @@ pub mod api {
 						types::ClaimRewards {
 							era,
 							pool_id,
-							evm_address,
+							fusion_address,
 						},
 						[
-							220u8, 176u8, 153u8, 66u8, 214u8, 190u8, 131u8, 51u8, 92u8, 95u8, 71u8,
-							76u8, 106u8, 222u8, 169u8, 244u8, 179u8, 152u8, 220u8, 12u8, 38u8,
-							216u8, 255u8, 129u8, 1u8, 26u8, 204u8, 163u8, 193u8, 133u8, 12u8, 19u8,
+							184u8, 195u8, 126u8, 102u8, 132u8, 146u8, 225u8, 10u8, 231u8, 39u8,
+							149u8, 70u8, 28u8, 169u8, 171u8, 49u8, 244u8, 183u8, 36u8, 207u8, 76u8,
+							196u8, 93u8, 212u8, 48u8, 165u8, 137u8, 225u8, 161u8, 143u8, 154u8,
+							75u8,
 						],
 					)
 				}
 				#[doc = "See [`Pallet::unbond_currency`]."]
 				pub fn unbond_currency(
 					&self,
-					evm_address: types::unbond_currency::EvmAddress,
+					fusion_address: types::unbond_currency::FusionAddress,
 					pool_id: types::unbond_currency::PoolId,
 					unbond_amount: types::unbond_currency::UnbondAmount,
 				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::UnbondCurrency> {
@@ -27996,22 +27997,21 @@ pub mod api {
 						"Fusion",
 						"unbond_currency",
 						types::UnbondCurrency {
-							evm_address,
+							fusion_address,
 							pool_id,
 							unbond_amount,
 						},
 						[
-							158u8, 4u8, 250u8, 153u8, 113u8, 242u8, 247u8, 133u8, 96u8, 165u8,
-							112u8, 204u8, 118u8, 140u8, 108u8, 51u8, 220u8, 219u8, 126u8, 184u8,
-							139u8, 156u8, 16u8, 89u8, 150u8, 69u8, 33u8, 247u8, 93u8, 157u8, 19u8,
-							211u8,
+							205u8, 203u8, 44u8, 196u8, 195u8, 104u8, 153u8, 160u8, 199u8, 205u8,
+							46u8, 130u8, 68u8, 40u8, 171u8, 16u8, 136u8, 59u8, 165u8, 145u8, 149u8,
+							140u8, 17u8, 217u8, 69u8, 117u8, 61u8, 160u8, 209u8, 1u8, 181u8, 94u8,
 						],
 					)
 				}
 				#[doc = "See [`Pallet::withdraw_unbonded_currency`]."]
 				pub fn withdraw_unbonded_currency(
 					&self,
-					evm_address: types::withdraw_unbonded_currency::EvmAddress,
+					fusion_address: types::withdraw_unbonded_currency::FusionAddress,
 					pool_id: types::withdraw_unbonded_currency::PoolId,
 				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<
 					types::WithdrawUnbondedCurrency,
@@ -28020,21 +28020,21 @@ pub mod api {
 						"Fusion",
 						"withdraw_unbonded_currency",
 						types::WithdrawUnbondedCurrency {
-							evm_address,
+							fusion_address,
 							pool_id,
 						},
 						[
-							119u8, 85u8, 44u8, 156u8, 172u8, 128u8, 157u8, 171u8, 163u8, 151u8,
-							40u8, 187u8, 125u8, 19u8, 94u8, 150u8, 184u8, 171u8, 173u8, 197u8,
-							77u8, 36u8, 95u8, 8u8, 52u8, 86u8, 17u8, 146u8, 226u8, 97u8, 79u8,
-							90u8,
+							216u8, 36u8, 70u8, 177u8, 34u8, 224u8, 199u8, 23u8, 218u8, 166u8,
+							179u8, 151u8, 158u8, 117u8, 11u8, 145u8, 251u8, 74u8, 104u8, 243u8,
+							201u8, 71u8, 11u8, 208u8, 142u8, 49u8, 195u8, 104u8, 66u8, 84u8, 123u8,
+							137u8,
 						],
 					)
 				}
 				#[doc = "See [`Pallet::unbond_currency_other`]."]
 				pub fn unbond_currency_other(
 					&self,
-					evm_address: types::unbond_currency_other::EvmAddress,
+					fusion_address: types::unbond_currency_other::FusionAddress,
 					pool_id: types::unbond_currency_other::PoolId,
 				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::UnbondCurrencyOther>
 				{
@@ -28042,20 +28042,20 @@ pub mod api {
 						"Fusion",
 						"unbond_currency_other",
 						types::UnbondCurrencyOther {
-							evm_address,
+							fusion_address,
 							pool_id,
 						},
 						[
-							56u8, 218u8, 174u8, 230u8, 44u8, 12u8, 75u8, 229u8, 4u8, 159u8, 40u8,
-							219u8, 83u8, 125u8, 68u8, 52u8, 128u8, 206u8, 96u8, 228u8, 84u8, 77u8,
-							187u8, 2u8, 83u8, 252u8, 212u8, 17u8, 208u8, 244u8, 247u8, 114u8,
+							199u8, 132u8, 246u8, 145u8, 216u8, 190u8, 164u8, 47u8, 63u8, 190u8,
+							64u8, 140u8, 91u8, 247u8, 192u8, 178u8, 34u8, 69u8, 28u8, 36u8, 209u8,
+							126u8, 224u8, 163u8, 241u8, 113u8, 2u8, 90u8, 19u8, 73u8, 114u8, 34u8,
 						],
 					)
 				}
 				#[doc = "See [`Pallet::withdraw_unbonded_currency_other`]."]
 				pub fn withdraw_unbonded_currency_other(
 					&self,
-					evm_address: types::withdraw_unbonded_currency_other::EvmAddress,
+					fusion_address: types::withdraw_unbonded_currency_other::FusionAddress,
 					pool_id: types::withdraw_unbonded_currency_other::PoolId,
 				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<
 					types::WithdrawUnbondedCurrencyOther,
@@ -28064,39 +28064,40 @@ pub mod api {
 						"Fusion",
 						"withdraw_unbonded_currency_other",
 						types::WithdrawUnbondedCurrencyOther {
-							evm_address,
+							fusion_address,
 							pool_id,
 						},
 						[
-							124u8, 238u8, 86u8, 52u8, 22u8, 247u8, 225u8, 24u8, 200u8, 171u8,
-							113u8, 120u8, 63u8, 183u8, 168u8, 184u8, 129u8, 32u8, 86u8, 183u8,
-							23u8, 51u8, 208u8, 92u8, 186u8, 167u8, 249u8, 15u8, 157u8, 174u8, 53u8,
-							131u8,
+							250u8, 88u8, 38u8, 41u8, 222u8, 230u8, 158u8, 127u8, 185u8, 247u8,
+							106u8, 62u8, 236u8, 238u8, 158u8, 154u8, 131u8, 38u8, 62u8, 184u8,
+							221u8, 215u8, 177u8, 136u8, 229u8, 68u8, 214u8, 14u8, 183u8, 156u8,
+							241u8, 110u8,
 						],
 					)
 				}
 				#[doc = "See [`Pallet::withdraw_avail_to_controller`]."]
 				pub fn withdraw_avail_to_controller(
 					&self,
-					evm_address: types::withdraw_avail_to_controller::EvmAddress,
+					fusion_address: types::withdraw_avail_to_controller::FusionAddress,
 				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<
 					types::WithdrawAvailToController,
 				> {
 					::subxt::ext::subxt_core::tx::payload::StaticPayload::new_static(
 						"Fusion",
 						"withdraw_avail_to_controller",
-						types::WithdrawAvailToController { evm_address },
+						types::WithdrawAvailToController { fusion_address },
 						[
-							83u8, 125u8, 134u8, 213u8, 97u8, 96u8, 89u8, 222u8, 27u8, 242u8, 12u8,
-							69u8, 83u8, 106u8, 68u8, 215u8, 30u8, 73u8, 46u8, 93u8, 51u8, 117u8,
-							216u8, 131u8, 13u8, 129u8, 40u8, 139u8, 88u8, 27u8, 128u8, 52u8,
+							1u8, 185u8, 80u8, 204u8, 203u8, 148u8, 67u8, 224u8, 5u8, 233u8, 206u8,
+							122u8, 86u8, 203u8, 83u8, 37u8, 171u8, 198u8, 213u8, 88u8, 170u8,
+							225u8, 171u8, 114u8, 72u8, 198u8, 252u8, 121u8, 191u8, 219u8, 93u8,
+							90u8,
 						],
 					)
 				}
 				#[doc = "See [`Pallet::set_pool_boost_allocations`]."]
 				pub fn set_pool_boost_allocations(
 					&self,
-					evm_address: types::set_pool_boost_allocations::EvmAddress,
+					fusion_address: types::set_pool_boost_allocations::FusionAddress,
 					pool_ids: types::set_pool_boost_allocations::PoolIds,
 				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<
 					types::SetPoolBoostAllocations,
@@ -28105,13 +28106,13 @@ pub mod api {
 						"Fusion",
 						"set_pool_boost_allocations",
 						types::SetPoolBoostAllocations {
-							evm_address,
+							fusion_address,
 							pool_ids,
 						},
 						[
-							127u8, 29u8, 216u8, 159u8, 66u8, 95u8, 198u8, 59u8, 76u8, 150u8, 148u8,
-							112u8, 4u8, 126u8, 210u8, 69u8, 150u8, 197u8, 12u8, 78u8, 131u8, 19u8,
-							88u8, 46u8, 175u8, 144u8, 212u8, 16u8, 202u8, 60u8, 159u8, 85u8,
+							130u8, 84u8, 110u8, 7u8, 95u8, 193u8, 85u8, 147u8, 203u8, 193u8, 29u8,
+							57u8, 222u8, 31u8, 41u8, 223u8, 245u8, 32u8, 114u8, 208u8, 69u8, 34u8,
+							67u8, 76u8, 1u8, 44u8, 47u8, 102u8, 173u8, 167u8, 59u8, 115u8,
 						],
 					)
 				}
@@ -28338,13 +28339,13 @@ pub mod api {
 			#[doc = "Event triggered when a currency is deposited into the system"]
 			pub struct CurrencyDeposited {
 				pub currency_id: currency_deposited::CurrencyId,
-				pub evm_address: currency_deposited::EvmAddress,
+				pub fusion_address: currency_deposited::FusionAddress,
 				pub amount: currency_deposited::Amount,
 			}
 			pub mod currency_deposited {
 				use super::runtime_types;
 				pub type CurrencyId = ::core::primitive::u32;
-				pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+				pub type FusionAddress = ::subxt::ext::subxt_core::utils::H160;
 				pub type Amount = ::core::primitive::u128;
 			}
 			impl ::subxt::ext::subxt_core::events::StaticEvent for CurrencyDeposited {
@@ -28368,7 +28369,7 @@ pub mod api {
 			pub struct CurrencyUnbonded {
 				pub pool_id: currency_unbonded::PoolId,
 				pub currency_id: currency_unbonded::CurrencyId,
-				pub evm_address: currency_unbonded::EvmAddress,
+				pub fusion_address: currency_unbonded::FusionAddress,
 				pub unbonded_amount: currency_unbonded::UnbondedAmount,
 				pub points: currency_unbonded::Points,
 				pub era: currency_unbonded::Era,
@@ -28377,7 +28378,7 @@ pub mod api {
 				use super::runtime_types;
 				pub type PoolId = ::core::primitive::u32;
 				pub type CurrencyId = ::core::primitive::u32;
-				pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+				pub type FusionAddress = ::subxt::ext::subxt_core::utils::H160;
 				pub type UnbondedAmount = ::core::primitive::u128;
 				pub type Points = ::core::primitive::u128;
 				pub type Era = ::core::primitive::u32;
@@ -28403,14 +28404,14 @@ pub mod api {
 			pub struct CurrencyWithdrawn {
 				pub pool_id: currency_withdrawn::PoolId,
 				pub currency_id: currency_withdrawn::CurrencyId,
-				pub evm_address: currency_withdrawn::EvmAddress,
+				pub fusion_address: currency_withdrawn::FusionAddress,
 				pub amount: currency_withdrawn::Amount,
 			}
 			pub mod currency_withdrawn {
 				use super::runtime_types;
 				pub type PoolId = ::core::primitive::u32;
 				pub type CurrencyId = ::core::primitive::u32;
-				pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+				pub type FusionAddress = ::subxt::ext::subxt_core::utils::H160;
 				pub type Amount = ::core::primitive::u128;
 			}
 			impl ::subxt::ext::subxt_core::events::StaticEvent for CurrencyWithdrawn {
@@ -28432,12 +28433,12 @@ pub mod api {
 			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
 			#[doc = "Event triggered when the controller address for a user is changed"]
 			pub struct ControllerAddressSet {
-				pub evm_address: controller_address_set::EvmAddress,
+				pub fusion_address: controller_address_set::FusionAddress,
 				pub new_controller_address: controller_address_set::NewControllerAddress,
 			}
 			pub mod controller_address_set {
 				use super::runtime_types;
-				pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+				pub type FusionAddress = ::subxt::ext::subxt_core::utils::H160;
 				pub type NewControllerAddress =
 					::core::option::Option<::subxt::ext::subxt_core::utils::AccountId32>;
 			}
@@ -28458,14 +28459,15 @@ pub mod api {
 			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
-			#[doc = "Event triggered when the Evm address and controller address are set for the Slash destination"]
+			#[doc = "Event triggered when the Fusion address and controller address are set for the Slash destination"]
 			pub struct SlashDestinationSet {
-				pub evm_address: slash_destination_set::EvmAddress,
+				pub fusion_address: slash_destination_set::FusionAddress,
 				pub controller_address: slash_destination_set::ControllerAddress,
 			}
 			pub mod slash_destination_set {
 				use super::runtime_types;
-				pub type EvmAddress = ::core::option::Option<::subxt::ext::subxt_core::utils::H160>;
+				pub type FusionAddress =
+					::core::option::Option<::subxt::ext::subxt_core::utils::H160>;
 				pub type ControllerAddress =
 					::core::option::Option<::subxt::ext::subxt_core::utils::AccountId32>;
 			}
@@ -28489,13 +28491,13 @@ pub mod api {
 			#[doc = "Event triggered when the compounding value is changed for a pool member"]
 			pub struct CompoundingSet {
 				pub pool_id: compounding_set::PoolId,
-				pub evm_address: compounding_set::EvmAddress,
+				pub fusion_address: compounding_set::FusionAddress,
 				pub compound: compounding_set::Compound,
 			}
 			pub mod compounding_set {
 				use super::runtime_types;
 				pub type PoolId = ::core::primitive::u32;
-				pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+				pub type FusionAddress = ::subxt::ext::subxt_core::utils::H160;
 				pub type Compound = ::core::primitive::bool;
 			}
 			impl ::subxt::ext::subxt_core::events::StaticEvent for CompoundingSet {
@@ -28598,7 +28600,7 @@ pub mod api {
 			#[doc = "Event triggered when a user joins a pool"]
 			pub struct PoolJoined {
 				pub pool_id: pool_joined::PoolId,
-				pub evm_address: pool_joined::EvmAddress,
+				pub fusion_address: pool_joined::FusionAddress,
 				pub currency_id: pool_joined::CurrencyId,
 				pub amount: pool_joined::Amount,
 				pub points: pool_joined::Points,
@@ -28606,7 +28608,7 @@ pub mod api {
 			pub mod pool_joined {
 				use super::runtime_types;
 				pub type PoolId = ::core::primitive::u32;
-				pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+				pub type FusionAddress = ::subxt::ext::subxt_core::utils::H160;
 				pub type CurrencyId = ::core::primitive::u32;
 				pub type Amount = ::core::primitive::u128;
 				pub type Points = ::core::primitive::u128;
@@ -28631,7 +28633,7 @@ pub mod api {
 			#[doc = "Event triggered when a user bonds extra currency into a pool"]
 			pub struct PoolBondExtra {
 				pub pool_id: pool_bond_extra::PoolId,
-				pub evm_address: pool_bond_extra::EvmAddress,
+				pub fusion_address: pool_bond_extra::FusionAddress,
 				pub currency_id: pool_bond_extra::CurrencyId,
 				pub amount: pool_bond_extra::Amount,
 				pub points: pool_bond_extra::Points,
@@ -28639,7 +28641,7 @@ pub mod api {
 			pub mod pool_bond_extra {
 				use super::runtime_types;
 				pub type PoolId = ::core::primitive::u32;
-				pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+				pub type FusionAddress = ::subxt::ext::subxt_core::utils::H160;
 				pub type CurrencyId = ::core::primitive::u32;
 				pub type Amount = ::core::primitive::u128;
 				pub type Points = ::core::primitive::u128;
@@ -28664,12 +28666,12 @@ pub mod api {
 			#[doc = "Event triggered when a user's pool membership is removed"]
 			pub struct PoolMembershipRemoved {
 				pub pool_id: pool_membership_removed::PoolId,
-				pub evm_address: pool_membership_removed::EvmAddress,
+				pub fusion_address: pool_membership_removed::FusionAddress,
 			}
 			pub mod pool_membership_removed {
 				use super::runtime_types;
 				pub type PoolId = ::core::primitive::u32;
-				pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+				pub type FusionAddress = ::subxt::ext::subxt_core::utils::H160;
 			}
 			impl ::subxt::ext::subxt_core::events::StaticEvent for PoolMembershipRemoved {
 				const PALLET: &'static str = "Fusion";
@@ -28835,14 +28837,14 @@ pub mod api {
 			#[doc = "Event triggered when a user claims rewards for a pool and era"]
 			pub struct RewardClaimed {
 				pub pool_id: reward_claimed::PoolId,
-				pub evm_address: reward_claimed::EvmAddress,
+				pub fusion_address: reward_claimed::FusionAddress,
 				pub era: reward_claimed::Era,
 				pub reward: reward_claimed::Reward,
 			}
 			pub mod reward_claimed {
 				use super::runtime_types;
 				pub type PoolId = ::core::primitive::u32;
-				pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+				pub type FusionAddress = ::subxt::ext::subxt_core::utils::H160;
 				pub type Era = ::core::primitive::u32;
 				pub type Reward = ::core::primitive::u128;
 			}
@@ -28890,13 +28892,13 @@ pub mod api {
 			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
 			#[doc = "Event triggered when AVAIL is withdrawn to the controller account"]
 			pub struct AvailWithdrawnToController {
-				pub evm_address: avail_withdrawn_to_controller::EvmAddress,
+				pub fusion_address: avail_withdrawn_to_controller::FusionAddress,
 				pub controller: avail_withdrawn_to_controller::Controller,
 				pub amount: avail_withdrawn_to_controller::Amount,
 			}
 			pub mod avail_withdrawn_to_controller {
 				use super::runtime_types;
-				pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+				pub type FusionAddress = ::subxt::ext::subxt_core::utils::H160;
 				pub type Controller = ::subxt::ext::subxt_core::utils::AccountId32;
 				pub type Amount = ::core::primitive::u128;
 			}
@@ -29035,13 +29037,13 @@ pub mod api {
 			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
 			#[doc = "Event triggered when pools boost allocations have been set for a user"]
 			pub struct UserBoostAllocationsOptimized {
-				pub evm_address: user_boost_allocations_optimized::EvmAddress,
+				pub fusion_address: user_boost_allocations_optimized::FusionAddress,
 				pub pools_added: user_boost_allocations_optimized::PoolsAdded,
 				pub pools_removed: user_boost_allocations_optimized::PoolsRemoved,
 			}
 			pub mod user_boost_allocations_optimized {
 				use super::runtime_types;
-				pub type EvmAddress = ::subxt::ext::subxt_core::utils::H160;
+				pub type FusionAddress = ::subxt::ext::subxt_core::utils::H160;
 				pub type PoolsAdded =
 					::subxt::ext::subxt_core::alloc::vec::Vec<::core::primitive::u32>;
 				pub type PoolsRemoved =
@@ -29060,55 +29062,54 @@ pub mod api {
 					use super::runtime_types;
 					pub type TotalValueLockedData = runtime_types::pallet_fusion::types::TVLData;
 				}
-				pub mod fusion_currencies {
+				pub mod currencies {
 					use super::runtime_types;
-					pub type FusionCurrencies = runtime_types::pallet_fusion::types::FusionCurrency;
+					pub type Currencies = runtime_types::pallet_fusion::types::FusionCurrency;
 					pub type Param0 = ::core::primitive::u32;
 				}
-				pub mod fusion_pools {
+				pub mod pools {
 					use super::runtime_types;
-					pub type FusionPools = runtime_types::pallet_fusion::types::FusionPool;
+					pub type Pools = runtime_types::pallet_fusion::types::FusionPool;
 					pub type Param0 = ::core::primitive::u32;
 				}
-				pub mod fusion_pools_account_to_id {
+				pub mod pools_account_to_id {
 					use super::runtime_types;
-					pub type FusionPoolsAccountToId = ::core::primitive::u32;
+					pub type PoolsAccountToId = ::core::primitive::u32;
 					pub type Param0 = ::subxt::ext::subxt_core::utils::AccountId32;
 				}
-				pub mod fusion_memberships {
+				pub mod memberships {
 					use super::runtime_types;
-					pub type FusionMemberships =
-						runtime_types::pallet_fusion::types::FusionMembership;
+					pub type Memberships = runtime_types::pallet_fusion::types::FusionMembership;
 					pub type Param0 = ::subxt::ext::subxt_core::utils::H160;
 					pub type Param1 = ::core::primitive::u32;
 				}
-				pub mod fusion_user_currency_balances {
+				pub mod user_currency_balances {
 					use super::runtime_types;
-					pub type FusionUserCurrencyBalances =
+					pub type UserCurrencyBalances =
 						runtime_types::pallet_fusion::types::FusionUserCurrencyBalance;
 					pub type Param0 = ::subxt::ext::subxt_core::utils::H160;
 					pub type Param1 = ::core::primitive::u32;
 				}
-				pub mod fusion_era_rewards {
+				pub mod era_rewards {
 					use super::runtime_types;
-					pub type FusionEraRewards = runtime_types::pallet_fusion::types::EraReward;
+					pub type EraRewards = runtime_types::pallet_fusion::types::EraReward;
 					pub type Param0 = ::core::primitive::u32;
 					pub type Param1 = ::core::primitive::u32;
 				}
-				pub mod fusion_currency_rates {
+				pub mod currency_rates {
 					use super::runtime_types;
-					pub type FusionCurrencyRates = ::core::primitive::u128;
+					pub type CurrencyRates = ::core::primitive::u128;
 					pub type Param0 = ::core::primitive::u32;
 					pub type Param1 = ::core::primitive::u32;
 				}
-				pub mod fusion_currency_rate_changes {
+				pub mod currency_rate_changes {
 					use super::runtime_types;
-					pub type FusionCurrencyRateChanges = ::core::primitive::u128;
+					pub type CurrencyRateChanges = ::core::primitive::u128;
 					pub type Param0 = ::core::primitive::u32;
 				}
-				pub mod fusion_evm_to_substrate_address {
+				pub mod fusion_address_to_substrate_address {
 					use super::runtime_types;
-					pub type FusionEvmToSubstrateAddress =
+					pub type FusionAddressToSubstrateAddress =
 						::subxt::ext::subxt_core::utils::AccountId32;
 					pub type Param0 = ::subxt::ext::subxt_core::utils::H160;
 				}
@@ -29117,15 +29118,15 @@ pub mod api {
 					pub type EraDurations = ::core::primitive::u64;
 					pub type Param0 = ::core::primitive::u32;
 				}
-				pub mod fusion_exposures {
+				pub mod exposures {
 					use super::runtime_types;
-					pub type FusionExposures = runtime_types::pallet_fusion::types::FusionExposure;
+					pub type Exposures = runtime_types::pallet_fusion::types::FusionExposure;
 					pub type Param0 = ::core::primitive::u32;
 					pub type Param1 = ::core::primitive::u32;
 				}
-				pub mod fusion_pools_from_validator {
+				pub mod pools_backing_validator {
 					use super::runtime_types;
-					pub type FusionPoolsFromValidator =
+					pub type PoolsBackingValidator =
 						runtime_types::bounded_collections::bounded_vec::BoundedVec<
 							::core::primitive::u32,
 						>;
@@ -29164,9 +29165,9 @@ pub mod api {
 					pub type Param0 = ::core::primitive::u32;
 					pub type Param1 = ::core::primitive::u32;
 				}
-				pub mod fusion_pools_with_boost {
+				pub mod pools_with_boost {
 					use super::runtime_types;
-					pub type FusionPoolsWithBoost = ::core::primitive::u128;
+					pub type PoolsWithBoost = ::core::primitive::u128;
 					pub type Param0 = ::core::primitive::u32;
 				}
 				pub mod has_boost {
@@ -29201,219 +29202,217 @@ pub mod api {
 					)
 				}
 				#[doc = " Stores all the fusion currencies"]
-				pub fn fusion_currencies_iter(
+				pub fn currencies_iter(
 					&self,
 				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
 					(),
-					types::fusion_currencies::FusionCurrencies,
+					types::currencies::Currencies,
 					(),
 					(),
 					::subxt::ext::subxt_core::utils::Yes,
 				> {
 					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
 						"Fusion",
-						"FusionCurrencies",
+						"Currencies",
 						(),
 						[
-							75u8, 65u8, 58u8, 76u8, 114u8, 205u8, 94u8, 164u8, 237u8, 129u8, 168u8,
-							169u8, 78u8, 25u8, 126u8, 93u8, 192u8, 98u8, 219u8, 122u8, 156u8, 56u8,
-							121u8, 39u8, 215u8, 33u8, 212u8, 239u8, 205u8, 78u8, 224u8, 83u8,
+							111u8, 95u8, 87u8, 159u8, 71u8, 176u8, 48u8, 186u8, 198u8, 89u8, 65u8,
+							191u8, 104u8, 215u8, 127u8, 202u8, 159u8, 39u8, 78u8, 37u8, 113u8,
+							201u8, 108u8, 53u8, 156u8, 176u8, 240u8, 72u8, 95u8, 107u8, 85u8,
+							180u8,
 						],
 					)
 				}
 				#[doc = " Stores all the fusion currencies"]
-				pub fn fusion_currencies(
+				pub fn currencies(
 					&self,
-					_0: impl ::core::borrow::Borrow<types::fusion_currencies::Param0>,
+					_0: impl ::core::borrow::Borrow<types::currencies::Param0>,
 				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
 					::subxt::ext::subxt_core::storage::address::StaticStorageKey<
-						types::fusion_currencies::Param0,
+						types::currencies::Param0,
 					>,
-					types::fusion_currencies::FusionCurrencies,
+					types::currencies::Currencies,
 					::subxt::ext::subxt_core::utils::Yes,
 					(),
 					(),
 				> {
 					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
 						"Fusion",
-						"FusionCurrencies",
+						"Currencies",
 						::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
 							_0.borrow(),
 						),
 						[
-							75u8, 65u8, 58u8, 76u8, 114u8, 205u8, 94u8, 164u8, 237u8, 129u8, 168u8,
-							169u8, 78u8, 25u8, 126u8, 93u8, 192u8, 98u8, 219u8, 122u8, 156u8, 56u8,
-							121u8, 39u8, 215u8, 33u8, 212u8, 239u8, 205u8, 78u8, 224u8, 83u8,
+							111u8, 95u8, 87u8, 159u8, 71u8, 176u8, 48u8, 186u8, 198u8, 89u8, 65u8,
+							191u8, 104u8, 215u8, 127u8, 202u8, 159u8, 39u8, 78u8, 37u8, 113u8,
+							201u8, 108u8, 53u8, 156u8, 176u8, 240u8, 72u8, 95u8, 107u8, 85u8,
+							180u8,
 						],
 					)
 				}
 				#[doc = " Stores all the fusion pools"]
-				pub fn fusion_pools_iter(
+				pub fn pools_iter(
 					&self,
 				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
 					(),
-					types::fusion_pools::FusionPools,
+					types::pools::Pools,
 					(),
 					(),
 					::subxt::ext::subxt_core::utils::Yes,
 				> {
 					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
 						"Fusion",
-						"FusionPools",
+						"Pools",
 						(),
 						[
-							162u8, 76u8, 186u8, 97u8, 107u8, 208u8, 237u8, 152u8, 35u8, 105u8,
-							230u8, 115u8, 34u8, 115u8, 79u8, 133u8, 43u8, 108u8, 171u8, 81u8,
-							212u8, 28u8, 123u8, 166u8, 207u8, 218u8, 249u8, 224u8, 154u8, 58u8,
-							34u8, 98u8,
+							190u8, 72u8, 67u8, 14u8, 96u8, 164u8, 45u8, 223u8, 99u8, 112u8, 139u8,
+							153u8, 85u8, 209u8, 200u8, 90u8, 249u8, 13u8, 136u8, 62u8, 34u8, 85u8,
+							241u8, 51u8, 221u8, 253u8, 227u8, 125u8, 32u8, 227u8, 112u8, 70u8,
 						],
 					)
 				}
 				#[doc = " Stores all the fusion pools"]
-				pub fn fusion_pools(
+				pub fn pools(
 					&self,
-					_0: impl ::core::borrow::Borrow<types::fusion_pools::Param0>,
+					_0: impl ::core::borrow::Borrow<types::pools::Param0>,
 				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
 					::subxt::ext::subxt_core::storage::address::StaticStorageKey<
-						types::fusion_pools::Param0,
+						types::pools::Param0,
 					>,
-					types::fusion_pools::FusionPools,
+					types::pools::Pools,
 					::subxt::ext::subxt_core::utils::Yes,
 					(),
 					(),
 				> {
 					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
 						"Fusion",
-						"FusionPools",
+						"Pools",
 						::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
 							_0.borrow(),
 						),
 						[
-							162u8, 76u8, 186u8, 97u8, 107u8, 208u8, 237u8, 152u8, 35u8, 105u8,
-							230u8, 115u8, 34u8, 115u8, 79u8, 133u8, 43u8, 108u8, 171u8, 81u8,
-							212u8, 28u8, 123u8, 166u8, 207u8, 218u8, 249u8, 224u8, 154u8, 58u8,
-							34u8, 98u8,
+							190u8, 72u8, 67u8, 14u8, 96u8, 164u8, 45u8, 223u8, 99u8, 112u8, 139u8,
+							153u8, 85u8, 209u8, 200u8, 90u8, 249u8, 13u8, 136u8, 62u8, 34u8, 85u8,
+							241u8, 51u8, 221u8, 253u8, 227u8, 125u8, 32u8, 227u8, 112u8, 70u8,
 						],
 					)
 				}
 				#[doc = " Mapping from the pools funds account address to the pool id"]
-				pub fn fusion_pools_account_to_id_iter(
+				pub fn pools_account_to_id_iter(
 					&self,
 				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
 					(),
-					types::fusion_pools_account_to_id::FusionPoolsAccountToId,
+					types::pools_account_to_id::PoolsAccountToId,
 					(),
 					(),
 					::subxt::ext::subxt_core::utils::Yes,
 				> {
 					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
 						"Fusion",
-						"FusionPoolsAccountToId",
+						"PoolsAccountToId",
 						(),
 						[
-							91u8, 253u8, 123u8, 103u8, 138u8, 85u8, 110u8, 222u8, 205u8, 47u8,
-							175u8, 190u8, 235u8, 243u8, 2u8, 102u8, 161u8, 100u8, 148u8, 11u8,
-							84u8, 72u8, 232u8, 76u8, 67u8, 79u8, 126u8, 0u8, 237u8, 150u8, 101u8,
-							223u8,
+							0u8, 201u8, 111u8, 157u8, 159u8, 20u8, 52u8, 40u8, 168u8, 63u8, 21u8,
+							90u8, 255u8, 208u8, 60u8, 141u8, 156u8, 125u8, 32u8, 188u8, 210u8,
+							177u8, 4u8, 12u8, 214u8, 187u8, 31u8, 93u8, 6u8, 26u8, 143u8, 199u8,
 						],
 					)
 				}
 				#[doc = " Mapping from the pools funds account address to the pool id"]
-				pub fn fusion_pools_account_to_id(
+				pub fn pools_account_to_id(
 					&self,
-					_0: impl ::core::borrow::Borrow<types::fusion_pools_account_to_id::Param0>,
+					_0: impl ::core::borrow::Borrow<types::pools_account_to_id::Param0>,
 				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
 					::subxt::ext::subxt_core::storage::address::StaticStorageKey<
-						types::fusion_pools_account_to_id::Param0,
+						types::pools_account_to_id::Param0,
 					>,
-					types::fusion_pools_account_to_id::FusionPoolsAccountToId,
+					types::pools_account_to_id::PoolsAccountToId,
 					::subxt::ext::subxt_core::utils::Yes,
 					(),
 					(),
 				> {
 					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
 						"Fusion",
-						"FusionPoolsAccountToId",
+						"PoolsAccountToId",
 						::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
 							_0.borrow(),
 						),
 						[
-							91u8, 253u8, 123u8, 103u8, 138u8, 85u8, 110u8, 222u8, 205u8, 47u8,
-							175u8, 190u8, 235u8, 243u8, 2u8, 102u8, 161u8, 100u8, 148u8, 11u8,
-							84u8, 72u8, 232u8, 76u8, 67u8, 79u8, 126u8, 0u8, 237u8, 150u8, 101u8,
-							223u8,
+							0u8, 201u8, 111u8, 157u8, 159u8, 20u8, 52u8, 40u8, 168u8, 63u8, 21u8,
+							90u8, 255u8, 208u8, 60u8, 141u8, 156u8, 125u8, 32u8, 188u8, 210u8,
+							177u8, 4u8, 12u8, 214u8, 187u8, 31u8, 93u8, 6u8, 26u8, 143u8, 199u8,
 						],
 					)
 				}
 				#[doc = " Stores all the membership of users in pools"]
-				pub fn fusion_memberships_iter(
+				pub fn memberships_iter(
 					&self,
 				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
 					(),
-					types::fusion_memberships::FusionMemberships,
+					types::memberships::Memberships,
 					(),
 					(),
 					::subxt::ext::subxt_core::utils::Yes,
 				> {
 					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
 						"Fusion",
-						"FusionMemberships",
+						"Memberships",
 						(),
 						[
-							28u8, 151u8, 223u8, 85u8, 134u8, 33u8, 102u8, 14u8, 119u8, 18u8, 46u8,
-							20u8, 65u8, 159u8, 196u8, 16u8, 119u8, 87u8, 30u8, 230u8, 159u8, 136u8,
-							248u8, 248u8, 56u8, 232u8, 190u8, 46u8, 62u8, 82u8, 158u8, 30u8,
+							77u8, 225u8, 56u8, 163u8, 46u8, 68u8, 192u8, 223u8, 121u8, 91u8, 241u8,
+							115u8, 194u8, 76u8, 205u8, 79u8, 133u8, 176u8, 192u8, 83u8, 114u8,
+							33u8, 146u8, 114u8, 229u8, 153u8, 245u8, 53u8, 188u8, 17u8, 55u8, 61u8,
 						],
 					)
 				}
 				#[doc = " Stores all the membership of users in pools"]
-				pub fn fusion_memberships_iter1(
+				pub fn memberships_iter1(
 					&self,
-					_0: impl ::core::borrow::Borrow<types::fusion_memberships::Param0>,
+					_0: impl ::core::borrow::Borrow<types::memberships::Param0>,
 				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
 					::subxt::ext::subxt_core::storage::address::StaticStorageKey<
-						types::fusion_memberships::Param0,
+						types::memberships::Param0,
 					>,
-					types::fusion_memberships::FusionMemberships,
+					types::memberships::Memberships,
 					(),
 					(),
 					::subxt::ext::subxt_core::utils::Yes,
 				> {
 					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
 						"Fusion",
-						"FusionMemberships",
+						"Memberships",
 						::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
 							_0.borrow(),
 						),
 						[
-							28u8, 151u8, 223u8, 85u8, 134u8, 33u8, 102u8, 14u8, 119u8, 18u8, 46u8,
-							20u8, 65u8, 159u8, 196u8, 16u8, 119u8, 87u8, 30u8, 230u8, 159u8, 136u8,
-							248u8, 248u8, 56u8, 232u8, 190u8, 46u8, 62u8, 82u8, 158u8, 30u8,
+							77u8, 225u8, 56u8, 163u8, 46u8, 68u8, 192u8, 223u8, 121u8, 91u8, 241u8,
+							115u8, 194u8, 76u8, 205u8, 79u8, 133u8, 176u8, 192u8, 83u8, 114u8,
+							33u8, 146u8, 114u8, 229u8, 153u8, 245u8, 53u8, 188u8, 17u8, 55u8, 61u8,
 						],
 					)
 				}
 				#[doc = " Stores all the membership of users in pools"]
-				pub fn fusion_memberships(
+				pub fn memberships(
 					&self,
-					_0: impl ::core::borrow::Borrow<types::fusion_memberships::Param0>,
-					_1: impl ::core::borrow::Borrow<types::fusion_memberships::Param1>,
+					_0: impl ::core::borrow::Borrow<types::memberships::Param0>,
+					_1: impl ::core::borrow::Borrow<types::memberships::Param1>,
 				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
 					(
 						::subxt::ext::subxt_core::storage::address::StaticStorageKey<
-							types::fusion_memberships::Param0,
+							types::memberships::Param0,
 						>,
 						::subxt::ext::subxt_core::storage::address::StaticStorageKey<
-							types::fusion_memberships::Param1,
+							types::memberships::Param1,
 						>,
 					),
-					types::fusion_memberships::FusionMemberships,
+					types::memberships::Memberships,
 					::subxt::ext::subxt_core::utils::Yes,
 					(),
 					(),
 				> {
 					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
 						"Fusion",
-						"FusionMemberships",
+						"Memberships",
 						(
 							::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
 								_0.borrow(),
@@ -29423,81 +29422,83 @@ pub mod api {
 							),
 						),
 						[
-							28u8, 151u8, 223u8, 85u8, 134u8, 33u8, 102u8, 14u8, 119u8, 18u8, 46u8,
-							20u8, 65u8, 159u8, 196u8, 16u8, 119u8, 87u8, 30u8, 230u8, 159u8, 136u8,
-							248u8, 248u8, 56u8, 232u8, 190u8, 46u8, 62u8, 82u8, 158u8, 30u8,
+							77u8, 225u8, 56u8, 163u8, 46u8, 68u8, 192u8, 223u8, 121u8, 91u8, 241u8,
+							115u8, 194u8, 76u8, 205u8, 79u8, 133u8, 176u8, 192u8, 83u8, 114u8,
+							33u8, 146u8, 114u8, 229u8, 153u8, 245u8, 53u8, 188u8, 17u8, 55u8, 61u8,
 						],
 					)
 				}
 				#[doc = " Stores all the users idle balances"]
-				pub fn fusion_user_currency_balances_iter(
+				pub fn user_currency_balances_iter(
 					&self,
 				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
 					(),
-					types::fusion_user_currency_balances::FusionUserCurrencyBalances,
+					types::user_currency_balances::UserCurrencyBalances,
 					(),
 					(),
 					::subxt::ext::subxt_core::utils::Yes,
 				> {
 					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
 						"Fusion",
-						"FusionUserCurrencyBalances",
+						"UserCurrencyBalances",
 						(),
 						[
-							105u8, 30u8, 233u8, 108u8, 197u8, 59u8, 35u8, 81u8, 95u8, 255u8, 110u8,
-							91u8, 168u8, 101u8, 249u8, 221u8, 6u8, 54u8, 211u8, 165u8, 242u8,
-							119u8, 49u8, 63u8, 36u8, 109u8, 162u8, 44u8, 208u8, 86u8, 245u8, 208u8,
+							207u8, 122u8, 102u8, 95u8, 171u8, 215u8, 103u8, 18u8, 24u8, 98u8,
+							144u8, 145u8, 64u8, 79u8, 112u8, 174u8, 247u8, 173u8, 84u8, 75u8, 2u8,
+							165u8, 254u8, 158u8, 204u8, 244u8, 71u8, 23u8, 17u8, 106u8, 218u8,
+							144u8,
 						],
 					)
 				}
 				#[doc = " Stores all the users idle balances"]
-				pub fn fusion_user_currency_balances_iter1(
+				pub fn user_currency_balances_iter1(
 					&self,
-					_0: impl ::core::borrow::Borrow<types::fusion_user_currency_balances::Param0>,
+					_0: impl ::core::borrow::Borrow<types::user_currency_balances::Param0>,
 				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
 					::subxt::ext::subxt_core::storage::address::StaticStorageKey<
-						types::fusion_user_currency_balances::Param0,
+						types::user_currency_balances::Param0,
 					>,
-					types::fusion_user_currency_balances::FusionUserCurrencyBalances,
+					types::user_currency_balances::UserCurrencyBalances,
 					(),
 					(),
 					::subxt::ext::subxt_core::utils::Yes,
 				> {
 					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
 						"Fusion",
-						"FusionUserCurrencyBalances",
+						"UserCurrencyBalances",
 						::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
 							_0.borrow(),
 						),
 						[
-							105u8, 30u8, 233u8, 108u8, 197u8, 59u8, 35u8, 81u8, 95u8, 255u8, 110u8,
-							91u8, 168u8, 101u8, 249u8, 221u8, 6u8, 54u8, 211u8, 165u8, 242u8,
-							119u8, 49u8, 63u8, 36u8, 109u8, 162u8, 44u8, 208u8, 86u8, 245u8, 208u8,
+							207u8, 122u8, 102u8, 95u8, 171u8, 215u8, 103u8, 18u8, 24u8, 98u8,
+							144u8, 145u8, 64u8, 79u8, 112u8, 174u8, 247u8, 173u8, 84u8, 75u8, 2u8,
+							165u8, 254u8, 158u8, 204u8, 244u8, 71u8, 23u8, 17u8, 106u8, 218u8,
+							144u8,
 						],
 					)
 				}
 				#[doc = " Stores all the users idle balances"]
-				pub fn fusion_user_currency_balances(
+				pub fn user_currency_balances(
 					&self,
-					_0: impl ::core::borrow::Borrow<types::fusion_user_currency_balances::Param0>,
-					_1: impl ::core::borrow::Borrow<types::fusion_user_currency_balances::Param1>,
+					_0: impl ::core::borrow::Borrow<types::user_currency_balances::Param0>,
+					_1: impl ::core::borrow::Borrow<types::user_currency_balances::Param1>,
 				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
 					(
 						::subxt::ext::subxt_core::storage::address::StaticStorageKey<
-							types::fusion_user_currency_balances::Param0,
+							types::user_currency_balances::Param0,
 						>,
 						::subxt::ext::subxt_core::storage::address::StaticStorageKey<
-							types::fusion_user_currency_balances::Param1,
+							types::user_currency_balances::Param1,
 						>,
 					),
-					types::fusion_user_currency_balances::FusionUserCurrencyBalances,
+					types::user_currency_balances::UserCurrencyBalances,
 					::subxt::ext::subxt_core::utils::Yes,
 					(),
 					(),
 				> {
 					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
 						"Fusion",
-						"FusionUserCurrencyBalances",
+						"UserCurrencyBalances",
 						(
 							::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
 								_0.borrow(),
@@ -29507,83 +29508,82 @@ pub mod api {
 							),
 						),
 						[
-							105u8, 30u8, 233u8, 108u8, 197u8, 59u8, 35u8, 81u8, 95u8, 255u8, 110u8,
-							91u8, 168u8, 101u8, 249u8, 221u8, 6u8, 54u8, 211u8, 165u8, 242u8,
-							119u8, 49u8, 63u8, 36u8, 109u8, 162u8, 44u8, 208u8, 86u8, 245u8, 208u8,
+							207u8, 122u8, 102u8, 95u8, 171u8, 215u8, 103u8, 18u8, 24u8, 98u8,
+							144u8, 145u8, 64u8, 79u8, 112u8, 174u8, 247u8, 173u8, 84u8, 75u8, 2u8,
+							165u8, 254u8, 158u8, 204u8, 244u8, 71u8, 23u8, 17u8, 106u8, 218u8,
+							144u8,
 						],
 					)
 				}
 				#[doc = " Stores era rewards for each pool"]
-				pub fn fusion_era_rewards_iter(
+				pub fn era_rewards_iter(
 					&self,
 				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
 					(),
-					types::fusion_era_rewards::FusionEraRewards,
+					types::era_rewards::EraRewards,
 					(),
 					(),
 					::subxt::ext::subxt_core::utils::Yes,
 				> {
 					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
 						"Fusion",
-						"FusionEraRewards",
+						"EraRewards",
 						(),
 						[
-							217u8, 220u8, 48u8, 190u8, 41u8, 173u8, 222u8, 170u8, 72u8, 76u8,
-							225u8, 220u8, 220u8, 187u8, 176u8, 147u8, 17u8, 213u8, 25u8, 75u8,
-							10u8, 232u8, 20u8, 122u8, 182u8, 170u8, 108u8, 116u8, 81u8, 36u8, 53u8,
-							5u8,
+							233u8, 67u8, 200u8, 205u8, 28u8, 37u8, 5u8, 11u8, 175u8, 153u8, 204u8,
+							237u8, 160u8, 252u8, 165u8, 145u8, 167u8, 155u8, 177u8, 100u8, 25u8,
+							51u8, 23u8, 107u8, 189u8, 158u8, 15u8, 239u8, 115u8, 10u8, 0u8, 215u8,
 						],
 					)
 				}
 				#[doc = " Stores era rewards for each pool"]
-				pub fn fusion_era_rewards_iter1(
+				pub fn era_rewards_iter1(
 					&self,
-					_0: impl ::core::borrow::Borrow<types::fusion_era_rewards::Param0>,
+					_0: impl ::core::borrow::Borrow<types::era_rewards::Param0>,
 				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
 					::subxt::ext::subxt_core::storage::address::StaticStorageKey<
-						types::fusion_era_rewards::Param0,
+						types::era_rewards::Param0,
 					>,
-					types::fusion_era_rewards::FusionEraRewards,
+					types::era_rewards::EraRewards,
 					(),
 					(),
 					::subxt::ext::subxt_core::utils::Yes,
 				> {
 					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
 						"Fusion",
-						"FusionEraRewards",
+						"EraRewards",
 						::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
 							_0.borrow(),
 						),
 						[
-							217u8, 220u8, 48u8, 190u8, 41u8, 173u8, 222u8, 170u8, 72u8, 76u8,
-							225u8, 220u8, 220u8, 187u8, 176u8, 147u8, 17u8, 213u8, 25u8, 75u8,
-							10u8, 232u8, 20u8, 122u8, 182u8, 170u8, 108u8, 116u8, 81u8, 36u8, 53u8,
-							5u8,
+							233u8, 67u8, 200u8, 205u8, 28u8, 37u8, 5u8, 11u8, 175u8, 153u8, 204u8,
+							237u8, 160u8, 252u8, 165u8, 145u8, 167u8, 155u8, 177u8, 100u8, 25u8,
+							51u8, 23u8, 107u8, 189u8, 158u8, 15u8, 239u8, 115u8, 10u8, 0u8, 215u8,
 						],
 					)
 				}
 				#[doc = " Stores era rewards for each pool"]
-				pub fn fusion_era_rewards(
+				pub fn era_rewards(
 					&self,
-					_0: impl ::core::borrow::Borrow<types::fusion_era_rewards::Param0>,
-					_1: impl ::core::borrow::Borrow<types::fusion_era_rewards::Param1>,
+					_0: impl ::core::borrow::Borrow<types::era_rewards::Param0>,
+					_1: impl ::core::borrow::Borrow<types::era_rewards::Param1>,
 				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
 					(
 						::subxt::ext::subxt_core::storage::address::StaticStorageKey<
-							types::fusion_era_rewards::Param0,
+							types::era_rewards::Param0,
 						>,
 						::subxt::ext::subxt_core::storage::address::StaticStorageKey<
-							types::fusion_era_rewards::Param1,
+							types::era_rewards::Param1,
 						>,
 					),
-					types::fusion_era_rewards::FusionEraRewards,
+					types::era_rewards::EraRewards,
 					::subxt::ext::subxt_core::utils::Yes,
 					(),
 					(),
 				> {
 					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
 						"Fusion",
-						"FusionEraRewards",
+						"EraRewards",
 						(
 							::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
 								_0.borrow(),
@@ -29593,85 +29593,86 @@ pub mod api {
 							),
 						),
 						[
-							217u8, 220u8, 48u8, 190u8, 41u8, 173u8, 222u8, 170u8, 72u8, 76u8,
-							225u8, 220u8, 220u8, 187u8, 176u8, 147u8, 17u8, 213u8, 25u8, 75u8,
-							10u8, 232u8, 20u8, 122u8, 182u8, 170u8, 108u8, 116u8, 81u8, 36u8, 53u8,
-							5u8,
+							233u8, 67u8, 200u8, 205u8, 28u8, 37u8, 5u8, 11u8, 175u8, 153u8, 204u8,
+							237u8, 160u8, 252u8, 165u8, 145u8, 167u8, 155u8, 177u8, 100u8, 25u8,
+							51u8, 23u8, 107u8, 189u8, 158u8, 15u8, 239u8, 115u8, 10u8, 0u8, 215u8,
 						],
 					)
 				}
 				#[doc = " Stores the conversion rates for currencies"]
 				#[doc = " How much one unit of currency is equal in AVAIL"]
-				pub fn fusion_currency_rates_iter(
+				pub fn currency_rates_iter(
 					&self,
 				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
 					(),
-					types::fusion_currency_rates::FusionCurrencyRates,
+					types::currency_rates::CurrencyRates,
 					(),
 					(),
 					::subxt::ext::subxt_core::utils::Yes,
 				> {
 					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
 						"Fusion",
-						"FusionCurrencyRates",
+						"CurrencyRates",
 						(),
 						[
-							66u8, 196u8, 98u8, 138u8, 4u8, 60u8, 16u8, 134u8, 226u8, 39u8, 238u8,
-							249u8, 177u8, 93u8, 153u8, 20u8, 243u8, 174u8, 182u8, 99u8, 155u8,
-							187u8, 120u8, 177u8, 80u8, 32u8, 134u8, 138u8, 73u8, 87u8, 63u8, 159u8,
+							188u8, 26u8, 237u8, 61u8, 234u8, 55u8, 167u8, 31u8, 221u8, 241u8, 31u8,
+							93u8, 189u8, 236u8, 161u8, 222u8, 218u8, 53u8, 186u8, 111u8, 139u8,
+							17u8, 107u8, 217u8, 179u8, 71u8, 249u8, 226u8, 100u8, 248u8, 89u8,
+							231u8,
 						],
 					)
 				}
 				#[doc = " Stores the conversion rates for currencies"]
 				#[doc = " How much one unit of currency is equal in AVAIL"]
-				pub fn fusion_currency_rates_iter1(
+				pub fn currency_rates_iter1(
 					&self,
-					_0: impl ::core::borrow::Borrow<types::fusion_currency_rates::Param0>,
+					_0: impl ::core::borrow::Borrow<types::currency_rates::Param0>,
 				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
 					::subxt::ext::subxt_core::storage::address::StaticStorageKey<
-						types::fusion_currency_rates::Param0,
+						types::currency_rates::Param0,
 					>,
-					types::fusion_currency_rates::FusionCurrencyRates,
+					types::currency_rates::CurrencyRates,
 					(),
 					(),
 					::subxt::ext::subxt_core::utils::Yes,
 				> {
 					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
 						"Fusion",
-						"FusionCurrencyRates",
+						"CurrencyRates",
 						::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
 							_0.borrow(),
 						),
 						[
-							66u8, 196u8, 98u8, 138u8, 4u8, 60u8, 16u8, 134u8, 226u8, 39u8, 238u8,
-							249u8, 177u8, 93u8, 153u8, 20u8, 243u8, 174u8, 182u8, 99u8, 155u8,
-							187u8, 120u8, 177u8, 80u8, 32u8, 134u8, 138u8, 73u8, 87u8, 63u8, 159u8,
+							188u8, 26u8, 237u8, 61u8, 234u8, 55u8, 167u8, 31u8, 221u8, 241u8, 31u8,
+							93u8, 189u8, 236u8, 161u8, 222u8, 218u8, 53u8, 186u8, 111u8, 139u8,
+							17u8, 107u8, 217u8, 179u8, 71u8, 249u8, 226u8, 100u8, 248u8, 89u8,
+							231u8,
 						],
 					)
 				}
 				#[doc = " Stores the conversion rates for currencies"]
 				#[doc = " How much one unit of currency is equal in AVAIL"]
-				pub fn fusion_currency_rates(
+				pub fn currency_rates(
 					&self,
-					_0: impl ::core::borrow::Borrow<types::fusion_currency_rates::Param0>,
-					_1: impl ::core::borrow::Borrow<types::fusion_currency_rates::Param1>,
+					_0: impl ::core::borrow::Borrow<types::currency_rates::Param0>,
+					_1: impl ::core::borrow::Borrow<types::currency_rates::Param1>,
 				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
 					(
 						::subxt::ext::subxt_core::storage::address::StaticStorageKey<
-							types::fusion_currency_rates::Param0,
+							types::currency_rates::Param0,
 						>,
 						::subxt::ext::subxt_core::storage::address::StaticStorageKey<
-							types::fusion_currency_rates::Param1,
+							types::currency_rates::Param1,
 						>,
 					),
-					types::fusion_currency_rates::FusionCurrencyRates,
+					types::currency_rates::CurrencyRates,
 					::subxt::ext::subxt_core::utils::Yes,
 					(),
 					(),
 				> {
 					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
 						"Fusion",
-						"FusionCurrencyRates",
+						"CurrencyRates",
 						(
 							::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
 								_0.borrow(),
@@ -29681,110 +29682,112 @@ pub mod api {
 							),
 						),
 						[
-							66u8, 196u8, 98u8, 138u8, 4u8, 60u8, 16u8, 134u8, 226u8, 39u8, 238u8,
-							249u8, 177u8, 93u8, 153u8, 20u8, 243u8, 174u8, 182u8, 99u8, 155u8,
-							187u8, 120u8, 177u8, 80u8, 32u8, 134u8, 138u8, 73u8, 87u8, 63u8, 159u8,
+							188u8, 26u8, 237u8, 61u8, 234u8, 55u8, 167u8, 31u8, 221u8, 241u8, 31u8,
+							93u8, 189u8, 236u8, 161u8, 222u8, 218u8, 53u8, 186u8, 111u8, 139u8,
+							17u8, 107u8, 217u8, 179u8, 71u8, 249u8, 226u8, 100u8, 248u8, 89u8,
+							231u8,
 						],
 					)
 				}
 				#[doc = " Stores the next currency changes to be applied next era"]
-				pub fn fusion_currency_rate_changes_iter(
+				pub fn currency_rate_changes_iter(
 					&self,
 				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
 					(),
-					types::fusion_currency_rate_changes::FusionCurrencyRateChanges,
+					types::currency_rate_changes::CurrencyRateChanges,
 					(),
-					(),
+					::subxt::ext::subxt_core::utils::Yes,
 					::subxt::ext::subxt_core::utils::Yes,
 				> {
 					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
 						"Fusion",
-						"FusionCurrencyRateChanges",
+						"CurrencyRateChanges",
 						(),
 						[
-							128u8, 234u8, 235u8, 52u8, 85u8, 64u8, 240u8, 226u8, 70u8, 134u8,
-							236u8, 252u8, 154u8, 192u8, 45u8, 160u8, 95u8, 28u8, 0u8, 36u8, 102u8,
-							46u8, 171u8, 103u8, 193u8, 247u8, 79u8, 116u8, 141u8, 139u8, 95u8,
-							150u8,
+							252u8, 199u8, 14u8, 92u8, 64u8, 1u8, 131u8, 53u8, 57u8, 82u8, 30u8,
+							136u8, 228u8, 86u8, 182u8, 91u8, 62u8, 101u8, 222u8, 46u8, 123u8,
+							168u8, 121u8, 122u8, 193u8, 167u8, 125u8, 173u8, 153u8, 249u8, 147u8,
+							59u8,
 						],
 					)
 				}
 				#[doc = " Stores the next currency changes to be applied next era"]
-				pub fn fusion_currency_rate_changes(
+				pub fn currency_rate_changes(
 					&self,
-					_0: impl ::core::borrow::Borrow<types::fusion_currency_rate_changes::Param0>,
+					_0: impl ::core::borrow::Borrow<types::currency_rate_changes::Param0>,
 				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
 					::subxt::ext::subxt_core::storage::address::StaticStorageKey<
-						types::fusion_currency_rate_changes::Param0,
+						types::currency_rate_changes::Param0,
 					>,
-					types::fusion_currency_rate_changes::FusionCurrencyRateChanges,
+					types::currency_rate_changes::CurrencyRateChanges,
 					::subxt::ext::subxt_core::utils::Yes,
-					(),
+					::subxt::ext::subxt_core::utils::Yes,
 					(),
 				> {
 					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
 						"Fusion",
-						"FusionCurrencyRateChanges",
+						"CurrencyRateChanges",
 						::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
 							_0.borrow(),
 						),
 						[
-							128u8, 234u8, 235u8, 52u8, 85u8, 64u8, 240u8, 226u8, 70u8, 134u8,
-							236u8, 252u8, 154u8, 192u8, 45u8, 160u8, 95u8, 28u8, 0u8, 36u8, 102u8,
-							46u8, 171u8, 103u8, 193u8, 247u8, 79u8, 116u8, 141u8, 139u8, 95u8,
-							150u8,
+							252u8, 199u8, 14u8, 92u8, 64u8, 1u8, 131u8, 53u8, 57u8, 82u8, 30u8,
+							136u8, 228u8, 86u8, 182u8, 91u8, 62u8, 101u8, 222u8, 46u8, 123u8,
+							168u8, 121u8, 122u8, 193u8, 167u8, 125u8, 173u8, 153u8, 249u8, 147u8,
+							59u8,
 						],
 					)
 				}
-				#[doc = " Mapping from EVM Address to Substrate address"]
-				pub fn fusion_evm_to_substrate_address_iter(
+				#[doc = " Mapping from Fusion address to Substrate address"]
+				pub fn fusion_address_to_substrate_address_iter(
 					&self,
 				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
 					(),
-					types::fusion_evm_to_substrate_address::FusionEvmToSubstrateAddress,
+					types::fusion_address_to_substrate_address::FusionAddressToSubstrateAddress,
 					(),
 					(),
 					::subxt::ext::subxt_core::utils::Yes,
 				> {
 					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
 						"Fusion",
-						"FusionEVMToSubstrateAddress",
+						"FusionAddressToSubstrateAddress",
 						(),
 						[
-							110u8, 248u8, 247u8, 240u8, 0u8, 167u8, 28u8, 123u8, 228u8, 61u8,
-							139u8, 46u8, 177u8, 170u8, 48u8, 58u8, 248u8, 123u8, 136u8, 112u8,
-							109u8, 25u8, 28u8, 146u8, 127u8, 136u8, 79u8, 33u8, 240u8, 49u8, 116u8,
-							81u8,
+							0u8, 243u8, 198u8, 21u8, 184u8, 201u8, 201u8, 217u8, 69u8, 15u8, 9u8,
+							242u8, 178u8, 141u8, 29u8, 250u8, 207u8, 114u8, 139u8, 243u8, 159u8,
+							208u8, 146u8, 155u8, 128u8, 190u8, 2u8, 92u8, 182u8, 71u8, 147u8, 34u8,
 						],
 					)
 				}
-				#[doc = " Mapping from EVM Address to Substrate address"]
-				pub fn fusion_evm_to_substrate_address(
+				#[doc = " Mapping from Fusion address to Substrate address"]
+				pub fn fusion_address_to_substrate_address(
 					&self,
-					_0: impl ::core::borrow::Borrow<types::fusion_evm_to_substrate_address::Param0>,
+					_0: impl ::core::borrow::Borrow<types::fusion_address_to_substrate_address::Param0>,
 				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
 					::subxt::ext::subxt_core::storage::address::StaticStorageKey<
-						types::fusion_evm_to_substrate_address::Param0,
+						types::fusion_address_to_substrate_address::Param0,
 					>,
-					types::fusion_evm_to_substrate_address::FusionEvmToSubstrateAddress,
+					types::fusion_address_to_substrate_address::FusionAddressToSubstrateAddress,
 					::subxt::ext::subxt_core::utils::Yes,
 					(),
 					(),
 				> {
 					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
 						"Fusion",
-						"FusionEVMToSubstrateAddress",
+						"FusionAddressToSubstrateAddress",
 						::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
 							_0.borrow(),
 						),
 						[
-							110u8, 248u8, 247u8, 240u8, 0u8, 167u8, 28u8, 123u8, 228u8, 61u8,
-							139u8, 46u8, 177u8, 170u8, 48u8, 58u8, 248u8, 123u8, 136u8, 112u8,
-							109u8, 25u8, 28u8, 146u8, 127u8, 136u8, 79u8, 33u8, 240u8, 49u8, 116u8,
-							81u8,
+							0u8, 243u8, 198u8, 21u8, 184u8, 201u8, 201u8, 217u8, 69u8, 15u8, 9u8,
+							242u8, 178u8, 141u8, 29u8, 250u8, 207u8, 114u8, 139u8, 243u8, 159u8,
+							208u8, 146u8, 155u8, 128u8, 190u8, 2u8, 92u8, 182u8, 71u8, 147u8, 34u8,
 						],
 					)
 				}
+				#[doc = " Stores the era durations for HistoryDepth eras"]
+				#[doc = " It is used in case claiming reward for a pool failed because of low balance"]
+				#[doc = " We will be able to compute those rewards later using era duration"]
 				pub fn era_durations_iter(
 					&self,
 				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
@@ -29806,6 +29809,9 @@ pub mod api {
 						],
 					)
 				}
+				#[doc = " Stores the era durations for HistoryDepth eras"]
+				#[doc = " It is used in case claiming reward for a pool failed because of low balance"]
+				#[doc = " We will be able to compute those rewards later using era duration"]
 				pub fn era_durations(
 					&self,
 					_0: impl ::core::borrow::Borrow<types::era_durations::Param0>,
@@ -29833,74 +29839,74 @@ pub mod api {
 					)
 				}
 				#[doc = " Stores the fusion era exposure for HistoryDepth eras"]
-				pub fn fusion_exposures_iter(
+				pub fn exposures_iter(
 					&self,
 				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
 					(),
-					types::fusion_exposures::FusionExposures,
+					types::exposures::Exposures,
 					(),
 					(),
 					::subxt::ext::subxt_core::utils::Yes,
 				> {
 					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
 						"Fusion",
-						"FusionExposures",
+						"Exposures",
 						(),
 						[
-							185u8, 39u8, 57u8, 158u8, 209u8, 251u8, 121u8, 148u8, 113u8, 62u8,
-							199u8, 122u8, 7u8, 120u8, 37u8, 120u8, 189u8, 16u8, 32u8, 84u8, 213u8,
-							126u8, 13u8, 72u8, 244u8, 12u8, 253u8, 28u8, 32u8, 72u8, 114u8, 134u8,
+							69u8, 29u8, 130u8, 72u8, 101u8, 42u8, 219u8, 31u8, 170u8, 90u8, 18u8,
+							123u8, 227u8, 2u8, 176u8, 200u8, 29u8, 190u8, 175u8, 137u8, 36u8,
+							126u8, 240u8, 31u8, 167u8, 76u8, 96u8, 38u8, 241u8, 71u8, 122u8, 253u8,
 						],
 					)
 				}
 				#[doc = " Stores the fusion era exposure for HistoryDepth eras"]
-				pub fn fusion_exposures_iter1(
+				pub fn exposures_iter1(
 					&self,
-					_0: impl ::core::borrow::Borrow<types::fusion_exposures::Param0>,
+					_0: impl ::core::borrow::Borrow<types::exposures::Param0>,
 				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
 					::subxt::ext::subxt_core::storage::address::StaticStorageKey<
-						types::fusion_exposures::Param0,
+						types::exposures::Param0,
 					>,
-					types::fusion_exposures::FusionExposures,
+					types::exposures::Exposures,
 					(),
 					(),
 					::subxt::ext::subxt_core::utils::Yes,
 				> {
 					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
 						"Fusion",
-						"FusionExposures",
+						"Exposures",
 						::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
 							_0.borrow(),
 						),
 						[
-							185u8, 39u8, 57u8, 158u8, 209u8, 251u8, 121u8, 148u8, 113u8, 62u8,
-							199u8, 122u8, 7u8, 120u8, 37u8, 120u8, 189u8, 16u8, 32u8, 84u8, 213u8,
-							126u8, 13u8, 72u8, 244u8, 12u8, 253u8, 28u8, 32u8, 72u8, 114u8, 134u8,
+							69u8, 29u8, 130u8, 72u8, 101u8, 42u8, 219u8, 31u8, 170u8, 90u8, 18u8,
+							123u8, 227u8, 2u8, 176u8, 200u8, 29u8, 190u8, 175u8, 137u8, 36u8,
+							126u8, 240u8, 31u8, 167u8, 76u8, 96u8, 38u8, 241u8, 71u8, 122u8, 253u8,
 						],
 					)
 				}
 				#[doc = " Stores the fusion era exposure for HistoryDepth eras"]
-				pub fn fusion_exposures(
+				pub fn exposures(
 					&self,
-					_0: impl ::core::borrow::Borrow<types::fusion_exposures::Param0>,
-					_1: impl ::core::borrow::Borrow<types::fusion_exposures::Param1>,
+					_0: impl ::core::borrow::Borrow<types::exposures::Param0>,
+					_1: impl ::core::borrow::Borrow<types::exposures::Param1>,
 				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
 					(
 						::subxt::ext::subxt_core::storage::address::StaticStorageKey<
-							types::fusion_exposures::Param0,
+							types::exposures::Param0,
 						>,
 						::subxt::ext::subxt_core::storage::address::StaticStorageKey<
-							types::fusion_exposures::Param1,
+							types::exposures::Param1,
 						>,
 					),
-					types::fusion_exposures::FusionExposures,
+					types::exposures::Exposures,
 					::subxt::ext::subxt_core::utils::Yes,
 					(),
 					(),
 				> {
 					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
 						"Fusion",
-						"FusionExposures",
+						"Exposures",
 						(
 							::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
 								_0.borrow(),
@@ -29910,81 +29916,84 @@ pub mod api {
 							),
 						),
 						[
-							185u8, 39u8, 57u8, 158u8, 209u8, 251u8, 121u8, 148u8, 113u8, 62u8,
-							199u8, 122u8, 7u8, 120u8, 37u8, 120u8, 189u8, 16u8, 32u8, 84u8, 213u8,
-							126u8, 13u8, 72u8, 244u8, 12u8, 253u8, 28u8, 32u8, 72u8, 114u8, 134u8,
+							69u8, 29u8, 130u8, 72u8, 101u8, 42u8, 219u8, 31u8, 170u8, 90u8, 18u8,
+							123u8, 227u8, 2u8, 176u8, 200u8, 29u8, 190u8, 175u8, 137u8, 36u8,
+							126u8, 240u8, 31u8, 167u8, 76u8, 96u8, 38u8, 241u8, 71u8, 122u8, 253u8,
 						],
 					)
 				}
-				#[doc = " Store the pools that backed the validator set as the key"]
-				pub fn fusion_pools_from_validator_iter(
+				#[doc = " Stores the pool ids that backed a validator for a specific era"]
+				#[doc = " (era, ValidatorAddress) => PoolIds that backed the validator for the era"]
+				pub fn pools_backing_validator_iter(
 					&self,
 				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
 					(),
-					types::fusion_pools_from_validator::FusionPoolsFromValidator,
+					types::pools_backing_validator::PoolsBackingValidator,
 					(),
 					::subxt::ext::subxt_core::utils::Yes,
 					::subxt::ext::subxt_core::utils::Yes,
 				> {
 					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
 						"Fusion",
-						"FusionPoolsFromValidator",
+						"PoolsBackingValidator",
 						(),
 						[
-							203u8, 28u8, 234u8, 32u8, 183u8, 146u8, 63u8, 1u8, 100u8, 254u8, 69u8,
-							207u8, 44u8, 207u8, 234u8, 211u8, 220u8, 116u8, 40u8, 93u8, 73u8, 32u8,
-							162u8, 169u8, 124u8, 12u8, 143u8, 65u8, 249u8, 82u8, 190u8, 61u8,
+							51u8, 15u8, 7u8, 254u8, 235u8, 84u8, 34u8, 14u8, 112u8, 26u8, 45u8,
+							244u8, 133u8, 121u8, 227u8, 182u8, 80u8, 135u8, 207u8, 54u8, 81u8,
+							16u8, 78u8, 248u8, 139u8, 29u8, 242u8, 42u8, 69u8, 148u8, 223u8, 32u8,
 						],
 					)
 				}
-				#[doc = " Store the pools that backed the validator set as the key"]
-				pub fn fusion_pools_from_validator_iter1(
+				#[doc = " Stores the pool ids that backed a validator for a specific era"]
+				#[doc = " (era, ValidatorAddress) => PoolIds that backed the validator for the era"]
+				pub fn pools_backing_validator_iter1(
 					&self,
-					_0: impl ::core::borrow::Borrow<types::fusion_pools_from_validator::Param0>,
+					_0: impl ::core::borrow::Borrow<types::pools_backing_validator::Param0>,
 				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
 					::subxt::ext::subxt_core::storage::address::StaticStorageKey<
-						types::fusion_pools_from_validator::Param0,
+						types::pools_backing_validator::Param0,
 					>,
-					types::fusion_pools_from_validator::FusionPoolsFromValidator,
+					types::pools_backing_validator::PoolsBackingValidator,
 					(),
 					::subxt::ext::subxt_core::utils::Yes,
 					::subxt::ext::subxt_core::utils::Yes,
 				> {
 					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
 						"Fusion",
-						"FusionPoolsFromValidator",
+						"PoolsBackingValidator",
 						::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
 							_0.borrow(),
 						),
 						[
-							203u8, 28u8, 234u8, 32u8, 183u8, 146u8, 63u8, 1u8, 100u8, 254u8, 69u8,
-							207u8, 44u8, 207u8, 234u8, 211u8, 220u8, 116u8, 40u8, 93u8, 73u8, 32u8,
-							162u8, 169u8, 124u8, 12u8, 143u8, 65u8, 249u8, 82u8, 190u8, 61u8,
+							51u8, 15u8, 7u8, 254u8, 235u8, 84u8, 34u8, 14u8, 112u8, 26u8, 45u8,
+							244u8, 133u8, 121u8, 227u8, 182u8, 80u8, 135u8, 207u8, 54u8, 81u8,
+							16u8, 78u8, 248u8, 139u8, 29u8, 242u8, 42u8, 69u8, 148u8, 223u8, 32u8,
 						],
 					)
 				}
-				#[doc = " Store the pools that backed the validator set as the key"]
-				pub fn fusion_pools_from_validator(
+				#[doc = " Stores the pool ids that backed a validator for a specific era"]
+				#[doc = " (era, ValidatorAddress) => PoolIds that backed the validator for the era"]
+				pub fn pools_backing_validator(
 					&self,
-					_0: impl ::core::borrow::Borrow<types::fusion_pools_from_validator::Param0>,
-					_1: impl ::core::borrow::Borrow<types::fusion_pools_from_validator::Param1>,
+					_0: impl ::core::borrow::Borrow<types::pools_backing_validator::Param0>,
+					_1: impl ::core::borrow::Borrow<types::pools_backing_validator::Param1>,
 				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
 					(
 						::subxt::ext::subxt_core::storage::address::StaticStorageKey<
-							types::fusion_pools_from_validator::Param0,
+							types::pools_backing_validator::Param0,
 						>,
 						::subxt::ext::subxt_core::storage::address::StaticStorageKey<
-							types::fusion_pools_from_validator::Param1,
+							types::pools_backing_validator::Param1,
 						>,
 					),
-					types::fusion_pools_from_validator::FusionPoolsFromValidator,
+					types::pools_backing_validator::PoolsBackingValidator,
 					::subxt::ext::subxt_core::utils::Yes,
 					::subxt::ext::subxt_core::utils::Yes,
 					(),
 				> {
 					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
 						"Fusion",
-						"FusionPoolsFromValidator",
+						"PoolsBackingValidator",
 						(
 							::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
 								_0.borrow(),
@@ -29994,9 +30003,9 @@ pub mod api {
 							),
 						),
 						[
-							203u8, 28u8, 234u8, 32u8, 183u8, 146u8, 63u8, 1u8, 100u8, 254u8, 69u8,
-							207u8, 44u8, 207u8, 234u8, 211u8, 220u8, 116u8, 40u8, 93u8, 73u8, 32u8,
-							162u8, 169u8, 124u8, 12u8, 143u8, 65u8, 249u8, 82u8, 190u8, 61u8,
+							51u8, 15u8, 7u8, 254u8, 235u8, 84u8, 34u8, 14u8, 112u8, 26u8, 45u8,
+							244u8, 133u8, 121u8, 227u8, 182u8, 80u8, 135u8, 207u8, 54u8, 81u8,
+							16u8, 78u8, 248u8, 139u8, 29u8, 242u8, 42u8, 69u8, 148u8, 223u8, 32u8,
 						],
 					)
 				}
@@ -30087,7 +30096,7 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = " Stores EVM Address of the slash destination"]
+				#[doc = " Stores Fusion address of the slash destination"]
 				#[doc = " It can be controlled with technical committee"]
 				pub fn slash_destination(
 					&self,
@@ -30291,49 +30300,49 @@ pub mod api {
 					)
 				}
 				#[doc = " Stores the pool ids of pool having an boost alongside the minimum to get the boost"]
-				pub fn fusion_pools_with_boost_iter(
+				pub fn pools_with_boost_iter(
 					&self,
 				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
 					(),
-					types::fusion_pools_with_boost::FusionPoolsWithBoost,
+					types::pools_with_boost::PoolsWithBoost,
 					(),
 					(),
 					::subxt::ext::subxt_core::utils::Yes,
 				> {
 					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
 						"Fusion",
-						"FusionPoolsWithBoost",
+						"PoolsWithBoost",
 						(),
 						[
-							248u8, 21u8, 102u8, 38u8, 44u8, 67u8, 28u8, 195u8, 147u8, 10u8, 137u8,
-							122u8, 122u8, 148u8, 81u8, 119u8, 53u8, 35u8, 176u8, 51u8, 160u8,
-							131u8, 74u8, 236u8, 31u8, 121u8, 222u8, 188u8, 52u8, 91u8, 4u8, 63u8,
+							1u8, 189u8, 184u8, 41u8, 168u8, 21u8, 182u8, 41u8, 122u8, 165u8, 181u8,
+							208u8, 227u8, 176u8, 204u8, 23u8, 38u8, 42u8, 99u8, 188u8, 81u8, 226u8,
+							69u8, 90u8, 130u8, 16u8, 179u8, 124u8, 161u8, 244u8, 207u8, 138u8,
 						],
 					)
 				}
 				#[doc = " Stores the pool ids of pool having an boost alongside the minimum to get the boost"]
-				pub fn fusion_pools_with_boost(
+				pub fn pools_with_boost(
 					&self,
-					_0: impl ::core::borrow::Borrow<types::fusion_pools_with_boost::Param0>,
+					_0: impl ::core::borrow::Borrow<types::pools_with_boost::Param0>,
 				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
 					::subxt::ext::subxt_core::storage::address::StaticStorageKey<
-						types::fusion_pools_with_boost::Param0,
+						types::pools_with_boost::Param0,
 					>,
-					types::fusion_pools_with_boost::FusionPoolsWithBoost,
+					types::pools_with_boost::PoolsWithBoost,
 					::subxt::ext::subxt_core::utils::Yes,
 					(),
 					(),
 				> {
 					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
 						"Fusion",
-						"FusionPoolsWithBoost",
+						"PoolsWithBoost",
 						::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
 							_0.borrow(),
 						),
 						[
-							248u8, 21u8, 102u8, 38u8, 44u8, 67u8, 28u8, 195u8, 147u8, 10u8, 137u8,
-							122u8, 122u8, 148u8, 81u8, 119u8, 53u8, 35u8, 176u8, 51u8, 160u8,
-							131u8, 74u8, 236u8, 31u8, 121u8, 222u8, 188u8, 52u8, 91u8, 4u8, 63u8,
+							1u8, 189u8, 184u8, 41u8, 168u8, 21u8, 182u8, 41u8, 122u8, 165u8, 181u8,
+							208u8, 227u8, 176u8, 204u8, 23u8, 38u8, 42u8, 99u8, 188u8, 81u8, 226u8,
+							69u8, 90u8, 130u8, 16u8, 179u8, 124u8, 161u8, 244u8, 207u8, 138u8,
 						],
 					)
 				}
@@ -34046,7 +34055,7 @@ pub mod api {
 					#[codec(index = 99)]
 					#[doc = "See [`Pallet::deposit_currency_dummy`]."]
 					deposit_currency_dummy {
-						evm_address: ::subxt::ext::subxt_core::utils::H160,
+						fusion_address: ::subxt::ext::subxt_core::utils::H160,
 						currency_id: ::core::primitive::u32,
 						amount: ::core::primitive::u128,
 					},
@@ -34141,14 +34150,15 @@ pub mod api {
 					#[codec(index = 9)]
 					#[doc = "See [`Pallet::set_controller_address`]."]
 					set_controller_address {
-						evm_address: ::subxt::ext::subxt_core::utils::H160,
+						fusion_address: ::subxt::ext::subxt_core::utils::H160,
 						new_controller_address:
 							::core::option::Option<::subxt::ext::subxt_core::utils::AccountId32>,
 					},
 					#[codec(index = 10)]
 					#[doc = "See [`Pallet::set_slash_destination`]."]
 					set_slash_destination {
-						evm_address: ::core::option::Option<::subxt::ext::subxt_core::utils::H160>,
+						fusion_address:
+							::core::option::Option<::subxt::ext::subxt_core::utils::H160>,
 						controller_address:
 							::core::option::Option<::subxt::ext::subxt_core::utils::AccountId32>,
 					},
@@ -34160,14 +34170,14 @@ pub mod api {
 					#[codec(index = 12)]
 					#[doc = "See [`Pallet::set_compounding`]."]
 					set_compounding {
-						evm_address: ::subxt::ext::subxt_core::utils::H160,
+						fusion_address: ::subxt::ext::subxt_core::utils::H160,
 						pool_id: ::core::primitive::u32,
 						compound: ::core::primitive::bool,
 					},
 					#[codec(index = 13)]
 					#[doc = "See [`Pallet::stake`]."]
 					stake {
-						evm_address: ::subxt::ext::subxt_core::utils::H160,
+						fusion_address: ::subxt::ext::subxt_core::utils::H160,
 						pool_id: ::core::primitive::u32,
 						amount: ::core::primitive::u128,
 					},
@@ -34176,42 +34186,42 @@ pub mod api {
 					claim_rewards {
 						era: ::core::primitive::u32,
 						pool_id: ::core::primitive::u32,
-						evm_address: ::subxt::ext::subxt_core::utils::H160,
+						fusion_address: ::subxt::ext::subxt_core::utils::H160,
 					},
 					#[codec(index = 15)]
 					#[doc = "See [`Pallet::unbond_currency`]."]
 					unbond_currency {
-						evm_address: ::subxt::ext::subxt_core::utils::H160,
+						fusion_address: ::subxt::ext::subxt_core::utils::H160,
 						pool_id: ::core::primitive::u32,
 						unbond_amount: ::core::primitive::u128,
 					},
 					#[codec(index = 16)]
 					#[doc = "See [`Pallet::withdraw_unbonded_currency`]."]
 					withdraw_unbonded_currency {
-						evm_address: ::subxt::ext::subxt_core::utils::H160,
+						fusion_address: ::subxt::ext::subxt_core::utils::H160,
 						pool_id: ::core::primitive::u32,
 					},
 					#[codec(index = 17)]
 					#[doc = "See [`Pallet::unbond_currency_other`]."]
 					unbond_currency_other {
-						evm_address: ::subxt::ext::subxt_core::utils::H160,
+						fusion_address: ::subxt::ext::subxt_core::utils::H160,
 						pool_id: ::core::primitive::u32,
 					},
 					#[codec(index = 18)]
 					#[doc = "See [`Pallet::withdraw_unbonded_currency_other`]."]
 					withdraw_unbonded_currency_other {
-						evm_address: ::subxt::ext::subxt_core::utils::H160,
+						fusion_address: ::subxt::ext::subxt_core::utils::H160,
 						pool_id: ::core::primitive::u32,
 					},
 					#[codec(index = 19)]
 					#[doc = "See [`Pallet::withdraw_avail_to_controller`]."]
 					withdraw_avail_to_controller {
-						evm_address: ::subxt::ext::subxt_core::utils::H160,
+						fusion_address: ::subxt::ext::subxt_core::utils::H160,
 					},
 					#[codec(index = 20)]
 					#[doc = "See [`Pallet::set_pool_boost_allocations`]."]
 					set_pool_boost_allocations {
-						evm_address: ::subxt::ext::subxt_core::utils::H160,
+						fusion_address: ::subxt::ext::subxt_core::utils::H160,
 						pool_ids: runtime_types::bounded_collections::bounded_vec::BoundedVec<
 							::core::primitive::u32,
 						>,
@@ -34280,7 +34290,7 @@ pub mod api {
 					#[doc = "Arithmetic error when doing points conversions"]
 					ArithmeticPointsError,
 					#[codec(index = 12)]
-					#[doc = "The substrate address does not correspond to the EVM address in the mapping"]
+					#[doc = "The substrate address does not correspond to the Fusion address in the mapping"]
 					InvalidSubstrateAddress,
 					#[codec(index = 13)]
 					#[doc = "The pool is not open"]
@@ -34482,7 +34492,7 @@ pub mod api {
 					#[doc = "Event triggered when a currency is deposited into the system"]
 					CurrencyDeposited {
 						currency_id: ::core::primitive::u32,
-						evm_address: ::subxt::ext::subxt_core::utils::H160,
+						fusion_address: ::subxt::ext::subxt_core::utils::H160,
 						amount: ::core::primitive::u128,
 					},
 					#[codec(index = 7)]
@@ -34490,7 +34500,7 @@ pub mod api {
 					CurrencyUnbonded {
 						pool_id: ::core::primitive::u32,
 						currency_id: ::core::primitive::u32,
-						evm_address: ::subxt::ext::subxt_core::utils::H160,
+						fusion_address: ::subxt::ext::subxt_core::utils::H160,
 						unbonded_amount: ::core::primitive::u128,
 						points: ::core::primitive::u128,
 						era: ::core::primitive::u32,
@@ -34500,20 +34510,21 @@ pub mod api {
 					CurrencyWithdrawn {
 						pool_id: ::core::primitive::u32,
 						currency_id: ::core::primitive::u32,
-						evm_address: ::subxt::ext::subxt_core::utils::H160,
+						fusion_address: ::subxt::ext::subxt_core::utils::H160,
 						amount: ::core::primitive::u128,
 					},
 					#[codec(index = 9)]
 					#[doc = "Event triggered when the controller address for a user is changed"]
 					ControllerAddressSet {
-						evm_address: ::subxt::ext::subxt_core::utils::H160,
+						fusion_address: ::subxt::ext::subxt_core::utils::H160,
 						new_controller_address:
 							::core::option::Option<::subxt::ext::subxt_core::utils::AccountId32>,
 					},
 					#[codec(index = 10)]
-					#[doc = "Event triggered when the Evm address and controller address are set for the Slash destination"]
+					#[doc = "Event triggered when the Fusion address and controller address are set for the Slash destination"]
 					SlashDestinationSet {
-						evm_address: ::core::option::Option<::subxt::ext::subxt_core::utils::H160>,
+						fusion_address:
+							::core::option::Option<::subxt::ext::subxt_core::utils::H160>,
 						controller_address:
 							::core::option::Option<::subxt::ext::subxt_core::utils::AccountId32>,
 					},
@@ -34521,7 +34532,7 @@ pub mod api {
 					#[doc = "Event triggered when the compounding value is changed for a pool member"]
 					CompoundingSet {
 						pool_id: ::core::primitive::u32,
-						evm_address: ::subxt::ext::subxt_core::utils::H160,
+						fusion_address: ::subxt::ext::subxt_core::utils::H160,
 						compound: ::core::primitive::bool,
 					},
 					#[codec(index = 12)]
@@ -34560,7 +34571,7 @@ pub mod api {
 					#[doc = "Event triggered when a user joins a pool"]
 					PoolJoined {
 						pool_id: ::core::primitive::u32,
-						evm_address: ::subxt::ext::subxt_core::utils::H160,
+						fusion_address: ::subxt::ext::subxt_core::utils::H160,
 						currency_id: ::core::primitive::u32,
 						amount: ::core::primitive::u128,
 						points: ::core::primitive::u128,
@@ -34569,7 +34580,7 @@ pub mod api {
 					#[doc = "Event triggered when a user bonds extra currency into a pool"]
 					PoolBondExtra {
 						pool_id: ::core::primitive::u32,
-						evm_address: ::subxt::ext::subxt_core::utils::H160,
+						fusion_address: ::subxt::ext::subxt_core::utils::H160,
 						currency_id: ::core::primitive::u32,
 						amount: ::core::primitive::u128,
 						points: ::core::primitive::u128,
@@ -34578,7 +34589,7 @@ pub mod api {
 					#[doc = "Event triggered when a user's pool membership is removed"]
 					PoolMembershipRemoved {
 						pool_id: ::core::primitive::u32,
-						evm_address: ::subxt::ext::subxt_core::utils::H160,
+						fusion_address: ::subxt::ext::subxt_core::utils::H160,
 					},
 					#[codec(index = 17)]
 					#[doc = "Event triggered when a pool is deleted"]
@@ -34617,7 +34628,7 @@ pub mod api {
 					#[doc = "Event triggered when a user claims rewards for a pool and era"]
 					RewardClaimed {
 						pool_id: ::core::primitive::u32,
-						evm_address: ::subxt::ext::subxt_core::utils::H160,
+						fusion_address: ::subxt::ext::subxt_core::utils::H160,
 						era: ::core::primitive::u32,
 						reward: ::core::primitive::u128,
 					},
@@ -34627,7 +34638,7 @@ pub mod api {
 					#[codec(index = 24)]
 					#[doc = "Event triggered when AVAIL is withdrawn to the controller account"]
 					AvailWithdrawnToController {
-						evm_address: ::subxt::ext::subxt_core::utils::H160,
+						fusion_address: ::subxt::ext::subxt_core::utils::H160,
 						controller: ::subxt::ext::subxt_core::utils::AccountId32,
 						amount: ::core::primitive::u128,
 					},
@@ -34662,7 +34673,7 @@ pub mod api {
 					#[codec(index = 29)]
 					#[doc = "Event triggered when pools boost allocations have been set for a user"]
 					UserBoostAllocationsOptimized {
-						evm_address: ::subxt::ext::subxt_core::utils::H160,
+						fusion_address: ::subxt::ext::subxt_core::utils::H160,
 						pools_added:
 							::subxt::ext::subxt_core::alloc::vec::Vec<::core::primitive::u32>,
 						pools_removed:
@@ -34739,7 +34750,6 @@ pub mod api {
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
 				)]
 				pub struct FusionCurrency {
-					pub currency_id: ::core::primitive::u32,
 					pub name: runtime_types::bounded_collections::bounded_vec::BoundedVec<
 						::core::primitive::u8,
 					>,
@@ -34811,7 +34821,7 @@ pub mod api {
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
 				)]
 				pub struct FusionMembership {
-					pub evm_address: ::subxt::ext::subxt_core::utils::H160,
+					pub fusion_address: ::subxt::ext::subxt_core::utils::H160,
 					pub joined_era: ::core::primitive::u32,
 					pub active_points: ::core::primitive::u128,
 					pub unbonding_eras: runtime_types::bounded_collections::bounded_vec::BoundedVec<
@@ -34859,7 +34869,6 @@ pub mod api {
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
 				)]
 				pub struct FusionPool {
-					pub pool_id: ::core::primitive::u32,
 					pub currency_id: ::core::primitive::u32,
 					pub apy: runtime_types::sp_arithmetic::per_things::Perbill,
 					pub funds_account: ::subxt::ext::subxt_core::utils::AccountId32,
@@ -34930,7 +34939,7 @@ pub mod api {
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
 				)]
 				pub struct FusionUserCurrencyBalance {
-					pub evm_address: ::subxt::ext::subxt_core::utils::H160,
+					pub fusion_address: ::subxt::ext::subxt_core::utils::H160,
 					pub currency_id: ::core::primitive::u32,
 					pub amount: ::core::primitive::u128,
 				}

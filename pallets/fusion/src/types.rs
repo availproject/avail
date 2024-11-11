@@ -5,8 +5,8 @@ use sp_staking::EraIndex;
 
 use crate::*;
 
-/// Type representing an EVM address
-pub type EvmAddress = H160;
+/// Type representing a fusion address (for now we use H160 as it's EVM compatible)
+pub type FusionAddress = H160;
 
 /// Type representing a balance for external currency
 pub type FusionCurrencyBalance = u128;
@@ -44,8 +44,6 @@ pub enum FusionPoolState {
 #[derive(Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[scale_info(skip_type_params(T))]
 pub struct FusionCurrency<T: Config> {
-	/// Id of the fusion currency
-	pub currency_id: CurrencyId,
 	/// Name of the currency (e.g., "AVAIL", "ETH", "wBTC")
 	pub name: BoundedVec<u8, T::MaxCurrencyName>,
 	/// Number of decimals to represent 1 unit of the currency (e.g., 8 for wBTC, 18 for ETH)
@@ -67,8 +65,6 @@ pub struct FusionCurrency<T: Config> {
 #[derive(Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[scale_info(skip_type_params(T))]
 pub struct FusionPool<T: Config> {
-	/// Id of the fusion pool
-	pub pool_id: PoolId,
 	/// Id of the currency this pool uses
 	pub currency_id: CurrencyId,
 	/// Percentage representing annual yield for this pool
@@ -79,8 +75,8 @@ pub struct FusionPool<T: Config> {
 	pub claimable_account: T::AccountId,
 	/// Optional nominator of the pool, mandate can always manage
 	pub nominator: Option<T::AccountId>,
-	/// The evm addresses of members of the pool
-	pub members: BoundedVec<(EvmAddress, Points), T::MaxMembersPerPool>,
+	/// The Fusion addresses of members of the pool
+	pub members: BoundedVec<(FusionAddress, Points), T::MaxMembersPerPool>,
 	/// The target validators to be nominated by this pool
 	pub targets: BoundedVec<T::AccountId, T::MaxTargets>,
 	/// The amount staked in native form
@@ -109,14 +105,14 @@ pub struct BoostData<T: Config> {
 	/// The amount of points in the pool getting boost
 	pub elligible_total_points: Points,
 	/// Vector with elligible members
-	pub elligible_members: BoundedVec<EvmAddress, T::MaxMembersPerPool>,
+	pub elligible_members: BoundedVec<FusionAddress, T::MaxMembersPerPool>,
 }
 
 #[derive(Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[scale_info(skip_type_params(T))]
 pub struct FusionMembership<T: Config> {
-	/// Evm address of the user
-	pub evm_address: EvmAddress,
+	/// Fusion address of the user
+	pub fusion_address: FusionAddress,
 	/// Era where the membership was created
 	pub joined_era: EraIndex,
 	/// The stake of the user represented by points
@@ -129,8 +125,8 @@ pub struct FusionMembership<T: Config> {
 
 #[derive(Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 pub struct FusionUserCurrencyBalance {
-	/// Evm address of the user
-	pub evm_address: EvmAddress,
+	/// Fusion address of the user
+	pub fusion_address: FusionAddress,
 	/// Id of the idle currency this pool uses
 	pub currency_id: CurrencyId,
 	/// Amount of currency available, for AVAIL, it's the amount you can compound
@@ -149,7 +145,7 @@ pub struct FusionExposure<T: Config> {
 	/// The total points in the pool
 	pub total_points: Points,
 	/// The users points in the pool
-	pub user_points: BoundedVec<(EvmAddress, Points), T::MaxMembersPerPool>,
+	pub user_points: BoundedVec<(FusionAddress, Points), T::MaxMembersPerPool>,
 	/// The nominations of the pool at the time of setting the exposure
 	pub targets: BoundedVec<T::AccountId, T::MaxTargets>,
 	/// Used to store the validator(s) actually backed alongside the amount
@@ -158,7 +154,7 @@ pub struct FusionExposure<T: Config> {
 	/// Boost additional APY
 	pub boost_additional_apy: Perbill,
 	/// The members having boost
-	pub boost_members: BoundedVec<EvmAddress, T::MaxMembersPerPool>,
+	pub boost_members: BoundedVec<FusionAddress, T::MaxMembersPerPool>,
 	/// The total points elligible to boost
 	pub boost_total_points: Points,
 	/// The avail equivalent of boost_total_points
@@ -202,12 +198,13 @@ impl<T: Config> FusionCurrency<T> {
 	/// Converts a given amount of this external currency to its equivalent in AVAIL.
 	pub fn currency_to_avail(
 		&self,
+		currency_id: CurrencyId,
 		amount: FusionCurrencyBalance,
 		era: Option<EraIndex>,
 	) -> Result<BalanceOf<T>, Error<T>> {
-		let rate = FusionCurrencyRates::<T>::get(
+		let rate = CurrencyRates::<T>::get(
 			era.unwrap_or_else(T::StakingFusionDataProvider::active_era),
-			self.currency_id,
+			currency_id,
 		)
 		.ok_or(Error::<T>::CurrencyRateNotFound)?;
 
@@ -226,13 +223,14 @@ impl<T: Config> FusionCurrency<T> {
 	/// Converts a given amount of AVAIL to its equivalent in this external currency.
 	pub fn avail_to_currency(
 		&self,
+		currency_id: CurrencyId,
 		avail_amount: BalanceOf<T>,
 		era: Option<EraIndex>,
 	) -> Result<FusionCurrencyBalance, Error<T>> {
 		let era = era.unwrap_or_else(T::StakingFusionDataProvider::active_era);
 
-		let rate = FusionCurrencyRates::<T>::get(era, self.currency_id)
-			.ok_or(Error::<T>::CurrencyRateNotFound)?;
+		let rate =
+			CurrencyRates::<T>::get(era, currency_id).ok_or(Error::<T>::CurrencyRateNotFound)?;
 
 		let rate = Pallet::<T>::u256(rate.try_into().map_err(|_| Error::<T>::ArithmeticError)?);
 		let avail_amount = Pallet::<T>::u256(
@@ -286,8 +284,8 @@ impl<T: Config> FusionPool<T> {
 			let currency_decimals = if let Some(c) = currency {
 				c.nb_decimals
 			} else {
-				let stored_currency = FusionCurrencies::<T>::get(self.currency_id)
-					.ok_or(Error::<T>::CurrencyNotFound)?;
+				let stored_currency =
+					Currencies::<T>::get(self.currency_id).ok_or(Error::<T>::CurrencyNotFound)?;
 				stored_currency.nb_decimals
 			};
 
@@ -327,8 +325,8 @@ impl<T: Config> FusionPool<T> {
 			let currency_decimals = if let Some(c) = currency {
 				c.nb_decimals
 			} else {
-				let currency = FusionCurrencies::<T>::get(self.currency_id)
-					.ok_or(Error::<T>::CurrencyNotFound)?;
+				let currency =
+					Currencies::<T>::get(self.currency_id).ok_or(Error::<T>::CurrencyNotFound)?;
 				currency.nb_decimals
 			};
 			let multiplier = Pallet::<T>::u256(10u128.pow(18 - currency_decimals as u32));
@@ -359,17 +357,18 @@ impl<T: Config> FusionPool<T> {
 	pub fn points_to_avail(
 		&self,
 		points: Points,
+		currency_id: CurrencyId,
 		currency: Option<&FusionCurrency<T>>,
 		era: Option<EraIndex>,
 	) -> Result<BalanceOf<T>, Error<T>> {
 		let currency_value = self.points_to_currency(points, currency)?;
 
 		let avail_value = if let Some(currency) = currency {
-			currency.currency_to_avail(currency_value, era)?
+			currency.currency_to_avail(currency_id, currency_value, era)?
 		} else {
 			let currency =
-				FusionCurrencies::<T>::get(self.currency_id).ok_or(Error::<T>::CurrencyNotFound)?;
-			currency.currency_to_avail(currency_value, era)?
+				Currencies::<T>::get(self.currency_id).ok_or(Error::<T>::CurrencyNotFound)?;
+			currency.currency_to_avail(currency_id, currency_value, era)?
 		};
 
 		Ok(avail_value)
@@ -378,15 +377,15 @@ impl<T: Config> FusionPool<T> {
 	pub fn avail_to_points(
 		&self,
 		avail_amount: BalanceOf<T>,
+		currency_id: CurrencyId,
 		currency: Option<&FusionCurrency<T>>,
 		era: Option<EraIndex>,
 	) -> Result<Points, Error<T>> {
 		let currency_value = if let Some(currency) = currency {
-			currency.avail_to_currency(avail_amount, era)?
+			currency.avail_to_currency(currency_id, avail_amount, era)?
 		} else {
-			let currency =
-				FusionCurrencies::<T>::get(self.currency_id).ok_or(Error::<T>::CurrencyNotFound)?;
-			currency.avail_to_currency(avail_amount, era)?
+			let currency = Currencies::<T>::get(currency_id).ok_or(Error::<T>::CurrencyNotFound)?;
+			currency.avail_to_currency(currency_id, avail_amount, era)?
 		};
 
 		let points = self.currency_to_points(currency_value, currency)?;
@@ -395,9 +394,9 @@ impl<T: Config> FusionPool<T> {
 
 	pub fn set_boost(
 		&mut self,
+		pool_id: PoolId,
 		boost_data: Option<(Perbill, FusionCurrencyBalance)>,
 	) -> DispatchResult {
-		let pool_id = self.pool_id;
 		match (&self.boost_data, boost_data) {
 			(None, None) => {
 				// There is no current boost, nothing to do
@@ -405,7 +404,7 @@ impl<T: Config> FusionPool<T> {
 			(Some(_old_boost), None) => {
 				// There is some boost, we remove it
 				// We remove the pool id from the storage of pools with boost
-				FusionPoolsWithBoost::<T>::remove(pool_id);
+				PoolsWithBoost::<T>::remove(pool_id);
 
 				// We remove all the users for this pool in HasBoost
 				let _ = HasBoost::<T>::clear_prefix(pool_id, u32::MAX, None);
@@ -416,7 +415,7 @@ impl<T: Config> FusionPool<T> {
 			(None, Some((apy, min_to_earn))) => {
 				// There is no current boost, we add it
 				// We add the pool the to vec of pools having boost
-				FusionPoolsWithBoost::<T>::insert(pool_id, min_to_earn);
+				PoolsWithBoost::<T>::insert(pool_id, min_to_earn);
 
 				// We update the pool
 				self.boost_data = Some(BoostData {
@@ -428,7 +427,7 @@ impl<T: Config> FusionPool<T> {
 			},
 			(Some(old_boost), Some((apy, min_to_earn))) => {
 				// There is already a boost, we update it
-				FusionPoolsWithBoost::<T>::insert(pool_id, min_to_earn);
+				PoolsWithBoost::<T>::insert(pool_id, min_to_earn);
 
 				// For each users having boost,
 				// we need to check if they still belong.
