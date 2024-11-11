@@ -27285,6 +27285,7 @@ pub mod api {
 					PartialEq,
 				)]
 				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[codec(dumb_trait_bound)]
 				#[decode_as_type(
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
 				)]
@@ -27318,6 +27319,7 @@ pub mod api {
 					PartialEq,
 				)]
 				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[codec(dumb_trait_bound)]
 				#[decode_as_type(
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
 				)]
@@ -27359,6 +27361,7 @@ pub mod api {
 					PartialEq,
 				)]
 				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[codec(dumb_trait_bound)]
 				#[decode_as_type(
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
 				)]
@@ -27398,6 +27401,7 @@ pub mod api {
 					PartialEq,
 				)]
 				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[codec(dumb_trait_bound)]
 				#[decode_as_type(
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
 				)]
@@ -27427,6 +27431,7 @@ pub mod api {
 					PartialEq,
 				)]
 				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[codec(dumb_trait_bound)]
 				#[decode_as_type(
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
 				)]
@@ -27458,6 +27463,7 @@ pub mod api {
 					PartialEq,
 				)]
 				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[codec(dumb_trait_bound)]
 				#[decode_as_type(
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
 				)]
@@ -27494,6 +27500,7 @@ pub mod api {
 					PartialEq,
 				)]
 				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[codec(dumb_trait_bound)]
 				#[decode_as_type(
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
 				)]
@@ -27547,6 +27554,7 @@ pub mod api {
 					PartialEq,
 				)]
 				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[codec(dumb_trait_bound)]
 				#[decode_as_type(
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
 				)]
@@ -27579,6 +27587,7 @@ pub mod api {
 					PartialEq,
 				)]
 				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[codec(dumb_trait_bound)]
 				#[decode_as_type(
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
 				)]
@@ -27610,6 +27619,7 @@ pub mod api {
 					PartialEq,
 				)]
 				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[codec(dumb_trait_bound)]
 				#[decode_as_type(
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
 				)]
@@ -27643,6 +27653,7 @@ pub mod api {
 					PartialEq,
 				)]
 				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[codec(dumb_trait_bound)]
 				#[decode_as_type(
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
 				)]
@@ -27675,6 +27686,7 @@ pub mod api {
 					PartialEq,
 				)]
 				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[codec(dumb_trait_bound)]
 				#[decode_as_type(
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
 				)]
@@ -27708,6 +27720,7 @@ pub mod api {
 					PartialEq,
 				)]
 				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[codec(dumb_trait_bound)]
 				#[decode_as_type(
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
 				)]
@@ -27737,6 +27750,7 @@ pub mod api {
 					PartialEq,
 				)]
 				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[codec(dumb_trait_bound)]
 				#[decode_as_type(
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
 				)]
@@ -27770,6 +27784,7 @@ pub mod api {
 					PartialEq,
 				)]
 				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[codec(dumb_trait_bound)]
 				#[decode_as_type(
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
 				)]
@@ -27803,6 +27818,7 @@ pub mod api {
 					PartialEq,
 				)]
 				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[codec(dumb_trait_bound)]
 				#[decode_as_type(
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
 				)]
@@ -27836,6 +27852,7 @@ pub mod api {
 					PartialEq,
 				)]
 				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[codec(dumb_trait_bound)]
 				#[decode_as_type(
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
 				)]
@@ -27869,6 +27886,7 @@ pub mod api {
 					PartialEq,
 				)]
 				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[codec(dumb_trait_bound)]
 				#[decode_as_type(
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
 				)]
@@ -27900,6 +27918,7 @@ pub mod api {
 					PartialEq,
 				)]
 				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[codec(dumb_trait_bound)]
 				#[decode_as_type(
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
 				)]
@@ -27931,6 +27950,7 @@ pub mod api {
 					PartialEq,
 				)]
 				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[codec(dumb_trait_bound)]
 				#[decode_as_type(
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
 				)]
@@ -27962,6 +27982,7 @@ pub mod api {
 					PartialEq,
 				)]
 				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[codec(dumb_trait_bound)]
 				#[decode_as_type(
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
 				)]
@@ -27991,6 +28012,7 @@ pub mod api {
 					PartialEq,
 				)]
 				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[codec(dumb_trait_bound)]
 				#[decode_as_type(
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
 				)]
@@ -28024,6 +28046,7 @@ pub mod api {
 					PartialEq,
 				)]
 				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[codec(dumb_trait_bound)]
 				#[decode_as_type(
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
 				)]
@@ -28082,7 +28105,8 @@ pub mod api {
 					max_amount: types::create_currency::MaxAmount,
 					min_amount: types::create_currency::MinAmount,
 					initial_conversion_rate: types::create_currency::InitialConversionRate,
-				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::CreateCurrency> {
+				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::CreateCurrency>
+				{
 					::subxt::ext::subxt_core::tx::payload::StaticPayload::new_static(
 						"Fusion",
 						"create_currency",
@@ -28129,7 +28153,8 @@ pub mod api {
 				pub fn destroy_currency(
 					&self,
 					currency_id: types::destroy_currency::CurrencyId,
-				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::DestroyCurrency> {
+				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::DestroyCurrency>
+				{
 					::subxt::ext::subxt_core::tx::payload::StaticPayload::new_static(
 						"Fusion",
 						"destroy_currency",
@@ -28243,7 +28268,8 @@ pub mod api {
 					&self,
 					pool_id: types::fill_pool_account::PoolId,
 					amount: types::fill_pool_account::Amount,
-				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::FillPoolAccount> {
+				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::FillPoolAccount>
+				{
 					::subxt::ext::subxt_core::tx::payload::StaticPayload::new_static(
 						"Fusion",
 						"fill_pool_account",
@@ -28338,7 +28364,8 @@ pub mod api {
 					fusion_address: types::set_compounding::FusionAddress,
 					pool_id: types::set_compounding::PoolId,
 					compound: types::set_compounding::Compound,
-				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::SetCompounding> {
+				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::SetCompounding>
+				{
 					::subxt::ext::subxt_core::tx::payload::StaticPayload::new_static(
 						"Fusion",
 						"set_compounding",
@@ -28407,7 +28434,8 @@ pub mod api {
 					fusion_address: types::unbond_currency::FusionAddress,
 					pool_id: types::unbond_currency::PoolId,
 					unbond_amount: types::unbond_currency::UnbondAmount,
-				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::UnbondCurrency> {
+				) -> ::subxt::ext::subxt_core::tx::payload::StaticPayload<types::UnbondCurrency>
+				{
 					::subxt::ext::subxt_core::tx::payload::StaticPayload::new_static(
 						"Fusion",
 						"unbond_currency",
@@ -28572,6 +28600,7 @@ pub mod api {
 				PartialEq,
 			)]
 			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[codec(dumb_trait_bound)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
 			#[doc = "Event triggered when the funding account is filled with new funds"]
@@ -28599,6 +28628,7 @@ pub mod api {
 				PartialEq,
 			)]
 			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[codec(dumb_trait_bound)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
 			pub struct FundsAccountWithdrawn {
@@ -28625,6 +28655,7 @@ pub mod api {
 				PartialEq,
 			)]
 			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[codec(dumb_trait_bound)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
 			#[doc = "Event triggered when a new currency is created"]
@@ -28662,6 +28693,7 @@ pub mod api {
 				PartialEq,
 			)]
 			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[codec(dumb_trait_bound)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
 			#[doc = "Event triggered when a currency's properties are updated"]
@@ -28697,6 +28729,7 @@ pub mod api {
 				PartialEq,
 			)]
 			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[codec(dumb_trait_bound)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
 			#[doc = "Event triggered when a currency is deleted"]
@@ -28722,6 +28755,7 @@ pub mod api {
 				PartialEq,
 			)]
 			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[codec(dumb_trait_bound)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
 			#[doc = "Event triggered when a conversion rate is set for a currency"]
@@ -28749,6 +28783,7 @@ pub mod api {
 				PartialEq,
 			)]
 			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[codec(dumb_trait_bound)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
 			#[doc = "Event triggered when a currency is deposited into the system"]
@@ -28778,6 +28813,7 @@ pub mod api {
 				PartialEq,
 			)]
 			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[codec(dumb_trait_bound)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
 			#[doc = "Event triggered when a user unbonds currency from a pool"]
@@ -28813,6 +28849,7 @@ pub mod api {
 				PartialEq,
 			)]
 			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[codec(dumb_trait_bound)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
 			#[doc = "Event triggered when a user withdraws unbonded currency"]
@@ -28844,6 +28881,7 @@ pub mod api {
 				PartialEq,
 			)]
 			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[codec(dumb_trait_bound)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
 			#[doc = "Event triggered when the controller address for a user is changed"]
@@ -28872,6 +28910,7 @@ pub mod api {
 				PartialEq,
 			)]
 			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[codec(dumb_trait_bound)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
 			#[doc = "Event triggered when the Fusion address and controller address are set for the Slash destination"]
@@ -28901,6 +28940,7 @@ pub mod api {
 				PartialEq,
 			)]
 			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[codec(dumb_trait_bound)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
 			#[doc = "Event triggered when the compounding value is changed for a pool member"]
@@ -28930,6 +28970,7 @@ pub mod api {
 				PartialEq,
 			)]
 			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[codec(dumb_trait_bound)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
 			#[doc = "Event triggered when a new Fusion pool is created"]
@@ -28968,6 +29009,7 @@ pub mod api {
 				PartialEq,
 			)]
 			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[codec(dumb_trait_bound)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
 			#[doc = "Event triggered when a Fusion pool's properties are updated"]
@@ -29010,6 +29052,7 @@ pub mod api {
 				PartialEq,
 			)]
 			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[codec(dumb_trait_bound)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
 			#[doc = "Event triggered when a user joins a pool"]
@@ -29043,6 +29086,7 @@ pub mod api {
 				PartialEq,
 			)]
 			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[codec(dumb_trait_bound)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
 			#[doc = "Event triggered when a user bonds extra currency into a pool"]
@@ -29076,6 +29120,7 @@ pub mod api {
 				PartialEq,
 			)]
 			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[codec(dumb_trait_bound)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
 			#[doc = "Event triggered when a user's pool membership is removed"]
@@ -29103,6 +29148,7 @@ pub mod api {
 				PartialEq,
 			)]
 			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[codec(dumb_trait_bound)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
 			#[doc = "Event triggered when a pool is deleted"]
@@ -29130,6 +29176,7 @@ pub mod api {
 				PartialEq,
 			)]
 			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[codec(dumb_trait_bound)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
 			#[doc = "Event triggered when a pool state was changed to destroying"]
@@ -29155,6 +29202,7 @@ pub mod api {
 				PartialEq,
 			)]
 			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[codec(dumb_trait_bound)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
 			#[doc = "Event triggered when a pool nominates a list of targets (validators)"]
@@ -29184,6 +29232,7 @@ pub mod api {
 				PartialEq,
 			)]
 			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[codec(dumb_trait_bound)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
 			#[doc = "Event triggered when unclaimed rewards are sent to the remainder"]
@@ -29209,6 +29258,7 @@ pub mod api {
 				PartialEq,
 			)]
 			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[codec(dumb_trait_bound)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
 			#[doc = "Event triggered when rewards are set for an era"]
@@ -29247,6 +29297,7 @@ pub mod api {
 				PartialEq,
 			)]
 			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[codec(dumb_trait_bound)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
 			#[doc = "Event triggered when a user claims rewards for a pool and era"]
@@ -29278,6 +29329,7 @@ pub mod api {
 				PartialEq,
 			)]
 			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[codec(dumb_trait_bound)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
 			#[doc = "Event triggered when exposures are set for an era"]
@@ -29303,6 +29355,7 @@ pub mod api {
 				PartialEq,
 			)]
 			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[codec(dumb_trait_bound)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
 			#[doc = "Event triggered when AVAIL is withdrawn to the controller account"]
@@ -29332,6 +29385,7 @@ pub mod api {
 				PartialEq,
 			)]
 			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[codec(dumb_trait_bound)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
 			#[doc = "Event triggered when the maximum total value locked authorized is updated."]
@@ -29355,6 +29409,7 @@ pub mod api {
 				PartialEq,
 			)]
 			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[codec(dumb_trait_bound)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
 			#[doc = "Event triggered when a slash was reported and it concern a fusion pool"]
@@ -29386,6 +29441,7 @@ pub mod api {
 				PartialEq,
 			)]
 			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[codec(dumb_trait_bound)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
 			#[doc = "Event triggered when one or multiple slashes are cancelled"]
@@ -29417,6 +29473,7 @@ pub mod api {
 				PartialEq,
 			)]
 			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[codec(dumb_trait_bound)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
 			#[doc = "Event triggered when a pool get slashed"]
@@ -29448,6 +29505,7 @@ pub mod api {
 				PartialEq,
 			)]
 			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[codec(dumb_trait_bound)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
 			#[doc = "Event triggered when pools boost allocations have been set for a user"]
@@ -34557,6 +34615,7 @@ pub mod api {
 					PartialEq,
 				)]
 				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[codec(dumb_trait_bound)]
 				#[decode_as_type(
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
 				)]
@@ -34758,6 +34817,7 @@ pub mod api {
 					PartialEq,
 				)]
 				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[codec(dumb_trait_bound)]
 				#[decode_as_type(
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
 				)]
@@ -34949,6 +35009,7 @@ pub mod api {
 					PartialEq,
 				)]
 				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[codec(dumb_trait_bound)]
 				#[decode_as_type(
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
 				)]
@@ -35207,6 +35268,7 @@ pub mod api {
 					PartialEq,
 				)]
 				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[codec(dumb_trait_bound)]
 				#[decode_as_type(
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
 				)]
@@ -35233,6 +35295,7 @@ pub mod api {
 					PartialEq,
 				)]
 				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[codec(dumb_trait_bound)]
 				#[decode_as_type(
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
 				)]
@@ -35256,6 +35319,7 @@ pub mod api {
 					PartialEq,
 				)]
 				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[codec(dumb_trait_bound)]
 				#[decode_as_type(
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
 				)]
@@ -35285,6 +35349,7 @@ pub mod api {
 					PartialEq,
 				)]
 				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[codec(dumb_trait_bound)]
 				#[decode_as_type(
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
 				)]
@@ -35327,6 +35392,7 @@ pub mod api {
 					PartialEq,
 				)]
 				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[codec(dumb_trait_bound)]
 				#[decode_as_type(
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
 				)]
@@ -35353,6 +35419,7 @@ pub mod api {
 					PartialEq,
 				)]
 				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[codec(dumb_trait_bound)]
 				#[decode_as_type(
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
 				)]
@@ -35375,6 +35442,7 @@ pub mod api {
 					PartialEq,
 				)]
 				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[codec(dumb_trait_bound)]
 				#[decode_as_type(
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
 				)]
@@ -35418,6 +35486,7 @@ pub mod api {
 					PartialEq,
 				)]
 				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[codec(dumb_trait_bound)]
 				#[decode_as_type(
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
 				)]
@@ -35445,6 +35514,7 @@ pub mod api {
 					PartialEq,
 				)]
 				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[codec(dumb_trait_bound)]
 				#[decode_as_type(
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
 				)]
@@ -35467,6 +35537,7 @@ pub mod api {
 					PartialEq,
 				)]
 				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+				#[codec(dumb_trait_bound)]
 				#[decode_as_type(
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
 				)]
