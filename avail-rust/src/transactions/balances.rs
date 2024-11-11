@@ -1,6 +1,6 @@
 use crate::rpcs::Rpc;
 use crate::sdk::WaitFor;
-use crate::{avail, AccountId, AvailBlocksClient, AvailConfig, BlockHash, TxApi};
+use crate::{avail, AccountId, AvailBlocksClient, AvailConfig, TxApi, H256};
 
 use std::str::FromStr;
 use subxt::blocks::ExtrinsicEvents;
@@ -17,9 +17,9 @@ pub struct TransferAllTxSuccess {
 	pub event: BalancesEvents::Transfer,
 	pub event2: Option<SystemEvents::KilledAccount>,
 	pub events: ExtrinsicEvents<AvailConfig>,
-	pub tx_hash: BlockHash,
+	pub tx_hash: H256,
 	pub tx_index: u32,
-	pub block_hash: BlockHash,
+	pub block_hash: H256,
 	pub block_number: u32,
 }
 
@@ -28,9 +28,9 @@ pub struct TransferAllowDeathTxSuccess {
 	pub event: BalancesEvents::Transfer,
 	pub event2: Option<SystemEvents::KilledAccount>,
 	pub events: ExtrinsicEvents<AvailConfig>,
-	pub tx_hash: BlockHash,
+	pub tx_hash: H256,
 	pub tx_index: u32,
-	pub block_hash: BlockHash,
+	pub block_hash: H256,
 	pub block_number: u32,
 }
 
@@ -38,9 +38,9 @@ pub struct TransferAllowDeathTxSuccess {
 pub struct TransferKeepAliveTxSuccess {
 	pub event: BalancesEvents::Transfer,
 	pub events: ExtrinsicEvents<AvailConfig>,
-	pub tx_hash: BlockHash,
+	pub tx_hash: H256,
 	pub tx_index: u32,
-	pub block_hash: BlockHash,
+	pub block_hash: H256,
 	pub block_number: u32,
 }
 

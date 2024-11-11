@@ -16,7 +16,7 @@ pub use api_dev::api::data_availability::calls::types::create_application_key::K
 pub use api_dev::api::data_availability::calls::types::submit_data::Data;
 pub use api_dev::api::runtime_types::frame_support::dispatch::DispatchFeeModifier;
 pub use api_dev::api::runtime_types::pallet_staking::ValidatorPrefs;
-pub use subxt::config::polkadot::H256;
+pub use primitive_types::H256;
 pub use subxt_signer::{sr25519::Keypair, SecretUri};
 
 pub use api_dev::api as avail;

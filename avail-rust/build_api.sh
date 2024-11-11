@@ -1,6 +1,6 @@
 #!/bin/sh
 echo "⛓ Installing SubXt..."
-cargo install --git https://github.com/paritytech/subxt --tag v0.37.0 subxt-cli || true
+cargo install --git https://github.com/paritytech/subxt --tag v0.38.0 subxt-cli || true
 echo "🔨 Generating Avail-SubXt API from localhost..."
 subxt codegen --version 14 \
 --derive Clone \
