@@ -3,12 +3,14 @@ mod config;
 mod from_substrate;
 mod rpcs;
 mod sdk;
-mod utils;
 
 // Export types for internal and external consumption
+pub mod account;
 pub mod block;
+pub mod error;
 pub mod primitives;
 pub mod transactions;
+pub mod utils;
 
 pub type RewardDestination =
 	api_dev::api::runtime_types::pallet_staking::RewardDestination<AccountId>;
@@ -36,9 +38,7 @@ pub use sp_core;
 pub use subxt;
 pub use subxt::config::polkadot::U256;
 pub use subxt_signer;
-pub use transactions::{Mortality, NewCommission, Nonce, Options};
-pub use utils::utils_raw;
-pub use utils::FetchTransactionError;
+pub use transactions::{Mortality, Nonce, Options};
 
 pub mod nomination_pools_types {
 	pub use crate::avail::nomination_pools::calls::types::set_claim_permission::Permission;

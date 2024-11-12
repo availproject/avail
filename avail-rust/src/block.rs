@@ -2,10 +2,10 @@ use crate::{
 	avail::data_availability::calls::types as DataAvailabilityCalls,
 	primitives::block::extrinsics_params::CheckAppId,
 };
+use crate::{ABlock, AExtrinsicDetails, AExtrinsics, AFoundExtrinsic, AOnlineClient};
+
 use primitive_types::H256;
 use subxt::blocks::StaticExtrinsic;
-
-use crate::{ABlock, ABlocksClient, AExtrinsicDetails, AExtrinsics, AFoundExtrinsic};
 
 pub struct Block {
 	pub block: ABlock,
@@ -13,8 +13,8 @@ pub struct Block {
 }
 
 impl Block {
-	pub async fn new(client: &ABlocksClient, block_hash: H256) -> Result<Self, subxt::Error> {
-		let (block, transactions) = block_transactions(client, block_hash).await?;
+	pub async fn new(client: &AOnlineClient, block_hash: H256) -> Result<Self, subxt::Error> {
+		let (block, transactions) = transactions(client, block_hash).await?;
 		Ok(Self {
 			block,
 			transactions,
@@ -90,11 +90,11 @@ impl Block {
 	}
 }
 
-pub async fn block_transactions(
-	client: &ABlocksClient,
+pub async fn transactions(
+	client: &AOnlineClient,
 	block_hash: H256,
 ) -> Result<(ABlock, AExtrinsics), subxt::Error> {
-	let block = client.at(block_hash).await?;
+	let block = client.blocks().at(block_hash).await?;
 	let transactions = block.extrinsics().await?;
 	Ok((block, transactions))
 }
@@ -245,7 +245,7 @@ impl DataSubmission {
 			.signature_bytes()
 			.expect("DA can only be executed signed")
 			.to_vec();
-		let app_id = read_app_id(&tx.details).expect("There be an app id");
+		let app_id = read_app_id(&tx.details).expect("There must be an app id");
 		let data = tx.value.data.0.clone();
 		Self {
 			tx_hash,

@@ -3,7 +3,7 @@ use crate::api_dev::api::data_availability::calls::types::submit_data::Data;
 use crate::api_dev::api::runtime_types::frame_support::dispatch::DispatchFeeModifier;
 use crate::api_dev::api::Call;
 use crate::sdk::WaitFor;
-use crate::{avail, ABlocksClient, ATxClient};
+use crate::{avail, AOnlineClient};
 
 use avail::data_availability::calls::types as DataAvailabilityCalls;
 use avail::data_availability::events as DataAvailabilityEvents;
@@ -11,51 +11,50 @@ use avail::sudo::events as SudoEvents;
 use subxt::backend::rpc::RpcClient;
 use subxt_signer::sr25519::Keypair;
 
-use super::{options::Options, sign_and_submit_and_progress_transaction, TxResultDetails};
+use super::{find_event_or_return_error, TransactionFailed};
+use super::{options::Options, progress_and_parse_transaction, TransactionDetails};
 
 #[derive(Debug)]
 pub struct SubmitDataTx {
 	pub event: DataAvailabilityEvents::DataSubmitted,
 	pub data: DataAvailabilityCalls::SubmitData,
-	pub details: TxResultDetails,
+	pub details: TransactionDetails,
 }
 
 #[derive(Debug)]
 pub struct CreateApplicationKeyTx {
 	pub event: DataAvailabilityEvents::ApplicationKeyCreated,
-	pub details: TxResultDetails,
+	pub details: TransactionDetails,
 }
 
 #[derive(Debug)]
 pub struct SetApplicationKeyTx {
 	pub event: DataAvailabilityEvents::ApplicationKeySet,
-	pub details: TxResultDetails,
+	pub details: TransactionDetails,
 }
 
 #[derive(Debug)]
 pub struct SubmitBlockLengthProposalTx {
 	pub event: DataAvailabilityEvents::BlockLengthProposalSubmitted,
-	pub details: TxResultDetails,
+	pub details: TransactionDetails,
 }
 
 #[derive(Debug)]
 pub struct SetSubmitDataFeeModifierTx {
 	pub event: DataAvailabilityEvents::SubmitDataFeeModifierSet,
-	pub details: TxResultDetails,
+	pub details: TransactionDetails,
 }
 
 #[derive(Clone)]
 pub struct DataAvailability {
-	tx_client: ATxClient,
-	blocks_client: ABlocksClient,
+	online_client: AOnlineClient,
 	rpc_client: RpcClient,
 }
 
 impl DataAvailability {
-	pub fn new(tx_client: ATxClient, rpc_client: RpcClient, blocks_client: ABlocksClient) -> Self {
+	pub fn new(online_client: AOnlineClient, rpc_client: RpcClient) -> Self {
 		Self {
-			tx_client,
-			blocks_client,
+			online_client,
 			rpc_client,
 		}
 	}
@@ -66,11 +65,10 @@ impl DataAvailability {
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
-	) -> Result<SubmitDataTx, String> {
+	) -> Result<SubmitDataTx, TransactionFailed> {
 		let call = avail::tx().data_availability().submit_data(data);
-		let details = sign_and_submit_and_progress_transaction(
-			&self.tx_client,
-			&self.blocks_client,
+		let details = progress_and_parse_transaction(
+			&self.online_client,
 			&self.rpc_client,
 			account,
 			call,
@@ -79,21 +77,20 @@ impl DataAvailability {
 		)
 		.await?;
 
-		let event = details
-			.events
-			.find_first::<DataAvailabilityEvents::DataSubmitted>();
-		let Some(event) = event.ok().flatten() else {
-			return Err(String::from("Failed to find DataSubmitted event"));
-		};
+		let event = find_event_or_return_error::<DataAvailabilityEvents::DataSubmitted>(
+			"Failed to find DataSubmitted event",
+			&details,
+		)?;
 
-		let block = details
-			.fetch_block(&self.blocks_client)
-			.await
-			.map_err(|e| e.to_string())?;
-		let mut data =
-			block.transaction_by_hash_static::<DataAvailabilityCalls::SubmitData>(details.tx_hash);
+		let block = details.fetch_block(&self.online_client).await;
+		let block = block.map_err(|e| TransactionFailed {
+			reason: e.into(),
+			details: Some(details.clone()),
+		})?;
+
+		let data = block
+			.transaction_by_index_static::<DataAvailabilityCalls::SubmitData>(details.tx_index);
 		let data = data
-			.pop()
 			.ok_or(String::from("Failed to find transaction data"))?
 			.value;
 
@@ -110,11 +107,10 @@ impl DataAvailability {
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
-	) -> Result<CreateApplicationKeyTx, String> {
+	) -> Result<CreateApplicationKeyTx, TransactionFailed> {
 		let call = avail::tx().data_availability().create_application_key(key);
-		let details = sign_and_submit_and_progress_transaction(
-			&self.tx_client,
-			&self.blocks_client,
+		let details = progress_and_parse_transaction(
+			&self.online_client,
 			&self.rpc_client,
 			account,
 			call,
@@ -123,12 +119,10 @@ impl DataAvailability {
 		)
 		.await?;
 
-		let event = details
-			.events
-			.find_first::<DataAvailabilityEvents::ApplicationKeyCreated>();
-		let Some(event) = event.ok().flatten() else {
-			return Err(String::from("Failed to find ApplicationKeyCreated event"));
-		};
+		let event = find_event_or_return_error::<DataAvailabilityEvents::ApplicationKeyCreated>(
+			"Failed to find ApplicationKeyCreated event",
+			&details,
+		)?;
 
 		Ok(CreateApplicationKeyTx { event, details })
 	}
@@ -140,7 +134,7 @@ impl DataAvailability {
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
-	) -> Result<SetApplicationKeyTx, String> {
+	) -> Result<SetApplicationKeyTx, TransactionFailed> {
 		let call = Call::DataAvailability(
 			avail::runtime_types::da_control::pallet::Call::set_application_key {
 				old_key,
@@ -148,9 +142,8 @@ impl DataAvailability {
 			},
 		);
 		let sudo = avail::tx().sudo().sudo(call);
-		let details = sign_and_submit_and_progress_transaction(
-			&self.tx_client,
-			&self.blocks_client,
+		let details = progress_and_parse_transaction(
+			&self.online_client,
 			&self.rpc_client,
 			account,
 			sudo,
@@ -159,21 +152,22 @@ impl DataAvailability {
 		)
 		.await?;
 
-		let sudo_event = details.events.find_first::<SudoEvents::Sudid>();
-		let Some(sudo_event) = sudo_event.ok().flatten() else {
-			return Err(String::from("Failed to find Sudid event"));
-		};
+		let sudo_event = find_event_or_return_error::<SudoEvents::Sudid>(
+			"Failed to find Sudid event",
+			&details,
+		)?;
 
 		if let Err(error) = sudo_event.sudo_result {
-			return Err(std::format!("{:?}", error));
+			return Err(TransactionFailed::from((
+				std::format!("{:?}", error),
+				details.clone(),
+			)));
 		}
 
-		let event = details
-			.events
-			.find_first::<DataAvailabilityEvents::ApplicationKeySet>();
-		let Some(event) = event.ok().flatten() else {
-			return Err(String::from("Failed to find ApplicationKeySet event"));
-		};
+		let event = find_event_or_return_error::<DataAvailabilityEvents::ApplicationKeySet>(
+			"Failed to find ApplicationKeySet event",
+			&details,
+		)?;
 
 		Ok(SetApplicationKeyTx { event, details })
 	}
@@ -185,7 +179,7 @@ impl DataAvailability {
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
-	) -> Result<SubmitBlockLengthProposalTx, String> {
+	) -> Result<SubmitBlockLengthProposalTx, TransactionFailed> {
 		let call = Call::DataAvailability(
 			avail::runtime_types::da_control::pallet::Call::submit_block_length_proposal {
 				rows,
@@ -193,9 +187,8 @@ impl DataAvailability {
 			},
 		);
 		let sudo = avail::tx().sudo().sudo(call);
-		let details = sign_and_submit_and_progress_transaction(
-			&self.tx_client,
-			&self.blocks_client,
+		let details = progress_and_parse_transaction(
+			&self.online_client,
 			&self.rpc_client,
 			account,
 			sudo,
@@ -204,23 +197,23 @@ impl DataAvailability {
 		)
 		.await?;
 
-		let sudo_event = details.events.find_first::<SudoEvents::Sudid>();
-		let Some(sudo_event) = sudo_event.ok().flatten() else {
-			return Err(String::from("Failed to find Sudid event"));
-		};
+		let sudo_event = find_event_or_return_error::<SudoEvents::Sudid>(
+			"Failed to find Sudid event",
+			&details,
+		)?;
 
 		if let Err(error) = sudo_event.sudo_result {
-			return Err(std::format!("{:?}", error));
+			return Err(TransactionFailed::from((
+				std::format!("{:?}", error),
+				details.clone(),
+			)));
 		}
 
-		let event = details
-			.events
-			.find_first::<DataAvailabilityEvents::BlockLengthProposalSubmitted>();
-		let Some(event) = event.ok().flatten() else {
-			return Err(String::from(
+		let event =
+			find_event_or_return_error::<DataAvailabilityEvents::BlockLengthProposalSubmitted>(
 				"Failed to find BlockLengthProposalSubmitted event",
-			));
-		};
+				&details,
+			)?;
 
 		Ok(SubmitBlockLengthProposalTx { event, details })
 	}
@@ -231,16 +224,15 @@ impl DataAvailability {
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
-	) -> Result<SetSubmitDataFeeModifierTx, String> {
+	) -> Result<SetSubmitDataFeeModifierTx, TransactionFailed> {
 		let call = Call::DataAvailability(
 			avail::runtime_types::da_control::pallet::Call::set_submit_data_fee_modifier {
 				modifier,
 			},
 		);
 		let sudo = avail::tx().sudo().sudo(call);
-		let details = sign_and_submit_and_progress_transaction(
-			&self.tx_client,
-			&self.blocks_client,
+		let details = progress_and_parse_transaction(
+			&self.online_client,
 			&self.rpc_client,
 			account,
 			sudo,
@@ -249,23 +241,22 @@ impl DataAvailability {
 		)
 		.await?;
 
-		let sudo_event = details.events.find_first::<SudoEvents::Sudid>();
-		let Some(sudo_event) = sudo_event.ok().flatten() else {
-			return Err(String::from("Failed to find Sudid event"));
-		};
+		let sudo_event = find_event_or_return_error::<SudoEvents::Sudid>(
+			"Failed to find Sudid event",
+			&details,
+		)?;
 
 		if let Err(error) = sudo_event.sudo_result {
-			return Err(std::format!("{:?}", error));
+			return Err(TransactionFailed::from((
+				std::format!("{:?}", error),
+				details.clone(),
+			)));
 		}
 
-		let event = details
-			.events
-			.find_first::<DataAvailabilityEvents::SubmitDataFeeModifierSet>();
-		let Some(event) = event.ok().flatten() else {
-			return Err(String::from(
-				"Failed to find SubmitDataFeeModifierSet event",
-			));
-		};
+		let event = find_event_or_return_error::<DataAvailabilityEvents::SubmitDataFeeModifierSet>(
+			"Failed to find SubmitDataFeeModifierSet event",
+			&details,
+		)?;
 
 		Ok(SetSubmitDataFeeModifierTx { event, details })
 	}

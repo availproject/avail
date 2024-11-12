@@ -320,7 +320,7 @@ async fn main() -> Result<(), String> {
 ### Interface
 
 ```rust
-async fn get_block(&self, at: Option<BlockHash>) -> Result<AvailBlockDetailsRPC, subxt::Error>;
+async fn get_block(&self, at: Option<BlockHash>) -> Result<ABlockDetailsRPC, subxt::Error>;
 ```
 
 #### Parameters

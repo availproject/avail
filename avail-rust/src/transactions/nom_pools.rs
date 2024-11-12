@@ -8,102 +8,102 @@ use crate::avail::{
 	runtime_types::sp_arithmetic::per_things::Perbill,
 };
 use crate::sdk::WaitFor;
-use crate::utils_raw::fetch_transaction;
-use crate::{ABlocksClient, ATxClient, AccountId, H256};
+use crate::{AOnlineClient, AccountId};
 
 use std::str::FromStr;
 use subxt::backend::rpc::RpcClient;
 use subxt_signer::sr25519::Keypair;
 
-use super::{options::Options, sign_and_submit_and_progress_transaction, TxResultDetails};
+use super::TransactionFailed;
+use super::{options::Options, progress_and_parse_transaction, TransactionDetails};
 
 #[derive(Debug)]
 pub struct CreateTx {
 	pub event: NominationPoolsEvents::Created,
 	pub event2: NominationPoolsEvents::Bonded,
-	pub details: TxResultDetails,
+	pub details: TransactionDetails,
 }
 
 #[derive(Debug)]
 pub struct CreateWithPoolIdTx {
 	pub event: NominationPoolsEvents::Created,
 	pub event2: NominationPoolsEvents::Bonded,
-	pub details: TxResultDetails,
+	pub details: TransactionDetails,
 }
 
 #[derive(Debug)]
 pub struct JoinTx {
 	pub event: NominationPoolsEvents::Bonded,
-	pub details: TxResultDetails,
+	pub details: TransactionDetails,
 }
 
 #[derive(Debug)]
 pub struct NominateTx {
 	pub data: NominationPoolsCalls::Nominate,
-	pub details: TxResultDetails,
+	pub details: TransactionDetails,
 }
 
 #[derive(Debug)]
 pub struct BondExtraTx {
 	pub event: NominationPoolsEvents::Bonded,
-	pub details: TxResultDetails,
+	pub details: TransactionDetails,
 }
 
 #[derive(Debug)]
 pub struct SetCommissionTx {
 	pub event: NominationPoolsEvents::PoolCommissionUpdated,
-	pub details: TxResultDetails,
+	pub details: TransactionDetails,
 }
 
 #[derive(Debug)]
 pub struct SetStateTx {
 	pub event: Option<NominationPoolsEvents::StateChanged>,
-	pub details: TxResultDetails,
+	pub details: TransactionDetails,
 }
 
 #[derive(Debug)]
 pub struct ClaimPayoutTx {
 	pub event: Option<NominationPoolsEvents::PaidOut>,
-	pub details: TxResultDetails,
+	pub details: TransactionDetails,
 }
 
 #[derive(Debug)]
 pub struct ChillTx {
-	pub details: TxResultDetails,
+	pub details: TransactionDetails,
 }
 
 #[derive(Debug)]
 pub struct SetClaimPermissionTx {
-	pub details: TxResultDetails,
+	pub details: TransactionDetails,
 }
 
 #[derive(Debug)]
 pub struct ClaimCommissionTx {
 	pub event: NominationPoolsEvents::PoolCommissionClaimed,
-	pub details: TxResultDetails,
+	pub details: TransactionDetails,
 }
 
 #[derive(Debug)]
 pub struct ClaimPayoutOtherTx {
 	pub event: Option<NominationPoolsEvents::PaidOut>,
-	pub details: TxResultDetails,
+	pub details: TransactionDetails,
 }
 
 #[derive(Debug)]
 pub struct UnbondTx {
 	pub event: Option<NominationPoolsEvents::Unbonded>,
-	pub details: TxResultDetails,
+	pub details: TransactionDetails,
 }
 
 #[derive(Debug)]
 pub struct SetMetadataTx {
-	pub details: TxResultDetails,
+	pub details: TransactionDetails,
 }
 
 #[derive(Debug)]
 pub struct WithdrawUnbondedTx {
 	pub event: Option<NominationPoolsEvents::Withdrawn>,
-	pub details: TxResultDetails,
+	pub details: TransactionDetails,
 }
 
 #[derive(Debug, Clone)]
@@ -114,16 +114,14 @@ pub struct NewCommission {
 
 #[derive(Clone)]
 pub struct NominationPools {
-	tx_client: ATxClient,
-	blocks_client: ABlocksClient,
+	online_client: AOnlineClient,
 	rpc_client: RpcClient,
 }
 
 impl NominationPools {
-	pub fn new(tx_client: ATxClient, rpc_client: RpcClient, blocks_client: ABlocksClient) -> Self {
+	pub fn new(online_client: AOnlineClient, rpc_client: RpcClient) -> Self {
 		Self {
-			tx_client,
-			blocks_client,
+			online_client,
 			rpc_client,
 		}
 	}
@@ -135,7 +133,7 @@ impl NominationPools {
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
-	) -> Result<NominateTx, String> {
+	) -> Result<NominateTx, TransactionFailed> {
 		let validators: Result<Vec<AccountId>, _> = validators
 			.into_iter()
 			.map(|v| AccountId::from_str(&v))
@@ -143,9 +141,8 @@ impl NominationPools {
 		let validators = validators.map_err(|e| e.to_string())?;
 
 		let call = avail::tx().nomination_pools().nominate(pool_id, validators);
-		let details = sign_and_submit_and_progress_transaction(
-			&self.tx_client,
-			&self.blocks_client,
+		let details = progress_and_parse_transaction(
+			&self.online_client,
 			&self.rpc_client,
 			account,
 			call,
@@ -154,8 +151,13 @@ impl NominationPools {
 		)
 		.await?;
 
+		let block = details.fetch_block(&self.online_client).await;
+		let block = block.map_err(|e| e.to_string())?;
 		let data =
-			tx_data_pool_nominate(&self.blocks_client, details.block_hash, details.tx_hash).await?;
+			block.transaction_by_index_static::<NominationPoolsCalls::Nominate>(details.tx_index);
+		let data = data
+			.ok_or(String::from("Failed to find transaction data"))?
+			.value;
 
 		Ok(NominateTx { data, details })
 	}
@@ -167,11 +169,10 @@ impl NominationPools {
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
-	) -> Result<JoinTx, String> {
+	) -> Result<JoinTx, TransactionFailed> {
 		let call = avail::tx().nomination_pools().join(amount, pool_id);
-		let details = sign_and_submit_and_progress_transaction(
-			&self.tx_client,
-			&self.blocks_client,
+		let details = progress_and_parse_transaction(
+			&self.online_client,
 			&self.rpc_client,
 			account,
 			call,
@@ -198,7 +199,7 @@ impl NominationPools {
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
-	) -> Result<CreateWithPoolIdTx, String> {
+	) -> Result<CreateWithPoolIdTx, TransactionFailed> {
 		let root = AccountId::from_str(root).map_err(|e| e.to_string())?;
 		let nominator = AccountId::from_str(nominator).map_err(|e| e.to_string())?;
 		let bouncer = AccountId::from_str(bouncer).map_err(|e| e.to_string())?;
@@ -210,9 +211,8 @@ impl NominationPools {
 			bouncer.into(),
 			pool_id,
 		);
-		let details = sign_and_submit_and_progress_transaction(
-			&self.tx_client,
-			&self.blocks_client,
+		let details = progress_and_parse_transaction(
+			&self.online_client,
 			&self.rpc_client,
 			account,
 			call,
@@ -249,7 +249,7 @@ impl NominationPools {
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
-	) -> Result<CreateTx, String> {
+	) -> Result<CreateTx, TransactionFailed> {
 		let root = AccountId::from_str(root).map_err(|e| e.to_string())?;
 		let nominator = AccountId::from_str(nominator).map_err(|e| e.to_string())?;
 		let bouncer = AccountId::from_str(bouncer).map_err(|e| e.to_string())?;
@@ -260,9 +260,8 @@ impl NominationPools {
 			nominator.into(),
 			bouncer.into(),
 		);
-		let details = sign_and_submit_and_progress_transaction(
-			&self.tx_client,
-			&self.blocks_client,
+		let details = progress_and_parse_transaction(
+			&self.online_client,
 			&self.rpc_client,
 			account,
 			call,
@@ -296,11 +295,10 @@ impl NominationPools {
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
-	) -> Result<BondExtraTx, String> {
+	) -> Result<BondExtraTx, TransactionFailed> {
 		let call = avail::tx().nomination_pools().bond_extra(extra);
-		let details = sign_and_submit_and_progress_transaction(
-			&self.tx_client,
-			&self.blocks_client,
+		let details = progress_and_parse_transaction(
+			&self.online_client,
 			&self.rpc_client,
 			account,
 			call,
@@ -324,7 +322,7 @@ impl NominationPools {
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
-	) -> Result<SetCommissionTx, String> {
+	) -> Result<SetCommissionTx, TransactionFailed> {
 		let new_commission: NewCommissionOriginal = match new_commission {
 			Some(x) => {
 				let account = AccountId::from_str(&x.payee).map_err(|e| e.to_string())?;
@@ -336,9 +334,8 @@ impl NominationPools {
 		let call = avail::tx()
 			.nomination_pools()
 			.set_commission(pool_id, new_commission);
-		let details = sign_and_submit_and_progress_transaction(
-			&self.tx_client,
-			&self.blocks_client,
+		let details = progress_and_parse_transaction(
+			&self.online_client,
 			&self.rpc_client,
 			account,
 			call,
@@ -364,11 +361,10 @@ impl NominationPools {
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
-	) -> Result<SetStateTx, String> {
+	) -> Result<SetStateTx, TransactionFailed> {
 		let call = avail::tx().nomination_pools().set_state(pool_id, state);
-		let details = sign_and_submit_and_progress_transaction(
-			&self.tx_client,
-			&self.blocks_client,
+		let details = progress_and_parse_transaction(
+			&self.online_client,
 			&self.rpc_client,
 			account,
 			call,
@@ -390,11 +386,10 @@ impl NominationPools {
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
-	) -> Result<ClaimPayoutTx, String> {
+	) -> Result<ClaimPayoutTx, TransactionFailed> {
 		let call = avail::tx().nomination_pools().claim_payout();
-		let details = sign_and_submit_and_progress_transaction(
-			&self.tx_client,
-			&self.blocks_client,
+		let details = progress_and_parse_transaction(
+			&self.online_client,
 			&self.rpc_client,
 			account,
 			call,
@@ -417,11 +412,10 @@ impl NominationPools {
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
-	) -> Result<ChillTx, String> {
+	) -> Result<ChillTx, TransactionFailed> {
 		let call = avail::tx().nomination_pools().chill(pool_id);
-		let details = sign_and_submit_and_progress_transaction(
-			&self.tx_client,
-			&self.blocks_client,
+		let details = progress_and_parse_transaction(
+			&self.online_client,
 			&self.rpc_client,
 			account,
 			call,
@@ -439,13 +433,12 @@ impl NominationPools {
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
-	) -> Result<SetClaimPermissionTx, String> {
+	) -> Result<SetClaimPermissionTx, TransactionFailed> {
 		let call = avail::tx()
 			.nomination_pools()
 			.set_claim_permission(permission);
-		let details = sign_and_submit_and_progress_transaction(
-			&self.tx_client,
-			&self.blocks_client,
+		let details = progress_and_parse_transaction(
+			&self.online_client,
 			&self.rpc_client,
 			account,
 			call,
@@ -463,11 +456,10 @@ impl NominationPools {
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
-	) -> Result<ClaimCommissionTx, String> {
+	) -> Result<ClaimCommissionTx, TransactionFailed> {
 		let call = avail::tx().nomination_pools().claim_commission(pool_id);
-		let details = sign_and_submit_and_progress_transaction(
-			&self.tx_client,
-			&self.blocks_client,
+		let details = progress_and_parse_transaction(
+			&self.online_client,
 			&self.rpc_client,
 			account,
 			call,
@@ -491,14 +483,13 @@ impl NominationPools {
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
-	) -> Result<ClaimPayoutOtherTx, String> {
+	) -> Result<ClaimPayoutOtherTx, TransactionFailed> {
 		let other = AccountId::from_str(other).map_err(|e| e.to_string())?;
 		let call = avail::tx()
 			.nomination_pools()
 			.claim_payout_other(other.into());
-		let details = sign_and_submit_and_progress_transaction(
-			&self.tx_client,
-			&self.blocks_client,
+		let details = progress_and_parse_transaction(
+			&self.online_client,
 			&self.rpc_client,
 			account,
 			call,
@@ -522,14 +513,13 @@ impl NominationPools {
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
-	) -> Result<UnbondTx, String> {
+	) -> Result<UnbondTx, TransactionFailed> {
 		let member_account = AccountId::from_str(member_account).map_err(|e| e.to_string())?;
 		let call = avail::tx()
 			.nomination_pools()
 			.unbond(member_account.into(), unbonding_points);
-		let details = sign_and_submit_and_progress_transaction(
-			&self.tx_client,
-			&self.blocks_client,
+		let details = progress_and_parse_transaction(
+			&self.online_client,
 			&self.rpc_client,
 			account,
 			call,
@@ -552,13 +542,12 @@ impl NominationPools {
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
-	) -> Result<SetMetadataTx, String> {
+	) -> Result<SetMetadataTx, TransactionFailed> {
 		let call = avail::tx()
 			.nomination_pools()
 			.set_metadata(pool_id, metadata);
-		let details = sign_and_submit_and_progress_transaction(
-			&self.tx_client,
-			&self.blocks_client,
+		let details = progress_and_parse_transaction(
+			&self.online_client,
 			&self.rpc_client,
 			account,
 			call,
@@ -577,14 +566,13 @@ impl NominationPools {
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
-	) -> Result<WithdrawUnbondedTx, String> {
+	) -> Result<WithdrawUnbondedTx, TransactionFailed> {
 		let member_account = AccountId::from_str(member_account).map_err(|e| e.to_string())?;
 		let call = avail::tx()
 			.nomination_pools()
 			.withdraw_unbonded(member_account.into(), num_slashing_spans);
-		let details = sign_and_submit_and_progress_transaction(
-			&self.tx_client,
-			&self.blocks_client,
+		let details = progress_and_parse_transaction(
+			&self.online_client,
 			&self.rpc_client,
 			account,
 			call,
@@ -600,15 +588,4 @@ impl NominationPools {
 
 		Ok(WithdrawUnbondedTx { event, details })
 	}
-}
-
-pub async fn tx_data_pool_nominate(
-	client: &ABlocksClient,
-	block_hash: H256,
-	tx_hash: H256,
-) -> Result<NominationPoolsCalls::Nominate, String> {
-	let transaction =
-		fetch_transaction::<NominationPoolsCalls::Nominate>(client, block_hash, tx_hash).await;
-	let transaction = transaction.map_err(|err| err.to_string())?;
-	Ok(transaction.value)
 }

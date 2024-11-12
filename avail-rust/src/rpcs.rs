@@ -4,7 +4,7 @@ use subxt::backend::legacy::LegacyRpcMethods;
 use crate::avail::runtime_types::frame_system::limits::BlockLength;
 use crate::from_substrate::{FeeDetails, NodeRole, PeerInfo, RuntimeDispatchInfo, SyncState};
 use crate::{
-	AvailBlockDetailsRPC, AvailConfig, AvailHeader, BlockHash, BlockNumber, Cell, GDataProof, GRow,
+	ABlockDetailsRPC, AvailConfig, AvailHeader, BlockHash, BlockNumber, Cell, GDataProof, GRow,
 };
 use subxt::backend::legacy::rpc_methods::{Bytes, SystemHealth};
 use subxt::backend::rpc::RpcClient;
@@ -25,11 +25,7 @@ pub struct Rpc {
 }
 
 impl Rpc {
-	pub async fn new(endpoint: &str, secure: bool) -> Result<Self, Box<dyn std::error::Error>> {
-		let client: RpcClient = match secure {
-			true => RpcClient::from_url(endpoint).await?,
-			false => RpcClient::from_insecure_url(endpoint).await?,
-		};
+	pub async fn new(client: RpcClient) -> Result<Self, Box<dyn std::error::Error>> {
 		let legacy_methods = LegacyRpcMethods::new(client.clone());
 		let kate = Kate::new(client.clone());
 		let author = Author::new(client.clone());
@@ -236,10 +232,7 @@ impl Chain {
 		Self { client }
 	}
 
-	pub async fn get_block(
-		&self,
-		at: Option<BlockHash>,
-	) -> Result<AvailBlockDetailsRPC, subxt::Error> {
+	pub async fn get_block(&self, at: Option<BlockHash>) -> Result<ABlockDetailsRPC, subxt::Error> {
 		get_block(&self.client, at).await
 	}
 
@@ -262,9 +255,18 @@ impl Chain {
 pub async fn get_block(
 	client: &RpcClient,
 	at: Option<BlockHash>,
-) -> Result<AvailBlockDetailsRPC, subxt::Error> {
-	let value: AvailBlockDetailsRPC = client.request("chain_getBlock", rpc_params![at]).await?;
+) -> Result<ABlockDetailsRPC, subxt::Error> {
+	let value: ABlockDetailsRPC = client.request("chain_getBlock", rpc_params![at]).await?;
 	Ok(value)
+}
+
+pub async fn get_latest_block(client: &RpcClient) -> Result<ABlockDetailsRPC, subxt::Error> {
+	get_block(client, None).await
+}
+
+pub async fn get_finalized_block(client: &RpcClient) -> Result<ABlockDetailsRPC, subxt::Error> {
+	let hash = get_finalized_head(client).await?;
+	get_block(client, Some(hash)).await
 }
 
 pub async fn get_block_hash(
@@ -275,6 +277,10 @@ pub async fn get_block_hash(
 		.request("chain_getBlockHash", rpc_params![block_number])
 		.await?;
 	Ok(value)
+}
+
+pub async fn get_latest_block_hash(client: &RpcClient) -> Result<BlockHash, subxt::Error> {
+	get_block_hash(client, None).await
 }
 
 pub async fn get_finalized_head(client: &RpcClient) -> Result<BlockHash, subxt::Error> {

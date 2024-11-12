@@ -3,9 +3,8 @@ import { KeyringPair } from "@polkadot/keyring/types"
 import { H256, Keyring, SDK, sdkUtil, WaitFor } from "."
 import { CreateApplicationKeyTx, SubmitDataTx } from "./transactions/da"
 import { Bytes } from "@polkadot/types-codec"
-import { getNonceState, getNonceNode } from "./utils"
 import { TransferKeepAliveTx } from "./transactions/balances"
-import { TransactionFailed } from "./transactions/common"
+import { TransactionFailed, TransactionOptions } from "./transactions/common"
 import { Result } from "neverthrow"
 
 export interface AccountBalance {
@@ -16,14 +15,15 @@ export interface AccountBalance {
 }
 
 export class Account {
-  waitFor: WaitFor = WaitFor.BlockInclusion
-  nonce: number | null = null
-  appId: number | null = null
+  private waitFor: WaitFor = WaitFor.BlockInclusion
+  private nonce: number | null = null
+  private appId: number | null = null
+  private tip: BN | null = null
 
   constructor(
     public sdk: SDK,
     public keyring: KeyringPair,
-  ) {}
+  ) { }
 
   static alice(sdk: SDK): Account {
     return new Account(sdk, new Keyring({ type: "sr25519" }).addFromUri("//Alice"))
@@ -35,6 +35,10 @@ export class Account {
 
   setAppId(value: number | null) {
     this.appId = value
+  }
+
+  setTip(value: BN | null) {
+    this.tip = value
   }
 
   setWaitFor(value: WaitFor) {
@@ -75,29 +79,37 @@ export class Account {
   }
 
   async getNonceState(): Promise<number> {
-    return await getNonceState(this.sdk.api, this.keyring.address)
+    return await sdkUtil.getNonceState(this.sdk.api, this.keyring.address)
   }
 
   async getNonceNode(): Promise<number> {
-    return await getNonceNode(this.sdk.api, this.keyring.address)
+    return await sdkUtil.getNonceNode(this.sdk.api, this.keyring.address)
   }
 
-  async getAppKeys(): Promise<number[]> {
-    return sdkUtil.getAppKeys(this.sdk.api, this.keyring.address)
+  async getAppKeys(): Promise<[string, number][]> {
+    return await sdkUtil.getAppKeys(this.sdk.api, this.keyring.address)
+  }
+
+  async getAppIds(): Promise<number[]> {
+    return await sdkUtil.getAppIds(this.sdk.api, this.keyring.address)
   }
 
   oneAvail(): BN {
     return SDK.oneAvail()
   }
 
-  private buildOptions(): any {
-    const options: any = {}
+  private buildOptions(): TransactionOptions {
+    const options: TransactionOptions = {}
     if (this.nonce != null) {
       options.nonce = this.nonce
     }
 
     if (this.appId != null) {
       options.app_id = this.appId
+    }
+
+    if (this.tip != null) {
+      options.tip = this.tip
     }
 
     return options

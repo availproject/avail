@@ -27,17 +27,25 @@ const main = async () => {
 
   // Fetching app id from Account instance transaction
   const account = new Account(sdk, alice)
-  account.appId = 1
+  account.setAppId(1)
   const tx2 = (await account.submitData(data))._unsafeUnwrap()
   console.log(tx2.appId) // 1
 
   // Fetching all app ids owned by an account via account instance
-  const appIds = await account.getAppKeys()
+  const appIds = await account.getAppIds()
   console.log(appIds) // [0, 1, 2, 3,...]
 
   // Fetching all app ids owned by an account via free function
-  const appIds2 = await sdkUtil.getAppKeys(api, alice.address)
+  const appIds2 = await sdkUtil.getAppIds(api, alice.address)
   console.log(appIds2) // [0, 1, 2, 3,...]
+
+  // Fetching all app keys owned by an account via account instance
+  const appKeys2 = await account.getAppKeys()
+  console.log(appKeys2) // [["App Key", 0], ["App Key 2", 1],...]
+
+  // Fetching all app keys owned by an account via free function
+  const appKeys3 = await sdkUtil.getAppKeys(api, alice.address)
+  console.log(appKeys3) // [["App Key", 0], ["App Key 2", 1],...]
 
   // Fetching app ids from a block via block instance
   const block = await Block.New(api, tx.details.blockHash)

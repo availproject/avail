@@ -2,7 +2,7 @@ import { ApiPromise } from "@polkadot/api"
 import { err, ok, Result } from "neverthrow"
 import { ISubmittableResult } from "@polkadot/types/types/extrinsic"
 import { decodeError } from "../../helpers"
-import { FailedTxResult, getBlockHashAndTxHash, TxResultDetails, WaitFor } from "../transactions/common"
+import { FailedTxResult, getBlockHashAndTxHash, TxResultDetails } from "../transactions/common"
 import { createKeyMulti, encodeAddress, sortAddresses } from "@polkadot/util-crypto"
 import { H256 } from ".."
 import { hexToU8a } from "@polkadot/util"
@@ -150,20 +150,28 @@ export function hexStringToHash(api: ApiPromise, value: string): Result<H256, st
   return ok(hex)
 }
 
-export async function getAppKeys(api: ApiPromise, address: string): Promise<number[]> {
-  const appKeys: number[] = []
+export async function getAppKeys(api: ApiPromise, address: string): Promise<[string, number][]> {
+  const appKeys: [string, number][] = []
+  const decoder = new TextDecoder("utf-8")
   const entries = await api.query.dataAvailability.appKeys.entries()
   entries.forEach((entry: any) => {
     if (entry[1].isSome) {
       const { owner, id } = entry[1].unwrap()
       if (owner.toString() == address) {
-        appKeys.push(parseInt(id.toString()))
+        appKeys.push([decoder.decode(entry[0].slice(49)), parseInt(id.toString())])
       }
     }
   })
 
-  return appKeys.sort((a, b) => a - b)
+  return appKeys.sort((a, b) => a[1] - b[1])
 }
+
+
+export async function getAppIds(api: ApiPromise, address: string): Promise<number[]> {
+  return (await getAppKeys(api, address)).map(e => e[1])
+}
+
+
 
 export function hexStringToHashUnsafe(api: ApiPromise, value: string): H256 {
   const hash = hexStringToHash(api, value)

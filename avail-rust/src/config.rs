@@ -3,7 +3,7 @@ use subxt::{
 	backend::legacy::rpc_methods::{Block as BlockRPC, BlockDetails as BlockDetailsRPC},
 	blocks::{Block, BlocksClient, ExtrinsicDetails, ExtrinsicEvents, Extrinsics, FoundExtrinsic},
 	config::substrate::BlakeTwo256,
-	tx::{TxClient, TxInBlock},
+	tx::{TxClient, TxInBlock, TxProgress},
 	utils::{AccountId32, MultiAddress, MultiSignature, H256},
 	Config, OnlineClient,
 };
@@ -19,19 +19,20 @@ pub type BlockHash = H256;
 /// Clients
 pub type AOnlineClient = OnlineClient<AvailConfig>;
 pub type ABlocksClient = BlocksClient<AvailConfig, AOnlineClient>;
-pub type ABlock = Block<AvailConfig, AOnlineClient>;
+pub type ATxClient = TxClient<AvailConfig, AOnlineClient>;
+
+/// TX status
+pub type ATxProgress = TxProgress<AvailConfig, AOnlineClient>;
+pub type ATxInBlock = TxInBlock<AvailConfig, AOnlineClient>;
 pub type AExtrinsicEvents = ExtrinsicEvents<AvailConfig>;
 pub type AExtrinsicDetails = ExtrinsicDetails<AvailConfig, AOnlineClient>;
 pub type AExtrinsics = Extrinsics<AvailConfig, AOnlineClient>;
 pub type AFoundExtrinsic<T> = FoundExtrinsic<AvailConfig, AOnlineClient, T>;
-pub type ATxClient = TxClient<AvailConfig, AOnlineClient>;
-
-/// TX status
-pub type TransactionInBlock = TxInBlock<AvailConfig, AOnlineClient>;
+pub type ABlock = Block<AvailConfig, AOnlineClient>;
 
 /// Used only when chain_getBlock RPC is called. This is part of legacy baggage.
-pub type AvailBlockDetailsRPC = BlockDetailsRPC<AvailConfig>;
-pub type AvailBlockRPC = BlockRPC<AvailConfig>;
+pub type ABlockDetailsRPC = BlockDetailsRPC<AvailConfig>;
+pub type ABlockRPC = BlockRPC<AvailConfig>;
 
 /// A struct representing the signed extra and additional parameters required
 /// to construct a transaction for a avail node.

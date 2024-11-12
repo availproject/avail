@@ -1,33 +1,30 @@
 use crate::avail::runtime_types::da_runtime::primitives::SessionKeys;
 use crate::sdk::WaitFor;
-use crate::utils_raw::fetch_transaction;
-use crate::{avail, ABlocksClient, ATxClient, H256};
+use crate::{avail, AOnlineClient};
 
 use subxt::backend::rpc::RpcClient;
 use subxt_signer::sr25519::Keypair;
 
-use super::{options::Options, sign_and_submit_and_progress_transaction, TxResultDetails};
+use super::{options::Options, progress_and_parse_transaction, TransactionDetails};
 
 use avail::session::calls::types as SessionCalls;
 
 #[derive(Debug)]
 pub struct SetKeysTxSuccess {
 	pub data: SessionCalls::SetKeys,
-	pub details: TxResultDetails,
+	pub details: TransactionDetails,
 }
 
 #[derive(Clone)]
 pub struct Session {
-	tx_client: ATxClient,
-	blocks_client: ABlocksClient,
+	online_client: AOnlineClient,
 	rpc_client: RpcClient,
 }
 
 impl Session {
-	pub fn new(tx_client: ATxClient, rpc_client: RpcClient, blocks_client: ABlocksClient) -> Self {
+	pub fn new(online_client: AOnlineClient, rpc_client: RpcClient) -> Self {
 		Self {
-			tx_client,
-			blocks_client,
+			online_client,
 			rpc_client,
 		}
 	}
@@ -40,9 +37,8 @@ impl Session {
 		options: Option<Options>,
 	) -> Result<SetKeysTxSuccess, String> {
 		let call = avail::tx().session().set_keys(keys, vec![]);
-		let details = sign_and_submit_and_progress_transaction(
-			&self.tx_client,
-			&self.blocks_client,
+		let details = progress_and_parse_transaction(
+			&self.online_client,
 			&self.rpc_client,
 			account,
 			call,
@@ -51,20 +47,13 @@ impl Session {
 		)
 		.await?;
 
-		let data =
-			tx_data_session_set_keys(&self.blocks_client, details.block_hash, details.tx_hash)
-				.await?;
+		let block = details.fetch_block(&self.online_client).await;
+		let block = block.map_err(|e| e.to_string())?;
+		let data = block.transaction_by_index_static::<SessionCalls::SetKeys>(details.tx_index);
+		let data = data
+			.ok_or(String::from("Failed to find transaction data"))?
+			.value;
 
 		Ok(SetKeysTxSuccess { data, details })
 	}
-}
-
-pub async fn tx_data_session_set_keys(
-	client: &ABlocksClient,
-	block_hash: H256,
-	tx_hash: H256,
-) -> Result<SessionCalls::SetKeys, String> {
-	let transaction = fetch_transaction::<SessionCalls::SetKeys>(client, block_hash, tx_hash).await;
-	let transaction = transaction.map_err(|err| err.to_string())?;
-	Ok(transaction.value)
 }

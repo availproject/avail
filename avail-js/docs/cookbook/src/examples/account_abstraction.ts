@@ -17,6 +17,7 @@ const main = async () => {
   console.log(await account.getNonceNode())
   console.log(await account.getNonceState())
   console.log(await account.getAppKeys())
+  console.log(await account.getAppIds())
 
   /*
       Three most common transactions are as well part of the Account interface.

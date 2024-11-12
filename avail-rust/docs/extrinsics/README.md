@@ -773,7 +773,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn bond(&self, value: u128, payee: RewardDestination, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<BondTxSuccess, String>;
+async fn bond(&self, value: u128, payee: RewardDestination, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<BondTx, String>;
 ```
 
 #### Parameters
@@ -838,10 +838,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `BondTxSuccess`.
+If the operation is successful, the function will return a object of type `BondTx`.
 
 ```rust
-BondTxSuccess {
+BondTx {
     event: Bonded {
         stash: AccountId32(...),
         amount: 100000000000000000000000,
@@ -869,7 +869,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn bond_extra(&self, max_additional: u128, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<BondExtraTxSuccess, String>;
+async fn bond_extra(&self, max_additional: u128, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<BondExtraTx, String>;
 ```
 
 #### Parameters
@@ -932,10 +932,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `BondExtraTxSuccess`.
+If the operation is successful, the function will return a object of type `BondExtraTx`.
 
 ```rust
-BondExtraTxSuccess {
+BondExtraTx {
     event: Bonded {
         stash: AccountId32(...),
         amount: 1000000000000000000,
@@ -963,7 +963,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn chill(&self, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<ChillTxSuccess, String>;
+async fn chill(&self, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<ChillTx, String>;
 ```
 
 #### Parameters
@@ -1024,10 +1024,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `ChillTxSuccess`.
+If the operation is successful, the function will return a object of type `ChillTx`.
 
 ```rust
-ChillTxSuccess {
+ChillTx {
     event: Some(
         Chilled {
             stash: AccountId32(...),
@@ -1056,7 +1056,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn chill_other(&self, stash: &str, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<ChillOtherTxSuccess, String>;
+async fn chill_other(&self, stash: &str, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<ChillOtherTx, String>;
 ```
 
 #### Parameters
@@ -1118,7 +1118,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn nominate( &self, targets: &[String], wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<NominateTxSuccess, String>;
+async fn nominate( &self, targets: &[String], wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<NominateTx, String>;
 ```
 
 #### Parameters
@@ -1188,10 +1188,10 @@ Error: "Runtime error: Pallet error: Staking::NotController"
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `NominateTxSuccess`.
+If the operation is successful, the function will return a object of type `NominateTx`.
 
 ```rust
-NominateTxSuccess {
+NominateTx {
     events: ExtrinsicEvents {
         ext_hash: 0x6e0ae6fde353974f8b46aace441c49ba7ab135fa3743e0e1331d35c4528dacfb,
         idx: 1,
@@ -1221,7 +1221,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn unbond(&self, value: u128, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<UnbondTxSuccess, String>;
+async fn unbond(&self, value: u128, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<UnbondTx, String>;
 ```
 
 #### Parameters
@@ -1284,10 +1284,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `UnbondTxSuccess`.
+If the operation is successful, the function will return a object of type `UnbondTx`.
 
 ```rust
-UnbondTxSuccess {
+UnbondTx {
     event: Unbonded {
         stash: AccountId32(...),
         amount: 1000000000000000000,
@@ -1315,7 +1315,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn validate(&self, commission: u8, blocked: bool, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<ValidateTxSuccess, String>;
+async fn validate(&self, commission: u8, blocked: bool, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<ValidateTx, String>;
 ```
 
 #### Parameters
@@ -1380,10 +1380,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `ValidateTxSuccess`.
+If the operation is successful, the function will return a object of type `ValidateTx`.
 
 ```rust
-ValidateTxSuccess {
+ValidateTx {
     event: ValidatorPrefsSet {
         stash: AccountId32(...),
         prefs: ValidatorPrefs {
@@ -1486,7 +1486,7 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `BondTxSuccess`.
+If the operation is successful, the function will return a object of type `BondTx`.
 
 ```rust
 SetKeysTxSuccess {

@@ -1,7 +1,8 @@
 use subxt::backend::rpc::RpcClient;
 
+use crate::error::ClientError;
 use crate::rpcs::{account_next_index, get_block_hash, get_finalized_head, get_header};
-use crate::{ABlocksClient, AccountId, AvailExtrinsicParamsBuilder, BlockHash};
+use crate::{AOnlineClient, AccountId, AvailExtrinsicParamsBuilder, BlockHash};
 
 use super::Params;
 
@@ -62,12 +63,12 @@ pub enum Nonce {
 	Custom(u32),
 }
 
-pub async fn from_options_to_params(
+pub async fn parse_options(
+	online_client: &AOnlineClient,
 	rpc_client: &RpcClient,
-	blocks_client: &ABlocksClient,
 	account: &AccountId,
 	options: Option<Options>,
-) -> Result<Params, String> {
+) -> Result<Params, ClientError> {
 	let Some(options) = options else {
 		return Ok(AvailExtrinsicParamsBuilder::new().build());
 	};
@@ -80,34 +81,25 @@ pub async fn from_options_to_params(
 		period: 32,
 		block_hash: None,
 	});
-	let header = get_header(rpc_client, mortality.block_hash);
-	let header = header.await.map_err(|e| e.to_string())?;
+	let header = get_header(rpc_client, mortality.block_hash).await?;
 	builder = builder.mortal(&header, mortality.period);
 
 	if let Some(nonce) = options.nonce {
 		builder = match nonce {
 			Nonce::BestBlock => {
-				let hash = get_block_hash(rpc_client, None).await.unwrap();
-				let block = blocks_client.at(hash).await.map_err(|e| e.to_string())?;
-				let nonce = block
-					.account_nonce(&account)
-					.await
-					.map_err(|e| e.to_string())?;
+				let hash = get_block_hash(rpc_client, None).await?;
+				let block = online_client.blocks().at(hash).await?;
+				let nonce = block.account_nonce(&account).await?;
 				builder.nonce(nonce)
 			},
 			Nonce::FinalizedBlock => {
-				let hash = get_finalized_head(rpc_client).await.unwrap();
-				let block = blocks_client.at(hash).await.map_err(|e| e.to_string())?;
-				let nonce = block
-					.account_nonce(&account)
-					.await
-					.map_err(|e| e.to_string())?;
+				let hash = get_finalized_head(rpc_client).await?;
+				let block = online_client.blocks().at(hash).await?;
+				let nonce = block.account_nonce(&account).await?;
 				builder.nonce(nonce)
 			},
 			Nonce::BestBlockAndTxPool => {
-				let nonce = account_next_index(rpc_client, account.to_string())
-					.await
-					.map_err(|e| e.to_string())?;
+				let nonce = account_next_index(rpc_client, account.to_string()).await?;
 				builder.nonce(nonce as u64)
 			},
 			Nonce::Custom(x) => builder.nonce(x as u64),

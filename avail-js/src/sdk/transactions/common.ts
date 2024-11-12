@@ -3,7 +3,7 @@ import { ISubmittableResult } from "@polkadot/types/types/extrinsic"
 import { EventRecord, H256, SignedBlock } from "@polkadot/types/interfaces/types"
 import { err, ok, Result } from "neverthrow"
 import { SubmittableExtrinsic } from "@polkadot/api/types"
-import { Block, KeyringPair } from ".."
+import { Block, BN, KeyringPair } from ".."
 import { parseTransactionResult } from "../utils"
 import { GenericExtrinsic } from "@polkadot/types"
 
@@ -72,6 +72,7 @@ export type GenericFailure = { isErr: true; reason: string }
 export interface TransactionOptions {
   app_id?: number
   nonce?: number
+  tip?: BN
   era?: number
   blockHash?: H256
 }

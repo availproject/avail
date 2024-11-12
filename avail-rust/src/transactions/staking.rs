@@ -1,8 +1,7 @@
 use crate::api_dev::api::runtime_types::pallet_staking::ValidatorPrefs;
 use crate::api_dev::api::runtime_types::sp_arithmetic::per_things::Perbill;
 use crate::sdk::WaitFor;
-use crate::utils_raw::fetch_transaction;
-use crate::{avail, ABlocksClient, ATxClient, AccountId, RewardDestination, H256};
+use crate::{avail, AOnlineClient, AccountId, RewardDestination};
 
 use std::str::FromStr;
 use subxt::backend::rpc::RpcClient;
@@ -12,62 +11,60 @@ use subxt_signer::sr25519::Keypair;
 use avail::staking::calls::types as StakingCalls;
 use avail::staking::events as StakingEvents;
 
-use super::{options::Options, sign_and_submit_and_progress_transaction, TxResultDetails};
+use super::{options::Options, progress_and_parse_transaction, TransactionDetails};
 
 #[derive(Debug)]
-pub struct BondTxSuccess {
+pub struct BondTx {
 	pub event: StakingEvents::Bonded,
-	pub details: TxResultDetails,
+	pub details: TransactionDetails,
 }
 
 #[derive(Debug)]
-pub struct BondExtraTxSuccess {
+pub struct BondExtraTx {
 	pub event: StakingEvents::Bonded,
-	pub details: TxResultDetails,
+	pub details: TransactionDetails,
 }
 
 #[derive(Debug)]
-pub struct ChillTxSuccess {
+pub struct ChillTx {
 	pub event: Option<StakingEvents::Chilled>,
-	pub details: TxResultDetails,
+	pub details: TransactionDetails,
 }
 
 #[derive(Debug)]
-pub struct ChillOtherTxSuccess {
+pub struct ChillOtherTx {
 	pub event: StakingEvents::Chilled,
-	pub details: TxResultDetails,
+	pub details: TransactionDetails,
 }
 
 #[derive(Debug)]
-pub struct NominateTxSuccess {
+pub struct NominateTx {
 	pub data: StakingCalls::Nominate,
-	pub details: TxResultDetails,
+	pub details: TransactionDetails,
 }
 
 #[derive(Debug)]
-pub struct UnbondTxSuccess {
+pub struct UnbondTx {
 	pub event: StakingEvents::Unbonded,
-	pub details: TxResultDetails,
+	pub details: TransactionDetails,
 }
 
 #[derive(Debug)]
-pub struct ValidateTxSuccess {
+pub struct ValidateTx {
 	pub event: StakingEvents::ValidatorPrefsSet,
-	pub details: TxResultDetails,
+	pub details: TransactionDetails,
 }
 
 #[derive(Clone)]
 pub struct Staking {
-	tx_client: ATxClient,
-	blocks_client: ABlocksClient,
+	online_client: AOnlineClient,
 	rpc_client: RpcClient,
 }
 
 impl Staking {
-	pub fn new(tx_client: ATxClient, rpc_client: RpcClient, blocks_client: ABlocksClient) -> Self {
+	pub fn new(online_client: AOnlineClient, rpc_client: RpcClient) -> Self {
 		Self {
-			tx_client,
-			blocks_client,
+			online_client,
 			rpc_client,
 		}
 	}
@@ -79,11 +76,10 @@ impl Staking {
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
-	) -> Result<BondTxSuccess, String> {
+	) -> Result<BondTx, String> {
 		let call = avail::tx().staking().bond(value, payee);
-		let details = sign_and_submit_and_progress_transaction(
-			&self.tx_client,
-			&self.blocks_client,
+		let details = progress_and_parse_transaction(
+			&self.online_client,
 			&self.rpc_client,
 			account,
 			call,
@@ -97,7 +93,7 @@ impl Staking {
 			return Err(String::from("Failed to find Bonded event"));
 		};
 
-		Ok(BondTxSuccess { event, details })
+		Ok(BondTx { event, details })
 	}
 
 	pub async fn bond_extra(
@@ -106,11 +102,10 @@ impl Staking {
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
-	) -> Result<BondExtraTxSuccess, String> {
+	) -> Result<BondExtraTx, String> {
 		let call = avail::tx().staking().bond_extra(max_additional);
-		let details = sign_and_submit_and_progress_transaction(
-			&self.tx_client,
-			&self.blocks_client,
+		let details = progress_and_parse_transaction(
+			&self.online_client,
 			&self.rpc_client,
 			account,
 			call,
@@ -124,7 +119,7 @@ impl Staking {
 			return Err(String::from("Failed to find Bonded event"));
 		};
 
-		Ok(BondExtraTxSuccess { event, details })
+		Ok(BondExtraTx { event, details })
 	}
 
 	pub async fn chill(
@@ -132,11 +127,10 @@ impl Staking {
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
-	) -> Result<ChillTxSuccess, String> {
+	) -> Result<ChillTx, String> {
 		let call = avail::tx().staking().chill();
-		let details = sign_and_submit_and_progress_transaction(
-			&self.tx_client,
-			&self.blocks_client,
+		let details = progress_and_parse_transaction(
+			&self.online_client,
 			&self.rpc_client,
 			account,
 			call,
@@ -151,7 +145,7 @@ impl Staking {
 			.ok()
 			.flatten();
 
-		Ok(ChillTxSuccess { event, details })
+		Ok(ChillTx { event, details })
 	}
 
 	pub async fn chill_other(
@@ -160,16 +154,15 @@ impl Staking {
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
-	) -> Result<ChillOtherTxSuccess, String> {
+	) -> Result<ChillOtherTx, String> {
 		let stash = match AccountId::from_str(stash) {
 			Ok(stash) => stash,
 			Err(error) => return Err(std::format!("{:?}", error)),
 		};
 
 		let call = avail::tx().staking().chill_other(stash);
-		let details = sign_and_submit_and_progress_transaction(
-			&self.tx_client,
-			&self.blocks_client,
+		let details = progress_and_parse_transaction(
+			&self.online_client,
 			&self.rpc_client,
 			account,
 			call,
@@ -182,7 +175,7 @@ impl Staking {
 			return Err(String::from("Failed to find Chilled event"));
 		};
 
-		Ok(ChillOtherTxSuccess { event, details })
+		Ok(ChillOtherTx { event, details })
 	}
 
 	pub async fn nominate(
@@ -191,7 +184,7 @@ impl Staking {
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
-	) -> Result<NominateTxSuccess, String> {
+	) -> Result<NominateTx, String> {
 		let targets: Result<Vec<AccountId>, _> = targets
 			.iter()
 			.map(|address| AccountId::from_str(address))
@@ -200,9 +193,8 @@ impl Staking {
 		let targets = targets.into_iter().map(|a| MultiAddress::Id(a)).collect();
 
 		let call = avail::tx().staking().nominate(targets);
-		let details = sign_and_submit_and_progress_transaction(
-			&self.tx_client,
-			&self.blocks_client,
+		let details = progress_and_parse_transaction(
+			&self.online_client,
 			&self.rpc_client,
 			account,
 			call,
@@ -211,11 +203,14 @@ impl Staking {
 		)
 		.await?;
 
-		let data =
-			tx_data_staking_nominate(&self.blocks_client, details.block_hash, details.tx_hash)
-				.await?;
+		let block = details.fetch_block(&self.online_client).await;
+		let block = block.map_err(|e| e.to_string())?;
+		let data = block.transaction_by_index_static::<StakingCalls::Nominate>(details.tx_index);
+		let data = data
+			.ok_or(String::from("Failed to find transaction data"))?
+			.value;
 
-		Ok(NominateTxSuccess { data, details })
+		Ok(NominateTx { data, details })
 	}
 
 	pub async fn unbond(
@@ -224,11 +219,10 @@ impl Staking {
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
-	) -> Result<UnbondTxSuccess, String> {
+	) -> Result<UnbondTx, String> {
 		let call = avail::tx().staking().unbond(value);
-		let details = sign_and_submit_and_progress_transaction(
-			&self.tx_client,
-			&self.blocks_client,
+		let details = progress_and_parse_transaction(
+			&self.online_client,
 			&self.rpc_client,
 			account,
 			call,
@@ -242,7 +236,7 @@ impl Staking {
 			return Err(String::from("Failed to find Unbonded event"));
 		};
 
-		Ok(UnbondTxSuccess { event, details })
+		Ok(UnbondTx { event, details })
 	}
 
 	pub async fn validate(
@@ -252,7 +246,7 @@ impl Staking {
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
-	) -> Result<ValidateTxSuccess, String> {
+	) -> Result<ValidateTx, String> {
 		if commission > 100 {
 			return Err(String::from("Commission cannot be more than 100"));
 		}
@@ -264,9 +258,8 @@ impl Staking {
 		};
 
 		let call = avail::tx().staking().validate(perfs);
-		let details = sign_and_submit_and_progress_transaction(
-			&self.tx_client,
-			&self.blocks_client,
+		let details = progress_and_parse_transaction(
+			&self.online_client,
 			&self.rpc_client,
 			account,
 			call,
@@ -282,17 +275,6 @@ impl Staking {
 			return Err(String::from("Failed to find ValidatorPrefsSet event"));
 		};
 
-		Ok(ValidateTxSuccess { event, details })
+		Ok(ValidateTx { event, details })
 	}
-}
-
-pub async fn tx_data_staking_nominate(
-	client: &ABlocksClient,
-	block_hash: H256,
-	tx_hash: H256,
-) -> Result<StakingCalls::Nominate, String> {
-	let transaction =
-		fetch_transaction::<StakingCalls::Nominate>(client, block_hash, tx_hash).await;
-	let transaction = transaction.map_err(|err| err.to_string())?;
-	Ok(transaction.value)
 }
