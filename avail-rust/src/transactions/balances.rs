@@ -72,7 +72,7 @@ impl Balances {
 		.await?;
 
 		let event = find_event_or_return_error::<BalancesEvents::Transfer>(
-			"Failed to find Transfer event",
+			"Failed to find Balances::Transfer event",
 			&details,
 		)?;
 		let event2 = find_event_or_nothing::<SystemEvents::KilledAccount>(&details);
@@ -111,7 +111,7 @@ impl Balances {
 		.await?;
 
 		let event = find_event_or_return_error::<BalancesEvents::Transfer>(
-			"Failed to find Transfer event",
+			"Failed to find Balances::Transfer event",
 			&details,
 		)?;
 		let event2 = find_event_or_nothing::<SystemEvents::KilledAccount>(&details);
@@ -150,7 +150,7 @@ impl Balances {
 		.await?;
 
 		let event = find_event_or_return_error::<BalancesEvents::Transfer>(
-			"Failed to find Transfer event",
+			"Failed to find Balances::Transfer event",
 			&details,
 		)?;
 

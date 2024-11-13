@@ -5,6 +5,7 @@ use crate::{avail, AOnlineClient};
 use subxt::backend::rpc::RpcClient;
 use subxt_signer::sr25519::Keypair;
 
+use super::{find_data_or_return_error, TransactionFailed};
 use super::{options::Options, progress_and_parse_transaction, TransactionDetails};
 
 use avail::session::calls::types as SessionCalls;
@@ -35,7 +36,7 @@ impl Session {
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
-	) -> Result<SetKeysTxSuccess, String> {
+	) -> Result<SetKeysTxSuccess, TransactionFailed> {
 		let call = avail::tx().session().set_keys(keys, vec![]);
 		let details = progress_and_parse_transaction(
 			&self.online_client,
@@ -47,12 +48,12 @@ impl Session {
 		)
 		.await?;
 
-		let block = details.fetch_block(&self.online_client).await;
-		let block = block.map_err(|e| e.to_string())?;
-		let data = block.transaction_by_index_static::<SessionCalls::SetKeys>(details.tx_index);
-		let data = data
-			.ok_or(String::from("Failed to find transaction data"))?
-			.value;
+		let data = find_data_or_return_error::<SessionCalls::SetKeys>(
+			&self.online_client,
+			"Failed to find Session::SetKeys data",
+			&details,
+		)
+		.await?;
 
 		Ok(SetKeysTxSuccess { data, details })
 	}

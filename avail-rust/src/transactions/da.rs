@@ -11,7 +11,7 @@ use avail::sudo::events as SudoEvents;
 use subxt::backend::rpc::RpcClient;
 use subxt_signer::sr25519::Keypair;
 
-use super::{find_event_or_return_error, TransactionFailed};
+use super::{find_data_or_return_error, find_event_or_return_error, TransactionFailed};
 use super::{options::Options, progress_and_parse_transaction, TransactionDetails};
 
 #[derive(Debug)]
@@ -78,21 +78,16 @@ impl DataAvailability {
 		.await?;
 
 		let event = find_event_or_return_error::<DataAvailabilityEvents::DataSubmitted>(
-			"Failed to find DataSubmitted event",
+			"Failed to find DataAvailability::DataSubmitted event",
 			&details,
 		)?;
 
-		let block = details.fetch_block(&self.online_client).await;
-		let block = block.map_err(|e| TransactionFailed {
-			reason: e.into(),
-			details: Some(details.clone()),
-		})?;
-
-		let data = block
-			.transaction_by_index_static::<DataAvailabilityCalls::SubmitData>(details.tx_index);
-		let data = data
-			.ok_or(String::from("Failed to find transaction data"))?
-			.value;
+		let data = find_data_or_return_error::<DataAvailabilityCalls::SubmitData>(
+			&self.online_client,
+			"Failed to find DataAvailability::SubmitData data",
+			&details,
+		)
+		.await?;
 
 		Ok(SubmitDataTx {
 			event,
@@ -120,7 +115,7 @@ impl DataAvailability {
 		.await?;
 
 		let event = find_event_or_return_error::<DataAvailabilityEvents::ApplicationKeyCreated>(
-			"Failed to find ApplicationKeyCreated event",
+			"Failed to find DataAvailability::ApplicationKeyCreated event",
 			&details,
 		)?;
 
@@ -153,7 +148,7 @@ impl DataAvailability {
 		.await?;
 
 		let sudo_event = find_event_or_return_error::<SudoEvents::Sudid>(
-			"Failed to find Sudid event",
+			"Failed to find Sudo::Sudid event",
 			&details,
 		)?;
 
@@ -165,7 +160,7 @@ impl DataAvailability {
 		}
 
 		let event = find_event_or_return_error::<DataAvailabilityEvents::ApplicationKeySet>(
-			"Failed to find ApplicationKeySet event",
+			"Failed to find DataAvailability::ApplicationKeySet event",
 			&details,
 		)?;
 
@@ -198,7 +193,7 @@ impl DataAvailability {
 		.await?;
 
 		let sudo_event = find_event_or_return_error::<SudoEvents::Sudid>(
-			"Failed to find Sudid event",
+			"Failed to find Sudo::Sudid event",
 			&details,
 		)?;
 
@@ -211,7 +206,7 @@ impl DataAvailability {
 
 		let event =
 			find_event_or_return_error::<DataAvailabilityEvents::BlockLengthProposalSubmitted>(
-				"Failed to find BlockLengthProposalSubmitted event",
+				"Failed to find DataAvailability::BlockLengthProposalSubmitted event",
 				&details,
 			)?;
 
@@ -242,7 +237,7 @@ impl DataAvailability {
 		.await?;
 
 		let sudo_event = find_event_or_return_error::<SudoEvents::Sudid>(
-			"Failed to find Sudid event",
+			"Failed to find Sudo::Sudid event",
 			&details,
 		)?;
 
@@ -254,7 +249,7 @@ impl DataAvailability {
 		}
 
 		let event = find_event_or_return_error::<DataAvailabilityEvents::SubmitDataFeeModifierSet>(
-			"Failed to find SubmitDataFeeModifierSet event",
+			"Failed to find DataAvailability::SubmitDataFeeModifierSet event",
 			&details,
 		)?;
 

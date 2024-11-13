@@ -14,7 +14,9 @@ use std::str::FromStr;
 use subxt::backend::rpc::RpcClient;
 use subxt_signer::sr25519::Keypair;
 
-use super::TransactionFailed;
+use super::{
+	find_data_or_return_error, find_event_or_nothing, find_event_or_return_error, TransactionFailed,
+};
 use super::{options::Options, progress_and_parse_transaction, TransactionDetails};
 
 #[derive(Debug)]
@@ -151,13 +153,12 @@ impl NominationPools {
 		)
 		.await?;
 
-		let block = details.fetch_block(&self.online_client).await;
-		let block = block.map_err(|e| e.to_string())?;
-		let data =
-			block.transaction_by_index_static::<NominationPoolsCalls::Nominate>(details.tx_index);
-		let data = data
-			.ok_or(String::from("Failed to find transaction data"))?
-			.value;
+		let data = find_data_or_return_error::<NominationPoolsCalls::Nominate>(
+			&self.online_client,
+			"Failed to find NominationPools::Nominate data",
+			&details,
+		)
+		.await?;
 
 		Ok(NominateTx { data, details })
 	}
@@ -181,10 +182,10 @@ impl NominationPools {
 		)
 		.await?;
 
-		let event = details.events.find_first::<NominationPoolsEvents::Bonded>();
-		let Some(event) = event.ok().flatten() else {
-			return Err(String::from("Failed to find Bonded event"));
-		};
+		let event = find_event_or_return_error::<NominationPoolsEvents::Bonded>(
+			"Failed to find NominationPools::Bonded event",
+			&details,
+		)?;
 
 		Ok(JoinTx { event, details })
 	}
@@ -221,17 +222,15 @@ impl NominationPools {
 		)
 		.await?;
 
-		let event = details
-			.events
-			.find_first::<NominationPoolsEvents::Created>();
-		let Some(event) = event.ok().flatten() else {
-			return Err(String::from("Failed to find Created event"));
-		};
+		let event = find_event_or_return_error::<NominationPoolsEvents::Created>(
+			"Failed to find NominationPools::Created event",
+			&details,
+		)?;
 
-		let event2 = details.events.find_first::<NominationPoolsEvents::Bonded>();
-		let Some(event2) = event2.ok().flatten() else {
-			return Err(String::from("Failed to find Bonded event"));
-		};
+		let event2 = find_event_or_return_error::<NominationPoolsEvents::Bonded>(
+			"Failed to find NominationPools::Bonded event",
+			&details,
+		)?;
 
 		Ok(CreateWithPoolIdTx {
 			event,
@@ -270,17 +269,15 @@ impl NominationPools {
 		)
 		.await?;
 
-		let event = details
-			.events
-			.find_first::<NominationPoolsEvents::Created>();
-		let Some(event) = event.ok().flatten() else {
-			return Err(String::from("Failed to find Created event"));
-		};
+		let event = find_event_or_return_error::<NominationPoolsEvents::Created>(
+			"Failed to find NominationPools::Created event",
+			&details,
+		)?;
 
-		let event2 = details.events.find_first::<NominationPoolsEvents::Bonded>();
-		let Some(event2) = event2.ok().flatten() else {
-			return Err(String::from("Failed to find Bonded event"));
-		};
+		let event2 = find_event_or_return_error::<NominationPoolsEvents::Bonded>(
+			"Failed to find NominationPools::Bonded event",
+			&details,
+		)?;
 
 		Ok(CreateTx {
 			event,
@@ -307,10 +304,10 @@ impl NominationPools {
 		)
 		.await?;
 
-		let event = details.events.find_first::<NominationPoolsEvents::Bonded>();
-		let Some(event) = event.ok().flatten() else {
-			return Err(String::from("Failed to find Bonded event"));
-		};
+		let event = find_event_or_return_error::<NominationPoolsEvents::Bonded>(
+			"Failed to find NominationPools::Bonded event",
+			&details,
+		)?;
 
 		Ok(BondExtraTx { event, details })
 	}
@@ -344,12 +341,10 @@ impl NominationPools {
 		)
 		.await?;
 
-		let event = details
-			.events
-			.find_first::<NominationPoolsEvents::PoolCommissionUpdated>();
-		let Some(event) = event.ok().flatten() else {
-			return Err(String::from("Failed to find PoolCommissionUpdated event"));
-		};
+		let event = find_event_or_return_error::<NominationPoolsEvents::PoolCommissionUpdated>(
+			"Failed to find NominationPools::PoolCommissionUpdated event",
+			&details,
+		)?;
 
 		Ok(SetCommissionTx { event, details })
 	}
@@ -373,10 +368,7 @@ impl NominationPools {
 		)
 		.await?;
 
-		let event = details
-			.events
-			.find_first::<NominationPoolsEvents::StateChanged>();
-		let event = event.ok().flatten();
+		let event = find_event_or_nothing::<NominationPoolsEvents::StateChanged>(&details);
 
 		Ok(SetStateTx { event, details })
 	}
@@ -398,10 +390,7 @@ impl NominationPools {
 		)
 		.await?;
 
-		let event = details
-			.events
-			.find_first::<NominationPoolsEvents::PaidOut>();
-		let event = event.ok().flatten();
+		let event = find_event_or_nothing::<NominationPoolsEvents::PaidOut>(&details);
 
 		Ok(ClaimPayoutTx { event, details })
 	}
@@ -467,12 +456,11 @@ impl NominationPools {
 			options,
 		)
 		.await?;
-		let event = details
-			.events
-			.find_first::<NominationPoolsEvents::PoolCommissionClaimed>();
-		let Some(event) = event.ok().flatten() else {
-			return Err(String::from("Failed to find PoolCommissionClaimed event"));
-		};
+
+		let event = find_event_or_return_error::<NominationPoolsEvents::PoolCommissionClaimed>(
+			"Failed to find NominationPools::PoolCommissionClaimed event",
+			&details,
+		)?;
 
 		Ok(ClaimCommissionTx { event, details })
 	}
@@ -498,10 +486,7 @@ impl NominationPools {
 		)
 		.await?;
 
-		let event = details
-			.events
-			.find_first::<NominationPoolsEvents::PaidOut>();
-		let event = event.ok().flatten();
+		let event = find_event_or_nothing::<NominationPoolsEvents::PaidOut>(&details);
 
 		Ok(ClaimPayoutOtherTx { event, details })
 	}
@@ -527,10 +512,8 @@ impl NominationPools {
 			options,
 		)
 		.await?;
-		let event = details
-			.events
-			.find_first::<NominationPoolsEvents::Unbonded>();
-		let event = event.ok().flatten();
+
+		let event = find_event_or_nothing::<NominationPoolsEvents::Unbonded>(&details);
 
 		Ok(UnbondTx { event, details })
 	}
@@ -581,10 +564,7 @@ impl NominationPools {
 		)
 		.await?;
 
-		let event = details
-			.events
-			.find_first::<NominationPoolsEvents::Withdrawn>();
-		let event = event.ok().flatten();
+		let event = find_event_or_nothing::<NominationPoolsEvents::Withdrawn>(&details);
 
 		Ok(WithdrawUnbondedTx { event, details })
 	}

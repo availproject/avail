@@ -11,6 +11,9 @@ use subxt_signer::sr25519::Keypair;
 use avail::staking::calls::types as StakingCalls;
 use avail::staking::events as StakingEvents;
 
+use super::{
+	find_data_or_return_error, find_event_or_nothing, find_event_or_return_error, TransactionFailed,
+};
 use super::{options::Options, progress_and_parse_transaction, TransactionDetails};
 
 #[derive(Debug)]
@@ -76,7 +79,7 @@ impl Staking {
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
-	) -> Result<BondTx, String> {
+	) -> Result<BondTx, TransactionFailed> {
 		let call = avail::tx().staking().bond(value, payee);
 		let details = progress_and_parse_transaction(
 			&self.online_client,
@@ -88,11 +91,10 @@ impl Staking {
 		)
 		.await?;
 
-		let event = details.events.find_first::<StakingEvents::Bonded>();
-		let Some(event) = event.ok().flatten() else {
-			return Err(String::from("Failed to find Bonded event"));
-		};
-
+		let event = find_event_or_return_error::<StakingEvents::Bonded>(
+			"Failed to find Staking::Bonded event",
+			&details,
+		)?;
 		Ok(BondTx { event, details })
 	}
 
@@ -102,7 +104,7 @@ impl Staking {
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
-	) -> Result<BondExtraTx, String> {
+	) -> Result<BondExtraTx, TransactionFailed> {
 		let call = avail::tx().staking().bond_extra(max_additional);
 		let details = progress_and_parse_transaction(
 			&self.online_client,
@@ -114,10 +116,10 @@ impl Staking {
 		)
 		.await?;
 
-		let event = details.events.find_first::<StakingEvents::Bonded>();
-		let Some(event) = event.ok().flatten() else {
-			return Err(String::from("Failed to find Bonded event"));
-		};
+		let event = find_event_or_return_error::<StakingEvents::Bonded>(
+			"Failed to find Staking::Bonded event",
+			&details,
+		)?;
 
 		Ok(BondExtraTx { event, details })
 	}
@@ -127,7 +129,7 @@ impl Staking {
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
-	) -> Result<ChillTx, String> {
+	) -> Result<ChillTx, TransactionFailed> {
 		let call = avail::tx().staking().chill();
 		let details = progress_and_parse_transaction(
 			&self.online_client,
@@ -139,11 +141,7 @@ impl Staking {
 		)
 		.await?;
 
-		let event = details
-			.events
-			.find_first::<StakingEvents::Chilled>()
-			.ok()
-			.flatten();
+		let event = find_event_or_nothing::<StakingEvents::Chilled>(&details);
 
 		Ok(ChillTx { event, details })
 	}
@@ -154,10 +152,10 @@ impl Staking {
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
-	) -> Result<ChillOtherTx, String> {
+	) -> Result<ChillOtherTx, TransactionFailed> {
 		let stash = match AccountId::from_str(stash) {
 			Ok(stash) => stash,
-			Err(error) => return Err(std::format!("{:?}", error)),
+			Err(error) => return Err(TransactionFailed::from(std::format!("{:?}", error))),
 		};
 
 		let call = avail::tx().staking().chill_other(stash);
@@ -170,10 +168,11 @@ impl Staking {
 			options,
 		)
 		.await?;
-		let event = details.events.find_first::<StakingEvents::Chilled>();
-		let Some(event) = event.ok().flatten() else {
-			return Err(String::from("Failed to find Chilled event"));
-		};
+
+		let event = find_event_or_return_error::<StakingEvents::Chilled>(
+			"Failed to find Staking::Chilled event",
+			&details,
+		)?;
 
 		Ok(ChillOtherTx { event, details })
 	}
@@ -184,7 +183,7 @@ impl Staking {
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
-	) -> Result<NominateTx, String> {
+	) -> Result<NominateTx, TransactionFailed> {
 		let targets: Result<Vec<AccountId>, _> = targets
 			.iter()
 			.map(|address| AccountId::from_str(address))
@@ -203,12 +202,12 @@ impl Staking {
 		)
 		.await?;
 
-		let block = details.fetch_block(&self.online_client).await;
-		let block = block.map_err(|e| e.to_string())?;
-		let data = block.transaction_by_index_static::<StakingCalls::Nominate>(details.tx_index);
-		let data = data
-			.ok_or(String::from("Failed to find transaction data"))?
-			.value;
+		let data = find_data_or_return_error::<StakingCalls::Nominate>(
+			&self.online_client,
+			"Failed to find Nominate data",
+			&details,
+		)
+		.await?;
 
 		Ok(NominateTx { data, details })
 	}
@@ -219,7 +218,7 @@ impl Staking {
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
-	) -> Result<UnbondTx, String> {
+	) -> Result<UnbondTx, TransactionFailed> {
 		let call = avail::tx().staking().unbond(value);
 		let details = progress_and_parse_transaction(
 			&self.online_client,
@@ -231,10 +230,10 @@ impl Staking {
 		)
 		.await?;
 
-		let event = details.events.find_first::<StakingEvents::Unbonded>();
-		let Some(event) = event.ok().flatten() else {
-			return Err(String::from("Failed to find Unbonded event"));
-		};
+		let event = find_event_or_return_error::<StakingEvents::Unbonded>(
+			"Failed to find Staking::Unbonded event",
+			&details,
+		)?;
 
 		Ok(UnbondTx { event, details })
 	}
@@ -246,9 +245,11 @@ impl Staking {
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
-	) -> Result<ValidateTx, String> {
+	) -> Result<ValidateTx, TransactionFailed> {
 		if commission > 100 {
-			return Err(String::from("Commission cannot be more than 100"));
+			return Err(TransactionFailed::from(
+				"Commission cannot be more than 100",
+			));
 		}
 
 		let commission = Perbill(commission as u32);
@@ -268,12 +269,10 @@ impl Staking {
 		)
 		.await?;
 
-		let event = details
-			.events
-			.find_first::<StakingEvents::ValidatorPrefsSet>();
-		let Some(event) = event.ok().flatten() else {
-			return Err(String::from("Failed to find ValidatorPrefsSet event"));
-		};
+		let event = find_event_or_return_error::<StakingEvents::ValidatorPrefsSet>(
+			"Failed to find Staking::ValidatorPrefsSet event",
+			&details,
+		)?;
 
 		Ok(ValidateTx { event, details })
 	}

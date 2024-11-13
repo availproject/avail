@@ -8,13 +8,13 @@ pub mod staking;
 use crate::{
 	error::ClientError,
 	utils::{self, *},
-	AOnlineClient, ATxInBlock, AvailConfig, H256,
+	AExtrinsicEvents, AOnlineClient, ATxInBlock, AvailConfig, H256,
 };
 
 pub use options::{Mortality, Nonce, Options};
 
 use std::sync::Arc;
-use subxt::{backend::rpc::RpcClient, blocks::ExtrinsicEvents, events::StaticEvent};
+use subxt::{backend::rpc::RpcClient, blocks::StaticExtrinsic, events::StaticEvent};
 
 pub type Params =
 	<<AvailConfig as subxt::Config>::ExtrinsicParams as subxt::config::ExtrinsicParams<
@@ -48,7 +48,7 @@ impl Transactions {
 #[derive(Debug, Clone)]
 pub struct TransactionDetails {
 	pub tx_in_block: Arc<ATxInBlock>,
-	pub events: Arc<ExtrinsicEvents<AvailConfig>>,
+	pub events: Arc<AExtrinsicEvents>,
 	pub tx_hash: H256,
 	pub tx_index: u32,
 	pub block_hash: H256,
@@ -58,7 +58,7 @@ pub struct TransactionDetails {
 impl TransactionDetails {
 	pub fn new(
 		tx_in_block: ATxInBlock,
-		events: ExtrinsicEvents<AvailConfig>,
+		events: AExtrinsicEvents,
 		tx_hash: H256,
 		tx_index: u32,
 		block_hash: H256,
@@ -156,6 +156,31 @@ impl From<(ClientError, TransactionDetails)> for TransactionFailed {
 			details: Some(value.1),
 		}
 	}
+}
+
+async fn find_data_or_return_error<T: StaticExtrinsic>(
+	client: &AOnlineClient,
+	error: &str,
+	details: &TransactionDetails,
+) -> Result<T, TransactionFailed> {
+	let block = details.fetch_block(client).await;
+	let block = block.map_err(|e| TransactionFailed {
+		reason: e.into(),
+		details: Some(details.clone()),
+	})?;
+
+	let data = block.transaction_by_index_static::<T>(details.tx_index);
+	let data = match data {
+		Some(d) => d.value,
+		None => {
+			return Err(TransactionFailed {
+				reason: error.into(),
+				details: Some(details.clone()),
+			})
+		},
+	};
+
+	Ok(data)
 }
 
 fn find_event_or_return_error<T: StaticEvent>(
