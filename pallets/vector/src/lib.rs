@@ -14,8 +14,8 @@ use frame_support::{
 use sp_core::H256;
 use sp_runtime::SaturatedConversion;
 use sp_std::{vec, vec::Vec};
-use alloy_sol_types::SolValue;
-use sp1_helios_primitives::types::ProofOutputs;
+use alloy_sol_types::{SolValue, sol};
+// use sp1_helios_primitives::types::ProofOutputs;
 use sp1_verifier::{Groth16Verifier, GROTH16_VK_BYTES};
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
@@ -407,6 +407,19 @@ pub mod pallet {
 		}
 	}
 
+	sol! {
+		 struct ProofOutputs {
+			bytes32 executionStateRoot;
+			bytes32 newHeader;
+			bytes32 nextSyncCommitteeHash;
+			uint256 newHead;
+			bytes32 prevHeader;
+			uint256 prevHead;
+			bytes32 syncCommitteeHash;
+		}
+	}
+
+
 	#[pallet::call]
 	impl<T: Config> Pallet<T>
 	where
@@ -430,9 +443,9 @@ pub mod pallet {
 			ensure!(new_head <= head, Error::<T>::SlotBehindHead);
 
 			
-			let is_valid = Groth16Verifier::verify(&proof_bytes, &public_values, SP1_HELIOS_VKEY, &GROTH16_VK_BYTES)
-				.expect("Groth16 proof is invalid");
-			ensure!(is_valid, Error::<T>::VerificationFailed);
+			let is_valid = Groth16Verifier::verify(&proof_bytes, &public_values, SP1_HELIOS_VKEY, &GROTH16_VK_BYTES);
+				// .expect("Groth16 proof is invalid");
+			ensure!(is_valid.is_ok(), Error::<T>::VerificationFailed);
 
 			Head::<T>::set(new_head);
 

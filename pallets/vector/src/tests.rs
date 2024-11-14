@@ -194,10 +194,9 @@ fn test_sp1_helios_proof() {
 	let vkey_hash = "0x00788ce8dc2970920a3d3c072c8c07843d15f1307a53b3dd31b113c3e71c28e8";
 
     let is_valid =
-        Groth16Verifier::verify(&proof, &public_inputs, vkey_hash, &GROTH16_VK_BYTES)
-            .expect("Groth16 proof is invalid");
+        Groth16Verifier::verify(&proof, &public_inputs, vkey_hash, &GROTH16_VK_BYTES);
 
-    if !is_valid {
+    if is_valid.is_err() {
         panic!("Groth16 proof is invalid");
     }
 }
