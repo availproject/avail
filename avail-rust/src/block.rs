@@ -1,3 +1,4 @@
+use crate::rpcs::{get_best_block_hash, get_finalized_head};
 use crate::{
 	avail::data_availability::calls::types as DataAvailabilityCalls,
 	primitives::block::extrinsics_params::CheckAppId,
@@ -5,7 +6,11 @@ use crate::{
 use crate::{ABlock, AExtrinsicDetails, AExtrinsics, AFoundExtrinsic, AOnlineClient};
 
 use primitive_types::H256;
+use subxt::backend::rpc::RpcClient;
+use subxt::backend::StreamOfResults;
 use subxt::blocks::StaticExtrinsic;
+use subxt::storage::StorageKeyValuePair;
+use subxt::utils::Yes;
 
 pub struct Block {
 	pub block: ABlock,
@@ -19,6 +24,22 @@ impl Block {
 			block,
 			transactions,
 		})
+	}
+
+	pub async fn new_best_block(
+		online_client: &AOnlineClient,
+		rpc_client: &RpcClient,
+	) -> Result<Self, subxt::Error> {
+		let best_hash = get_best_block_hash(rpc_client).await?;
+		Self::new(online_client, best_hash).await
+	}
+
+	pub async fn new_finalized_block(
+		online_client: &AOnlineClient,
+		rpc_client: &RpcClient,
+	) -> Result<Self, subxt::Error> {
+		let best_hash = get_finalized_head(rpc_client).await?;
+		Self::new(online_client, best_hash).await
 	}
 
 	pub fn transaction_count(&self) -> usize {
@@ -87,6 +108,37 @@ impl Block {
 
 	pub fn submit_data_by_app_id(&self, app_id: u32) -> Option<DataSubmission> {
 		submit_data_by_app_id(&self.transactions, app_id)
+	}
+
+	pub async fn storage_fetch<'address, T>(
+		&self,
+		address: &'address T,
+	) -> Result<Option<<T as subxt::storage::Address>::Target>, subxt::Error>
+	where
+		T: subxt::storage::Address<IsFetchable = Yes> + 'address,
+	{
+		self.block.storage().fetch(address).await
+	}
+
+	pub async fn storage_fetch_or_default<'address, T>(
+		&self,
+		address: &'address T,
+	) -> Result<<T as subxt::storage::Address>::Target, subxt::Error>
+	where
+		T: subxt::storage::Address<IsFetchable = Yes, IsDefaultable = Yes> + 'address,
+	{
+		self.block.storage().fetch_or_default(address).await
+	}
+
+	pub async fn storage_iter<T>(
+		&self,
+		address: T,
+	) -> Result<StreamOfResults<StorageKeyValuePair<T>>, subxt::Error>
+	where
+		T: subxt::storage::Address<IsIterable = Yes> + 'static,
+		T::Keys: 'static + Sized,
+	{
+		self.block.storage().iter(address).await
 	}
 }
 

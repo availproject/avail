@@ -83,6 +83,7 @@ impl Payment {
 #[cfg(test)]
 mod tests {
 	use super::*;
+	use crate::utils;
 	use crate::Keypair;
 	use crate::SecretUri;
 	use std::str::FromStr;
@@ -95,7 +96,7 @@ mod tests {
 		let sdk = crate::sdk::SDK::new("ws://127.0.0.1:9944").await.unwrap();
 		let keys = sdk.rpc.author.rotate_keys().await.unwrap();
 
-		let keys = sdk.util.deconstruct_session_keys(keys).unwrap();
+		let keys = utils::deconstruct_session_keys(keys).unwrap();
 		let b = sdk
 			.tx
 			.session
@@ -260,7 +261,7 @@ pub async fn get_block(
 	Ok(value)
 }
 
-pub async fn get_latest_block(client: &RpcClient) -> Result<ABlockDetailsRPC, subxt::Error> {
+pub async fn get_best_block(client: &RpcClient) -> Result<ABlockDetailsRPC, subxt::Error> {
 	get_block(client, None).await
 }
 
@@ -279,7 +280,7 @@ pub async fn get_block_hash(
 	Ok(value)
 }
 
-pub async fn get_latest_block_hash(client: &RpcClient) -> Result<BlockHash, subxt::Error> {
+pub async fn get_best_block_hash(client: &RpcClient) -> Result<BlockHash, subxt::Error> {
 	get_block_hash(client, None).await
 }
 

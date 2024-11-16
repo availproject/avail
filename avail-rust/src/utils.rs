@@ -11,7 +11,7 @@ use subxt_signer::sr25519::Keypair;
 use crate::{
 	avail::{self, runtime_types::da_runtime::primitives::SessionKeys},
 	error::ClientError,
-	rpcs::{account_next_index, get_block_hash, get_latest_block_hash},
+	rpcs::{account_next_index, get_best_block_hash, get_block_hash},
 	transactions::{options::parse_options, TransactionDetails, TransactionFailed},
 	AExtrinsicEvents, AOnlineClient, ATxInBlock, ATxProgress, AccountId, AppUncheckedExtrinsic,
 	Options, WaitFor,
@@ -209,7 +209,7 @@ pub async fn get_nonce_state(
 	address: &str,
 ) -> Result<u32, ClientError> {
 	let account = account_id_from_str(address)?;
-	let hash = get_latest_block_hash(rpc_client).await?;
+	let hash = get_best_block_hash(rpc_client).await?;
 	let block = online_client.blocks().at(hash).await?;
 
 	Ok(block.account_nonce(&account).await? as u32)
