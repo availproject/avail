@@ -2,8 +2,11 @@
 #![recursion_limit = "512"]
 
 use crate::{storage_utils::MessageStatusEnum, verifier::Verifier};
+use alloy_sol_types::{sol, SolValue};
+use ark_std::format;
 use avail_base::{MemoryTemporaryStorage, ProvidePostInherent};
 use avail_core::data_proof::{tx_uid, AddressedMessage, Message, MessageType};
+use sp1_verifier::{Groth16Verifier, GROTH16_VK_BYTES};
 
 use codec::Compact;
 use frame_support::{
@@ -29,7 +32,22 @@ mod weights;
 
 pub use pallet::*;
 
+pub type ProofInput = BoundedVec<u8, ConstU32<512>>;
+pub type PublicValues = BoundedVec<u8, ConstU32<512>>;
+
+sol! {
+	 struct ProofOutputs {
+		bytes32 executionStateRoot;
+		bytes32 newHeader;
+		bytes32 nextSyncCommitteeHash;
+		uint256 newHead;
+		bytes32 prevHeader;
+		uint256 prevHead;
+		bytes32 syncCommitteeHash;
+	}
+}
 pub type FunctionInput = BoundedVec<u8, ConstU32<256>>;
+pub type PublicValuesInput = BoundedVec<u8, ConstU32<512>>;
 pub type FunctionOutput = BoundedVec<u8, ConstU32<512>>;
 pub type FunctionProof = BoundedVec<u8, ConstU32<1048>>;
 pub type ValidProof = BoundedVec<BoundedVec<u8, ConstU32<2048>>, ConstU32<32>>;
@@ -113,6 +131,9 @@ pub mod pallet {
 		CannotParseOutputData,
 		/// Cannot get current message id
 		CurrentMessageIdNotFound,
+		CannotDecodePublicValue,
+		SyncCommitteeHashAlreadySet,
+		CurrentSyncCommitteeNotEqual,
 	}
 
 	#[pallet::event]
@@ -125,9 +146,16 @@ pub mod pallet {
 			execution_state_root: H256,
 		},
 		/// Emit event once the sync committee updates.
-		SyncCommitteeUpdated { period: u64, root: U256 },
+		SyncCommitteeUpdated {
+			period: u64,
+			root: U256,
+		},
 		/// Emit when new updater is set.
-		BroadcasterUpdated { old: H256, new: H256, domain: u32 },
+		BroadcasterUpdated {
+			old: H256,
+			new: H256,
+			domain: u32,
+		},
 		/// Emit when message gets executed.
 		MessageExecuted {
 			from: H256,
@@ -136,7 +164,10 @@ pub mod pallet {
 			message_root: H256,
 		},
 		/// Emit if source chain gets frozen.
-		SourceChainFrozen { source_chain_id: u32, frozen: bool },
+		SourceChainFrozen {
+			source_chain_id: u32,
+			frozen: bool,
+		},
 		/// Emit when message is submitted.
 		MessageSubmitted {
 			from: T::AccountId,
@@ -153,7 +184,9 @@ pub mod pallet {
 			finality_threshold: u16,
 		},
 		/// Emit function Ids that are updated.
-		FunctionIdsUpdated { value: Option<(H256, H256)> },
+		FunctionIdsUpdated {
+			value: Option<(H256, H256)>,
+		},
 		/// Emit updated step verification key.
 		StepVerificationKeyUpdated {
 			value: Option<BoundedVec<u8, ConstU32<10_000>>>,
@@ -163,7 +196,18 @@ pub mod pallet {
 			value: Option<BoundedVec<u8, ConstU32<10_000>>>,
 		},
 		/// Emit new updater.
-		NewUpdater { old: H256, new: H256 },
+		NewUpdater {
+			old: H256,
+			new: H256,
+		},
+		NewSP1VerificationKey {
+			old: H256,
+			new: H256,
+		},
+		SyncCommitteeHashUpdated {
+			period: u64,
+			hash: H256,
+		},
 	}
 
 	/// Storage for a head updates.
@@ -188,6 +232,11 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn sync_committee_poseidons)]
 	pub type SyncCommitteePoseidons<T> = StorageMap<_, Identity, u64, U256, ValueQuery>;
+
+	/// Maps from a period to the poseidon commitment for the sync committee.
+	#[pallet::storage]
+	#[pallet::getter(fn sync_committee_hashes)]
+	pub type SyncCommitteeHashes<T> = StorageMap<_, Identity, u64, H256, ValueQuery>;
 
 	/// Storage for a config of finality threshold and slots per period.
 	#[pallet::storage]
@@ -255,6 +304,10 @@ pub mod pallet {
 	#[pallet::getter(fn updater)]
 	pub type Updater<T: Config> = StorageValue<_, H256, ValueQuery>;
 
+	#[pallet::storage]
+	#[pallet::getter(fn sp1_verification_key)]
+	pub type SP1VerificationKey<T: Config> = StorageValue<_, H256, ValueQuery>;
+
 	/// Default implementations of [`DefaultConfig`], which can be used to implement [`Config`].
 	pub mod config_preludes {
 		use super::*;
@@ -271,7 +324,8 @@ pub mod pallet {
 		/// based on this one.
 		pub struct TestDefaultConfig;
 
-		#[derive_impl(frame_system::config_preludes::TestDefaultConfig as frame_system::DefaultConfig, no_aggregated_types)]
+		#[derive_impl(frame_system::config_preludes::TestDefaultConfig as frame_system::DefaultConfig, no_aggregated_types
+        )]
 		impl frame_system::DefaultConfig for TestDefaultConfig {}
 
 		#[frame_support::register_default_impl(TestDefaultConfig)]
@@ -778,6 +832,129 @@ pub mod pallet {
 			Updater::<T>::set(updater);
 
 			Self::deposit_event(Event::<T>::NewUpdater { old, new: updater });
+			Ok(())
+		}
+
+		/// The entrypoint for fulfill a call.
+		/// input Function input.
+		/// output Function output.
+		/// proof  Function proof.
+		/// slot  Function slot to update.
+		#[pallet::call_index(13)]
+		#[pallet::weight(T::WeightInfo::fulfill_call_rotate())] // TODO calc weight
+		pub fn fulfill(
+			origin: OriginFor<T>,
+			proof: ProofInput,
+			public_values: FunctionOutput,
+		) -> DispatchResultWithPostInfo {
+			let sender: [u8; 32] = ensure_signed(origin)?.into();
+			let updater = Updater::<T>::get();
+			// ensure sender is preconfigured
+			ensure!(H256(sender) == updater, Error::<T>::UpdaterMisMatch);
+
+			let proof_outputs: ProofOutputs = SolValue::abi_decode(&public_values, true)
+				.map_err(|_| Error::<T>::CannotDecodePublicValue)?;
+
+			let head = Head::<T>::get();
+			let new_head: u64 = proof_outputs.newHead.to();
+			ensure!(new_head > head, Error::<T>::SlotBehindHead);
+
+			let sp1_vk = SP1VerificationKey::<T>::get();
+
+			let is_valid = Groth16Verifier::verify(
+				&proof,
+				&public_values,
+				&format!("{:?}", sp1_vk),
+				&GROTH16_VK_BYTES,
+			);
+			ensure!(is_valid.is_ok(), Error::<T>::VerificationFailed);
+
+			Head::<T>::set(new_head);
+			let header = Headers::<T>::get(new_head);
+			ensure!(header == H256::zero(), Error::<T>::HeaderRootAlreadySet);
+
+			let new_header = H256::from(proof_outputs.newHeader.0);
+
+			let execution_state_root = ExecutionStateRoots::<T>::get(new_head);
+			ensure!(
+				execution_state_root == H256::zero(),
+				Error::<T>::StateRootAlreadySet
+			);
+			let new_execution_state_root = H256::from(proof_outputs.executionStateRoot.0);
+
+			Headers::<T>::insert(new_head, new_header);
+			ExecutionStateRoots::<T>::insert(new_head, new_execution_state_root);
+
+			Self::deposit_event(Event::HeadUpdated {
+				slot: new_head,
+				finalization_root: new_header,
+				execution_state_root: new_execution_state_root,
+			});
+
+			let config = ConfigurationStorage::<T>::get();
+			let period = new_head
+				.checked_div(config.slots_per_period)
+				.ok_or(Error::<T>::ConfigurationNotSet)?;
+			let next_period = period + 1;
+
+			ensure!(
+				SyncCommitteeHashes::<T>::get(next_period) == H256::zero(),
+				Error::<T>::SyncCommitteeAlreadySet
+			);
+
+			ensure!(
+				SyncCommitteeHashes::<T>::get(period)
+					== H256::from(proof_outputs.syncCommitteeHash.0),
+				Error::<T>::CurrentSyncCommitteeNotEqual
+			);
+
+			let next_sync_committee_hash = H256::from(proof_outputs.nextSyncCommitteeHash.0);
+			if next_sync_committee_hash != H256::zero() {
+				let sync_committee_hash = SyncCommitteeHashes::<T>::get(next_period);
+				if sync_committee_hash != next_sync_committee_hash {
+					ensure!(
+						sync_committee_hash == H256::zero(),
+						Error::<T>::SyncCommitteeAlreadySet
+					);
+					SyncCommitteeHashes::<T>::set(next_period, next_sync_committee_hash);
+					Self::deposit_event(Event::SyncCommitteeHashUpdated {
+						period: next_period,
+						hash: next_sync_committee_hash,
+					});
+				}
+			}
+			Timestamps::<T>::insert(new_head, T::TimeProvider::now().as_secs());
+
+			Ok(().into())
+		}
+
+		#[pallet::call_index(14)]
+		#[pallet::weight(T::WeightInfo::set_function_ids())]
+		pub fn set_sp1_verification_key(origin: OriginFor<T>, sp1_vk: H256) -> DispatchResult {
+			ensure_root(origin)?;
+			let old_vk = SP1VerificationKey::<T>::get();
+			SP1VerificationKey::<T>::put(sp1_vk);
+
+			Self::deposit_event(Event::NewSP1VerificationKey {
+				old: old_vk,
+				new: sp1_vk,
+			});
+
+			Ok(())
+		}
+
+		#[pallet::call_index(15)]
+		#[pallet::weight(T::WeightInfo::set_function_ids())]
+		pub fn set_sync_committee_hash(
+			origin: OriginFor<T>,
+			period: u64,
+			hash: H256,
+		) -> DispatchResult {
+			ensure_root(origin)?;
+
+			SyncCommitteeHashes::<T>::insert(period, hash);
+			Self::deposit_event(Event::SyncCommitteeHashUpdated { period, hash });
+
 			Ok(())
 		}
 	}

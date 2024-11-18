@@ -232,9 +232,9 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	.unwrap();
 
 	vector_bridge::GenesisConfig::<Test> {
-		finality_threshold: 461,
+		// finality_threshold: 461,
 		function_ids: (STEP_FUNCTION_ID, ROTATE_FUNCTION_ID),
-		slots_per_period: 8192,
+		// slots_per_period: 8192,
 		step_verification_key: STEP_VK.as_bytes().to_vec(),
 		rotate_verification_key: ROTATE_VK.as_bytes().to_vec(),
 		whitelisted_domains: vec![2],
