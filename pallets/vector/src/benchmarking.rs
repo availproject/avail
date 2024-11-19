@@ -1,4 +1,8 @@
-use crate::{state::Configuration, BalanceOf, Call, Config, ConfigurationStorage, ExecutionStateRoots, FunctionIds, FunctionInput, FunctionOutput, FunctionProof, Headers, Pallet, ProofInput, PublicValuesInput, RotateVerificationKey, StepVerificationKey, Updater, ValidProof};
+use crate::{
+	state::Configuration, BalanceOf, Call, Config, ConfigurationStorage, ExecutionStateRoots,
+	FunctionIds, FunctionInput, FunctionOutput, FunctionProof, Headers, Pallet, ProofInput,
+	PublicValuesInput, RotateVerificationKey, StepVerificationKey, Updater, ValidProof,
+};
 use avail_core::data_proof::BOUNDED_DATA_MAX_LENGTH;
 use avail_core::data_proof::{AddressedMessage, Message};
 use frame_benchmarking::{
@@ -160,7 +164,8 @@ pub const ROTATE_VK: &str = r#"{"vk_json":{
     ]
 }}"#;
 
-const SP1_VERIFICATION_KEY: [u8; 32] = hex!("00788ce8dc2970920a3d3c072c8c07843d15f1307a53b3dd31b113c3e71c28e8");
+const SP1_VERIFICATION_KEY: [u8; 32] =
+	hex!("00788ce8dc2970920a3d3c072c8c07843d15f1307a53b3dd31b113c3e71c28e8");
 
 #[benchmarks(where
 [u8; 32]: From << T as frame_system::Config >::AccountId >,
@@ -478,7 +483,9 @@ mod benchmarks {
 	#[benchmark]
 	fn set_sync_committee_hash() -> Result<(), BenchmarkError> {
 		let origin = RawOrigin::Root;
-		let sync_committee_hash = H256(hex!("f4887c7e675fa7c166c1d17e03d0dd746aa595756b66a8fb8d8fad1215d4caaf"));
+		let sync_committee_hash = H256(hex!(
+			"f4887c7e675fa7c166c1d17e03d0dd746aa595756b66a8fb8d8fad1215d4caaf"
+		));
 		let period = 754;
 
 		#[extrinsic_call]
@@ -489,7 +496,9 @@ mod benchmarks {
 
 	#[benchmark]
 	fn fulfill() -> Result<(), BenchmarkError> {
-		let sync_committee_hash = H256(hex!("f4887c7e675fa7c166c1d17e03d0dd746aa595756b66a8fb8d8fad1215d4caaf"));
+		let sync_committee_hash = H256(hex!(
+			"f4887c7e675fa7c166c1d17e03d0dd746aa595756b66a8fb8d8fad1215d4caaf"
+		));
 		let period = 754;
 		SyncCommitteeHashes::<T>::set(period, sync_committee_hash);
 		Updater::<T>::set(H256(ACCOUNT1));

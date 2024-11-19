@@ -1,4 +1,3 @@
-use alloy_sol_types::private::primitives::hex::ToHex;
 use crate::{
 	mock::{
 		new_test_ext, Balances, Bridge, RuntimeEvent, RuntimeOrigin, System, Test,
@@ -11,6 +10,7 @@ use crate::{
 	RotateVerificationKey, SP1VerificationKey, SourceChainFrozen, StepVerificationKey,
 	SyncCommitteeHashes, SyncCommitteePoseidons, Updater, ValidProof, WhitelistedDomains,
 };
+use alloy_sol_types::private::primitives::hex::ToHex;
 use alloy_sol_types::SolValue;
 use avail_core::data_proof::Message::FungibleToken;
 use avail_core::data_proof::{tx_uid, AddressedMessage, Message};
