@@ -1483,7 +1483,7 @@ fn test_fulfill_successfully() {
 //         let slots_per_period = 8192;
 //         let finality_threshold = 342;
 //         let slot = 6178816u64;
-//         let current_period = slot / finality_threshold;
+//         let current_period = slot / slots_per_period;
 //
 //         ConfigurationStorage::<Test>::set(Configuration {
 //             slots_per_period,
@@ -1525,7 +1525,7 @@ fn test_fulfill_incorrect_proof_output() {
 		let slots_per_period = 8192;
 		let finality_threshold = 342;
 		let slot = 6178816u64;
-		let current_period = slot / finality_threshold;
+		let current_period = slot / slots_per_period;
 
 		ConfigurationStorage::<Test>::set(Configuration {
 			slots_per_period,
@@ -1561,7 +1561,7 @@ fn test_fulfill_head_not_greater() {
 		let slots_per_period = 8192;
 		let finality_threshold = 342;
 		let slot = 6178816u64;
-		let current_period = slot / finality_threshold;
+		let current_period = slot / slots_per_period;
 
 		ConfigurationStorage::<Test>::set(Configuration {
 			slots_per_period,
@@ -1600,7 +1600,7 @@ fn test_fulfill_next_period_already_set() {
 		let slots_per_period = 8192;
 		let finality_threshold = 342;
 		let slot = 6178816u64;
-		let current_period = slot / finality_threshold;
+		let current_period = slot / slots_per_period;
 
 		ConfigurationStorage::<Test>::set(Configuration {
 			slots_per_period,
@@ -1636,9 +1636,9 @@ fn test_fulfill_configuration_not_set() {
 		SP1VerificationKey::<Test>::set(H256(SP1_VERIFICATION_KEY));
 
 		let proof_outputs: ProofOutputs = SolValue::abi_decode(&public_inputs, true).unwrap();
-		let finality_threshold = 342;
+		let slots_per_period = 8192;
 		let slot = 6178816u64;
-		let current_period = slot / finality_threshold;
+		let current_period = slot / slots_per_period;
 
 		ConfigurationStorage::<Test>::set(Configuration {
 			slots_per_period: 0,
@@ -1676,7 +1676,7 @@ fn test_fulfill_configuration_not_set() {
 //         // max participation required
 //         let finality_threshold = 5000;
 //         let slot = 6178816u64;
-//         let current_period = slot / finality_threshold;
+//         let current_period = slot / slots_per_period;
 //
 //         ConfigurationStorage::<Test>::set(Configuration {
 //             slots_per_period,
