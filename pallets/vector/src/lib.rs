@@ -33,7 +33,6 @@ mod weights;
 pub use pallet::*;
 
 pub type ProofInput = BoundedVec<u8, ConstU32<512>>;
-pub type PublicValues = BoundedVec<u8, ConstU32<512>>;
 
 sol! {
 	 struct ProofOutputs {
@@ -845,7 +844,7 @@ pub mod pallet {
 		pub fn fulfill(
 			origin: OriginFor<T>,
 			proof: ProofInput,
-			public_values: FunctionOutput,
+			public_values: PublicValuesInput,
 		) -> DispatchResultWithPostInfo {
 			let sender: [u8; 32] = ensure_signed(origin)?.into();
 			let updater = Updater::<T>::get();

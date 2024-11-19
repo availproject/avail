@@ -1,8 +1,4 @@
-use crate::{
-	state::Configuration, BalanceOf, Call, Config, ConfigurationStorage, ExecutionStateRoots,
-	FunctionIds, FunctionInput, FunctionOutput, FunctionProof, Headers, Pallet,
-	RotateVerificationKey, StepVerificationKey, Updater, ValidProof,
-};
+use crate::{state::Configuration, BalanceOf, Call, Config, ConfigurationStorage, ExecutionStateRoots, FunctionIds, FunctionInput, FunctionOutput, FunctionProof, Headers, Pallet, ProofInput, PublicValuesInput, RotateVerificationKey, StepVerificationKey, Updater, ValidProof};
 use avail_core::data_proof::BOUNDED_DATA_MAX_LENGTH;
 use avail_core::data_proof::{AddressedMessage, Message};
 use frame_benchmarking::{
@@ -164,13 +160,15 @@ pub const ROTATE_VK: &str = r#"{"vk_json":{
     ]
 }}"#;
 
+const SP1_VERIFICATION_KEY: [u8; 32] = hex!("00788ce8dc2970920a3d3c072c8c07843d15f1307a53b3dd31b113c3e71c28e8");
+
 #[benchmarks(where
 [u8; 32]: From << T as frame_system::Config >::AccountId >,
 < T as frame_system::Config >::AccountId: From < [u8; 32] >,
 )]
 mod benchmarks {
 	use super::*;
-	use crate::Broadcasters;
+	use crate::{Broadcasters, SyncCommitteeHashes};
 	use sp_runtime::traits::AccountIdConversion;
 
 	#[benchmark]
@@ -466,6 +464,45 @@ mod benchmarks {
 		Ok(())
 	}
 
+	#[benchmark]
+	fn set_sp1_verification_key() -> Result<(), BenchmarkError> {
+		let origin = RawOrigin::Root;
+		let value = H256(SP1_VERIFICATION_KEY);
+
+		#[extrinsic_call]
+		_(origin, value);
+
+		Ok(())
+	}
+
+	#[benchmark]
+	fn set_sync_committee_hash() -> Result<(), BenchmarkError> {
+		let origin = RawOrigin::Root;
+		let sync_committee_hash = H256(hex!("f4887c7e675fa7c166c1d17e03d0dd746aa595756b66a8fb8d8fad1215d4caaf"));
+		let period = 754;
+
+		#[extrinsic_call]
+		_(origin, period, sync_committee_hash);
+
+		Ok(())
+	}
+
+	#[benchmark]
+	fn fulfill() -> Result<(), BenchmarkError> {
+		let sync_committee_hash = H256(hex!("f4887c7e675fa7c166c1d17e03d0dd746aa595756b66a8fb8d8fad1215d4caaf"));
+		let period = 754;
+		SyncCommitteeHashes::<T>::set(period, sync_committee_hash);
+		Updater::<T>::set(H256(ACCOUNT1));
+
+		let account = T::AccountId::from(ACCOUNT1);
+		let origin = RawOrigin::Signed(account.clone());
+
+		#[extrinsic_call]
+		_(origin, get_valid_sp1_proof(), get_valid_public_values());
+
+		Ok(())
+	}
+
 	impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);
 }
 
@@ -570,4 +607,12 @@ fn get_valid_rotate_output() -> FunctionOutput {
 
 fn get_valid_rotate_proof() -> FunctionProof {
 	BoundedVec::truncate_from(hex!("14305744fb26a377656a947cae0874c14b086de9d407bdfaf415ca9f47402c04144589183b473537750e7211f93671e324825db673edcf5c0839b08eecba08202966ba52dc07e1bf9832a54770048b84999172d47c57628758d8fe43dd9fe1412e6f8c0e75a79cde28e0e24eb09f9d23309defb07f4a1761deb6598de77278971d2d914930ad2e3ad8b6264e595a0516a912fc9394c93fa61146efc54d61e5c32378a5d4460aa2164422702f9401fcfb3e2b991a0e5b847ede3ea9ffe70a55100203abc0636c101adb6546c2f7aaf32d79e69093afb40c3c1a674e44a1ece76a1183fc03ef9553a7728672de2aada5d5582b5bcf0859e8c312ab59429553ed6d").to_vec())
+}
+
+fn get_valid_sp1_proof() -> ProofInput {
+	BoundedVec::truncate_from(hex!("0906909023b57ea329344437d01eaa453caa08c01bad6662a15eaf5b1a4f8772e4ce5c180655f20b52a401653cc55ef33311435238f5aae57d5295093b2fafa8ec1949a52d618596b003c3ec290f33f87032a9662fd03c5fae18d93adaf921a2a133e7620fa4cde186d77895b90765ffada8862171398d6d8ec81ac0418c77832fbfdcfd0316ceb5d7a6b371a6438865ad8b66f737a4f702f4ba9487ec3e75ad2bfc68a828cc30d8bb3c035c48ceae35091e41a5417704ef220f1555a2dfd1b72433637c16bb5ed83108bb7d0ba2cce357639d2595c032e991a8a7ebb59737a906ba2abd17e4aa255f659dc7f22c520ea74f62377d6a5342490b3d84c423e573998c7924").to_vec())
+}
+
+fn get_valid_public_values() -> PublicValuesInput {
+	BoundedVec::truncate_from(hex!("009c4d92c7f0d1a15c9e62d578ee917c8aded8d9d5ab9de1ffa278c00d282f8095eb3a41a42b59787608d52c6aada0b590902283a91144ef47ad6860b92a5c08f4887c7e675fa7c166c1d17e03d0dd746aa595756b66a8fb8d8fad1215d4caaf00000000000000000000000000000000000000000000000000000000005e4800707bf6bc332f8c8dfffa93ea511e2342c5ace8839d68afecc1fc12a116aabda300000000000000000000000000000000000000000000000000000000005d3300c00e7928895533bafa24fffba54cc7660664eb0134bffe39932fb28a3ddd4b46").to_vec())
 }

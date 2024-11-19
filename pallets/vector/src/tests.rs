@@ -1,3 +1,4 @@
+use alloy_sol_types::private::primitives::hex::ToHex;
 use crate::{
 	mock::{
 		new_test_ext, Balances, Bridge, RuntimeEvent, RuntimeOrigin, System, Test,
@@ -1422,6 +1423,10 @@ fn test_fulfill_successfully() {
 		let finality_threshold = 342;
 		let slot = 6178816u64;
 		let current_period = slot / slots_per_period;
+
+		println!("proof {:?}", proof.encode_hex::<String>());
+		println!("pub values {:?}", public_inputs.encode_hex::<String>());
+		println!("sync com  {:?}", proof_outputs.syncCommitteeHash);
 
 		ConfigurationStorage::<Test>::set(Configuration {
 			slots_per_period,
