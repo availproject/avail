@@ -173,7 +173,7 @@ const SP1_VERIFICATION_KEY: [u8; 32] =
 )]
 mod benchmarks {
 	use super::*;
-	use crate::{Broadcasters, SyncCommitteeHashes};
+	use crate::{Broadcasters, SP1VerificationKey, SyncCommitteeHashes};
 	use sp_runtime::traits::AccountIdConversion;
 
 	#[benchmark]
@@ -496,13 +496,25 @@ mod benchmarks {
 
 	#[benchmark]
 	fn fulfill() -> Result<(), BenchmarkError> {
-		let sync_committee_hash = H256(hex!(
-			"f4887c7e675fa7c166c1d17e03d0dd746aa595756b66a8fb8d8fad1215d4caaf"
-		));
-		let period = 754;
-		SyncCommitteeHashes::<T>::set(period, sync_committee_hash);
-		Updater::<T>::set(H256(ACCOUNT1));
+		SP1VerificationKey::<T>::set(H256(SP1_VERIFICATION_KEY));
 
+		let slots_per_period = 8192;
+		let finality_threshold = 342u16;
+		let slot = 6178816u64;
+		ConfigurationStorage::<T>::set(Configuration {
+			slots_per_period,
+			finality_threshold,
+		});
+
+		let period = slot / slots_per_period;
+		SyncCommitteeHashes::<T>::set(
+			period,
+			H256(hex!(
+				"c00e7928895533bafa24fffba54cc7660664eb0134bffe39932fb28a3ddd4b46"
+			)),
+		);
+
+		Updater::<T>::set(H256(ACCOUNT1));
 		let account = T::AccountId::from(ACCOUNT1);
 		let origin = RawOrigin::Signed(account.clone());
 

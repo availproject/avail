@@ -1408,7 +1408,7 @@ fn set_sp1_verification_key_non_root() {
 	});
 }
 
-const PROOF_FILE: &str = "test/proof.bin";
+pub const PROOF_FILE: &str = "test/proof.bin";
 
 #[test]
 fn test_fulfill_successfully() {
@@ -1420,7 +1420,7 @@ fn test_fulfill_successfully() {
 
 		let proof_outputs: ProofOutputs = SolValue::abi_decode(&public_inputs, true).unwrap();
 		let slots_per_period = 8192;
-		let finality_threshold = 342;
+		let finality_threshold = 342u16;
 		let slot = 6178816u64;
 		let current_period = slot / slots_per_period;
 
@@ -1430,7 +1430,7 @@ fn test_fulfill_successfully() {
 
 		ConfigurationStorage::<Test>::set(Configuration {
 			slots_per_period,
-			finality_threshold: finality_threshold as u16,
+			finality_threshold,
 		});
 
 		Updater::<Test>::set(H256(TEST_SENDER_VEC));
