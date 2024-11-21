@@ -840,7 +840,7 @@ pub mod pallet {
 		/// proof  Function proof.
 		/// slot  Function slot to update.
 		#[pallet::call_index(13)]
-		#[pallet::weight(T::WeightInfo::fulfill_call_rotate())] // TODO calc weight
+		#[pallet::weight(T::WeightInfo::fulfill())]
 		pub fn fulfill(
 			origin: OriginFor<T>,
 			proof: ProofInput,
@@ -928,7 +928,7 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(14)]
-		#[pallet::weight(T::WeightInfo::set_function_ids())]
+		#[pallet::weight(T::WeightInfo::set_sp1_verification_key())]
 		pub fn set_sp1_verification_key(origin: OriginFor<T>, sp1_vk: H256) -> DispatchResult {
 			ensure_root(origin)?;
 			let old_vk = SP1VerificationKey::<T>::get();
@@ -943,7 +943,7 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(15)]
-		#[pallet::weight(T::WeightInfo::set_function_ids())]
+		#[pallet::weight(T::WeightInfo::set_sync_committee_hash())]
 		pub fn set_sync_committee_hash(
 			origin: OriginFor<T>,
 			period: u64,
