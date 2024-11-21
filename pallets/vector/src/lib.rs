@@ -145,16 +145,9 @@ pub mod pallet {
 			execution_state_root: H256,
 		},
 		/// Emit event once the sync committee updates.
-		SyncCommitteeUpdated {
-			period: u64,
-			root: U256,
-		},
+		SyncCommitteeUpdated { period: u64, root: U256 },
 		/// Emit when new updater is set.
-		BroadcasterUpdated {
-			old: H256,
-			new: H256,
-			domain: u32,
-		},
+		BroadcasterUpdated { old: H256, new: H256, domain: u32 },
 		/// Emit when message gets executed.
 		MessageExecuted {
 			from: H256,
@@ -163,10 +156,7 @@ pub mod pallet {
 			message_root: H256,
 		},
 		/// Emit if source chain gets frozen.
-		SourceChainFrozen {
-			source_chain_id: u32,
-			frozen: bool,
-		},
+		SourceChainFrozen { source_chain_id: u32, frozen: bool },
 		/// Emit when message is submitted.
 		MessageSubmitted {
 			from: T::AccountId,
@@ -183,9 +173,7 @@ pub mod pallet {
 			finality_threshold: u16,
 		},
 		/// Emit function Ids that are updated.
-		FunctionIdsUpdated {
-			value: Option<(H256, H256)>,
-		},
+		FunctionIdsUpdated { value: Option<(H256, H256)> },
 		/// Emit updated step verification key.
 		StepVerificationKeyUpdated {
 			value: Option<BoundedVec<u8, ConstU32<10_000>>>,
@@ -195,18 +183,11 @@ pub mod pallet {
 			value: Option<BoundedVec<u8, ConstU32<10_000>>>,
 		},
 		/// Emit new updater.
-		NewUpdater {
-			old: H256,
-			new: H256,
-		},
-		NewSP1VerificationKey {
-			old: H256,
-			new: H256,
-		},
-		SyncCommitteeHashUpdated {
-			period: u64,
-			hash: H256,
-		},
+		NewUpdater { old: H256, new: H256 },
+		/// Emit new SP1 verification key.
+		NewSP1VerificationKey { old: H256, new: H256 },
+		/// Emit when new sync committee is updated.
+		SyncCommitteeHashUpdated { period: u64, hash: H256 },
 	}
 
 	/// Storage for a head updates.
@@ -232,7 +213,7 @@ pub mod pallet {
 	#[pallet::getter(fn sync_committee_poseidons)]
 	pub type SyncCommitteePoseidons<T> = StorageMap<_, Identity, u64, U256, ValueQuery>;
 
-	/// Maps from a period to the poseidon commitment for the sync committee.
+	/// Maps from a period to the the sync committee hash.
 	#[pallet::storage]
 	#[pallet::getter(fn sync_committee_hashes)]
 	pub type SyncCommitteeHashes<T> = StorageMap<_, Identity, u64, H256, ValueQuery>;
@@ -835,10 +816,8 @@ pub mod pallet {
 		}
 
 		/// The entrypoint for fulfill a call.
-		/// input Function input.
-		/// output Function output.
-		/// proof  Function proof.
-		/// slot  Function slot to update.
+		/// proof Input proof value.
+		/// public_values Input public values.
 		#[pallet::call_index(13)]
 		#[pallet::weight(T::WeightInfo::fulfill())]
 		pub fn fulfill(
