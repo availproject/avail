@@ -30,6 +30,8 @@ const TEST_SENDER_VEC: [u8; 32] =
 	hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d");
 const TEST_SENDER_ACCOUNT: AccountId32 = AccountId32::new(TEST_SENDER_VEC);
 
+// Generated with SP1 Helios https://github.com/succinctlabs/sp1-helios/blob/main/README.md
+// cargo prove key —-elf (sp1 helios elf) in SP1 Helios
 const SP1_VERIFICATION_KEY: [u8; 32] =
 	hex!("00788ce8dc2970920a3d3c072c8c07843d15f1307a53b3dd31b113c3e71c28e8");
 
@@ -1479,7 +1481,7 @@ fn test_fulfill_successfully() {
 //         let sp1_proof_with_public_values = SP1ProofWithPublicValues::load(PROOF_FILE).unwrap();
 //         let mut proof = sp1_proof_with_public_values.bytes();
 //         //  make proof incorrect
-//         proof[10] = 0x01; // Replace with your desired byte value
+//         proof[10] = 0x01;
 //
 //         let public_inputs = sp1_proof_with_public_values.public_values.to_vec();
 //         SP1VerificationKey::<Test>::set(H256(SP1_VERIFICATION_KEY));
@@ -1667,40 +1669,6 @@ fn test_fulfill_configuration_not_set() {
 		assert_err!(err, Error::<Test>::ConfigurationNotSet);
 	});
 }
-
-// #[test]
-// fn test_fulfill_finality_threshold_not_met() {
-//     new_test_ext().execute_with(|| {
-//         let sp1_proof_with_public_values = SP1ProofWithPublicValues::load(PROOF_FILE).unwrap();
-//         let proof = sp1_proof_with_public_values.bytes();
-//         let public_inputs = sp1_proof_with_public_values.public_values.to_vec();
-//         SP1VerificationKey::<Test>::set(H256(SP1_VERIFICATION_KEY));
-//
-//         let proof_outputs: ProofOutputs = SolValue::abi_decode(&public_inputs, true).unwrap();
-//         let slots_per_period = 8192;
-//         // max participation required
-//         let finality_threshold = 5000;
-//         let slot = 6178816u64;
-//         let current_period = slot / slots_per_period;
-//
-//         ConfigurationStorage::<Test>::set(Configuration {
-//             slots_per_period,
-//             finality_threshold: finality_threshold as u16,
-//         });
-//
-//         Updater::<Test>::set(H256(TEST_SENDER_VEC));
-//         SyncCommitteeHashes::<Test>::set(current_period, H256::from(proof_outputs.syncCommitteeHash.0));
-//
-//         let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
-//         let err = Bridge::fulfill(
-//             origin,
-//             BoundedVec::truncate_from(proof),
-//             BoundedVec::truncate_from(public_inputs),
-//         );
-//
-//         assert_err!(err, Error::<Test>::NotEnoughParticipants);
-//     });
-// }
 
 #[test]
 fn set_sync_committee_hash() {

@@ -1510,6 +1510,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "cargo_metadata"
+version = "0.18.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2d886547e41f740c616ae73108f6eb70afe6d940c7bc697cb30f13daec073037"
+dependencies = [
+ "camino",
+ "cargo-platform",
+ "semver 1.0.23",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
+]
+
+[[package]]
 name = "cast"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2079,6 +2093,15 @@ checksum = "6b50826342786a51a89e2da3a28f1c32b06e387201bc2d19791f622c673706b1"
 dependencies = [
  "cast",
  "itertools 0.10.5",
+]
+
+[[package]]
+name = "crossbeam-channel"
+version = "0.5.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "33480d6946193aa8033910124896ca395333cae7e2d1113d1fef6c3272217df2"
+dependencies = [
+ "crossbeam-utils",
 ]
 
 [[package]]
@@ -11437,9 +11460,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "sp1-build"
+version = "3.0.0"
+source = "git+https://github.com/succinctlabs/sp1?rev=87cab0f744bb36550f0f91c84bac1d2382bee51e#87cab0f744bb36550f0f91c84bac1d2382bee51e"
+dependencies = [
+ "anyhow",
+ "cargo_metadata 0.18.1",
+ "chrono",
+ "clap 4.5.21",
+ "dirs",
+]
+
+[[package]]
 name = "sp1-core-executor"
 version = "3.0.0"
-source = "git+https://github.com/succinctlabs/sp1?branch=dev#12f212e386ae4c2da30cf6a61a7d87615d56bdac"
+source = "git+https://github.com/succinctlabs/sp1?rev=87cab0f744bb36550f0f91c84bac1d2382bee51e#87cab0f744bb36550f0f91c84bac1d2382bee51e"
 dependencies = [
  "bincode",
  "bytemuck",
@@ -11472,7 +11507,7 @@ dependencies = [
 [[package]]
 name = "sp1-core-machine"
 version = "3.0.0"
-source = "git+https://github.com/succinctlabs/sp1?branch=dev#12f212e386ae4c2da30cf6a61a7d87615d56bdac"
+source = "git+https://github.com/succinctlabs/sp1?rev=87cab0f744bb36550f0f91c84bac1d2382bee51e#87cab0f744bb36550f0f91c84bac1d2382bee51e"
 dependencies = [
  "bincode",
  "cfg-if",
@@ -11519,7 +11554,7 @@ dependencies = [
 [[package]]
 name = "sp1-curves"
 version = "3.0.0"
-source = "git+https://github.com/succinctlabs/sp1?branch=dev#12f212e386ae4c2da30cf6a61a7d87615d56bdac"
+source = "git+https://github.com/succinctlabs/sp1?rev=87cab0f744bb36550f0f91c84bac1d2382bee51e#87cab0f744bb36550f0f91c84bac1d2382bee51e"
 dependencies = [
  "cfg-if",
  "curve25519-dalek 4.1.3",
@@ -11541,7 +11576,7 @@ dependencies = [
 [[package]]
 name = "sp1-derive"
 version = "3.0.0"
-source = "git+https://github.com/succinctlabs/sp1?branch=dev#12f212e386ae4c2da30cf6a61a7d87615d56bdac"
+source = "git+https://github.com/succinctlabs/sp1?rev=87cab0f744bb36550f0f91c84bac1d2382bee51e#87cab0f744bb36550f0f91c84bac1d2382bee51e"
 dependencies = [
  "quote",
  "syn 1.0.109",
@@ -11560,7 +11595,7 @@ dependencies = [
 [[package]]
 name = "sp1-primitives"
 version = "3.0.0"
-source = "git+https://github.com/succinctlabs/sp1?branch=dev#12f212e386ae4c2da30cf6a61a7d87615d56bdac"
+source = "git+https://github.com/succinctlabs/sp1?rev=87cab0f744bb36550f0f91c84bac1d2382bee51e#87cab0f744bb36550f0f91c84bac1d2382bee51e"
 dependencies = [
  "bincode",
  "hex",
@@ -11577,7 +11612,7 @@ dependencies = [
 [[package]]
 name = "sp1-prover"
 version = "3.0.0"
-source = "git+https://github.com/succinctlabs/sp1?branch=dev#12f212e386ae4c2da30cf6a61a7d87615d56bdac"
+source = "git+https://github.com/succinctlabs/sp1?rev=87cab0f744bb36550f0f91c84bac1d2382bee51e#87cab0f744bb36550f0f91c84bac1d2382bee51e"
 dependencies = [
  "anyhow",
  "bincode",
@@ -11607,13 +11642,14 @@ dependencies = [
  "sp1-stark",
  "thiserror 1.0.69",
  "tracing",
+ "tracing-appender",
  "tracing-subscriber 0.3.18",
 ]
 
 [[package]]
 name = "sp1-recursion-circuit"
 version = "3.0.0"
-source = "git+https://github.com/succinctlabs/sp1?branch=dev#12f212e386ae4c2da30cf6a61a7d87615d56bdac"
+source = "git+https://github.com/succinctlabs/sp1?rev=87cab0f744bb36550f0f91c84bac1d2382bee51e#87cab0f744bb36550f0f91c84bac1d2382bee51e"
 dependencies = [
  "hashbrown 0.14.5",
  "itertools 0.13.0",
@@ -11646,7 +11682,7 @@ dependencies = [
 [[package]]
 name = "sp1-recursion-compiler"
 version = "3.0.0"
-source = "git+https://github.com/succinctlabs/sp1?branch=dev#12f212e386ae4c2da30cf6a61a7d87615d56bdac"
+source = "git+https://github.com/succinctlabs/sp1?rev=87cab0f744bb36550f0f91c84bac1d2382bee51e#87cab0f744bb36550f0f91c84bac1d2382bee51e"
 dependencies = [
  "backtrace",
  "itertools 0.13.0",
@@ -11667,7 +11703,7 @@ dependencies = [
 [[package]]
 name = "sp1-recursion-core"
 version = "3.0.0"
-source = "git+https://github.com/succinctlabs/sp1?branch=dev#12f212e386ae4c2da30cf6a61a7d87615d56bdac"
+source = "git+https://github.com/succinctlabs/sp1?rev=87cab0f744bb36550f0f91c84bac1d2382bee51e#87cab0f744bb36550f0f91c84bac1d2382bee51e"
 dependencies = [
  "backtrace",
  "ff 0.13.0",
@@ -11702,7 +11738,7 @@ dependencies = [
 [[package]]
 name = "sp1-recursion-derive"
 version = "3.0.0"
-source = "git+https://github.com/succinctlabs/sp1?branch=dev#12f212e386ae4c2da30cf6a61a7d87615d56bdac"
+source = "git+https://github.com/succinctlabs/sp1?rev=87cab0f744bb36550f0f91c84bac1d2382bee51e#87cab0f744bb36550f0f91c84bac1d2382bee51e"
 dependencies = [
  "quote",
  "syn 1.0.109",
@@ -11711,7 +11747,7 @@ dependencies = [
 [[package]]
 name = "sp1-recursion-gnark-ffi"
 version = "3.0.0"
-source = "git+https://github.com/succinctlabs/sp1?branch=dev#12f212e386ae4c2da30cf6a61a7d87615d56bdac"
+source = "git+https://github.com/succinctlabs/sp1?rev=87cab0f744bb36550f0f91c84bac1d2382bee51e#87cab0f744bb36550f0f91c84bac1d2382bee51e"
 dependencies = [
  "anyhow",
  "bincode",
@@ -11736,7 +11772,7 @@ dependencies = [
 [[package]]
 name = "sp1-sdk"
 version = "3.0.0"
-source = "git+https://github.com/succinctlabs/sp1?branch=dev#12f212e386ae4c2da30cf6a61a7d87615d56bdac"
+source = "git+https://github.com/succinctlabs/sp1?rev=87cab0f744bb36550f0f91c84bac1d2382bee51e#87cab0f744bb36550f0f91c84bac1d2382bee51e"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -11753,6 +11789,7 @@ dependencies = [
  "p3-field",
  "p3-fri",
  "serde",
+ "sp1-build",
  "sp1-core-executor",
  "sp1-core-machine",
  "sp1-primitives",
@@ -11769,7 +11806,7 @@ dependencies = [
 [[package]]
 name = "sp1-stark"
 version = "3.0.0"
-source = "git+https://github.com/succinctlabs/sp1?branch=dev#12f212e386ae4c2da30cf6a61a7d87615d56bdac"
+source = "git+https://github.com/succinctlabs/sp1?rev=87cab0f744bb36550f0f91c84bac1d2382bee51e#87cab0f744bb36550f0f91c84bac1d2382bee51e"
 dependencies = [
  "arrayref",
  "hashbrown 0.14.5",
@@ -11802,7 +11839,7 @@ dependencies = [
 [[package]]
 name = "sp1-verifier"
 version = "3.0.0"
-source = "git+https://github.com/succinctlabs/sp1?branch=dev#12f212e386ae4c2da30cf6a61a7d87615d56bdac"
+source = "git+https://github.com/succinctlabs/sp1?rev=87cab0f744bb36550f0f91c84bac1d2382bee51e#87cab0f744bb36550f0f91c84bac1d2382bee51e"
 dependencies = [
  "hex",
  "lazy_static",
@@ -12073,7 +12110,7 @@ version = "17.0.0"
 source = "git+https://github.com/availproject/polkadot-sdk.git?tag=polkadot-1.7.1-patch-10#f5587b380ee596f90482d402844c49aa140781d8"
 dependencies = [
  "build-helper",
- "cargo_metadata",
+ "cargo_metadata 0.15.4",
  "console",
  "filetime",
  "parity-wasm",
@@ -12627,6 +12664,18 @@ dependencies = [
  "pin-project-lite 0.2.15",
  "tracing-attributes",
  "tracing-core",
+]
+
+[[package]]
+name = "tracing-appender"
+version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3566e8ce28cc0a3fe42519fc80e6b4c943cc4c8cef275620eb8dac2d3d4e06cf"
+dependencies = [
+ "crossbeam-channel",
+ "thiserror 1.0.69",
+ "time",
+ "tracing-subscriber 0.3.18",
 ]
 
 [[package]]
