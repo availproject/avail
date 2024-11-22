@@ -335,9 +335,9 @@ pub mod api {
 			.hash();
 		runtime_metadata_hash
 			== [
-				157u8, 105u8, 146u8, 18u8, 155u8, 83u8, 176u8, 100u8, 196u8, 223u8, 205u8, 93u8,
-				34u8, 205u8, 24u8, 114u8, 206u8, 11u8, 234u8, 222u8, 119u8, 43u8, 230u8, 65u8,
-				48u8, 205u8, 215u8, 228u8, 85u8, 109u8, 147u8, 180u8,
+				69u8, 62u8, 25u8, 43u8, 239u8, 65u8, 163u8, 188u8, 120u8, 25u8, 100u8, 190u8, 43u8,
+				28u8, 158u8, 77u8, 58u8, 178u8, 71u8, 204u8, 124u8, 65u8, 145u8, 78u8, 241u8,
+				102u8, 93u8, 104u8, 183u8, 216u8, 97u8, 247u8,
 			]
 	}
 	pub mod system {
@@ -24539,6 +24539,7 @@ pub mod api {
 			#[codec(dumb_trait_bound)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
+			#[doc = "Emit new SP1 verification key."]
 			pub struct NewSP1VerificationKey {
 				pub old: new_sp1_verification_key::Old,
 				pub new: new_sp1_verification_key::New,
@@ -24566,6 +24567,7 @@ pub mod api {
 			#[codec(dumb_trait_bound)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
+			#[doc = "Emit when new sync committee is updated."]
 			pub struct SyncCommitteeHashUpdated {
 				pub period: sync_committee_hash_updated::Period,
 				pub hash: sync_committee_hash_updated::Hash,
@@ -24902,7 +24904,7 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = " Maps from a period to the poseidon commitment for the sync committee."]
+				#[doc = " Maps from a period to the the sync committee hash."]
 				pub fn sync_committee_hashes_iter(
 					&self,
 				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
@@ -24924,7 +24926,7 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = " Maps from a period to the poseidon commitment for the sync committee."]
+				#[doc = " Maps from a period to the the sync committee hash."]
 				pub fn sync_committee_hashes(
 					&self,
 					_0: impl ::core::borrow::Borrow<types::sync_committee_hashes::Param0>,
@@ -35912,11 +35914,11 @@ pub mod api {
 					#[doc = "Cannot get current message id"]
 					CurrentMessageIdNotFound,
 					#[codec(index = 34)]
+					#[doc = "Public values decoding error."]
 					CannotDecodePublicValue,
 					#[codec(index = 35)]
+					#[doc = "Sync committee hash is already set for given period."]
 					SyncCommitteeHashAlreadySet,
-					#[codec(index = 36)]
-					CurrentSyncCommitteeNotEqual,
 				}
 				#[derive(
 					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
@@ -36023,11 +36025,13 @@ pub mod api {
 						new: ::subxt::ext::subxt_core::utils::H256,
 					},
 					#[codec(index = 12)]
+					#[doc = "Emit new SP1 verification key."]
 					NewSP1VerificationKey {
 						old: ::subxt::ext::subxt_core::utils::H256,
 						new: ::subxt::ext::subxt_core::utils::H256,
 					},
 					#[codec(index = 13)]
+					#[doc = "Emit when new sync committee is updated."]
 					SyncCommitteeHashUpdated {
 						period: ::core::primitive::u64,
 						hash: ::subxt::ext::subxt_core::utils::H256,

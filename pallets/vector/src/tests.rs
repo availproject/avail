@@ -10,7 +10,7 @@ use crate::{
 	RotateVerificationKey, SP1VerificationKey, SourceChainFrozen, StepVerificationKey,
 	SyncCommitteeHashes, SyncCommitteePoseidons, Updater, ValidProof, WhitelistedDomains,
 };
-use alloy_sol_types::private::primitives::hex::ToHex;
+
 use alloy_sol_types::SolValue;
 use avail_core::data_proof::Message::FungibleToken;
 use avail_core::data_proof::{tx_uid, AddressedMessage, Message};
@@ -1501,26 +1501,23 @@ fn test_fulfill_successfully_sync_committee_not_set() {
 		assert_ok!(ok);
 
 		let header = Headers::<Test>::get(6178816);
-		assert_eq!(
-			H256(hex!(
-				"95eb3a41a42b59787608d52c6aada0b590902283a91144ef47ad6860b92a5c08"
-			)),
-			header
-		);
+
+		// assert proof outputs
+		let period = 6178816 / 8192;
+		assert_eq!(H256(proof_outputs.newHeader.0), header);
 		let execution_state_root = ExecutionStateRoots::<Test>::get(6178816);
 		assert_eq!(
-			H256(hex!(
-				"009c4d92c7f0d1a15c9e62d578ee917c8aded8d9d5ab9de1ffa278c00d282f80"
-			)),
+			H256(proof_outputs.executionStateRoot.0),
 			execution_state_root
 		);
-		let sync_committee_hash = SyncCommitteeHashes::<Test>::get((6178816 / 8192) + 1);
+		let sync_committee_hash = SyncCommitteeHashes::<Test>::get(period + 1);
 		assert_eq!(
-			H256(hex!(
-				"f4887c7e675fa7c166c1d17e03d0dd746aa595756b66a8fb8d8fad1215d4caaf"
-			)),
+			H256(proof_outputs.nextSyncCommitteeHash.0),
 			sync_committee_hash
 		);
+
+		let sync_committee_hash = SyncCommitteeHashes::<Test>::get(period);
+		assert_eq!(H256(proof_outputs.syncCommitteeHash.0), sync_committee_hash);
 	});
 }
 

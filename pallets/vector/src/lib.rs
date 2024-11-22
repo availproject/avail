@@ -874,12 +874,6 @@ pub mod pallet {
 			let period = new_head
 				.checked_div(config.slots_per_period)
 				.ok_or(Error::<T>::ConfigurationNotSet)?;
-			let next_period = period + 1;
-
-			ensure!(
-				SyncCommitteeHashes::<T>::get(next_period) == H256::zero(),
-				Error::<T>::SyncCommitteeAlreadySet
-			);
 
 			// If the sync committee for the period is not set, set it.
 			// This can happen if the light client was very behind and had a lot of updates
@@ -893,8 +887,11 @@ pub mod pallet {
 				});
 			}
 
+			// Update next sync committee hash only if it is not set
 			let next_sync_committee_hash = H256::from(proof_outputs.nextSyncCommitteeHash.0);
 			if next_sync_committee_hash != H256::zero() {
+				let next_period = period + 1;
+
 				let sync_committee_hash = SyncCommitteeHashes::<T>::get(next_period);
 				if sync_committee_hash != next_sync_committee_hash {
 					ensure!(

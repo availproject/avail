@@ -267,13 +267,11 @@ impl<T: frame_system::Config> pallet_vector::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
-	/// Storage: `Vector::SP1VerificationKey` (r:1 w:1)
-	/// Proof: `Vector::SP1VerificationKey` (`max_values`: Some(1), `max_size`: Some(32), added: 527, mode: `MaxEncodedLen`)
 	fn set_sp1_verification_key() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `357`
 		//  Estimated: `1517`
-		// Minimum execution time: 8_000_000 picoseconds.
+		// Minimum execution time: 7_000_000 picoseconds.
 		Weight::from_parts(8_000_000, 0)
 			.saturating_add(Weight::from_parts(0, 1517))
 			.saturating_add(T::DbWeight::get().reads(1))
@@ -312,8 +310,8 @@ impl<T: frame_system::Config> pallet_vector::WeightInfo for WeightInfo<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `614`
 		//  Estimated: `6020`
-		// Minimum execution time: 534_129_000_000 picoseconds.
-		Weight::from_parts(536_316_000_000, 0)
+		// Minimum execution time: 524_799_000_000 picoseconds.
+		Weight::from_parts(528_506_000_000, 0)
 			.saturating_add(Weight::from_parts(0, 6020))
 			.saturating_add(T::DbWeight::get().reads(9))
 			.saturating_add(T::DbWeight::get().writes(5))

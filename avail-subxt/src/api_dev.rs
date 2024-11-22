@@ -1628,8 +1628,7 @@ pub mod api {
 				#[doc = " The maximum length of a block (in bytes)."]
 				pub fn block_length(
 					&self,
-				) -> ::subxt::constants::Address<runtime_types::frame_system::limits::BlockLength>
-				{
+				) -> ::subxt::constants::Address<runtime_types::frame_system::limits::BlockLength> {
 					::subxt::constants::Address::new_static(
 						"System",
 						"BlockLength",
@@ -12913,8 +12912,7 @@ pub mod api {
 				#[doc = " Maximum amount of funds that should be placed in a deposit for making a proposal."]
 				pub fn proposal_bond_maximum(
 					&self,
-				) -> ::subxt::constants::Address<::core::option::Option<::core::primitive::u128>>
-				{
+				) -> ::subxt::constants::Address<::core::option::Option<::core::primitive::u128>> {
 					::subxt::constants::Address::new_static(
 						"Treasury",
 						"ProposalBondMaximum",
@@ -15503,8 +15501,7 @@ pub mod api {
 				#[doc = " Minimum number of cols in a block."]
 				pub fn min_block_cols(
 					&self,
-				) -> ::subxt::constants::Address<runtime_types::avail_core::BlockLengthColumns>
-				{
+				) -> ::subxt::constants::Address<runtime_types::avail_core::BlockLengthColumns> {
 					::subxt::constants::Address::new_static(
 						"DataAvailability",
 						"MinBlockCols",
@@ -15518,8 +15515,7 @@ pub mod api {
 				#[doc = " Maximum number of cols in a block."]
 				pub fn max_block_cols(
 					&self,
-				) -> ::subxt::constants::Address<runtime_types::avail_core::BlockLengthColumns>
-				{
+				) -> ::subxt::constants::Address<runtime_types::avail_core::BlockLengthColumns> {
 					::subxt::constants::Address::new_static(
 						"DataAvailability",
 						"MaxBlockCols",
