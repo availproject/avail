@@ -10,7 +10,6 @@ use crate::{
 	RotateVerificationKey, SP1VerificationKey, SourceChainFrozen, StepVerificationKey,
 	SyncCommitteeHashes, SyncCommitteePoseidons, Updater, ValidProof, WhitelistedDomains,
 };
-
 use alloy_sol_types::SolValue;
 use avail_core::data_proof::Message::FungibleToken;
 use avail_core::data_proof::{tx_uid, AddressedMessage, Message};

@@ -881,10 +881,6 @@ pub mod pallet {
 			if SyncCommitteeHashes::<T>::get(period) == H256::zero() {
 				let sync_committee_hash = H256::from(proof_outputs.syncCommitteeHash.0);
 				SyncCommitteeHashes::<T>::set(period, sync_committee_hash);
-				Self::deposit_event(Event::SyncCommitteeHashUpdated {
-					period,
-					hash: sync_committee_hash,
-				});
 			}
 
 			// Update next sync committee hash only if it is not set
