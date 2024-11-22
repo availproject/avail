@@ -1426,10 +1426,6 @@ fn test_fulfill_successfully() {
 		let slot = 6178816u64;
 		let current_period = slot / slots_per_period;
 
-		println!("proof {:?}", proof.encode_hex::<String>());
-		println!("pub values {:?}", public_inputs.encode_hex::<String>());
-		println!("sync com  {:?}", proof_outputs.syncCommitteeHash);
-
 		ConfigurationStorage::<Test>::set(Configuration {
 			slots_per_period,
 			finality_threshold,
@@ -1440,6 +1436,60 @@ fn test_fulfill_successfully() {
 			current_period,
 			H256::from(proof_outputs.syncCommitteeHash.0),
 		);
+
+		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
+		let ok = Bridge::fulfill(
+			origin,
+			BoundedVec::truncate_from(proof),
+			BoundedVec::truncate_from(public_inputs),
+		);
+
+		assert_ok!(ok);
+
+		let header = Headers::<Test>::get(6178816);
+		assert_eq!(
+			H256(hex!(
+				"95eb3a41a42b59787608d52c6aada0b590902283a91144ef47ad6860b92a5c08"
+			)),
+			header
+		);
+		let execution_state_root = ExecutionStateRoots::<Test>::get(6178816);
+		assert_eq!(
+			H256(hex!(
+				"009c4d92c7f0d1a15c9e62d578ee917c8aded8d9d5ab9de1ffa278c00d282f80"
+			)),
+			execution_state_root
+		);
+		let sync_committee_hash = SyncCommitteeHashes::<Test>::get((6178816 / 8192) + 1);
+		assert_eq!(
+			H256(hex!(
+				"f4887c7e675fa7c166c1d17e03d0dd746aa595756b66a8fb8d8fad1215d4caaf"
+			)),
+			sync_committee_hash
+		);
+	});
+}
+
+#[test]
+fn test_fulfill_successfully_sync_committee_not_set() {
+	new_test_ext().execute_with(|| {
+		let sp1_proof_with_public_values = SP1ProofWithPublicValues::load(PROOF_FILE).unwrap();
+		let proof = sp1_proof_with_public_values.bytes();
+		let public_inputs = sp1_proof_with_public_values.public_values.to_vec();
+		SP1VerificationKey::<Test>::set(H256(SP1_VERIFICATION_KEY));
+
+		let proof_outputs: ProofOutputs = SolValue::abi_decode(&public_inputs, true).unwrap();
+		let slots_per_period = 8192;
+		let finality_threshold = 342u16;
+		let slot = 6178816u64;
+		let current_period = slot / slots_per_period;
+
+		ConfigurationStorage::<Test>::set(Configuration {
+			slots_per_period,
+			finality_threshold,
+		});
+
+		Updater::<Test>::set(H256(TEST_SENDER_VEC));
 
 		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
 		let ok = Bridge::fulfill(

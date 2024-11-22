@@ -130,9 +130,10 @@ pub mod pallet {
 		CannotParseOutputData,
 		/// Cannot get current message id
 		CurrentMessageIdNotFound,
+		/// Public values decoding error.
 		CannotDecodePublicValue,
+		/// Sync committee hash is already set for given period.
 		SyncCommitteeHashAlreadySet,
-		CurrentSyncCommitteeNotEqual,
 	}
 
 	#[pallet::event]
@@ -880,11 +881,17 @@ pub mod pallet {
 				Error::<T>::SyncCommitteeAlreadySet
 			);
 
-			ensure!(
-				SyncCommitteeHashes::<T>::get(period)
-					== H256::from(proof_outputs.syncCommitteeHash.0),
-				Error::<T>::CurrentSyncCommitteeNotEqual
-			);
+			// If the sync committee for the period is not set, set it.
+			// This can happen if the light client was very behind and had a lot of updates
+			// and only the last sync committee is stored, not the intermediate ones for every period and may have gaps in periods.
+			if SyncCommitteeHashes::<T>::get(period) == H256::zero() {
+				let sync_committee_hash = H256::from(proof_outputs.syncCommitteeHash.0);
+				SyncCommitteeHashes::<T>::set(period, sync_committee_hash);
+				Self::deposit_event(Event::SyncCommitteeHashUpdated {
+					period,
+					hash: sync_committee_hash,
+				});
+			}
 
 			let next_sync_committee_hash = H256::from(proof_outputs.nextSyncCommitteeHash.0);
 			if next_sync_committee_hash != H256::zero() {
