@@ -1,37 +1,12 @@
-use crate::sdk::WaitFor;
+use crate::AOnlineClient;
 use crate::{avail, AccountId};
-use crate::{utils, AOnlineClient};
 
-use avail::balances::events as BalancesEvents;
-use avail::system::events as SystemEvents;
+use super::Transaction;
 use subxt::backend::rpc::RpcClient;
-use subxt_signer::sr25519::Keypair;
 
-use super::{
-	find_event_or_nothing, find_event_or_return_error, progress_and_parse_transaction,
-	TransactionFailed,
-};
-use super::{options::Options, TransactionDetails};
-
-#[derive(Debug)]
-pub struct TransferAllTx {
-	pub event: BalancesEvents::Transfer,
-	pub event2: Option<SystemEvents::KilledAccount>,
-	pub details: TransactionDetails,
-}
-
-#[derive(Debug)]
-pub struct TransferAllowDeathTx {
-	pub event: BalancesEvents::Transfer,
-	pub event2: Option<SystemEvents::KilledAccount>,
-	pub details: TransactionDetails,
-}
-
-#[derive(Debug)]
-pub struct TransferKeepAliveTx {
-	pub event: BalancesEvents::Transfer,
-	pub details: TransactionDetails,
-}
+pub type TransferAllCall = avail::balances::calls::types::TransferAll;
+pub type TransferAllowDeathCall = avail::balances::calls::types::TransferAllowDeath;
+pub type TransferKeepAliveCall = avail::balances::calls::types::TransferKeepAlive;
 
 #[derive(Clone)]
 pub struct Balances {
@@ -47,98 +22,30 @@ impl Balances {
 		}
 	}
 
-	pub async fn transfer_all(
-		&self,
-		dest: AccountId,
-		keep_alive: bool,
-		wait_for: WaitFor,
-		account: &Keypair,
-		options: Option<Options>,
-	) -> Result<TransferAllTx, TransactionFailed> {
-		let call = avail::tx().balances().transfer_all(dest.into(), keep_alive);
-		let details = utils::progress_and_parse_transaction(
-			&self.online_client,
-			&self.rpc_client,
-			account,
-			call,
-			wait_for,
-			options,
-		)
-		.await?;
-
-		let event = find_event_or_return_error::<BalancesEvents::Transfer>(
-			"Failed to find Balances::Transfer event",
-			&details,
-		)?;
-		let event2 = find_event_or_nothing::<SystemEvents::KilledAccount>(&details);
-
-		Ok(TransferAllTx {
-			event,
-			event2,
-			details,
-		})
+	pub fn transfer_all(&self, dest: AccountId, keep_alive: bool) -> Transaction<TransferAllCall> {
+		let payload = avail::tx().balances().transfer_all(dest.into(), keep_alive);
+		Transaction::new(self.online_client.clone(), self.rpc_client.clone(), payload)
 	}
 
-	pub async fn transfer_allow_death(
+	pub fn transfer_allow_death(
 		&self,
 		dest: AccountId,
 		amount: u128,
-		wait_for: WaitFor,
-		account: &Keypair,
-		options: Option<Options>,
-	) -> Result<TransferAllowDeathTx, TransactionFailed> {
-		let call = avail::tx()
+	) -> Transaction<TransferAllowDeathCall> {
+		let payload = avail::tx()
 			.balances()
 			.transfer_allow_death(dest.into(), amount);
-		let details = progress_and_parse_transaction(
-			&self.online_client,
-			&self.rpc_client,
-			account,
-			call,
-			wait_for,
-			options,
-		)
-		.await?;
-
-		let event = find_event_or_return_error::<BalancesEvents::Transfer>(
-			"Failed to find Balances::Transfer event",
-			&details,
-		)?;
-		let event2 = find_event_or_nothing::<SystemEvents::KilledAccount>(&details);
-
-		Ok(TransferAllowDeathTx {
-			event,
-			event2,
-			details,
-		})
+		Transaction::new(self.online_client.clone(), self.rpc_client.clone(), payload)
 	}
 
-	pub async fn transfer_keep_alive(
+	pub fn transfer_keep_alive(
 		&self,
 		dest: AccountId,
 		value: u128,
-		wait_for: WaitFor,
-		account: &Keypair,
-		options: Option<Options>,
-	) -> Result<TransferKeepAliveTx, TransactionFailed> {
-		let call = avail::tx()
+	) -> Transaction<TransferKeepAliveCall> {
+		let payload = avail::tx()
 			.balances()
 			.transfer_keep_alive(dest.into(), value);
-		let details = progress_and_parse_transaction(
-			&self.online_client,
-			&self.rpc_client,
-			account,
-			call,
-			wait_for,
-			options,
-		)
-		.await?;
-
-		let event = find_event_or_return_error::<BalancesEvents::Transfer>(
-			"Failed to find Balances::Transfer event",
-			&details,
-		)?;
-
-		Ok(TransferKeepAliveTx { event, details })
+		Transaction::new(self.online_client.clone(), self.rpc_client.clone(), payload)
 	}
 }

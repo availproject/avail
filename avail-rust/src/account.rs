@@ -6,8 +6,8 @@ use crate::{
 		runtime_types::{frame_system::AccountInfo, pallet_balances::types::AccountData},
 	},
 	error::ClientError,
-	transactions::{balances, da, TransactionFailed},
-	utils, AccountId, Key, Keypair, Nonce, Options, SecretUri, WaitFor, SDK,
+	transactions::{TransactionDetails, TransactionFailed},
+	utils, AccountId, Keypair, Nonce, Options, SecretUri, WaitFor, SDK,
 };
 
 pub struct Account {
@@ -70,34 +70,28 @@ impl Account {
 		&self,
 		dest: AccountId,
 		value: u128,
-	) -> Result<balances::TransferKeepAliveTx, TransactionFailed> {
+	) -> Result<TransactionDetails, TransactionFailed> {
 		let options = Some(self.build_options());
-		self.sdk
-			.tx
-			.balances
-			.transfer_keep_alive(dest, value, self.wait_for, &self.keyring, options)
-			.await
+		let tx = self.sdk.tx.balances.transfer_keep_alive(dest, value);
+		tx.execute(self.wait_for, &self.keyring, options).await
 	}
 
-	pub async fn submit_data(&self, data: Vec<u8>) -> Result<da::SubmitDataTx, TransactionFailed> {
+	pub async fn submit_data(
+		&self,
+		data: Vec<u8>,
+	) -> Result<TransactionDetails, TransactionFailed> {
 		let options = Some(self.build_options());
-		self.sdk
-			.tx
-			.data_availability
-			.submit_data(data, self.wait_for, &self.keyring, options)
-			.await
+		let tx = self.sdk.tx.data_availability.submit_data(data);
+		tx.execute(self.wait_for, &self.keyring, options).await
 	}
 
 	pub async fn create_application_key(
 		&self,
-		key: Key,
-	) -> Result<da::CreateApplicationKeyTx, TransactionFailed> {
+		key: Vec<u8>,
+	) -> Result<TransactionDetails, TransactionFailed> {
 		let options = Some(self.build_options());
-		self.sdk
-			.tx
-			.data_availability
-			.create_application_key(key, self.wait_for, &self.keyring, options)
-			.await
+		let tx = self.sdk.tx.data_availability.create_application_key(key);
+		tx.execute(self.wait_for, &self.keyring, options).await
 	}
 
 	pub async fn get_balance(&self) -> Result<AccountInfo<u32, AccountData<u128>>, String> {

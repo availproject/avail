@@ -44,8 +44,8 @@ pub async fn run() -> Result<(), ClientError> {
 
 mod create {
 	use avail_rust::{
-		error::ClientError, utils::account_id_from_str, Keypair, Nonce, Options, SecretUri,
-		WaitFor, SDK,
+		error::ClientError, transactions::NominationPoolsEvents, utils::account_id_from_str,
+		Keypair, Nonce, Options, SecretUri, SDK,
 	};
 	use core::str::FromStr;
 
@@ -60,24 +60,20 @@ mod create {
 		let nominator = account_id_from_str("5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty")?; // Bob
 		let bouncer = account_id_from_str("5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty")?; // Bob
 
-		let wait_for = WaitFor::BlockInclusion;
-		let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
-		let result = sdk
+		let options = Some(Options::new().nonce(Nonce::BestBlockAndTxPool));
+		let tx = sdk
 			.tx
 			.nomination_pools
-			.create(
-				amount,
-				root,
-				nominator,
-				bouncer,
-				wait_for,
-				&account,
-				Some(options),
-			)
-			.await;
-		let result = result.map_err(|e| e.reason)?;
+			.create(amount, root, nominator, bouncer);
+		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(result);
+		dbg!(&result);
+		if let Some(event) = result.find_first_event::<NominationPoolsEvents::Created>() {
+			dbg!(event);
+		}
+		if let Some(event) = result.find_first_event::<NominationPoolsEvents::Bonded>() {
+			dbg!(event);
+		}
 
 		Ok(())
 	}
@@ -85,8 +81,8 @@ mod create {
 
 mod create_with_pool_id {
 	use avail_rust::{
-		error::ClientError, utils::account_id_from_str, Keypair, Nonce, Options, SecretUri,
-		WaitFor, SDK,
+		error::ClientError, transactions::NominationPoolsEvents, utils::account_id_from_str,
+		Keypair, Nonce, Options, SecretUri, SDK,
 	};
 	use core::str::FromStr;
 
@@ -102,32 +98,30 @@ mod create_with_pool_id {
 		let bouncer = account_id_from_str("5HGjWAeFDfFCWPsjFQdVV2Msvz2XtMktvgocEZcCj68kUMaw")?; // Eve
 		let pool_id = 0;
 
-		let wait_for = WaitFor::BlockInclusion;
-		let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
-		let result = sdk
+		let options = Some(Options::new().nonce(Nonce::BestBlockAndTxPool));
+		let tx = sdk
 			.tx
 			.nomination_pools
-			.create_with_pool_id(
-				amount,
-				root,
-				nominator,
-				bouncer,
-				pool_id,
-				wait_for,
-				&account,
-				Some(options),
-			)
-			.await;
-		let result = result.map_err(|e| e.reason)?;
+			.create_with_pool_id(amount, root, nominator, bouncer, pool_id);
+		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(result);
+		dbg!(&result);
+		if let Some(event) = result.find_first_event::<NominationPoolsEvents::Created>() {
+			dbg!(event);
+		}
+		if let Some(event) = result.find_first_event::<NominationPoolsEvents::Bonded>() {
+			dbg!(event);
+		}
 
 		Ok(())
 	}
 }
 
 mod join {
-	use avail_rust::{error::ClientError, Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
+	use avail_rust::{
+		error::ClientError, transactions::NominationPoolsEvents, Keypair, Nonce, Options,
+		SecretUri, SDK,
+	};
 	use core::str::FromStr;
 
 	pub async fn run() -> Result<(), ClientError> {
@@ -139,16 +133,14 @@ mod join {
 		let amount = SDK::one_avail() * 100_000u128;
 		let pool_id = 1;
 
-		let wait_for = WaitFor::BlockInclusion;
-		let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
-		let result = sdk
-			.tx
-			.nomination_pools
-			.join(amount, pool_id, wait_for, &account, Some(options))
-			.await;
-		let result = result.map_err(|e| e.reason)?;
+		let options = Some(Options::new().nonce(Nonce::BestBlockAndTxPool));
+		let tx = sdk.tx.nomination_pools.join(amount, pool_id);
+		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(result);
+		dbg!(&result);
+		if let Some(event) = result.find_first_event::<NominationPoolsEvents::Bonded>() {
+			dbg!(event);
+		}
 
 		Ok(())
 	}
@@ -156,8 +148,9 @@ mod join {
 
 mod bond_extra {
 	use avail_rust::{
-		error::ClientError, transactions::nom_pools::BondExtra, Keypair, Nonce, Options, SecretUri,
-		WaitFor, SDK,
+		error::ClientError,
+		transactions::{nom_pools::BondExtra, NominationPoolsEvents},
+		Keypair, Nonce, Options, SecretUri, SDK,
 	};
 	use core::str::FromStr;
 
@@ -169,23 +162,24 @@ mod bond_extra {
 		let account = Keypair::from_uri(&secret_uri)?;
 		let extra = BondExtra::FreeBalance(SDK::one_avail());
 
-		let wait_for = WaitFor::BlockInclusion;
-		let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
-		let result = sdk
-			.tx
-			.nomination_pools
-			.bond_extra(extra, wait_for, &account, Some(options))
-			.await;
-		let result = result.map_err(|e| e.reason)?;
+		let options = Some(Options::new().nonce(Nonce::BestBlockAndTxPool));
+		let tx = sdk.tx.nomination_pools.bond_extra(extra);
+		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(result);
+		dbg!(&result);
+		if let Some(event) = result.find_first_event::<NominationPoolsEvents::Bonded>() {
+			dbg!(event);
+		}
 
 		Ok(())
 	}
 }
 
 mod unbond {
-	use avail_rust::{error::ClientError, Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
+	use avail_rust::{
+		error::ClientError, transactions::NominationPoolsEvents, Keypair, Nonce, Options,
+		SecretUri, SDK,
+	};
 	use core::str::FromStr;
 
 	pub async fn run() -> Result<(), ClientError> {
@@ -197,29 +191,27 @@ mod unbond {
 		let member_account = account.public_key().to_account_id();
 		let unbonding_points = SDK::one_avail();
 
-		let wait_for = WaitFor::BlockInclusion;
-		let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
-		let result = sdk
+		let options = Some(Options::new().nonce(Nonce::BestBlockAndTxPool));
+		let tx = sdk
 			.tx
 			.nomination_pools
-			.unbond(
-				member_account,
-				unbonding_points,
-				wait_for,
-				&account,
-				Some(options),
-			)
-			.await;
-		let result = result.map_err(|e| e.reason)?;
+			.unbond(member_account, unbonding_points);
+		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(result);
+		dbg!(&result);
+		if let Some(event) = result.find_first_event::<NominationPoolsEvents::Unbonded>() {
+			dbg!(event);
+		}
 
 		Ok(())
 	}
 }
 
 mod withdraw_unbonded {
-	use avail_rust::{error::ClientError, Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
+	use avail_rust::{
+		error::ClientError, transactions::NominationPoolsEvents, Keypair, Nonce, Options,
+		SecretUri, SDK,
+	};
 	use core::str::FromStr;
 
 	pub async fn run() -> Result<(), ClientError> {
@@ -231,22 +223,17 @@ mod withdraw_unbonded {
 		let member_account = account.public_key().to_account_id();
 		let num_slashing_spans = 0;
 
-		let wait_for = WaitFor::BlockInclusion;
-		let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
-		let result = sdk
+		let options = Some(Options::new().nonce(Nonce::BestBlockAndTxPool));
+		let tx = sdk
 			.tx
 			.nomination_pools
-			.withdraw_unbonded(
-				member_account,
-				num_slashing_spans,
-				wait_for,
-				&account,
-				Some(options),
-			)
-			.await;
-		let result = result.map_err(|e| e.reason)?;
+			.withdraw_unbonded(member_account, num_slashing_spans);
+		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(result);
+		dbg!(&result);
+		if let Some(event) = result.find_first_event::<NominationPoolsEvents::Withdrawn>() {
+			dbg!(event);
+		}
 
 		Ok(())
 	}
@@ -254,8 +241,10 @@ mod withdraw_unbonded {
 
 mod set_commission {
 	use avail_rust::{
-		error::ClientError, transactions::nom_pools::NewCommission, Keypair, Nonce, Options,
-		Perbill, SecretUri, WaitFor, SDK,
+		error::ClientError,
+		transactions::{nom_pools::NewCommission, NominationPoolsEvents},
+		utils::account_id_from_str,
+		Keypair, Nonce, Options, Perbill, SecretUri, SDK,
 	};
 	use core::str::FromStr;
 
@@ -267,33 +256,30 @@ mod set_commission {
 		let account = Keypair::from_uri(&secret_uri)?;
 		let pool_id = 1;
 		let new_commission = NewCommission {
-			payee: String::from("5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"), // Alice
-			amount: Perbill(10_000_000u32),                                          // 1%
+			payee: account_id_from_str("5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY")?, // Alice
+			amount: Perbill(10_000_000u32),                                                  // 1%
 		};
 
-		let wait_for = WaitFor::BlockInclusion;
-		let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
-		let result = sdk
+		let options = Some(Options::new().nonce(Nonce::BestBlockAndTxPool));
+		let tx = sdk
 			.tx
 			.nomination_pools
-			.set_commission(
-				pool_id,
-				Some(new_commission),
-				wait_for,
-				&account,
-				Some(options),
-			)
-			.await;
-		let result = result.map_err(|e| e.reason)?;
+			.set_commission(pool_id, Some(new_commission));
+		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(result);
+		dbg!(&result);
+		if let Some(event) =
+			result.find_first_event::<NominationPoolsEvents::PoolCommissionUpdated>()
+		{
+			dbg!(event);
+		}
 
 		Ok(())
 	}
 }
 
 mod set_metadata {
-	use avail_rust::{error::ClientError, Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
+	use avail_rust::{error::ClientError, Keypair, Nonce, Options, SecretUri, SDK};
 	use core::str::FromStr;
 
 	pub async fn run() -> Result<(), ClientError> {
@@ -305,16 +291,11 @@ mod set_metadata {
 		let pool_id = 1;
 		let metadata = String::from("This is metadata").as_bytes().to_vec();
 
-		let wait_for = WaitFor::BlockInclusion;
-		let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
-		let result = sdk
-			.tx
-			.nomination_pools
-			.set_metadata(pool_id, metadata, wait_for, &account, Some(options))
-			.await;
-		let result = result.map_err(|e| e.reason)?;
+		let options = Some(Options::new().nonce(Nonce::BestBlockAndTxPool));
+		let tx = sdk.tx.nomination_pools.set_metadata(pool_id, metadata);
+		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(result);
+		dbg!(&result);
 
 		Ok(())
 	}
@@ -322,8 +303,9 @@ mod set_metadata {
 
 mod set_state {
 	use avail_rust::{
-		error::ClientError, transactions::nom_pools::State, Keypair, Nonce, Options, SecretUri,
-		WaitFor, SDK,
+		error::ClientError,
+		transactions::{nom_pools::State, NominationPoolsEvents},
+		Keypair, Nonce, Options, SecretUri, SDK,
 	};
 	use core::str::FromStr;
 
@@ -336,16 +318,14 @@ mod set_state {
 		let pool_id = 0;
 		let state = State::Destroying;
 
-		let wait_for = WaitFor::BlockInclusion;
-		let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
-		let result = sdk
-			.tx
-			.nomination_pools
-			.set_state(pool_id, state, wait_for, &account, Some(options))
-			.await;
-		let result = result.map_err(|e| e.reason)?;
+		let options = Some(Options::new().nonce(Nonce::BestBlockAndTxPool));
+		let tx = sdk.tx.nomination_pools.set_state(pool_id, state);
+		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(result);
+		dbg!(&result);
+		if let Some(event) = result.find_first_event::<NominationPoolsEvents::StateChanged>() {
+			dbg!(event);
+		}
 
 		Ok(())
 	}
@@ -354,7 +334,7 @@ mod set_state {
 mod set_claim_permission {
 	use avail_rust::{
 		error::ClientError, transactions::nom_pools::Permission, Keypair, Nonce, Options,
-		SecretUri, WaitFor, SDK,
+		SecretUri, SDK,
 	};
 	use core::str::FromStr;
 
@@ -366,16 +346,11 @@ mod set_claim_permission {
 		let account = Keypair::from_uri(&secret_uri)?;
 		let permission = Permission::PermissionlessAll;
 
-		let wait_for = WaitFor::BlockInclusion;
-		let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
-		let result = sdk
-			.tx
-			.nomination_pools
-			.set_claim_permission(permission, wait_for, &account, Some(options))
-			.await;
-		let result = result.map_err(|e| e.reason)?;
+		let options = Some(Options::new().nonce(Nonce::BestBlockAndTxPool));
+		let tx = sdk.tx.nomination_pools.set_claim_permission(permission);
+		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(result);
+		dbg!(&result);
 
 		Ok(())
 	}
@@ -383,8 +358,8 @@ mod set_claim_permission {
 
 mod nominate {
 	use avail_rust::{
-		error::ClientError, utils::account_id_from_str, Keypair, Nonce, Options, SecretUri,
-		WaitFor, SDK,
+		error::ClientError, transactions::NominationPoolsCalls, utils::account_id_from_str,
+		Keypair, Nonce, Options, SecretUri, SDK,
 	};
 	use core::str::FromStr;
 
@@ -399,23 +374,24 @@ mod nominate {
 			account_id_from_str("5GNJqTPyNqANBkUVMN1LPPrxXnFouWXoe2wNSmmEoLctxiZY")?, // Alice_Stash
 		];
 
-		let wait_for = WaitFor::BlockInclusion;
-		let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
-		let result = sdk
-			.tx
-			.nomination_pools
-			.nominate(pool_id, validators, wait_for, &account, Some(options))
-			.await;
-		let result = result.map_err(|e| e.reason)?;
+		let options = Some(Options::new().nonce(Nonce::BestBlockAndTxPool));
+		let tx = sdk.tx.nomination_pools.nominate(pool_id, validators);
+		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(result);
+		dbg!(&result);
+		if let Some(data) = result
+			.get_data::<NominationPoolsCalls::Nominate>(&sdk.online_client)
+			.await
+		{
+			dbg!(data);
+		}
 
 		Ok(())
 	}
 }
 
 mod chill {
-	use avail_rust::{error::ClientError, Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
+	use avail_rust::{error::ClientError, Keypair, Nonce, Options, SecretUri, SDK};
 	use core::str::FromStr;
 
 	pub async fn run() -> Result<(), ClientError> {
@@ -426,23 +402,21 @@ mod chill {
 		let account = Keypair::from_uri(&secret_uri)?;
 		let pool_id = 0;
 
-		let wait_for = WaitFor::BlockInclusion;
-		let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
-		let result = sdk
-			.tx
-			.nomination_pools
-			.chill(pool_id, wait_for, &account, Some(options))
-			.await;
-		let result = result.map_err(|e| e.reason)?;
+		let options = Some(Options::new().nonce(Nonce::BestBlockAndTxPool));
+		let tx = sdk.tx.nomination_pools.chill(pool_id);
+		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(result);
+		dbg!(&result);
 
 		Ok(())
 	}
 }
 
 mod claim_payout {
-	use avail_rust::{error::ClientError, Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
+	use avail_rust::{
+		error::ClientError, transactions::NominationPoolsEvents, Keypair, Nonce, Options,
+		SecretUri, SDK,
+	};
 	use core::str::FromStr;
 
 	pub async fn run() -> Result<(), ClientError> {
@@ -452,16 +426,14 @@ mod claim_payout {
 		let secret_uri = SecretUri::from_str("//Bob")?;
 		let account = Keypair::from_uri(&secret_uri)?;
 
-		let wait_for = WaitFor::BlockInclusion;
-		let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
-		let result = sdk
-			.tx
-			.nomination_pools
-			.claim_payout(wait_for, &account, Some(options))
-			.await;
-		let result = result.map_err(|e| e.reason)?;
+		let options = Some(Options::new().nonce(Nonce::BestBlockAndTxPool));
+		let tx = sdk.tx.nomination_pools.claim_payout();
+		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(result);
+		dbg!(&result);
+		if let Some(event) = result.find_first_event::<NominationPoolsEvents::PaidOut>() {
+			dbg!(event);
+		}
 
 		Ok(())
 	}
@@ -469,8 +441,8 @@ mod claim_payout {
 
 mod claim_payout_other {
 	use avail_rust::{
-		error::ClientError, utils::account_id_from_str, Keypair, Nonce, Options, SecretUri,
-		WaitFor, SDK,
+		error::ClientError, transactions::NominationPoolsEvents, utils::account_id_from_str,
+		Keypair, Nonce, Options, SecretUri, SDK,
 	};
 	use core::str::FromStr;
 
@@ -482,23 +454,24 @@ mod claim_payout_other {
 		let account = Keypair::from_uri(&secret_uri)?;
 		let other = account_id_from_str("5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy")?; // Dave
 
-		let wait_for = WaitFor::BlockInclusion;
-		let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
-		let result = sdk
-			.tx
-			.nomination_pools
-			.claim_payout_other(other, wait_for, &account, Some(options))
-			.await;
-		let result = result.map_err(|e| e.reason)?;
+		let options = Some(Options::new().nonce(Nonce::BestBlockAndTxPool));
+		let tx = sdk.tx.nomination_pools.claim_payout_other(other);
+		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(result);
+		dbg!(&result);
+		if let Some(event) = result.find_first_event::<NominationPoolsEvents::PaidOut>() {
+			dbg!(event);
+		}
 
 		Ok(())
 	}
 }
 
 mod claim_commission {
-	use avail_rust::{error::ClientError, Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
+	use avail_rust::{
+		error::ClientError, transactions::NominationPoolsEvents, Keypair, Nonce, Options,
+		SecretUri, SDK,
+	};
 	use core::str::FromStr;
 
 	pub async fn run() -> Result<(), ClientError> {
@@ -509,16 +482,16 @@ mod claim_commission {
 		let account = Keypair::from_uri(&secret_uri)?;
 		let pool_id = 1;
 
-		let wait_for = WaitFor::BlockInclusion;
-		let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
-		let result = sdk
-			.tx
-			.nomination_pools
-			.claim_commission(pool_id, wait_for, &account, Some(options))
-			.await;
-		let result = result.map_err(|e| e.reason)?;
+		let options = Some(Options::new().nonce(Nonce::BestBlockAndTxPool));
+		let tx = sdk.tx.nomination_pools.claim_commission(pool_id);
+		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(result);
+		dbg!(&result);
+		if let Some(event) =
+			result.find_first_event::<NominationPoolsEvents::PoolCommissionClaimed>()
+		{
+			dbg!(event);
+		}
 
 		Ok(())
 	}
@@ -527,7 +500,7 @@ mod claim_commission {
 mod payout_stakers {
 	use avail_rust::{
 		avail, error::ClientError, utils::account_id_from_str, Keypair, Nonce, Options, SecretUri,
-		WaitFor, SDK,
+		SDK,
 	};
 	use core::str::FromStr;
 
@@ -547,14 +520,9 @@ mod payout_stakers {
 			era = era - 1
 		};
 
-		let wait_for = WaitFor::BlockInclusion;
-		let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
-		_ = sdk
-			.tx
-			.staking
-			.payout_stakers(validator_stash, era, wait_for, &account, Some(options))
-			.await
-			.unwrap();
+		let options = Some(Options::new().nonce(Nonce::BestBlockAndTxPool));
+		let tx = sdk.tx.staking.payout_stakers(validator_stash, era);
+		tx.execute_wait_for_inclusion(&account, options).await?;
 
 		Ok(())
 	}

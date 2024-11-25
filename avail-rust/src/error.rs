@@ -2,6 +2,8 @@ use subxt::error::DispatchError;
 use subxt_signer::sr25519;
 use subxt_signer::SecretUriError;
 
+use crate::transactions::TransactionFailed;
+
 #[derive(Debug)]
 pub enum ClientError {
 	Custom(String),
@@ -54,5 +56,11 @@ impl From<SecretUriError> for ClientError {
 impl From<sr25519::Error> for ClientError {
 	fn from(value: sr25519::Error) -> Self {
 		Self::Sr25519(value)
+	}
+}
+
+impl From<TransactionFailed> for ClientError {
+	fn from(value: TransactionFailed) -> Self {
+		value.reason
 	}
 }

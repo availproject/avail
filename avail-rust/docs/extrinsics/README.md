@@ -61,7 +61,7 @@ async fn main() -> Result<(), String> {
 		.create_application_key(key, wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	dbg!(&result);
 
 	Ok(())
 }
@@ -161,7 +161,7 @@ async fn main() -> Result<(), String> {
 		.submit_data(data, wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	dbg!(&result);
 
 	Ok(())
 }
@@ -406,7 +406,7 @@ async fn main() -> Result<(), String> {
 		.set_submit_data_fee_modifier(modifier, wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	dbg!(&result);
 
 	Ok(())
 }
@@ -513,7 +513,7 @@ async fn main() -> Result<(), String> {
 		.transfer_keep_alive(dest, amount, wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	dbg!(&result);
 
 	Ok(())
 }
@@ -614,7 +614,7 @@ async fn main() -> Result<(), String> {
 		println!("Killed={}", event.account);
 	}
 
-	dbg!(result);
+	dbg!(&result);
 
 	Ok(())
 }
@@ -716,7 +716,7 @@ async fn main() -> Result<(), String> {
 		println!("Killed={}", event.account);
 	}
 
-	dbg!(result);
+	dbg!(&result);
 
 	Ok(())
 }
@@ -824,7 +824,7 @@ async fn main() -> Result<(), String> {
 		.bond(value, payee, wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	dbg!(&result);
 
 	Ok(())
 }
@@ -918,7 +918,7 @@ async fn main() -> Result<(), String> {
 		.bond_extra(max_additional, wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	dbg!(&result);
 
 	Ok(())
 }
@@ -1010,7 +1010,7 @@ async fn main() -> Result<(), String> {
 		.chill(wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	dbg!(&result);
 
 	Ok(())
 }
@@ -1105,7 +1105,7 @@ async fn main() -> Result<(), String> {
 		.chill_other(stash, wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	dbg!(&result);
 
 	Ok(())
 }
@@ -1170,7 +1170,7 @@ async fn main() -> Result<(), String> {
 		.nominate(&targets, wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	dbg!(&result);
 
 	Ok(())
 }
@@ -1270,7 +1270,7 @@ async fn main() -> Result<(), String> {
 		.unbond(value, wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	dbg!(&result);
 
 	Ok(())
 }
@@ -1366,7 +1366,7 @@ async fn main() -> Result<(), String> {
 		.validate(commission, blocked, wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	dbg!(&result);
 
 	Ok(())
 }
@@ -1472,7 +1472,7 @@ async fn main() -> Result<(), String> {
 		.set_keys(keys, wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	dbg!(&result);
 
 	Ok(())
 }
@@ -1599,7 +1599,7 @@ async fn main() -> Result<(), String> {
 		)
 		.await?;
 
-	dbg!(result);
+	dbg!(&result);
 
 	Ok(())
 }
@@ -1716,7 +1716,7 @@ async fn main() -> Result<(), String> {
 		)
 		.await?;
 
-	dbg!(result);
+	dbg!(&result);
 
 	Ok(())
 }
@@ -1818,7 +1818,7 @@ async fn main() -> Result<(), String> {
 		.join(amount, pool_id, wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	dbg!(&result);
 
 	Ok(())
 }
@@ -1919,7 +1919,7 @@ async fn main() -> Result<(), String> {
 		.nominate(pool_id, validators, wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	dbg!(&result);
 
 	Ok(())
 }
@@ -2016,7 +2016,7 @@ async fn main() -> Result<(), String> {
 		.bond_extra(extra, wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	dbg!(&result);
 
 	Ok(())
 }
@@ -2123,7 +2123,7 @@ async fn main() -> Result<(), String> {
 		)
 		.await?;
 
-	dbg!(result);
+	dbg!(&result);
 
 	Ok(())
 }
@@ -2226,7 +2226,7 @@ async fn main() -> Result<(), String> {
 		.set_metadata(pool_id, metadata, wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	dbg!(&result);
 
 	Ok(())
 }
@@ -2318,7 +2318,7 @@ async fn main() -> Result<(), String> {
 		.set_claim_permission(permission, wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	dbg!(&result);
 
 	Ok(())
 }
@@ -2410,7 +2410,7 @@ async fn main() -> Result<(), String> {
 		.set_state(pool_id, state, wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	dbg!(&result);
 
 	Ok(())
 }
@@ -2509,7 +2509,7 @@ async fn main() -> Result<(), String> {
 		)
 		.await?;
 
-	dbg!(result);
+	dbg!(&result);
 
 	Ok(())
 }
@@ -2616,7 +2616,7 @@ async fn main() -> Result<(), String> {
 		)
 		.await?;
 
-	dbg!(result);
+	dbg!(&result);
 
 	Ok(())
 }
@@ -2714,7 +2714,7 @@ async fn main() -> Result<(), String> {
 		.chill(pool_id, wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	dbg!(&result);
 
 	Ok(())
 }
@@ -2802,7 +2802,7 @@ async fn main() -> Result<(), String> {
 		.claim_payout(wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	dbg!(&result);
 
 	Ok(())
 }
@@ -2899,7 +2899,7 @@ async fn main() -> Result<(), String> {
 		.claim_commission(pool_id, wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	dbg!(&result);
 
 	Ok(())
 }
@@ -2993,7 +2993,7 @@ async fn main() -> Result<(), String> {
 		.claim_payout_other(other, wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	dbg!(&result);
 
 	Ok(())
 }

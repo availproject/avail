@@ -2,7 +2,6 @@ use avail_core::data_proof::ProofResponse;
 use subxt::backend::legacy::LegacyRpcMethods;
 
 use crate::avail::runtime_types::frame_system::limits::BlockLength;
-use crate::error::ClientError;
 use crate::from_substrate::{FeeDetails, NodeRole, PeerInfo, RuntimeDispatchInfo, SyncState};
 use crate::{
 	ABlockDetailsRPC, AvailConfig, AvailHeader, BlockHash, BlockNumber, Cell, GDataProof, GRow,

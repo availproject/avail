@@ -8,7 +8,10 @@ pub async fn run() -> Result<(), ClientError> {
 }
 
 mod set_keys {
-	use avail_rust::{error::ClientError, utils, Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
+	use avail_rust::{
+		error::ClientError, transactions::SessionCalls, utils, Keypair, Nonce, Options, SecretUri,
+		SDK,
+	};
 	use core::str::FromStr;
 
 	pub async fn run() -> Result<(), ClientError> {
@@ -20,16 +23,17 @@ mod set_keys {
 		let keys = sdk.rpc.author.rotate_keys().await?;
 		let keys = utils::deconstruct_session_keys(keys)?;
 
-		let wait_for = WaitFor::BlockInclusion;
-		let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
-		let result = sdk
-			.tx
-			.session
-			.set_keys(keys, wait_for, &account, Some(options))
-			.await;
-		let result = result.map_err(|e| e.reason)?;
+		let options = Some(Options::new().nonce(Nonce::BestBlockAndTxPool));
+		let tx = sdk.tx.session.set_keys(keys);
+		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(result);
+		dbg!(&result);
+		if let Some(data) = result
+			.get_data::<SessionCalls::SetKeys>(&sdk.online_client)
+			.await
+		{
+			dbg!(data);
+		}
 
 		Ok(())
 	}

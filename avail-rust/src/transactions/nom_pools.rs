@@ -1,118 +1,37 @@
 use crate::avail::{
-	self, nomination_pools::calls::types as NominationPoolsCalls,
-	nomination_pools::calls::types::set_commission::NewCommission as NewCommissionOriginal,
-	nomination_pools::events as NominationPoolsEvents,
+	self, nomination_pools::calls::types::set_commission::NewCommission as NewCommissionOriginal,
 	runtime_types::sp_arithmetic::per_things::Perbill,
 };
-use crate::sdk::WaitFor;
 use crate::{AOnlineClient, AccountId};
 
-use std::str::FromStr;
+use super::Transaction;
 use subxt::backend::rpc::RpcClient;
-use subxt_signer::sr25519::Keypair;
 
 pub use crate::avail::nomination_pools::calls::types::set_claim_permission::Permission;
 pub use crate::avail::nomination_pools::calls::types::set_state::State;
 pub use crate::avail::runtime_types::pallet_nomination_pools::BondExtra;
 
-use super::{
-	find_data_or_return_error, find_event_or_nothing, find_event_or_return_error, TransactionFailed,
-};
-use super::{options::Options, progress_and_parse_transaction, TransactionDetails};
-
-#[derive(Debug)]
-pub struct CreateTx {
-	pub event: NominationPoolsEvents::Created,
-	pub event2: NominationPoolsEvents::Bonded,
-	pub details: TransactionDetails,
-}
-
-#[derive(Debug)]
-pub struct CreateWithPoolIdTx {
-	pub event: NominationPoolsEvents::Created,
-	pub event2: NominationPoolsEvents::Bonded,
-	pub details: TransactionDetails,
-}
-
-#[derive(Debug)]
-pub struct JoinTx {
-	pub event: NominationPoolsEvents::Bonded,
-	pub details: TransactionDetails,
-}
-
-#[derive(Debug)]
-pub struct NominateTx {
-	pub data: NominationPoolsCalls::Nominate,
-	pub details: TransactionDetails,
-}
-
-#[derive(Debug)]
-pub struct BondExtraTx {
-	pub event: NominationPoolsEvents::Bonded,
-	pub details: TransactionDetails,
-}
-
-#[derive(Debug)]
-pub struct SetCommissionTx {
-	pub event: NominationPoolsEvents::PoolCommissionUpdated,
-	pub details: TransactionDetails,
-}
-
-#[derive(Debug)]
-pub struct SetStateTx {
-	pub event: Option<NominationPoolsEvents::StateChanged>,
-	pub details: TransactionDetails,
-}
-
-#[derive(Debug)]
-pub struct ClaimPayoutTx {
-	pub event: Option<NominationPoolsEvents::PaidOut>,
-	pub details: TransactionDetails,
-}
-
-#[derive(Debug)]
-pub struct ChillTx {
-	pub details: TransactionDetails,
-}
-
-#[derive(Debug)]
-pub struct SetClaimPermissionTx {
-	pub details: TransactionDetails,
-}
-
-#[derive(Debug)]
-pub struct ClaimCommissionTx {
-	pub event: NominationPoolsEvents::PoolCommissionClaimed,
-	pub details: TransactionDetails,
-}
-
-#[derive(Debug)]
-pub struct ClaimPayoutOtherTx {
-	pub event: Option<NominationPoolsEvents::PaidOut>,
-	pub details: TransactionDetails,
-}
-
-#[derive(Debug)]
-pub struct UnbondTx {
-	pub event: Option<NominationPoolsEvents::Unbonded>,
-	pub details: TransactionDetails,
-}
-
-#[derive(Debug)]
-pub struct SetMetadataTx {
-	pub details: TransactionDetails,
-}
-
-#[derive(Debug)]
-pub struct WithdrawUnbondedTx {
-	pub event: Option<NominationPoolsEvents::Withdrawn>,
-	pub details: TransactionDetails,
-}
+pub type NominateCall = avail::nomination_pools::calls::types::Nominate;
+pub type JoinCall = avail::nomination_pools::calls::types::Join;
+pub type CreateCall = avail::nomination_pools::calls::types::Create;
+pub type CreateWithPoolIdCall = avail::nomination_pools::calls::types::CreateWithPoolId;
+pub type BondExtraCall = avail::nomination_pools::calls::types::BondExtra;
+pub type BondExtraOtherCall = avail::nomination_pools::calls::types::BondExtraOther;
+pub type SetCommissionCall = avail::nomination_pools::calls::types::SetCommission;
+pub type SetClaimPermissionCall = avail::nomination_pools::calls::types::SetClaimPermission;
+pub type SetStateCall = avail::nomination_pools::calls::types::SetState;
+pub type ClaimPayoutCall = avail::nomination_pools::calls::types::ClaimPayout;
+pub type ClaimPayoutOtherCall = avail::nomination_pools::calls::types::ClaimPayoutOther;
+pub type ChillCall = avail::nomination_pools::calls::types::Chill;
+pub type ClaimCommissionCall = avail::nomination_pools::calls::types::ClaimCommission;
+pub type UnbondCall = avail::nomination_pools::calls::types::Unbond;
+pub type SetMetadataCall = avail::nomination_pools::calls::types::SetMetadata;
+pub type WithdrawUnbondedCall = avail::nomination_pools::calls::types::WithdrawUnbonded;
 
 #[derive(Debug, Clone)]
 pub struct NewCommission {
 	pub amount: Perbill,
-	pub payee: String,
+	pub payee: AccountId,
 }
 
 #[derive(Clone)]
@@ -129,427 +48,134 @@ impl NominationPools {
 		}
 	}
 
-	pub async fn nominate(
-		&self,
-		pool_id: u32,
-		validators: Vec<AccountId>,
-		wait_for: WaitFor,
-		account: &Keypair,
-		options: Option<Options>,
-	) -> Result<NominateTx, TransactionFailed> {
-		let call = avail::tx().nomination_pools().nominate(pool_id, validators);
-		let details = progress_and_parse_transaction(
-			&self.online_client,
-			&self.rpc_client,
-			account,
-			call,
-			wait_for,
-			options,
-		)
-		.await?;
-
-		let data = find_data_or_return_error::<NominationPoolsCalls::Nominate>(
-			&self.online_client,
-			"Failed to find NominationPools::Nominate data",
-			&details,
-		)
-		.await?;
-
-		Ok(NominateTx { data, details })
+	pub fn nominate(&self, pool_id: u32, validators: Vec<AccountId>) -> Transaction<NominateCall> {
+		let payload = avail::tx().nomination_pools().nominate(pool_id, validators);
+		Transaction::new(self.online_client.clone(), self.rpc_client.clone(), payload)
 	}
 
-	pub async fn join(
-		&self,
-		amount: u128,
-		pool_id: u32,
-		wait_for: WaitFor,
-		account: &Keypair,
-		options: Option<Options>,
-	) -> Result<JoinTx, TransactionFailed> {
-		let call = avail::tx().nomination_pools().join(amount, pool_id);
-		let details = progress_and_parse_transaction(
-			&self.online_client,
-			&self.rpc_client,
-			account,
-			call,
-			wait_for,
-			options,
-		)
-		.await?;
-
-		let event = find_event_or_return_error::<NominationPoolsEvents::Bonded>(
-			"Failed to find NominationPools::Bonded event",
-			&details,
-		)?;
-
-		Ok(JoinTx { event, details })
+	pub fn join(&self, amount: u128, pool_id: u32) -> Transaction<JoinCall> {
+		let payload = avail::tx().nomination_pools().join(amount, pool_id);
+		Transaction::new(self.online_client.clone(), self.rpc_client.clone(), payload)
 	}
 
-	pub async fn create_with_pool_id(
+	pub fn create_with_pool_id(
 		&self,
 		amount: u128,
 		root: AccountId,
 		nominator: AccountId,
 		bouncer: AccountId,
 		pool_id: u32,
-		wait_for: WaitFor,
-		account: &Keypair,
-		options: Option<Options>,
-	) -> Result<CreateWithPoolIdTx, TransactionFailed> {
-		let call = avail::tx().nomination_pools().create_with_pool_id(
+	) -> Transaction<CreateWithPoolIdCall> {
+		let payload = avail::tx().nomination_pools().create_with_pool_id(
 			amount,
 			root.into(),
 			nominator.into(),
 			bouncer.into(),
 			pool_id,
 		);
-		let details = progress_and_parse_transaction(
-			&self.online_client,
-			&self.rpc_client,
-			account,
-			call,
-			wait_for,
-			options,
-		)
-		.await?;
-
-		let event = find_event_or_return_error::<NominationPoolsEvents::Created>(
-			"Failed to find NominationPools::Created event",
-			&details,
-		)?;
-
-		let event2 = find_event_or_return_error::<NominationPoolsEvents::Bonded>(
-			"Failed to find NominationPools::Bonded event",
-			&details,
-		)?;
-
-		Ok(CreateWithPoolIdTx {
-			event,
-			event2,
-			details,
-		})
+		Transaction::new(self.online_client.clone(), self.rpc_client.clone(), payload)
 	}
 
-	pub async fn create(
+	pub fn create(
 		&self,
 		amount: u128,
 		root: AccountId,
 		nominator: AccountId,
 		bouncer: AccountId,
-		wait_for: WaitFor,
-		account: &Keypair,
-		options: Option<Options>,
-	) -> Result<CreateTx, TransactionFailed> {
-		let call = avail::tx().nomination_pools().create(
+	) -> Transaction<CreateCall> {
+		let payload = avail::tx().nomination_pools().create(
 			amount,
 			root.into(),
 			nominator.into(),
 			bouncer.into(),
 		);
-		let details = progress_and_parse_transaction(
-			&self.online_client,
-			&self.rpc_client,
-			account,
-			call,
-			wait_for,
-			options,
-		)
-		.await?;
-
-		let event = find_event_or_return_error::<NominationPoolsEvents::Created>(
-			"Failed to find NominationPools::Created event",
-			&details,
-		)?;
-
-		let event2 = find_event_or_return_error::<NominationPoolsEvents::Bonded>(
-			"Failed to find NominationPools::Bonded event",
-			&details,
-		)?;
-
-		Ok(CreateTx {
-			event,
-			event2,
-			details,
-		})
+		Transaction::new(self.online_client.clone(), self.rpc_client.clone(), payload)
 	}
 
-	pub async fn bond_extra(
-		&self,
-		extra: BondExtra<u128>,
-		wait_for: WaitFor,
-		account: &Keypair,
-		options: Option<Options>,
-	) -> Result<BondExtraTx, TransactionFailed> {
-		let call = avail::tx().nomination_pools().bond_extra(extra);
-		let details = progress_and_parse_transaction(
-			&self.online_client,
-			&self.rpc_client,
-			account,
-			call,
-			wait_for,
-			options,
-		)
-		.await?;
-
-		let event = find_event_or_return_error::<NominationPoolsEvents::Bonded>(
-			"Failed to find NominationPools::Bonded event",
-			&details,
-		)?;
-
-		Ok(BondExtraTx { event, details })
+	pub fn bond_extra(&self, extra: BondExtra<u128>) -> Transaction<BondExtraCall> {
+		let payload = avail::tx().nomination_pools().bond_extra(extra);
+		Transaction::new(self.online_client.clone(), self.rpc_client.clone(), payload)
 	}
 
-	pub async fn set_commission(
+	pub fn set_commission(
 		&self,
 		pool_id: u32,
 		new_commission: Option<NewCommission>,
-		wait_for: WaitFor,
-		account: &Keypair,
-		options: Option<Options>,
-	) -> Result<SetCommissionTx, TransactionFailed> {
+	) -> Transaction<SetCommissionCall> {
 		let new_commission: NewCommissionOriginal = match new_commission {
-			Some(x) => {
-				let account = AccountId::from_str(&x.payee).map_err(|e| e.to_string())?;
-				Some((x.amount, account))
-			},
+			Some(x) => Some((x.amount, x.payee)),
 			None => None,
 		};
 
-		let call = avail::tx()
+		let payload = avail::tx()
 			.nomination_pools()
 			.set_commission(pool_id, new_commission);
-		let details = progress_and_parse_transaction(
-			&self.online_client,
-			&self.rpc_client,
-			account,
-			call,
-			wait_for,
-			options,
-		)
-		.await?;
-
-		let event = find_event_or_return_error::<NominationPoolsEvents::PoolCommissionUpdated>(
-			"Failed to find NominationPools::PoolCommissionUpdated event",
-			&details,
-		)?;
-
-		Ok(SetCommissionTx { event, details })
+		Transaction::new(self.online_client.clone(), self.rpc_client.clone(), payload)
 	}
 
-	pub async fn set_state(
-		&self,
-		pool_id: u32,
-		state: State,
-		wait_for: WaitFor,
-		account: &Keypair,
-		options: Option<Options>,
-	) -> Result<SetStateTx, TransactionFailed> {
-		let call = avail::tx().nomination_pools().set_state(pool_id, state);
-		let details = progress_and_parse_transaction(
-			&self.online_client,
-			&self.rpc_client,
-			account,
-			call,
-			wait_for,
-			options,
-		)
-		.await?;
-
-		let event = find_event_or_nothing::<NominationPoolsEvents::StateChanged>(&details);
-
-		Ok(SetStateTx { event, details })
+	pub fn set_state(&self, pool_id: u32, state: State) -> Transaction<SetStateCall> {
+		let payload = avail::tx().nomination_pools().set_state(pool_id, state);
+		Transaction::new(self.online_client.clone(), self.rpc_client.clone(), payload)
 	}
 
-	pub async fn claim_payout(
-		&self,
-		wait_for: WaitFor,
-		account: &Keypair,
-		options: Option<Options>,
-	) -> Result<ClaimPayoutTx, TransactionFailed> {
-		let call = avail::tx().nomination_pools().claim_payout();
-		let details = progress_and_parse_transaction(
-			&self.online_client,
-			&self.rpc_client,
-			account,
-			call,
-			wait_for,
-			options,
-		)
-		.await?;
-
-		let event = find_event_or_nothing::<NominationPoolsEvents::PaidOut>(&details);
-
-		Ok(ClaimPayoutTx { event, details })
+	pub fn claim_payout(&self) -> Transaction<ClaimPayoutCall> {
+		let payload = avail::tx().nomination_pools().claim_payout();
+		Transaction::new(self.online_client.clone(), self.rpc_client.clone(), payload)
 	}
 
-	pub async fn chill(
-		&self,
-		pool_id: u32,
-		wait_for: WaitFor,
-		account: &Keypair,
-		options: Option<Options>,
-	) -> Result<ChillTx, TransactionFailed> {
-		let call = avail::tx().nomination_pools().chill(pool_id);
-		let details = progress_and_parse_transaction(
-			&self.online_client,
-			&self.rpc_client,
-			account,
-			call,
-			wait_for,
-			options,
-		)
-		.await?;
-
-		Ok(ChillTx { details })
+	pub fn chill(&self, pool_id: u32) -> Transaction<ChillCall> {
+		let payload = avail::tx().nomination_pools().chill(pool_id);
+		Transaction::new(self.online_client.clone(), self.rpc_client.clone(), payload)
 	}
 
-	pub async fn set_claim_permission(
+	pub fn set_claim_permission(
 		&self,
 		permission: Permission,
-		wait_for: WaitFor,
-		account: &Keypair,
-		options: Option<Options>,
-	) -> Result<SetClaimPermissionTx, TransactionFailed> {
-		let call = avail::tx()
+	) -> Transaction<SetClaimPermissionCall> {
+		let payload = avail::tx()
 			.nomination_pools()
 			.set_claim_permission(permission);
-		let details = progress_and_parse_transaction(
-			&self.online_client,
-			&self.rpc_client,
-			account,
-			call,
-			wait_for,
-			options,
-		)
-		.await?;
-
-		Ok(SetClaimPermissionTx { details })
+		Transaction::new(self.online_client.clone(), self.rpc_client.clone(), payload)
 	}
 
-	pub async fn claim_commission(
-		&self,
-		pool_id: u32,
-		wait_for: WaitFor,
-		account: &Keypair,
-		options: Option<Options>,
-	) -> Result<ClaimCommissionTx, TransactionFailed> {
-		let call = avail::tx().nomination_pools().claim_commission(pool_id);
-		let details = progress_and_parse_transaction(
-			&self.online_client,
-			&self.rpc_client,
-			account,
-			call,
-			wait_for,
-			options,
-		)
-		.await?;
-
-		let event = find_event_or_return_error::<NominationPoolsEvents::PoolCommissionClaimed>(
-			"Failed to find NominationPools::PoolCommissionClaimed event",
-			&details,
-		)?;
-
-		Ok(ClaimCommissionTx { event, details })
+	pub fn claim_commission(&self, pool_id: u32) -> Transaction<ClaimCommissionCall> {
+		let payload = avail::tx().nomination_pools().claim_commission(pool_id);
+		Transaction::new(self.online_client.clone(), self.rpc_client.clone(), payload)
 	}
 
-	pub async fn claim_payout_other(
-		&self,
-		other: AccountId,
-		wait_for: WaitFor,
-		account: &Keypair,
-		options: Option<Options>,
-	) -> Result<ClaimPayoutOtherTx, TransactionFailed> {
-		let call = avail::tx()
+	pub fn claim_payout_other(&self, other: AccountId) -> Transaction<ClaimPayoutOtherCall> {
+		let payload = avail::tx()
 			.nomination_pools()
 			.claim_payout_other(other.into());
-		let details = progress_and_parse_transaction(
-			&self.online_client,
-			&self.rpc_client,
-			account,
-			call,
-			wait_for,
-			options,
-		)
-		.await?;
-
-		let event = find_event_or_nothing::<NominationPoolsEvents::PaidOut>(&details);
-
-		Ok(ClaimPayoutOtherTx { event, details })
+		Transaction::new(self.online_client.clone(), self.rpc_client.clone(), payload)
 	}
 
-	pub async fn unbond(
+	pub fn unbond(
 		&self,
 		member_account: AccountId,
 		unbonding_points: u128,
-		wait_for: WaitFor,
-		account: &Keypair,
-		options: Option<Options>,
-	) -> Result<UnbondTx, TransactionFailed> {
-		let call = avail::tx()
+	) -> Transaction<UnbondCall> {
+		let payload = avail::tx()
 			.nomination_pools()
 			.unbond(member_account.into(), unbonding_points);
-		let details = progress_and_parse_transaction(
-			&self.online_client,
-			&self.rpc_client,
-			account,
-			call,
-			wait_for,
-			options,
-		)
-		.await?;
-
-		let event = find_event_or_nothing::<NominationPoolsEvents::Unbonded>(&details);
-
-		Ok(UnbondTx { event, details })
+		Transaction::new(self.online_client.clone(), self.rpc_client.clone(), payload)
 	}
 
-	pub async fn set_metadata(
-		&self,
-		pool_id: u32,
-		metadata: Vec<u8>,
-		wait_for: WaitFor,
-		account: &Keypair,
-		options: Option<Options>,
-	) -> Result<SetMetadataTx, TransactionFailed> {
-		let call = avail::tx()
+	pub fn set_metadata(&self, pool_id: u32, metadata: Vec<u8>) -> Transaction<SetMetadataCall> {
+		let payload = avail::tx()
 			.nomination_pools()
 			.set_metadata(pool_id, metadata);
-		let details = progress_and_parse_transaction(
-			&self.online_client,
-			&self.rpc_client,
-			account,
-			call,
-			wait_for,
-			options,
-		)
-		.await?;
-
-		Ok(SetMetadataTx { details })
+		Transaction::new(self.online_client.clone(), self.rpc_client.clone(), payload)
 	}
 
-	pub async fn withdraw_unbonded(
+	pub fn withdraw_unbonded(
 		&self,
 		member_account: AccountId,
 		num_slashing_spans: u32,
-		wait_for: WaitFor,
-		account: &Keypair,
-		options: Option<Options>,
-	) -> Result<WithdrawUnbondedTx, TransactionFailed> {
-		let call = avail::tx()
+	) -> Transaction<WithdrawUnbondedCall> {
+		let payload = avail::tx()
 			.nomination_pools()
 			.withdraw_unbonded(member_account.into(), num_slashing_spans);
-		let details = progress_and_parse_transaction(
-			&self.online_client,
-			&self.rpc_client,
-			account,
-			call,
-			wait_for,
-			options,
-		)
-		.await?;
-
-		let event = find_event_or_nothing::<NominationPoolsEvents::Withdrawn>(&details);
-
-		Ok(WithdrawUnbondedTx { event, details })
+		Transaction::new(self.online_client.clone(), self.rpc_client.clone(), payload)
 	}
 }

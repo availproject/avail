@@ -30,7 +30,8 @@ pub async fn run() -> Result<(), ClientError> {
 
 mod bond {
 	use avail_rust::{
-		error::ClientError, Keypair, Nonce, Options, RewardDestination, SecretUri, WaitFor, SDK,
+		error::ClientError, transactions::StakingEvents, Keypair, Nonce, Options,
+		RewardDestination, SecretUri, SDK,
 	};
 	use core::str::FromStr;
 
@@ -43,23 +44,23 @@ mod bond {
 		let value = SDK::one_avail() * 100_000u128;
 		let payee = RewardDestination::Staked;
 
-		let wait_for = WaitFor::BlockInclusion;
-		let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
-		let result = sdk
-			.tx
-			.staking
-			.bond(value, payee, wait_for, &account, Some(options))
-			.await;
-		let result = result.map_err(|e| e.reason)?;
+		let options = Some(Options::new().nonce(Nonce::BestBlockAndTxPool));
+		let tx = sdk.tx.staking.bond(value, payee);
+		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(result);
+		dbg!(&result);
+		if let Some(event) = result.find_first_event::<StakingEvents::Bonded>() {
+			dbg!(event);
+		}
 
 		Ok(())
 	}
 }
 
 mod bond_extra {
-	use avail_rust::{error::ClientError, Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
+	use avail_rust::{
+		error::ClientError, transactions::StakingEvents, Keypair, Nonce, Options, SecretUri, SDK,
+	};
 	use core::str::FromStr;
 
 	pub async fn run() -> Result<(), ClientError> {
@@ -70,16 +71,14 @@ mod bond_extra {
 		let account = Keypair::from_uri(&secret_uri)?;
 		let max_additional = SDK::one_avail();
 
-		let wait_for = WaitFor::BlockInclusion;
-		let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
-		let result = sdk
-			.tx
-			.staking
-			.bond_extra(max_additional, wait_for, &account, Some(options))
-			.await;
-		let result = result.map_err(|e| e.reason)?;
+		let options = Some(Options::new().nonce(Nonce::BestBlockAndTxPool));
+		let tx = sdk.tx.staking.bond_extra(max_additional);
+		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(result);
+		dbg!(&result);
+		if let Some(event) = result.find_first_event::<StakingEvents::Bonded>() {
+			dbg!(event);
+		}
 
 		Ok(())
 	}
@@ -87,8 +86,8 @@ mod bond_extra {
 
 mod nominate {
 	use avail_rust::{
-		error::ClientError, utils::account_id_from_str, Keypair, Nonce, Options, SecretUri,
-		WaitFor, SDK,
+		error::ClientError, transactions::StakingCalls, utils::account_id_from_str, Keypair, Nonce,
+		Options, SecretUri, SDK,
 	};
 	use core::str::FromStr;
 
@@ -102,23 +101,26 @@ mod nominate {
 			account_id_from_str("5GNJqTPyNqANBkUVMN1LPPrxXnFouWXoe2wNSmmEoLctxiZY")?, // Alice Stash
 		];
 
-		let wait_for = WaitFor::BlockInclusion;
-		let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
-		let result = sdk
-			.tx
-			.staking
-			.nominate(&targets, wait_for, &account, Some(options))
-			.await;
-		let result = result.map_err(|e| e.reason)?;
+		let options = Some(Options::new().nonce(Nonce::BestBlockAndTxPool));
+		let tx = sdk.tx.staking.nominate(&targets);
+		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(result);
+		dbg!(&result);
+		if let Some(data) = result
+			.get_data::<StakingCalls::Nominate>(&sdk.online_client)
+			.await
+		{
+			dbg!(data);
+		}
 
 		Ok(())
 	}
 }
 
 mod chill {
-	use avail_rust::{error::ClientError, Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
+	use avail_rust::{
+		error::ClientError, transactions::StakingEvents, Keypair, Nonce, Options, SecretUri, SDK,
+	};
 	use core::str::FromStr;
 
 	pub async fn run() -> Result<(), ClientError> {
@@ -128,16 +130,14 @@ mod chill {
 		let secret_uri = SecretUri::from_str("//Alice")?;
 		let account = Keypair::from_uri(&secret_uri)?;
 
-		let wait_for = WaitFor::BlockInclusion;
-		let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
-		let result = sdk
-			.tx
-			.staking
-			.chill(wait_for, &account, Some(options))
-			.await;
-		let result = result.map_err(|e| e.reason)?;
+		let options = Some(Options::new().nonce(Nonce::BestBlockAndTxPool));
+		let tx = sdk.tx.staking.chill();
+		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(result);
+		dbg!(&result);
+		if let Some(event) = result.find_first_event::<StakingEvents::Chilled>() {
+			dbg!(event);
+		}
 
 		Ok(())
 	}
@@ -145,8 +145,8 @@ mod chill {
 
 mod chill_other {
 	use avail_rust::{
-		error::ClientError, utils::account_id_from_str, Keypair, Nonce, Options, SecretUri,
-		WaitFor, SDK,
+		error::ClientError, transactions::StakingEvents, utils::account_id_from_str, Keypair,
+		Nonce, Options, SecretUri, SDK,
 	};
 	use core::str::FromStr;
 
@@ -160,11 +160,9 @@ mod chill_other {
 			account_id_from_str("5GNJqTPyNqANBkUVMN1LPPrxXnFouWXoe2wNSmmEoLctxiZY").unwrap(), // Alice Stash
 		];
 
-		let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
-		_ = sdk
-			.tx
-			.staking
-			.nominate(&targets, WaitFor::BlockInclusion, &account, Some(options))
+		let options = Some(Options::new().nonce(Nonce::BestBlockAndTxPool));
+		let tx = sdk.tx.staking.nominate(&targets);
+		tx.execute_wait_for_inclusion(&account, options)
 			.await
 			.unwrap();
 	}
@@ -177,23 +175,23 @@ mod chill_other {
 		let account = Keypair::from_uri(&secret_uri)?;
 		let stash = account_id_from_str("5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY")?;
 
-		let wait_for = WaitFor::BlockInclusion;
-		let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
-		let result = sdk
-			.tx
-			.staking
-			.chill_other(stash, wait_for, &account, Some(options))
-			.await;
-		let result = result.map_err(|e| e.reason)?;
+		let options = Some(Options::new().nonce(Nonce::BestBlockAndTxPool));
+		let tx = sdk.tx.staking.chill_other(stash);
+		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(result);
+		dbg!(&result);
+		if let Some(event) = result.find_first_event::<StakingEvents::Chilled>() {
+			dbg!(event);
+		}
 
 		Ok(())
 	}
 }
 
 mod unbond {
-	use avail_rust::{error::ClientError, Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
+	use avail_rust::{
+		error::ClientError, transactions::StakingEvents, Keypair, Nonce, Options, SecretUri, SDK,
+	};
 	use core::str::FromStr;
 
 	pub async fn run() -> Result<(), ClientError> {
@@ -204,23 +202,25 @@ mod unbond {
 		let account = Keypair::from_uri(&secret_uri)?;
 		let value = SDK::one_avail();
 
-		let wait_for = WaitFor::BlockInclusion;
-		let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
-		let result = sdk
-			.tx
-			.staking
-			.unbond(value, wait_for, &account, Some(options))
-			.await;
-		let result = result.map_err(|e| e.reason)?;
+		let options = Some(Options::new().nonce(Nonce::BestBlockAndTxPool));
+		let tx = sdk.tx.staking.unbond(value);
+		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(result);
+		dbg!(&result);
+		if let Some(event) = result.find_first_event::<StakingEvents::Unbonded>() {
+			dbg!(event);
+		}
 
 		Ok(())
 	}
 }
 
 mod validate {
-	use avail_rust::{error::ClientError, Keypair, Nonce, Options, SecretUri, WaitFor, SDK};
+	use avail_rust::{
+		error::ClientError,
+		transactions::{staking::Commission, StakingEvents},
+		Keypair, Nonce, Options, SecretUri, SDK,
+	};
 	use core::str::FromStr;
 
 	pub async fn run() -> Result<(), ClientError> {
@@ -229,19 +229,17 @@ mod validate {
 		// Input
 		let secret_uri = SecretUri::from_str("//Alice")?;
 		let account = Keypair::from_uri(&secret_uri)?;
-		let commission = 100;
+		let commission = Commission::new(50).unwrap();
 		let blocked = false;
 
-		let wait_for = WaitFor::BlockInclusion;
-		let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
-		let result = sdk
-			.tx
-			.staking
-			.validate(commission, blocked, wait_for, &account, Some(options))
-			.await;
-		let result = result.map_err(|e| e.reason)?;
+		let options = Some(Options::new().nonce(Nonce::BestBlockAndTxPool));
+		let tx = sdk.tx.staking.validate(commission, blocked);
+		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(result);
+		dbg!(&result);
+		if let Some(event) = result.find_first_event::<StakingEvents::ValidatorPrefsSet>() {
+			dbg!(event);
+		}
 
 		Ok(())
 	}
@@ -253,12 +251,9 @@ mod validate {
 		let secret_uri = SecretUri::from_str("//Alice").unwrap();
 		let account = Keypair::from_uri(&secret_uri).unwrap();
 
-		let wait_for = WaitFor::BlockInclusion;
-		let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
-		_ = sdk
-			.tx
-			.staking
-			.chill(wait_for, &account, Some(options))
+		let options = Some(Options::new().nonce(Nonce::BestBlockAndTxPool));
+		let tx = sdk.tx.staking.chill();
+		tx.execute_wait_for_inclusion(&account, options)
 			.await
 			.unwrap();
 	}
@@ -267,7 +262,7 @@ mod validate {
 mod payout_stakers {
 	use avail_rust::{
 		avail, error::ClientError, utils::account_id_from_str, Keypair, Nonce, Options, SecretUri,
-		WaitFor, SDK,
+		SDK,
 	};
 	use core::str::FromStr;
 
@@ -287,16 +282,11 @@ mod payout_stakers {
 			era = era - 1
 		};
 
-		let wait_for = WaitFor::BlockInclusion;
-		let options = Options::new().nonce(Nonce::BestBlockAndTxPool);
-		let result = sdk
-			.tx
-			.staking
-			.payout_stakers(validator_stash, era, wait_for, &account, Some(options))
-			.await;
-		let result = result.map_err(|e| e.reason)?;
+		let options = Some(Options::new().nonce(Nonce::BestBlockAndTxPool));
+		let tx = sdk.tx.staking.payout_stakers(validator_stash, era);
+		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(result);
+		dbg!(&result);
 
 		Ok(())
 	}

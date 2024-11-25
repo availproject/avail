@@ -71,7 +71,7 @@ pub async fn progress_and_parse_transaction<T>(
 	online_client: &AOnlineClient,
 	rpc_client: &RpcClient,
 	account: &Keypair,
-	call: DefaultPayload<T>,
+	call: &DefaultPayload<T>,
 	wait_for: WaitFor,
 	options: Option<Options>,
 ) -> Result<TransactionDetails, TransactionFailed>
@@ -83,7 +83,7 @@ where
 
 	let tx_client = online_client.tx();
 	let maybe_tx_progress = tx_client
-		.sign_and_submit_then_watch(&call, account, params)
+		.sign_and_submit_then_watch(call, account, params)
 		.await;
 	let tx_in_block = progress_transaction(maybe_tx_progress, wait_for).await?;
 	let tx_details = parse_transaction_in_block(online_client, tx_in_block).await?;

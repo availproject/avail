@@ -8,18 +8,36 @@ pub mod staking;
 use crate::{
 	error::ClientError,
 	utils::{self, *},
-	AExtrinsicEvents, AOnlineClient, ATxInBlock, AvailConfig, H256,
+	AExtrinsicEvents, AOnlineClient, ATxInBlock, AvailConfig, WaitFor, H256,
 };
 
 pub use options::{Mortality, Nonce, Options};
+use subxt_signer::sr25519::Keypair;
 
 use std::sync::Arc;
-use subxt::{backend::rpc::RpcClient, blocks::StaticExtrinsic, events::StaticEvent};
+use subxt::{
+	backend::rpc::RpcClient, blocks::StaticExtrinsic, events::StaticEvent,
+	ext::scale_encode::EncodeAsFields, tx::DefaultPayload,
+};
 
 pub type Params =
 	<<AvailConfig as subxt::Config>::ExtrinsicParams as subxt::config::ExtrinsicParams<
 		AvailConfig,
 	>>::Params;
+
+pub use crate::avail::balances::events as BalancesEvents;
+pub use crate::avail::data_availability::events as DataAvailabilityEvents;
+pub use crate::avail::nomination_pools::events as NominationPoolsEvents;
+pub use crate::avail::session::events as SessionEvents;
+pub use crate::avail::staking::events as StakingEvents;
+pub use crate::avail::system::events as SystemEvents;
+
+pub use crate::avail::balances::calls::types as BalancesCalls;
+pub use crate::avail::data_availability::calls::types as DataAvailabilityCalls;
+pub use crate::avail::nomination_pools::calls::types as NominationPoolsCalls;
+pub use crate::avail::session::calls::types as SessionCalls;
+pub use crate::avail::staking::calls::types as StakingCalls;
+pub use crate::avail::system::calls::types as SystemCalls;
 
 #[derive(Clone)]
 pub struct Transactions {
@@ -79,6 +97,22 @@ impl TransactionDetails {
 		client: &AOnlineClient,
 	) -> Result<crate::block::Block, subxt::Error> {
 		crate::block::Block::new(client, self.block_hash).await
+	}
+
+	pub fn find_first_event<T>(&self) -> Option<T>
+	where
+		T: StaticEvent,
+	{
+		self.events.find_first::<T>().ok().flatten()
+	}
+
+	pub async fn get_data<T>(&self, client: &AOnlineClient) -> Option<T>
+	where
+		T: StaticExtrinsic,
+	{
+		let block = self.fetch_block(client).await.ok()?;
+		let tx = block.transaction_by_index_static::<T>(self.tx_index)?;
+		Some(tx.value)
 	}
 
 	pub fn check_if_transaction_was_successful(
@@ -158,41 +192,65 @@ impl From<(ClientError, TransactionDetails)> for TransactionFailed {
 	}
 }
 
-async fn find_data_or_return_error<T: StaticExtrinsic>(
-	client: &AOnlineClient,
-	error: &str,
-	details: &TransactionDetails,
-) -> Result<T, TransactionFailed> {
-	let block = details.fetch_block(client).await;
-	let block = block.map_err(|e| TransactionFailed {
-		reason: e.into(),
-		details: Some(details.clone()),
-	})?;
-
-	let data = block.transaction_by_index_static::<T>(details.tx_index);
-	let data = match data {
-		Some(d) => d.value,
-		None => {
-			return Err(TransactionFailed {
-				reason: error.into(),
-				details: Some(details.clone()),
-			})
-		},
-	};
-
-	Ok(data)
+#[derive(Debug, Clone)]
+pub struct Transaction<T>
+where
+	T: StaticExtrinsic + EncodeAsFields,
+{
+	online_client: AOnlineClient,
+	rpc_client: RpcClient,
+	payload: DefaultPayload<T>,
 }
+impl<T> Transaction<T>
+where
+	T: StaticExtrinsic + EncodeAsFields,
+{
+	pub fn new(
+		online_client: AOnlineClient,
+		rpc_client: RpcClient,
+		payload: DefaultPayload<T>,
+	) -> Self {
+		Self {
+			online_client,
+			rpc_client,
+			payload,
+		}
+	}
 
-fn find_event_or_return_error<T: StaticEvent>(
-	error: &str,
-	details: &TransactionDetails,
-) -> Result<T, TransactionFailed> {
-	let event = details.events.find_first::<T>().ok().flatten();
-	event.ok_or(TransactionFailed::from((error, details.clone())))
-}
+	pub async fn execute_wait_for_inclusion(
+		&self,
+		account: &Keypair,
+		options: Option<Options>,
+	) -> Result<TransactionDetails, TransactionFailed> {
+		self.execute(WaitFor::BlockInclusion, account, options)
+			.await
+	}
 
-fn find_event_or_nothing<T: StaticEvent>(details: &TransactionDetails) -> Option<T> {
-	details.events.find_first::<T>().ok().flatten()
+	pub async fn execute_wait_for_finalization(
+		&self,
+		account: &Keypair,
+		options: Option<Options>,
+	) -> Result<TransactionDetails, TransactionFailed> {
+		self.execute(WaitFor::BlockFinalization, account, options)
+			.await
+	}
+
+	pub async fn execute(
+		&self,
+		wait_for: WaitFor,
+		account: &Keypair,
+		options: Option<Options>,
+	) -> Result<TransactionDetails, TransactionFailed> {
+		progress_and_parse_transaction(
+			&self.online_client,
+			&self.rpc_client,
+			account,
+			&self.payload,
+			wait_for,
+			options,
+		)
+		.await
+	}
 }
 
 #[cfg(test)]
