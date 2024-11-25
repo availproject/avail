@@ -48,7 +48,7 @@ mod bond {
 		let tx = sdk.tx.staking.bond(value, payee);
 		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(&result);
+		result.print_debug();
 		if let Some(event) = result.find_first_event::<StakingEvents::Bonded>() {
 			dbg!(event);
 		}
@@ -75,7 +75,7 @@ mod bond_extra {
 		let tx = sdk.tx.staking.bond_extra(max_additional);
 		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(&result);
+		result.print_debug();
 		if let Some(event) = result.find_first_event::<StakingEvents::Bonded>() {
 			dbg!(event);
 		}
@@ -105,7 +105,7 @@ mod nominate {
 		let tx = sdk.tx.staking.nominate(&targets);
 		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(&result);
+		result.print_debug();
 		if let Some(data) = result
 			.get_data::<StakingCalls::Nominate>(&sdk.online_client)
 			.await
@@ -134,7 +134,7 @@ mod chill {
 		let tx = sdk.tx.staking.chill();
 		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(&result);
+		result.print_debug();
 		if let Some(event) = result.find_first_event::<StakingEvents::Chilled>() {
 			dbg!(event);
 		}
@@ -179,7 +179,7 @@ mod chill_other {
 		let tx = sdk.tx.staking.chill_other(stash);
 		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(&result);
+		result.print_debug();
 		if let Some(event) = result.find_first_event::<StakingEvents::Chilled>() {
 			dbg!(event);
 		}
@@ -206,7 +206,7 @@ mod unbond {
 		let tx = sdk.tx.staking.unbond(value);
 		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(&result);
+		result.print_debug();
 		if let Some(event) = result.find_first_event::<StakingEvents::Unbonded>() {
 			dbg!(event);
 		}
@@ -236,7 +236,7 @@ mod validate {
 		let tx = sdk.tx.staking.validate(commission, blocked);
 		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(&result);
+		result.print_debug();
 		if let Some(event) = result.find_first_event::<StakingEvents::ValidatorPrefsSet>() {
 			dbg!(event);
 		}
@@ -286,7 +286,7 @@ mod payout_stakers {
 		let tx = sdk.tx.staking.payout_stakers(validator_stash, era);
 		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(&result);
+		result.print_debug();
 
 		Ok(())
 	}

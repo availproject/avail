@@ -92,6 +92,37 @@ impl TransactionDetails {
 		}
 	}
 
+	pub fn print_debug(&self) {
+		let formatted_string = format!(
+			r#"
+TransactionDetails {{
+    tx_in_block: TxInBlock {{...}},
+    events: ExtrinsicEvents {{
+        ext_hash: {:?},
+        idx: {},
+        events: Events {{
+            num_events: {},
+            ...
+        }},
+    }},
+    tx_hash: {:?},
+    tx_index: {},
+    block_hash: {:?},
+    block_number: {},
+}}
+		"#,
+			self.events.extrinsic_hash(),
+			self.events.extrinsic_index(),
+			self.events.all_events_in_block().len(),
+			self.tx_hash,
+			self.tx_index,
+			self.block_hash,
+			self.block_number
+		);
+
+		println!("{}", formatted_string);
+	}
+
 	pub async fn fetch_block(
 		&self,
 		client: &AOnlineClient,

@@ -2,7 +2,6 @@ mod api_dev;
 mod config;
 mod examples;
 mod from_substrate;
-mod rpcs;
 mod sdk;
 
 // Export types for internal and external consumption
@@ -10,6 +9,7 @@ pub mod account;
 pub mod block;
 pub mod error;
 pub mod primitives;
+pub mod rpcs;
 pub mod transactions;
 pub mod utils;
 

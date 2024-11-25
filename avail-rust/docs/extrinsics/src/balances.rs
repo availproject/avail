@@ -34,7 +34,7 @@ mod transfer_all {
 		let tx = sdk.tx.balances.transfer_all(dest, keep_alive);
 		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(&result);
+		result.print_debug();
 		if let Some(event) = result.find_first_event::<BalancesEvents::Transfer>() {
 			dbg!(event);
 		}
@@ -84,7 +84,7 @@ mod transfer_allow_death {
 		let tx = sdk.tx.balances.transfer_allow_death(dest, amount);
 		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(&result);
+		result.print_debug();
 		if let Some(event) = result.find_first_event::<BalancesEvents::Transfer>() {
 			dbg!(event);
 		}
@@ -116,7 +116,7 @@ mod transfer_keep_alive {
 		let tx = sdk.tx.balances.transfer_keep_alive(dest, amount);
 		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(&result);
+		result.print_debug();
 		if let Some(event) = result.find_first_event::<BalancesEvents::Transfer>() {
 			dbg!(event);
 		}

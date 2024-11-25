@@ -27,7 +27,7 @@ mod set_keys {
 		let tx = sdk.tx.session.set_keys(keys);
 		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(&result);
+		result.print_debug();
 		if let Some(data) = result
 			.get_data::<SessionCalls::SetKeys>(&sdk.online_client)
 			.await

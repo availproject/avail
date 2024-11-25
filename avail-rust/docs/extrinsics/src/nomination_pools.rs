@@ -67,7 +67,7 @@ mod create {
 			.create(amount, root, nominator, bouncer);
 		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(&result);
+		result.print_debug();
 		if let Some(event) = result.find_first_event::<NominationPoolsEvents::Created>() {
 			dbg!(event);
 		}
@@ -105,7 +105,7 @@ mod create_with_pool_id {
 			.create_with_pool_id(amount, root, nominator, bouncer, pool_id);
 		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(&result);
+		result.print_debug();
 		if let Some(event) = result.find_first_event::<NominationPoolsEvents::Created>() {
 			dbg!(event);
 		}
@@ -137,7 +137,7 @@ mod join {
 		let tx = sdk.tx.nomination_pools.join(amount, pool_id);
 		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(&result);
+		result.print_debug();
 		if let Some(event) = result.find_first_event::<NominationPoolsEvents::Bonded>() {
 			dbg!(event);
 		}
@@ -166,7 +166,7 @@ mod bond_extra {
 		let tx = sdk.tx.nomination_pools.bond_extra(extra);
 		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(&result);
+		result.print_debug();
 		if let Some(event) = result.find_first_event::<NominationPoolsEvents::Bonded>() {
 			dbg!(event);
 		}
@@ -198,7 +198,7 @@ mod unbond {
 			.unbond(member_account, unbonding_points);
 		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(&result);
+		result.print_debug();
 		if let Some(event) = result.find_first_event::<NominationPoolsEvents::Unbonded>() {
 			dbg!(event);
 		}
@@ -230,7 +230,7 @@ mod withdraw_unbonded {
 			.withdraw_unbonded(member_account, num_slashing_spans);
 		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(&result);
+		result.print_debug();
 		if let Some(event) = result.find_first_event::<NominationPoolsEvents::Withdrawn>() {
 			dbg!(event);
 		}
@@ -267,7 +267,7 @@ mod set_commission {
 			.set_commission(pool_id, Some(new_commission));
 		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(&result);
+		result.print_debug();
 		if let Some(event) =
 			result.find_first_event::<NominationPoolsEvents::PoolCommissionUpdated>()
 		{
@@ -295,7 +295,7 @@ mod set_metadata {
 		let tx = sdk.tx.nomination_pools.set_metadata(pool_id, metadata);
 		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(&result);
+		result.print_debug();
 
 		Ok(())
 	}
@@ -322,7 +322,7 @@ mod set_state {
 		let tx = sdk.tx.nomination_pools.set_state(pool_id, state);
 		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(&result);
+		result.print_debug();
 		if let Some(event) = result.find_first_event::<NominationPoolsEvents::StateChanged>() {
 			dbg!(event);
 		}
@@ -350,7 +350,7 @@ mod set_claim_permission {
 		let tx = sdk.tx.nomination_pools.set_claim_permission(permission);
 		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(&result);
+		result.print_debug();
 
 		Ok(())
 	}
@@ -378,7 +378,7 @@ mod nominate {
 		let tx = sdk.tx.nomination_pools.nominate(pool_id, validators);
 		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(&result);
+		result.print_debug();
 		if let Some(data) = result
 			.get_data::<NominationPoolsCalls::Nominate>(&sdk.online_client)
 			.await
@@ -406,7 +406,7 @@ mod chill {
 		let tx = sdk.tx.nomination_pools.chill(pool_id);
 		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(&result);
+		result.print_debug();
 
 		Ok(())
 	}
@@ -430,7 +430,7 @@ mod claim_payout {
 		let tx = sdk.tx.nomination_pools.claim_payout();
 		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(&result);
+		result.print_debug();
 		if let Some(event) = result.find_first_event::<NominationPoolsEvents::PaidOut>() {
 			dbg!(event);
 		}
@@ -458,7 +458,7 @@ mod claim_payout_other {
 		let tx = sdk.tx.nomination_pools.claim_payout_other(other);
 		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(&result);
+		result.print_debug();
 		if let Some(event) = result.find_first_event::<NominationPoolsEvents::PaidOut>() {
 			dbg!(event);
 		}
@@ -486,7 +486,7 @@ mod claim_commission {
 		let tx = sdk.tx.nomination_pools.claim_commission(pool_id);
 		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(&result);
+		result.print_debug();
 		if let Some(event) =
 			result.find_first_event::<NominationPoolsEvents::PoolCommissionClaimed>()
 		{

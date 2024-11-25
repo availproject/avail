@@ -1,9 +1,9 @@
 [workspace]
 
 [package]
-name = "storage-staking-active-era"
+name = "docs-storage"
 edition = "2021"
 
 [dependencies]
-avail-rust = { git = "https://github.com/availproject/avail" }
+avail-rust = { path = "../../." }
 tokio = { version = "1.38.0", features = ["rt-multi-thread"] }

@@ -29,7 +29,7 @@ mod submit_data {
 		let tx = sdk.tx.data_availability.submit_data(data);
 		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(&result);
+		result.print_debug();
 		if let Some(event) = result.find_first_event::<DataAvailabilityEvents::DataSubmitted>() {
 			dbg!(event);
 		}
@@ -63,7 +63,7 @@ mod create_application_key {
 		let tx = sdk.tx.data_availability.create_application_key(key);
 		let result = tx.execute_wait_for_inclusion(&account, options).await?;
 
-		dbg!(&result);
+		result.print_debug();
 		if let Some(event) =
 			result.find_first_event::<DataAvailabilityEvents::ApplicationKeyCreated>()
 		{
