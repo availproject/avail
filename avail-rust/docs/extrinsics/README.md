@@ -45,7 +45,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -145,7 +145,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -244,7 +244,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -313,7 +313,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -386,7 +386,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -497,7 +497,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -594,7 +594,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -696,7 +696,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -808,7 +808,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -903,7 +903,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -996,7 +996,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice//stash").unwrap();
@@ -1090,7 +1090,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -1152,7 +1152,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -1255,7 +1255,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -1350,7 +1350,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -1456,7 +1456,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -1573,7 +1573,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -1688,7 +1688,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -1802,7 +1802,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Bob").unwrap();
@@ -1900,7 +1900,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -2001,7 +2001,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -2098,7 +2098,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -2210,7 +2210,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -2303,7 +2303,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -2394,7 +2394,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -2487,7 +2487,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -2594,7 +2594,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -2699,7 +2699,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -2788,7 +2788,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -2884,7 +2884,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -2978,7 +2978,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();

@@ -1,10 +1,7 @@
 use crate::avail::{
 	self, nomination_pools::calls::types as NominationPoolsCalls,
-	nomination_pools::calls::types::set_claim_permission::Permission,
 	nomination_pools::calls::types::set_commission::NewCommission as NewCommissionOriginal,
-	nomination_pools::calls::types::set_state::State,
 	nomination_pools::events as NominationPoolsEvents,
-	runtime_types::pallet_nomination_pools::BondExtra,
 	runtime_types::sp_arithmetic::per_things::Perbill,
 };
 use crate::sdk::WaitFor;
@@ -13,6 +10,10 @@ use crate::{AOnlineClient, AccountId};
 use std::str::FromStr;
 use subxt::backend::rpc::RpcClient;
 use subxt_signer::sr25519::Keypair;
+
+pub use crate::avail::nomination_pools::calls::types::set_claim_permission::Permission;
+pub use crate::avail::nomination_pools::calls::types::set_state::State;
+pub use crate::avail::runtime_types::pallet_nomination_pools::BondExtra;
 
 use super::{
 	find_data_or_return_error, find_event_or_nothing, find_event_or_return_error, TransactionFailed,
@@ -131,17 +132,11 @@ impl NominationPools {
 	pub async fn nominate(
 		&self,
 		pool_id: u32,
-		validators: Vec<String>,
+		validators: Vec<AccountId>,
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
 	) -> Result<NominateTx, TransactionFailed> {
-		let validators: Result<Vec<AccountId>, _> = validators
-			.into_iter()
-			.map(|v| AccountId::from_str(&v))
-			.collect();
-		let validators = validators.map_err(|e| e.to_string())?;
-
 		let call = avail::tx().nomination_pools().nominate(pool_id, validators);
 		let details = progress_and_parse_transaction(
 			&self.online_client,
@@ -193,18 +188,14 @@ impl NominationPools {
 	pub async fn create_with_pool_id(
 		&self,
 		amount: u128,
-		root: &str,
-		nominator: &str,
-		bouncer: &str,
+		root: AccountId,
+		nominator: AccountId,
+		bouncer: AccountId,
 		pool_id: u32,
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
 	) -> Result<CreateWithPoolIdTx, TransactionFailed> {
-		let root = AccountId::from_str(root).map_err(|e| e.to_string())?;
-		let nominator = AccountId::from_str(nominator).map_err(|e| e.to_string())?;
-		let bouncer = AccountId::from_str(bouncer).map_err(|e| e.to_string())?;
-
 		let call = avail::tx().nomination_pools().create_with_pool_id(
 			amount,
 			root.into(),
@@ -242,17 +233,13 @@ impl NominationPools {
 	pub async fn create(
 		&self,
 		amount: u128,
-		root: &str,
-		nominator: &str,
-		bouncer: &str,
+		root: AccountId,
+		nominator: AccountId,
+		bouncer: AccountId,
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
 	) -> Result<CreateTx, TransactionFailed> {
-		let root = AccountId::from_str(root).map_err(|e| e.to_string())?;
-		let nominator = AccountId::from_str(nominator).map_err(|e| e.to_string())?;
-		let bouncer = AccountId::from_str(bouncer).map_err(|e| e.to_string())?;
-
 		let call = avail::tx().nomination_pools().create(
 			amount,
 			root.into(),
@@ -467,12 +454,11 @@ impl NominationPools {
 
 	pub async fn claim_payout_other(
 		&self,
-		other: &str,
+		other: AccountId,
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
 	) -> Result<ClaimPayoutOtherTx, TransactionFailed> {
-		let other = AccountId::from_str(other).map_err(|e| e.to_string())?;
 		let call = avail::tx()
 			.nomination_pools()
 			.claim_payout_other(other.into());
@@ -493,13 +479,12 @@ impl NominationPools {
 
 	pub async fn unbond(
 		&self,
-		member_account: &str,
+		member_account: AccountId,
 		unbonding_points: u128,
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
 	) -> Result<UnbondTx, TransactionFailed> {
-		let member_account = AccountId::from_str(member_account).map_err(|e| e.to_string())?;
 		let call = avail::tx()
 			.nomination_pools()
 			.unbond(member_account.into(), unbonding_points);
@@ -544,13 +529,12 @@ impl NominationPools {
 
 	pub async fn withdraw_unbonded(
 		&self,
-		member_account: &str,
+		member_account: AccountId,
 		num_slashing_spans: u32,
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
 	) -> Result<WithdrawUnbondedTx, TransactionFailed> {
-		let member_account = AccountId::from_str(member_account).map_err(|e| e.to_string())?;
 		let call = avail::tx()
 			.nomination_pools()
 			.withdraw_unbonded(member_account.into(), num_slashing_spans);

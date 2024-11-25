@@ -7,7 +7,7 @@ use crate::{
 	},
 	error::ClientError,
 	transactions::{balances, da, TransactionFailed},
-	utils, AccountId, Data, Key, Keypair, Nonce, Options, SecretUri, WaitFor, SDK,
+	utils, AccountId, Key, Keypair, Nonce, Options, SecretUri, WaitFor, SDK,
 };
 
 pub struct Account {
@@ -68,7 +68,7 @@ impl Account {
 
 	pub async fn balance_transfer(
 		&self,
-		dest: &str,
+		dest: AccountId,
 		value: u128,
 	) -> Result<balances::TransferKeepAliveTx, TransactionFailed> {
 		let options = Some(self.build_options());
@@ -79,7 +79,7 @@ impl Account {
 			.await
 	}
 
-	pub async fn submit_data(&self, data: Data) -> Result<da::SubmitDataTx, TransactionFailed> {
+	pub async fn submit_data(&self, data: Vec<u8>) -> Result<da::SubmitDataTx, TransactionFailed> {
 		let options = Some(self.build_options());
 		self.sdk
 			.tx

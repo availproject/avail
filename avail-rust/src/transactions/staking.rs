@@ -1,5 +1,6 @@
 use crate::api_dev::api::runtime_types::pallet_staking::ValidatorPrefs;
 use crate::api_dev::api::runtime_types::sp_arithmetic::per_things::Perbill;
+use crate::avail::staking::events::era_paid::EraIndex;
 use crate::sdk::WaitFor;
 use crate::{avail, AOnlineClient, AccountId, RewardDestination};
 
@@ -36,7 +37,7 @@ pub struct ChillTx {
 
 #[derive(Debug)]
 pub struct ChillOtherTx {
-	pub event: StakingEvents::Chilled,
+	pub event: Option<StakingEvents::Chilled>,
 	pub details: TransactionDetails,
 }
 
@@ -55,6 +56,11 @@ pub struct UnbondTx {
 #[derive(Debug)]
 pub struct ValidateTx {
 	pub event: StakingEvents::ValidatorPrefsSet,
+	pub details: TransactionDetails,
+}
+
+#[derive(Debug)]
+pub struct PayoutStakersTx {
 	pub details: TransactionDetails,
 }
 
@@ -148,16 +154,11 @@ impl Staking {
 
 	pub async fn chill_other(
 		&self,
-		stash: &str,
+		stash: AccountId,
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
 	) -> Result<ChillOtherTx, TransactionFailed> {
-		let stash = match AccountId::from_str(stash) {
-			Ok(stash) => stash,
-			Err(error) => return Err(TransactionFailed::from(std::format!("{:?}", error))),
-		};
-
 		let call = avail::tx().staking().chill_other(stash);
 		let details = progress_and_parse_transaction(
 			&self.online_client,
@@ -169,27 +170,22 @@ impl Staking {
 		)
 		.await?;
 
-		let event = find_event_or_return_error::<StakingEvents::Chilled>(
-			"Failed to find Staking::Chilled event",
-			&details,
-		)?;
+		let event = find_event_or_nothing::<StakingEvents::Chilled>(&details);
 
 		Ok(ChillOtherTx { event, details })
 	}
 
 	pub async fn nominate(
 		&self,
-		targets: &[String],
+		targets: &[AccountId],
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
 	) -> Result<NominateTx, TransactionFailed> {
-		let targets: Result<Vec<AccountId>, _> = targets
-			.iter()
-			.map(|address| AccountId::from_str(address))
+		let targets = targets
+			.into_iter()
+			.map(|a| MultiAddress::Id(a.clone()))
 			.collect();
-		let targets = targets.map_err(|e| std::format!("{:?}", e))?;
-		let targets = targets.into_iter().map(|a| MultiAddress::Id(a)).collect();
 
 		let call = avail::tx().staking().nominate(targets);
 		let details = progress_and_parse_transaction(
@@ -275,5 +271,27 @@ impl Staking {
 		)?;
 
 		Ok(ValidateTx { event, details })
+	}
+
+	pub async fn payout_stakers(
+		&self,
+		validator_stash: AccountId,
+		era: u32,
+		wait_for: WaitFor,
+		account: &Keypair,
+		options: Option<Options>,
+	) -> Result<PayoutStakersTx, TransactionFailed> {
+		let call = avail::tx().staking().payout_stakers(validator_stash, era);
+		let details = progress_and_parse_transaction(
+			&self.online_client,
+			&self.rpc_client,
+			account,
+			call,
+			wait_for,
+			options,
+		)
+		.await?;
+
+		Ok(PayoutStakersTx { details })
 	}
 }

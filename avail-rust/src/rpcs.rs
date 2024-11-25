@@ -2,6 +2,7 @@ use avail_core::data_proof::ProofResponse;
 use subxt::backend::legacy::LegacyRpcMethods;
 
 use crate::avail::runtime_types::frame_system::limits::BlockLength;
+use crate::error::ClientError;
 use crate::from_substrate::{FeeDetails, NodeRole, PeerInfo, RuntimeDispatchInfo, SyncState};
 use crate::{
 	ABlockDetailsRPC, AvailConfig, AvailHeader, BlockHash, BlockNumber, Cell, GDataProof, GRow,
@@ -25,7 +26,7 @@ pub struct Rpc {
 }
 
 impl Rpc {
-	pub async fn new(client: RpcClient) -> Result<Self, Box<dyn std::error::Error>> {
+	pub async fn new(client: RpcClient) -> Self {
 		let legacy_methods = LegacyRpcMethods::new(client.clone());
 		let kate = Kate::new(client.clone());
 		let author = Author::new(client.clone());
@@ -33,7 +34,7 @@ impl Rpc {
 		let system = System::new(client.clone());
 		let payment = Payment::new(client.clone());
 
-		Ok(Self {
+		Self {
 			client,
 			legacy_methods,
 			kate,
@@ -41,7 +42,7 @@ impl Rpc {
 			chain,
 			system,
 			payment,
-		})
+		}
 	}
 }
 

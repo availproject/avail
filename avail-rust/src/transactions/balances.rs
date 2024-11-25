@@ -1,5 +1,5 @@
-use crate::avail;
 use crate::sdk::WaitFor;
+use crate::{avail, AccountId};
 use crate::{utils, AOnlineClient};
 
 use avail::balances::events as BalancesEvents;
@@ -49,17 +49,12 @@ impl Balances {
 
 	pub async fn transfer_all(
 		&self,
-		dest: &str,
+		dest: AccountId,
 		keep_alive: bool,
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
 	) -> Result<TransferAllTx, TransactionFailed> {
-		let dest = match utils::account_id_from_str(dest) {
-			Ok(dest) => dest,
-			Err(error) => return Err(TransactionFailed::from(error)),
-		};
-
 		let call = avail::tx().balances().transfer_all(dest.into(), keep_alive);
 		let details = utils::progress_and_parse_transaction(
 			&self.online_client,
@@ -86,17 +81,12 @@ impl Balances {
 
 	pub async fn transfer_allow_death(
 		&self,
-		dest: &str,
+		dest: AccountId,
 		amount: u128,
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
 	) -> Result<TransferAllowDeathTx, TransactionFailed> {
-		let dest = match utils::account_id_from_str(dest) {
-			Ok(dest) => dest,
-			Err(error) => return Err(TransactionFailed::from(error)),
-		};
-
 		let call = avail::tx()
 			.balances()
 			.transfer_allow_death(dest.into(), amount);
@@ -125,17 +115,12 @@ impl Balances {
 
 	pub async fn transfer_keep_alive(
 		&self,
-		dest: &str,
+		dest: AccountId,
 		value: u128,
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
 	) -> Result<TransferKeepAliveTx, TransactionFailed> {
-		let dest = match utils::account_id_from_str(dest) {
-			Ok(dest) => dest,
-			Err(error) => return Err(TransactionFailed::from(error).into()),
-		};
-
 		let call = avail::tx()
 			.balances()
 			.transfer_keep_alive(dest.into(), value);

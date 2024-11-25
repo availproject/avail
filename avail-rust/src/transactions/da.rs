@@ -61,11 +61,13 @@ impl DataAvailability {
 
 	pub async fn submit_data(
 		&self,
-		data: Data,
+		data: Vec<u8>,
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
 	) -> Result<SubmitDataTx, TransactionFailed> {
+		let data = Data { 0: data };
+
 		let call = avail::tx().data_availability().submit_data(data);
 		let details = progress_and_parse_transaction(
 			&self.online_client,
