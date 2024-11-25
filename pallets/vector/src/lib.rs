@@ -214,11 +214,6 @@ pub mod pallet {
 	#[pallet::getter(fn sync_committee_poseidons)]
 	pub type SyncCommitteePoseidons<T> = StorageMap<_, Identity, u64, U256, ValueQuery>;
 
-	/// Maps from a period to the the sync committee hash.
-	#[pallet::storage]
-	#[pallet::getter(fn sync_committee_hashes)]
-	pub type SyncCommitteeHashes<T> = StorageMap<_, Identity, u64, H256, ValueQuery>;
-
 	/// Storage for a config of finality threshold and slots per period.
 	#[pallet::storage]
 	pub type ConfigurationStorage<T: Config> = StorageValue<_, Configuration, ValueQuery>;
@@ -285,6 +280,12 @@ pub mod pallet {
 	#[pallet::getter(fn updater)]
 	pub type Updater<T: Config> = StorageValue<_, H256, ValueQuery>;
 
+	/// Maps from a period to the the sync committee hash.
+	#[pallet::storage]
+	#[pallet::getter(fn sync_committee_hashes)]
+	pub type SyncCommitteeHashes<T> = StorageMap<_, Identity, u64, H256, ValueQuery>;
+
+	/// SP1 program verification key.
 	#[pallet::storage]
 	#[pallet::getter(fn sp1_verification_key)]
 	pub type SP1VerificationKey<T: Config> = StorageValue<_, H256, ValueQuery>;

@@ -24610,11 +24610,6 @@ pub mod api {
 					pub type SyncCommitteePoseidons = runtime_types::primitive_types::U256;
 					pub type Param0 = ::core::primitive::u64;
 				}
-				pub mod sync_committee_hashes {
-					use super::runtime_types;
-					pub type SyncCommitteeHashes = ::subxt::ext::subxt_core::utils::H256;
-					pub type Param0 = ::core::primitive::u64;
-				}
 				pub mod configuration_storage {
 					use super::runtime_types;
 					pub type ConfigurationStorage =
@@ -24685,6 +24680,11 @@ pub mod api {
 				pub mod updater {
 					use super::runtime_types;
 					pub type Updater = ::subxt::ext::subxt_core::utils::H256;
+				}
+				pub mod sync_committee_hashes {
+					use super::runtime_types;
+					pub type SyncCommitteeHashes = ::subxt::ext::subxt_core::utils::H256;
+					pub type Param0 = ::core::primitive::u64;
 				}
 				pub mod sp1_verification_key {
 					use super::runtime_types;
@@ -24901,55 +24901,6 @@ pub mod api {
 							42u8, 212u8, 16u8, 100u8, 95u8, 97u8, 54u8, 157u8, 85u8, 121u8, 7u8,
 							250u8, 175u8, 242u8, 182u8, 62u8, 41u8, 109u8, 229u8, 93u8, 234u8,
 							72u8, 43u8, 223u8, 208u8, 0u8, 83u8, 250u8, 22u8, 76u8, 35u8, 104u8,
-						],
-					)
-				}
-				#[doc = " Maps from a period to the the sync committee hash."]
-				pub fn sync_committee_hashes_iter(
-					&self,
-				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
-					(),
-					types::sync_committee_hashes::SyncCommitteeHashes,
-					(),
-					::subxt::ext::subxt_core::utils::Yes,
-					::subxt::ext::subxt_core::utils::Yes,
-				> {
-					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
-						"Vector",
-						"SyncCommitteeHashes",
-						(),
-						[
-							51u8, 118u8, 71u8, 185u8, 193u8, 166u8, 64u8, 107u8, 217u8, 216u8,
-							61u8, 74u8, 64u8, 98u8, 20u8, 23u8, 57u8, 104u8, 188u8, 189u8, 195u8,
-							162u8, 238u8, 137u8, 19u8, 17u8, 252u8, 175u8, 185u8, 16u8, 133u8,
-							142u8,
-						],
-					)
-				}
-				#[doc = " Maps from a period to the the sync committee hash."]
-				pub fn sync_committee_hashes(
-					&self,
-					_0: impl ::core::borrow::Borrow<types::sync_committee_hashes::Param0>,
-				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
-					::subxt::ext::subxt_core::storage::address::StaticStorageKey<
-						types::sync_committee_hashes::Param0,
-					>,
-					types::sync_committee_hashes::SyncCommitteeHashes,
-					::subxt::ext::subxt_core::utils::Yes,
-					::subxt::ext::subxt_core::utils::Yes,
-					(),
-				> {
-					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
-						"Vector",
-						"SyncCommitteeHashes",
-						::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
-							_0.borrow(),
-						),
-						[
-							51u8, 118u8, 71u8, 185u8, 193u8, 166u8, 64u8, 107u8, 217u8, 216u8,
-							61u8, 74u8, 64u8, 98u8, 20u8, 23u8, 57u8, 104u8, 188u8, 189u8, 195u8,
-							162u8, 238u8, 137u8, 19u8, 17u8, 252u8, 175u8, 185u8, 16u8, 133u8,
-							142u8,
 						],
 					)
 				}
@@ -25316,6 +25267,56 @@ pub mod api {
 						],
 					)
 				}
+				#[doc = " Maps from a period to the the sync committee hash."]
+				pub fn sync_committee_hashes_iter(
+					&self,
+				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
+					(),
+					types::sync_committee_hashes::SyncCommitteeHashes,
+					(),
+					::subxt::ext::subxt_core::utils::Yes,
+					::subxt::ext::subxt_core::utils::Yes,
+				> {
+					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
+						"Vector",
+						"SyncCommitteeHashes",
+						(),
+						[
+							51u8, 118u8, 71u8, 185u8, 193u8, 166u8, 64u8, 107u8, 217u8, 216u8,
+							61u8, 74u8, 64u8, 98u8, 20u8, 23u8, 57u8, 104u8, 188u8, 189u8, 195u8,
+							162u8, 238u8, 137u8, 19u8, 17u8, 252u8, 175u8, 185u8, 16u8, 133u8,
+							142u8,
+						],
+					)
+				}
+				#[doc = " Maps from a period to the the sync committee hash."]
+				pub fn sync_committee_hashes(
+					&self,
+					_0: impl ::core::borrow::Borrow<types::sync_committee_hashes::Param0>,
+				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
+					::subxt::ext::subxt_core::storage::address::StaticStorageKey<
+						types::sync_committee_hashes::Param0,
+					>,
+					types::sync_committee_hashes::SyncCommitteeHashes,
+					::subxt::ext::subxt_core::utils::Yes,
+					::subxt::ext::subxt_core::utils::Yes,
+					(),
+				> {
+					::subxt::ext::subxt_core::storage::address::StaticAddress::new_static(
+						"Vector",
+						"SyncCommitteeHashes",
+						::subxt::ext::subxt_core::storage::address::StaticStorageKey::new(
+							_0.borrow(),
+						),
+						[
+							51u8, 118u8, 71u8, 185u8, 193u8, 166u8, 64u8, 107u8, 217u8, 216u8,
+							61u8, 74u8, 64u8, 98u8, 20u8, 23u8, 57u8, 104u8, 188u8, 189u8, 195u8,
+							162u8, 238u8, 137u8, 19u8, 17u8, 252u8, 175u8, 185u8, 16u8, 133u8,
+							142u8,
+						],
+					)
+				}
+				#[doc = " SP1 program verification key."]
 				pub fn sp1_verification_key(
 					&self,
 				) -> ::subxt::ext::subxt_core::storage::address::StaticAddress<
