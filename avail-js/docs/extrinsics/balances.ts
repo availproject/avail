@@ -1,12 +1,12 @@
 import { SDK, Keyring, Events, BN } from "../../src/sdk"
 
 export async function run() {
-  console.log("TransferAll")
+  console.log("Balances_TransferAll")
   await TransferAll.run()
   await TransferAll.clean()
-  console.log("TransferAllowDeath")
+  console.log("Balances_TransferAllowDeath")
   await TransferAllowDeath.run()
-  console.log("TransferKeepAlive")
+  console.log("Balances_TransferKeepAlive")
   await TransferKeepAlive.run()
 }
 

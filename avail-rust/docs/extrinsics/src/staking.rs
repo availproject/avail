@@ -12,13 +12,13 @@ pub async fn run() -> Result<(), ClientError> {
 	println!("staking_chill");
 	chill::run().await?;
 	println!("staking_chill_other");
-	chill_other::prepare().await;
+	chill_other::prepare().await?;
 	chill_other::run().await?;
 	println!("staking_unbond");
 	unbond::run().await?;
 	println!("staking_validate");
 	validate::run().await?;
-	validate::clean().await;
+	validate::clean().await?;
 
 	wait_for_new_era(None).await?;
 
@@ -150,21 +150,21 @@ mod chill_other {
 	};
 	use core::str::FromStr;
 
-	pub async fn prepare() {
-		let sdk = SDK::new(SDK::local_endpoint()).await.unwrap();
+	pub async fn prepare() -> Result<(), ClientError> {
+		let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 		// Input
-		let secret_uri = SecretUri::from_str("//Alice").unwrap();
-		let account = Keypair::from_uri(&secret_uri).unwrap();
+		let secret_uri = SecretUri::from_str("//Alice")?;
+		let account = Keypair::from_uri(&secret_uri)?;
 		let targets = [
-			account_id_from_str("5GNJqTPyNqANBkUVMN1LPPrxXnFouWXoe2wNSmmEoLctxiZY").unwrap(), // Alice Stash
+			account_id_from_str("5GNJqTPyNqANBkUVMN1LPPrxXnFouWXoe2wNSmmEoLctxiZY")?, // Alice Stash
 		];
 
 		let options = Some(Options::new().nonce(Nonce::BestBlockAndTxPool));
 		let tx = sdk.tx.staking.nominate(&targets);
-		tx.execute_wait_for_inclusion(&account, options)
-			.await
-			.unwrap();
+		tx.execute_wait_for_inclusion(&account, options).await?;
+
+		Ok(())
 	}
 
 	pub async fn run() -> Result<(), ClientError> {
@@ -244,18 +244,18 @@ mod validate {
 		Ok(())
 	}
 
-	pub async fn clean() {
-		let sdk = SDK::new(SDK::local_endpoint()).await.unwrap();
+	pub async fn clean() -> Result<(), ClientError> {
+		let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 		// Input
-		let secret_uri = SecretUri::from_str("//Alice").unwrap();
-		let account = Keypair::from_uri(&secret_uri).unwrap();
+		let secret_uri = SecretUri::from_str("//Alice")?;
+		let account = Keypair::from_uri(&secret_uri)?;
 
 		let options = Some(Options::new().nonce(Nonce::BestBlockAndTxPool));
 		let tx = sdk.tx.staking.chill();
-		tx.execute_wait_for_inclusion(&account, options)
-			.await
-			.unwrap();
+		tx.execute_wait_for_inclusion(&account, options).await?;
+
+		Ok(())
 	}
 }
 

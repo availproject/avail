@@ -21,8 +21,8 @@ mod submit_data {
 		let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 		// Input
-		let secret_uri = SecretUri::from_str("//Alice").unwrap();
-		let account = Keypair::from_uri(&secret_uri).unwrap();
+		let secret_uri = SecretUri::from_str("//Alice")?;
+		let account = Keypair::from_uri(&secret_uri)?;
 		let data = String::from("My Awesome Data").as_bytes().to_vec();
 
 		let options = Some(Options::new().nonce(Nonce::BestBlockAndTxPool).app_id(1));
@@ -55,8 +55,8 @@ mod create_application_key {
 		let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 		// Input
-		let secret_uri = SecretUri::from_str("//Alice").unwrap();
-		let account = Keypair::from_uri(&secret_uri).unwrap();
+		let secret_uri = SecretUri::from_str("//Alice")?;
+		let account = Keypair::from_uri(&secret_uri)?;
 		let key = String::from("MyAwesomeKey").as_bytes().to_vec();
 
 		let options = Some(Options::new().nonce(Nonce::BestBlockAndTxPool));

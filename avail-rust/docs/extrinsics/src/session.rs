@@ -18,8 +18,8 @@ mod set_keys {
 		let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 		// Input
-		let secret_uri = SecretUri::from_str("//Alice//stash").unwrap();
-		let account = Keypair::from_uri(&secret_uri).unwrap();
+		let secret_uri = SecretUri::from_str("//Alice//stash")?;
+		let account = Keypair::from_uri(&secret_uri)?;
 		let keys = sdk.rpc.author.rotate_keys().await?;
 		let keys = utils::deconstruct_session_keys(keys)?;
 

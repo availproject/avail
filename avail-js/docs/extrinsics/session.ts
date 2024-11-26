@@ -1,7 +1,7 @@
 import { SDK, Keyring, sdkUtil } from "../../src/sdk"
 
 export async function run() {
-  console.log("SetKeys")
+  console.log("Session_SetKeys")
   await SetKeys.run()
 }
 
@@ -9,7 +9,7 @@ namespace SetKeys {
   export async function run() {
     const sdk = await SDK.New(SDK.localEndpoint())
 
-    const account = new Keyring({ type: "sr25519" }).addFromUri("//Alice")
+    const account = new Keyring({ type: "sr25519" }).addFromUri("//Alice//stash")
     const keysBytes = await sdk.api.rpc.author.rotateKeys()
     const keys = sdkUtil.deconstruct_session_keys(keysBytes.toString())
 

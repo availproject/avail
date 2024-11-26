@@ -3,9 +3,16 @@ import * as Balances from "./balances"
 import * as DataAvailability from "./da"
 import * as Staking from "./staking"
 import * as Session from "./session"
+import * as Multisig from "./multisig"
+import * as NominationPools from "./nomination_pools"
 
 async function main() {
+  await Balances.run()
+  await DataAvailability.run()
+  await Staking.run()
   await Session.run()
+  await Multisig.run()
+  await NominationPools.run()
 }
 
 main()

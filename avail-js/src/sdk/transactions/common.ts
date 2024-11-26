@@ -123,7 +123,7 @@ export class TxResultDetails {
 
   printDebug() {
     console.log(
-      `TxResultDetails {\n  txResult: {...}}\n  events: ${this.events.toString()}\n  txHash: ${this.txHash.toHuman()}\n  txIndex: ${this.txIndex.toString()}\n  blockHash: ${this.blockHash.toHuman()}\n  blockNumber: ${this.blockNumber.toString()}\n}`,
+      `TxResultDetails {\n  txResult: {...}\n  events: ${this.events.toString()}\n  txHash: ${this.txHash.toHuman()}\n  txIndex: ${this.txIndex.toString()}\n  blockHash: ${this.blockHash.toHuman()}\n  blockNumber: ${this.blockNumber.toString()}\n}`,
     )
   }
 }

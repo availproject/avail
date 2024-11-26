@@ -1,9 +1,9 @@
 import { SDK, Keyring, Events } from "../../src/sdk"
 
 export async function run() {
-  console.log("SubmitData")
+  console.log("DA_SubmitData")
   await SubmitData.run()
-  console.log("CreateApplicationKey")
+  console.log("DA_CreateApplicationKey")
   await CreateApplicationKey.run()
 }
 

@@ -3,7 +3,7 @@ use avail_rust::error::ClientError;
 pub async fn run() -> Result<(), ClientError> {
 	println!("balances_transfer_all");
 	transfer_all::run().await?;
-	transfer_all::clean().await;
+	transfer_all::clean().await?;
 	println!("balances_transfer_allow_death");
 	transfer_allow_death::run().await?;
 	println!("balances_transfer_keep_alive");
@@ -25,8 +25,8 @@ mod transfer_all {
 		let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 		// Input
-		let secret_uri = SecretUri::from_str("//Alice").unwrap();
-		let account = Keypair::from_uri(&secret_uri).unwrap();
+		let secret_uri = SecretUri::from_str("//Alice")?;
+		let account = Keypair::from_uri(&secret_uri)?;
 		let dest = account_id_from_str("5HGjWAeFDfFCWPsjFQdVV2Msvz2XtMktvgocEZcCj68kUMaw")?; // Eve
 		let keep_alive = false;
 
@@ -45,20 +45,20 @@ mod transfer_all {
 		Ok(())
 	}
 
-	pub async fn clean() {
-		let sdk = SDK::new(SDK::local_endpoint()).await.unwrap();
+	pub async fn clean() -> Result<(), ClientError> {
+		let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 		// Input
-		let secret_uri = SecretUri::from_str("//Eve").unwrap();
-		let account = Keypair::from_uri(&secret_uri).unwrap();
-		let dest = account_id_from_str("5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY").unwrap(); // Alice
+		let secret_uri = SecretUri::from_str("//Eve")?;
+		let account = Keypair::from_uri(&secret_uri)?;
+		let dest = account_id_from_str("5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY")?; // Alice
 		let value = SDK::one_avail() * 900_000;
 		let options = Some(Options::new().nonce(Nonce::BestBlockAndTxPool));
 
 		let tx = sdk.tx.balances.transfer_keep_alive(dest, value);
-		tx.execute_wait_for_inclusion(&account, options)
-			.await
-			.unwrap();
+		tx.execute_wait_for_inclusion(&account, options).await?;
+
+		Ok(())
 	}
 }
 
@@ -75,8 +75,8 @@ mod transfer_allow_death {
 		let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 		// Input
-		let secret_uri = SecretUri::from_str("//Alice").unwrap();
-		let account = Keypair::from_uri(&secret_uri).unwrap();
+		let secret_uri = SecretUri::from_str("//Alice")?;
+		let account = Keypair::from_uri(&secret_uri)?;
 		let dest = account_id_from_str("5HGjWAeFDfFCWPsjFQdVV2Msvz2XtMktvgocEZcCj68kUMaw")?; // Eve
 		let amount = SDK::one_avail();
 
@@ -107,8 +107,8 @@ mod transfer_keep_alive {
 		let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 		// Input
-		let secret_uri = SecretUri::from_str("//Alice").unwrap();
-		let account = Keypair::from_uri(&secret_uri).unwrap();
+		let secret_uri = SecretUri::from_str("//Alice")?;
+		let account = Keypair::from_uri(&secret_uri)?;
 		let dest = account_id_from_str("5HGjWAeFDfFCWPsjFQdVV2Msvz2XtMktvgocEZcCj68kUMaw")?; // Eve
 		let amount = SDK::one_avail();
 
