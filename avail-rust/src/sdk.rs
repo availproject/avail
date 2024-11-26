@@ -36,9 +36,24 @@ impl SDK {
 		})
 	}
 
-	pub fn alice() -> Result<Keypair, String> {
-		let secret_uri = SecretUri::from_str("//Alice").map_err(|e| e.to_string())?;
-		Keypair::from_uri(&secret_uri).map_err(|e| e.to_string())
+	pub fn alice() -> Result<Keypair, ClientError> {
+		let secret_uri = SecretUri::from_str("//Alice")?;
+		Ok(Keypair::from_uri(&secret_uri)?)
+	}
+
+	pub fn bob() -> Result<Keypair, ClientError> {
+		let secret_uri = SecretUri::from_str("//Bob")?;
+		Ok(Keypair::from_uri(&secret_uri)?)
+	}
+
+	pub fn charlie() -> Result<Keypair, ClientError> {
+		let secret_uri = SecretUri::from_str("//Charlie")?;
+		Ok(Keypair::from_uri(&secret_uri)?)
+	}
+
+	pub fn eve() -> Result<Keypair, ClientError> {
+		let secret_uri = SecretUri::from_str("//Eve")?;
+		Ok(Keypair::from_uri(&secret_uri)?)
 	}
 
 	pub fn one_avail() -> u128 {
@@ -47,6 +62,14 @@ impl SDK {
 
 	pub fn local_endpoint() -> &'static str {
 		"ws://127.0.0.1:9944"
+	}
+
+	pub fn turing_endpoint() -> &'static str {
+		"wss://turing-rpc.avail.so/ws"
+	}
+
+	pub fn mainnet_endpoint() -> &'static str {
+		"wss://mainnet-rpc.avail.so/ws"
 	}
 }
 

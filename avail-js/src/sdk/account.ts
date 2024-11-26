@@ -1,11 +1,8 @@
 import { BN } from "@polkadot/util"
 import { KeyringPair } from "@polkadot/keyring/types"
 import { H256, Keyring, SDK, sdkUtil, WaitFor } from "."
-import { CreateApplicationKeyTx, SubmitDataTx } from "./transactions/da"
 import { Bytes } from "@polkadot/types-codec"
-import { TransferKeepAliveTx } from "./transactions/balances"
-import { TransactionFailed, TransactionOptions } from "./transactions/common"
-import { Result } from "neverthrow"
+import { Transaction, TransactionFailed, TransactionOptions } from "./transactions/common"
 
 export interface AccountBalance {
   free: BN
@@ -23,7 +20,7 @@ export class Account {
   constructor(
     public sdk: SDK,
     public keyring: KeyringPair,
-  ) { }
+  ) {}
 
   static alice(sdk: SDK): Account {
     return new Account(sdk, new Keyring({ type: "sr25519" }).addFromUri("//Alice"))
@@ -49,24 +46,24 @@ export class Account {
     return this.keyring.address
   }
 
-  async balanceTransfer(dest: string, value: BN): Promise<Result<TransferKeepAliveTx, TransactionFailed>> {
-    return await this.sdk.tx.balances.transferKeepAlive(dest, value, this.waitFor, this.keyring, this.buildOptions())
+  balanceTransfer(dest: string, value: BN): Transaction {
+    return this.sdk.tx.balances.transferKeepAlive(dest, value)
   }
 
   async balanceTransferNoWait(dest: string, value: BN): Promise<H256> {
     return await this.sdk.tx.balances.transferKeepAliveNoWait(dest, value, this.keyring, this.buildOptions())
   }
 
-  async submitData(data: string | Bytes): Promise<Result<SubmitDataTx, TransactionFailed>> {
-    return await this.sdk.tx.dataAvailability.submitData(data, this.waitFor, this.keyring, this.buildOptions())
+  submitData(data: string | Bytes): Transaction {
+    return this.sdk.tx.dataAvailability.submitData(data)
   }
 
   async submitDataNoWait(data: string | Bytes): Promise<H256> {
     return await this.sdk.tx.dataAvailability.submitDataNoWait(data, this.keyring, this.buildOptions())
   }
 
-  async createApplicationKey(key: string): Promise<Result<CreateApplicationKeyTx, TransactionFailed>> {
-    return await this.sdk.tx.dataAvailability.createApplicationKey(key, this.waitFor, this.keyring, this.buildOptions())
+  createApplicationKey(key: string): Transaction {
+    return this.sdk.tx.dataAvailability.createApplicationKey(key)
   }
 
   async createApplicationKeyNoWait(key: string): Promise<H256> {

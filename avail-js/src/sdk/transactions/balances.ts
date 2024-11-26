@@ -1,38 +1,9 @@
 import { ApiPromise } from "@polkadot/api"
-import { H256, EventRecord } from "@polkadot/types/interfaces/types"
+import { H256 } from "@polkadot/types/interfaces/types"
 import { BN } from "@polkadot/util"
 import { KeyringPair } from "@polkadot/keyring/types"
-import {
-  WaitFor,
-  TransactionOptions,
-  signAndSendAndParseTransaction,
-  TxResultDetails,
-  TransactionFailed,
-} from "./common"
-import { err, ok, Result } from "neverthrow"
-
-export class TransferAllTx {
-  constructor(
-    public event: Events.TransferEvent,
-    public event2: Events.KilledAccount | undefined,
-    public details: TxResultDetails,
-  ) {}
-}
-
-export class TransferAllowDeathTx {
-  constructor(
-    public event: Events.TransferEvent,
-    public event2: Events.KilledAccount | undefined,
-    public details: TxResultDetails,
-  ) {}
-}
-
-export class TransferKeepAliveTx {
-  constructor(
-    public event: Events.TransferEvent,
-    public details: TxResultDetails,
-  ) {}
-}
+import { TransactionOptions } from "./common"
+import { Transaction } from "."
 
 export class Balances {
   private api: ApiPromise
@@ -41,24 +12,9 @@ export class Balances {
     this.api = api
   }
 
-  async transferAll(
-    dest: string,
-    keepAlive: boolean,
-    waitFor: WaitFor,
-    account: KeyringPair,
-    options?: TransactionOptions,
-  ): Promise<Result<TransferAllTx, TransactionFailed>> {
+  transferAll(dest: string, keepAlive: boolean): Transaction {
     const tx = this.api.tx.balances.transferAll(dest, keepAlive)
-    const maybeParsed = await signAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
-    if (maybeParsed.isErr()) return err(maybeParsed.error)
-
-    const details = maybeParsed.value
-
-    const event = Events.TransferEvent.New(details.events)
-    if (event == undefined) return err(new TransactionFailed("Failed to find Transfer event", details))
-    const event2 = Events.KilledAccount.New(details.events)
-
-    return ok(new TransferAllTx(event, event2, details))
+    return new Transaction(this.api, tx)
   }
 
   async transferAllNoWait(
@@ -70,24 +26,9 @@ export class Balances {
     return this.api.tx.balances.transferAll(dest, keepAlive).signAndSend(account, options || {})
   }
 
-  async transferAllowDeath(
-    dest: string,
-    value: BN,
-    waitFor: WaitFor,
-    account: KeyringPair,
-    options?: TransactionOptions,
-  ): Promise<Result<TransferAllowDeathTx, TransactionFailed>> {
+  transferAllowDeath(dest: string, value: BN): Transaction {
     const tx = this.api.tx.balances.transferAllowDeath(dest, value)
-    const maybeParsed = await signAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
-    if (maybeParsed.isErr()) return err(maybeParsed.error)
-
-    const details = maybeParsed.value
-
-    const event = Events.TransferEvent.New(details.events)
-    if (event == undefined) return err(new TransactionFailed("Failed to find Transfer event", details))
-    const event2 = Events.KilledAccount.New(details.events)
-
-    return ok(new TransferAllowDeathTx(event, event2, details))
+    return new Transaction(this.api, tx)
   }
 
   async transferAllowDeathNoWait(
@@ -99,23 +40,9 @@ export class Balances {
     return this.api.tx.balances.transferAllowDeath(dest, value).signAndSend(account, options || {})
   }
 
-  async transferKeepAlive(
-    dest: string,
-    value: BN,
-    waitFor: WaitFor,
-    account: KeyringPair,
-    options?: TransactionOptions,
-  ): Promise<Result<TransferKeepAliveTx, TransactionFailed>> {
+  transferKeepAlive(dest: string, value: BN): Transaction {
     const tx = this.api.tx.balances.transferKeepAlive(dest, value)
-    const maybeParsed = await signAndSendAndParseTransaction(this.api, tx, account, waitFor, options)
-    if (maybeParsed.isErr()) return err(maybeParsed.error)
-
-    const details = maybeParsed.value
-
-    const event = Events.TransferEvent.New(details.events)
-    if (event == undefined) return err(new TransactionFailed("Failed to find Transfer event", details))
-
-    return ok(new TransferKeepAliveTx(event, details))
+    return new Transaction(this.api, tx)
   }
 
   async transferKeepAliveNoWait(
@@ -125,31 +52,5 @@ export class Balances {
     options?: TransactionOptions,
   ): Promise<H256> {
     return this.api.tx.balances.transferKeepAlive(dest, value).signAndSend(account, options || {})
-  }
-}
-
-export namespace Events {
-  export class TransferEvent {
-    constructor(
-      public from: string,
-      public to: string,
-      public amount: BN,
-    ) {}
-    static New(events: EventRecord[]): TransferEvent | undefined {
-      const ed: any = events.find((e) => e.event.method == "Transfer")?.event.data
-      if (ed == undefined) return undefined
-
-      return new TransferEvent(ed["from"].toString(), ed["to"].toString(), ed["amount"])
-    }
-  }
-
-  export class KilledAccount {
-    constructor(public account: string) {}
-    static New(events: EventRecord[]): KilledAccount | undefined {
-      const ed: any = events.find((e) => e.event.method == "KilledAccount" && e.event.section == "system")?.event.data
-      if (ed == undefined) return undefined
-
-      return new KilledAccount(ed["account"].toString())
-    }
   }
 }

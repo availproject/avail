@@ -1,11 +1,12 @@
 import { ApiPromise } from "@polkadot/api"
 import { ISubmittableResult } from "@polkadot/types/types/extrinsic"
-import { EventRecord, H256, SignedBlock } from "@polkadot/types/interfaces/types"
+import { EventRecord, H256 } from "@polkadot/types/interfaces/types"
 import { err, ok, Result } from "neverthrow"
 import { SubmittableExtrinsic } from "@polkadot/api/types"
-import { Block, BN, KeyringPair } from ".."
+import { Block, BN, Events, KeyringPair } from ".."
 import { parseTransactionResult } from "../utils"
 import { GenericExtrinsic } from "@polkadot/types"
+import { findFirstEvent, findLastEvent, findAllEvents } from "./events"
 
 export enum WaitFor {
   BlockInclusion,
@@ -103,6 +104,28 @@ export class TxResultDetails {
     const tx = block.transactionByIndex(this.txIndex)._unsafeUnwrap()
     return tx
   }
+
+  findFirstEvent<T>(c: { decode(arg0: EventRecord): T | null }): T | null {
+    return findFirstEvent(c, this.events)
+  }
+
+  findLastEvent<T>(c: { decode(arg0: EventRecord): T | null }): T | null {
+    return findLastEvent(c, this.events)
+  }
+
+  findAllEvents<T>(c: { decode(arg0: EventRecord): T | null }): T[] {
+    return findAllEvents(c, this.events)
+  }
+
+  checkIfTransactionWasSuccessful(): Boolean {
+    return this.findFirstEvent(Events.System.ExtrinsicSuccess) != null
+  }
+
+  printDebug() {
+    console.log(
+      `TxResultDetails {\n  txResult: {...}}\n  events: ${this.events.toString()}\n  txHash: ${this.txHash.toHuman()}\n  txIndex: ${this.txIndex.toString()}\n  blockHash: ${this.blockHash.toHuman()}\n  blockNumber: ${this.blockNumber.toString()}\n}`,
+    )
+  }
 }
 
 export class FailedTxResult {
@@ -115,4 +138,40 @@ export class FailedTxResult {
 export interface MultisigTimepoint {
   height: number
   index: number
+}
+
+export class Transaction {
+  private api: ApiPromise
+  private tx: SubmittableExtrinsic<"promise">
+
+  constructor(api: ApiPromise, tx: SubmittableExtrinsic<"promise">) {
+    this.api = api
+    this.tx = tx
+  }
+
+  async execute_wait_for_inclusion(
+    account: KeyringPair,
+    options?: TransactionOptions,
+  ): Promise<Result<TxResultDetails, TransactionFailed>> {
+    return await this.execute(WaitFor.BlockInclusion, account, options)
+  }
+
+  async execute_wait_for_finalization(
+    account: KeyringPair,
+    options?: TransactionOptions,
+  ): Promise<Result<TxResultDetails, TransactionFailed>> {
+    return await this.execute(WaitFor.BlockFinalization, account, options)
+  }
+
+  async execute(
+    waitFor: WaitFor,
+    account: KeyringPair,
+    options?: TransactionOptions,
+  ): Promise<Result<TxResultDetails, TransactionFailed>> {
+    return await signAndSendAndParseTransaction(this.api, this.tx, account, waitFor, options)
+  }
+
+  payment_query_info() {}
+
+  payment_query_fee_details() {}
 }

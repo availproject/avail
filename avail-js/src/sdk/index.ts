@@ -12,6 +12,7 @@ export { Bytes } from "@polkadot/types-codec"
 export { H256, Weight } from "@polkadot/types/interfaces"
 export { Account } from "./account"
 export { DataSubmission } from "./block"
+export { EventRecord } from "@polkadot/types/interfaces/types"
 export {
   WaitFor,
   StakingRewardDestination,
@@ -23,6 +24,7 @@ export {
   TransactionOptions,
   TxResultDetails,
   MultisigTimepoint,
+  Events,
 } from "./transactions"
 export { Block } from "./block"
 

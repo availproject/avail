@@ -166,12 +166,9 @@ export async function getAppKeys(api: ApiPromise, address: string): Promise<[str
   return appKeys.sort((a, b) => a[1] - b[1])
 }
 
-
 export async function getAppIds(api: ApiPromise, address: string): Promise<number[]> {
-  return (await getAppKeys(api, address)).map(e => e[1])
+  return (await getAppKeys(api, address)).map((e) => e[1])
 }
-
-
 
 export function hexStringToHashUnsafe(api: ApiPromise, value: string): H256 {
   const hash = hexStringToHash(api, value)
@@ -194,4 +191,21 @@ export function fromHexToAscii(hex: string): string {
   }
 
   return `${str}`
+}
+
+export function deconstruct_session_keys(keys: string) {
+  if (keys.startsWith("0x")) {
+    keys = keys.slice(2, undefined)
+  }
+  const babeKey = "0x".concat(keys.slice(0, 64))
+  const grandpaKey = "0x".concat(keys.slice(64, 128))
+  const imonlineKey = "0x".concat(keys.slice(128, 192))
+  const authorityDiscoveryKey = "0x".concat(keys.slice(192, 256))
+
+  return {
+    babe: babeKey,
+    grandpa: grandpaKey,
+    imOnline: imonlineKey,
+    authorityDiscover: authorityDiscoveryKey,
+  }
 }
