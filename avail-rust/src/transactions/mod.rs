@@ -7,10 +7,13 @@ pub mod staking;
 
 use crate::{
 	error::ClientError,
+	from_substrate::FeeDetails,
+	rpcs::query_fee_details,
 	utils::{self, *},
 	AExtrinsicEvents, AOnlineClient, ATxInBlock, AvailConfig, WaitFor, H256,
 };
 
+use options::parse_options;
 pub use options::{Mortality, Nonce, Options};
 use subxt_signer::sr25519::Keypair;
 
@@ -281,6 +284,43 @@ where
 			options,
 		)
 		.await
+	}
+
+	pub async fn payment_query_info(
+		&self,
+		account: &Keypair,
+		options: Option<Options>,
+	) -> Result<u128, ClientError> {
+		let account_id = account.public_key().to_account_id();
+		let params =
+			parse_options(&self.online_client, &self.rpc_client, &account_id, options).await?;
+		let tx = self
+			.online_client
+			.tx()
+			.create_signed(&self.payload, account, params)
+			.await?;
+
+		Ok(tx.partial_fee_estimate().await?)
+	}
+
+	pub async fn payment_query_fee_details(
+		&self,
+		account: &Keypair,
+		options: Option<Options>,
+	) -> Result<FeeDetails, ClientError> {
+		let account_id = account.public_key().to_account_id();
+		let params =
+			parse_options(&self.online_client, &self.rpc_client, &account_id, options).await?;
+		let tx = self
+			.online_client
+			.tx()
+			.create_signed(&self.payload, account, params)
+			.await?;
+
+		let len_bytes: [u8; 4] = (tx.encoded().len() as u32).to_le_bytes();
+		let encoded_with_len = [tx.encoded(), &len_bytes[..]].concat();
+
+		Ok(query_fee_details(&self.rpc_client, encoded_with_len.into(), None).await?)
 	}
 }
 

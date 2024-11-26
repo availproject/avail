@@ -8,10 +8,10 @@ use super::Params;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Options {
-	pub app_id: Option<u32>,
-	pub mortality: Option<Mortality>,
-	pub nonce: Option<Nonce>,
-	pub tip: Option<u128>,
+	app_id: Option<u32>,
+	mortality: Option<Mortality>,
+	nonce: Option<Nonce>,
+	tip: Option<u128>,
 }
 impl Options {
 	pub fn new() -> Self {
@@ -41,6 +41,23 @@ impl Options {
 	pub fn tip(mut self, value: u128) -> Self {
 		self.tip = Some(value);
 		self
+	}
+
+	pub async fn parse(
+		self,
+		online_client: &AOnlineClient,
+		rpc_client: &RpcClient,
+		account: &AccountId,
+	) -> Result<Params, ClientError> {
+		if self.app_id.is_none()
+			&& self.mortality.is_none()
+			&& self.nonce.is_none()
+			&& self.tip.is_none()
+		{
+			parse_options(online_client, rpc_client, account, None).await
+		} else {
+			parse_options(online_client, rpc_client, account, Some(self)).await
+		}
 	}
 }
 

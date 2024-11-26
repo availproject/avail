@@ -1,0 +1,16 @@
+mod data_submission;
+mod events;
+mod insecure_connection;
+mod transactions;
+mod validator;
+
+use avail_rust::error::ClientError;
+
+pub async fn run() -> Result<(), ClientError> {
+	data_submission::run().await?;
+	events::run().await?;
+	insecure_connection::run().await?;
+	transactions::run().await?;
+	validator::run().await?;
+	Ok(())
+}

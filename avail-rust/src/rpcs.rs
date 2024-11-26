@@ -60,11 +60,7 @@ impl Payment {
 		extrinsic: Bytes,
 		at: Option<BlockHash>,
 	) -> Result<FeeDetails, subxt::Error> {
-		let value: FeeDetails = self
-			.client
-			.request("payment_queryFeeDetails", rpc_params![extrinsic, at])
-			.await?;
-		Ok(value)
+		query_fee_details(&self.client, extrinsic, at).await
 	}
 
 	pub async fn query_info(
@@ -72,60 +68,30 @@ impl Payment {
 		extrinsic: Bytes,
 		at: Option<BlockHash>,
 	) -> Result<RuntimeDispatchInfo, subxt::Error> {
-		let value: RuntimeDispatchInfo = self
-			.client
-			.request("payment_queryInfo", rpc_params![extrinsic, at])
-			.await?;
-		Ok(value)
+		query_info(&self.client, extrinsic, at).await
 	}
 }
 
-#[cfg(test)]
-mod tests {
-	use super::*;
-	use crate::utils;
-	use crate::Keypair;
-	use crate::SecretUri;
-	use std::str::FromStr;
+pub async fn query_fee_details(
+	client: &RpcClient,
+	extrinsic: Bytes,
+	at: Option<BlockHash>,
+) -> Result<FeeDetails, subxt::Error> {
+	let value: FeeDetails = client
+		.request("payment_queryFeeDetails", rpc_params![extrinsic, at])
+		.await?;
+	Ok(value)
+}
 
-	#[tokio::test]
-	async fn testing_function() {
-		let secret_uri = SecretUri::from_str("//Alice").unwrap();
-		let account = Keypair::from_uri(&secret_uri).unwrap();
-
-		let sdk = crate::sdk::SDK::new("ws://127.0.0.1:9944").await.unwrap();
-		let keys = sdk.rpc.author.rotate_keys().await.unwrap();
-
-		let keys = utils::deconstruct_session_keys(keys).unwrap();
-		let b = sdk
-			.tx
-			.session
-			.set_keys(keys, crate::WaitFor::BlockFinalization, &account, None)
-			.await
-			.unwrap();
-
-		/* 		let h = BlockHash::from_str(
-			"0x90c6d99b3fb9d608a5bee9eb59bb107d5fd11b0aa398f3b1132503c15db40551",
-		)
-		.unwrap();
-		let block = sdk.rpc.chain.get_block(Some(h)).await.unwrap();
-		//dbg!(&block.block.extrinsics);
-		let info = sdk
-			.rpc
-			.payment
-			.query_info(block.block.extrinsics[1].clone(), Some(h))
-			.await;
-
-		match info {
-			Ok(a) => {
-				dbg!(&a);
-			},
-			Err(a) => {
-				dbg!(a);
-				panic!();
-			},
-		}; */
-	}
+pub async fn query_info(
+	client: &RpcClient,
+	extrinsic: Bytes,
+	at: Option<BlockHash>,
+) -> Result<RuntimeDispatchInfo, subxt::Error> {
+	let value: RuntimeDispatchInfo = client
+		.request("payment_queryInfo", rpc_params![extrinsic, at])
+		.await?;
+	Ok(value)
 }
 
 #[derive(Clone)]
@@ -143,76 +109,47 @@ impl System {
 	}
 
 	pub async fn chain(&self) -> Result<String, subxt::Error> {
-		let value: String = self.client.request("system_chain", rpc_params![]).await?;
-		Ok(value)
+		chain(&self.client).await
 	}
 
 	pub async fn chain_type(&self) -> Result<String, subxt::Error> {
-		let value: String = self
-			.client
-			.request("system_chainType", rpc_params![])
-			.await?;
-		Ok(value)
+		chain_type(&self.client).await
 	}
 
 	pub async fn health(&self) -> Result<SystemHealth, subxt::Error> {
-		let value: SystemHealth = self.client.request("system_health", rpc_params![]).await?;
-		Ok(value)
+		health(&self.client).await
 	}
 
 	pub async fn local_listen_addresses(&self) -> Result<Vec<String>, subxt::Error> {
-		let value: Vec<String> = self
-			.client
-			.request("system_localListenAddresses", rpc_params![])
-			.await?;
-		Ok(value)
+		local_listen_addresses(&self.client).await
 	}
 
 	pub async fn local_peer_id(&self) -> Result<String, subxt::Error> {
-		let value: String = self
-			.client
-			.request("system_localPeerId", rpc_params![])
-			.await?;
-		Ok(value)
+		local_peer_id(&self.client).await
 	}
 
 	pub async fn name(&self) -> Result<String, subxt::Error> {
-		let value: String = self.client.request("system_name", rpc_params![]).await?;
-		Ok(value)
+		name(&self.client).await
 	}
 
 	pub async fn node_roles(&self) -> Result<Vec<NodeRole>, subxt::Error> {
-		let value: Vec<NodeRole> = self
-			.client
-			.request("system_nodeRoles", rpc_params![])
-			.await?;
-		Ok(value)
+		node_roles(&self.client).await
 	}
 
 	pub async fn peers(&self) -> Result<Vec<PeerInfo>, subxt::Error> {
-		let value: Vec<PeerInfo> = self.client.request("system_peers", rpc_params![]).await?;
-		Ok(value)
+		peers(&self.client).await
 	}
 
 	pub async fn properties(&self) -> Result<Properties, subxt::Error> {
-		let value: Properties = self
-			.client
-			.request("system_properties", rpc_params![])
-			.await?;
-		Ok(value)
+		properties(&self.client).await
 	}
 
 	pub async fn sync_state(&self) -> Result<SyncState, subxt::Error> {
-		let value: SyncState = self
-			.client
-			.request("system_syncState", rpc_params![])
-			.await?;
-		Ok(value)
+		sync_state(&self.client).await
 	}
 
 	pub async fn version(&self) -> Result<String, subxt::Error> {
-		let value: String = self.client.request("system_version", rpc_params![]).await?;
-		Ok(value)
+		version(&self.client).await
 	}
 }
 
@@ -220,6 +157,63 @@ pub async fn account_next_index(client: &RpcClient, account: String) -> Result<u
 	let value: u32 = client
 		.request("system_accountNextIndex", rpc_params![account])
 		.await?;
+	Ok(value)
+}
+
+pub async fn chain(client: &RpcClient) -> Result<String, subxt::Error> {
+	let value: String = client.request("system_chain", rpc_params![]).await?;
+	Ok(value)
+}
+
+pub async fn chain_type(client: &RpcClient) -> Result<String, subxt::Error> {
+	let value: String = client.request("system_chainType", rpc_params![]).await?;
+	Ok(value)
+}
+
+pub async fn health(client: &RpcClient) -> Result<SystemHealth, subxt::Error> {
+	let value: SystemHealth = client.request("system_health", rpc_params![]).await?;
+	Ok(value)
+}
+
+pub async fn local_listen_addresses(client: &RpcClient) -> Result<Vec<String>, subxt::Error> {
+	let value: Vec<String> = client
+		.request("system_localListenAddresses", rpc_params![])
+		.await?;
+	Ok(value)
+}
+
+pub async fn local_peer_id(client: &RpcClient) -> Result<String, subxt::Error> {
+	let value: String = client.request("system_localPeerId", rpc_params![]).await?;
+	Ok(value)
+}
+
+pub async fn name(client: &RpcClient) -> Result<String, subxt::Error> {
+	let value: String = client.request("system_name", rpc_params![]).await?;
+	Ok(value)
+}
+
+pub async fn node_roles(client: &RpcClient) -> Result<Vec<NodeRole>, subxt::Error> {
+	let value: Vec<NodeRole> = client.request("system_nodeRoles", rpc_params![]).await?;
+	Ok(value)
+}
+
+pub async fn peers(client: &RpcClient) -> Result<Vec<PeerInfo>, subxt::Error> {
+	let value: Vec<PeerInfo> = client.request("system_peers", rpc_params![]).await?;
+	Ok(value)
+}
+
+pub async fn properties(client: &RpcClient) -> Result<Properties, subxt::Error> {
+	let value: Properties = client.request("system_properties", rpc_params![]).await?;
+	Ok(value)
+}
+
+pub async fn sync_state(client: &RpcClient) -> Result<SyncState, subxt::Error> {
+	let value: SyncState = client.request("system_syncState", rpc_params![]).await?;
+	Ok(value)
+}
+
+pub async fn version(client: &RpcClient) -> Result<String, subxt::Error> {
+	let value: String = client.request("system_version", rpc_params![]).await?;
 	Ok(value)
 }
 
@@ -310,12 +304,13 @@ impl Author {
 	}
 
 	pub async fn rotate_keys(&self) -> Result<Vec<u8>, subxt::Error> {
-		let bytes: Bytes = self
-			.client
-			.request("author_rotateKeys", rpc_params![])
-			.await?;
-		Ok(bytes.0)
+		rotate_keys(&self.client).await
 	}
+}
+
+pub async fn rotate_keys(client: &RpcClient) -> Result<Vec<u8>, subxt::Error> {
+	let bytes: Bytes = client.request("author_rotateKeys", rpc_params![]).await?;
+	Ok(bytes.0)
 }
 
 #[derive(Clone)]
@@ -329,11 +324,7 @@ impl Kate {
 	}
 
 	pub async fn block_length(&self, at: Option<BlockHash>) -> Result<BlockLength, subxt::Error> {
-		let result: BlockLength = self
-			.client
-			.request("kate_blockLength", rpc_params![at])
-			.await?;
-		Ok(result)
+		block_length(&self.client, at).await
 	}
 
 	pub async fn query_data_proof(
@@ -341,11 +332,7 @@ impl Kate {
 		transaction_index: u32,
 		at: Option<BlockHash>,
 	) -> Result<ProofResponse, subxt::Error> {
-		let result: ProofResponse = self
-			.client
-			.request("kate_queryDataProof", rpc_params![transaction_index, at])
-			.await?;
-		Ok(result)
+		query_data_proof(&self.client, transaction_index, at).await
 	}
 
 	pub async fn query_proof(
@@ -353,11 +340,7 @@ impl Kate {
 		cells: Vec<Cell>,
 		at: Option<BlockHash>,
 	) -> Result<Vec<GDataProof>, subxt::Error> {
-		let result: Vec<GDataProof> = self
-			.client
-			.request("kate_queryProof", rpc_params![cells, at])
-			.await?;
-		Ok(result)
+		query_proof(&self.client, cells, at).await
 	}
 
 	pub async fn query_rows(
@@ -365,10 +348,47 @@ impl Kate {
 		rows: Vec<u32>,
 		at: Option<BlockHash>,
 	) -> Result<Vec<GRow>, subxt::Error> {
-		let result: Vec<GRow> = self
-			.client
-			.request("kate_queryRows", rpc_params![rows, at])
-			.await?;
-		Ok(result)
+		query_rows(&self.client, rows, at).await
 	}
+}
+
+pub async fn block_length(
+	client: &RpcClient,
+	at: Option<BlockHash>,
+) -> Result<BlockLength, subxt::Error> {
+	let result: BlockLength = client.request("kate_blockLength", rpc_params![at]).await?;
+	Ok(result)
+}
+
+pub async fn query_data_proof(
+	client: &RpcClient,
+	transaction_index: u32,
+	at: Option<BlockHash>,
+) -> Result<ProofResponse, subxt::Error> {
+	let result: ProofResponse = client
+		.request("kate_queryDataProof", rpc_params![transaction_index, at])
+		.await?;
+	Ok(result)
+}
+
+pub async fn query_proof(
+	client: &RpcClient,
+	cells: Vec<Cell>,
+	at: Option<BlockHash>,
+) -> Result<Vec<GDataProof>, subxt::Error> {
+	let result: Vec<GDataProof> = client
+		.request("kate_queryProof", rpc_params![cells, at])
+		.await?;
+	Ok(result)
+}
+
+pub async fn query_rows(
+	client: &RpcClient,
+	rows: Vec<u32>,
+	at: Option<BlockHash>,
+) -> Result<Vec<GRow>, subxt::Error> {
+	let result: Vec<GRow> = client
+		.request("kate_queryRows", rpc_params![rows, at])
+		.await?;
+	Ok(result)
 }

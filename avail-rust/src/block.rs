@@ -42,6 +42,10 @@ impl Block {
 		Self::new(online_client, best_hash).await
 	}
 
+	pub fn transaction_all_static<T: StaticExtrinsic>(&self) -> Vec<AFoundExtrinsic<T>> {
+		transaction_all_static::<T>(&self.transactions)
+	}
+
 	pub fn transaction_count(&self) -> usize {
 		return transaction_count(&self.transactions);
 	}
@@ -90,24 +94,24 @@ impl Block {
 		transaction_by_app_id_static(&self.transactions, app_id)
 	}
 
-	pub fn submit_data_all(&self) -> Vec<DataSubmission> {
-		submit_data_all(&self.transactions)
+	pub fn data_submissions_all(&self) -> Vec<DataSubmission> {
+		data_submissions_all(&self.transactions)
 	}
 
-	pub fn submit_data_by_signer(&self, signer: &str) -> Vec<DataSubmission> {
-		submit_data_by_signer(&self.transactions, signer)
+	pub fn data_submissions_by_signer(&self, signer: &str) -> Vec<DataSubmission> {
+		data_submissions_by_signer(&self.transactions, signer)
 	}
 
-	pub fn submit_data_by_index(&self, tx_index: u32) -> Option<DataSubmission> {
-		submit_data_by_index(&self.transactions, tx_index)
+	pub fn data_submissions_by_index(&self, tx_index: u32) -> Option<DataSubmission> {
+		data_submissions_by_index(&self.transactions, tx_index)
 	}
 
-	pub fn submit_data_by_hash(&self, tx_hash: H256) -> Option<DataSubmission> {
-		submit_data_by_hash(&self.transactions, tx_hash)
+	pub fn data_submissions_by_hash(&self, tx_hash: H256) -> Option<DataSubmission> {
+		data_submissions_by_hash(&self.transactions, tx_hash)
 	}
 
-	pub fn submit_data_by_app_id(&self, app_id: u32) -> Option<DataSubmission> {
-		submit_data_by_app_id(&self.transactions, app_id)
+	pub fn data_submissions_by_app_id(&self, app_id: u32) -> Option<DataSubmission> {
+		data_submissions_by_app_id(&self.transactions, app_id)
 	}
 
 	pub async fn storage_fetch<'address, T>(
@@ -161,7 +165,7 @@ pub fn transaction_all_static<T: StaticExtrinsic>(
 	transactions.find::<T>().flatten().collect()
 }
 
-pub fn submit_data_all(transactions: &AExtrinsics) -> Vec<DataSubmission> {
+pub fn data_submissions_all(transactions: &AExtrinsics) -> Vec<DataSubmission> {
 	transaction_all_static::<DataAvailabilityCalls::SubmitData>(transactions)
 		.into_iter()
 		.map(|tx| DataSubmission::from_static(tx))
@@ -186,7 +190,7 @@ pub fn transaction_by_signer_static<T: StaticExtrinsic>(
 		.collect()
 }
 
-pub fn submit_data_by_signer(transactions: &AExtrinsics, signer: &str) -> Vec<DataSubmission> {
+pub fn data_submissions_by_signer(transactions: &AExtrinsics, signer: &str) -> Vec<DataSubmission> {
 	transaction_by_signer_static::<DataAvailabilityCalls::SubmitData>(transactions, signer)
 		.into_iter()
 		.map(|tx| DataSubmission::from_static(tx))
@@ -210,7 +214,10 @@ pub fn transaction_by_index_static<T: StaticExtrinsic>(
 	Some(AFoundExtrinsic { details, value })
 }
 
-pub fn submit_data_by_index(transactions: &AExtrinsics, tx_index: u32) -> Option<DataSubmission> {
+pub fn data_submissions_by_index(
+	transactions: &AExtrinsics,
+	tx_index: u32,
+) -> Option<DataSubmission> {
 	transaction_by_index_static::<DataAvailabilityCalls::SubmitData>(transactions, tx_index)
 		.map(|tx| DataSubmission::from_static(tx))
 }
@@ -233,7 +240,10 @@ pub fn transaction_by_hash_static<T: StaticExtrinsic>(
 		.collect()
 }
 
-pub fn submit_data_by_hash(transactions: &AExtrinsics, tx_hash: H256) -> Option<DataSubmission> {
+pub fn data_submissions_by_hash(
+	transactions: &AExtrinsics,
+	tx_hash: H256,
+) -> Option<DataSubmission> {
 	let all_submissions: Vec<DataSubmission> =
 		transaction_by_hash_static::<DataAvailabilityCalls::SubmitData>(transactions, tx_hash)
 			.into_iter()
@@ -261,7 +271,10 @@ pub fn transaction_by_app_id_static<T: StaticExtrinsic>(
 		.collect()
 }
 
-pub fn submit_data_by_app_id(transactions: &AExtrinsics, app_id: u32) -> Option<DataSubmission> {
+pub fn data_submissions_by_app_id(
+	transactions: &AExtrinsics,
+	app_id: u32,
+) -> Option<DataSubmission> {
 	let all_submissions: Vec<DataSubmission> =
 		transaction_by_app_id_static::<DataAvailabilityCalls::SubmitData>(transactions, app_id)
 			.into_iter()
@@ -307,4 +320,12 @@ impl DataSubmission {
 			app_id,
 		}
 	}
+
+	pub fn to_ascii(&self) -> Option<String> {
+		to_ascii(self.data.clone())
+	}
+}
+
+pub fn to_ascii(value: Vec<u8>) -> Option<String> {
+	String::from_utf8(value).ok()
 }
