@@ -1,12 +1,31 @@
 use frame_support::pallet_prelude::*;
-use sp_core::H160;
+use sp_core::{H160, H256, H512};
 use sp_runtime::Perbill;
 use sp_staking::EraIndex;
 
 use crate::*;
 
 /// Type representing a fusion address (for now we use H160 as it's EVM compatible)
-pub type FusionAddress = H160;
+#[derive(Clone, Copy, Encode, Decode, PartialEq, Eq, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+pub enum FusionAddress {
+	EvmAddress(H160),    // 20-byte Ethereum-like address
+	SolanaAddress(H256), // 32-byte Solana address
+	Other(H512),         // 64-byte general-purpose identifier
+}
+impl FusionAddress {
+	/// Create a new Evm Address
+	pub fn new_evm(address: H160) -> Self {
+		FusionAddress::EvmAddress(address)
+	}
+	/// Create a new Solana Address
+	pub fn new_solana(address: H256) -> Self {
+		FusionAddress::SolanaAddress(address)
+	}
+	/// Create a new Other address
+	pub fn new_other(address: H512) -> Self {
+		FusionAddress::Other(address)
+	}
+}
 
 /// Type representing a balance for external currency
 pub type FusionCurrencyBalance = u128;

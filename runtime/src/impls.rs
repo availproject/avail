@@ -169,7 +169,8 @@ impl pallet_fusion::Config for Runtime {
 	type MaxUnbonding = MaxUnbonding;
 	type MaxSlashesPerPool = MaxSlashesPerPool;
 	type MaxPoolsPerValidator = MaxPoolsPerValidator;
-	type BondingDuration = constants::staking::BondingDuration;
+	type BondingDuration = constants::fusion::FusionBondingDuration;
+	type SlashDeferDuration = constants::staking::SlashDeferDuration;
 	type RewardRemainder = Treasury;
 	type HistoryDepth = HistoryDepth;
 	type StakingFusionDataProvider = Self;

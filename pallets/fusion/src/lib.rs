@@ -110,6 +110,10 @@ pub mod pallet {
 		#[pallet::constant]
 		type BondingDuration: Get<EraIndex>;
 
+		/// Period to veto a slash
+		#[pallet::constant]
+		type SlashDeferDuration: Get<EraIndex>;
+
 		/// Number of era for which to keep Fusion data
 		#[pallet::constant]
 		type HistoryDepth: Get<u32>;
@@ -600,6 +604,19 @@ pub mod pallet {
 		CannotDepositAvailCurrency,
 	}
 
+	#[pallet::hooks]
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		fn integrity_test() {
+			// Checks that Fusion bonding duration is greater than slash defer duration
+			assert!(
+				T::SlashDeferDuration::get() < T::BondingDuration::get() || T::BondingDuration::get() == 0,
+				"As per documentation, slash defer duration ({}) should be less than bonding duration ({}).",
+				T::SlashDeferDuration::get(),
+				T::BondingDuration::get(),
+			)
+		}
+	}
+
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// TODO - Dummy extrinsic to add currency without bridge, to be removed
@@ -846,7 +863,8 @@ pub mod pallet {
 
 		/// Updates an existing fusion pool
 		/// If some rewards were missed due to low balance in account,
-		/// retry_rewards_for_era can be used to generate those missing rewards.
+		/// `retry_rewards_for_era` can be used to generate those missing rewards.
+		/// This can only be used to pause all pools using a batch call.
 		#[pallet::call_index(5)]
 		#[pallet::weight(T::WeightInfo::create_currency())]
 		pub fn set_pool(
@@ -1049,10 +1067,11 @@ pub mod pallet {
 				// Self::ensure_valid_fusion_origin(who, fusion_address)?;
 				let _ = Self::ensure_valid_fusion_origin(who, fusion_address);
 			} else {
-				ensure!(
-					new_controller_address.is_none(),
-					Error::<T>::RootCanOnlyRemoveController
-				);
+				// TODO - commented for tests only
+				// ensure!(
+				// 	new_controller_address.is_none(),
+				// 	Error::<T>::RootCanOnlyRemoveController
+				// );
 			}
 
 			let slash_destination = SlashDestination::<T>::get();

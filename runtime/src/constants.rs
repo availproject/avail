@@ -358,6 +358,19 @@ pub mod da {
 	pub type MaxAppDataLength = ConstU32<524_288>; // 512 Kb
 }
 
+pub mod fusion {
+	use super::*;
+
+	#[cfg(not(feature = "fast-runtime"))]
+	parameter_types! {
+		pub const FusionBondingDuration: sp_staking::EraIndex = 28; // 28 days
+	}
+	#[cfg(feature = "fast-runtime")]
+	parameter_types! {
+		pub const FusionBondingDuration: sp_staking::EraIndex = 2; // 2 eras
+	}
+}
+
 /// Macro to set a value (e.g. when using the `parameter_types` macro) to either a production value
 /// or to an environment variable or testing value (in case the `fast-runtime` feature is selected).
 /// Note that the environment variable is evaluated _at compile time_.

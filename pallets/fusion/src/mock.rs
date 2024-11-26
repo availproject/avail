@@ -47,6 +47,7 @@ parameter_types! {
 	pub const MaxTargets: u32 = 16;
 	pub const MaxUnbonding: u32 = 8;
 	pub const BondingDuration: EraIndex = 3;
+	pub const SlashDeferDuration: EraIndex = 0;
 	pub const HistoryDepth: u32 = 20;
 	pub const MaxSlashesPerPool: u32 = 100;
 	pub const MaxPoolsPerValidator: u32 = 100;
@@ -65,6 +66,7 @@ impl pallet_fusion::Config for Test {
 	type MaxPoolsPerValidator = MaxPoolsPerValidator;
 	type MaxSlashesPerPool = MaxSlashesPerPool;
 	type BondingDuration = BondingDuration;
+	type SlashDeferDuration = SlashDeferDuration;
 	type RewardRemainder = ();
 	type HistoryDepth = HistoryDepth;
 	type StakingFusionDataProvider = ();

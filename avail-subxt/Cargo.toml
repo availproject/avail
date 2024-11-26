@@ -40,6 +40,7 @@ serde_json = { version = "1.0", features = ["arbitrary_precision"] }
 
 # Substrate
 subxt = "0.34"
+subxt-cli = "0.34"
 sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10", default-features = false }
 sp-runtime = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10", default-features = false }
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = [
