@@ -3,10 +3,10 @@ import { ISubmittableResult } from "@polkadot/types/types/extrinsic"
 import { EventRecord, H256 } from "@polkadot/types/interfaces/types"
 import { err, ok, Result } from "neverthrow"
 import { SubmittableExtrinsic } from "@polkadot/api/types"
-import { Block, BN, Events, KeyringPair } from ".."
+import { Block, BN, KeyringPair } from ".."
 import { parseTransactionResult } from "../utils"
 import { GenericExtrinsic } from "@polkadot/types"
-import { findFirstEvent, findLastEvent, findAllEvents } from "./events"
+import { Events, CallData } from "./."
 
 export enum WaitFor {
   BlockInclusion,
@@ -99,22 +99,26 @@ export class TxResultDetails {
     return await Block.New(api, this.blockHash)
   }
 
-  async fetchGenericTransaction(api: ApiPromise): Promise<GenericExtrinsic> {
+  async fetchGenericTransaction(api: ApiPromise): Promise<GenericExtrinsic | null> {
     const block = await Block.New(api, this.blockHash)
-    const tx = block.transactionByIndex(this.txIndex)._unsafeUnwrap()
-    return tx
+    return block.transactionByIndex(this.txIndex)
   }
 
   findFirstEvent<T>(c: { decode(arg0: EventRecord): T | null }): T | null {
-    return findFirstEvent(c, this.events)
+    return Events.findFirstEvent(c, this.events)
   }
 
   findLastEvent<T>(c: { decode(arg0: EventRecord): T | null }): T | null {
-    return findLastEvent(c, this.events)
+    return Events.findLastEvent(c, this.events)
   }
 
   findAllEvents<T>(c: { decode(arg0: EventRecord): T | null }): T[] {
-    return findAllEvents(c, this.events)
+    return Events.findAllEvents(c, this.events)
+  }
+
+  async getData<T>(api: ApiPromise, c: { decode(arg0: GenericExtrinsic): T | null }): Promise<T | null> {
+    const tx = await this.fetchGenericTransaction(api)
+    return tx ? CallData.getData(tx, c) : null
   }
 
   checkIfTransactionWasSuccessful(): Boolean {
@@ -169,6 +173,11 @@ export class Transaction {
     options?: TransactionOptions,
   ): Promise<Result<TxResultDetails, TransactionFailed>> {
     return await signAndSendAndParseTransaction(this.api, this.tx, account, waitFor, options)
+  }
+
+  async executeAndForget(account: KeyringPair, options?: TransactionOptions): Promise<H256> {
+    const optionWrapper = options || {}
+    return await this.tx.signAndSend(account, optionWrapper)
   }
 
   payment_query_info() {}

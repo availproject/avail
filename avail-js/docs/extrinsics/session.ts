@@ -1,4 +1,4 @@
-import { SDK, Keyring, sdkUtil } from "../../src/sdk"
+import { SDK, Keyring, utils } from "../../src/sdk"
 
 export async function run() {
   console.log("Session_SetKeys")
@@ -11,7 +11,7 @@ namespace SetKeys {
 
     const account = new Keyring({ type: "sr25519" }).addFromUri("//Alice//stash")
     const keysBytes = await sdk.api.rpc.author.rotateKeys()
-    const keys = sdkUtil.deconstruct_session_keys(keysBytes.toString())
+    const keys = utils.deconstruct_session_keys(keysBytes.toString())
 
     const tx = sdk.tx.session.setKeys(keys)
     const result = await tx.execute_wait_for_inclusion(account)

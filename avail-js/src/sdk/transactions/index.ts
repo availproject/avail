@@ -11,6 +11,7 @@ export { DispatchFeeModifier } from "./da"
 export { StakingRewardDestination } from "./staking"
 export { BondExtra, ClaimPermission, NewCommission, PoolState } from "./nomination_pools"
 export * as Events from "./events"
+export * as CallData from "./call_data"
 
 export class Transactions {
   private api: ApiPromise

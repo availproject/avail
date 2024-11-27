@@ -67,6 +67,36 @@ pub async fn parse_transaction_in_block(
 	Ok(details)
 }
 
+/// Creates and signs an extrinsic and submits to the chain for block inclusion.
+///
+/// Returns `Ok` with the extrinsic hash if it is valid extrinsic.
+///
+/// # Note
+///
+/// Success does not mean the extrinsic has been included in the block, just that it is valid
+/// and has been included in the transaction pool.
+pub async fn sign_send_and_forget<T>(
+	online_client: &AOnlineClient,
+	rpc_client: &RpcClient,
+	account: &Keypair,
+	call: &DefaultPayload<T>,
+	options: Option<Options>,
+) -> Result<H256, TransactionFailed>
+where
+	T: StaticExtrinsic + EncodeAsFields,
+{
+	let account_id = account.public_key().to_account_id();
+	let params = parse_options(online_client, rpc_client, &account_id, options).await?;
+
+	let tx_client = online_client.tx();
+	let tx_hash = tx_client
+		.sign_and_submit(call, account, params)
+		.await
+		.map_err(|e| e.to_string())?;
+
+	Ok(tx_hash)
+}
+
 pub async fn progress_and_parse_transaction<T>(
 	online_client: &AOnlineClient,
 	rpc_client: &RpcClient,

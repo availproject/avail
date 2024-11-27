@@ -8,3 +8,4 @@ title = "API Document"
 
 [output.markdown]
 [output.html]
+additional-css = ["custom.css"]

@@ -140,6 +140,20 @@ TransactionDetails {{
 		self.events.find_first::<T>().ok().flatten()
 	}
 
+	pub fn find_last_event<T>(&self) -> Option<T>
+	where
+		T: StaticEvent,
+	{
+		self.events.find_last::<T>().ok().flatten()
+	}
+
+	pub fn find_all_events<T>(&self) -> Vec<T>
+	where
+		T: StaticEvent,
+	{
+		self.events.find::<T>().flatten().collect()
+	}
+
 	pub async fn get_data<T>(&self, client: &AOnlineClient) -> Option<T>
 	where
 		T: StaticExtrinsic,
@@ -281,6 +295,21 @@ where
 			account,
 			&self.payload,
 			wait_for,
+			options,
+		)
+		.await
+	}
+
+	pub async fn execute_and_forget(
+		&self,
+		account: &Keypair,
+		options: Option<Options>,
+	) -> Result<H256, TransactionFailed> {
+		sign_send_and_forget(
+			&self.online_client,
+			&self.rpc_client,
+			account,
+			&self.payload,
 			options,
 		)
 		.await

@@ -8,56 +8,6 @@ import { H256 } from ".."
 import { hexToU8a } from "@polkadot/util"
 import { U8aFixed } from "@polkadot/types-codec"
 
-export class Utils {
-  private api: ApiPromise
-
-  constructor(api: ApiPromise) {
-    this.api = api
-  }
-
-  /// Parses a transaction result. Helper function to get transaction details on
-  /// transaction success or an error if the transaction failed
-  async parseTransactionResult(txResult: ISubmittableResult): Promise<Result<TxResultDetails, FailedTxResult>> {
-    return await parseTransactionResult(this.api, txResult)
-  }
-
-  /**
-   * Converts a commission percentage to a perbill format.
-   *
-   * @param {number} value - The commission percentage (0-100).
-   * @return {string} The commission value in perbill format.
-   * @throws {Error} If the value is not an integer or is out of the 0-100 range.
-   */
-  commissionNumberToPerbill(value: number): Result<string, string> {
-    return commissionNumberToPerbill(value)
-  }
-
-  /// Generates a multisig account
-  generateMultisig(addresses: string[], threshold: number): string {
-    return generateMultisig(addresses, threshold)
-  }
-
-  /// Sorts multisig address so that ce be used for other multisig functions
-  sortMultisigAddresses(addresses: string[]): string[] {
-    return sortMultisigAddresses(addresses)
-  }
-
-  async getNonceState(address: string): Promise<number> {
-    return await getNonceState(this.api, address)
-  }
-
-  async getNonceNode(address: string): Promise<number> {
-    return await getNonceNode(this.api, address)
-  }
-
-  hexStringToHash(value: string): Result<H256, string> {
-    return hexStringToHash(this.api, value)
-  }
-  hexStringToHashUnsafe(value: string): H256 {
-    return hexStringToHashUnsafe(this.api, value)
-  }
-}
-
 export async function parseTransactionResult(
   api: ApiPromise,
   txResult: ISubmittableResult,
@@ -92,6 +42,13 @@ export async function parseTransactionResult(
   return ok(details)
 }
 
+/**
+ * Converts a commission percentage to a perbill format.
+ *
+ * @param {number} value - The commission percentage (0-100).
+ * @return {string} The commission value in perbill format.
+ * @throws {Error} If the value is not an integer or is out of the 0-100 range.
+ */
 export function commissionNumberToPerbill(value: number): Result<string, string> {
   if (!Number.isInteger(value)) {
     return err("Commission cannot have decimal place. It needs to be a whole number.")

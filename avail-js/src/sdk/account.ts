@@ -1,8 +1,8 @@
 import { BN } from "@polkadot/util"
 import { KeyringPair } from "@polkadot/keyring/types"
-import { H256, Keyring, SDK, sdkUtil, WaitFor } from "."
+import { Keyring, SDK, utils } from "."
 import { Bytes } from "@polkadot/types-codec"
-import { Transaction, TransactionFailed, TransactionOptions } from "./transactions/common"
+import { Transaction, TransactionOptions } from "./transactions/common"
 
 export interface AccountBalance {
   free: BN
@@ -12,7 +12,6 @@ export interface AccountBalance {
 }
 
 export class Account {
-  private waitFor: WaitFor = WaitFor.BlockInclusion
   private nonce: number | null = null
   private appId: number | null = null
   private tip: BN | null = null
@@ -38,10 +37,6 @@ export class Account {
     this.tip = value
   }
 
-  setWaitFor(value: WaitFor) {
-    this.waitFor = value
-  }
-
   address(): string {
     return this.keyring.address
   }
@@ -50,24 +45,12 @@ export class Account {
     return this.sdk.tx.balances.transferKeepAlive(dest, value)
   }
 
-  async balanceTransferNoWait(dest: string, value: BN): Promise<H256> {
-    return await this.sdk.tx.balances.transferKeepAliveNoWait(dest, value, this.keyring, this.buildOptions())
-  }
-
   submitData(data: string | Bytes): Transaction {
     return this.sdk.tx.dataAvailability.submitData(data)
   }
 
-  async submitDataNoWait(data: string | Bytes): Promise<H256> {
-    return await this.sdk.tx.dataAvailability.submitDataNoWait(data, this.keyring, this.buildOptions())
-  }
-
   createApplicationKey(key: string): Transaction {
     return this.sdk.tx.dataAvailability.createApplicationKey(key)
-  }
-
-  async createApplicationKeyNoWait(key: string): Promise<H256> {
-    return await this.sdk.tx.dataAvailability.createApplicationKeyNoWait(key, this.keyring, this.buildOptions())
   }
 
   async getBalance(): Promise<AccountBalance> {
@@ -76,19 +59,19 @@ export class Account {
   }
 
   async getNonceState(): Promise<number> {
-    return await sdkUtil.getNonceState(this.sdk.api, this.keyring.address)
+    return await utils.getNonceState(this.sdk.api, this.keyring.address)
   }
 
   async getNonceNode(): Promise<number> {
-    return await sdkUtil.getNonceNode(this.sdk.api, this.keyring.address)
+    return await utils.getNonceNode(this.sdk.api, this.keyring.address)
   }
 
   async getAppKeys(): Promise<[string, number][]> {
-    return await sdkUtil.getAppKeys(this.sdk.api, this.keyring.address)
+    return await utils.getAppKeys(this.sdk.api, this.keyring.address)
   }
 
   async getAppIds(): Promise<number[]> {
-    return await sdkUtil.getAppIds(this.sdk.api, this.keyring.address)
+    return await utils.getAppIds(this.sdk.api, this.keyring.address)
   }
 
   oneAvail(): BN {

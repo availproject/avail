@@ -63,7 +63,7 @@ impl Account {
 	}
 
 	pub fn one_avail() -> u128 {
-		1_000_000_000_000_000_000u128
+		SDK::one_avail()
 	}
 
 	pub async fn balance_transfer(

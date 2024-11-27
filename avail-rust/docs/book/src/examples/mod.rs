@@ -1,3 +1,4 @@
+mod batch;
 mod data_submission;
 mod events;
 mod insecure_connection;
@@ -12,5 +13,7 @@ pub async fn run() -> Result<(), ClientError> {
 	insecure_connection::run().await?;
 	transactions::run().await?;
 	validator::run().await?;
+	batch::run().await?;
+
 	Ok(())
 }

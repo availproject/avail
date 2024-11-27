@@ -434,6 +434,71 @@ export namespace Staking {
   }
 }
 
+export namespace Utility {
+  export class BatchCompleted {
+    constructor() {}
+
+    static decode(event: EventRecord): BatchCompleted | null {
+      if (event.event.section != "utility" || event.event.method != "BatchCompleted") {
+        return null
+      }
+
+      return new BatchCompleted()
+    }
+  }
+
+  export class BatchCompletedWithErrors {
+    constructor() {}
+
+    static decode(event: EventRecord): BatchCompletedWithErrors | null {
+      if (event.event.section != "utility" || event.event.method != "BatchCompletedWithErrors") {
+        return null
+      }
+
+      return new BatchCompletedWithErrors()
+    }
+  }
+
+  export class ItemFailed {
+    constructor() {}
+
+    static decode(event: EventRecord): ItemFailed | null {
+      if (event.event.section != "utility" || event.event.method != "ItemFailed") {
+        return null
+      }
+      const ed: any = event.event.data
+
+      return new ItemFailed()
+    }
+  }
+
+  export class ItemCompleted {
+    constructor() {}
+
+    static decode(event: EventRecord): ItemCompleted | null {
+      if (event.event.section != "utility" || event.event.method != "ItemCompleted") {
+        return null
+      }
+      const ed: any = event.event.data
+
+      return new ItemCompleted()
+    }
+  }
+
+  export class BatchInterrupted {
+    constructor() {}
+
+    static decode(event: EventRecord): BatchInterrupted | null {
+      if (event.event.section != "utility" || event.event.method != "BatchInterrupted") {
+        return null
+      }
+      const ed: any = event.event.data
+
+      return new BatchInterrupted()
+    }
+  }
+}
+
 /* export namespace TransactionData {
   export class Nominate {
     constructor(public targets: string[]) {}

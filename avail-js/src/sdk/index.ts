@@ -1,7 +1,6 @@
 import { ApiPromise, Keyring } from "@polkadot/api"
 import { initialize } from "../chain"
 import { Transactions } from "./transactions"
-import { Utils } from "./utils"
 import { BN } from "@polkadot/util"
 import { KeyringPair } from "@polkadot/keyring/types"
 
@@ -25,17 +24,17 @@ export {
   TxResultDetails,
   MultisigTimepoint,
   Events,
+  Transaction,
 } from "./transactions"
 export { Block } from "./block"
 
 export * as sdkBlock from "./block"
-export * as sdkUtil from "./utils"
+export * as utils from "./utils"
 export * as sdkTransactions from "./transactions"
 
 export class SDK {
   api: ApiPromise
   tx: Transactions
-  util: Utils
 
   static async New(endpoint: string): Promise<SDK> {
     const api = await initialize(endpoint)
@@ -45,7 +44,6 @@ export class SDK {
   private constructor(api: ApiPromise) {
     this.api = api
     this.tx = new Transactions(api)
-    this.util = new Utils(api)
   }
 
   static oneAvail(): BN {

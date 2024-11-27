@@ -28,7 +28,7 @@ export class Block {
     return transactionBySigner(this.signedBlock, signer)
   }
 
-  transactionByIndex(txIndex: number): Result<GenericExtrinsic, string> {
+  transactionByIndex(txIndex: number): GenericExtrinsic | null {
     return transactionByIndex(this.signedBlock, txIndex)
   }
 
@@ -40,28 +40,28 @@ export class Block {
     return transactionByAppId(this.signedBlock, appId)
   }
 
-  submitDataCount(): number {
-    return submitDataCount(this.signedBlock)
+  dataSubmissionsCount(): number {
+    return dataSubmissionsCount(this.signedBlock)
   }
 
-  submitDataAll(): DataSubmission[] {
-    return submitDataAll(this.signedBlock)
+  dataSubmissionsAll(): DataSubmission[] {
+    return dataSubmissionsAll(this.signedBlock)
   }
 
-  submitDataBySigner(signer: string): DataSubmission[] {
-    return submitDataBySigner(this.signedBlock, signer)
+  dataSubmissionsBySigner(signer: string): DataSubmission[] {
+    return dataSubmissionsBySigner(this.signedBlock, signer)
   }
 
-  submitDataByIndex(txIndex: number): Result<DataSubmission, string> {
-    return submitDataByIndex(this.signedBlock, txIndex)
+  dataSubmissionsByIndex(txIndex: number): Result<DataSubmission, string> {
+    return dataSubmissionsByIndex(this.signedBlock, txIndex)
   }
 
-  submitDataByHash(txHash: H256): Result<DataSubmission, string> {
-    return submitDataByHash(this.signedBlock, txHash)
+  dataSubmissionsByHash(txHash: H256): Result<DataSubmission, string> {
+    return dataSubmissionsByHash(this.signedBlock, txHash)
   }
 
-  submitDataByAppId(appId: number): DataSubmission[] {
-    return submitDataByAppId(this.signedBlock, appId)
+  dataSubmissionsByAppId(appId: number): DataSubmission[] {
+    return dataSubmissionsByAppId(this.signedBlock, appId)
   }
 }
 
@@ -79,11 +79,11 @@ export function transactionBySigner(block: SignedBlock, signer: string): Generic
   })
 }
 
-export function transactionByIndex(block: SignedBlock, txIndex: number): Result<GenericExtrinsic, string> {
+export function transactionByIndex(block: SignedBlock, txIndex: number): GenericExtrinsic | null {
   const transactions = block.block.extrinsics
-  if (txIndex >= transactions.length) return err("Failed to find transaction. Index is out of bounds.")
+  if (txIndex >= transactions.length) return null
 
-  return ok(transactions[txIndex])
+  return transactions[txIndex]
 }
 
 export function transactionByHash(block: SignedBlock, txHash: H256): GenericExtrinsic[] {
@@ -98,15 +98,15 @@ export function transactionByAppId(block: SignedBlock, appId: number): GenericEx
   })
 }
 
-export function submitDataCount(block: SignedBlock): number {
-  return submitDataAll(block).length
+export function dataSubmissionsCount(block: SignedBlock): number {
+  return dataSubmissionsAll(block).length
 }
 
-export function submitDataAll(block: SignedBlock): DataSubmission[] {
+export function dataSubmissionsAll(block: SignedBlock): DataSubmission[] {
   const dataSubmissions = []
   const txs = block.block.extrinsics
   for (let i = 0; i < txs.length; i += 1) {
-    const maybeDataSubmission = submitDataByIndex(block, i)
+    const maybeDataSubmission = dataSubmissionsByIndex(block, i)
     if (maybeDataSubmission.isOk()) {
       dataSubmissions.push(maybeDataSubmission.value)
     }
@@ -115,23 +115,23 @@ export function submitDataAll(block: SignedBlock): DataSubmission[] {
   return dataSubmissions
 }
 
-export function submitDataBySigner(block: SignedBlock, signer: string): DataSubmission[] {
-  return submitDataAll(block).filter((sub) => {
+export function dataSubmissionsBySigner(block: SignedBlock, signer: string): DataSubmission[] {
+  return dataSubmissionsAll(block).filter((sub) => {
     return sub.txSigner == signer
   })
 }
 
-export function submitDataByHash(block: SignedBlock, txHash: H256): Result<DataSubmission, string> {
+export function dataSubmissionsByHash(block: SignedBlock, txHash: H256): Result<DataSubmission, string> {
   const index = block.block.extrinsics.findIndex((tx) => {
     return tx.hash.toHex() == txHash.toHex()
   })
 
   if (index == -1) return err("Failed to extract data. Transaction has not been found")
 
-  return submitDataByIndex(block, index)
+  return dataSubmissionsByIndex(block, index)
 }
 
-export function submitDataByIndex(block: SignedBlock, txIndex: number): Result<DataSubmission, string> {
+export function dataSubmissionsByIndex(block: SignedBlock, txIndex: number): Result<DataSubmission, string> {
   const transactions = block.block.extrinsics
   if (txIndex >= transactions.length) return err("Failed to extract data. Transaction has not been found")
 
@@ -139,8 +139,8 @@ export function submitDataByIndex(block: SignedBlock, txIndex: number): Result<D
   return extractDataSubmissionFromTx(tx, txIndex)
 }
 
-export function submitDataByAppId(block: SignedBlock, appId: number): DataSubmission[] {
-  return submitDataAll(block).filter((sub) => {
+export function dataSubmissionsByAppId(block: SignedBlock, appId: number): DataSubmission[] {
+  return dataSubmissionsAll(block).filter((sub) => {
     return sub.appId == appId
   })
 }
@@ -193,6 +193,10 @@ export class DataSubmission {
     public txSigner: string,
     public appId: number,
   ) {}
+
+  static fromGenericTx(tx: GenericExtrinsic, txIndex: number): DataSubmission | null {
+    return extractDataSubmissionFromTx(tx, txIndex).unwrapOr(null)
+  }
 
   toAscii(): string {
     return fromHexToAscii(this.hexData)
