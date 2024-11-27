@@ -33,8 +33,9 @@ use sp_runtime::{
 use sp_staking::{currency_to_vote::CurrencyToVote, EraIndex};
 use sp_std::collections::btree_set::BTreeSet;
 use sp_std::{vec, vec::Vec};
+use pallet_staking::traits::FusionExt;
 
-pub use traits::{FusionExt, StakingFusionDataProvider};
+pub use traits::StakingFusionDataProvider;
 pub use weights::WeightInfo;
 
 pub type BalanceOf<T> =
@@ -2613,7 +2614,7 @@ impl<T: Config> Pallet<T> {
 	}
 }
 
-impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>> for Pallet<T> {
+impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>, PoolId> for Pallet<T> {
 	fn set_fusion_exposures() -> () {
 		let era = T::StakingFusionDataProvider::current_era();
 		let planned_era = era.saturating_add(1);
