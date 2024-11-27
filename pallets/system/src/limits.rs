@@ -44,6 +44,7 @@ use static_assertions::const_assert;
 
 /// Block length limit configuration.
 #[derive(RuntimeDebug, PartialEq, Clone, PassByCodec, MaxEncodedLen, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct BlockLength {
 	/// Maximal total length in bytes for each extrinsic class.
 	///
