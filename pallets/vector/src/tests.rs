@@ -34,6 +34,8 @@ const TEST_SENDER_ACCOUNT: AccountId32 = AccountId32::new(TEST_SENDER_VEC);
 const SP1_VERIFICATION_KEY: [u8; 32] =
 	hex!("00788ce8dc2970920a3d3c072c8c07843d15f1307a53b3dd31b113c3e71c28e8");
 
+pub const PROOF_FILE: &str = "test/proof.bin";
+
 fn get_valid_step_input() -> FunctionInput {
 	BoundedVec::truncate_from(
 		hex!("0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df0000000000747ffe")
@@ -1409,8 +1411,6 @@ fn set_sp1_verification_key_non_root() {
 	});
 }
 
-pub const PROOF_FILE: &str = "test/proof.bin";
-
 #[test]
 fn test_fulfill_successfully() {
 	new_test_ext().execute_with(|| {
@@ -1480,8 +1480,6 @@ fn test_fulfill_successfully_sync_committee_not_set() {
 		let proof_outputs: ProofOutputs = SolValue::abi_decode(&public_inputs, true).unwrap();
 		let slots_per_period = 8192;
 		let finality_threshold = 342u16;
-		let slot = 6178816u64;
-		let current_period = slot / slots_per_period;
 
 		ConfigurationStorage::<Test>::set(Configuration {
 			slots_per_period,
@@ -1569,7 +1567,7 @@ fn test_fulfill_incorrect_proof_output() {
 		let mut proof_outputs: ProofOutputs =
 			SolValue::abi_decode(sp1_proof_with_public_values.public_values.as_slice(), true)
 				.unwrap();
-		proof_outputs.syncCommitteeHash.0 = H256::zero().0;
+		proof_outputs.syncCommitteeHash.0 = H256::random().0;
 		let proof_outputs_vec = proof_outputs.abi_encode();
 
 		SP1VerificationKey::<Test>::set(H256(SP1_VERIFICATION_KEY));
