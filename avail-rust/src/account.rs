@@ -1,57 +1,66 @@
 use std::str::FromStr;
 
+use subxt::{backend::rpc::RpcClient, blocks::StaticExtrinsic, ext::scale_encode::EncodeAsFields};
+
 use crate::{
-	avail::{
-		self,
-		runtime_types::{frame_system::AccountInfo, pallet_balances::types::AccountData},
-	},
+	avail,
 	error::ClientError,
-	transactions::{TransactionDetails, TransactionFailed},
-	utils, AccountId, Keypair, Nonce, Options, SecretUri, WaitFor, SDK,
+	rpcs::get_block_hash,
+	transactions::{Transaction, TransactionDetails, TransactionFailed},
+	utils, AOnlineClient, AccountId, Keypair, Options, SecretUri, WaitFor, SDK,
 };
 
 pub struct Account {
-	sdk: SDK,
-	keyring: Keypair,
-	nonce: Option<Nonce>,
-	app_id: Option<u32>,
-	tip: Option<u128>,
-	wait_for: WaitFor,
+	pub keyring: Keypair,
+}
+
+impl From<Keypair> for Account {
+	fn from(value: Keypair) -> Self {
+		Self { keyring: value }
+	}
+}
+
+impl TryFrom<SecretUri> for Account {
+	type Error = ClientError;
+
+	fn try_from(value: SecretUri) -> Result<Self, Self::Error> {
+		let keyring = Keypair::from_uri(&value)?;
+		Ok(Self { keyring })
+	}
+}
+
+impl TryFrom<&str> for Account {
+	type Error = ClientError;
+
+	fn try_from(value: &str) -> Result<Self, Self::Error> {
+		let secret_uri = SecretUri::from_str(value)?;
+		Account::try_from(secret_uri)
+	}
+}
+
+impl TryFrom<String> for Account {
+	type Error = ClientError;
+
+	fn try_from(value: String) -> Result<Self, Self::Error> {
+		Account::try_from(value.as_str())
+	}
 }
 
 impl Account {
-	pub fn new(sdk: SDK, keyring: Keypair) -> Self {
-		Self {
-			sdk,
-			keyring,
-			nonce: None,
-			app_id: None,
-			tip: None,
-			wait_for: WaitFor::BlockInclusion,
-		}
+	pub fn new(keyring: Keypair) -> Self {
+		Self { keyring }
 	}
 
-	pub fn alice(sdk: SDK) -> Result<Self, String> {
-		let secret_uri = SecretUri::from_str("//Alice").map_err(|e| e.to_string())?;
-		let keyring = Keypair::from_uri(&secret_uri).map_err(|e| e.to_string())?;
-
-		Ok(Account::new(sdk, keyring))
+	pub fn alice() -> Result<Self, ClientError> {
+		Account::try_from("//Alice")
 	}
 
-	pub fn set_nonce(&mut self, value: Option<Nonce>) {
-		self.nonce = value;
+	pub fn bob() -> Result<Self, ClientError> {
+		Account::try_from("//Bob")
 	}
 
-	pub fn set_app_id(&mut self, value: Option<u32>) {
-		self.app_id = value;
-	}
-
-	pub fn set_wait_for(&mut self, value: WaitFor) {
-		self.wait_for = value;
-	}
-
-	pub fn set_tip(&mut self, value: Option<u128>) {
-		self.tip = value;
+	pub fn eve() -> Result<Self, ClientError> {
+		Account::try_from("//Eve")
 	}
 
 	pub fn address(&self) -> String {
@@ -66,67 +75,39 @@ impl Account {
 		SDK::one_avail()
 	}
 
-	pub async fn balance_transfer(
+	pub async fn execute<T>(
 		&self,
-		dest: AccountId,
-		value: u128,
-	) -> Result<TransactionDetails, TransactionFailed> {
-		let options = Some(self.build_options());
-		let tx = self.sdk.tx.balances.transfer_keep_alive(dest, value);
-		tx.execute(self.wait_for, &self.keyring, options).await
+		tx: Transaction<T>,
+		wait_for: WaitFor,
+		options: Option<Options>,
+	) -> Result<TransactionDetails, TransactionFailed>
+	where
+		T: StaticExtrinsic + EncodeAsFields,
+	{
+		tx.execute(wait_for, &self.keyring, options).await
 	}
 
-	pub async fn submit_data(
+	pub async fn get_nonce_state(
 		&self,
-		data: Vec<u8>,
-	) -> Result<TransactionDetails, TransactionFailed> {
-		let options = Some(self.build_options());
-		let tx = self.sdk.tx.data_availability.submit_data(data);
-		tx.execute(self.wait_for, &self.keyring, options).await
+		online_client: &AOnlineClient,
+		rpc_client: &RpcClient,
+	) -> Result<u32, ClientError> {
+		utils::get_nonce_state(online_client, rpc_client, &self.address()).await
 	}
 
-	pub async fn create_application_key(
-		&self,
-		key: Vec<u8>,
-	) -> Result<TransactionDetails, TransactionFailed> {
-		let options = Some(self.build_options());
-		let tx = self.sdk.tx.data_availability.create_application_key(key);
-		tx.execute(self.wait_for, &self.keyring, options).await
+	pub async fn get_nonce_node(&self, rpc_client: &RpcClient) -> Result<u32, ClientError> {
+		utils::get_nonce_node(rpc_client, &self.address()).await
 	}
 
-	pub async fn get_balance(&self) -> Result<AccountInfo<u32, AccountData<u128>>, String> {
-		let block_hash = self.sdk.rpc.chain.get_block_hash(None).await;
+	pub async fn get_app_keys(
+		&self,
+		online_client: &AOnlineClient,
+		rpc_client: &RpcClient,
+	) -> Result<Vec<(String, u32)>, String> {
+		let block_hash = get_block_hash(rpc_client, None).await;
 		let block_hash = block_hash.map_err(|e| e.to_string())?;
 
-		let account_id = self.keyring.public_key().to_account_id();
-		let storage = self.sdk.online_client.storage().at(block_hash);
-		let address = avail::storage().system().account(account_id);
-
-		let result = storage
-			.fetch_or_default(&address)
-			.await
-			.map_err(|e| e.to_string())?;
-		Ok(result)
-	}
-
-	pub async fn get_nonce_state(&self) -> Result<u32, ClientError> {
-		utils::get_nonce_state(
-			&self.sdk.online_client,
-			&self.sdk.rpc_client,
-			&self.address(),
-		)
-		.await
-	}
-
-	pub async fn get_nonce_node(&self) -> Result<u32, ClientError> {
-		utils::get_nonce_node(&self.sdk.rpc_client, &self.address()).await
-	}
-
-	pub async fn get_app_keys(&self) -> Result<Vec<(String, u32)>, String> {
-		let block_hash = self.sdk.rpc.chain.get_block_hash(None).await;
-		let block_hash = block_hash.map_err(|e| e.to_string())?;
-
-		let storage = self.sdk.online_client.storage().at(block_hash);
+		let storage = online_client.storage().at(block_hash);
 		let address = avail::storage().data_availability().app_keys_iter();
 
 		let mut app_keys = storage.iter(address).await.map_err(|e| e.to_string())?;
@@ -147,29 +128,16 @@ impl Account {
 		Ok(result)
 	}
 
-	pub async fn get_app_ids(&self) -> Result<Vec<u32>, String> {
-		let keys = match self.get_app_keys().await {
+	pub async fn get_app_ids(
+		&self,
+		online_client: &AOnlineClient,
+		rpc_client: &RpcClient,
+	) -> Result<Vec<u32>, String> {
+		let keys = match self.get_app_keys(online_client, rpc_client).await {
 			Ok(k) => k,
 			Err(e) => return Err(e),
 		};
 
 		Ok(keys.into_iter().map(|v| v.1).collect())
-	}
-
-	fn build_options(&self) -> Options {
-		let mut options = Options::new();
-		if let Some(nonce) = &self.nonce {
-			options = options.nonce(nonce.clone());
-		}
-
-		if let Some(app_id) = &self.app_id {
-			options = options.app_id(app_id.clone());
-		}
-
-		if let Some(tip) = &self.tip {
-			options = options.tip(tip.clone());
-		}
-
-		options
 	}
 }

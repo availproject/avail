@@ -1,4 +1,4 @@
-use crate::rpcs::{get_best_block_hash, get_finalized_head};
+use crate::rpcs::{get_best_block_hash, get_block_hash, get_finalized_head};
 use crate::{
 	avail::data_availability::calls::types as DataAvailabilityCalls,
 	primitives::block::extrinsics_params::CheckAppId,
@@ -40,6 +40,23 @@ impl Block {
 	) -> Result<Self, subxt::Error> {
 		let best_hash = get_finalized_head(rpc_client).await?;
 		Self::new(online_client, best_hash).await
+	}
+
+	pub async fn from_block(block: ABlock) -> Result<Self, subxt::Error> {
+		let transactions = block.extrinsics().await?;
+		Ok(Self {
+			block,
+			transactions,
+		})
+	}
+
+	pub async fn from_block_number(
+		online_client: &AOnlineClient,
+		rpc_client: &RpcClient,
+		block_number: u32,
+	) -> Result<Self, subxt::Error> {
+		let block_hash = get_block_hash(rpc_client, Some(block_number)).await?;
+		Self::new(online_client, block_hash).await
 	}
 
 	pub fn transaction_all_static<T: StaticExtrinsic>(&self) -> Vec<AFoundExtrinsic<T>> {

@@ -352,17 +352,3 @@ where
 		Ok(query_fee_details(&self.rpc_client, encoded_with_len.into(), None).await?)
 	}
 }
-
-#[cfg(test)]
-mod tests {
-	use super::*;
-	use crate::account::Account;
-
-	#[tokio::test]
-	async fn testing_function() {
-		let sdk = crate::sdk::SDK::new("ws://127.0.0.1:9944").await.unwrap();
-		let alice = Account::alice(sdk).unwrap();
-		let a = alice.get_app_keys().await.unwrap();
-		dbg!(a);
-	}
-}

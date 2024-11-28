@@ -1,6 +1,5 @@
 mod api_dev;
 mod config;
-mod examples;
 mod from_substrate;
 mod sdk;
 
