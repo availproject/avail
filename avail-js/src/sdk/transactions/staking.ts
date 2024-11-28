@@ -52,7 +52,7 @@ export class Staking {
     return new Transaction(this.api, tx)
   }
 
-  payoutStakers(validatorStash: String, era: number): Transaction {
+  payoutStakers(validatorStash: string, era: number): Transaction {
     const tx = this.api.tx.staking.payoutStakers(validatorStash, era)
     return new Transaction(this.api, tx)
   }

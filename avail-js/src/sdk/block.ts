@@ -12,6 +12,16 @@ export class Block {
     return new Block(block)
   }
 
+  static async NewBestBlock(api: ApiPromise): Promise<Block> {
+    const blockHash = await api.rpc.chain.getBlockHash()
+    return Block.New(api, blockHash)
+  }
+
+  static async NewFinalizedBlock(api: ApiPromise): Promise<Block> {
+    const blockHash = await api.rpc.chain.getFinalizedHead()
+    return Block.New(api, blockHash)
+  }
+
   constructor(block: SignedBlock) {
     this.signedBlock = block
   }

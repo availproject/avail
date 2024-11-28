@@ -3,8 +3,8 @@ import { BN, MultisigTimepoint } from ".."
 import { ApiPromise } from "@polkadot/api"
 
 export function findFirstEvent<T>(c: { decode(arg0: EventRecord): T | null }, eventRecord: EventRecord[]): T | null {
-  for (let event of eventRecord) {
-    let decoded_event = c.decode(event)
+  for (const event of eventRecord) {
+    const decoded_event = c.decode(event)
     if (decoded_event != null) {
       return decoded_event
     }
@@ -15,8 +15,8 @@ export function findFirstEvent<T>(c: { decode(arg0: EventRecord): T | null }, ev
 export function findLastEvent<T>(c: { decode(arg0: EventRecord): T | null }, eventRecord: EventRecord[]): T | null {
   let result = null
 
-  for (let event of eventRecord) {
-    let decoded_event = c.decode(event)
+  for (const event of eventRecord) {
+    const decoded_event = c.decode(event)
     if (decoded_event != null) {
       result = decoded_event
     }
@@ -28,8 +28,8 @@ export function findLastEvent<T>(c: { decode(arg0: EventRecord): T | null }, eve
 export function findEvent<T>(c: { decode(arg0: EventRecord): T | null }, eventRecord: EventRecord[]): T[] {
   const decoded_events = []
 
-  for (let event of eventRecord) {
-    let decoded_event = c.decode(event)
+  for (const event of eventRecord) {
+    const decoded_event = c.decode(event)
     if (decoded_event != null) {
       decoded_events.push(decoded_event)
     }

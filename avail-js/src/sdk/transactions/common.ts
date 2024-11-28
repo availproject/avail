@@ -122,7 +122,7 @@ export class TxResultDetails {
     return tx ? CallData.getData(tx, c) : null
   }
 
-  checkIfTransactionWasSuccessful(): Boolean {
+  checkIfTransactionWasSuccessful(): boolean {
     return this.findFirstEvent(Events.System.ExtrinsicSuccess) != null
   }
 
