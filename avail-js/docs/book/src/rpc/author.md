@@ -1,3 +1,0 @@
-```ts
-{{#include ./author.ts}}
-```

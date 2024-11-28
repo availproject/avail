@@ -4,3 +4,7 @@ language = "en"
 multilingual = false
 src = "src"
 title = "Avail JS SDK Cookbook"
+
+[output.markdown]
+[output.html]
+additional-css = ["custom.css"]

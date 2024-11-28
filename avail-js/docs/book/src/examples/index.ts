@@ -5,5 +5,5 @@ import * as Transactions from "./transactions"
 import * as Validator from "./validator"
 
 export async function run() {
-  await Validator.run()
+  await Transactions.run()
 }

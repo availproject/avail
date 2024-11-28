@@ -38,18 +38,16 @@ export function findEvent<T>(c: { decode(arg0: EventRecord): T | null }, eventRe
   return decoded_events
 }
 
-export async function fetchEvents(api: ApiPromise, blockHash: H256, txIndex: number): Promise<EventRecord[]> {
+export async function fetchEvents(api: ApiPromise, blockHash: H256, txIndex?: number): Promise<EventRecord[]> {
   const apiAt = await api.at(blockHash)
-  const eventRecords: EventRecord[] = (await apiAt.query.system.events()) as any
-
-  const result: EventRecord[] = []
-  for (const eventRecord of eventRecords) {
-    if (eventRecord.phase.isApplyExtrinsic && eventRecord.phase.asApplyExtrinsic.toNumber() == txIndex) {
-      result.push(eventRecord)
-    }
+  const eventRecords = (await apiAt.query.system.events()) as any as EventRecord[]
+  if (txIndex != undefined) {
+    return eventRecords.filter((e) => {
+      e.phase.isApplyExtrinsic && e.phase.asApplyExtrinsic.toNumber() == txIndex
+    })
   }
 
-  return result
+  return eventRecords
 }
 
 export namespace Balances {

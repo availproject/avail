@@ -1,3 +1,0 @@
-```ts
-{{#include ./staking.ts}}
-```

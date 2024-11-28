@@ -1,8 +1,8 @@
 import { ApiPromise } from "@polkadot/api"
 import { GenericExtrinsic } from "@polkadot/types"
 import { H256, SignedBlock } from "@polkadot/types/interfaces/runtime"
-import { Result, err, ok } from "neverthrow"
 import { fromHexToAscii } from "./utils"
+import { EventRecord, Events } from "."
 
 export class Block {
   signedBlock: SignedBlock
@@ -14,6 +14,14 @@ export class Block {
 
   constructor(block: SignedBlock) {
     this.signedBlock = block
+  }
+
+  async blockHash(api: ApiPromise): Promise<H256> {
+    return await api.rpc.chain.getBlockHash(this.signedBlock.block.header.number.toNumber())
+  }
+
+  async fetchEvents(api: ApiPromise, txIndex?: number): Promise<EventRecord[]> {
+    return Events.fetchEvents(api, await this.blockHash(api), txIndex)
   }
 
   transactionCount(): number {
@@ -38,6 +46,10 @@ export class Block {
 
   transactionByAppId(appId: number): GenericExtrinsic[] {
     return transactionByAppId(this.signedBlock, appId)
+  }
+
+  transactionHashToIndex(txHash: H256): number[] {
+    return transactionHashToIndex(this.signedBlock, txHash)
   }
 
   dataSubmissionsCount(): number {
@@ -96,6 +108,16 @@ export function transactionByAppId(block: SignedBlock, appId: number): GenericEx
   return block.block.extrinsics.filter((tx) => {
     return extractAppIdFromTx(tx) == appId
   })
+}
+
+export function transactionHashToIndex(block: SignedBlock, txHash: H256): number[] {
+  const indices: number[] = []
+  for (const [index, tx] of block.block.extrinsics.entries()) {
+    if (tx.hash.toHex() == txHash.toHex()) {
+      indices.push(index)
+    }
+  }
+  return indices
 }
 
 export function dataSubmissionsCount(block: SignedBlock): number {

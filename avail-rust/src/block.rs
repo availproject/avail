@@ -47,11 +47,11 @@ impl Block {
 	}
 
 	pub fn transaction_count(&self) -> usize {
-		return transaction_count(&self.transactions);
+		transaction_count(&self.transactions)
 	}
 
 	pub fn transaction_by_signer(&self, signer: &str) -> Vec<AExtrinsicDetails> {
-		return transaction_by_signer(&self.transactions, signer);
+		transaction_by_signer(&self.transactions, signer)
 	}
 
 	pub fn transaction_by_signer_static<T: StaticExtrinsic>(
@@ -62,7 +62,7 @@ impl Block {
 	}
 
 	pub fn transaction_by_index(&self, tx_index: u32) -> Option<AExtrinsicDetails> {
-		return transaction_by_index(&self.transactions, tx_index);
+		transaction_by_index(&self.transactions, tx_index)
 	}
 
 	pub fn transaction_by_index_static<T: StaticExtrinsic>(
@@ -73,7 +73,7 @@ impl Block {
 	}
 
 	pub fn transaction_by_hash(&self, tx_hash: H256) -> Vec<AExtrinsicDetails> {
-		return transaction_by_hash(&self.transactions, tx_hash);
+		transaction_by_hash(&self.transactions, tx_hash)
 	}
 
 	pub fn transaction_by_hash_static<T: StaticExtrinsic>(
@@ -92,6 +92,10 @@ impl Block {
 		app_id: u32,
 	) -> Vec<AFoundExtrinsic<T>> {
 		transaction_by_app_id_static(&self.transactions, app_id)
+	}
+
+	pub fn transaction_hash_to_index(&self, tx_hash: H256) -> Vec<u32> {
+		transaction_hash_to_index(&self.transactions, tx_hash)
 	}
 
 	pub fn data_submissions_all(&self) -> Vec<DataSubmission> {
@@ -282,6 +286,17 @@ pub fn data_submissions_by_app_id(
 			.collect();
 
 	all_submissions.into_iter().next()
+}
+
+pub fn transaction_hash_to_index(transactions: &AExtrinsics, tx_hash: H256) -> Vec<u32> {
+	let mut indices = Vec::new();
+	for tx in transactions.iter() {
+		if tx.hash() == tx_hash {
+			indices.push(tx.index())
+		}
+	}
+
+	return indices;
 }
 
 pub fn read_app_id(transaction: &AExtrinsicDetails) -> Option<u32> {

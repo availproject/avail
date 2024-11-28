@@ -1,9 +1,9 @@
 import { ApiPromise } from "@polkadot/api"
 import { ISubmittableResult } from "@polkadot/types/types/extrinsic"
-import { EventRecord, H256 } from "@polkadot/types/interfaces/types"
+import { EventRecord, H256, InclusionFee } from "@polkadot/types/interfaces/types"
 import { err, ok, Result } from "neverthrow"
-import { SubmittableExtrinsic } from "@polkadot/api/types"
-import { Block, BN, KeyringPair } from ".."
+import { ApiTypes, SubmittableExtrinsic, SubmittablePaymentResult } from "@polkadot/api/types"
+import { Block, BN, KeyringPair, utils } from ".."
 import { parseTransactionResult } from "../utils"
 import { GenericEvent, GenericExtrinsic } from "@polkadot/types"
 import { Events, CallData } from "./."
@@ -181,7 +181,25 @@ export class Transaction {
     return await this.tx.signAndSend(account, optionWrapper)
   }
 
-  payment_query_info() {}
+  async payment_query_info(address: string): Promise<SubmittablePaymentResult<ApiTypes>> {
+    return this.tx.paymentInfo(address)
+  }
 
-  payment_query_fee_details() {}
+  async payment_query_fee_details(api: ApiPromise, address: string): Promise<InclusionFee> {
+    const blockHash2 = await api.rpc.chain.getBlockHash()
+    const nonce = await utils.getNonceNode(api, address)
+    const runtimeVersion = api.runtimeVersion
+    const signatureOptions = { blockHash: blockHash2, genesisHash: api.genesisHash, nonce, runtimeVersion }
+    const fakeTx = this.tx.signFake(address, signatureOptions)
+
+    const queryFeeDetails: any = api.call.transactionPaymentApi.queryFeeDetails(fakeTx.toHex(), null)
+
+    const inclusionFee = {
+      baseFee: queryFeeDetails.inclusionFee.__internal__raw.baseFee,
+      lenFee: queryFeeDetails.inclusionFee.__internal__raw.lenFee,
+      adjustedWeightFee: queryFeeDetails.inclusionFee.__internal__raw.adjustedWeightFee,
+    } as InclusionFee
+
+    return inclusionFee
+  }
 }
