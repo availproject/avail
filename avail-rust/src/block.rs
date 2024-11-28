@@ -1,9 +1,12 @@
+use crate::error::ClientError;
 use crate::rpcs::{get_best_block_hash, get_block_hash, get_finalized_head};
 use crate::{
 	avail::data_availability::calls::types as DataAvailabilityCalls,
 	primitives::block::extrinsics_params::CheckAppId,
 };
-use crate::{ABlock, AExtrinsicDetails, AExtrinsics, AFoundExtrinsic, AOnlineClient};
+use crate::{
+	ABlock, AExtrinsicDetails, AExtrinsicEvents, AExtrinsics, AFoundExtrinsic, AOnlineClient,
+};
 
 use primitive_types::H256;
 use subxt::backend::rpc::RpcClient;
@@ -19,7 +22,7 @@ pub struct Block {
 
 impl Block {
 	pub async fn new(client: &AOnlineClient, block_hash: H256) -> Result<Self, subxt::Error> {
-		let (block, transactions) = transactions(client, block_hash).await?;
+		let (block, transactions) = fetch_transactions(client, block_hash).await?;
 		Ok(Self {
 			block,
 			transactions,
@@ -57,6 +60,13 @@ impl Block {
 	) -> Result<Self, subxt::Error> {
 		let block_hash = get_block_hash(rpc_client, Some(block_number)).await?;
 		Self::new(online_client, block_hash).await
+	}
+
+	pub async fn events(
+		&self,
+		tx_index: Option<u32>,
+	) -> Result<Vec<AExtrinsicEvents>, ClientError> {
+		fetch_events(&self.transactions, tx_index).await
 	}
 
 	pub fn transaction_all_static<T: StaticExtrinsic>(&self) -> Vec<AFoundExtrinsic<T>> {
@@ -167,13 +177,33 @@ impl Block {
 	}
 }
 
-pub async fn transactions(
+pub async fn fetch_transactions(
 	client: &AOnlineClient,
 	block_hash: H256,
 ) -> Result<(ABlock, AExtrinsics), subxt::Error> {
 	let block = client.blocks().at(block_hash).await?;
 	let transactions = block.extrinsics().await?;
 	Ok((block, transactions))
+}
+
+pub async fn fetch_events(
+	transactions: &AExtrinsics,
+	tx_index: Option<u32>,
+) -> Result<Vec<AExtrinsicEvents>, ClientError> {
+	let mut events = Vec::new();
+	let iter = transactions.iter();
+	for details in iter {
+		let ev = details.events().await?;
+		if let Some(tx_index) = tx_index {
+			if details.index() == tx_index {
+				events.push(ev);
+			}
+		} else {
+			events.push(ev);
+		}
+	}
+
+	Ok(events)
 }
 
 pub fn transaction_count(transactions: &AExtrinsics) -> usize {
