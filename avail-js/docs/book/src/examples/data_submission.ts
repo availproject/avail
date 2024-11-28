@@ -1,5 +1,4 @@
-import { CallData } from "../../../../src/sdk/transactions"
-import { SDK, Events, Block, DataSubmission } from "./../../../../src/index"
+import { SDK, Events, Block, DataSubmission, CallData } from "./../../../../src/index"
 
 export async function run() {
   const sdk = await SDK.New(SDK.localEndpoint())
@@ -10,7 +9,7 @@ export async function run() {
   // Application Key Creation
   const key = "My JS Key"
   const tx = sdk.tx.dataAvailability.createApplicationKey(key)
-  const keyRes = (await tx.execute_wait_for_inclusion(account))._unsafeUnwrap()
+  const keyRes = (await tx.executeWaitForInclusion(account))._unsafeUnwrap()
 
   const keyEvent = keyRes.findFirstEvent(Events.DataAvailability.ApplicationKeyCreated)
   if (keyEvent == null) throw Error("Failed to find Key Event")
@@ -19,7 +18,7 @@ export async function run() {
   // Data Submission
   const data = "My Data"
   const tx2 = sdk.tx.dataAvailability.submitData(data)
-  const submitRes = (await tx2.execute_wait_for_inclusion(account, { app_id: appId }))._unsafeUnwrap()
+  const submitRes = (await tx2.executeWaitForInclusion(account, { app_id: appId }))._unsafeUnwrap()
 
   console.log(
     `Block Hash: ${submitRes.blockHash}, Block Number: ${submitRes.blockNumber}, Tx Hash: ${submitRes.txHash}, Tx Index: ${submitRes.txIndex}`,
@@ -27,13 +26,13 @@ export async function run() {
 
   const callData = await submitRes.getData(api, CallData.DataAvailability.SubmitData)
   if (callData != null) {
-    console.log(`Call data: ${callData.data}`)
+    console.log(`Call data: 0x${callData.data}`)
   }
-
-  // TODO Call Data
 
   // Getting Data Submission from Block #1
   const block = await Block.New(api, submitRes.blockHash)
+
+  // dataSubmissionsBySigner, dataSubmissionsByIndex, dataSubmissionsByHash, dataSubmissionsByAppId
   const dataSubmissions = block.dataSubmissionsAll()
   for (const ds of dataSubmissions) {
     console.log(

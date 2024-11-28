@@ -52,11 +52,11 @@ export class Block {
     return dataSubmissionsBySigner(this.signedBlock, signer)
   }
 
-  dataSubmissionsByIndex(txIndex: number): Result<DataSubmission, string> {
+  dataSubmissionsByIndex(txIndex: number): DataSubmission | null {
     return dataSubmissionsByIndex(this.signedBlock, txIndex)
   }
 
-  dataSubmissionsByHash(txHash: H256): Result<DataSubmission, string> {
+  dataSubmissionsByHash(txHash: H256): DataSubmission | null {
     return dataSubmissionsByHash(this.signedBlock, txHash)
   }
 
@@ -106,9 +106,9 @@ export function dataSubmissionsAll(block: SignedBlock): DataSubmission[] {
   const dataSubmissions = []
   const txs = block.block.extrinsics
   for (let i = 0; i < txs.length; i += 1) {
-    const maybeDataSubmission = dataSubmissionsByIndex(block, i)
-    if (maybeDataSubmission.isOk()) {
-      dataSubmissions.push(maybeDataSubmission.value)
+    const ds = dataSubmissionsByIndex(block, i)
+    if (ds != null) {
+      dataSubmissions.push(ds)
     }
   }
 
@@ -121,19 +121,19 @@ export function dataSubmissionsBySigner(block: SignedBlock, signer: string): Dat
   })
 }
 
-export function dataSubmissionsByHash(block: SignedBlock, txHash: H256): Result<DataSubmission, string> {
+export function dataSubmissionsByHash(block: SignedBlock, txHash: H256): DataSubmission | null {
   const index = block.block.extrinsics.findIndex((tx) => {
     return tx.hash.toHex() == txHash.toHex()
   })
 
-  if (index == -1) return err("Failed to extract data. Transaction has not been found")
+  if (index == -1) return null
 
   return dataSubmissionsByIndex(block, index)
 }
 
-export function dataSubmissionsByIndex(block: SignedBlock, txIndex: number): Result<DataSubmission, string> {
+export function dataSubmissionsByIndex(block: SignedBlock, txIndex: number): DataSubmission | null {
   const transactions = block.block.extrinsics
-  if (txIndex >= transactions.length) return err("Failed to extract data. Transaction has not been found")
+  if (txIndex >= transactions.length) return null
 
   const tx = block.block.extrinsics[txIndex]
   return extractDataSubmissionFromTx(tx, txIndex)
@@ -145,44 +145,31 @@ export function dataSubmissionsByAppId(block: SignedBlock, appId: number): DataS
   })
 }
 
-export function extractDataSubmissionDataFromTx(tx: GenericExtrinsic): Result<string, string> {
-  const {
-    method: { args, method, section },
-  } = tx
-  if (!isTransactionDataSubmission(tx)) {
-    return err("Failed to extract data. The transaction is not of type Data Submit")
+export function extractDataSubmissionDataFromTx(tx: GenericExtrinsic): string | null {
+  if (tx.method.section != "dataAvailability" && tx.method.method != "submitData") {
+    return null
   }
 
-  let dataHex = args.map((a) => a.toString()).join(", ")
+  let dataHex = tx.method.args.map((a) => a.toString()).join(", ")
   if (dataHex.startsWith("0x")) {
     dataHex = dataHex.slice(2)
   }
 
-  return ok(dataHex)
+  return dataHex
 }
 
-export function extractDataSubmissionFromTx(tx: GenericExtrinsic, txIndex: number): Result<DataSubmission, string> {
-  const maybeData = extractDataSubmissionDataFromTx(tx)
-  if (maybeData.isErr()) {
-    return err(maybeData.error)
-  }
+export function extractDataSubmissionFromTx(tx: GenericExtrinsic, txIndex: number): DataSubmission | null {
+  const data = extractDataSubmissionDataFromTx(tx)
+  if (data == null) return null
 
   const txHash = tx.hash
-  const data = maybeData.value
   const txSigner = tx.signer.toString()
   const appId = extractAppIdFromTx(tx)
-  return ok(new DataSubmission(txHash, txIndex, data, txSigner, appId))
+  return new DataSubmission(txHash, txIndex, data, txSigner, appId)
 }
 
 export function extractAppIdFromTx(tx: GenericExtrinsic): number {
   return parseInt((tx as any).__internal__raw.signature.appId.toString())
-}
-
-export function isTransactionDataSubmission(tx: GenericExtrinsic): boolean {
-  const {
-    method: { method, section },
-  } = tx
-  return section == "dataAvailability" && method == "submitData"
 }
 
 export class DataSubmission {
@@ -195,7 +182,7 @@ export class DataSubmission {
   ) {}
 
   static fromGenericTx(tx: GenericExtrinsic, txIndex: number): DataSubmission | null {
-    return extractDataSubmissionFromTx(tx, txIndex).unwrapOr(null)
+    return extractDataSubmissionFromTx(tx, txIndex)
   }
 
   toAscii(): string {

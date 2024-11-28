@@ -147,7 +147,7 @@ TransactionDetails {{
 		self.events.find_last::<T>().ok().flatten()
 	}
 
-	pub fn find_all_events<T>(&self) -> Vec<T>
+	pub fn find_event<T>(&self) -> Vec<T>
 	where
 		T: StaticEvent,
 	{

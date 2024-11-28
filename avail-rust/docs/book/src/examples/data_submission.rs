@@ -44,6 +44,8 @@ pub async fn run() -> Result<(), ClientError> {
 
 	// Getting Data Submission from Block #1
 	let block = Block::new(online_client, res.block_hash).await?;
+
+	// data_submissions_by_signer, data_submissions_by_index, data_submissions_by_hash, data_submissions_by_app_id
 	let data_submissions = block.data_submissions_all();
 	for ds in data_submissions {
 		println!(

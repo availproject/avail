@@ -1,4 +1,5 @@
 import { GenericExtrinsic } from "@polkadot/types"
+import { BN } from ".."
 
 export async function getData<T>(
   tx: GenericExtrinsic,
@@ -22,6 +23,26 @@ export namespace DataAvailability {
       }
 
       return new SubmitData(dataHex)
+    }
+  }
+}
+
+export namespace Balances {
+  export class TransferKeepAlive {
+    constructor(
+      public dest: string,
+      public value: BN,
+    ) {}
+
+    static decode(tx: GenericExtrinsic): TransferKeepAlive | null {
+      if (tx.method.section != "balances" || tx.method.method != "transferKeepAlive") {
+        return null
+      }
+      const args = tx.method.args as any
+      const dest = args[0].toString()
+      const value = new BN(args[1].toString())
+
+      return new TransferKeepAlive(dest, value)
     }
   }
 }

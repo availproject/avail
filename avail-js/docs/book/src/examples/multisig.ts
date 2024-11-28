@@ -1,4 +1,4 @@
-import { SDK, WaitFor, BN, KeyringPair, Weight, TxResultDetails, MultisigTimepoint } from "./../../../../src/index"
+import { SDK, BN, KeyringPair, Weight, TxResultDetails, MultisigTimepoint, utils } from "./../../../../src/index"
 
 const main = async () => {
   const sdk = await SDK.New(SDK.localEndpoint())
@@ -8,7 +8,7 @@ const main = async () => {
 
   // Create Multisig Account
   const threshold = 3
-  const multisigAddress = sdk.util.generateMultisig([alice.address, bob.address, charlie.address], threshold)
+  const multisigAddress = utils.generateMultisig([alice.address, bob.address, charlie.address], threshold)
   await fundMultisigAccount(sdk, alice, multisigAddress)
 
   // Define what action will be taken by the multisig account
@@ -36,16 +36,16 @@ const main = async () => {
     */
 
   // Create New Multisig
-  const call1signatures = sdk.util.sortMultisigAddresses([bob.address, charlie.address])
+  const call1signatures = utils.sortMultisigAddresses([bob.address, charlie.address])
   const firstResult = await firstApproval(sdk, alice, threshold, call1signatures, callHash, maxWeight)
 
   // Approve existing Multisig
   const timepoint: MultisigTimepoint = { height: firstResult.blockNumber, index: firstResult.txIndex }
-  const call2signatures = sdk.util.sortMultisigAddresses([alice.address, charlie.address])
+  const call2signatures = utils.sortMultisigAddresses([alice.address, charlie.address])
   const _secondResult = await nextApproval(sdk, bob, threshold, call2signatures, timepoint, callHash, maxWeight)
 
   // Execute Multisig
-  const call3signatures = sdk.util.sortMultisigAddresses([alice.address, bob.address])
+  const call3signatures = utils.sortMultisigAddresses([alice.address, bob.address])
   const _thirdResult = await lastApproval(sdk, charlie, threshold, call3signatures, timepoint, callData, maxWeight)
 
   process.exit()
@@ -54,11 +54,9 @@ const main = async () => {
 async function fundMultisigAccount(sdk: SDK, alice: KeyringPair, multisigAddress: string): Promise<string> {
   console.log("Funding multisig account...")
   const amount = SDK.oneAvail().mul(new BN(100)) // 100 Avail
-  const result = await sdk.tx.balances.transferKeepAlive(multisigAddress, amount, WaitFor.BlockInclusion, alice)
-  if (result.isErr()) {
-    console.log(result.error.reason)
-    process.exit(1)
-  }
+  const tx = sdk.tx.balances.transferKeepAlive(multisigAddress, amount)
+  const result = await tx.executeWaitForInclusion(alice)
+  if (result.isErr()) throw Error(result.error.reason)
 
   return multisigAddress
 }
@@ -73,21 +71,11 @@ async function firstApproval(
 ): Promise<TxResultDetails> {
   console.log("Alice is creating a Multisig Transaction...")
 
-  const maybeTxResult = await sdk.tx.multisig.approveAsMulti(
-    threshold,
-    otherSignatures,
-    null,
-    callHash,
-    maxWeight,
-    WaitFor.BlockInclusion,
-    account,
-  )
-  if (maybeTxResult.isErr()) {
-    console.log(maybeTxResult.error)
-    process.exit(1)
-  }
+  const tx = sdk.tx.multisig.approveAsMulti(threshold, otherSignatures, null, callHash, maxWeight)
+  const result = await tx.executeWaitForInclusion(account)
+  if (result.isErr()) throw Error(result.error.reason)
 
-  return maybeTxResult.value.details
+  return result.value
 }
 
 async function nextApproval(
@@ -101,21 +89,11 @@ async function nextApproval(
 ): Promise<TxResultDetails> {
   console.log("Bob is approving the existing Multisig Transaction...")
 
-  const maybeTxResult = await sdk.tx.multisig.approveAsMulti(
-    threshold,
-    otherSignatures,
-    timepoint,
-    callHash,
-    maxWeight,
-    WaitFor.BlockInclusion,
-    account,
-  )
-  if (maybeTxResult.isErr()) {
-    console.log(maybeTxResult.error)
-    process.exit(1)
-  }
+  const tx = sdk.tx.multisig.approveAsMulti(threshold, otherSignatures, timepoint, callHash, maxWeight)
+  const result = await tx.executeWaitForInclusion(account)
+  if (result.isErr()) throw Error(result.error.reason)
 
-  return maybeTxResult.value.details
+  return result.value
 }
 
 async function lastApproval(
@@ -129,21 +107,11 @@ async function lastApproval(
 ): Promise<TxResultDetails> {
   console.log("Charlie is approving and executing the existing Multisig Transaction...")
 
-  const maybeTxResult = await sdk.tx.multisig.asMulti(
-    threshold,
-    otherSignatures,
-    timepoint,
-    callData,
-    maxWeight,
-    WaitFor.BlockInclusion,
-    account,
-  )
-  if (maybeTxResult.isErr()) {
-    console.log(maybeTxResult.error)
-    process.exit(1)
-  }
+  const tx = sdk.tx.multisig.asMulti(threshold, otherSignatures, timepoint, callData, maxWeight)
+  const result = await tx.executeWaitForInclusion(account)
+  if (result.isErr()) throw Error(result.error.reason)
 
-  return maybeTxResult.value.details
+  return result.value
 }
 
 main()

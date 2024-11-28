@@ -22,10 +22,10 @@ export async function run() {
   // and the error of the failed call. If all were successful, then the `BatchCompleted`
   // event is deposited.
   const batchTx = new Transaction(api, api.tx.utility.batch(calls))
-  const batchRes = (await batchTx.execute_wait_for_inclusion(account))._unsafeUnwrap()
+  const batchRes = (await batchTx.executeWaitForInclusion(account))._unsafeUnwrap()
   console.log("-- Batch Call --")
 
-  const batchInterrupted = batchRes.findAllEvents(Events.Utility.BatchInterrupted)
+  const batchInterrupted = batchRes.findEvent(Events.Utility.BatchInterrupted)
   if (batchInterrupted.length > 0) {
     console.log("At least one call has failed")
   }
@@ -39,16 +39,16 @@ export async function run() {
   // Send a batch of dispatch calls and atomically execute them.
   // The whole transaction will rollback and fail if any of the calls failed.
   const batchAllTx = new Transaction(api, api.tx.utility.batchAll(calls))
-  const _ = (await batchAllTx.execute_wait_for_inclusion(account))._unsafeUnwrapErr()
+  const _ = (await batchAllTx.executeWaitForInclusion(account))._unsafeUnwrapErr()
 
   // Force Batch
   // Send a batch of dispatch calls.
   // Unlike `batch`, it allows errors and won't interrupt.
   const forceBatchTx = new Transaction(api, api.tx.utility.forceBatch(calls))
-  const forceBatchRes = (await forceBatchTx.execute_wait_for_inclusion(account))._unsafeUnwrap()
+  const forceBatchRes = (await forceBatchTx.executeWaitForInclusion(account))._unsafeUnwrap()
   console.log("-- Force Batch Call --")
 
-  const itemFailed = forceBatchRes.findAllEvents(Events.Utility.ItemFailed)
+  const itemFailed = forceBatchRes.findEvent(Events.Utility.ItemFailed)
   if (itemFailed.length > 0) {
     console.log("At least one call has failed")
   }

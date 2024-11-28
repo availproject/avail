@@ -16,7 +16,7 @@ namespace SubmitData {
     const options = { app_id: 1 }
 
     const tx = sdk.tx.dataAvailability.submitData(data)
-    const result = await tx.execute_wait_for_inclusion(account, options)
+    const result = await tx.executeWaitForInclusion(account, options)
     if (result.isErr()) throw Error(result.error.reason)
     const details = result.value
 
@@ -36,7 +36,7 @@ namespace CreateApplicationKey {
     const key = "My Key"
 
     const tx = sdk.tx.dataAvailability.createApplicationKey(key)
-    const result = await tx.execute_wait_for_inclusion(account)
+    const result = await tx.executeWaitForInclusion(account)
     if (result.isErr()) throw Error(result.error.reason)
     const details = result.value
 

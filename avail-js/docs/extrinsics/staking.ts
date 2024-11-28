@@ -34,7 +34,7 @@ namespace Bond {
     const payee = "Staked"
 
     const tx = sdk.tx.staking.bond(value, payee)
-    const result = await tx.execute_wait_for_inclusion(account)
+    const result = await tx.executeWaitForInclusion(account)
     if (result.isErr()) throw Error(result.error.reason)
     const details = result.value
 
@@ -54,7 +54,7 @@ namespace BondExtra {
     const value = SDK.oneAvail()
 
     const tx = sdk.tx.staking.bondExtra(value)
-    const result = await tx.execute_wait_for_inclusion(account)
+    const result = await tx.executeWaitForInclusion(account)
     if (result.isErr()) throw Error(result.error.reason)
     const details = result.value
 
@@ -74,7 +74,7 @@ namespace Nominate {
     const targets = ["5GNJqTPyNqANBkUVMN1LPPrxXnFouWXoe2wNSmmEoLctxiZY"]
 
     const tx = sdk.tx.staking.nominate(targets)
-    const result = await tx.execute_wait_for_inclusion(account)
+    const result = await tx.executeWaitForInclusion(account)
     if (result.isErr()) throw Error(result.error.reason)
     const details = result.value
 
@@ -89,7 +89,7 @@ namespace Chill {
     const account = new Keyring({ type: "sr25519" }).addFromUri("//Alice")
 
     const tx = sdk.tx.staking.chill()
-    const result = await tx.execute_wait_for_inclusion(account)
+    const result = await tx.executeWaitForInclusion(account)
     if (result.isErr()) throw Error(result.error.reason)
     const details = result.value
 
@@ -109,7 +109,7 @@ namespace ChillOther {
     const targets = ["5GNJqTPyNqANBkUVMN1LPPrxXnFouWXoe2wNSmmEoLctxiZY"]
 
     const tx = sdk.tx.staking.nominate(targets)
-    const result = await tx.execute_wait_for_inclusion(account)
+    const result = await tx.executeWaitForInclusion(account)
     result._unsafeUnwrap()
   }
 
@@ -120,7 +120,7 @@ namespace ChillOther {
     const stash = "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
 
     const tx = sdk.tx.staking.chillOther(stash)
-    const result = await tx.execute_wait_for_inclusion(account)
+    const result = await tx.executeWaitForInclusion(account)
     if (result.isErr()) throw Error(result.error.reason)
     const details = result.value
 
@@ -140,7 +140,7 @@ namespace Unbond {
     const value = SDK.oneAvail()
 
     const tx = sdk.tx.staking.unbond(value)
-    const result = await tx.execute_wait_for_inclusion(account)
+    const result = await tx.executeWaitForInclusion(account)
     if (result.isErr()) throw Error(result.error.reason)
     const details = result.value
 
@@ -161,7 +161,7 @@ namespace Validate {
     const blocked = false
 
     const tx = sdk.tx.staking.validate(commission, blocked)
-    const result = await tx.execute_wait_for_inclusion(account)
+    const result = await tx.executeWaitForInclusion(account)
     if (result.isErr()) throw Error(result.error.reason)
     const details = result.value
 
@@ -178,7 +178,7 @@ namespace Validate {
     const account = new Keyring({ type: "sr25519" }).addFromUri("//Alice")
 
     const tx = sdk.tx.staking.chill()
-    const result = await tx.execute_wait_for_inclusion(account)
+    const result = await tx.executeWaitForInclusion(account)
     result._unsafeUnwrap()
   }
 }
@@ -195,7 +195,7 @@ namespace PayoutStakers {
     if (era > 0) era -= 1
 
     const tx = sdk.tx.staking.payoutStakers(stash, era)
-    const result = await tx.execute_wait_for_inclusion(account)
+    const result = await tx.executeWaitForInclusion(account)
     if (result.isErr()) throw Error(result.error.reason)
     const details = result.value
 

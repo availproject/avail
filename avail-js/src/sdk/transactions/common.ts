@@ -5,8 +5,9 @@ import { err, ok, Result } from "neverthrow"
 import { SubmittableExtrinsic } from "@polkadot/api/types"
 import { Block, BN, KeyringPair } from ".."
 import { parseTransactionResult } from "../utils"
-import { GenericExtrinsic } from "@polkadot/types"
+import { GenericEvent, GenericExtrinsic } from "@polkadot/types"
 import { Events, CallData } from "./."
+import { IEventRecord } from "@polkadot/types/types"
 
 export enum WaitFor {
   BlockInclusion,
@@ -112,8 +113,8 @@ export class TxResultDetails {
     return Events.findLastEvent(c, this.events)
   }
 
-  findAllEvents<T>(c: { decode(arg0: EventRecord): T | null }): T[] {
-    return Events.findAllEvents(c, this.events)
+  findEvent<T>(c: { decode(arg0: EventRecord): T | null }): T[] {
+    return Events.findEvent(c, this.events)
   }
 
   async getData<T>(api: ApiPromise, c: { decode(arg0: GenericExtrinsic): T | null }): Promise<T | null> {
@@ -153,14 +154,14 @@ export class Transaction {
     this.tx = tx
   }
 
-  async execute_wait_for_inclusion(
+  async executeWaitForInclusion(
     account: KeyringPair,
     options?: TransactionOptions,
   ): Promise<Result<TxResultDetails, TransactionFailed>> {
     return await this.execute(WaitFor.BlockInclusion, account, options)
   }
 
-  async execute_wait_for_finalization(
+  async executeWaitForFinalization(
     account: KeyringPair,
     options?: TransactionOptions,
   ): Promise<Result<TxResultDetails, TransactionFailed>> {

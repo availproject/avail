@@ -19,7 +19,7 @@ namespace TransferAll {
     const keepAlive = false
 
     const tx = sdk.tx.balances.transferAll(dest, keepAlive)
-    const result = await tx.execute_wait_for_inclusion(account)
+    const result = await tx.executeWaitForInclusion(account)
     if (result.isErr()) throw Error(result.error.reason)
     const details = result.value
 
@@ -43,7 +43,7 @@ namespace TransferAll {
     let value = SDK.oneAvail().mul(new BN("900000"))
 
     const tx = sdk.tx.balances.transferKeepAlive(dest, value)
-    const result = await tx.execute_wait_for_inclusion(account)
+    const result = await tx.executeWaitForInclusion(account)
     result._unsafeUnwrap()
   }
 }
@@ -57,7 +57,7 @@ namespace TransferAllowDeath {
     const value = SDK.oneAvail()
 
     const tx = sdk.tx.balances.transferAllowDeath(dest, value)
-    const result = await tx.execute_wait_for_inclusion(account, undefined)
+    const result = await tx.executeWaitForInclusion(account, undefined)
     if (result.isErr()) throw Error(result.error.reason)
     const details = result.value
 
@@ -83,7 +83,7 @@ namespace TransferKeepAlive {
     const value = SDK.oneAvail()
 
     const tx = sdk.tx.balances.transferKeepAlive(dest, value)
-    const result = await tx.execute_wait_for_inclusion(account, undefined)
+    const result = await tx.executeWaitForInclusion(account, undefined)
     if (result.isErr()) throw Error(result.error.reason)
     const details = result.value
 

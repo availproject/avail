@@ -30,7 +30,7 @@ namespace ApproveAsMulti {
     console.log("Alice is creating a Multisig Transaction...")
     const call1signatures = sdk.util.sortMultisigAddresses([bobAddress])
     const tx = sdk.tx.multisig.approveAsMulti(threshold, call1signatures, null, callHash, maxWeight)
-    const result = await tx.execute_wait_for_inclusion(alice)
+    const result = await tx.executeWaitForInclusion(alice)
     if (result.isErr()) {
       console.log(result.error)
       process.exit(1)
@@ -64,7 +64,7 @@ namespace AsMulti {
     console.log("Bob is approving and executing the existing Multisig Transaction...")
     const call2signatures = sdk.util.sortMultisigAddresses([aliceAddress])
     const tx = sdk.tx.multisig.asMulti(threshold, call2signatures, timepoint, callData, maxWeight)
-    const result = await tx.execute_wait_for_inclusion(bob)
+    const result = await tx.executeWaitForInclusion(bob)
     if (result.isErr()) {
       console.log(result.error)
       process.exit(1)

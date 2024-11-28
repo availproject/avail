@@ -51,7 +51,7 @@ namespace Create {
     const bouncer: string = "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty" // Bob
 
     const tx = sdk.tx.nominationPools.create(amount, root, nominator, bouncer)
-    const result = await tx.execute_wait_for_inclusion(account)
+    const result = await tx.executeWaitForInclusion(account)
     if (result.isErr()) throw Error(result.error.reason)
     const details = result.value
 
@@ -81,7 +81,7 @@ namespace CreateWithPoolId {
     const poolId = 0
 
     const tx = sdk.tx.nominationPools.createWithPoolId(amount, root, nominator, bouncer, poolId)
-    const result = await tx.execute_wait_for_inclusion(account)
+    const result = await tx.executeWaitForInclusion(account)
     if (result.isErr()) throw Error(result.error.reason)
     const details = result.value
 
@@ -108,7 +108,7 @@ namespace Join {
     const poolId = 1
 
     const tx = sdk.tx.nominationPools.join(amount, poolId)
-    const result = await tx.execute_wait_for_inclusion(account)
+    const result = await tx.executeWaitForInclusion(account)
     if (result.isErr()) throw Error(result.error.reason)
     const details = result.value
 
@@ -129,7 +129,7 @@ namespace BondExtra {
     const bondExtra = { FreeBalance: amount } as BondExtra
 
     const tx = sdk.tx.nominationPools.bondExtra(bondExtra)
-    const result = await tx.execute_wait_for_inclusion(account)
+    const result = await tx.executeWaitForInclusion(account)
     if (result.isErr()) throw Error(result.error.reason)
     const details = result.value
 
@@ -150,7 +150,7 @@ namespace Unbond {
     const unbondingPoints = SDK.oneAvail()
 
     const tx = sdk.tx.nominationPools.unbond(memberAccount, unbondingPoints)
-    const result = await tx.execute_wait_for_inclusion(account)
+    const result = await tx.executeWaitForInclusion(account)
     if (result.isErr()) throw Error(result.error.reason)
     const details = result.value
 
@@ -171,7 +171,7 @@ namespace WithdrawUnbonded {
     const numSlashingSpans = 0
 
     const tx = sdk.tx.nominationPools.withdrawUnbonded(memberAccount, numSlashingSpans)
-    const result = await tx.execute_wait_for_inclusion(account)
+    const result = await tx.executeWaitForInclusion(account)
     if (result.isErr()) throw Error(result.error.reason)
     const details = result.value
 
@@ -193,7 +193,7 @@ namespace SetCommission {
 
     // TODO
     const tx = sdk.tx.nominationPools.setCommission(poolId, newCommission)
-    const result = await tx.execute_wait_for_inclusion(account)
+    const result = await tx.executeWaitForInclusion(account)
     if (result.isErr()) throw Error(result.error.reason)
     const details = result.value
 
@@ -215,7 +215,7 @@ namespace SetMetadata {
 
     // TODO
     const tx = sdk.tx.nominationPools.setMetadata(poolId, metadata)
-    const result = await tx.execute_wait_for_inclusion(account)
+    const result = await tx.executeWaitForInclusion(account)
     if (result.isErr()) throw Error(result.error.reason)
     const details = result.value
 
@@ -232,7 +232,7 @@ namespace SetState {
     const state = "Blocked"
 
     const tx = sdk.tx.nominationPools.setState(poolId, state)
-    const result = await tx.execute_wait_for_inclusion(account)
+    const result = await tx.executeWaitForInclusion(account)
     if (result.isErr()) throw Error(result.error.reason)
     const details = result.value
 
@@ -252,7 +252,7 @@ namespace SetClaimPermission {
     const permission = "PermissionlessAll"
 
     const tx = sdk.tx.nominationPools.setClaimPermission(permission)
-    const result = await tx.execute_wait_for_inclusion(account)
+    const result = await tx.executeWaitForInclusion(account)
     if (result.isErr()) throw Error(result.error.reason)
     const details = result.value
 
@@ -269,7 +269,7 @@ namespace Nominate {
     const validators = ["5GNJqTPyNqANBkUVMN1LPPrxXnFouWXoe2wNSmmEoLctxiZY"]
 
     const tx = sdk.tx.nominationPools.nominate(poolId, validators)
-    const result = await tx.execute_wait_for_inclusion(account)
+    const result = await tx.executeWaitForInclusion(account)
     if (result.isErr()) throw Error(result.error.reason)
     const details = result.value
 
@@ -285,7 +285,7 @@ namespace Chill {
     const poolId = 0
 
     const tx = sdk.tx.nominationPools.chill(poolId)
-    const result = await tx.execute_wait_for_inclusion(account)
+    const result = await tx.executeWaitForInclusion(account)
     if (result.isErr()) throw Error(result.error.reason)
     const details = result.value
 
@@ -300,7 +300,7 @@ namespace ClaimPayout {
     const account = new Keyring({ type: "sr25519" }).addFromUri("//Bob")
 
     const tx = sdk.tx.nominationPools.claimPayout()
-    const result = await tx.execute_wait_for_inclusion(account)
+    const result = await tx.executeWaitForInclusion(account)
     if (result.isErr()) throw Error(result.error.reason)
     const details = result.value
 
@@ -320,7 +320,7 @@ namespace ClaimPayoutOther {
     const other = "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy" // Dave
 
     const tx = sdk.tx.nominationPools.claimPayoutOther(other)
-    const result = await tx.execute_wait_for_inclusion(account)
+    const result = await tx.executeWaitForInclusion(account)
     if (result.isErr()) throw Error(result.error.reason)
     const details = result.value
 
@@ -340,7 +340,7 @@ namespace ClaimCommission {
     const poolId = 1
 
     const tx = sdk.tx.nominationPools.claimCommission(poolId)
-    const result = await tx.execute_wait_for_inclusion(account)
+    const result = await tx.executeWaitForInclusion(account)
     if (result.isErr()) throw Error(result.error.reason)
     const details = result.value
 
@@ -364,7 +364,7 @@ namespace PayoutStakers {
     if (era > 0) era -= 1
 
     const tx = sdk.tx.staking.payoutStakers(stash, era)
-    const result = await tx.execute_wait_for_inclusion(account)
+    const result = await tx.executeWaitForInclusion(account)
     result._unsafeUnwrap()
   }
 }

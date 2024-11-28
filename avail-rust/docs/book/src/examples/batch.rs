@@ -39,7 +39,7 @@ pub async fn run() -> Result<(), ClientError> {
 	let res = tx.execute_wait_for_inclusion(&account, options).await?;
 	println!("-- Batch Call --");
 
-	let batch_interrupted = res.find_all_events::<UtilityEvents::BatchInterrupted>();
+	let batch_interrupted = res.find_event::<UtilityEvents::BatchInterrupted>();
 	if batch_interrupted.len() > 0 {
 		println!("At least one call has failed");
 	}
@@ -67,7 +67,7 @@ pub async fn run() -> Result<(), ClientError> {
 	let res = tx.execute_wait_for_inclusion(&account, options).await?;
 	println!("-- Force Batch Call --");
 
-	let item_failed = res.find_all_events::<UtilityEvents::ItemFailed>();
+	let item_failed = res.find_event::<UtilityEvents::ItemFailed>();
 	if item_failed.len() > 0 {
 		println!("At least one call has failed");
 	}

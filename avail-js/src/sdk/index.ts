@@ -25,6 +25,7 @@ export {
   MultisigTimepoint,
   Events,
   Transaction,
+  CallData,
 } from "./transactions"
 export { Block } from "./block"
 

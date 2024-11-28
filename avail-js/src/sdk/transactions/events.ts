@@ -1,5 +1,6 @@
-import { EventRecord } from "@polkadot/types/interfaces/types"
+import { EventRecord, H256 } from "@polkadot/types/interfaces/types"
 import { BN, MultisigTimepoint } from ".."
+import { ApiPromise } from "@polkadot/api"
 
 export function findFirstEvent<T>(c: { decode(arg0: EventRecord): T | null }, eventRecord: EventRecord[]): T | null {
   for (let event of eventRecord) {
@@ -24,7 +25,7 @@ export function findLastEvent<T>(c: { decode(arg0: EventRecord): T | null }, eve
   return result
 }
 
-export function findAllEvents<T>(c: { decode(arg0: EventRecord): T | null }, eventRecord: EventRecord[]): T[] {
+export function findEvent<T>(c: { decode(arg0: EventRecord): T | null }, eventRecord: EventRecord[]): T[] {
   const decoded_events = []
 
   for (let event of eventRecord) {
@@ -35,6 +36,20 @@ export function findAllEvents<T>(c: { decode(arg0: EventRecord): T | null }, eve
   }
 
   return decoded_events
+}
+
+export async function fetchEvents(api: ApiPromise, blockHash: H256, txIndex: number): Promise<EventRecord[]> {
+  const apiAt = await api.at(blockHash)
+  const eventRecords: EventRecord[] = (await apiAt.query.system.events()) as any
+
+  const result: EventRecord[] = []
+  for (const eventRecord of eventRecords) {
+    if (eventRecord.phase.isApplyExtrinsic && eventRecord.phase.asApplyExtrinsic.toNumber() == txIndex) {
+      result.push(eventRecord)
+    }
+  }
+
+  return result
 }
 
 export namespace Balances {
