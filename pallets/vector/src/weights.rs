@@ -287,8 +287,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		//  Estimated: `1517`
 		// Minimum execution time: 7_000_000 picoseconds.
 		Weight::from_parts(8_000_000, 1517)
-			.saturating_add(RocksDbWeight::get().reads(1_u64))
-			.saturating_add(RocksDbWeight::get().writes(1_u64))
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	/// Storage: `Vector::SyncCommitteeHashes` (r:0 w:1)
 	/// Proof: `Vector::SyncCommitteeHashes` (`max_values`: None, `max_size`: Some(40), added: 2515, mode: `MaxEncodedLen`)
@@ -296,9 +296,9 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 5_000_000 picoseconds.
+		// Minimum execution time: 4_000_000 picoseconds.
 		Weight::from_parts(5_000_000, 0)
-			.saturating_add(RocksDbWeight::get().writes(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	/// Storage: `Vector::Updater` (r:1 w:0)
 	/// Proof: `Vector::Updater` (`max_values`: Some(1), `max_size`: Some(32), added: 527, mode: `MaxEncodedLen`)
@@ -311,7 +311,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Storage: `Vector::ExecutionStateRoots` (r:1 w:1)
 	/// Proof: `Vector::ExecutionStateRoots` (`max_values`: None, `max_size`: Some(40), added: 2515, mode: `MaxEncodedLen`)
 	/// Storage: `Vector::ConfigurationStorage` (r:1 w:0)
-	/// Proof: `Vector::ConfigurationStorage` (`max_values`: Some(1), `max_size`: Some(10), added: 505, mode: `MaxEncodedLen`)
+	/// Proof: `Vector::ConfigurationStorage` (`max_values`: Some(1), `max_size`: Some(13), added: 508, mode: `MaxEncodedLen`)
 	/// Storage: `Vector::SyncCommitteeHashes` (r:2 w:1)
 	/// Proof: `Vector::SyncCommitteeHashes` (`max_values`: None, `max_size`: Some(40), added: 2515, mode: `MaxEncodedLen`)
 	/// Storage: `Timestamp::Now` (r:1 w:0)
@@ -322,10 +322,10 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `614`
 		//  Estimated: `6020`
-		// Minimum execution time: 526_071_000_000 picoseconds.
-		Weight::from_parts(529_512_000_000, 6020)
-			.saturating_add(RocksDbWeight::get().reads(9_u64))
-			.saturating_add(RocksDbWeight::get().writes(5_u64))
+		// Minimum execution time: 532_131_000_000 picoseconds.
+		Weight::from_parts(537_965_000_000, 6020)
+			.saturating_add(T::DbWeight::get().reads(9_u64))
+			.saturating_add(T::DbWeight::get().writes(5_u64))
 	}
 }
 
@@ -553,7 +553,7 @@ impl WeightInfo for () {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 5_000_000 picoseconds.
+		// Minimum execution time: 4_000_000 picoseconds.
 		Weight::from_parts(5_000_000, 0)
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
@@ -568,7 +568,7 @@ impl WeightInfo for () {
 	/// Storage: `Vector::ExecutionStateRoots` (r:1 w:1)
 	/// Proof: `Vector::ExecutionStateRoots` (`max_values`: None, `max_size`: Some(40), added: 2515, mode: `MaxEncodedLen`)
 	/// Storage: `Vector::ConfigurationStorage` (r:1 w:0)
-	/// Proof: `Vector::ConfigurationStorage` (`max_values`: Some(1), `max_size`: Some(10), added: 505, mode: `MaxEncodedLen`)
+	/// Proof: `Vector::ConfigurationStorage` (`max_values`: Some(1), `max_size`: Some(13), added: 508, mode: `MaxEncodedLen`)
 	/// Storage: `Vector::SyncCommitteeHashes` (r:2 w:1)
 	/// Proof: `Vector::SyncCommitteeHashes` (`max_values`: None, `max_size`: Some(40), added: 2515, mode: `MaxEncodedLen`)
 	/// Storage: `Timestamp::Now` (r:1 w:0)
@@ -579,8 +579,8 @@ impl WeightInfo for () {
 		// Proof Size summary in bytes:
 		//  Measured:  `614`
 		//  Estimated: `6020`
-		// Minimum execution time: 526_071_000_000 picoseconds.
-		Weight::from_parts(529_512_000_000, 6020)
+		// Minimum execution time: 532_131_000_000 picoseconds.
+		Weight::from_parts(537_965_000_000, 6020)
 			.saturating_add(RocksDbWeight::get().reads(9_u64))
 			.saturating_add(RocksDbWeight::get().writes(5_u64))
 	}

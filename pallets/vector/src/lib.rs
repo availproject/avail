@@ -32,8 +32,6 @@ mod weights;
 
 pub use pallet::*;
 
-pub type ProofInput = BoundedVec<u8, ConstU32<512>>;
-
 sol! {
 	 struct ProofOutputs {
 		bytes32 executionStateRoot;
@@ -45,8 +43,10 @@ sol! {
 		bytes32 syncCommitteeHash;
 	}
 }
-pub type FunctionInput = BoundedVec<u8, ConstU32<256>>;
+
+pub type ProofInput = BoundedVec<u8, ConstU32<1024>>;
 pub type PublicValuesInput = BoundedVec<u8, ConstU32<512>>;
+pub type FunctionInput = BoundedVec<u8, ConstU32<256>>;
 pub type FunctionOutput = BoundedVec<u8, ConstU32<512>>;
 pub type FunctionProof = BoundedVec<u8, ConstU32<1048>>;
 pub type ValidProof = BoundedVec<BoundedVec<u8, ConstU32<2048>>, ConstU32<32>>;
