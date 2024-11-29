@@ -90,22 +90,40 @@ pub async fn watch_transaction(
 ) -> Result<TransactionDetails, ClientError> {
 	let mut block_hash;
 	let mut block_number;
-	let mut tx_details = None;
+	let tx_details;
 
-	let mut stream = if wait_for == WaitFor::BlockInclusion {
-		online_client.blocks().subscribe_all().await?
-	} else {
-		online_client.blocks().subscribe_finalized().await?
+	let create_stream = || async {
+		if wait_for == WaitFor::BlockInclusion {
+			online_client.blocks().subscribe_all().await
+		} else {
+			online_client.blocks().subscribe_finalized().await
+		}
 	};
+
+	let mut stream = create_stream().await?;
+	let mut stream_failed_count = 0;
 
 	let mut current_block_number: Option<u32> = None;
 	let mut timeout_block_number: Option<u32> = None;
 
 	loop {
 		let Some(block) = stream.next().await else {
-			let error =
-				String::from("Failed to get next block from the stream. Client might be offline");
-			return Err(ClientError::BlockStream(error));
+			if stream_failed_count > 3 {
+				let error = String::from(
+					"Critical Error: Failed to get next block from the stream. Aborting.",
+				);
+				return Err(ClientError::BlockStream(error));
+			} else {
+				let warning = String::from(
+					"Warning: Failed to get next block from the stream. Creating new stream.",
+				);
+				println!("{}", warning);
+
+				stream_failed_count += 1;
+				stream = create_stream().await?;
+
+				continue;
+			}
 		};
 
 		let block = block?;
@@ -129,12 +147,16 @@ pub async fn watch_transaction(
 			timeout_block_number = Some(block_number + block_timeout);
 		}
 		if timeout_block_number.is_some_and(|timeout| block_number >= timeout) {
-			break;
+			let error =
+				"Transaction not found. It might have been dropped and thus it was never executed";
+			return Err(ClientError::from(error));
 		}
 	}
 
 	let Some(tx_details) = tx_details else {
-		return Err(ClientError::Custom("a".into()).into());
+		// TODO
+		let error = "If we are here then God/Gods/NoGod/MaybeGod help us";
+		return Err(ClientError::from(error));
 	};
 
 	let events = tx_details.events().await?;
