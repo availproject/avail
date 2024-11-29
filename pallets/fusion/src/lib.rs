@@ -25,6 +25,7 @@ use frame_support::{
 };
 use frame_system::pallet_prelude::*;
 pub use pallet::*;
+use pallet_staking::traits::FusionExt;
 use sp_core::U256;
 use sp_runtime::{
 	traits::{AccountIdConversion, Bounded, Zero},
@@ -33,7 +34,6 @@ use sp_runtime::{
 use sp_staking::{currency_to_vote::CurrencyToVote, EraIndex};
 use sp_std::collections::btree_set::BTreeSet;
 use sp_std::{vec, vec::Vec};
-use pallet_staking::traits::FusionExt;
 
 pub use traits::StakingFusionDataProvider;
 pub use weights::WeightInfo;
@@ -1041,7 +1041,7 @@ pub mod pallet {
 				ensure!(
 					targets
 						.iter()
-						.all(|target| T::StakingFusionDataProvider::is_valid_validator(&target)),
+						.all(|target| T::StakingFusionDataProvider::is_valid_validator(target)),
 					Error::<T>::NoValidValidators
 				);
 
@@ -1305,18 +1305,18 @@ impl<T: Config> Pallet<T> {
 
 	/// Helper to convert U256 to balance
 	pub fn balance(value: U256) -> BalanceOf<T> {
-		let value: u128 = value.try_into().unwrap_or(u128::max_value());
+		let value: u128 = value.try_into().unwrap_or(u128::MAX);
 		value.try_into().unwrap_or(BalanceOf::<T>::max_value())
 	}
 
 	/// Helper to convert U256 to fusion currency
 	pub fn fusion_currency(value: U256) -> FusionCurrencyBalance {
-		value.try_into().unwrap_or(u128::max_value())
+		value.try_into().unwrap_or(u128::MAX)
 	}
 
 	/// Helper to convert U256 to points
 	pub fn points(value: U256) -> Points {
-		value.try_into().unwrap_or(u128::max_value())
+		value.try_into().unwrap_or(u128::MAX)
 	}
 
 	/// Ensures the origin is signed and that the provided Fusion address maps to the correct Substrate account.
@@ -1436,12 +1436,12 @@ impl<T: Config> Pallet<T> {
 		}
 
 		for key in EraRewards::<T>::iter_keys() {
-			if &key.1 == &pool_id {
+			if key.1 == pool_id {
 				EraRewards::<T>::remove(key.0, key.1);
 			}
 		}
 		for key in Exposures::<T>::iter_keys() {
-			if &key.1 == &pool_id {
+			if key.1 == pool_id {
 				Exposures::<T>::remove(key.0, key.1);
 			}
 		}
@@ -1543,7 +1543,7 @@ impl<T: Config> Pallet<T> {
 
 	/// Compute rewards for each pool and set them in storage
 	/// Reward computatation is done at the end of era N for era N
-	fn compute_era_rewards(era: EraIndex, era_duration: u64, maybe_pool_id: Option<PoolId>) -> () {
+	fn compute_era_rewards(era: EraIndex, era_duration: u64, maybe_pool_id: Option<PoolId>) {
 		let mut total_rewarded = BalanceOf::<T>::zero();
 		let mut rewarded_pools: Vec<PoolId> = vec![];
 		let mut paused_pools: Vec<PoolId> = vec![];
@@ -1609,7 +1609,7 @@ impl<T: Config> Pallet<T> {
 				Self::pause_pool(
 					pool_id,
 					&mut pool,
-					&"Fusion pool selected validators have not earned rewards.",
+					"Fusion pool selected validators have not earned rewards.",
 					&mut paused_pools,
 					&mut paused_pools_missed_rewards,
 					pool_era_reward,
@@ -1627,7 +1627,7 @@ impl<T: Config> Pallet<T> {
 				Self::pause_pool(
 					pool_id,
 					&mut pool,
-					&"Insufficient funds in fusion pool account.",
+					"Insufficient funds in fusion pool account.",
 					&mut paused_pools,
 					&mut paused_pools_missed_rewards,
 					era_rewards_with_boost,
@@ -1644,7 +1644,7 @@ impl<T: Config> Pallet<T> {
 				Self::pause_pool(
 					pool_id,
 					&mut pool,
-					&"An error has occured during transfer",
+					"An error has occured during transfer",
 					&mut paused_pools,
 					&mut paused_pools_missed_rewards,
 					era_rewards_with_boost,
@@ -1948,10 +1948,10 @@ impl<T: Config> Pallet<T> {
 			);
 
 			let (user_reward_balance, user_points) =
-				Self::compute_basic_rewards(fusion_address, &exposure, &era_rewards)?;
+				Self::compute_basic_rewards(fusion_address, &exposure, era_rewards)?;
 
 			let boost_rewards =
-				Self::compute_boost_rewards(fusion_address, &exposure, &era_rewards, user_points)?;
+				Self::compute_boost_rewards(fusion_address, &exposure, era_rewards, user_points)?;
 
 			let total_user_rewards = user_reward_balance.saturating_add(boost_rewards);
 
@@ -2237,7 +2237,12 @@ impl<T: Config> Pallet<T> {
 				if let Some(unbonding_chunk_index) = maybe_unbonding_chunk_index {
 					let unbonding_chunk = pool_era_unbonding_chunks.remove(unbonding_chunk_index);
 					total_withdrawable = total_withdrawable.saturating_add(unbonding_chunk.1);
-					UnbondingChunks::<T>::insert(pool_id, era, pool_era_unbonding_chunks);
+
+					if !pool_era_unbonding_chunks.is_empty() {
+						UnbondingChunks::<T>::insert(pool_id, era, pool_era_unbonding_chunks);
+					} else {
+						UnbondingChunks::<T>::remove(pool_id, era);
+					}
 				} else {
 					log::error!("An unbonding chunk was not found for user: {fusion_address:?}, era: {era:?} and pool id {pool_id:?}. Storage was cleaned but it should get fixed");
 				}
@@ -2416,7 +2421,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Function to remove all boost for everyone in case the Avail pool is slashed
-	fn shutdown_pools_boost() -> () {
+	fn shutdown_pools_boost() {
 		for (pool_id, _) in PoolsWithBoost::<T>::iter() {
 			let _ = HasBoost::<T>::clear_prefix(pool_id, u32::MAX, None);
 			let _ = Pools::<T>::try_mutate(pool_id, |pool_opt| -> DispatchResult {
@@ -2615,7 +2620,7 @@ impl<T: Config> Pallet<T> {
 }
 
 impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>, PoolId> for Pallet<T> {
-	fn set_fusion_exposures() -> () {
+	fn set_fusion_exposures() {
 		let era = T::StakingFusionDataProvider::current_era();
 		let planned_era = era.saturating_add(1);
 		let mut at_least_one = false;
@@ -2707,7 +2712,7 @@ impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>, PoolId> for Pallet<T> {
 		}
 	}
 
-	fn handle_end_era(era: EraIndex, era_duration: u64) -> () {
+	fn handle_end_era(era: EraIndex, era_duration: u64) {
 		fn log_if_error<T>(
 			result: Result<T, DispatchError>,
 			function_name: &str,
@@ -2761,7 +2766,7 @@ impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>, PoolId> for Pallet<T> {
 		validator: &T::AccountId,
 		value: BalanceOf<T>,
 		era: EraIndex,
-	) -> () {
+	) {
 		let Some(pool_id) = Self::get_pool_id_from_funds_account(maybe_pool_account) else {
 			return;
 		};
@@ -2772,12 +2777,13 @@ impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>, PoolId> for Pallet<T> {
 				return Ok(());
 			};
 
-			let mut native_exposure_data = match exposure.native_exposure_data.clone() {
-				Some(x) => x,
-				None => BoundedVec::default(),
-			};
+			let mut native_exposure_data =
+				exposure.native_exposure_data.clone().unwrap_or_default();
 
-			if let Err(_) = native_exposure_data.try_push((validator.clone(), value)) {
+			if native_exposure_data
+				.try_push((validator.clone(), value))
+				.is_err()
+			{
 				log::error!(
 					"Could not update fusion exposure for pool {:?} - native_exposure_data limit reached",
 					pool_id
@@ -2788,7 +2794,7 @@ impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>, PoolId> for Pallet<T> {
 				era,
 				validator,
 				|pool_ids| -> DispatchResult {
-					if let Err(_) = pool_ids.try_push(pool_id) {
+					if pool_ids.try_push(pool_id).is_err() {
 						log::error!(
 							"Could not set fusion pools from validator for pool {pool_id:?} and validator {validator:?} and era {era:?}",
 						);
@@ -2824,11 +2830,9 @@ impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>, PoolId> for Pallet<T> {
 		let filtered_nominators: Vec<(PoolId, BalanceOf<T>)> = nominators
 			.iter()
 			.filter_map(|(nominator_account, balance)| {
-				if let Some(pool_id) = pool_funds_accounts.remove(nominator_account) {
-					Some((pool_id, *balance))
-				} else {
-					None
-				}
+				pool_funds_accounts
+					.remove(nominator_account)
+					.map(|pool_id| (pool_id, *balance))
 			})
 			.collect();
 
