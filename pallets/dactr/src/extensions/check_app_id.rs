@@ -175,13 +175,13 @@ where
 impl<T> SignedExtension for CheckAppId<T>
 where
 	T: DAConfig + VectorConfig + UtilityConfig + Send + Sync,
-	<T as frame_system::Config>::RuntimeCall:
+	<T as SystemConfig>::RuntimeCall:
 		IsSubType<DACall<T>> + IsSubType<pallet_utility::Call<T>> + IsSubType<VectorCall<T>>,
 	[u8; 32]: From<<T as frame_system::Config>::AccountId>,
 {
-	type AccountId = T::AccountId;
+	type AccountId = <T as SystemConfig>::AccountId;
 	type AdditionalSigned = ();
-	type Call = <T as frame_system::Config>::RuntimeCall;
+	type Call = <T as SystemConfig>::RuntimeCall;
 	type Pre = ();
 
 	const IDENTIFIER: &'static str = "CheckAppId";

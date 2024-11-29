@@ -157,4 +157,7 @@ impl<T: frame_system::Config> pallet_balances::WeightInfo for WeightInfo<T> {
 		Weight::from_parts(13_275_000, 0)
 			.saturating_add(Weight::from_parts(0, 0))
 	}
+
+	fn burn_allow_death() -> frame_election_provider_support::Weight { todo!() }
+	fn burn_keep_alive() -> frame_election_provider_support::Weight { todo!() }
 }

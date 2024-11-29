@@ -233,7 +233,7 @@ where
 	<R as frame_system::Config>::AccountId: From<AccountId>,
 	<R as frame_system::Config>::AccountId: Into<AccountId>,
 {
-	fn on_unbalanceds<B>(
+	fn on_unbalanceds(
 		mut fees_then_tips: impl Iterator<Item = Credit<R::AccountId, pallet_balances::Pallet<R>>>,
 	) {
 		if let Some(fees) = fees_then_tips.next() {
@@ -503,7 +503,6 @@ impl pallet_staking::Config for Runtime {
 	type NextNewSession = Session;
 	type NominationsQuota =
 		pallet_staking::FixedNominationsQuota<{ constants::staking::MaxNominations::get() }>;
-	type OffendingValidatorsThreshold = constants::staking::OffendingValidatorsThreshold;
 	// send the slashed funds to the treasury.
 	type Reward = ();
 	type RewardRemainder = Treasury;
@@ -517,6 +516,7 @@ impl pallet_staking::Config for Runtime {
 	type TargetList = pallet_staking::UseValidatorsMap<Self>;
 	type UnixTime = Timestamp;
 	type VoterList = VoterList;
+	type DisablingStrategy = pallet_staking::UpToLimitDisablingStrategy;
 	type WeightInfo = weights::pallet_staking::WeightInfo<Runtime>;
 }
 
@@ -627,8 +627,12 @@ impl pallet_nomination_pools::Config for Runtime {
 	type RewardCounter = FixedU128;
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeFreezeReason = RuntimeFreezeReason;
-	type Staking = Staking;
 	type U256ToBalance = U256ToBalance;
+	type StakeAdapter = pallet_nomination_pools::adapter::TransferStake<Self, Staking>;
+	type AdminOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 5, 7>,
+	>;
 	type WeightInfo = ();
 }
 
@@ -643,16 +647,11 @@ pub type TreasurySpender =
 	pallet_collective::EnsureProportionAtLeast<AccountId, TreasuryCollective, 5, 7>;
 
 impl pallet_treasury::Config for Runtime {
-	type ApproveOrigin = EnsureRoot<AccountId>;
 	type Burn = Burn;
 	type BurnDestination = ();
 	type Currency = Balances;
 	type MaxApprovals = MaxApprovals;
-	type OnSlash = Treasury;
 	type PalletId = TreasuryPalletId;
-	type ProposalBond = ProposalBond;
-	type ProposalBondMaximum = ();
-	type ProposalBondMinimum = ProposalBondMinimum;
 	type RejectOrigin = EnsureRoot<AccountId>;
 	type RuntimeEvent = RuntimeEvent;
 	type SpendFunds = ();
@@ -677,7 +676,7 @@ impl pallet_mmr::Config for Runtime {
 	type LeafData = pallet_mmr::ParentNumberAndHash<Self>;
 	type OnNewRoot = ();
 	type WeightInfo = ();
-
+	type BlockHashProvider = pallet_mmr::DefaultBlockHashProvider<Runtime>;
 	const INDEXING_PREFIX: &'static [u8] = b"mmr";
 }
 

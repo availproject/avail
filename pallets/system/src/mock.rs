@@ -120,6 +120,22 @@ impl Config for Test {
 	type Extrinsic = Extrinsic;
 	type MaxDiffAppIdPerBlock = ConstU32<1_024>;
 	type MaxTxPerAppIdPerBlock = ConstU32<8_192>;
+	type MultiBlockMigrator = MockedMigrator;
+}
+
+parameter_types! {
+	pub static Ongoing: bool = false;
+}
+
+pub struct MockedMigrator;
+impl frame_support::migrations::MultiStepMigrator for MockedMigrator {
+	fn ongoing() -> bool {
+		Ongoing::get()
+	}
+
+	fn step() -> Weight {
+		Weight::zero()
+	}
 }
 
 #[allow(dead_code)]
