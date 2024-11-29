@@ -88,8 +88,8 @@ pub async fn watch_transaction(
 	wait_for: WaitFor,
 	block_timeout: Option<u32>,
 ) -> Result<TransactionDetails, ClientError> {
-	let mut block_hash = tx_hash;
-	let mut block_number = 0u32;
+	let mut block_hash;
+	let mut block_number;
 	let mut tx_details = None;
 
 	let mut stream = if wait_for == WaitFor::BlockInclusion {
@@ -101,7 +101,13 @@ pub async fn watch_transaction(
 	let mut current_block_number: Option<u32> = None;
 	let mut timeout_block_number: Option<u32> = None;
 
-	while let Some(block) = stream.next().await {
+	loop {
+		let Some(block) = stream.next().await else {
+			let error =
+				String::from("Failed to get next block from the stream. Client might be offline");
+			return Err(ClientError::BlockStream(error));
+		};
+
 		let block = block?;
 		block_hash = block.hash();
 		block_number = block.number();

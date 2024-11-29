@@ -7,6 +7,7 @@ use crate::transactions::TransactionFailed;
 #[derive(Debug)]
 pub enum ClientError {
 	Custom(String),
+	BlockStream(String),
 	Subxt(subxt::Error),
 	SubxtSigner(SecretUriError),
 	Sr25519(sr25519::Error),
@@ -16,6 +17,7 @@ impl ClientError {
 	pub fn to_string(&self) -> String {
 		match self {
 			ClientError::Custom(e) => e.clone(),
+			ClientError::BlockStream(e) => e.clone(),
 			ClientError::Subxt(e) => e.to_string(),
 			ClientError::SubxtSigner(e) => e.to_string(),
 			ClientError::Sr25519(e) => e.to_string(),
