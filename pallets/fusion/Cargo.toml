@@ -21,6 +21,7 @@ sp-runtime = { workspace = true, default-features = false }
 sp-std = { workspace = true, default-features = false }
 sp-staking = { workspace = true, default-features = false, features = ["serde"] }
 pallet-balances = { workspace = true, default-features = false }
+pallet-staking = { workspace = true, default-features = false }
 
 # Benchmarking
 frame-benchmarking = { workspace = true, default-features = false, optional = true }
