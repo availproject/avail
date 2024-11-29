@@ -4,68 +4,20 @@ use subxt::{
 	blocks::StaticExtrinsic,
 	error::DispatchError,
 	ext::scale_encode::EncodeAsFields,
-	tx::{DefaultPayload, TxStatus},
+	tx::DefaultPayload,
 };
 use subxt_signer::sr25519::Keypair;
 
 use crate::{
 	avail::{self, runtime_types::da_runtime::primitives::SessionKeys},
+	block::Block,
 	error::ClientError,
-	rpcs::{account_next_index, get_best_block_hash, get_block_hash},
+	rpcs::{account_next_index, get_block_hash},
 	transactions::{options::parse_options, TransactionDetails, TransactionFailed},
-	AExtrinsicEvents, AOnlineClient, ATxInBlock, ATxProgress, AccountId, AppUncheckedExtrinsic,
-	Options, WaitFor,
+	AExtrinsicEvents, AOnlineClient, AccountId, AppUncheckedExtrinsic, Options, WaitFor,
 };
 
 use core::str::FromStr;
-
-pub async fn progress_transaction(
-	maybe_tx_progress: Result<ATxProgress, subxt::Error>,
-	wait_for: WaitFor,
-) -> Result<ATxInBlock, ClientError> {
-	let mut tx_progress = maybe_tx_progress?;
-
-	while let Some(tx_status) = tx_progress.next().await {
-		let tx_status = tx_status?;
-
-		match tx_status {
-			TxStatus::InBestBlock(tx_in_block) => {
-				if wait_for == WaitFor::BlockInclusion {
-					return Ok(tx_in_block);
-				}
-			},
-			TxStatus::InFinalizedBlock(tx_in_block) => {
-				if wait_for == WaitFor::BlockFinalization {
-					return Ok(tx_in_block);
-				}
-			},
-			TxStatus::Error { message } => return Err(ClientError::from(message)),
-			TxStatus::Invalid { message } => return Err(ClientError::from(message)),
-			TxStatus::Dropped { message } => return Err(ClientError::from(message)),
-			_ => {},
-		};
-	}
-
-	Err(ClientError::from("Something went wrong."))
-}
-
-pub async fn parse_transaction_in_block(
-	client: &AOnlineClient,
-	tx_in_block: ATxInBlock,
-) -> Result<TransactionDetails, TransactionFailed> {
-	// Fetch transaction details
-	let details = match fetch_transaction_details(client, tx_in_block).await {
-		Ok(d) => d,
-		Err(error) => return Err(TransactionFailed::from(ClientError::from(error))),
-	};
-
-	// Check if the transaction was successful
-	if let Err(error) = details.check_if_transaction_was_successful(client) {
-		return Err(TransactionFailed::from((ClientError::from(error), details)));
-	}
-
-	Ok(details)
-}
 
 /// Creates and signs an extrinsic and submits to the chain for block inclusion.
 ///
@@ -97,14 +49,29 @@ where
 	Ok(tx_hash)
 }
 
-pub async fn progress_and_parse_transaction<T>(
+pub async fn execute_and_watch_transaction<T>(
 	online_client: &AOnlineClient,
 	rpc_client: &RpcClient,
 	account: &Keypair,
 	call: &DefaultPayload<T>,
 	wait_for: WaitFor,
 	options: Option<Options>,
-) -> Result<TransactionDetails, TransactionFailed>
+	block_timeout: Option<u32>,
+) -> Result<TransactionDetails, ClientError>
+where
+	T: StaticExtrinsic + EncodeAsFields,
+{
+	let tx_hash = execute_transaction(online_client, rpc_client, account, call, options).await?;
+	watch_transaction(online_client, tx_hash, wait_for, block_timeout).await
+}
+
+pub async fn execute_transaction<T>(
+	online_client: &AOnlineClient,
+	rpc_client: &RpcClient,
+	account: &Keypair,
+	call: &DefaultPayload<T>,
+	options: Option<Options>,
+) -> Result<H256, ClientError>
 where
 	T: StaticExtrinsic + EncodeAsFields,
 {
@@ -112,13 +79,71 @@ where
 	let params = parse_options(online_client, rpc_client, &account_id, options).await?;
 
 	let tx_client = online_client.tx();
-	let maybe_tx_progress = tx_client
-		.sign_and_submit_then_watch(call, account, params)
-		.await;
-	let tx_in_block = progress_transaction(maybe_tx_progress, wait_for).await?;
-	let tx_details = parse_transaction_in_block(online_client, tx_in_block).await?;
+	Ok(tx_client.sign_and_submit(call, account, params).await?)
+}
 
-	Ok(tx_details)
+pub async fn watch_transaction(
+	online_client: &AOnlineClient,
+	tx_hash: H256,
+	wait_for: WaitFor,
+	block_timeout: Option<u32>,
+) -> Result<TransactionDetails, ClientError> {
+	let mut block_hash = tx_hash;
+	let mut block_number = 0u32;
+	let mut tx_details = None;
+
+	let mut stream = if wait_for == WaitFor::BlockInclusion {
+		online_client.blocks().subscribe_all().await?
+	} else {
+		online_client.blocks().subscribe_finalized().await?
+	};
+
+	let mut current_block_number: Option<u32> = None;
+	let mut timeout_block_number: Option<u32> = None;
+
+	while let Some(block) = stream.next().await {
+		let block = block?;
+		block_hash = block.hash();
+		block_number = block.number();
+
+		let transactions = block.extrinsics().await?;
+		let tx_found = transactions.iter().find(|e| e.hash() == tx_hash);
+		if let Some(tx) = tx_found {
+			tx_details = Some(tx);
+			break;
+		}
+
+		// Block timeout logic
+		let Some(block_timeout) = block_timeout else {
+			continue;
+		};
+
+		if current_block_number.is_none() {
+			current_block_number = Some(block_number);
+			timeout_block_number = Some(block_number + block_timeout);
+		}
+		if timeout_block_number.is_some_and(|timeout| block_number >= timeout) {
+			break;
+		}
+	}
+
+	let Some(tx_details) = tx_details else {
+		return Err(ClientError::Custom("a".into()).into());
+	};
+
+	let events = tx_details.events().await?;
+	let tx_hash = tx_hash;
+	let tx_index = tx_details.index();
+	let block_hash = block_hash;
+	let block_number = block_number;
+
+	return Ok(TransactionDetails::new(
+		events,
+		tx_hash,
+		tx_index,
+		block_hash,
+		block_number,
+	));
 }
 
 pub fn check_if_transaction_was_successful(
@@ -135,28 +160,6 @@ pub fn check_if_transaction_was_successful(
 	}
 
 	Ok(())
-}
-
-async fn fetch_transaction_details(
-	client: &AOnlineClient,
-	tx_in_block: ATxInBlock,
-) -> Result<TransactionDetails, subxt::Error> {
-	let events = tx_in_block.fetch_events().await?;
-	let tx_hash = tx_in_block.extrinsic_hash();
-	let tx_index = events.extrinsic_index();
-	let block_hash = tx_in_block.block_hash();
-	let block_number = get_block_number(client, block_hash).await?;
-
-	let details = TransactionDetails {
-		tx_in_block: tx_in_block.into(),
-		events: events.into(),
-		tx_hash,
-		tx_index,
-		block_hash,
-		block_number,
-	};
-
-	Ok(details)
 }
 
 pub fn decode_raw_block_rpc_extrinsics(
@@ -239,7 +242,7 @@ pub async fn get_nonce_state(
 	address: &str,
 ) -> Result<u32, ClientError> {
 	let account = account_id_from_str(address)?;
-	let hash = get_best_block_hash(rpc_client).await?;
+	let hash = Block::fetch_best_block_hash(rpc_client).await?;
 	let block = online_client.blocks().at(hash).await?;
 
 	Ok(block.account_nonce(&account).await? as u32)
@@ -252,12 +255,6 @@ pub async fn get_nonce_node(client: &RpcClient, address: &str) -> Result<u32, Cl
 
 pub fn account_id_from_str(value: &str) -> Result<AccountId, String> {
 	AccountId::from_str(value).map_err(|e| std::format!("{:?}", e))
-}
-
-async fn get_block_number(client: &AOnlineClient, block_hash: H256) -> Result<u32, subxt::Error> {
-	let block_number = client.blocks().at(block_hash).await?.number();
-
-	Ok(block_number)
 }
 
 pub async fn get_app_keys(

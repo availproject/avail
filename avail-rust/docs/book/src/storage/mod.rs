@@ -3,7 +3,7 @@ use avail_rust::{
 	error::ClientError,
 	rpcs,
 	utils::account_id_from_str,
-	AccountId, SDK,
+	AccountId, Block, SDK,
 };
 
 pub async fn da_app_keys() -> Result<(), ClientError> {
@@ -14,7 +14,7 @@ pub async fn da_app_keys() -> Result<(), ClientError> {
 	let key = BoundedVec(key.as_bytes().to_vec());
 	let storage_query = avail::storage().data_availability().app_keys(key);
 
-	let best_block_hash = rpcs::get_best_block_hash(rpc_client).await?;
+	let best_block_hash = Block::fetch_best_block_hash(rpc_client).await?;
 	let storage = online_client.storage().at(best_block_hash);
 	let result = storage.fetch(&storage_query).await?;
 
@@ -29,7 +29,7 @@ pub async fn da_app_keys_iter() -> Result<(), ClientError> {
 
 	let storage_query = avail::storage().data_availability().app_keys_iter();
 
-	let best_block_hash = rpcs::get_best_block_hash(rpc_client).await?;
+	let best_block_hash = Block::fetch_best_block_hash(rpc_client).await?;
 	let storage = online_client.storage().at(best_block_hash);
 	let mut results = storage.iter(storage_query).await?;
 
@@ -50,7 +50,7 @@ pub async fn da_next_app_id() -> Result<(), ClientError> {
 
 	let storage_query = avail::storage().data_availability().next_app_id();
 
-	let best_block_hash = rpcs::get_best_block_hash(rpc_client).await?;
+	let best_block_hash = Block::fetch_best_block_hash(rpc_client).await?;
 	let storage = online_client.storage().at(best_block_hash);
 	let result = storage.fetch_or_default(&storage_query).await?;
 
@@ -64,7 +64,7 @@ pub async fn staking_active_era() -> Result<(), ClientError> {
 	let (online_client, rpc_client) = (&sdk.online_client, &sdk.rpc_client);
 
 	let storage_query = avail::storage().staking().active_era();
-	let best_block_hash = rpcs::get_best_block_hash(rpc_client).await?;
+	let best_block_hash = Block::fetch_best_block_hash(rpc_client).await?;
 	let storage = online_client.storage().at(best_block_hash);
 	let result = storage.fetch(&storage_query).await?;
 
@@ -80,7 +80,7 @@ pub async fn staking_bonded() -> Result<(), ClientError> {
 	let account_id = account_id_from_str("5GNJqTPyNqANBkUVMN1LPPrxXnFouWXoe2wNSmmEoLctxiZY")?; // Alice_Stash
 
 	let storage_query = avail::storage().staking().bonded(account_id);
-	let best_block_hash = rpcs::get_best_block_hash(rpc_client).await?;
+	let best_block_hash = Block::fetch_best_block_hash(rpc_client).await?;
 	let storage = online_client.storage().at(best_block_hash);
 	let result = storage.fetch(&storage_query).await?;
 
@@ -94,7 +94,7 @@ pub async fn staking_bonded_iter() -> Result<(), ClientError> {
 	let (online_client, rpc_client) = (&sdk.online_client, &sdk.rpc_client);
 
 	let storage_query = avail::storage().staking().bonded_iter();
-	let best_block_hash = rpcs::get_best_block_hash(rpc_client).await?;
+	let best_block_hash = Block::fetch_best_block_hash(rpc_client).await?;
 	let storage = online_client.storage().at(best_block_hash);
 	let mut results = storage.iter(storage_query).await?;
 
@@ -114,7 +114,7 @@ pub async fn system_account_iter() -> Result<(), ClientError> {
 	let (online_client, rpc_client) = (&sdk.online_client, &sdk.rpc_client);
 
 	let storage_query = avail::storage().system().account_iter();
-	let best_block_hash = rpcs::get_best_block_hash(rpc_client).await?;
+	let best_block_hash = Block::fetch_best_block_hash(rpc_client).await?;
 	let storage = online_client.storage().at(best_block_hash);
 	let mut results = storage.iter(storage_query).await?;
 

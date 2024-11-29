@@ -1,12 +1,11 @@
 use std::str::FromStr;
-
 use subxt::{backend::rpc::RpcClient, blocks::StaticExtrinsic, ext::scale_encode::EncodeAsFields};
 
 use crate::{
 	avail,
 	error::ClientError,
 	rpcs::get_block_hash,
-	transactions::{Transaction, TransactionDetails, TransactionFailed},
+	transactions::{Transaction, TransactionDetails},
 	utils, AOnlineClient, AccountId, Keypair, Options, SecretUri, WaitFor, SDK,
 };
 
@@ -80,11 +79,11 @@ impl Account {
 		tx: Transaction<T>,
 		wait_for: WaitFor,
 		options: Option<Options>,
-	) -> Result<TransactionDetails, TransactionFailed>
+	) -> Result<TransactionDetails, ClientError>
 	where
 		T: StaticExtrinsic + EncodeAsFields,
 	{
-		tx.execute(wait_for, &self.keyring, options).await
+		tx.execute(wait_for, &self.keyring, options, Some(6)).await
 	}
 
 	pub async fn get_nonce_state(

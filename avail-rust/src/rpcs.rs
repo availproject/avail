@@ -274,10 +274,6 @@ pub async fn get_block_hash(
 	Ok(value)
 }
 
-pub async fn get_best_block_hash(client: &RpcClient) -> Result<BlockHash, subxt::Error> {
-	get_block_hash(client, None).await
-}
-
 pub async fn get_finalized_head(client: &RpcClient) -> Result<BlockHash, subxt::Error> {
 	let value: BlockHash = client
 		.request("chain_getFinalizedHead", rpc_params![])

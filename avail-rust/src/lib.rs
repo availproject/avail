@@ -28,6 +28,7 @@ pub use sdk::{WaitFor, SDK};
 
 pub use crate::avail::runtime_types::sp_arithmetic::per_things::Perbill;
 pub use avail_core;
+pub use block::Block;
 pub use hex;
 pub use kate_recovery;
 pub use primitives::block::{

@@ -1,4 +1,4 @@
-use avail_rust::{avail, block::Block, error::ClientError, utils, Options, SDK};
+use avail_rust::{avail, error::ClientError, utils, Block, Options, SDK};
 
 pub async fn run() -> Result<(), ClientError> {
 	let sdk = SDK::new(SDK::local_endpoint()).await?;

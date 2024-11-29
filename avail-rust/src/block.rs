@@ -1,5 +1,5 @@
 use crate::error::ClientError;
-use crate::rpcs::{get_best_block_hash, get_block_hash, get_finalized_head};
+use crate::rpcs;
 use crate::{
 	avail::data_availability::calls::types as DataAvailabilityCalls,
 	primitives::block::extrinsics_params::CheckAppId,
@@ -33,16 +33,16 @@ impl Block {
 		online_client: &AOnlineClient,
 		rpc_client: &RpcClient,
 	) -> Result<Self, subxt::Error> {
-		let best_hash = get_best_block_hash(rpc_client).await?;
-		Self::new(online_client, best_hash).await
+		let block_hash = Self::fetch_best_block_hash(rpc_client).await?;
+		Self::new(online_client, block_hash).await
 	}
 
 	pub async fn new_finalized_block(
 		online_client: &AOnlineClient,
 		rpc_client: &RpcClient,
 	) -> Result<Self, subxt::Error> {
-		let best_hash = get_finalized_head(rpc_client).await?;
-		Self::new(online_client, best_hash).await
+		let block_hash = Self::fetch_finalized_block_hash(rpc_client).await?;
+		Self::new(online_client, block_hash).await
 	}
 
 	pub async fn from_block(block: ABlock) -> Result<Self, subxt::Error> {
@@ -58,7 +58,7 @@ impl Block {
 		rpc_client: &RpcClient,
 		block_number: u32,
 	) -> Result<Self, subxt::Error> {
-		let block_hash = get_block_hash(rpc_client, Some(block_number)).await?;
+		let block_hash = rpcs::get_block_hash(rpc_client, Some(block_number)).await?;
 		Self::new(online_client, block_hash).await
 	}
 
@@ -174,6 +174,14 @@ impl Block {
 		T::Keys: 'static + Sized,
 	{
 		self.block.storage().iter(address).await
+	}
+
+	pub async fn fetch_best_block_hash(client: &RpcClient) -> Result<H256, subxt::Error> {
+		rpcs::get_block_hash(client, None).await
+	}
+
+	pub async fn fetch_finalized_block_hash(client: &RpcClient) -> Result<H256, subxt::Error> {
+		rpcs::get_finalized_head(client).await
 	}
 }
 

@@ -1,7 +1,8 @@
 use subxt::backend::rpc::RpcClient;
 
 use crate::error::ClientError;
-use crate::rpcs::{account_next_index, get_block_hash, get_finalized_head, get_header};
+use crate::rpcs::{account_next_index, get_block_hash, get_header};
+use crate::Block;
 use crate::{AOnlineClient, AccountId, AvailExtrinsicParamsBuilder, BlockHash};
 
 use super::Params;
@@ -110,7 +111,7 @@ pub async fn parse_options(
 				builder.nonce(nonce)
 			},
 			Nonce::FinalizedBlock => {
-				let hash = get_finalized_head(rpc_client).await?;
+				let hash = Block::fetch_finalized_block_hash(rpc_client).await?;
 				let block = online_client.blocks().at(hash).await?;
 				let nonce = block.account_nonce(&account).await?;
 				builder.nonce(nonce)

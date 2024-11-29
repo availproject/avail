@@ -10,7 +10,7 @@ use crate::{
 	from_substrate::FeeDetails,
 	rpcs::query_fee_details,
 	utils::{self, *},
-	AExtrinsicEvents, AOnlineClient, ATxInBlock, AvailConfig, WaitFor, H256,
+	AExtrinsicEvents, AOnlineClient, AvailConfig, WaitFor, H256,
 };
 
 use options::parse_options;
@@ -68,7 +68,6 @@ impl Transactions {
 
 #[derive(Debug, Clone)]
 pub struct TransactionDetails {
-	pub tx_in_block: Arc<ATxInBlock>,
 	pub events: Arc<AExtrinsicEvents>,
 	pub tx_hash: H256,
 	pub tx_index: u32,
@@ -78,7 +77,6 @@ pub struct TransactionDetails {
 
 impl TransactionDetails {
 	pub fn new(
-		tx_in_block: ATxInBlock,
 		events: AExtrinsicEvents,
 		tx_hash: H256,
 		tx_index: u32,
@@ -86,7 +84,6 @@ impl TransactionDetails {
 		block_number: u32,
 	) -> Self {
 		Self {
-			tx_in_block: tx_in_block.into(),
 			events: events.into(),
 			tx_hash,
 			tx_index,
@@ -269,8 +266,8 @@ where
 		&self,
 		account: &Keypair,
 		options: Option<Options>,
-	) -> Result<TransactionDetails, TransactionFailed> {
-		self.execute(WaitFor::BlockInclusion, account, options)
+	) -> Result<TransactionDetails, ClientError> {
+		self.execute(WaitFor::BlockInclusion, account, options, Some(3))
 			.await
 	}
 
@@ -278,8 +275,8 @@ where
 		&self,
 		account: &Keypair,
 		options: Option<Options>,
-	) -> Result<TransactionDetails, TransactionFailed> {
-		self.execute(WaitFor::BlockFinalization, account, options)
+	) -> Result<TransactionDetails, ClientError> {
+		self.execute(WaitFor::BlockFinalization, account, options, Some(6))
 			.await
 	}
 
@@ -288,14 +285,16 @@ where
 		wait_for: WaitFor,
 		account: &Keypair,
 		options: Option<Options>,
-	) -> Result<TransactionDetails, TransactionFailed> {
-		progress_and_parse_transaction(
+		block_timeout: Option<u32>,
+	) -> Result<TransactionDetails, ClientError> {
+		execute_and_watch_transaction(
 			&self.online_client,
 			&self.rpc_client,
 			account,
 			&self.payload,
 			wait_for,
 			options,
+			block_timeout,
 		)
 		.await
 	}
@@ -313,6 +312,15 @@ where
 			options,
 		)
 		.await
+	}
+
+	pub async fn watch_transaction(
+		online_client: &AOnlineClient,
+		tx_hash: H256,
+		wait_for: WaitFor,
+		block_timeout: Option<u32>,
+	) -> Result<TransactionDetails, ClientError> {
+		watch_transaction(online_client, tx_hash, wait_for, block_timeout).await
 	}
 
 	pub async fn payment_query_info(
