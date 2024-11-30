@@ -1,3 +1,4 @@
+use log::{debug, info, log_enabled, warn};
 use primitive_types::H256;
 use subxt::{
 	backend::{legacy::rpc_methods::Bytes, rpc::RpcClient},
@@ -57,12 +58,39 @@ pub async fn execute_and_watch_transaction<T>(
 	wait_for: WaitFor,
 	options: Option<Options>,
 	block_timeout: Option<u32>,
+	retry_count: Option<u32>,
 ) -> Result<TransactionDetails, ClientError>
 where
 	T: StaticExtrinsic + EncodeAsFields,
 {
-	let tx_hash = execute_transaction(online_client, rpc_client, account, call, options).await?;
-	watch_transaction(online_client, tx_hash, wait_for, block_timeout).await
+	let mut retry_count = retry_count.unwrap_or(0);
+	loop {
+		let tx_hash =
+			execute_transaction(online_client, rpc_client, account, call, options).await?;
+		let result = watch_transaction(online_client, tx_hash, wait_for, block_timeout).await;
+		let error = match result {
+			Ok(details) => return Ok(details),
+			Err(err) => err,
+		};
+
+		match error {
+			TransactionExecutionError::TransactionNotFound => (),
+			TransactionExecutionError::BlockStreamFailure => {
+				return Err(ClientError::TransactionExecution(error))
+			},
+			TransactionExecutionError::SubxtError(_) => {
+				return Err(ClientError::TransactionExecution(error))
+			},
+		};
+
+		if retry_count == 0 {
+			warn!(target: "watcher", "Failed to find transaction. Tx Hash: {:?}. Aborting", tx_hash);
+			return Err(ClientError::TransactionExecution(error));
+		}
+
+		info!(target: "watcher", "Failed to find transaction. Tx Hash: {:?}. Trying again.", tx_hash);
+		retry_count -= 1;
+	}
 }
 
 pub async fn execute_transaction<T>(
@@ -79,7 +107,51 @@ where
 	let params = parse_options(online_client, rpc_client, &account_id, options).await?;
 
 	let tx_client = online_client.tx();
-	Ok(tx_client.sign_and_submit(call, account, params).await?)
+	if log_enabled!(log::Level::Debug) {
+		let address = account.public_key().to_account_id().to_string();
+		let call_name = call.call_name();
+		let pallet_name = call.pallet_name();
+		debug!(
+			target: "transaction",
+			"Signing and submitting new transaction. Account: {}, Pallet Name: {}, Call Name: {}",
+			address, pallet_name, call_name
+		);
+	}
+	let tx_hash = tx_client.sign_and_submit(call, account, params).await?;
+
+	debug!(
+		target: "transaction",
+		"Transaction was submitted. Tx Hash: {:?}",
+		tx_hash
+	);
+	Ok(tx_hash)
+}
+
+#[derive(Debug)]
+pub enum TransactionExecutionError {
+	TransactionNotFound,
+	BlockStreamFailure,
+	SubxtError(subxt::Error),
+}
+
+impl TransactionExecutionError {
+	pub fn to_string(&self) -> String {
+		match self {
+			TransactionExecutionError::TransactionNotFound => {
+				String::from("Transaction not found").to_string()
+			},
+			TransactionExecutionError::BlockStreamFailure => {
+				String::from("Block Stream Failure").to_string()
+			},
+			TransactionExecutionError::SubxtError(error) => error.to_string(),
+		}
+	}
+}
+
+impl From<subxt::Error> for TransactionExecutionError {
+	fn from(value: subxt::Error) -> Self {
+		Self::SubxtError(value)
+	}
 }
 
 pub async fn watch_transaction(
@@ -87,53 +159,35 @@ pub async fn watch_transaction(
 	tx_hash: H256,
 	wait_for: WaitFor,
 	block_timeout: Option<u32>,
-) -> Result<TransactionDetails, ClientError> {
+) -> Result<TransactionDetails, TransactionExecutionError> {
 	let mut block_hash;
 	let mut block_number;
 	let tx_details;
 
-	let create_stream = || async {
-		if wait_for == WaitFor::BlockInclusion {
-			online_client.blocks().subscribe_all().await
-		} else {
-			online_client.blocks().subscribe_finalized().await
-		}
-	};
-
-	let mut stream = create_stream().await?;
-	let mut stream_failed_count = 0;
+	let mut stream = match wait_for == WaitFor::BlockInclusion {
+		true => online_client.blocks().subscribe_all().await,
+		false => online_client.blocks().subscribe_finalized().await,
+	}?;
 
 	let mut current_block_number: Option<u32> = None;
 	let mut timeout_block_number: Option<u32> = None;
 
+	debug!(target: "watcher", "Watching for Tx Hash: {:?}. Waiting for: {}, Block timeout: {:?}", tx_hash, wait_for.to_str(), block_timeout);
 	loop {
 		let Some(block) = stream.next().await else {
-			if stream_failed_count > 3 {
-				let error = String::from(
-					"Critical Error: Failed to get next block from the stream. Aborting.",
-				);
-				return Err(ClientError::BlockStream(error));
-			} else {
-				let warning = String::from(
-					"Warning: Failed to get next block from the stream. Creating new stream.",
-				);
-				println!("{}", warning);
-
-				stream_failed_count += 1;
-				stream = create_stream().await?;
-
-				continue;
-			}
+			return Err(TransactionExecutionError::BlockStreamFailure);
 		};
 
 		let block = block?;
 		block_hash = block.hash();
 		block_number = block.number();
 
+		debug!(target: "watcher", "New block fetched. Hash: {:?}, Number: {}", block_hash, block_number);
+
 		let transactions = block.extrinsics().await?;
 		let tx_found = transactions.iter().find(|e| e.hash() == tx_hash);
 		if let Some(tx) = tx_found {
-			tx_details = Some(tx);
+			tx_details = tx;
 			break;
 		}
 
@@ -145,25 +199,17 @@ pub async fn watch_transaction(
 		if current_block_number.is_none() {
 			current_block_number = Some(block_number);
 			timeout_block_number = Some(block_number + block_timeout);
+			debug!(target: "watcher", "Current Block Number: {}, Timeout Block Number: {}", block_number, block_number + block_timeout + 1);
 		}
-		if timeout_block_number.is_some_and(|timeout| block_number >= timeout) {
-			let error =
-				"Transaction not found. It might have been dropped and thus it was never executed";
-			return Err(ClientError::from(error));
+		if timeout_block_number.is_some_and(|timeout| block_number > timeout) {
+			return Err(TransactionExecutionError::TransactionNotFound);
 		}
 	}
 
-	let Some(tx_details) = tx_details else {
-		// TODO
-		let error = "If we are here then God/Gods/NoGod/MaybeGod help us";
-		return Err(ClientError::from(error));
-	};
-
 	let events = tx_details.events().await?;
-	let tx_hash = tx_hash;
 	let tx_index = tx_details.index();
-	let block_hash = block_hash;
-	let block_number = block_number;
+
+	debug!(target: "watcher", "Transaction was found. Tx Hash: {:?}, Tx Index: {}, Block Hash: {:?}, Block Number: {}", tx_hash, tx_index, block_hash, block_number);
 
 	return Ok(TransactionDetails::new(
 		events,

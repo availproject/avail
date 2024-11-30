@@ -267,7 +267,7 @@ where
 		account: &Keypair,
 		options: Option<Options>,
 	) -> Result<TransactionDetails, ClientError> {
-		self.execute(WaitFor::BlockInclusion, account, options, Some(3))
+		self.execute(WaitFor::BlockInclusion, account, options, Some(2))
 			.await
 	}
 
@@ -276,7 +276,7 @@ where
 		account: &Keypair,
 		options: Option<Options>,
 	) -> Result<TransactionDetails, ClientError> {
-		self.execute(WaitFor::BlockFinalization, account, options, Some(6))
+		self.execute(WaitFor::BlockFinalization, account, options, Some(5))
 			.await
 	}
 
@@ -295,6 +295,7 @@ where
 			wait_for,
 			options,
 			block_timeout,
+			Some(3),
 		)
 		.await
 	}
@@ -319,7 +320,7 @@ where
 		tx_hash: H256,
 		wait_for: WaitFor,
 		block_timeout: Option<u32>,
-	) -> Result<TransactionDetails, ClientError> {
+	) -> Result<TransactionDetails, TransactionExecutionError> {
 		watch_transaction(online_client, tx_hash, wait_for, block_timeout).await
 	}
 

@@ -23,6 +23,7 @@ impl SDK {
 	}
 
 	async fn new_inner(endpoint: &str, secure: bool) -> Result<Self, ClientError> {
+		env_logger::builder().format_timestamp_millis().init();
 		let (online_client, rpc_client) = initialize_api(endpoint, secure).await?;
 
 		let rpc = Rpc::new(rpc_client.clone()).await;
@@ -92,4 +93,13 @@ pub async fn initialize_api(
 pub enum WaitFor {
 	BlockInclusion,
 	BlockFinalization,
+}
+
+impl WaitFor {
+	pub fn to_str(&self) -> &'static str {
+		match self {
+			WaitFor::BlockInclusion => "Block Inclusion",
+			WaitFor::BlockFinalization => "Block Finalization",
+		}
+	}
 }

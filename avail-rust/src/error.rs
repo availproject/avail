@@ -3,12 +3,12 @@ use subxt_signer::sr25519;
 use subxt_signer::SecretUriError;
 
 use crate::transactions::TransactionFailed;
+use crate::utils::TransactionExecutionError;
 
 #[derive(Debug)]
 pub enum ClientError {
 	Custom(String),
-	TransactionDropped,
-	BlockStream(String),
+	TransactionExecution(TransactionExecutionError),
 	Subxt(subxt::Error),
 	SubxtSigner(SecretUriError),
 	Sr25519(sr25519::Error),
@@ -18,8 +18,7 @@ impl ClientError {
 	pub fn to_string(&self) -> String {
 		match self {
 			ClientError::Custom(e) => e.clone(),
-			ClientError::TransactionDropped => String::from("Transaction Dropped"),
-			ClientError::BlockStream(e) => e.clone(),
+			ClientError::TransactionExecution(e) => e.to_string(),
 			ClientError::Subxt(e) => e.to_string(),
 			ClientError::SubxtSigner(e) => e.to_string(),
 			ClientError::Sr25519(e) => e.to_string(),
