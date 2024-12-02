@@ -30,7 +30,6 @@ use futures::prelude::*;
 use pallet_transaction_payment::ChargeTransactionPayment;
 use sc_client_api::{Backend, BlockBackend};
 use sc_consensus_babe::{self, SlotProportion};
-pub use sc_executor::NativeElseWasmExecutor;
 use sc_network::{
 	event::Event, service::traits::NetworkService, NetworkBackend, NetworkEventStream,
 };
@@ -47,34 +46,34 @@ use substrate_prometheus_endpoint::{PrometheusError, Registry};
 
 pub const LOG_TARGET: &str = "avail::node::service";
 
-// Declare an instance of the native executor named `ExecutorDispatch`. Include the wasm binary as
-// the equivalent wasm code.
-pub struct ExecutorDispatch;
+/// Host functions required for da-runtime and Avail node.
+#[cfg(not(feature = "runtime-benchmarks"))]
+pub type HostFunctions = (
+	frame_system::native::hosted_header_builder::hosted_header_builder::HostFunctions,
+	avail_base::mem_tmp_storage::hosted_mem_tmp_storage::HostFunctions,
+	da_runtime::kate::native::hosted_kate::HostFunctions,
+	sp_io::SubstrateHostFunctions,
+);
 
-impl sc_executor::NativeExecutionDispatch for ExecutorDispatch {
-	type ExtendHostFunctions = (
-		frame_benchmarking::benchmarking::HostFunctions,
-		frame_system::native::hosted_header_builder::hosted_header_builder::HostFunctions,
-		avail_base::mem_tmp_storage::hosted_mem_tmp_storage::HostFunctions,
-		da_runtime::kate::native::hosted_kate::HostFunctions,
-	);
+#[cfg(feature = "runtime-benchmarks")]
+pub type HostFunctions = (
+	frame_system::native::hosted_header_builder::hosted_header_builder::HostFunctions,
+	avail_base::mem_tmp_storage::hosted_mem_tmp_storage::HostFunctions,
+	da_runtime::kate::native::hosted_kate::HostFunctions,
+	sp_io::SubstrateHostFunctions,
+	frame_benchmarking::benchmarking::HostFunctions,
+);
 
-	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-		da_runtime::apis::api::dispatch(method, data)
-	}
-
-	fn native_version() -> sc_executor::NativeVersion {
-		da_runtime::native_version()
-	}
-}
+/// A specialized `WasmExecutor` intended to use across substrate node. It provides all required
+/// HostFunctions.
+pub type RuntimeExecutor = sc_executor::WasmExecutor<HostFunctions>;
 
 /// The minimum period of blocks on which justifications will be
 /// imported and generated.
 const GRANDPA_JUSTIFICATION_PERIOD: u32 = 512;
 
 /// The full client type definition.
-pub type FullClient =
-	sc_service::TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<ExecutorDispatch>>;
+pub type FullClient = sc_service::TFullClient<Block, RuntimeApi, RuntimeExecutor>;
 pub type FullBackend = sc_service::TFullBackend<Block>;
 type FullSelectChain = sc_consensus::LongestChain<FullBackend, Block>;
 type FullGrandpaBlockImport =
@@ -207,8 +206,7 @@ pub fn new_partial(
 		})
 		.transpose()?;
 
-	// TODO: Move to WasmExecuter as NativeElseWasmExecutor is deprecated
-	let executor = sc_service::new_native_or_wasm_executor(&config);
+	let executor = sc_service::new_wasm_executor(&config.executor);
 
 	let (client, backend, keystore_container, task_manager) =
 		sc_service::new_full_parts::<Block, RuntimeApi, _>(

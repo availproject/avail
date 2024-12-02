@@ -120,7 +120,7 @@ mod test {
 	#[test]
 	fn rlp_to_h256_works_with_len_32() {
 		let rlp = [1u8; 32];
-		let expected = H256::from(rlp.clone());
+		let expected = H256::from(rlp);
 
 		let actual = rlp_to_h256(&rlp).unwrap();
 		assert_eq!(actual, expected);
