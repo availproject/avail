@@ -111,10 +111,11 @@ where
 		let address = account.public_key().to_account_id().to_string();
 		let call_name = call.call_name();
 		let pallet_name = call.pallet_name();
+		let nonce = &params.4 .0;
 		debug!(
 			target: "transaction",
-			"Signing and submitting new transaction. Account: {}, Pallet Name: {}, Call Name: {}",
-			address, pallet_name, call_name
+			"Signing and submitting new transaction. Account: {}, Nonce: {:?}, Pallet Name: {}, Call Name: {}",
+			address, nonce, pallet_name, call_name
 		);
 	}
 	let tx_hash = tx_client.sign_and_submit(call, account, params).await?;
