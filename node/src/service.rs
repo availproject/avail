@@ -455,7 +455,7 @@ pub fn new_full_base<N: NetworkBackend<Block, <Block as BlockT>::Hash>>(
 			metrics,
 		})?;
 
-	let role = config.role.clone();
+	let role = config.role;
 	let force_authoring = config.force_authoring;
 	let backoff_authoring_blocks =
 		Some(sc_consensus_slots::BackoffAuthoringOnFinalizedHeadLagging::default());
@@ -603,7 +603,7 @@ pub fn new_full_base<N: NetworkBackend<Block, <Block as BlockT>::Hash>>(
 		name: Some(name),
 		observer_enabled: false,
 		keystore,
-		local_role: role.clone(),
+		local_role: role,
 		telemetry: telemetry.as_ref().map(|x| x.handle()),
 		protocol_name: grandpa_protocol_name,
 	};
@@ -675,7 +675,7 @@ pub fn new_full(config: Configuration, cli: Cli) -> Result<TaskManager, ServiceE
 
 	let task_manager = match config.network.network_backend {
 		sc_network::config::NetworkBackendType::Libp2p => {
-			let task_manager = new_full_base::<sc_network::NetworkWorker<_, _>>(
+			new_full_base::<sc_network::NetworkWorker<_, _>>(
 				config,
 				cli.no_hardware_benchmarks,
 				|_, _| (),
@@ -684,11 +684,10 @@ pub fn new_full(config: Configuration, cli: Cli) -> Result<TaskManager, ServiceE
 				cli.kate_rpc_enabled,
 				cli.kate_rpc_metrics_enabled,
 			)
-			.map(|NewFullBase { task_manager, .. }| task_manager)?;
-			task_manager
+			.map(|NewFullBase { task_manager, .. }| task_manager)?
 		},
 		sc_network::config::NetworkBackendType::Litep2p => {
-			let task_manager = new_full_base::<sc_network::Litep2pNetworkBackend>(
+			new_full_base::<sc_network::Litep2pNetworkBackend>(
 				config,
 				cli.no_hardware_benchmarks,
 				|_, _| (),
@@ -697,8 +696,7 @@ pub fn new_full(config: Configuration, cli: Cli) -> Result<TaskManager, ServiceE
 				cli.kate_rpc_enabled,
 				cli.kate_rpc_metrics_enabled,
 			)
-			.map(|NewFullBase { task_manager, .. }| task_manager)?;
-			task_manager
+			.map(|NewFullBase { task_manager, .. }| task_manager)?
 		},
 	};
 
