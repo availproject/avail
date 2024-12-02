@@ -85,7 +85,7 @@ pub mod pallet {
 
 		/// Maximum allowed for the currency name
 		#[pallet::constant]
-		type MaxCurrencyName: Get<u32>;
+		type MaxCurrencyNameLength: Get<u32>;
 
 		/// Maximum number of members in a pool
 		#[pallet::constant]
@@ -322,7 +322,7 @@ pub mod pallet {
 		/// Event triggered when a new currency is created
 		CurrencyCreated {
 			currency_id: CurrencyId,
-			name: BoundedVec<u8, T::MaxCurrencyName>,
+			name: BoundedVec<u8, T::MaxCurrencyNameLength>,
 			nb_decimals: u8,
 			max_amount: FusionCurrencyBalance,
 			min_amount: FusionCurrencyBalance,
@@ -331,7 +331,7 @@ pub mod pallet {
 		/// Event triggered when a currency's properties are updated
 		CurrencySet {
 			currency_id: CurrencyId,
-			name: Option<BoundedVec<u8, T::MaxCurrencyName>>,
+			name: Option<BoundedVec<u8, T::MaxCurrencyNameLength>>,
 			max_amount: Option<FusionCurrencyBalance>,
 			min_amount: Option<FusionCurrencyBalance>,
 		},
@@ -640,7 +640,7 @@ pub mod pallet {
 		pub fn create_currency(
 			origin: OriginFor<T>,
 			currency_id: CurrencyId,
-			name: BoundedVec<u8, T::MaxCurrencyName>,
+			name: BoundedVec<u8, T::MaxCurrencyNameLength>,
 			nb_decimals: u8,
 			max_amount: FusionCurrencyBalance,
 			min_amount: FusionCurrencyBalance,
@@ -702,7 +702,7 @@ pub mod pallet {
 		pub fn set_currency(
 			origin: OriginFor<T>,
 			currency_id: CurrencyId,
-			name: Option<BoundedVec<u8, T::MaxCurrencyName>>,
+			name: Option<BoundedVec<u8, T::MaxCurrencyNameLength>>,
 			max_amount: Option<FusionCurrencyBalance>,
 			min_amount: Option<FusionCurrencyBalance>,
 		) -> DispatchResult {

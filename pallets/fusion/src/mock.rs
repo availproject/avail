@@ -42,7 +42,7 @@ impl pallet_balances::Config for Test {
 
 parameter_types! {
 	pub const FusionPalletId: PalletId = PalletId(*b"avl/fusi");
-	pub const MaxCurrencyName: u32 = 32;
+	pub const MaxCurrencyNameLength: u32 = 32;
 	pub const MaxMembersPerPool: u32 = 10;
 	pub const MaxTargets: u32 = 16;
 	pub const MaxUnbonding: u32 = 8;
@@ -59,7 +59,7 @@ impl pallet_fusion::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type ApprovedOrigin = EnsureRoot<AccountId>;
 	type PalletId = FusionPalletId;
-	type MaxCurrencyName = MaxCurrencyName;
+	type MaxCurrencyNameLength = MaxCurrencyNameLength;
 	type MaxMembersPerPool = MaxMembersPerPool;
 	type MaxTargets = MaxTargets;
 	type MaxUnbonding = MaxUnbonding;

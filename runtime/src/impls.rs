@@ -143,7 +143,7 @@ impl pallet_authority_discovery::Config for Runtime {
 
 parameter_types! {
 	pub const FusionPalletId: PalletId = PalletId(*b"avl/fusi");
-	pub const MaxCurrencyName: u32 = 32;
+	pub const MaxCurrencyNameLength: u32 = 32;
 	pub const MaxMembersPerPool: u32 = 100_000;
 	pub const MaxTargets: u32 = 16;
 	pub const MaxUnbonding: u32 = 8;
@@ -163,7 +163,7 @@ impl pallet_fusion::Config for Runtime {
 		pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 5, 7>,
 	>;
 	type PalletId = FusionPalletId;
-	type MaxCurrencyName = MaxCurrencyName;
+	type MaxCurrencyNameLength = MaxCurrencyNameLength;
 	type MaxMembersPerPool = MaxMembersPerPool;
 	type MaxTargets = MaxTargets;
 	type MaxUnbonding = MaxUnbonding;

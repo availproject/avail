@@ -345,9 +345,9 @@ pub mod api {
 			.hash();
 		runtime_metadata_hash
 			== [
-				91u8, 16u8, 234u8, 218u8, 147u8, 134u8, 28u8, 187u8, 152u8, 119u8, 220u8, 225u8,
-				204u8, 241u8, 179u8, 25u8, 172u8, 154u8, 78u8, 24u8, 243u8, 153u8, 229u8, 215u8,
-				42u8, 10u8, 115u8, 84u8, 129u8, 132u8, 184u8, 63u8,
+				235u8, 141u8, 44u8, 1u8, 145u8, 126u8, 6u8, 151u8, 57u8, 92u8, 236u8, 153u8, 218u8,
+				77u8, 251u8, 108u8, 30u8, 211u8, 180u8, 87u8, 26u8, 145u8, 233u8, 4u8, 53u8, 102u8,
+				99u8, 157u8, 6u8, 149u8, 84u8, 69u8,
 			]
 	}
 	pub mod system {
@@ -28629,12 +28629,12 @@ pub mod api {
 					)
 				}
 				#[doc = " Maximum allowed for the currency name"]
-				pub fn max_currency_name(
+				pub fn max_currency_name_length(
 					&self,
 				) -> ::subxt::constants::Address<::core::primitive::u32> {
 					::subxt::constants::Address::new_static(
 						"Fusion",
-						"MaxCurrencyName",
+						"MaxCurrencyNameLength",
 						[
 							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
 							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,

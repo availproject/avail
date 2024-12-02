@@ -64,7 +64,7 @@ pub enum FusionPoolState {
 #[scale_info(skip_type_params(T))]
 pub struct FusionCurrency<T: Config> {
 	/// Name of the currency (e.g., "AVAIL", "ETH", "wBTC")
-	pub name: BoundedVec<u8, T::MaxCurrencyName>,
+	pub name: BoundedVec<u8, T::MaxCurrencyNameLength>,
 	/// Number of decimals to represent 1 unit of the currency (e.g., 8 for wBTC, 18 for ETH)
 	pub nb_decimals: u8,
 	/// The amount staked in native form
