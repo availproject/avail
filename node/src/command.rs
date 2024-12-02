@@ -23,11 +23,7 @@ use da_runtime::Block;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use sc_cli::{Result, SubstrateCli};
 use sc_service::PartialComponents;
-#[cfg(feature = "try-runtime")]
-use {
-	crate::service::ExecutorDispatch, da_runtime::constants::time::SLOT_DURATION,
-	try_runtime_cli::block_building_info::substrate_info,
-};
+use sp_runtime::traits::HashingFor;
 
 use crate::{
 	cli::{Cli, Subcommand},
@@ -114,11 +110,11 @@ pub fn run() -> Result<()> {
 									.into(),
 							);
 						}
-						cmd.run::<Block, (
+						cmd.run_with_spec::<HashingFor<Block>, (
 							frame_system::native::hosted_header_builder::hosted_header_builder::HostFunctions,
 							avail_base::mem_tmp_storage::hosted_mem_tmp_storage::HostFunctions,
 							da_runtime::kate::native::hosted_kate::HostFunctions,
-						)>(config)
+						)>(Some(config.chain_spec))
 					},
 					BenchmarkCmd::Block(_cmd) => {
 						unimplemented!();
@@ -315,10 +311,6 @@ pub fn run() -> Result<()> {
 				))
 			})
 		},
-		#[cfg(not(feature = "try-runtime"))]
-		Some(Subcommand::TryRuntime) => Err("TryRuntime wasn't enabled when building the node. \
-				You can enable it with `--features try-runtime`."
-			.into()),
 		Some(Subcommand::ChainInfo(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 			runner.sync_run(|config| cmd.run::<Block>(&config))

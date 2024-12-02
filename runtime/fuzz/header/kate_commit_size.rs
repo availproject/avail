@@ -39,7 +39,7 @@ fn runtime_ext(total_app_ids: NonZeroUsize) -> TestExternalities {
 		.unwrap();
 
 	pallet_babe::GenesisConfig::<Runtime> {
-		epoch_config: Some(da_runtime::constants::babe::GENESIS_EPOCH_CONFIG),
+		epoch_config: da_runtime::constants::babe::GENESIS_EPOCH_CONFIG,
 		..Default::default()
 	}
 	.assimilate_storage(&mut t)

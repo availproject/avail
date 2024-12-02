@@ -98,7 +98,7 @@ hash-db = { version = "0.15.2", default-features = false }
 memory-db = { version = "0.30.0", default-features = false }
 bounded-collections = { version = "0.2", default-features = false }
 itertools = { version = "0.10.5", default-features = false }
-jsonrpsee = { version = "0.22", features = ["server", "client", "macros"] }
+jsonrpsee = { version = "0.24.3", features = ["server", "client", "macros"] }
 moka = { version = "0.12.1", features = ["future"] }
 lru = "0.7.2"
 tempfile = "3.1.0"
@@ -220,7 +220,7 @@ mmr-rpc = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "9fb
 sc-rpc = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "9fb27e7926940a4f6c570d658f1a7efe54360d80", default-features = false }
 sc-rpc-api = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "9fb27e7926940a4f6c570d658f1a7efe54360d80", default-features = false }
 sc-rpc-spec-v2 = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "9fb27e7926940a4f6c570d658f1a7efe54360d80", default-features = false }
-substrate-frame-rpc-system = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "9fb27e7926940a4f6c570d658f1a7efe54360d80", default-features = false }
+substrate-frame-rpc-system = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "9fb27e7926940a4f6c570d658f1a7efe54360d80", default-features = false, version = "39.0.0" }
 substrate-state-trie-migration-rpc = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "9fb27e7926940a4f6c570d658f1a7efe54360d80", default-features = false }
 frame-benchmarking-cli = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "9fb27e7926940a4f6c570d658f1a7efe54360d80", default-features = false }
 # try-runtime-cli = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "9fb27e7926940a4f6c570d658f1a7efe54360d80", default-features = false }
