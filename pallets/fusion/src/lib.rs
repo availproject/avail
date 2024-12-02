@@ -655,7 +655,10 @@ pub mod pallet {
 
 			ensure!(name.len() > 0, Error::<T>::InvalidName);
 			ensure!(nb_decimals > 0, Error::<T>::InvalidNumberOfDecimals);
-			ensure!(max_amount > 0, Error::<T>::InvalidMaxNumber);
+			ensure!(
+				max_amount > 0 && max_amount > min_amount,
+				Error::<T>::InvalidMaxNumber
+			);
 			ensure!(
 				initial_conversion_rate > BalanceOf::<T>::zero(),
 				Error::<T>::InvalidConversionRate
