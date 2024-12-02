@@ -19,7 +19,7 @@ use subxt_signer::sr25519::Keypair;
 
 use std::sync::Arc;
 use subxt::{
-	backend::rpc::RpcClient, blocks::StaticExtrinsic, events::StaticEvent,
+	backend::rpc::reconnecting_rpc_client::RpcClient, blocks::StaticExtrinsic, events::StaticEvent,
 	ext::scale_encode::EncodeAsFields, tx::DefaultPayload,
 };
 
@@ -96,7 +96,6 @@ impl TransactionDetails {
 		let formatted_string = format!(
 			r#"
 TransactionDetails {{
-    tx_in_block: TxInBlock {{...}},
     events: ExtrinsicEvents {{
         ext_hash: {:?},
         idx: {},
@@ -126,7 +125,7 @@ TransactionDetails {{
 	pub async fn fetch_block(
 		&self,
 		client: &AOnlineClient,
-	) -> Result<crate::block::Block, subxt::Error> {
+	) -> Result<crate::block::Block, ClientError> {
 		crate::block::Block::new(client, self.block_hash).await
 	}
 

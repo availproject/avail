@@ -1,4 +1,4 @@
-use subxt::backend::rpc::RpcClient;
+use subxt::backend::rpc::reconnecting_rpc_client::RpcClient;
 
 use crate::error::ClientError;
 use crate::rpcs::{account_next_index, get_block_hash, get_header};

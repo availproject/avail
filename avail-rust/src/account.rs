@@ -1,5 +1,8 @@
 use std::str::FromStr;
-use subxt::{backend::rpc::RpcClient, blocks::StaticExtrinsic, ext::scale_encode::EncodeAsFields};
+use subxt::{
+	backend::rpc::reconnecting_rpc_client::RpcClient, blocks::StaticExtrinsic,
+	ext::scale_encode::EncodeAsFields,
+};
 
 use crate::{
 	avail,

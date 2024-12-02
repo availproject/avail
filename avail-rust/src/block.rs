@@ -9,7 +9,7 @@ use crate::{
 };
 
 use primitive_types::H256;
-use subxt::backend::rpc::RpcClient;
+use subxt::backend::rpc::reconnecting_rpc_client::RpcClient;
 use subxt::backend::StreamOfResults;
 use subxt::blocks::StaticExtrinsic;
 use subxt::storage::StorageKeyValuePair;
@@ -21,7 +21,7 @@ pub struct Block {
 }
 
 impl Block {
-	pub async fn new(client: &AOnlineClient, block_hash: H256) -> Result<Self, subxt::Error> {
+	pub async fn new(client: &AOnlineClient, block_hash: H256) -> Result<Self, ClientError> {
 		let (block, transactions) = fetch_transactions(client, block_hash).await?;
 		Ok(Self {
 			block,
@@ -32,7 +32,7 @@ impl Block {
 	pub async fn new_best_block(
 		online_client: &AOnlineClient,
 		rpc_client: &RpcClient,
-	) -> Result<Self, subxt::Error> {
+	) -> Result<Self, ClientError> {
 		let block_hash = Self::fetch_best_block_hash(rpc_client).await?;
 		Self::new(online_client, block_hash).await
 	}
@@ -40,7 +40,7 @@ impl Block {
 	pub async fn new_finalized_block(
 		online_client: &AOnlineClient,
 		rpc_client: &RpcClient,
-	) -> Result<Self, subxt::Error> {
+	) -> Result<Self, ClientError> {
 		let block_hash = Self::fetch_finalized_block_hash(rpc_client).await?;
 		Self::new(online_client, block_hash).await
 	}
@@ -57,7 +57,7 @@ impl Block {
 		online_client: &AOnlineClient,
 		rpc_client: &RpcClient,
 		block_number: u32,
-	) -> Result<Self, subxt::Error> {
+	) -> Result<Self, ClientError> {
 		let block_hash = rpcs::get_block_hash(rpc_client, Some(block_number)).await?;
 		Self::new(online_client, block_hash).await
 	}
@@ -176,11 +176,11 @@ impl Block {
 		self.block.storage().iter(address).await
 	}
 
-	pub async fn fetch_best_block_hash(client: &RpcClient) -> Result<H256, subxt::Error> {
+	pub async fn fetch_best_block_hash(client: &RpcClient) -> Result<H256, ClientError> {
 		rpcs::get_block_hash(client, None).await
 	}
 
-	pub async fn fetch_finalized_block_hash(client: &RpcClient) -> Result<H256, subxt::Error> {
+	pub async fn fetch_finalized_block_hash(client: &RpcClient) -> Result<H256, ClientError> {
 		rpcs::get_finalized_head(client).await
 	}
 }

@@ -3,7 +3,7 @@ use crate::api_dev::api::runtime_types::sp_arithmetic::per_things::Perbill;
 use crate::{avail, AOnlineClient, AccountId, RewardDestination};
 
 use super::Transaction;
-use subxt::backend::rpc::RpcClient;
+use subxt::backend::rpc::reconnecting_rpc_client::RpcClient;
 use subxt_core::utils::MultiAddress;
 
 pub type BondCall = avail::staking::calls::types::Bond;

@@ -1,7 +1,7 @@
 use log::{debug, info, log_enabled, warn};
 use primitive_types::H256;
 use subxt::{
-	backend::{legacy::rpc_methods::Bytes, rpc::RpcClient},
+	backend::{legacy::rpc_methods::Bytes, rpc::reconnecting_rpc_client::RpcClient},
 	blocks::StaticExtrinsic,
 	error::DispatchError,
 	ext::scale_encode::EncodeAsFields,
@@ -179,7 +179,17 @@ pub async fn watch_transaction(
 			return Err(TransactionExecutionError::BlockStreamFailure);
 		};
 
-		let block = block?;
+		let block = match block {
+			Ok(b) => b,
+			Err(e) => {
+				if e.is_disconnected_will_reconnect() {
+					debug!("The RPC connection was lost and we may have missed a few blocks");
+					continue;
+				}
+
+				return Err(TransactionExecutionError::SubxtError(e));
+			},
+		};
 		block_hash = block.hash();
 		block_number = block.number();
 

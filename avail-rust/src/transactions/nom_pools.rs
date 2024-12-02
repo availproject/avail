@@ -5,7 +5,7 @@ use crate::avail::{
 use crate::{AOnlineClient, AccountId};
 
 use super::Transaction;
-use subxt::backend::rpc::RpcClient;
+use subxt::backend::rpc::reconnecting_rpc_client::RpcClient;
 
 pub use crate::avail::nomination_pools::calls::types::set_claim_permission::Permission;
 pub use crate::avail::nomination_pools::calls::types::set_state::State;

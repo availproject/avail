@@ -9,6 +9,5 @@
     - [Events](./examples/events.md)
     - [Transactions](./examples/transactions.md)
     - [Validator](./examples/validator.md)
-    - [Insecure Connection](./examples/insecure_connection.md)
     - [Batch](./examples/batch.md)
 

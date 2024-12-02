@@ -1,6 +1,6 @@
-use std::str::FromStr;
+use std::{str::FromStr, time::Duration};
 
-use subxt::backend::rpc::RpcClient;
+use subxt::backend::rpc::reconnecting_rpc_client::{ExponentialBackoff, RpcClient};
 use subxt_signer::{sr25519::Keypair, SecretUri};
 
 use crate::{error::ClientError, rpcs::Rpc, transactions::Transactions, AOnlineClient};
@@ -15,16 +15,8 @@ pub struct SDK {
 
 impl SDK {
 	pub async fn new(endpoint: &str) -> Result<Self, ClientError> {
-		Self::new_inner(endpoint, true).await
-	}
-
-	pub async fn new_insecure(endpoint: &str) -> Result<Self, ClientError> {
-		Self::new_inner(endpoint, false).await
-	}
-
-	async fn new_inner(endpoint: &str, secure: bool) -> Result<Self, ClientError> {
-		env_logger::builder().format_timestamp_millis().init();
-		let (online_client, rpc_client) = initialize_api(endpoint, secure).await?;
+		env_logger::builder().init();
+		let (online_client, rpc_client) = initialize_api(endpoint).await?;
 
 		let rpc = Rpc::new(rpc_client.clone()).await;
 		let tx = Transactions::new(online_client.clone(), rpc_client.clone());
@@ -35,6 +27,30 @@ impl SDK {
 			tx,
 			rpc,
 		})
+	}
+
+	pub async fn new_custom(
+		online_client: AOnlineClient,
+		rpc_client: RpcClient,
+		enable_logging: bool,
+	) -> Result<Self, ClientError> {
+		if enable_logging {
+			env_logger::builder().init();
+		}
+
+		let rpc = Rpc::new(rpc_client.clone()).await;
+		let tx = Transactions::new(online_client.clone(), rpc_client.clone());
+
+		Ok(SDK {
+			online_client,
+			rpc_client,
+			tx,
+			rpc,
+		})
+	}
+
+	fn enable_logging() {
+		env_logger::builder().init();
 	}
 
 	pub fn alice() -> Result<Keypair, ClientError> {
@@ -74,19 +90,28 @@ impl SDK {
 	}
 }
 
-pub async fn initialize_api(
-	endpoint: &str,
-	secure: bool,
-) -> Result<(AOnlineClient, RpcClient), ClientError> {
-	let rpc_client: RpcClient = match secure {
-		true => RpcClient::from_url(endpoint).await?,
-		false => RpcClient::from_insecure_url(endpoint).await?,
-	};
+pub async fn initialize_api(endpoint: &str) -> Result<(AOnlineClient, RpcClient), ClientError> {
+	let rpc_client = RpcClient::builder()
+		.retry_policy(
+			ExponentialBackoff::from_millis(1000)
+				.max_delay(Duration::from_secs(3))
+				.take(3),
+		)
+		.build(endpoint)
+		.await
+		.map_err(|e| e.to_string())?;
 
 	// Cloning RpcClient is cheaper and doesn't create a new WS connection
 	let api = AOnlineClient::from_rpc_client(rpc_client.clone()).await?;
 
 	Ok((api, rpc_client))
+}
+
+pub async fn initialize_api_custom(rpc_client: RpcClient) -> Result<AOnlineClient, ClientError> {
+	// Cloning RpcClient is cheaper and doesn't create a new WS connection
+	let online_client = AOnlineClient::from_rpc_client(rpc_client.clone()).await?;
+
+	Ok(online_client)
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]

@@ -3,7 +3,7 @@ use crate::api_dev::api::data_availability::calls::types::submit_data::Data;
 use crate::{avail, AOnlineClient};
 
 use super::Transaction;
-use subxt::backend::rpc::RpcClient;
+use subxt::backend::rpc::reconnecting_rpc_client::RpcClient;
 
 pub type SubmitDataCall = avail::data_availability::calls::types::SubmitData;
 pub type CreateApplicationKeyCall = avail::data_availability::calls::types::CreateApplicationKey;
