@@ -18,8 +18,8 @@ use test_log::test;
 use tracing::trace;
 
 const INVALID_DOMAIN: u32 = 0;
-const MAX_ARBITRATY: usize = 136 + 1;
-const MAX_FUNGIBLE: usize = 132 + 1;
+const MAX_ARBITRATY: usize = 158 + 1;
+const MAX_FUNGIBLE: usize = 153 + 1;
 
 const ENABLE_LOG_MSG: &str =
 	"Re-run with `RUST_LOG=\"e2e::tests::max_send_message=trace\" to display logs`";
