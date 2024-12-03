@@ -335,9 +335,9 @@ pub mod api {
 			.hash();
 		runtime_metadata_hash
 			== [
-				6u8, 23u8, 252u8, 119u8, 172u8, 59u8, 61u8, 198u8, 202u8, 108u8, 208u8, 155u8,
-				237u8, 191u8, 124u8, 174u8, 159u8, 18u8, 90u8, 204u8, 156u8, 229u8, 71u8, 243u8,
-				203u8, 35u8, 62u8, 38u8, 127u8, 166u8, 71u8, 165u8,
+				224u8, 149u8, 127u8, 165u8, 214u8, 43u8, 202u8, 8u8, 71u8, 200u8, 116u8, 70u8,
+				63u8, 56u8, 96u8, 177u8, 149u8, 205u8, 19u8, 255u8, 195u8, 87u8, 202u8, 197u8,
+				250u8, 28u8, 41u8, 41u8, 48u8, 157u8, 71u8, 203u8,
 			]
 	}
 	pub mod system {
@@ -366,7 +366,9 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::remark`]."]
+				#[doc = "Make some on-chain remark."]
+				#[doc = ""]
+				#[doc = "Can be executed by every `origin`."]
 				pub struct Remark {
 					pub remark: remark::Remark,
 				}
@@ -391,7 +393,7 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::set_heap_pages`]."]
+				#[doc = "Set the number of pages in the WebAssembly environment's heap."]
 				pub struct SetHeapPages {
 					pub pages: set_heap_pages::Pages,
 				}
@@ -416,7 +418,7 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::set_code`]."]
+				#[doc = "Set the new runtime code."]
 				pub struct SetCode {
 					pub code: set_code::Code,
 				}
@@ -441,7 +443,10 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::set_code_without_checks`]."]
+				#[doc = "Set the new runtime code without doing any checks of the given `code`."]
+				#[doc = ""]
+				#[doc = "Note that runtime upgrades will not run if this is called with a not-increasing spec"]
+				#[doc = "version!"]
 				pub struct SetCodeWithoutChecks {
 					pub code: set_code_without_checks::Code,
 				}
@@ -466,7 +471,7 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::set_storage`]."]
+				#[doc = "Set some items of storage."]
 				pub struct SetStorage {
 					pub items: set_storage::Items,
 				}
@@ -494,7 +499,7 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::kill_storage`]."]
+				#[doc = "Kill some items from storage."]
 				pub struct KillStorage {
 					pub keys: kill_storage::Keys,
 				}
@@ -519,7 +524,10 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::kill_prefix`]."]
+				#[doc = "Kill all storage items with a key that starts with the given prefix."]
+				#[doc = ""]
+				#[doc = "**NOTE:** We rely on the Root origin to provide us the number of subkeys under"]
+				#[doc = "the prefix we are removing to accurately calculate the weight of this function."]
 				pub struct KillPrefix {
 					pub prefix: kill_prefix::Prefix,
 					pub subkeys: kill_prefix::Subkeys,
@@ -546,7 +554,7 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::remark_with_event`]."]
+				#[doc = "Make some on-chain remark and emit event."]
 				pub struct RemarkWithEvent {
 					pub remark: remark_with_event::Remark,
 				}
@@ -571,7 +579,10 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::authorize_upgrade`]."]
+				#[doc = "Authorize an upgrade to a given `code_hash` for the runtime. The runtime can be supplied"]
+				#[doc = "later."]
+				#[doc = ""]
+				#[doc = "This call requires Root origin."]
 				pub struct AuthorizeUpgrade {
 					pub code_hash: authorize_upgrade::CodeHash,
 				}
@@ -596,7 +607,14 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::authorize_upgrade_without_checks`]."]
+				#[doc = "Authorize an upgrade to a given `code_hash` for the runtime. The runtime can be supplied"]
+				#[doc = "later."]
+				#[doc = ""]
+				#[doc = "WARNING: This authorizes an upgrade that will take place without any safety checks, for"]
+				#[doc = "example that the spec name remains the same and that the version number increases. Not"]
+				#[doc = "recommended for normal use. Use `authorize_upgrade` instead."]
+				#[doc = ""]
+				#[doc = "This call requires Root origin."]
 				pub struct AuthorizeUpgradeWithoutChecks {
 					pub code_hash: authorize_upgrade_without_checks::CodeHash,
 				}
@@ -621,7 +639,15 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::apply_authorized_upgrade`]."]
+				#[doc = "Provide the preimage (runtime binary) `code` for an upgrade that has been authorized."]
+				#[doc = ""]
+				#[doc = "If the authorization required a version check, this call will ensure the spec name"]
+				#[doc = "remains unchanged and that the spec version has increased."]
+				#[doc = ""]
+				#[doc = "Depending on the runtime's `OnSetCode` configuration, this function may directly apply"]
+				#[doc = "the new `code` in the same block or attempt to schedule the upgrade."]
+				#[doc = ""]
+				#[doc = "All origins are allowed."]
 				pub struct ApplyAuthorizedUpgrade {
 					pub code: apply_authorized_upgrade::Code,
 				}
@@ -636,7 +662,9 @@ pub mod api {
 			}
 			pub struct TransactionApi;
 			impl TransactionApi {
-				#[doc = "See [`Pallet::remark`]."]
+				#[doc = "Make some on-chain remark."]
+				#[doc = ""]
+				#[doc = "Can be executed by every `origin`."]
 				pub fn remark(
 					&self,
 					remark: types::remark::Remark,
@@ -653,7 +681,7 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::set_heap_pages`]."]
+				#[doc = "Set the number of pages in the WebAssembly environment's heap."]
 				pub fn set_heap_pages(
 					&self,
 					pages: types::set_heap_pages::Pages,
@@ -670,7 +698,7 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::set_code`]."]
+				#[doc = "Set the new runtime code."]
 				pub fn set_code(
 					&self,
 					code: types::set_code::Code,
@@ -686,7 +714,10 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::set_code_without_checks`]."]
+				#[doc = "Set the new runtime code without doing any checks of the given `code`."]
+				#[doc = ""]
+				#[doc = "Note that runtime upgrades will not run if this is called with a not-increasing spec"]
+				#[doc = "version!"]
 				pub fn set_code_without_checks(
 					&self,
 					code: types::set_code_without_checks::Code,
@@ -703,7 +734,7 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::set_storage`]."]
+				#[doc = "Set some items of storage."]
 				pub fn set_storage(
 					&self,
 					items: types::set_storage::Items,
@@ -720,7 +751,7 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::kill_storage`]."]
+				#[doc = "Kill some items from storage."]
 				pub fn kill_storage(
 					&self,
 					keys: types::kill_storage::Keys,
@@ -737,7 +768,10 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::kill_prefix`]."]
+				#[doc = "Kill all storage items with a key that starts with the given prefix."]
+				#[doc = ""]
+				#[doc = "**NOTE:** We rely on the Root origin to provide us the number of subkeys under"]
+				#[doc = "the prefix we are removing to accurately calculate the weight of this function."]
 				pub fn kill_prefix(
 					&self,
 					prefix: types::kill_prefix::Prefix,
@@ -755,7 +789,7 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::remark_with_event`]."]
+				#[doc = "Make some on-chain remark and emit event."]
 				pub fn remark_with_event(
 					&self,
 					remark: types::remark_with_event::Remark,
@@ -771,7 +805,10 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::authorize_upgrade`]."]
+				#[doc = "Authorize an upgrade to a given `code_hash` for the runtime. The runtime can be supplied"]
+				#[doc = "later."]
+				#[doc = ""]
+				#[doc = "This call requires Root origin."]
 				pub fn authorize_upgrade(
 					&self,
 					code_hash: types::authorize_upgrade::CodeHash,
@@ -788,7 +825,14 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::authorize_upgrade_without_checks`]."]
+				#[doc = "Authorize an upgrade to a given `code_hash` for the runtime. The runtime can be supplied"]
+				#[doc = "later."]
+				#[doc = ""]
+				#[doc = "WARNING: This authorizes an upgrade that will take place without any safety checks, for"]
+				#[doc = "example that the spec name remains the same and that the version number increases. Not"]
+				#[doc = "recommended for normal use. Use `authorize_upgrade` instead."]
+				#[doc = ""]
+				#[doc = "This call requires Root origin."]
 				pub fn authorize_upgrade_without_checks(
 					&self,
 					code_hash: types::authorize_upgrade_without_checks::CodeHash,
@@ -805,7 +849,15 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::apply_authorized_upgrade`]."]
+				#[doc = "Provide the preimage (runtime binary) `code` for an upgrade that has been authorized."]
+				#[doc = ""]
+				#[doc = "If the authorization required a version check, this call will ensure the spec name"]
+				#[doc = "remains unchanged and that the spec version has increased."]
+				#[doc = ""]
+				#[doc = "Depending on the runtime's `OnSetCode` configuration, this function may directly apply"]
+				#[doc = "the new `code` in the same block or attempt to schedule the upgrade."]
+				#[doc = ""]
+				#[doc = "All origins are allowed."]
 				pub fn apply_authorized_upgrade(
 					&self,
 					code: types::apply_authorized_upgrade::Code,
@@ -1019,6 +1071,10 @@ pub mod api {
 					use super::runtime_types;
 					pub type ExtrinsicCount = ::core::primitive::u32;
 				}
+				pub mod inherents_applied {
+					use super::runtime_types;
+					pub type InherentsApplied = ::core::primitive::bool;
+				}
 				pub mod block_weight {
 					use super::runtime_types;
 					pub type BlockWeight = runtime_types::frame_support::dispatch::PerDispatchClass<
@@ -1164,6 +1220,27 @@ pub mod api {
 							153u8, 148u8, 234u8, 203u8, 181u8, 119u8, 6u8, 187u8, 177u8, 199u8,
 							120u8, 47u8, 137u8, 254u8, 96u8, 100u8, 165u8, 182u8, 249u8, 230u8,
 							159u8, 79u8,
+						],
+					)
+				}
+				#[doc = " Whether all inherents have been applied."]
+				pub fn inherents_applied(
+					&self,
+				) -> ::subxt::storage::address::Address<
+					::subxt::storage::address::StaticStorageMapKey,
+					types::inherents_applied::InherentsApplied,
+					::subxt::storage::address::Yes,
+					::subxt::storage::address::Yes,
+					(),
+				> {
+					::subxt::storage::address::Address::new_static(
+						"System",
+						"InherentsApplied",
+						vec![],
+						[
+							132u8, 249u8, 142u8, 252u8, 8u8, 103u8, 80u8, 120u8, 50u8, 6u8, 188u8,
+							223u8, 101u8, 55u8, 165u8, 189u8, 172u8, 249u8, 165u8, 230u8, 183u8,
+							109u8, 34u8, 65u8, 185u8, 150u8, 29u8, 8u8, 186u8, 129u8, 135u8, 239u8,
 						],
 					)
 				}
@@ -1385,9 +1462,9 @@ pub mod api {
 						"Events",
 						vec![],
 						[
-							44u8, 46u8, 192u8, 87u8, 241u8, 90u8, 93u8, 88u8, 0u8, 103u8, 28u8,
-							102u8, 132u8, 112u8, 157u8, 36u8, 13u8, 99u8, 7u8, 220u8, 210u8, 206u8,
-							5u8, 179u8, 55u8, 252u8, 56u8, 74u8, 117u8, 207u8, 246u8, 231u8,
+							174u8, 245u8, 15u8, 225u8, 77u8, 11u8, 106u8, 76u8, 66u8, 177u8, 92u8,
+							208u8, 190u8, 21u8, 54u8, 131u8, 62u8, 78u8, 31u8, 85u8, 131u8, 192u8,
+							6u8, 181u8, 7u8, 197u8, 175u8, 146u8, 218u8, 241u8, 244u8, 224u8,
 						],
 					)
 				}
@@ -1764,7 +1841,24 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::batch`]."]
+				#[doc = "Send a batch of dispatch calls."]
+				#[doc = ""]
+				#[doc = "May be called from any origin except `None`."]
+				#[doc = ""]
+				#[doc = "- `calls`: The calls to be dispatched from the same origin. The number of call must not"]
+				#[doc = "  exceed the constant: `batched_calls_limit` (available in constant metadata)."]
+				#[doc = ""]
+				#[doc = "If origin is root then the calls are dispatched without checking origin filter. (This"]
+				#[doc = "includes bypassing `frame_system::Config::BaseCallFilter`)."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- O(C) where C is the number of calls to be batched."]
+				#[doc = ""]
+				#[doc = "This will return `Ok` in all circumstances. To determine the success of the batch, an"]
+				#[doc = "event is deposited. If a call failed and the batch was interrupted, then the"]
+				#[doc = "`BatchInterrupted` event is deposited, along with the number of successful calls made"]
+				#[doc = "and the error of the failed call. If all were successful, then the `BatchCompleted`"]
+				#[doc = "event is deposited."]
 				pub struct Batch {
 					pub calls: batch::Calls,
 				}
@@ -1789,7 +1883,19 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::as_derivative`]."]
+				#[doc = "Send a call through an indexed pseudonym of the sender."]
+				#[doc = ""]
+				#[doc = "Filter from origin are passed along. The call will be dispatched with an origin which"]
+				#[doc = "use the same filter as the origin of this call."]
+				#[doc = ""]
+				#[doc = "NOTE: If you need to ensure that any account-based filtering is not honored (i.e."]
+				#[doc = "because you expect `proxy` to have been used prior in the call stack and you do not want"]
+				#[doc = "the call restrictions to apply to any sub-accounts), then use `as_multi_threshold_1`"]
+				#[doc = "in the Multisig pallet instead."]
+				#[doc = ""]
+				#[doc = "NOTE: Prior to version *12, this was called `as_limited_sub`."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_."]
 				pub struct AsDerivative {
 					pub index: as_derivative::Index,
 					pub call: ::std::boxed::Box<as_derivative::Call>,
@@ -1816,7 +1922,19 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::batch_all`]."]
+				#[doc = "Send a batch of dispatch calls and atomically execute them."]
+				#[doc = "The whole transaction will rollback and fail if any of the calls failed."]
+				#[doc = ""]
+				#[doc = "May be called from any origin except `None`."]
+				#[doc = ""]
+				#[doc = "- `calls`: The calls to be dispatched from the same origin. The number of call must not"]
+				#[doc = "  exceed the constant: `batched_calls_limit` (available in constant metadata)."]
+				#[doc = ""]
+				#[doc = "If origin is root then the calls are dispatched without checking origin filter. (This"]
+				#[doc = "includes bypassing `frame_system::Config::BaseCallFilter`)."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- O(C) where C is the number of calls to be batched."]
 				pub struct BatchAll {
 					pub calls: batch_all::Calls,
 				}
@@ -1841,7 +1959,12 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::dispatch_as`]."]
+				#[doc = "Dispatches a function call with a provided origin."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Root_."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- O(1)."]
 				pub struct DispatchAs {
 					pub as_origin: ::std::boxed::Box<dispatch_as::AsOrigin>,
 					pub call: ::std::boxed::Box<dispatch_as::Call>,
@@ -1868,7 +1991,19 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::force_batch`]."]
+				#[doc = "Send a batch of dispatch calls."]
+				#[doc = "Unlike `batch`, it allows errors and won't interrupt."]
+				#[doc = ""]
+				#[doc = "May be called from any origin except `None`."]
+				#[doc = ""]
+				#[doc = "- `calls`: The calls to be dispatched from the same origin. The number of call must not"]
+				#[doc = "  exceed the constant: `batched_calls_limit` (available in constant metadata)."]
+				#[doc = ""]
+				#[doc = "If origin is root then the calls are dispatch without checking origin filter. (This"]
+				#[doc = "includes bypassing `frame_system::Config::BaseCallFilter`)."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- O(C) where C is the number of calls to be batched."]
 				pub struct ForceBatch {
 					pub calls: force_batch::Calls,
 				}
@@ -1893,7 +2028,12 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::with_weight`]."]
+				#[doc = "Dispatch a function call with a specified weight."]
+				#[doc = ""]
+				#[doc = "This function does not check the weight of the call, and instead allows the"]
+				#[doc = "Root origin to specify the weight of the call."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Root_."]
 				pub struct WithWeight {
 					pub call: ::std::boxed::Box<with_weight::Call>,
 					pub weight: with_weight::Weight,
@@ -1910,7 +2050,24 @@ pub mod api {
 			}
 			pub struct TransactionApi;
 			impl TransactionApi {
-				#[doc = "See [`Pallet::batch`]."]
+				#[doc = "Send a batch of dispatch calls."]
+				#[doc = ""]
+				#[doc = "May be called from any origin except `None`."]
+				#[doc = ""]
+				#[doc = "- `calls`: The calls to be dispatched from the same origin. The number of call must not"]
+				#[doc = "  exceed the constant: `batched_calls_limit` (available in constant metadata)."]
+				#[doc = ""]
+				#[doc = "If origin is root then the calls are dispatched without checking origin filter. (This"]
+				#[doc = "includes bypassing `frame_system::Config::BaseCallFilter`)."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- O(C) where C is the number of calls to be batched."]
+				#[doc = ""]
+				#[doc = "This will return `Ok` in all circumstances. To determine the success of the batch, an"]
+				#[doc = "event is deposited. If a call failed and the batch was interrupted, then the"]
+				#[doc = "`BatchInterrupted` event is deposited, along with the number of successful calls made"]
+				#[doc = "and the error of the failed call. If all were successful, then the `BatchCompleted`"]
+				#[doc = "event is deposited."]
 				pub fn batch(
 					&self,
 					calls: types::batch::Calls,
@@ -1920,13 +2077,26 @@ pub mod api {
 						"batch",
 						types::Batch { calls },
 						[
-							33u8, 225u8, 24u8, 34u8, 203u8, 210u8, 240u8, 124u8, 219u8, 117u8, 8u8,
-							197u8, 200u8, 105u8, 186u8, 114u8, 25u8, 188u8, 100u8, 68u8, 18u8,
-							150u8, 51u8, 13u8, 34u8, 237u8, 144u8, 133u8, 182u8, 76u8, 251u8, 61u8,
+							208u8, 122u8, 69u8, 26u8, 118u8, 252u8, 184u8, 245u8, 65u8, 37u8, 50u8,
+							10u8, 74u8, 153u8, 155u8, 66u8, 221u8, 46u8, 152u8, 217u8, 143u8,
+							176u8, 62u8, 145u8, 134u8, 124u8, 132u8, 249u8, 204u8, 178u8, 42u8,
+							190u8,
 						],
 					)
 				}
-				#[doc = "See [`Pallet::as_derivative`]."]
+				#[doc = "Send a call through an indexed pseudonym of the sender."]
+				#[doc = ""]
+				#[doc = "Filter from origin are passed along. The call will be dispatched with an origin which"]
+				#[doc = "use the same filter as the origin of this call."]
+				#[doc = ""]
+				#[doc = "NOTE: If you need to ensure that any account-based filtering is not honored (i.e."]
+				#[doc = "because you expect `proxy` to have been used prior in the call stack and you do not want"]
+				#[doc = "the call restrictions to apply to any sub-accounts), then use `as_multi_threshold_1`"]
+				#[doc = "in the Multisig pallet instead."]
+				#[doc = ""]
+				#[doc = "NOTE: Prior to version *12, this was called `as_limited_sub`."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_."]
 				pub fn as_derivative(
 					&self,
 					index: types::as_derivative::Index,
@@ -1940,13 +2110,26 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							64u8, 7u8, 86u8, 245u8, 190u8, 58u8, 86u8, 188u8, 20u8, 143u8, 217u8,
-							212u8, 50u8, 216u8, 99u8, 232u8, 67u8, 111u8, 86u8, 89u8, 102u8, 110u8,
-							47u8, 2u8, 6u8, 128u8, 145u8, 29u8, 159u8, 148u8, 87u8, 112u8,
+							2u8, 9u8, 106u8, 215u8, 131u8, 71u8, 102u8, 134u8, 245u8, 132u8, 5u8,
+							140u8, 65u8, 251u8, 155u8, 229u8, 215u8, 62u8, 106u8, 32u8, 22u8,
+							177u8, 151u8, 241u8, 207u8, 102u8, 57u8, 23u8, 135u8, 70u8, 140u8,
+							229u8,
 						],
 					)
 				}
-				#[doc = "See [`Pallet::batch_all`]."]
+				#[doc = "Send a batch of dispatch calls and atomically execute them."]
+				#[doc = "The whole transaction will rollback and fail if any of the calls failed."]
+				#[doc = ""]
+				#[doc = "May be called from any origin except `None`."]
+				#[doc = ""]
+				#[doc = "- `calls`: The calls to be dispatched from the same origin. The number of call must not"]
+				#[doc = "  exceed the constant: `batched_calls_limit` (available in constant metadata)."]
+				#[doc = ""]
+				#[doc = "If origin is root then the calls are dispatched without checking origin filter. (This"]
+				#[doc = "includes bypassing `frame_system::Config::BaseCallFilter`)."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- O(C) where C is the number of calls to be batched."]
 				pub fn batch_all(
 					&self,
 					calls: types::batch_all::Calls,
@@ -1956,13 +2139,18 @@ pub mod api {
 						"batch_all",
 						types::BatchAll { calls },
 						[
-							82u8, 204u8, 178u8, 13u8, 233u8, 105u8, 68u8, 191u8, 51u8, 32u8, 164u8,
-							118u8, 110u8, 249u8, 116u8, 181u8, 76u8, 23u8, 232u8, 248u8, 156u8,
-							43u8, 104u8, 47u8, 147u8, 92u8, 113u8, 1u8, 134u8, 216u8, 200u8, 183u8,
+							159u8, 147u8, 53u8, 243u8, 21u8, 182u8, 175u8, 94u8, 15u8, 64u8, 184u8,
+							61u8, 230u8, 73u8, 82u8, 98u8, 208u8, 57u8, 206u8, 138u8, 33u8, 18u8,
+							200u8, 186u8, 44u8, 83u8, 7u8, 175u8, 146u8, 113u8, 62u8, 135u8,
 						],
 					)
 				}
-				#[doc = "See [`Pallet::dispatch_as`]."]
+				#[doc = "Dispatches a function call with a provided origin."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Root_."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- O(1)."]
 				pub fn dispatch_as(
 					&self,
 					as_origin: types::dispatch_as::AsOrigin,
@@ -1976,13 +2164,25 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							105u8, 220u8, 107u8, 51u8, 74u8, 237u8, 238u8, 118u8, 174u8, 75u8,
-							97u8, 11u8, 93u8, 57u8, 91u8, 227u8, 172u8, 207u8, 129u8, 182u8, 171u8,
-							238u8, 96u8, 7u8, 220u8, 74u8, 123u8, 94u8, 177u8, 147u8, 176u8, 21u8,
+							212u8, 174u8, 191u8, 189u8, 77u8, 234u8, 179u8, 58u8, 155u8, 234u8,
+							137u8, 184u8, 48u8, 254u8, 65u8, 55u8, 145u8, 164u8, 76u8, 216u8, 85u8,
+							72u8, 85u8, 158u8, 76u8, 228u8, 4u8, 30u8, 67u8, 55u8, 250u8, 139u8,
 						],
 					)
 				}
-				#[doc = "See [`Pallet::force_batch`]."]
+				#[doc = "Send a batch of dispatch calls."]
+				#[doc = "Unlike `batch`, it allows errors and won't interrupt."]
+				#[doc = ""]
+				#[doc = "May be called from any origin except `None`."]
+				#[doc = ""]
+				#[doc = "- `calls`: The calls to be dispatched from the same origin. The number of call must not"]
+				#[doc = "  exceed the constant: `batched_calls_limit` (available in constant metadata)."]
+				#[doc = ""]
+				#[doc = "If origin is root then the calls are dispatch without checking origin filter. (This"]
+				#[doc = "includes bypassing `frame_system::Config::BaseCallFilter`)."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- O(C) where C is the number of calls to be batched."]
 				pub fn force_batch(
 					&self,
 					calls: types::force_batch::Calls,
@@ -1992,14 +2192,18 @@ pub mod api {
 						"force_batch",
 						types::ForceBatch { calls },
 						[
-							165u8, 244u8, 204u8, 40u8, 2u8, 70u8, 87u8, 178u8, 4u8, 82u8, 230u8,
-							127u8, 110u8, 0u8, 120u8, 152u8, 197u8, 157u8, 116u8, 17u8, 234u8,
-							138u8, 54u8, 108u8, 244u8, 73u8, 201u8, 245u8, 176u8, 58u8, 130u8,
-							22u8,
+							143u8, 117u8, 9u8, 169u8, 151u8, 206u8, 35u8, 66u8, 209u8, 19u8, 242u8,
+							94u8, 231u8, 55u8, 9u8, 128u8, 27u8, 83u8, 65u8, 77u8, 222u8, 179u8,
+							124u8, 198u8, 103u8, 44u8, 9u8, 127u8, 159u8, 146u8, 164u8, 200u8,
 						],
 					)
 				}
-				#[doc = "See [`Pallet::with_weight`]."]
+				#[doc = "Dispatch a function call with a specified weight."]
+				#[doc = ""]
+				#[doc = "This function does not check the weight of the call, and instead allows the"]
+				#[doc = "Root origin to specify the weight of the call."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Root_."]
 				pub fn with_weight(
 					&self,
 					call: types::with_weight::Call,
@@ -2013,9 +2217,9 @@ pub mod api {
 							weight,
 						},
 						[
-							118u8, 133u8, 73u8, 38u8, 214u8, 17u8, 100u8, 55u8, 144u8, 35u8, 186u8,
-							195u8, 228u8, 12u8, 111u8, 222u8, 246u8, 48u8, 121u8, 189u8, 5u8,
-							222u8, 142u8, 56u8, 61u8, 92u8, 54u8, 253u8, 58u8, 220u8, 161u8, 233u8,
+							19u8, 55u8, 227u8, 32u8, 195u8, 154u8, 198u8, 0u8, 163u8, 101u8, 19u8,
+							36u8, 201u8, 114u8, 56u8, 104u8, 41u8, 95u8, 40u8, 166u8, 135u8, 60u8,
+							43u8, 122u8, 207u8, 14u8, 77u8, 204u8, 1u8, 148u8, 95u8, 127u8,
 						],
 					)
 				}
@@ -2210,7 +2414,10 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::report_equivocation`]."]
+				#[doc = "Report authority equivocation/misbehavior. This method will verify"]
+				#[doc = "the equivocation proof and validate the given key ownership proof"]
+				#[doc = "against the extracted offender. If both are valid, the offence will"]
+				#[doc = "be reported."]
 				pub struct ReportEquivocation {
 					pub equivocation_proof:
 						::std::boxed::Box<report_equivocation::EquivocationProof>,
@@ -2245,7 +2452,14 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::report_equivocation_unsigned`]."]
+				#[doc = "Report authority equivocation/misbehavior. This method will verify"]
+				#[doc = "the equivocation proof and validate the given key ownership proof"]
+				#[doc = "against the extracted offender. If both are valid, the offence will"]
+				#[doc = "be reported."]
+				#[doc = "This extrinsic must be called unsigned and it is expected that only"]
+				#[doc = "block authors will call it (validated in `ValidateUnsigned`), as such"]
+				#[doc = "if the block author is defined it will be defined as the equivocation"]
+				#[doc = "reporter."]
 				pub struct ReportEquivocationUnsigned {
 					pub equivocation_proof:
 						::std::boxed::Box<report_equivocation_unsigned::EquivocationProof>,
@@ -2280,7 +2494,10 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::plan_config_change`]."]
+				#[doc = "Plan an epoch config change. The epoch config change is recorded and will be enacted on"]
+				#[doc = "the next call to `enact_epoch_change`. The config will be activated one epoch after."]
+				#[doc = "Multiple calls to this method will replace any existing planned config change that had"]
+				#[doc = "not been enacted yet."]
 				pub struct PlanConfigChange {
 					pub config: plan_config_change::Config,
 				}
@@ -2296,7 +2513,10 @@ pub mod api {
 			}
 			pub struct TransactionApi;
 			impl TransactionApi {
-				#[doc = "See [`Pallet::report_equivocation`]."]
+				#[doc = "Report authority equivocation/misbehavior. This method will verify"]
+				#[doc = "the equivocation proof and validate the given key ownership proof"]
+				#[doc = "against the extracted offender. If both are valid, the offence will"]
+				#[doc = "be reported."]
 				pub fn report_equivocation(
 					&self,
 					equivocation_proof: types::report_equivocation::EquivocationProof,
@@ -2310,13 +2530,21 @@ pub mod api {
 							key_owner_proof,
 						},
 						[
-							43u8, 68u8, 186u8, 190u8, 47u8, 24u8, 64u8, 67u8, 172u8, 228u8, 98u8,
-							111u8, 168u8, 76u8, 88u8, 28u8, 211u8, 150u8, 0u8, 145u8, 135u8, 247u8,
-							163u8, 115u8, 99u8, 15u8, 121u8, 43u8, 225u8, 198u8, 85u8, 34u8,
+							202u8, 250u8, 68u8, 178u8, 46u8, 105u8, 51u8, 111u8, 204u8, 40u8,
+							100u8, 131u8, 16u8, 23u8, 158u8, 3u8, 132u8, 211u8, 235u8, 54u8, 197u8,
+							100u8, 105u8, 233u8, 79u8, 138u8, 203u8, 127u8, 226u8, 69u8, 105u8,
+							174u8,
 						],
 					)
 				}
-				#[doc = "See [`Pallet::report_equivocation_unsigned`]."]
+				#[doc = "Report authority equivocation/misbehavior. This method will verify"]
+				#[doc = "the equivocation proof and validate the given key ownership proof"]
+				#[doc = "against the extracted offender. If both are valid, the offence will"]
+				#[doc = "be reported."]
+				#[doc = "This extrinsic must be called unsigned and it is expected that only"]
+				#[doc = "block authors will call it (validated in `ValidateUnsigned`), as such"]
+				#[doc = "if the block author is defined it will be defined as the equivocation"]
+				#[doc = "reporter."]
 				pub fn report_equivocation_unsigned(
 					&self,
 					equivocation_proof: types::report_equivocation_unsigned::EquivocationProof,
@@ -2330,13 +2558,17 @@ pub mod api {
 							key_owner_proof,
 						},
 						[
-							251u8, 50u8, 22u8, 133u8, 31u8, 204u8, 163u8, 176u8, 193u8, 47u8, 31u8,
-							229u8, 45u8, 11u8, 133u8, 191u8, 198u8, 221u8, 127u8, 108u8, 78u8,
-							21u8, 134u8, 197u8, 21u8, 68u8, 82u8, 92u8, 78u8, 201u8, 114u8, 178u8,
+							239u8, 12u8, 178u8, 149u8, 194u8, 238u8, 105u8, 224u8, 187u8, 69u8,
+							178u8, 76u8, 86u8, 205u8, 252u8, 105u8, 153u8, 244u8, 180u8, 111u8,
+							70u8, 51u8, 140u8, 91u8, 155u8, 241u8, 154u8, 9u8, 64u8, 203u8, 112u8,
+							60u8,
 						],
 					)
 				}
-				#[doc = "See [`Pallet::plan_config_change`]."]
+				#[doc = "Plan an epoch config change. The epoch config change is recorded and will be enacted on"]
+				#[doc = "the next call to `enact_epoch_change`. The config will be activated one epoch after."]
+				#[doc = "Multiple calls to this method will replace any existing planned config change that had"]
+				#[doc = "not been enacted yet."]
 				pub fn plan_config_change(
 					&self,
 					config: types::plan_config_change::Config,
@@ -2488,10 +2720,10 @@ pub mod api {
 						"Authorities",
 						vec![],
 						[
-							67u8, 196u8, 244u8, 13u8, 246u8, 245u8, 198u8, 98u8, 81u8, 55u8, 182u8,
-							187u8, 214u8, 5u8, 181u8, 76u8, 251u8, 213u8, 144u8, 166u8, 36u8,
-							153u8, 234u8, 181u8, 252u8, 55u8, 198u8, 175u8, 55u8, 211u8, 105u8,
-							85u8,
+							192u8, 157u8, 98u8, 244u8, 104u8, 38u8, 195u8, 114u8, 183u8, 62u8,
+							247u8, 18u8, 31u8, 152u8, 246u8, 206u8, 97u8, 13u8, 118u8, 211u8,
+							104u8, 54u8, 150u8, 152u8, 126u8, 170u8, 228u8, 158u8, 108u8, 129u8,
+							134u8, 44u8,
 						],
 					)
 				}
@@ -2628,10 +2860,9 @@ pub mod api {
 						"NextAuthorities",
 						vec![],
 						[
-							116u8, 95u8, 126u8, 199u8, 237u8, 90u8, 202u8, 227u8, 247u8, 56u8,
-							201u8, 113u8, 239u8, 191u8, 151u8, 56u8, 156u8, 133u8, 61u8, 64u8,
-							141u8, 26u8, 8u8, 95u8, 177u8, 255u8, 54u8, 223u8, 132u8, 74u8, 210u8,
-							128u8,
+							29u8, 161u8, 79u8, 221u8, 198u8, 101u8, 11u8, 17u8, 20u8, 17u8, 225u8,
+							144u8, 35u8, 150u8, 241u8, 190u8, 106u8, 32u8, 230u8, 14u8, 212u8,
+							126u8, 1u8, 96u8, 73u8, 173u8, 245u8, 39u8, 153u8, 33u8, 205u8, 174u8,
 						],
 					)
 				}
@@ -2983,7 +3214,25 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::set`]."]
+				#[doc = "Set the current time."]
+				#[doc = ""]
+				#[doc = "This call should be invoked exactly once per block. It will panic at the finalization"]
+				#[doc = "phase, if this call hasn't been invoked by that time."]
+				#[doc = ""]
+				#[doc = "The timestamp should be greater than the previous one by the amount specified by"]
+				#[doc = "[`Config::MinimumPeriod`]."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _None_."]
+				#[doc = ""]
+				#[doc = "This dispatch class is _Mandatory_ to ensure it gets executed in the block. Be aware"]
+				#[doc = "that changing the complexity of this call could result exhausting the resources in a"]
+				#[doc = "block to execute any other calls."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- `O(1)` (Note that implementations of `OnTimestampSet` must also be `O(1)`)"]
+				#[doc = "- 1 storage read and 1 storage mutation (codec `O(1)` because of `DidUpdate::take` in"]
+				#[doc = "  `on_finalize`)"]
+				#[doc = "- 1 event handler `on_timestamp_set`. Must be `O(1)`."]
 				pub struct Set {
 					#[codec(compact)]
 					pub now: set::Now,
@@ -2999,7 +3248,25 @@ pub mod api {
 			}
 			pub struct TransactionApi;
 			impl TransactionApi {
-				#[doc = "See [`Pallet::set`]."]
+				#[doc = "Set the current time."]
+				#[doc = ""]
+				#[doc = "This call should be invoked exactly once per block. It will panic at the finalization"]
+				#[doc = "phase, if this call hasn't been invoked by that time."]
+				#[doc = ""]
+				#[doc = "The timestamp should be greater than the previous one by the amount specified by"]
+				#[doc = "[`Config::MinimumPeriod`]."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _None_."]
+				#[doc = ""]
+				#[doc = "This dispatch class is _Mandatory_ to ensure it gets executed in the block. Be aware"]
+				#[doc = "that changing the complexity of this call could result exhausting the resources in a"]
+				#[doc = "block to execute any other calls."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- `O(1)` (Note that implementations of `OnTimestampSet` must also be `O(1)`)"]
+				#[doc = "- 1 storage read and 1 storage mutation (codec `O(1)` because of `DidUpdate::take` in"]
+				#[doc = "  `on_finalize`)"]
+				#[doc = "- 1 event handler `on_timestamp_set`. Must be `O(1)`."]
 				pub fn set(&self, now: types::set::Now) -> ::subxt::tx::Payload<types::Set> {
 					::subxt::tx::Payload::new_static(
 						"Timestamp",
@@ -3169,7 +3436,18 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::claim`]."]
+				#[doc = "Assign an previously unassigned index."]
+				#[doc = ""]
+				#[doc = "Payment: `Deposit` is reserved from the sender account."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_."]
+				#[doc = ""]
+				#[doc = "- `index`: the index to be claimed. This must not be in use."]
+				#[doc = ""]
+				#[doc = "Emits `IndexAssigned` if successful."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- `O(1)`."]
 				pub struct Claim {
 					pub index: claim::Index,
 				}
@@ -3194,7 +3472,18 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::transfer`]."]
+				#[doc = "Assign an index already owned by the sender to another account. The balance reservation"]
+				#[doc = "is effectively transferred to the new account."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_."]
+				#[doc = ""]
+				#[doc = "- `index`: the index to be re-assigned. This must be owned by the sender."]
+				#[doc = "- `new`: the new owner of the index. This function is a no-op if it is equal to sender."]
+				#[doc = ""]
+				#[doc = "Emits `IndexAssigned` if successful."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- `O(1)`."]
 				pub struct Transfer {
 					pub new: transfer::New,
 					pub index: transfer::Index,
@@ -3224,7 +3513,18 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::free`]."]
+				#[doc = "Free up an index owned by the sender."]
+				#[doc = ""]
+				#[doc = "Payment: Any previous deposit placed for the index is unreserved in the sender account."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ and the sender must own the index."]
+				#[doc = ""]
+				#[doc = "- `index`: the index to be freed. This must be owned by the sender."]
+				#[doc = ""]
+				#[doc = "Emits `IndexFreed` if successful."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- `O(1)`."]
 				pub struct Free {
 					pub index: free::Index,
 				}
@@ -3249,7 +3549,19 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::force_transfer`]."]
+				#[doc = "Force an index to an account. This doesn't require a deposit. If the index is already"]
+				#[doc = "held, then any deposit is reimbursed to its current owner."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Root_."]
+				#[doc = ""]
+				#[doc = "- `index`: the index to be (re-)assigned."]
+				#[doc = "- `new`: the new owner of the index. This function is a no-op if it is equal to sender."]
+				#[doc = "- `freeze`: if set to `true`, will freeze the index so it cannot be transferred."]
+				#[doc = ""]
+				#[doc = "Emits `IndexAssigned` if successful."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- `O(1)`."]
 				pub struct ForceTransfer {
 					pub new: force_transfer::New,
 					pub index: force_transfer::Index,
@@ -3281,7 +3593,18 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::freeze`]."]
+				#[doc = "Freeze an index so it will always point to the sender account. This consumes the"]
+				#[doc = "deposit."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ and the signing account must have a"]
+				#[doc = "non-frozen account `index`."]
+				#[doc = ""]
+				#[doc = "- `index`: the index to be frozen in place."]
+				#[doc = ""]
+				#[doc = "Emits `IndexFrozen` if successful."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- `O(1)`."]
 				pub struct Freeze {
 					pub index: freeze::Index,
 				}
@@ -3296,7 +3619,18 @@ pub mod api {
 			}
 			pub struct TransactionApi;
 			impl TransactionApi {
-				#[doc = "See [`Pallet::claim`]."]
+				#[doc = "Assign an previously unassigned index."]
+				#[doc = ""]
+				#[doc = "Payment: `Deposit` is reserved from the sender account."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_."]
+				#[doc = ""]
+				#[doc = "- `index`: the index to be claimed. This must not be in use."]
+				#[doc = ""]
+				#[doc = "Emits `IndexAssigned` if successful."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- `O(1)`."]
 				pub fn claim(
 					&self,
 					index: types::claim::Index,
@@ -3312,7 +3646,18 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::transfer`]."]
+				#[doc = "Assign an index already owned by the sender to another account. The balance reservation"]
+				#[doc = "is effectively transferred to the new account."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_."]
+				#[doc = ""]
+				#[doc = "- `index`: the index to be re-assigned. This must be owned by the sender."]
+				#[doc = "- `new`: the new owner of the index. This function is a no-op if it is equal to sender."]
+				#[doc = ""]
+				#[doc = "Emits `IndexAssigned` if successful."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- `O(1)`."]
 				pub fn transfer(
 					&self,
 					new: types::transfer::New,
@@ -3330,7 +3675,18 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::free`]."]
+				#[doc = "Free up an index owned by the sender."]
+				#[doc = ""]
+				#[doc = "Payment: Any previous deposit placed for the index is unreserved in the sender account."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ and the sender must own the index."]
+				#[doc = ""]
+				#[doc = "- `index`: the index to be freed. This must be owned by the sender."]
+				#[doc = ""]
+				#[doc = "Emits `IndexFreed` if successful."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- `O(1)`."]
 				pub fn free(&self, index: types::free::Index) -> ::subxt::tx::Payload<types::Free> {
 					::subxt::tx::Payload::new_static(
 						"Indices",
@@ -3344,7 +3700,19 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::force_transfer`]."]
+				#[doc = "Force an index to an account. This doesn't require a deposit. If the index is already"]
+				#[doc = "held, then any deposit is reimbursed to its current owner."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Root_."]
+				#[doc = ""]
+				#[doc = "- `index`: the index to be (re-)assigned."]
+				#[doc = "- `new`: the new owner of the index. This function is a no-op if it is equal to sender."]
+				#[doc = "- `freeze`: if set to `true`, will freeze the index so it cannot be transferred."]
+				#[doc = ""]
+				#[doc = "Emits `IndexAssigned` if successful."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- `O(1)`."]
 				pub fn force_transfer(
 					&self,
 					new: types::force_transfer::New,
@@ -3363,7 +3731,18 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::freeze`]."]
+				#[doc = "Freeze an index so it will always point to the sender account. This consumes the"]
+				#[doc = "deposit."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ and the signing account must have a"]
+				#[doc = "non-frozen account `index`."]
+				#[doc = ""]
+				#[doc = "- `index`: the index to be frozen in place."]
+				#[doc = ""]
+				#[doc = "Emits `IndexFrozen` if successful."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- `O(1)`."]
 				pub fn freeze(
 					&self,
 					index: types::freeze::Index,
@@ -3576,7 +3955,13 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::transfer_allow_death`]."]
+				#[doc = "Transfer some liquid free balance to another account."]
+				#[doc = ""]
+				#[doc = "`transfer_allow_death` will set the `FreeBalance` of the sender and receiver."]
+				#[doc = "If the sender's account is below the existential deposit as a result"]
+				#[doc = "of the transfer, the account will be reaped."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be `Signed` by the transactor."]
 				pub struct TransferAllowDeath {
 					pub dest: transfer_allow_death::Dest,
 					#[codec(compact)]
@@ -3607,7 +3992,8 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::force_transfer`]."]
+				#[doc = "Exactly as `transfer_allow_death`, except the origin must be root and the source account"]
+				#[doc = "may be specified."]
 				pub struct ForceTransfer {
 					pub source: force_transfer::Source,
 					pub dest: force_transfer::Dest,
@@ -3643,7 +4029,12 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::transfer_keep_alive`]."]
+				#[doc = "Same as the [`transfer_allow_death`] call, but with a check that the transfer will not"]
+				#[doc = "kill the origin account."]
+				#[doc = ""]
+				#[doc = "99% of the time you want [`transfer_allow_death`] instead."]
+				#[doc = ""]
+				#[doc = "[`transfer_allow_death`]: struct.Pallet.html#method.transfer"]
 				pub struct TransferKeepAlive {
 					pub dest: transfer_keep_alive::Dest,
 					#[codec(compact)]
@@ -3674,7 +4065,21 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::transfer_all`]."]
+				#[doc = "Transfer the entire transferable balance from the caller account."]
+				#[doc = ""]
+				#[doc = "NOTE: This function only attempts to transfer _transferable_ balances. This means that"]
+				#[doc = "any locked, reserved, or existential deposits (when `keep_alive` is `true`), will not be"]
+				#[doc = "transferred by this function. To ensure that this function results in a killed account,"]
+				#[doc = "you might need to prepare the account by removing any reference counters, storage"]
+				#[doc = "deposits, etc..."]
+				#[doc = ""]
+				#[doc = "The dispatch origin of this call must be Signed."]
+				#[doc = ""]
+				#[doc = "- `dest`: The recipient of the transfer."]
+				#[doc = "- `keep_alive`: A boolean to determine if the `transfer_all` operation should send all"]
+				#[doc = "  of the funds the account has, causing the sender account to be killed (false), or"]
+				#[doc = "  transfer everything except at least the existential deposit, which will guarantee to"]
+				#[doc = "  keep the sender account alive (true)."]
 				pub struct TransferAll {
 					pub dest: transfer_all::Dest,
 					pub keep_alive: transfer_all::KeepAlive,
@@ -3704,7 +4109,9 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::force_unreserve`]."]
+				#[doc = "Unreserve some balance from a user by force."]
+				#[doc = ""]
+				#[doc = "Can only be called by ROOT."]
 				pub struct ForceUnreserve {
 					pub who: force_unreserve::Who,
 					pub amount: force_unreserve::Amount,
@@ -3734,7 +4141,14 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::upgrade_accounts`]."]
+				#[doc = "Upgrade a specified account."]
+				#[doc = ""]
+				#[doc = "- `origin`: Must be `Signed`."]
+				#[doc = "- `who`: The account to be upgraded."]
+				#[doc = ""]
+				#[doc = "This will waive the transaction fee if at least all but 10% of the accounts needed to"]
+				#[doc = "be upgraded. (We let some not have to be upgraded just in order to allow for the"]
+				#[doc = "possibility of churn)."]
 				pub struct UpgradeAccounts {
 					pub who: upgrade_accounts::Who,
 				}
@@ -3759,7 +4173,9 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::force_set_balance`]."]
+				#[doc = "Set the regular balance of a given account."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call is `root`."]
 				pub struct ForceSetBalance {
 					pub who: force_set_balance::Who,
 					#[codec(compact)]
@@ -3790,7 +4206,11 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::force_adjust_total_issuance`]."]
+				#[doc = "Adjust the total issuance in a saturating way."]
+				#[doc = ""]
+				#[doc = "Can only be called by root and always needs a positive `delta`."]
+				#[doc = ""]
+				#[doc = "# Example"]
 				pub struct ForceAdjustTotalIssuance {
 					pub direction: force_adjust_total_issuance::Direction,
 					#[codec(compact)]
@@ -3805,10 +4225,50 @@ pub mod api {
 					const PALLET: &'static str = "Balances";
 					const CALL: &'static str = "force_adjust_total_issuance";
 				}
+				#[derive(
+					:: subxt :: ext :: codec :: Decode,
+					:: subxt :: ext :: codec :: Encode,
+					:: subxt :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: codec)]
+				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+				#[doc = "Burn the specified liquid free balance from the origin account."]
+				#[doc = ""]
+				#[doc = "If the origin's account ends up below the existential deposit as a result"]
+				#[doc = "of the burn and `keep_alive` is false, the account will be reaped."]
+				#[doc = ""]
+				#[doc = "Unlike sending funds to a _burn_ address, which merely makes the funds inaccessible,"]
+				#[doc = "this `burn` operation will reduce total issuance by the amount _burned_."]
+				pub struct Burn {
+					#[codec(compact)]
+					pub value: burn::Value,
+					pub keep_alive: burn::KeepAlive,
+				}
+				pub mod burn {
+					use super::runtime_types;
+					pub type Value = ::core::primitive::u128;
+					pub type KeepAlive = ::core::primitive::bool;
+				}
+				impl ::subxt::blocks::StaticExtrinsic for Burn {
+					const PALLET: &'static str = "Balances";
+					const CALL: &'static str = "burn";
+				}
 			}
 			pub struct TransactionApi;
 			impl TransactionApi {
-				#[doc = "See [`Pallet::transfer_allow_death`]."]
+				#[doc = "Transfer some liquid free balance to another account."]
+				#[doc = ""]
+				#[doc = "`transfer_allow_death` will set the `FreeBalance` of the sender and receiver."]
+				#[doc = "If the sender's account is below the existential deposit as a result"]
+				#[doc = "of the transfer, the account will be reaped."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be `Signed` by the transactor."]
 				pub fn transfer_allow_death(
 					&self,
 					dest: types::transfer_allow_death::Dest,
@@ -3826,7 +4286,8 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::force_transfer`]."]
+				#[doc = "Exactly as `transfer_allow_death`, except the origin must be root and the source account"]
+				#[doc = "may be specified."]
 				pub fn force_transfer(
 					&self,
 					source: types::force_transfer::Source,
@@ -3848,7 +4309,12 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::transfer_keep_alive`]."]
+				#[doc = "Same as the [`transfer_allow_death`] call, but with a check that the transfer will not"]
+				#[doc = "kill the origin account."]
+				#[doc = ""]
+				#[doc = "99% of the time you want [`transfer_allow_death`] instead."]
+				#[doc = ""]
+				#[doc = "[`transfer_allow_death`]: struct.Pallet.html#method.transfer"]
 				pub fn transfer_keep_alive(
 					&self,
 					dest: types::transfer_keep_alive::Dest,
@@ -3866,7 +4332,21 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::transfer_all`]."]
+				#[doc = "Transfer the entire transferable balance from the caller account."]
+				#[doc = ""]
+				#[doc = "NOTE: This function only attempts to transfer _transferable_ balances. This means that"]
+				#[doc = "any locked, reserved, or existential deposits (when `keep_alive` is `true`), will not be"]
+				#[doc = "transferred by this function. To ensure that this function results in a killed account,"]
+				#[doc = "you might need to prepare the account by removing any reference counters, storage"]
+				#[doc = "deposits, etc..."]
+				#[doc = ""]
+				#[doc = "The dispatch origin of this call must be Signed."]
+				#[doc = ""]
+				#[doc = "- `dest`: The recipient of the transfer."]
+				#[doc = "- `keep_alive`: A boolean to determine if the `transfer_all` operation should send all"]
+				#[doc = "  of the funds the account has, causing the sender account to be killed (false), or"]
+				#[doc = "  transfer everything except at least the existential deposit, which will guarantee to"]
+				#[doc = "  keep the sender account alive (true)."]
 				pub fn transfer_all(
 					&self,
 					dest: types::transfer_all::Dest,
@@ -3884,7 +4364,9 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::force_unreserve`]."]
+				#[doc = "Unreserve some balance from a user by force."]
+				#[doc = ""]
+				#[doc = "Can only be called by ROOT."]
 				pub fn force_unreserve(
 					&self,
 					who: types::force_unreserve::Who,
@@ -3901,7 +4383,14 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::upgrade_accounts`]."]
+				#[doc = "Upgrade a specified account."]
+				#[doc = ""]
+				#[doc = "- `origin`: Must be `Signed`."]
+				#[doc = "- `who`: The account to be upgraded."]
+				#[doc = ""]
+				#[doc = "This will waive the transaction fee if at least all but 10% of the accounts needed to"]
+				#[doc = "be upgraded. (We let some not have to be upgraded just in order to allow for the"]
+				#[doc = "possibility of churn)."]
 				pub fn upgrade_accounts(
 					&self,
 					who: types::upgrade_accounts::Who,
@@ -3917,7 +4406,9 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::force_set_balance`]."]
+				#[doc = "Set the regular balance of a given account."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call is `root`."]
 				pub fn force_set_balance(
 					&self,
 					who: types::force_set_balance::Who,
@@ -3935,7 +4426,11 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::force_adjust_total_issuance`]."]
+				#[doc = "Adjust the total issuance in a saturating way."]
+				#[doc = ""]
+				#[doc = "Can only be called by root and always needs a positive `delta`."]
+				#[doc = ""]
+				#[doc = "# Example"]
 				pub fn force_adjust_total_issuance(
 					&self,
 					direction: types::force_adjust_total_issuance::Direction,
@@ -3950,6 +4445,29 @@ pub mod api {
 							190u8, 63u8, 236u8, 186u8, 96u8, 122u8, 104u8, 87u8, 173u8, 38u8, 58u8,
 							176u8, 21u8, 78u8, 42u8, 106u8, 46u8, 248u8, 251u8, 190u8, 150u8,
 							202u8,
+						],
+					)
+				}
+				#[doc = "Burn the specified liquid free balance from the origin account."]
+				#[doc = ""]
+				#[doc = "If the origin's account ends up below the existential deposit as a result"]
+				#[doc = "of the burn and `keep_alive` is false, the account will be reaped."]
+				#[doc = ""]
+				#[doc = "Unlike sending funds to a _burn_ address, which merely makes the funds inaccessible,"]
+				#[doc = "this `burn` operation will reduce total issuance by the amount _burned_."]
+				pub fn burn(
+					&self,
+					value: types::burn::Value,
+					keep_alive: types::burn::KeepAlive,
+				) -> ::subxt::tx::Payload<types::Burn> {
+					::subxt::tx::Payload::new_static(
+						"Balances",
+						"burn",
+						types::Burn { value, keep_alive },
+						[
+							176u8, 64u8, 7u8, 109u8, 16u8, 44u8, 145u8, 125u8, 147u8, 152u8, 130u8,
+							114u8, 221u8, 201u8, 150u8, 162u8, 118u8, 71u8, 52u8, 92u8, 240u8,
+							116u8, 203u8, 98u8, 5u8, 22u8, 43u8, 102u8, 94u8, 208u8, 101u8, 57u8,
 						],
 					)
 				}
@@ -4598,7 +5116,7 @@ pub mod api {
 				pub mod holds {
 					use super::runtime_types;
 					pub type Holds = runtime_types::bounded_collections::bounded_vec::BoundedVec<
-						runtime_types::pallet_balances::types::IdAmount<
+						runtime_types::frame_support::traits::tokens::misc::IdAmount<
 							runtime_types::da_runtime::RuntimeHoldReason,
 							::core::primitive::u128,
 						>,
@@ -4608,7 +5126,7 @@ pub mod api {
 				pub mod freezes {
 					use super::runtime_types;
 					pub type Freezes = runtime_types::bounded_collections::bounded_vec::BoundedVec<
-						runtime_types::pallet_balances::types::IdAmount<
+						runtime_types::frame_support::traits::tokens::misc::IdAmount<
 							runtime_types::da_runtime::RuntimeFreezeReason,
 							::core::primitive::u128,
 						>,
@@ -4754,6 +5272,8 @@ pub mod api {
 				}
 				#[doc = " Any liquidity locks on some account balances."]
 				#[doc = " NOTE: Should only be accessed when setting, changing and freeing a lock."]
+				#[doc = ""]
+				#[doc = " Use of locks is deprecated in favour of freezes. See `https://github.com/paritytech/substrate/pull/12951/`"]
 				pub fn locks_iter(
 					&self,
 				) -> ::subxt::storage::address::Address<
@@ -4776,6 +5296,8 @@ pub mod api {
 				}
 				#[doc = " Any liquidity locks on some account balances."]
 				#[doc = " NOTE: Should only be accessed when setting, changing and freeing a lock."]
+				#[doc = ""]
+				#[doc = " Use of locks is deprecated in favour of freezes. See `https://github.com/paritytech/substrate/pull/12951/`"]
 				pub fn locks(
 					&self,
 					_0: impl ::std::borrow::Borrow<types::locks::Param0>,
@@ -4800,6 +5322,8 @@ pub mod api {
 					)
 				}
 				#[doc = " Named reserves on some account balances."]
+				#[doc = ""]
+				#[doc = " Use of reserves is deprecated in favour of holds. See `https://github.com/paritytech/substrate/pull/12951/`"]
 				pub fn reserves_iter(
 					&self,
 				) -> ::subxt::storage::address::Address<
@@ -4821,6 +5345,8 @@ pub mod api {
 					)
 				}
 				#[doc = " Named reserves on some account balances."]
+				#[doc = ""]
+				#[doc = " Use of reserves is deprecated in favour of holds. See `https://github.com/paritytech/substrate/pull/12951/`"]
 				pub fn reserves(
 					&self,
 					_0: impl ::std::borrow::Borrow<types::reserves::Param0>,
@@ -4965,6 +5491,8 @@ pub mod api {
 				}
 				#[doc = " The maximum number of locks that should exist on an account."]
 				#[doc = " Not strictly enforced, but used for weight estimation."]
+				#[doc = ""]
+				#[doc = " Use of locks is deprecated in favour of freezes. See `https://github.com/paritytech/substrate/pull/12951/`"]
 				pub fn max_locks(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
 					::subxt::constants::Address::new_static(
 						"Balances",
@@ -4978,6 +5506,8 @@ pub mod api {
 					)
 				}
 				#[doc = " The maximum number of named reserves that can exist on an account."]
+				#[doc = ""]
+				#[doc = " Use of reserves is deprecated in favour of holds. See `https://github.com/paritytech/substrate/pull/12951/`"]
 				pub fn max_reserves(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
 					::subxt::constants::Address::new_static(
 						"Balances",
@@ -5172,7 +5702,20 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::submit_unsigned`]."]
+				#[doc = "Submit a solution for the unsigned phase."]
+				#[doc = ""]
+				#[doc = "The dispatch origin fo this call must be __none__."]
+				#[doc = ""]
+				#[doc = "This submission is checked on the fly. Moreover, this unsigned solution is only"]
+				#[doc = "validated when submitted to the pool from the **local** node. Effectively, this means"]
+				#[doc = "that only active validators can submit this transaction when authoring a block (similar"]
+				#[doc = "to an inherent)."]
+				#[doc = ""]
+				#[doc = "To prevent any incorrect solution (and thus wasted time/weight), this transaction will"]
+				#[doc = "panic if the solution submitted by the validator is invalid in any way, effectively"]
+				#[doc = "putting their authoring reward at risk."]
+				#[doc = ""]
+				#[doc = "No deposit or reward is associated with this submission."]
 				pub struct SubmitUnsigned {
 					pub raw_solution: ::std::boxed::Box<submit_unsigned::RawSolution>,
 					pub witness: submit_unsigned::Witness,
@@ -5203,7 +5746,11 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::set_minimum_untrusted_score`]."]
+				#[doc = "Set a new value for `MinimumUntrustedScore`."]
+				#[doc = ""]
+				#[doc = "Dispatch origin must be aligned with `T::ForceOrigin`."]
+				#[doc = ""]
+				#[doc = "This check can be turned off by setting the value to `None`."]
 				pub struct SetMinimumUntrustedScore {
 					pub maybe_next_score: set_minimum_untrusted_score::MaybeNextScore,
 				}
@@ -5229,7 +5776,14 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::set_emergency_election_result`]."]
+				#[doc = "Set a solution in the queue, to be handed out to the client of this pallet in the next"]
+				#[doc = "call to `ElectionProvider::elect`."]
+				#[doc = ""]
+				#[doc = "This can only be set by `T::ForceOrigin`, and only when the phase is `Emergency`."]
+				#[doc = ""]
+				#[doc = "The solution is not checked for any feasibility and is assumed to be trustworthy, as any"]
+				#[doc = "feasibility check itself can in principle cause the election process to fail (due to"]
+				#[doc = "memory/weight constrains)."]
 				pub struct SetEmergencyElectionResult {
 					pub supports: set_emergency_election_result::Supports,
 				}
@@ -5257,7 +5811,15 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::submit`]."]
+				#[doc = "Submit a solution for the signed phase."]
+				#[doc = ""]
+				#[doc = "The dispatch origin fo this call must be __signed__."]
+				#[doc = ""]
+				#[doc = "The solution is potentially queued, based on the claimed score and processed at the end"]
+				#[doc = "of the signed phase."]
+				#[doc = ""]
+				#[doc = "A deposit is reserved and recorded for the solution. Based on the outcome, the solution"]
+				#[doc = "might be rewarded, slashed, or get all or a part of the deposit back."]
 				pub struct Submit {
 					pub raw_solution: ::std::boxed::Box<submit::RawSolution>,
 				}
@@ -5285,7 +5847,10 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::governance_fallback`]."]
+				#[doc = "Trigger the governance fallback."]
+				#[doc = ""]
+				#[doc = "This can only be called when [`Phase::Emergency`] is enabled, as an alternative to"]
+				#[doc = "calling [`Call::set_emergency_election_result`]."]
 				pub struct GovernanceFallback {
 					pub maybe_max_voters: governance_fallback::MaybeMaxVoters,
 					pub maybe_max_targets: governance_fallback::MaybeMaxTargets,
@@ -5302,7 +5867,20 @@ pub mod api {
 			}
 			pub struct TransactionApi;
 			impl TransactionApi {
-				#[doc = "See [`Pallet::submit_unsigned`]."]
+				#[doc = "Submit a solution for the unsigned phase."]
+				#[doc = ""]
+				#[doc = "The dispatch origin fo this call must be __none__."]
+				#[doc = ""]
+				#[doc = "This submission is checked on the fly. Moreover, this unsigned solution is only"]
+				#[doc = "validated when submitted to the pool from the **local** node. Effectively, this means"]
+				#[doc = "that only active validators can submit this transaction when authoring a block (similar"]
+				#[doc = "to an inherent)."]
+				#[doc = ""]
+				#[doc = "To prevent any incorrect solution (and thus wasted time/weight), this transaction will"]
+				#[doc = "panic if the solution submitted by the validator is invalid in any way, effectively"]
+				#[doc = "putting their authoring reward at risk."]
+				#[doc = ""]
+				#[doc = "No deposit or reward is associated with this submission."]
 				pub fn submit_unsigned(
 					&self,
 					raw_solution: types::submit_unsigned::RawSolution,
@@ -5322,7 +5900,11 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::set_minimum_untrusted_score`]."]
+				#[doc = "Set a new value for `MinimumUntrustedScore`."]
+				#[doc = ""]
+				#[doc = "Dispatch origin must be aligned with `T::ForceOrigin`."]
+				#[doc = ""]
+				#[doc = "This check can be turned off by setting the value to `None`."]
 				pub fn set_minimum_untrusted_score(
 					&self,
 					maybe_next_score: types::set_minimum_untrusted_score::MaybeNextScore,
@@ -5339,7 +5921,14 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::set_emergency_election_result`]."]
+				#[doc = "Set a solution in the queue, to be handed out to the client of this pallet in the next"]
+				#[doc = "call to `ElectionProvider::elect`."]
+				#[doc = ""]
+				#[doc = "This can only be set by `T::ForceOrigin`, and only when the phase is `Emergency`."]
+				#[doc = ""]
+				#[doc = "The solution is not checked for any feasibility and is assumed to be trustworthy, as any"]
+				#[doc = "feasibility check itself can in principle cause the election process to fail (due to"]
+				#[doc = "memory/weight constrains)."]
 				pub fn set_emergency_election_result(
 					&self,
 					supports: types::set_emergency_election_result::Supports,
@@ -5356,7 +5945,15 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::submit`]."]
+				#[doc = "Submit a solution for the signed phase."]
+				#[doc = ""]
+				#[doc = "The dispatch origin fo this call must be __signed__."]
+				#[doc = ""]
+				#[doc = "The solution is potentially queued, based on the claimed score and processed at the end"]
+				#[doc = "of the signed phase."]
+				#[doc = ""]
+				#[doc = "A deposit is reserved and recorded for the solution. Based on the outcome, the solution"]
+				#[doc = "might be rewarded, slashed, or get all or a part of the deposit back."]
 				pub fn submit(
 					&self,
 					raw_solution: types::submit::RawSolution,
@@ -5374,7 +5971,10 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::governance_fallback`]."]
+				#[doc = "Trigger the governance fallback."]
+				#[doc = ""]
+				#[doc = "This can only be called when [`Phase::Emergency`] is enabled, as an alternative to"]
+				#[doc = "calling [`Call::set_emergency_election_result`]."]
 				pub fn governance_fallback(
 					&self,
 					maybe_max_voters: types::governance_fallback::MaybeMaxVoters,
@@ -5416,7 +6016,7 @@ pub mod api {
 			#[doc = "A solution was stored with the given compute."]
 			#[doc = ""]
 			#[doc = "The `origin` indicates the origin of the solution. If `origin` is `Some(AccountId)`,"]
-			#[doc = "the stored solution was submited in the signed phase by a miner with the `AccountId`."]
+			#[doc = "the stored solution was submitted in the signed phase by a miner with the `AccountId`."]
 			#[doc = "Otherwise, the solution was stored either during the unsigned phase or by"]
 			#[doc = "`T::ForceOrigin`. The `bool` is `true` when a previous solution was ejected to make"]
 			#[doc = "room for this one."]
@@ -5928,34 +6528,6 @@ pub mod api {
 			use super::runtime_types;
 			pub struct ConstantsApi;
 			impl ConstantsApi {
-				#[doc = " Duration of the unsigned phase."]
-				pub fn unsigned_phase(
-					&self,
-				) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static(
-						"ElectionProviderMultiPhase",
-						"UnsignedPhase",
-						[
-							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
-							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
-							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
-							145u8,
-						],
-					)
-				}
-				#[doc = " Duration of the signed phase."]
-				pub fn signed_phase(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
-					::subxt::constants::Address::new_static(
-						"ElectionProviderMultiPhase",
-						"SignedPhase",
-						[
-							98u8, 252u8, 116u8, 72u8, 26u8, 180u8, 225u8, 83u8, 200u8, 157u8,
-							125u8, 151u8, 53u8, 76u8, 168u8, 26u8, 10u8, 9u8, 98u8, 68u8, 9u8,
-							178u8, 197u8, 113u8, 31u8, 79u8, 200u8, 90u8, 203u8, 100u8, 41u8,
-							145u8,
-						],
-					)
-				}
 				#[doc = " The minimum amount of improvement to the solution score that defines a solution as"]
 				#[doc = " \"better\" in the Signed phase."]
 				pub fn better_signed_threshold(
@@ -6203,7 +6775,22 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::bond`]."]
+				#[doc = "Take the origin account as a stash and lock up `value` of its balance. `controller` will"]
+				#[doc = "be the account that controls it."]
+				#[doc = ""]
+				#[doc = "`value` must be more than the `minimum_balance` specified by `T::Currency`."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ by the stash account."]
+				#[doc = ""]
+				#[doc = "Emits `Bonded`."]
+				#[doc = "## Complexity"]
+				#[doc = "- Independent of the arguments. Moderate complexity."]
+				#[doc = "- O(1)."]
+				#[doc = "- Three extra DB entries."]
+				#[doc = ""]
+				#[doc = "NOTE: Two of the storage writes (`Self::bonded`, `Self::payee`) are _never_ cleaned"]
+				#[doc = "unless the `origin` falls below _existential deposit_ (or equal to 0) and gets removed"]
+				#[doc = "as dust."]
 				pub struct Bond {
 					#[codec(compact)]
 					pub value: bond::Value,
@@ -6233,7 +6820,20 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::bond_extra`]."]
+				#[doc = "Add some extra amount that have appeared in the stash `free_balance` into the balance up"]
+				#[doc = "for staking."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ by the stash, not the controller."]
+				#[doc = ""]
+				#[doc = "Use this if there are additional funds in your stash account that you wish to bond."]
+				#[doc = "Unlike [`bond`](Self::bond) or [`unbond`](Self::unbond) this function does not impose"]
+				#[doc = "any limitation on the amount that can be added."]
+				#[doc = ""]
+				#[doc = "Emits `Bonded`."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- Independent of the arguments. Insignificant complexity."]
+				#[doc = "- O(1)."]
 				pub struct BondExtra {
 					#[codec(compact)]
 					pub max_additional: bond_extra::MaxAdditional,
@@ -6259,7 +6859,25 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::unbond`]."]
+				#[doc = "Schedule a portion of the stash to be unlocked ready for transfer out after the bond"]
+				#[doc = "period ends. If this leaves an amount actively bonded less than"]
+				#[doc = "T::Currency::minimum_balance(), then it is increased to the full amount."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ by the controller, not the stash."]
+				#[doc = ""]
+				#[doc = "Once the unlock period is done, you can call `withdraw_unbonded` to actually move"]
+				#[doc = "the funds out of management ready for transfer."]
+				#[doc = ""]
+				#[doc = "No more than a limited number of unlocking chunks (see `MaxUnlockingChunks`)"]
+				#[doc = "can co-exists at the same time. If there are no unlocking chunks slots available"]
+				#[doc = "[`Call::withdraw_unbonded`] is called to remove some of the chunks (if possible)."]
+				#[doc = ""]
+				#[doc = "If a user encounters the `InsufficientBond` error when calling this extrinsic,"]
+				#[doc = "they should call `chill` first in order to free up their bonded funds."]
+				#[doc = ""]
+				#[doc = "Emits `Unbonded`."]
+				#[doc = ""]
+				#[doc = "See also [`Call::withdraw_unbonded`]."]
 				pub struct Unbond {
 					#[codec(compact)]
 					pub value: unbond::Value,
@@ -6285,7 +6903,29 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::withdraw_unbonded`]."]
+				#[doc = "Remove any unlocked chunks from the `unlocking` queue from our management."]
+				#[doc = ""]
+				#[doc = "This essentially frees up that balance to be used by the stash account to do whatever"]
+				#[doc = "it wants."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ by the controller."]
+				#[doc = ""]
+				#[doc = "Emits `Withdrawn`."]
+				#[doc = ""]
+				#[doc = "See also [`Call::unbond`]."]
+				#[doc = ""]
+				#[doc = "## Parameters"]
+				#[doc = ""]
+				#[doc = "- `num_slashing_spans` indicates the number of metadata slashing spans to clear when"]
+				#[doc = "this call results in a complete removal of all the data related to the stash account."]
+				#[doc = "In this case, the `num_slashing_spans` must be larger or equal to the number of"]
+				#[doc = "slashing spans associated with the stash account in the [`SlashingSpans`] storage type,"]
+				#[doc = "otherwise the call will fail. The call weight is directly proportional to"]
+				#[doc = "`num_slashing_spans`."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "O(S) where S is the number of slashing spans to remove"]
+				#[doc = "NOTE: Weight annotation is the kill scenario, we refund otherwise."]
 				pub struct WithdrawUnbonded {
 					pub num_slashing_spans: withdraw_unbonded::NumSlashingSpans,
 				}
@@ -6310,7 +6950,11 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::validate`]."]
+				#[doc = "Declare the desire to validate for the origin controller."]
+				#[doc = ""]
+				#[doc = "Effects will be felt at the beginning of the next era."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ by the controller, not the stash."]
 				pub struct Validate {
 					pub prefs: validate::Prefs,
 				}
@@ -6335,7 +6979,16 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::nominate`]."]
+				#[doc = "Declare the desire to nominate `targets` for the origin controller."]
+				#[doc = ""]
+				#[doc = "Effects will be felt at the beginning of the next era."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ by the controller, not the stash."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- The transaction's complexity is proportional to the size of `targets` (N)"]
+				#[doc = "which is capped at CompactAssignments::LIMIT (T::MaxNominations)."]
+				#[doc = "- Both the reads and writes follow a similar pattern."]
 				pub struct Nominate {
 					pub targets: nominate::Targets,
 				}
@@ -6365,7 +7018,16 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::chill`]."]
+				#[doc = "Declare no desire to either validate or nominate."]
+				#[doc = ""]
+				#[doc = "Effects will be felt at the beginning of the next era."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ by the controller, not the stash."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- Independent of the arguments. Insignificant complexity."]
+				#[doc = "- Contains one read."]
+				#[doc = "- Writes are limited to the `origin` account key."]
 				pub struct Chill;
 				impl ::subxt::blocks::StaticExtrinsic for Chill {
 					const PALLET: &'static str = "Staking";
@@ -6384,7 +7046,18 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::set_payee`]."]
+				#[doc = "(Re-)set the payment target for a controller."]
+				#[doc = ""]
+				#[doc = "Effects will be felt instantly (as soon as this function is completed successfully)."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ by the controller, not the stash."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- O(1)"]
+				#[doc = "- Independent of the arguments. Insignificant complexity."]
+				#[doc = "- Contains a limited number of reads."]
+				#[doc = "- Writes are limited to the `origin` account key."]
+				#[doc = "---------"]
 				pub struct SetPayee {
 					pub payee: set_payee::Payee,
 				}
@@ -6411,7 +7084,20 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::set_controller`]."]
+				#[doc = "(Re-)sets the controller of a stash to the stash itself. This function previously"]
+				#[doc = "accepted a `controller` argument to set the controller to an account other than the"]
+				#[doc = "stash itself. This functionality has now been removed, now only setting the controller"]
+				#[doc = "to the stash, if it is not already."]
+				#[doc = ""]
+				#[doc = "Effects will be felt instantly (as soon as this function is completed successfully)."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ by the stash, not the controller."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "O(1)"]
+				#[doc = "- Independent of the arguments. Insignificant complexity."]
+				#[doc = "- Contains a limited number of reads."]
+				#[doc = "- Writes are limited to the `origin` account key."]
 				pub struct SetController;
 				impl ::subxt::blocks::StaticExtrinsic for SetController {
 					const PALLET: &'static str = "Staking";
@@ -6430,7 +7116,12 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::set_validator_count`]."]
+				#[doc = "Sets the ideal number of validators."]
+				#[doc = ""]
+				#[doc = "The dispatch origin must be Root."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "O(1)"]
 				pub struct SetValidatorCount {
 					#[codec(compact)]
 					pub new: set_validator_count::New,
@@ -6456,7 +7147,13 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::increase_validator_count`]."]
+				#[doc = "Increments the ideal number of validators up to maximum of"]
+				#[doc = "`ElectionProviderBase::MaxWinners`."]
+				#[doc = ""]
+				#[doc = "The dispatch origin must be Root."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "Same as [`Self::set_validator_count`]."]
 				pub struct IncreaseValidatorCount {
 					#[codec(compact)]
 					pub additional: increase_validator_count::Additional,
@@ -6482,7 +7179,13 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::scale_validator_count`]."]
+				#[doc = "Scale up the ideal number of validators by a factor up to maximum of"]
+				#[doc = "`ElectionProviderBase::MaxWinners`."]
+				#[doc = ""]
+				#[doc = "The dispatch origin must be Root."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "Same as [`Self::set_validator_count`]."]
 				pub struct ScaleValidatorCount {
 					pub factor: scale_validator_count::Factor,
 				}
@@ -6507,7 +7210,19 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::force_no_eras`]."]
+				#[doc = "Force there to be no new eras indefinitely."]
+				#[doc = ""]
+				#[doc = "The dispatch origin must be Root."]
+				#[doc = ""]
+				#[doc = "# Warning"]
+				#[doc = ""]
+				#[doc = "The election process starts multiple blocks before the end of the era."]
+				#[doc = "Thus the election process may be ongoing when this is called. In this case the"]
+				#[doc = "election will continue until the next era is triggered."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- No arguments."]
+				#[doc = "- Weight: O(1)"]
 				pub struct ForceNoEras;
 				impl ::subxt::blocks::StaticExtrinsic for ForceNoEras {
 					const PALLET: &'static str = "Staking";
@@ -6526,7 +7241,20 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::force_new_era`]."]
+				#[doc = "Force there to be a new era at the end of the next session. After this, it will be"]
+				#[doc = "reset to normal (non-forced) behaviour."]
+				#[doc = ""]
+				#[doc = "The dispatch origin must be Root."]
+				#[doc = ""]
+				#[doc = "# Warning"]
+				#[doc = ""]
+				#[doc = "The election process starts multiple blocks before the end of the era."]
+				#[doc = "If this is called just before a new era is triggered, the election process may not"]
+				#[doc = "have enough blocks to get a result."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- No arguments."]
+				#[doc = "- Weight: O(1)"]
 				pub struct ForceNewEra;
 				impl ::subxt::blocks::StaticExtrinsic for ForceNewEra {
 					const PALLET: &'static str = "Staking";
@@ -6545,7 +7273,9 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::set_invulnerables`]."]
+				#[doc = "Set the validators who cannot be slashed (if any)."]
+				#[doc = ""]
+				#[doc = "The dispatch origin must be Root."]
 				pub struct SetInvulnerables {
 					pub invulnerables: set_invulnerables::Invulnerables,
 				}
@@ -6570,7 +7300,14 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::force_unstake`]."]
+				#[doc = "Force a current staker to become completely unstaked, immediately."]
+				#[doc = ""]
+				#[doc = "The dispatch origin must be Root."]
+				#[doc = ""]
+				#[doc = "## Parameters"]
+				#[doc = ""]
+				#[doc = "- `num_slashing_spans`: Refer to comments on [`Call::withdraw_unbonded`] for more"]
+				#[doc = "details."]
 				pub struct ForceUnstake {
 					pub stash: force_unstake::Stash,
 					pub num_slashing_spans: force_unstake::NumSlashingSpans,
@@ -6597,7 +7334,15 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::force_new_era_always`]."]
+				#[doc = "Force there to be a new era at the end of sessions indefinitely."]
+				#[doc = ""]
+				#[doc = "The dispatch origin must be Root."]
+				#[doc = ""]
+				#[doc = "# Warning"]
+				#[doc = ""]
+				#[doc = "The election process starts multiple blocks before the end of the era."]
+				#[doc = "If this is called just before a new era is triggered, the election process may not"]
+				#[doc = "have enough blocks to get a result."]
 				pub struct ForceNewEraAlways;
 				impl ::subxt::blocks::StaticExtrinsic for ForceNewEraAlways {
 					const PALLET: &'static str = "Staking";
@@ -6616,7 +7361,11 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::cancel_deferred_slash`]."]
+				#[doc = "Cancel enactment of a deferred slash."]
+				#[doc = ""]
+				#[doc = "Can be called by the `T::AdminOrigin`."]
+				#[doc = ""]
+				#[doc = "Parameters: era and indices of the slashes for that era to kill."]
 				pub struct CancelDeferredSlash {
 					pub era: cancel_deferred_slash::Era,
 					pub slash_indices: cancel_deferred_slash::SlashIndices,
@@ -6643,7 +7392,19 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::payout_stakers`]."]
+				#[doc = "Pay out next page of the stakers behind a validator for the given era."]
+				#[doc = ""]
+				#[doc = "- `validator_stash` is the stash account of the validator."]
+				#[doc = "- `era` may be any era between `[current_era - history_depth; current_era]`."]
+				#[doc = ""]
+				#[doc = "The origin of this call must be _Signed_. Any account can call this function, even if"]
+				#[doc = "it is not one of the stakers."]
+				#[doc = ""]
+				#[doc = "The reward payout could be paged in case there are too many nominators backing the"]
+				#[doc = "`validator_stash`. This call will payout unpaid pages in an ascending order. To claim a"]
+				#[doc = "specific page, use `payout_stakers_by_page`.`"]
+				#[doc = ""]
+				#[doc = "If all pages are claimed, it returns an error `InvalidPage`."]
 				pub struct PayoutStakers {
 					pub validator_stash: payout_stakers::ValidatorStash,
 					pub era: payout_stakers::Era,
@@ -6670,7 +7431,13 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::rebond`]."]
+				#[doc = "Rebond a portion of the stash scheduled to be unlocked."]
+				#[doc = ""]
+				#[doc = "The dispatch origin must be signed by the controller."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- Time complexity: O(L), where L is unlocking chunks"]
+				#[doc = "- Bounded by `MaxUnlockingChunks`."]
 				pub struct Rebond {
 					#[codec(compact)]
 					pub value: rebond::Value,
@@ -6696,7 +7463,24 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::reap_stash`]."]
+				#[doc = "Remove all data structures concerning a staker/stash once it is at a state where it can"]
+				#[doc = "be considered `dust` in the staking system. The requirements are:"]
+				#[doc = ""]
+				#[doc = "1. the `total_balance` of the stash is below existential deposit."]
+				#[doc = "2. or, the `ledger.total` of the stash is below existential deposit."]
+				#[doc = "3. or, existential deposit is zero and either `total_balance` or `ledger.total` is zero."]
+				#[doc = ""]
+				#[doc = "The former can happen in cases like a slash; the latter when a fully unbonded account"]
+				#[doc = "is still receiving staking rewards in `RewardDestination::Staked`."]
+				#[doc = ""]
+				#[doc = "It can be called by anyone, as long as `stash` meets the above requirements."]
+				#[doc = ""]
+				#[doc = "Refunds the transaction fees upon successful execution."]
+				#[doc = ""]
+				#[doc = "## Parameters"]
+				#[doc = ""]
+				#[doc = "- `num_slashing_spans`: Refer to comments on [`Call::withdraw_unbonded`] for more"]
+				#[doc = "details."]
 				pub struct ReapStash {
 					pub stash: reap_stash::Stash,
 					pub num_slashing_spans: reap_stash::NumSlashingSpans,
@@ -6723,7 +7507,17 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::kick`]."]
+				#[doc = "Remove the given nominations from the calling validator."]
+				#[doc = ""]
+				#[doc = "Effects will be felt at the beginning of the next era."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ by the controller, not the stash."]
+				#[doc = ""]
+				#[doc = "- `who`: A list of nominator stash accounts who are nominating this validator which"]
+				#[doc = "  should no longer be nominating this validator."]
+				#[doc = ""]
+				#[doc = "Note: Making this call only makes sense if you first set the validator preferences to"]
+				#[doc = "block any further nominations."]
 				pub struct Kick {
 					pub who: kick::Who,
 				}
@@ -6753,7 +7547,23 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::set_staking_configs`]."]
+				#[doc = "Update the various staking configurations ."]
+				#[doc = ""]
+				#[doc = "* `min_nominator_bond`: The minimum active bond needed to be a nominator."]
+				#[doc = "* `min_validator_bond`: The minimum active bond needed to be a validator."]
+				#[doc = "* `max_nominator_count`: The max number of users who can be a nominator at once. When"]
+				#[doc = "  set to `None`, no limit is enforced."]
+				#[doc = "* `max_validator_count`: The max number of users who can be a validator at once. When"]
+				#[doc = "  set to `None`, no limit is enforced."]
+				#[doc = "* `chill_threshold`: The ratio of `max_nominator_count` or `max_validator_count` which"]
+				#[doc = "  should be filled in order for the `chill_other` transaction to work."]
+				#[doc = "* `min_commission`: The minimum amount of commission that each validators must maintain."]
+				#[doc = "  This is checked only upon calling `validate`. Existing validators are not affected."]
+				#[doc = ""]
+				#[doc = "RuntimeOrigin must be Root to call this function."]
+				#[doc = ""]
+				#[doc = "NOTE: Existing nominators and validators will not be affected by this update."]
+				#[doc = "to kick people under the new limits, `chill_other` should be called."]
 				pub struct SetStakingConfigs {
 					pub min_nominator_bond: set_staking_configs::MinNominatorBond,
 					pub min_validator_bond: set_staking_configs::MinValidatorBond,
@@ -6761,6 +7571,7 @@ pub mod api {
 					pub max_validator_count: set_staking_configs::MaxValidatorCount,
 					pub chill_threshold: set_staking_configs::ChillThreshold,
 					pub min_commission: set_staking_configs::MinCommission,
+					pub max_staked_rewards: set_staking_configs::MaxStakedRewards,
 				}
 				pub mod set_staking_configs {
 					use super::runtime_types;
@@ -6788,6 +7599,10 @@ pub mod api {
 						runtime_types::pallet_staking::pallet::pallet::ConfigOp<
 							runtime_types::sp_arithmetic::per_things::Perbill,
 						>;
+					pub type MaxStakedRewards =
+						runtime_types::pallet_staking::pallet::pallet::ConfigOp<
+							runtime_types::sp_arithmetic::per_things::Percent,
+						>;
 				}
 				impl ::subxt::blocks::StaticExtrinsic for SetStakingConfigs {
 					const PALLET: &'static str = "Staking";
@@ -6806,7 +7621,32 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::chill_other`]."]
+				#[doc = "Declare a `controller` to stop participating as either a validator or nominator."]
+				#[doc = ""]
+				#[doc = "Effects will be felt at the beginning of the next era."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_, but can be called by anyone."]
+				#[doc = ""]
+				#[doc = "If the caller is the same as the controller being targeted, then no further checks are"]
+				#[doc = "enforced, and this function behaves just like `chill`."]
+				#[doc = ""]
+				#[doc = "If the caller is different than the controller being targeted, the following conditions"]
+				#[doc = "must be met:"]
+				#[doc = ""]
+				#[doc = "* `controller` must belong to a nominator who has become non-decodable,"]
+				#[doc = ""]
+				#[doc = "Or:"]
+				#[doc = ""]
+				#[doc = "* A `ChillThreshold` must be set and checked which defines how close to the max"]
+				#[doc = "  nominators or validators we must reach before users can start chilling one-another."]
+				#[doc = "* A `MaxNominatorCount` and `MaxValidatorCount` must be set which is used to determine"]
+				#[doc = "  how close we are to the threshold."]
+				#[doc = "* A `MinNominatorBond` and `MinValidatorBond` must be set and checked, which determines"]
+				#[doc = "  if this is a person that should be chilled because they have not met the threshold"]
+				#[doc = "  bond required."]
+				#[doc = ""]
+				#[doc = "This can be helpful if bond requirements are updated, and we need to remove old users"]
+				#[doc = "who do not satisfy these requirements."]
 				pub struct ChillOther {
 					pub stash: chill_other::Stash,
 				}
@@ -6831,7 +7671,9 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::force_apply_min_commission`]."]
+				#[doc = "Force a validator to have at least the minimum commission. This will not affect a"]
+				#[doc = "validator who already has a commission greater than or equal to the minimum. Any account"]
+				#[doc = "can call this."]
 				pub struct ForceApplyMinCommission {
 					pub validator_stash: force_apply_min_commission::ValidatorStash,
 				}
@@ -6856,7 +7698,10 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::set_min_commission`]."]
+				#[doc = "Sets the minimum amount of commission that each validators must maintain."]
+				#[doc = ""]
+				#[doc = "This call has lower privilege requirements than `set_staking_config` and can be called"]
+				#[doc = "by the `T::AdminOrigin`. Root can always call this."]
 				pub struct SetMinCommission {
 					pub new: set_min_commission::New,
 				}
@@ -6881,7 +7726,23 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::payout_stakers_by_page`]."]
+				#[doc = "Pay out a page of the stakers behind a validator for the given era and page."]
+				#[doc = ""]
+				#[doc = "- `validator_stash` is the stash account of the validator."]
+				#[doc = "- `era` may be any era between `[current_era - history_depth; current_era]`."]
+				#[doc = "- `page` is the page index of nominators to pay out with value between 0 and"]
+				#[doc = "  `num_nominators / T::MaxExposurePageSize`."]
+				#[doc = ""]
+				#[doc = "The origin of this call must be _Signed_. Any account can call this function, even if"]
+				#[doc = "it is not one of the stakers."]
+				#[doc = ""]
+				#[doc = "If a validator has more than [`Config::MaxExposurePageSize`] nominators backing"]
+				#[doc = "them, then the list of nominators is paged, with each page being capped at"]
+				#[doc = "[`Config::MaxExposurePageSize`.] If a validator has more than one page of nominators,"]
+				#[doc = "the call needs to be made for each page separately in order for all the nominators"]
+				#[doc = "backing a validator to receive the reward. The nominators are not sorted across pages"]
+				#[doc = "and so it should not be assumed the highest staker would be on the topmost page and vice"]
+				#[doc = "versa. If rewards are not claimed in [`Config::HistoryDepth`] eras, they are lost."]
 				pub struct PayoutStakersByPage {
 					pub validator_stash: payout_stakers_by_page::ValidatorStash,
 					pub era: payout_stakers_by_page::Era,
@@ -6910,7 +7771,12 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::update_payee`]."]
+				#[doc = "Migrates an account's `RewardDestination::Controller` to"]
+				#[doc = "`RewardDestination::Account(controller)`."]
+				#[doc = ""]
+				#[doc = "Effects will be felt instantly (as soon as this function is completed successfully)."]
+				#[doc = ""]
+				#[doc = "This will waive the transaction fee if the `payee` is successfully migrated."]
 				pub struct UpdatePayee {
 					pub controller: update_payee::Controller,
 				}
@@ -6935,7 +7801,13 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::deprecate_controller_batch`]."]
+				#[doc = "Updates a batch of controller accounts to their corresponding stash account if they are"]
+				#[doc = "not the same. Ignores any controller accounts that do not exist, and does not operate if"]
+				#[doc = "the stash and controller are already the same."]
+				#[doc = ""]
+				#[doc = "Effects will be felt instantly (as soon as this function is completed successfully)."]
+				#[doc = ""]
+				#[doc = "The dispatch origin must be `T::AdminOrigin`."]
 				pub struct DeprecateControllerBatch {
 					pub controllers: deprecate_controller_batch::Controllers,
 				}
@@ -6950,10 +7822,70 @@ pub mod api {
 					const PALLET: &'static str = "Staking";
 					const CALL: &'static str = "deprecate_controller_batch";
 				}
+				#[derive(
+					:: subxt :: ext :: codec :: Decode,
+					:: subxt :: ext :: codec :: Encode,
+					:: subxt :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: codec)]
+				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+				#[doc = "Restores the state of a ledger which is in an inconsistent state."]
+				#[doc = ""]
+				#[doc = "The requirements to restore a ledger are the following:"]
+				#[doc = "* The stash is bonded; or"]
+				#[doc = "* The stash is not bonded but it has a staking lock left behind; or"]
+				#[doc = "* If the stash has an associated ledger and its state is inconsistent; or"]
+				#[doc = "* If the ledger is not corrupted *but* its staking lock is out of sync."]
+				#[doc = ""]
+				#[doc = "The `maybe_*` input parameters will overwrite the corresponding data and metadata of the"]
+				#[doc = "ledger associated with the stash. If the input parameters are not set, the ledger will"]
+				#[doc = "be reset values from on-chain state."]
+				pub struct RestoreLedger {
+					pub stash: restore_ledger::Stash,
+					pub maybe_controller: restore_ledger::MaybeController,
+					pub maybe_total: restore_ledger::MaybeTotal,
+					pub maybe_unlocking: restore_ledger::MaybeUnlocking,
+				}
+				pub mod restore_ledger {
+					use super::runtime_types;
+					pub type Stash = ::subxt::utils::AccountId32;
+					pub type MaybeController = ::core::option::Option<::subxt::utils::AccountId32>;
+					pub type MaybeTotal = ::core::option::Option<::core::primitive::u128>;
+					pub type MaybeUnlocking = ::core::option::Option<
+						runtime_types::bounded_collections::bounded_vec::BoundedVec<
+							runtime_types::pallet_staking::UnlockChunk<::core::primitive::u128>,
+						>,
+					>;
+				}
+				impl ::subxt::blocks::StaticExtrinsic for RestoreLedger {
+					const PALLET: &'static str = "Staking";
+					const CALL: &'static str = "restore_ledger";
+				}
 			}
 			pub struct TransactionApi;
 			impl TransactionApi {
-				#[doc = "See [`Pallet::bond`]."]
+				#[doc = "Take the origin account as a stash and lock up `value` of its balance. `controller` will"]
+				#[doc = "be the account that controls it."]
+				#[doc = ""]
+				#[doc = "`value` must be more than the `minimum_balance` specified by `T::Currency`."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ by the stash account."]
+				#[doc = ""]
+				#[doc = "Emits `Bonded`."]
+				#[doc = "## Complexity"]
+				#[doc = "- Independent of the arguments. Moderate complexity."]
+				#[doc = "- O(1)."]
+				#[doc = "- Three extra DB entries."]
+				#[doc = ""]
+				#[doc = "NOTE: Two of the storage writes (`Self::bonded`, `Self::payee`) are _never_ cleaned"]
+				#[doc = "unless the `origin` falls below _existential deposit_ (or equal to 0) and gets removed"]
+				#[doc = "as dust."]
 				pub fn bond(
 					&self,
 					value: types::bond::Value,
@@ -6970,7 +7902,20 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::bond_extra`]."]
+				#[doc = "Add some extra amount that have appeared in the stash `free_balance` into the balance up"]
+				#[doc = "for staking."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ by the stash, not the controller."]
+				#[doc = ""]
+				#[doc = "Use this if there are additional funds in your stash account that you wish to bond."]
+				#[doc = "Unlike [`bond`](Self::bond) or [`unbond`](Self::unbond) this function does not impose"]
+				#[doc = "any limitation on the amount that can be added."]
+				#[doc = ""]
+				#[doc = "Emits `Bonded`."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- Independent of the arguments. Insignificant complexity."]
+				#[doc = "- O(1)."]
 				pub fn bond_extra(
 					&self,
 					max_additional: types::bond_extra::MaxAdditional,
@@ -6986,7 +7931,25 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::unbond`]."]
+				#[doc = "Schedule a portion of the stash to be unlocked ready for transfer out after the bond"]
+				#[doc = "period ends. If this leaves an amount actively bonded less than"]
+				#[doc = "T::Currency::minimum_balance(), then it is increased to the full amount."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ by the controller, not the stash."]
+				#[doc = ""]
+				#[doc = "Once the unlock period is done, you can call `withdraw_unbonded` to actually move"]
+				#[doc = "the funds out of management ready for transfer."]
+				#[doc = ""]
+				#[doc = "No more than a limited number of unlocking chunks (see `MaxUnlockingChunks`)"]
+				#[doc = "can co-exists at the same time. If there are no unlocking chunks slots available"]
+				#[doc = "[`Call::withdraw_unbonded`] is called to remove some of the chunks (if possible)."]
+				#[doc = ""]
+				#[doc = "If a user encounters the `InsufficientBond` error when calling this extrinsic,"]
+				#[doc = "they should call `chill` first in order to free up their bonded funds."]
+				#[doc = ""]
+				#[doc = "Emits `Unbonded`."]
+				#[doc = ""]
+				#[doc = "See also [`Call::withdraw_unbonded`]."]
 				pub fn unbond(
 					&self,
 					value: types::unbond::Value,
@@ -7002,7 +7965,29 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::withdraw_unbonded`]."]
+				#[doc = "Remove any unlocked chunks from the `unlocking` queue from our management."]
+				#[doc = ""]
+				#[doc = "This essentially frees up that balance to be used by the stash account to do whatever"]
+				#[doc = "it wants."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ by the controller."]
+				#[doc = ""]
+				#[doc = "Emits `Withdrawn`."]
+				#[doc = ""]
+				#[doc = "See also [`Call::unbond`]."]
+				#[doc = ""]
+				#[doc = "## Parameters"]
+				#[doc = ""]
+				#[doc = "- `num_slashing_spans` indicates the number of metadata slashing spans to clear when"]
+				#[doc = "this call results in a complete removal of all the data related to the stash account."]
+				#[doc = "In this case, the `num_slashing_spans` must be larger or equal to the number of"]
+				#[doc = "slashing spans associated with the stash account in the [`SlashingSpans`] storage type,"]
+				#[doc = "otherwise the call will fail. The call weight is directly proportional to"]
+				#[doc = "`num_slashing_spans`."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "O(S) where S is the number of slashing spans to remove"]
+				#[doc = "NOTE: Weight annotation is the kill scenario, we refund otherwise."]
 				pub fn withdraw_unbonded(
 					&self,
 					num_slashing_spans: types::withdraw_unbonded::NumSlashingSpans,
@@ -7019,7 +8004,11 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::validate`]."]
+				#[doc = "Declare the desire to validate for the origin controller."]
+				#[doc = ""]
+				#[doc = "Effects will be felt at the beginning of the next era."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ by the controller, not the stash."]
 				pub fn validate(
 					&self,
 					prefs: types::validate::Prefs,
@@ -7035,7 +8024,16 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::nominate`]."]
+				#[doc = "Declare the desire to nominate `targets` for the origin controller."]
+				#[doc = ""]
+				#[doc = "Effects will be felt at the beginning of the next era."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ by the controller, not the stash."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- The transaction's complexity is proportional to the size of `targets` (N)"]
+				#[doc = "which is capped at CompactAssignments::LIMIT (T::MaxNominations)."]
+				#[doc = "- Both the reads and writes follow a similar pattern."]
 				pub fn nominate(
 					&self,
 					targets: types::nominate::Targets,
@@ -7052,7 +8050,16 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::chill`]."]
+				#[doc = "Declare no desire to either validate or nominate."]
+				#[doc = ""]
+				#[doc = "Effects will be felt at the beginning of the next era."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ by the controller, not the stash."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- Independent of the arguments. Insignificant complexity."]
+				#[doc = "- Contains one read."]
+				#[doc = "- Writes are limited to the `origin` account key."]
 				pub fn chill(&self) -> ::subxt::tx::Payload<types::Chill> {
 					::subxt::tx::Payload::new_static(
 						"Staking",
@@ -7065,7 +8072,18 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::set_payee`]."]
+				#[doc = "(Re-)set the payment target for a controller."]
+				#[doc = ""]
+				#[doc = "Effects will be felt instantly (as soon as this function is completed successfully)."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ by the controller, not the stash."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- O(1)"]
+				#[doc = "- Independent of the arguments. Insignificant complexity."]
+				#[doc = "- Contains a limited number of reads."]
+				#[doc = "- Writes are limited to the `origin` account key."]
+				#[doc = "---------"]
 				pub fn set_payee(
 					&self,
 					payee: types::set_payee::Payee,
@@ -7082,7 +8100,20 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::set_controller`]."]
+				#[doc = "(Re-)sets the controller of a stash to the stash itself. This function previously"]
+				#[doc = "accepted a `controller` argument to set the controller to an account other than the"]
+				#[doc = "stash itself. This functionality has now been removed, now only setting the controller"]
+				#[doc = "to the stash, if it is not already."]
+				#[doc = ""]
+				#[doc = "Effects will be felt instantly (as soon as this function is completed successfully)."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ by the stash, not the controller."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "O(1)"]
+				#[doc = "- Independent of the arguments. Insignificant complexity."]
+				#[doc = "- Contains a limited number of reads."]
+				#[doc = "- Writes are limited to the `origin` account key."]
 				pub fn set_controller(&self) -> ::subxt::tx::Payload<types::SetController> {
 					::subxt::tx::Payload::new_static(
 						"Staking",
@@ -7096,7 +8127,12 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::set_validator_count`]."]
+				#[doc = "Sets the ideal number of validators."]
+				#[doc = ""]
+				#[doc = "The dispatch origin must be Root."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "O(1)"]
 				pub fn set_validator_count(
 					&self,
 					new: types::set_validator_count::New,
@@ -7113,7 +8149,13 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::increase_validator_count`]."]
+				#[doc = "Increments the ideal number of validators up to maximum of"]
+				#[doc = "`ElectionProviderBase::MaxWinners`."]
+				#[doc = ""]
+				#[doc = "The dispatch origin must be Root."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "Same as [`Self::set_validator_count`]."]
 				pub fn increase_validator_count(
 					&self,
 					additional: types::increase_validator_count::Additional,
@@ -7130,7 +8172,13 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::scale_validator_count`]."]
+				#[doc = "Scale up the ideal number of validators by a factor up to maximum of"]
+				#[doc = "`ElectionProviderBase::MaxWinners`."]
+				#[doc = ""]
+				#[doc = "The dispatch origin must be Root."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "Same as [`Self::set_validator_count`]."]
 				pub fn scale_validator_count(
 					&self,
 					factor: types::scale_validator_count::Factor,
@@ -7147,7 +8195,19 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::force_no_eras`]."]
+				#[doc = "Force there to be no new eras indefinitely."]
+				#[doc = ""]
+				#[doc = "The dispatch origin must be Root."]
+				#[doc = ""]
+				#[doc = "# Warning"]
+				#[doc = ""]
+				#[doc = "The election process starts multiple blocks before the end of the era."]
+				#[doc = "Thus the election process may be ongoing when this is called. In this case the"]
+				#[doc = "election will continue until the next era is triggered."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- No arguments."]
+				#[doc = "- Weight: O(1)"]
 				pub fn force_no_eras(&self) -> ::subxt::tx::Payload<types::ForceNoEras> {
 					::subxt::tx::Payload::new_static(
 						"Staking",
@@ -7161,7 +8221,20 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::force_new_era`]."]
+				#[doc = "Force there to be a new era at the end of the next session. After this, it will be"]
+				#[doc = "reset to normal (non-forced) behaviour."]
+				#[doc = ""]
+				#[doc = "The dispatch origin must be Root."]
+				#[doc = ""]
+				#[doc = "# Warning"]
+				#[doc = ""]
+				#[doc = "The election process starts multiple blocks before the end of the era."]
+				#[doc = "If this is called just before a new era is triggered, the election process may not"]
+				#[doc = "have enough blocks to get a result."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- No arguments."]
+				#[doc = "- Weight: O(1)"]
 				pub fn force_new_era(&self) -> ::subxt::tx::Payload<types::ForceNewEra> {
 					::subxt::tx::Payload::new_static(
 						"Staking",
@@ -7174,7 +8247,9 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::set_invulnerables`]."]
+				#[doc = "Set the validators who cannot be slashed (if any)."]
+				#[doc = ""]
+				#[doc = "The dispatch origin must be Root."]
 				pub fn set_invulnerables(
 					&self,
 					invulnerables: types::set_invulnerables::Invulnerables,
@@ -7190,7 +8265,14 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::force_unstake`]."]
+				#[doc = "Force a current staker to become completely unstaked, immediately."]
+				#[doc = ""]
+				#[doc = "The dispatch origin must be Root."]
+				#[doc = ""]
+				#[doc = "## Parameters"]
+				#[doc = ""]
+				#[doc = "- `num_slashing_spans`: Refer to comments on [`Call::withdraw_unbonded`] for more"]
+				#[doc = "details."]
 				pub fn force_unstake(
 					&self,
 					stash: types::force_unstake::Stash,
@@ -7210,7 +8292,15 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::force_new_era_always`]."]
+				#[doc = "Force there to be a new era at the end of sessions indefinitely."]
+				#[doc = ""]
+				#[doc = "The dispatch origin must be Root."]
+				#[doc = ""]
+				#[doc = "# Warning"]
+				#[doc = ""]
+				#[doc = "The election process starts multiple blocks before the end of the era."]
+				#[doc = "If this is called just before a new era is triggered, the election process may not"]
+				#[doc = "have enough blocks to get a result."]
 				pub fn force_new_era_always(
 					&self,
 				) -> ::subxt::tx::Payload<types::ForceNewEraAlways> {
@@ -7225,7 +8315,11 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::cancel_deferred_slash`]."]
+				#[doc = "Cancel enactment of a deferred slash."]
+				#[doc = ""]
+				#[doc = "Can be called by the `T::AdminOrigin`."]
+				#[doc = ""]
+				#[doc = "Parameters: era and indices of the slashes for that era to kill."]
 				pub fn cancel_deferred_slash(
 					&self,
 					era: types::cancel_deferred_slash::Era,
@@ -7243,7 +8337,19 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::payout_stakers`]."]
+				#[doc = "Pay out next page of the stakers behind a validator for the given era."]
+				#[doc = ""]
+				#[doc = "- `validator_stash` is the stash account of the validator."]
+				#[doc = "- `era` may be any era between `[current_era - history_depth; current_era]`."]
+				#[doc = ""]
+				#[doc = "The origin of this call must be _Signed_. Any account can call this function, even if"]
+				#[doc = "it is not one of the stakers."]
+				#[doc = ""]
+				#[doc = "The reward payout could be paged in case there are too many nominators backing the"]
+				#[doc = "`validator_stash`. This call will payout unpaid pages in an ascending order. To claim a"]
+				#[doc = "specific page, use `payout_stakers_by_page`.`"]
+				#[doc = ""]
+				#[doc = "If all pages are claimed, it returns an error `InvalidPage`."]
 				pub fn payout_stakers(
 					&self,
 					validator_stash: types::payout_stakers::ValidatorStash,
@@ -7263,7 +8369,13 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::rebond`]."]
+				#[doc = "Rebond a portion of the stash scheduled to be unlocked."]
+				#[doc = ""]
+				#[doc = "The dispatch origin must be signed by the controller."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- Time complexity: O(L), where L is unlocking chunks"]
+				#[doc = "- Bounded by `MaxUnlockingChunks`."]
 				pub fn rebond(
 					&self,
 					value: types::rebond::Value,
@@ -7279,7 +8391,24 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::reap_stash`]."]
+				#[doc = "Remove all data structures concerning a staker/stash once it is at a state where it can"]
+				#[doc = "be considered `dust` in the staking system. The requirements are:"]
+				#[doc = ""]
+				#[doc = "1. the `total_balance` of the stash is below existential deposit."]
+				#[doc = "2. or, the `ledger.total` of the stash is below existential deposit."]
+				#[doc = "3. or, existential deposit is zero and either `total_balance` or `ledger.total` is zero."]
+				#[doc = ""]
+				#[doc = "The former can happen in cases like a slash; the latter when a fully unbonded account"]
+				#[doc = "is still receiving staking rewards in `RewardDestination::Staked`."]
+				#[doc = ""]
+				#[doc = "It can be called by anyone, as long as `stash` meets the above requirements."]
+				#[doc = ""]
+				#[doc = "Refunds the transaction fees upon successful execution."]
+				#[doc = ""]
+				#[doc = "## Parameters"]
+				#[doc = ""]
+				#[doc = "- `num_slashing_spans`: Refer to comments on [`Call::withdraw_unbonded`] for more"]
+				#[doc = "details."]
 				pub fn reap_stash(
 					&self,
 					stash: types::reap_stash::Stash,
@@ -7299,7 +8428,17 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::kick`]."]
+				#[doc = "Remove the given nominations from the calling validator."]
+				#[doc = ""]
+				#[doc = "Effects will be felt at the beginning of the next era."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ by the controller, not the stash."]
+				#[doc = ""]
+				#[doc = "- `who`: A list of nominator stash accounts who are nominating this validator which"]
+				#[doc = "  should no longer be nominating this validator."]
+				#[doc = ""]
+				#[doc = "Note: Making this call only makes sense if you first set the validator preferences to"]
+				#[doc = "block any further nominations."]
 				pub fn kick(&self, who: types::kick::Who) -> ::subxt::tx::Payload<types::Kick> {
 					::subxt::tx::Payload::new_static(
 						"Staking",
@@ -7312,7 +8451,23 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::set_staking_configs`]."]
+				#[doc = "Update the various staking configurations ."]
+				#[doc = ""]
+				#[doc = "* `min_nominator_bond`: The minimum active bond needed to be a nominator."]
+				#[doc = "* `min_validator_bond`: The minimum active bond needed to be a validator."]
+				#[doc = "* `max_nominator_count`: The max number of users who can be a nominator at once. When"]
+				#[doc = "  set to `None`, no limit is enforced."]
+				#[doc = "* `max_validator_count`: The max number of users who can be a validator at once. When"]
+				#[doc = "  set to `None`, no limit is enforced."]
+				#[doc = "* `chill_threshold`: The ratio of `max_nominator_count` or `max_validator_count` which"]
+				#[doc = "  should be filled in order for the `chill_other` transaction to work."]
+				#[doc = "* `min_commission`: The minimum amount of commission that each validators must maintain."]
+				#[doc = "  This is checked only upon calling `validate`. Existing validators are not affected."]
+				#[doc = ""]
+				#[doc = "RuntimeOrigin must be Root to call this function."]
+				#[doc = ""]
+				#[doc = "NOTE: Existing nominators and validators will not be affected by this update."]
+				#[doc = "to kick people under the new limits, `chill_other` should be called."]
 				pub fn set_staking_configs(
 					&self,
 					min_nominator_bond: types::set_staking_configs::MinNominatorBond,
@@ -7321,6 +8476,7 @@ pub mod api {
 					max_validator_count: types::set_staking_configs::MaxValidatorCount,
 					chill_threshold: types::set_staking_configs::ChillThreshold,
 					min_commission: types::set_staking_configs::MinCommission,
+					max_staked_rewards: types::set_staking_configs::MaxStakedRewards,
 				) -> ::subxt::tx::Payload<types::SetStakingConfigs> {
 					::subxt::tx::Payload::new_static(
 						"Staking",
@@ -7332,15 +8488,42 @@ pub mod api {
 							max_validator_count,
 							chill_threshold,
 							min_commission,
+							max_staked_rewards,
 						},
 						[
-							99u8, 61u8, 196u8, 68u8, 226u8, 64u8, 104u8, 70u8, 173u8, 108u8, 29u8,
-							39u8, 61u8, 202u8, 72u8, 227u8, 190u8, 6u8, 138u8, 137u8, 207u8, 11u8,
-							190u8, 79u8, 73u8, 7u8, 108u8, 131u8, 19u8, 7u8, 173u8, 60u8,
+							14u8, 242u8, 77u8, 245u8, 48u8, 49u8, 147u8, 180u8, 37u8, 61u8, 225u8,
+							86u8, 130u8, 232u8, 77u8, 134u8, 152u8, 139u8, 18u8, 105u8, 135u8,
+							203u8, 113u8, 240u8, 240u8, 90u8, 163u8, 185u8, 47u8, 233u8, 157u8,
+							8u8,
 						],
 					)
 				}
-				#[doc = "See [`Pallet::chill_other`]."]
+				#[doc = "Declare a `controller` to stop participating as either a validator or nominator."]
+				#[doc = ""]
+				#[doc = "Effects will be felt at the beginning of the next era."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_, but can be called by anyone."]
+				#[doc = ""]
+				#[doc = "If the caller is the same as the controller being targeted, then no further checks are"]
+				#[doc = "enforced, and this function behaves just like `chill`."]
+				#[doc = ""]
+				#[doc = "If the caller is different than the controller being targeted, the following conditions"]
+				#[doc = "must be met:"]
+				#[doc = ""]
+				#[doc = "* `controller` must belong to a nominator who has become non-decodable,"]
+				#[doc = ""]
+				#[doc = "Or:"]
+				#[doc = ""]
+				#[doc = "* A `ChillThreshold` must be set and checked which defines how close to the max"]
+				#[doc = "  nominators or validators we must reach before users can start chilling one-another."]
+				#[doc = "* A `MaxNominatorCount` and `MaxValidatorCount` must be set which is used to determine"]
+				#[doc = "  how close we are to the threshold."]
+				#[doc = "* A `MinNominatorBond` and `MinValidatorBond` must be set and checked, which determines"]
+				#[doc = "  if this is a person that should be chilled because they have not met the threshold"]
+				#[doc = "  bond required."]
+				#[doc = ""]
+				#[doc = "This can be helpful if bond requirements are updated, and we need to remove old users"]
+				#[doc = "who do not satisfy these requirements."]
 				pub fn chill_other(
 					&self,
 					stash: types::chill_other::Stash,
@@ -7357,7 +8540,9 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::force_apply_min_commission`]."]
+				#[doc = "Force a validator to have at least the minimum commission. This will not affect a"]
+				#[doc = "validator who already has a commission greater than or equal to the minimum. Any account"]
+				#[doc = "can call this."]
 				pub fn force_apply_min_commission(
 					&self,
 					validator_stash: types::force_apply_min_commission::ValidatorStash,
@@ -7373,7 +8558,10 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::set_min_commission`]."]
+				#[doc = "Sets the minimum amount of commission that each validators must maintain."]
+				#[doc = ""]
+				#[doc = "This call has lower privilege requirements than `set_staking_config` and can be called"]
+				#[doc = "by the `T::AdminOrigin`. Root can always call this."]
 				pub fn set_min_commission(
 					&self,
 					new: types::set_min_commission::New,
@@ -7390,7 +8578,23 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::payout_stakers_by_page`]."]
+				#[doc = "Pay out a page of the stakers behind a validator for the given era and page."]
+				#[doc = ""]
+				#[doc = "- `validator_stash` is the stash account of the validator."]
+				#[doc = "- `era` may be any era between `[current_era - history_depth; current_era]`."]
+				#[doc = "- `page` is the page index of nominators to pay out with value between 0 and"]
+				#[doc = "  `num_nominators / T::MaxExposurePageSize`."]
+				#[doc = ""]
+				#[doc = "The origin of this call must be _Signed_. Any account can call this function, even if"]
+				#[doc = "it is not one of the stakers."]
+				#[doc = ""]
+				#[doc = "If a validator has more than [`Config::MaxExposurePageSize`] nominators backing"]
+				#[doc = "them, then the list of nominators is paged, with each page being capped at"]
+				#[doc = "[`Config::MaxExposurePageSize`.] If a validator has more than one page of nominators,"]
+				#[doc = "the call needs to be made for each page separately in order for all the nominators"]
+				#[doc = "backing a validator to receive the reward. The nominators are not sorted across pages"]
+				#[doc = "and so it should not be assumed the highest staker would be on the topmost page and vice"]
+				#[doc = "versa. If rewards are not claimed in [`Config::HistoryDepth`] eras, they are lost."]
 				pub fn payout_stakers_by_page(
 					&self,
 					validator_stash: types::payout_stakers_by_page::ValidatorStash,
@@ -7412,7 +8616,12 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::update_payee`]."]
+				#[doc = "Migrates an account's `RewardDestination::Controller` to"]
+				#[doc = "`RewardDestination::Account(controller)`."]
+				#[doc = ""]
+				#[doc = "Effects will be felt instantly (as soon as this function is completed successfully)."]
+				#[doc = ""]
+				#[doc = "This will waive the transaction fee if the `payee` is successfully migrated."]
 				pub fn update_payee(
 					&self,
 					controller: types::update_payee::Controller,
@@ -7429,7 +8638,13 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::deprecate_controller_batch`]."]
+				#[doc = "Updates a batch of controller accounts to their corresponding stash account if they are"]
+				#[doc = "not the same. Ignores any controller accounts that do not exist, and does not operate if"]
+				#[doc = "the stash and controller are already the same."]
+				#[doc = ""]
+				#[doc = "Effects will be felt instantly (as soon as this function is completed successfully)."]
+				#[doc = ""]
+				#[doc = "The dispatch origin must be `T::AdminOrigin`."]
 				pub fn deprecate_controller_batch(
 					&self,
 					controllers: types::deprecate_controller_batch::Controllers,
@@ -7443,6 +8658,40 @@ pub mod api {
 							87u8, 0u8, 235u8, 124u8, 60u8, 170u8, 24u8, 22u8, 55u8, 226u8, 68u8,
 							210u8, 107u8, 147u8, 191u8, 128u8, 190u8, 142u8, 204u8, 38u8, 101u8,
 							12u8,
+						],
+					)
+				}
+				#[doc = "Restores the state of a ledger which is in an inconsistent state."]
+				#[doc = ""]
+				#[doc = "The requirements to restore a ledger are the following:"]
+				#[doc = "* The stash is bonded; or"]
+				#[doc = "* The stash is not bonded but it has a staking lock left behind; or"]
+				#[doc = "* If the stash has an associated ledger and its state is inconsistent; or"]
+				#[doc = "* If the ledger is not corrupted *but* its staking lock is out of sync."]
+				#[doc = ""]
+				#[doc = "The `maybe_*` input parameters will overwrite the corresponding data and metadata of the"]
+				#[doc = "ledger associated with the stash. If the input parameters are not set, the ledger will"]
+				#[doc = "be reset values from on-chain state."]
+				pub fn restore_ledger(
+					&self,
+					stash: types::restore_ledger::Stash,
+					maybe_controller: types::restore_ledger::MaybeController,
+					maybe_total: types::restore_ledger::MaybeTotal,
+					maybe_unlocking: types::restore_ledger::MaybeUnlocking,
+				) -> ::subxt::tx::Payload<types::RestoreLedger> {
+					::subxt::tx::Payload::new_static(
+						"Staking",
+						"restore_ledger",
+						types::RestoreLedger {
+							stash,
+							maybe_controller,
+							maybe_total,
+							maybe_unlocking,
+						},
+						[
+							199u8, 92u8, 58u8, 85u8, 126u8, 61u8, 68u8, 207u8, 29u8, 62u8, 9u8,
+							161u8, 162u8, 101u8, 180u8, 210u8, 157u8, 88u8, 216u8, 169u8, 169u8,
+							229u8, 190u8, 94u8, 40u8, 73u8, 37u8, 64u8, 23u8, 125u8, 117u8, 31u8,
 						],
 					)
 				}
@@ -7899,6 +9148,31 @@ pub mod api {
 				const PALLET: &'static str = "Staking";
 				const EVENT: &'static str = "ForceEra";
 			}
+			#[derive(
+				:: subxt :: ext :: codec :: Decode,
+				:: subxt :: ext :: codec :: Encode,
+				:: subxt :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+			#[doc = "Report of a controller batch deprecation."]
+			pub struct ControllerBatchDeprecated {
+				pub failures: controller_batch_deprecated::Failures,
+			}
+			pub mod controller_batch_deprecated {
+				use super::runtime_types;
+				pub type Failures = ::core::primitive::u32;
+			}
+			impl ::subxt::events::StaticEvent for ControllerBatchDeprecated {
+				const PALLET: &'static str = "Staking";
+				const EVENT: &'static str = "ControllerBatchDeprecated";
+			}
 		}
 		pub mod storage {
 			use super::runtime_types;
@@ -7970,6 +9244,15 @@ pub mod api {
 				pub mod counter_for_nominators {
 					use super::runtime_types;
 					pub type CounterForNominators = ::core::primitive::u32;
+				}
+				pub mod virtual_stakers {
+					use super::runtime_types;
+					pub type VirtualStakers = ();
+					pub type Param0 = ::subxt::utils::AccountId32;
+				}
+				pub mod counter_for_virtual_stakers {
+					use super::runtime_types;
+					pub type CounterForVirtualStakers = ::core::primitive::u32;
 				}
 				pub mod max_nominators_count {
 					use super::runtime_types;
@@ -8055,6 +9338,10 @@ pub mod api {
 					use super::runtime_types;
 					pub type ForceEra = runtime_types::pallet_staking::Forcing;
 				}
+				pub mod max_staked_rewards {
+					use super::runtime_types;
+					pub type MaxStakedRewards = runtime_types::sp_arithmetic::per_things::Percent;
+				}
 				pub mod slash_reward_fraction {
 					use super::runtime_types;
 					pub type SlashRewardFraction =
@@ -8111,10 +9398,9 @@ pub mod api {
 					use super::runtime_types;
 					pub type CurrentPlannedSession = ::core::primitive::u32;
 				}
-				pub mod offending_validators {
+				pub mod disabled_validators {
 					use super::runtime_types;
-					pub type OffendingValidators =
-						::std::vec::Vec<(::core::primitive::u32, ::core::primitive::bool)>;
+					pub type DisabledValidators = ::std::vec::Vec<::core::primitive::u32>;
 				}
 				pub mod chill_threshold {
 					use super::runtime_types;
@@ -8625,6 +9911,83 @@ pub mod api {
 							150u8, 236u8, 184u8, 12u8, 224u8, 26u8, 13u8, 204u8, 208u8, 178u8,
 							68u8, 148u8, 232u8, 85u8, 74u8, 248u8, 167u8, 61u8, 88u8, 126u8, 40u8,
 							20u8, 73u8, 47u8, 94u8, 57u8, 144u8, 77u8, 156u8, 179u8, 55u8, 49u8,
+						],
+					)
+				}
+				#[doc = " Stakers whose funds are managed by other pallets."]
+				#[doc = ""]
+				#[doc = " This pallet does not apply any locks on them, therefore they are only virtually bonded. They"]
+				#[doc = " are expected to be keyless accounts and hence should not be allowed to mutate their ledger"]
+				#[doc = " directly via this pallet. Instead, these accounts are managed by other pallets and accessed"]
+				#[doc = " via low level apis. We keep track of them to do minimal integrity checks."]
+				pub fn virtual_stakers_iter(
+					&self,
+				) -> ::subxt::storage::address::Address<
+					::subxt::storage::address::StaticStorageMapKey,
+					types::virtual_stakers::VirtualStakers,
+					(),
+					(),
+					::subxt::storage::address::Yes,
+				> {
+					::subxt::storage::address::Address::new_static(
+						"Staking",
+						"VirtualStakers",
+						vec![],
+						[
+							176u8, 114u8, 176u8, 164u8, 4u8, 33u8, 248u8, 152u8, 206u8, 8u8, 241u8,
+							209u8, 96u8, 131u8, 145u8, 120u8, 74u8, 141u8, 249u8, 208u8, 93u8,
+							157u8, 125u8, 0u8, 63u8, 18u8, 61u8, 195u8, 240u8, 145u8, 15u8, 161u8,
+						],
+					)
+				}
+				#[doc = " Stakers whose funds are managed by other pallets."]
+				#[doc = ""]
+				#[doc = " This pallet does not apply any locks on them, therefore they are only virtually bonded. They"]
+				#[doc = " are expected to be keyless accounts and hence should not be allowed to mutate their ledger"]
+				#[doc = " directly via this pallet. Instead, these accounts are managed by other pallets and accessed"]
+				#[doc = " via low level apis. We keep track of them to do minimal integrity checks."]
+				pub fn virtual_stakers(
+					&self,
+					_0: impl ::std::borrow::Borrow<types::virtual_stakers::Param0>,
+				) -> ::subxt::storage::address::Address<
+					::subxt::storage::address::StaticStorageMapKey,
+					types::virtual_stakers::VirtualStakers,
+					::subxt::storage::address::Yes,
+					(),
+					(),
+				> {
+					::subxt::storage::address::Address::new_static(
+						"Staking",
+						"VirtualStakers",
+						vec![::subxt::storage::address::make_static_storage_map_key(
+							_0.borrow(),
+						)],
+						[
+							176u8, 114u8, 176u8, 164u8, 4u8, 33u8, 248u8, 152u8, 206u8, 8u8, 241u8,
+							209u8, 96u8, 131u8, 145u8, 120u8, 74u8, 141u8, 249u8, 208u8, 93u8,
+							157u8, 125u8, 0u8, 63u8, 18u8, 61u8, 195u8, 240u8, 145u8, 15u8, 161u8,
+						],
+					)
+				}
+				#[doc = "Counter for the related counted storage map"]
+				pub fn counter_for_virtual_stakers(
+					&self,
+				) -> ::subxt::storage::address::Address<
+					::subxt::storage::address::StaticStorageMapKey,
+					types::counter_for_virtual_stakers::CounterForVirtualStakers,
+					::subxt::storage::address::Yes,
+					::subxt::storage::address::Yes,
+					(),
+				> {
+					::subxt::storage::address::Address::new_static(
+						"Staking",
+						"CounterForVirtualStakers",
+						vec![],
+						[
+							50u8, 194u8, 203u8, 237u8, 196u8, 237u8, 212u8, 33u8, 145u8, 68u8,
+							29u8, 99u8, 68u8, 153u8, 191u8, 111u8, 104u8, 148u8, 191u8, 92u8,
+							249u8, 22u8, 253u8, 98u8, 176u8, 152u8, 237u8, 143u8, 26u8, 5u8, 1u8,
+							98u8,
 						],
 					)
 				}
@@ -9532,6 +10895,29 @@ pub mod api {
 						],
 					)
 				}
+				#[doc = " Maximum staked rewards, i.e. the percentage of the era inflation that"]
+				#[doc = " is used for stake rewards."]
+				#[doc = " See [Era payout](./index.html#era-payout)."]
+				pub fn max_staked_rewards(
+					&self,
+				) -> ::subxt::storage::address::Address<
+					::subxt::storage::address::StaticStorageMapKey,
+					types::max_staked_rewards::MaxStakedRewards,
+					::subxt::storage::address::Yes,
+					(),
+					(),
+				> {
+					::subxt::storage::address::Address::new_static(
+						"Staking",
+						"MaxStakedRewards",
+						vec![],
+						[
+							115u8, 208u8, 243u8, 76u8, 110u8, 71u8, 154u8, 80u8, 193u8, 138u8,
+							75u8, 11u8, 24u8, 51u8, 112u8, 125u8, 153u8, 151u8, 216u8, 67u8, 214u8,
+							4u8, 94u8, 229u8, 32u8, 186u8, 140u8, 150u8, 100u8, 233u8, 88u8, 53u8,
+						],
+					)
+				}
 				#[doc = " The percentage of the slash that is distributed to reporters."]
 				#[doc = ""]
 				#[doc = " The rest of the slashed value is handled by the `Slash`."]
@@ -9940,33 +11326,30 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = " Indices of validators that have offended in the active era and whether they are currently"]
-				#[doc = " disabled."]
+				#[doc = " Indices of validators that have offended in the active era. The offenders are disabled for a"]
+				#[doc = " whole era. For this reason they are kept here - only staking pallet knows about eras. The"]
+				#[doc = " implementor of [`DisablingStrategy`] defines if a validator should be disabled which"]
+				#[doc = " implicitly means that the implementor also controls the max number of disabled validators."]
 				#[doc = ""]
-				#[doc = " This value should be a superset of disabled validators since not all offences lead to the"]
-				#[doc = " validator being disabled (if there was no slash). This is needed to track the percentage of"]
-				#[doc = " validators that have offended in the current era, ensuring a new era is forced if"]
-				#[doc = " `OffendingValidatorsThreshold` is reached. The vec is always kept sorted so that we can find"]
-				#[doc = " whether a given validator has previously offended using binary search. It gets cleared when"]
-				#[doc = " the era ends."]
-				pub fn offending_validators(
+				#[doc = " The vec is always kept sorted so that we can find whether a given validator has previously"]
+				#[doc = " offended using binary search."]
+				pub fn disabled_validators(
 					&self,
 				) -> ::subxt::storage::address::Address<
 					::subxt::storage::address::StaticStorageMapKey,
-					types::offending_validators::OffendingValidators,
+					types::disabled_validators::DisabledValidators,
 					::subxt::storage::address::Yes,
 					::subxt::storage::address::Yes,
 					(),
 				> {
 					::subxt::storage::address::Address::new_static(
 						"Staking",
-						"OffendingValidators",
+						"DisabledValidators",
 						vec![],
 						[
-							201u8, 31u8, 141u8, 182u8, 160u8, 180u8, 37u8, 226u8, 50u8, 65u8,
-							103u8, 11u8, 38u8, 120u8, 200u8, 219u8, 219u8, 98u8, 185u8, 137u8,
-							154u8, 20u8, 130u8, 163u8, 126u8, 185u8, 33u8, 194u8, 76u8, 172u8,
-							70u8, 220u8,
+							213u8, 19u8, 168u8, 234u8, 187u8, 200u8, 180u8, 97u8, 234u8, 189u8,
+							36u8, 233u8, 158u8, 184u8, 45u8, 35u8, 129u8, 213u8, 133u8, 8u8, 104u8,
+							183u8, 46u8, 68u8, 154u8, 240u8, 132u8, 22u8, 247u8, 11u8, 54u8, 221u8,
 						],
 					)
 				}
@@ -10157,7 +11540,15 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::set_keys`]."]
+				#[doc = "Sets the session key(s) of the function caller to `keys`."]
+				#[doc = "Allows an account to set its session key prior to becoming a validator."]
+				#[doc = "This doesn't take effect until the next session."]
+				#[doc = ""]
+				#[doc = "The dispatch origin of this function must be signed."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- `O(1)`. Actual cost depends on the number of length of `T::Keys::key_ids()` which is"]
+				#[doc = "  fixed."]
 				pub struct SetKeys {
 					pub keys: set_keys::Keys,
 					pub proof: set_keys::Proof,
@@ -10184,7 +11575,18 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::purge_keys`]."]
+				#[doc = "Removes any session key(s) of the function caller."]
+				#[doc = ""]
+				#[doc = "This doesn't take effect until the next session."]
+				#[doc = ""]
+				#[doc = "The dispatch origin of this function must be Signed and the account must be either be"]
+				#[doc = "convertible to a validator ID using the chain's typical addressing system (this usually"]
+				#[doc = "means being a controller account) or directly convertible into a validator ID (which"]
+				#[doc = "usually means being a stash account)."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- `O(1)` in number of key types. Actual cost depends on the number of length of"]
+				#[doc = "  `T::Keys::key_ids()` which is fixed."]
 				pub struct PurgeKeys;
 				impl ::subxt::blocks::StaticExtrinsic for PurgeKeys {
 					const PALLET: &'static str = "Session";
@@ -10193,7 +11595,15 @@ pub mod api {
 			}
 			pub struct TransactionApi;
 			impl TransactionApi {
-				#[doc = "See [`Pallet::set_keys`]."]
+				#[doc = "Sets the session key(s) of the function caller to `keys`."]
+				#[doc = "Allows an account to set its session key prior to becoming a validator."]
+				#[doc = "This doesn't take effect until the next session."]
+				#[doc = ""]
+				#[doc = "The dispatch origin of this function must be signed."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- `O(1)`. Actual cost depends on the number of length of `T::Keys::key_ids()` which is"]
+				#[doc = "  fixed."]
 				pub fn set_keys(
 					&self,
 					keys: types::set_keys::Keys,
@@ -10204,14 +11614,24 @@ pub mod api {
 						"set_keys",
 						types::SetKeys { keys, proof },
 						[
-							234u8, 217u8, 243u8, 95u8, 164u8, 203u8, 209u8, 248u8, 54u8, 231u8,
-							57u8, 124u8, 154u8, 216u8, 160u8, 166u8, 209u8, 53u8, 16u8, 242u8,
-							125u8, 58u8, 166u8, 233u8, 119u8, 152u8, 196u8, 199u8, 156u8, 176u8,
-							21u8, 57u8,
+							134u8, 20u8, 18u8, 98u8, 190u8, 99u8, 4u8, 40u8, 200u8, 59u8, 5u8,
+							198u8, 73u8, 235u8, 2u8, 236u8, 45u8, 249u8, 28u8, 63u8, 130u8, 74u8,
+							243u8, 89u8, 166u8, 186u8, 136u8, 131u8, 143u8, 158u8, 205u8, 104u8,
 						],
 					)
 				}
-				#[doc = "See [`Pallet::purge_keys`]."]
+				#[doc = "Removes any session key(s) of the function caller."]
+				#[doc = ""]
+				#[doc = "This doesn't take effect until the next session."]
+				#[doc = ""]
+				#[doc = "The dispatch origin of this function must be Signed and the account must be either be"]
+				#[doc = "convertible to a validator ID using the chain's typical addressing system (this usually"]
+				#[doc = "means being a controller account) or directly convertible into a validator ID (which"]
+				#[doc = "usually means being a stash account)."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- `O(1)` in number of key types. Actual cost depends on the number of length of"]
+				#[doc = "  `T::Keys::key_ids()` which is fixed."]
 				pub fn purge_keys(&self) -> ::subxt::tx::Payload<types::PurgeKeys> {
 					::subxt::tx::Payload::new_static(
 						"Session",
@@ -10382,10 +11802,9 @@ pub mod api {
 						"QueuedKeys",
 						vec![],
 						[
-							215u8, 187u8, 11u8, 198u8, 127u8, 39u8, 230u8, 91u8, 151u8, 236u8,
-							125u8, 172u8, 253u8, 102u8, 117u8, 133u8, 230u8, 114u8, 249u8, 169u8,
-							172u8, 167u8, 250u8, 27u8, 189u8, 100u8, 179u8, 159u8, 30u8, 216u8,
-							24u8, 77u8,
+							52u8, 192u8, 74u8, 3u8, 65u8, 0u8, 254u8, 96u8, 247u8, 90u8, 254u8,
+							245u8, 174u8, 147u8, 78u8, 172u8, 171u8, 40u8, 178u8, 184u8, 33u8,
+							188u8, 114u8, 54u8, 126u8, 218u8, 123u8, 150u8, 25u8, 51u8, 27u8, 36u8,
 						],
 					)
 				}
@@ -10429,10 +11848,9 @@ pub mod api {
 						"NextKeys",
 						vec![],
 						[
-							201u8, 134u8, 209u8, 217u8, 146u8, 174u8, 26u8, 156u8, 153u8, 147u8,
-							25u8, 78u8, 113u8, 124u8, 118u8, 174u8, 194u8, 186u8, 112u8, 200u8,
-							31u8, 68u8, 88u8, 130u8, 184u8, 13u8, 237u8, 179u8, 5u8, 75u8, 203u8,
-							252u8,
+							54u8, 7u8, 147u8, 34u8, 50u8, 49u8, 129u8, 125u8, 55u8, 60u8, 182u8,
+							239u8, 129u8, 172u8, 88u8, 62u8, 183u8, 107u8, 176u8, 231u8, 16u8,
+							191u8, 196u8, 51u8, 36u8, 244u8, 76u8, 116u8, 163u8, 11u8, 19u8, 50u8,
 						],
 					)
 				}
@@ -10454,10 +11872,9 @@ pub mod api {
 							_0.borrow(),
 						)],
 						[
-							201u8, 134u8, 209u8, 217u8, 146u8, 174u8, 26u8, 156u8, 153u8, 147u8,
-							25u8, 78u8, 113u8, 124u8, 118u8, 174u8, 194u8, 186u8, 112u8, 200u8,
-							31u8, 68u8, 88u8, 130u8, 184u8, 13u8, 237u8, 179u8, 5u8, 75u8, 203u8,
-							252u8,
+							54u8, 7u8, 147u8, 34u8, 50u8, 49u8, 129u8, 125u8, 55u8, 60u8, 182u8,
+							239u8, 129u8, 172u8, 88u8, 62u8, 183u8, 107u8, 176u8, 231u8, 16u8,
+							191u8, 196u8, 51u8, 36u8, 244u8, 76u8, 116u8, 163u8, 11u8, 19u8, 50u8,
 						],
 					)
 				}
@@ -10564,7 +11981,30 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::set_members`]."]
+				#[doc = "Set the collective's membership."]
+				#[doc = ""]
+				#[doc = "- `new_members`: The new member list. Be nice to the chain and provide it sorted."]
+				#[doc = "- `prime`: The prime member whose vote sets the default."]
+				#[doc = "- `old_count`: The upper bound for the previous number of members in storage. Used for"]
+				#[doc = "  weight estimation."]
+				#[doc = ""]
+				#[doc = "The dispatch of this call must be `SetMembersOrigin`."]
+				#[doc = ""]
+				#[doc = "NOTE: Does not enforce the expected `MaxMembers` limit on the amount of members, but"]
+				#[doc = "      the weight estimations rely on it to estimate dispatchable weight."]
+				#[doc = ""]
+				#[doc = "# WARNING:"]
+				#[doc = ""]
+				#[doc = "The `pallet-collective` can also be managed by logic outside of the pallet through the"]
+				#[doc = "implementation of the trait [`ChangeMembers`]."]
+				#[doc = "Any call to `set_members` must be careful that the member set doesn't get out of sync"]
+				#[doc = "with other logic managing the member set."]
+				#[doc = ""]
+				#[doc = "## Complexity:"]
+				#[doc = "- `O(MP + N)` where:"]
+				#[doc = "  - `M` old-members-count (code- and governance-bounded)"]
+				#[doc = "  - `N` new-members-count (code- and governance-bounded)"]
+				#[doc = "  - `P` proposals-count (code-bounded)"]
 				pub struct SetMembers {
 					pub new_members: set_members::NewMembers,
 					pub prime: set_members::Prime,
@@ -10593,7 +12033,15 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::execute`]."]
+				#[doc = "Dispatch a proposal from a member using the `Member` origin."]
+				#[doc = ""]
+				#[doc = "Origin must be a member of the collective."]
+				#[doc = ""]
+				#[doc = "## Complexity:"]
+				#[doc = "- `O(B + M + P)` where:"]
+				#[doc = "- `B` is `proposal` size in bytes (length-fee-bounded)"]
+				#[doc = "- `M` members-count (code-bounded)"]
+				#[doc = "- `P` complexity of dispatching `proposal`"]
 				pub struct Execute {
 					pub proposal: ::std::boxed::Box<execute::Proposal>,
 					#[codec(compact)]
@@ -10621,7 +12069,20 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::propose`]."]
+				#[doc = "Add a new proposal to either be voted on or executed directly."]
+				#[doc = ""]
+				#[doc = "Requires the sender to be member."]
+				#[doc = ""]
+				#[doc = "`threshold` determines whether `proposal` is executed directly (`threshold < 2`)"]
+				#[doc = "or put up for voting."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- `O(B + M + P1)` or `O(B + M + P2)` where:"]
+				#[doc = "  - `B` is `proposal` size in bytes (length-fee-bounded)"]
+				#[doc = "  - `M` is members-count (code- and governance-bounded)"]
+				#[doc = "  - branching is influenced by `threshold` where:"]
+				#[doc = "    - `P1` is proposal execution complexity (`threshold < 2`)"]
+				#[doc = "    - `P2` is proposals-count (code-bounded) (`threshold >= 2`)"]
 				pub struct Propose {
 					#[codec(compact)]
 					pub threshold: propose::Threshold,
@@ -10652,7 +12113,15 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::vote`]."]
+				#[doc = "Add an aye or nay vote for the sender to the given proposal."]
+				#[doc = ""]
+				#[doc = "Requires the sender to be a member."]
+				#[doc = ""]
+				#[doc = "Transaction fees will be waived if the member is voting on any particular proposal"]
+				#[doc = "for the first time and the call is successful. Subsequent vote changes will charge a"]
+				#[doc = "fee."]
+				#[doc = "## Complexity"]
+				#[doc = "- `O(M)` where `M` is members-count (code- and governance-bounded)"]
 				pub struct Vote {
 					pub proposal: vote::Proposal,
 					#[codec(compact)]
@@ -10682,7 +12151,16 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::disapprove_proposal`]."]
+				#[doc = "Disapprove a proposal, close, and remove it from the system, regardless of its current"]
+				#[doc = "state."]
+				#[doc = ""]
+				#[doc = "Must be called by the Root origin."]
+				#[doc = ""]
+				#[doc = "Parameters:"]
+				#[doc = "* `proposal_hash`: The hash of the proposal that should be disapproved."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "O(P) where P is the number of max proposals"]
 				pub struct DisapproveProposal {
 					pub proposal_hash: disapprove_proposal::ProposalHash,
 				}
@@ -10707,7 +12185,30 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::close`]."]
+				#[doc = "Close a vote that is either approved, disapproved or whose voting period has ended."]
+				#[doc = ""]
+				#[doc = "May be called by any signed account in order to finish voting and close the proposal."]
+				#[doc = ""]
+				#[doc = "If called before the end of the voting period it will only close the vote if it is"]
+				#[doc = "has enough votes to be approved or disapproved."]
+				#[doc = ""]
+				#[doc = "If called after the end of the voting period abstentions are counted as rejections"]
+				#[doc = "unless there is a prime member set and the prime member cast an approval."]
+				#[doc = ""]
+				#[doc = "If the close operation completes successfully with disapproval, the transaction fee will"]
+				#[doc = "be waived. Otherwise execution of the approved operation will be charged to the caller."]
+				#[doc = ""]
+				#[doc = "+ `proposal_weight_bound`: The maximum amount of weight consumed by executing the closed"]
+				#[doc = "proposal."]
+				#[doc = "+ `length_bound`: The upper bound for the length of the proposal in storage. Checked via"]
+				#[doc = "`storage::read` so it is `size_of::<u32>() == 4` larger than the pure length."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- `O(B + M + P1 + P2)` where:"]
+				#[doc = "  - `B` is `proposal` size in bytes (length-fee-bounded)"]
+				#[doc = "  - `M` is members-count (code- and governance-bounded)"]
+				#[doc = "  - `P1` is the complexity of `proposal` preimage."]
+				#[doc = "  - `P2` is proposal-count (code-bounded)"]
 				pub struct Close {
 					pub proposal_hash: close::ProposalHash,
 					#[codec(compact)]
@@ -10730,7 +12231,30 @@ pub mod api {
 			}
 			pub struct TransactionApi;
 			impl TransactionApi {
-				#[doc = "See [`Pallet::set_members`]."]
+				#[doc = "Set the collective's membership."]
+				#[doc = ""]
+				#[doc = "- `new_members`: The new member list. Be nice to the chain and provide it sorted."]
+				#[doc = "- `prime`: The prime member whose vote sets the default."]
+				#[doc = "- `old_count`: The upper bound for the previous number of members in storage. Used for"]
+				#[doc = "  weight estimation."]
+				#[doc = ""]
+				#[doc = "The dispatch of this call must be `SetMembersOrigin`."]
+				#[doc = ""]
+				#[doc = "NOTE: Does not enforce the expected `MaxMembers` limit on the amount of members, but"]
+				#[doc = "      the weight estimations rely on it to estimate dispatchable weight."]
+				#[doc = ""]
+				#[doc = "# WARNING:"]
+				#[doc = ""]
+				#[doc = "The `pallet-collective` can also be managed by logic outside of the pallet through the"]
+				#[doc = "implementation of the trait [`ChangeMembers`]."]
+				#[doc = "Any call to `set_members` must be careful that the member set doesn't get out of sync"]
+				#[doc = "with other logic managing the member set."]
+				#[doc = ""]
+				#[doc = "## Complexity:"]
+				#[doc = "- `O(MP + N)` where:"]
+				#[doc = "  - `M` old-members-count (code- and governance-bounded)"]
+				#[doc = "  - `N` new-members-count (code- and governance-bounded)"]
+				#[doc = "  - `P` proposals-count (code-bounded)"]
 				pub fn set_members(
 					&self,
 					new_members: types::set_members::NewMembers,
@@ -10753,7 +12277,15 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::execute`]."]
+				#[doc = "Dispatch a proposal from a member using the `Member` origin."]
+				#[doc = ""]
+				#[doc = "Origin must be a member of the collective."]
+				#[doc = ""]
+				#[doc = "## Complexity:"]
+				#[doc = "- `O(B + M + P)` where:"]
+				#[doc = "- `B` is `proposal` size in bytes (length-fee-bounded)"]
+				#[doc = "- `M` members-count (code-bounded)"]
+				#[doc = "- `P` complexity of dispatching `proposal`"]
 				pub fn execute(
 					&self,
 					proposal: types::execute::Proposal,
@@ -10767,14 +12299,27 @@ pub mod api {
 							length_bound,
 						},
 						[
-							53u8, 134u8, 9u8, 220u8, 130u8, 78u8, 167u8, 240u8, 118u8, 91u8, 141u8,
-							174u8, 96u8, 46u8, 205u8, 108u8, 43u8, 91u8, 157u8, 209u8, 235u8,
-							139u8, 15u8, 65u8, 236u8, 164u8, 19u8, 46u8, 193u8, 114u8, 200u8,
-							242u8,
+							208u8, 226u8, 10u8, 148u8, 245u8, 239u8, 200u8, 228u8, 162u8, 182u8,
+							67u8, 163u8, 157u8, 176u8, 1u8, 74u8, 6u8, 44u8, 26u8, 100u8, 215u8,
+							4u8, 128u8, 134u8, 70u8, 219u8, 151u8, 184u8, 193u8, 118u8, 210u8,
+							202u8,
 						],
 					)
 				}
-				#[doc = "See [`Pallet::propose`]."]
+				#[doc = "Add a new proposal to either be voted on or executed directly."]
+				#[doc = ""]
+				#[doc = "Requires the sender to be member."]
+				#[doc = ""]
+				#[doc = "`threshold` determines whether `proposal` is executed directly (`threshold < 2`)"]
+				#[doc = "or put up for voting."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- `O(B + M + P1)` or `O(B + M + P2)` where:"]
+				#[doc = "  - `B` is `proposal` size in bytes (length-fee-bounded)"]
+				#[doc = "  - `M` is members-count (code- and governance-bounded)"]
+				#[doc = "  - branching is influenced by `threshold` where:"]
+				#[doc = "    - `P1` is proposal execution complexity (`threshold < 2`)"]
+				#[doc = "    - `P2` is proposals-count (code-bounded) (`threshold >= 2`)"]
 				pub fn propose(
 					&self,
 					threshold: types::propose::Threshold,
@@ -10790,14 +12335,21 @@ pub mod api {
 							length_bound,
 						},
 						[
-							211u8, 213u8, 137u8, 188u8, 164u8, 144u8, 145u8, 233u8, 152u8, 25u8,
-							139u8, 106u8, 69u8, 44u8, 45u8, 189u8, 39u8, 205u8, 200u8, 145u8,
-							247u8, 213u8, 76u8, 211u8, 12u8, 219u8, 141u8, 43u8, 199u8, 15u8,
-							180u8, 84u8,
+							114u8, 78u8, 229u8, 234u8, 124u8, 94u8, 21u8, 122u8, 75u8, 240u8, 47u8,
+							172u8, 3u8, 134u8, 243u8, 38u8, 81u8, 203u8, 106u8, 5u8, 119u8, 0u8,
+							114u8, 213u8, 155u8, 2u8, 151u8, 167u8, 190u8, 119u8, 27u8, 139u8,
 						],
 					)
 				}
-				#[doc = "See [`Pallet::vote`]."]
+				#[doc = "Add an aye or nay vote for the sender to the given proposal."]
+				#[doc = ""]
+				#[doc = "Requires the sender to be a member."]
+				#[doc = ""]
+				#[doc = "Transaction fees will be waived if the member is voting on any particular proposal"]
+				#[doc = "for the first time and the call is successful. Subsequent vote changes will charge a"]
+				#[doc = "fee."]
+				#[doc = "## Complexity"]
+				#[doc = "- `O(M)` where `M` is members-count (code- and governance-bounded)"]
 				pub fn vote(
 					&self,
 					proposal: types::vote::Proposal,
@@ -10820,7 +12372,16 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::disapprove_proposal`]."]
+				#[doc = "Disapprove a proposal, close, and remove it from the system, regardless of its current"]
+				#[doc = "state."]
+				#[doc = ""]
+				#[doc = "Must be called by the Root origin."]
+				#[doc = ""]
+				#[doc = "Parameters:"]
+				#[doc = "* `proposal_hash`: The hash of the proposal that should be disapproved."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "O(P) where P is the number of max proposals"]
 				pub fn disapprove_proposal(
 					&self,
 					proposal_hash: types::disapprove_proposal::ProposalHash,
@@ -10836,7 +12397,30 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::close`]."]
+				#[doc = "Close a vote that is either approved, disapproved or whose voting period has ended."]
+				#[doc = ""]
+				#[doc = "May be called by any signed account in order to finish voting and close the proposal."]
+				#[doc = ""]
+				#[doc = "If called before the end of the voting period it will only close the vote if it is"]
+				#[doc = "has enough votes to be approved or disapproved."]
+				#[doc = ""]
+				#[doc = "If called after the end of the voting period abstentions are counted as rejections"]
+				#[doc = "unless there is a prime member set and the prime member cast an approval."]
+				#[doc = ""]
+				#[doc = "If the close operation completes successfully with disapproval, the transaction fee will"]
+				#[doc = "be waived. Otherwise execution of the approved operation will be charged to the caller."]
+				#[doc = ""]
+				#[doc = "+ `proposal_weight_bound`: The maximum amount of weight consumed by executing the closed"]
+				#[doc = "proposal."]
+				#[doc = "+ `length_bound`: The upper bound for the length of the proposal in storage. Checked via"]
+				#[doc = "`storage::read` so it is `size_of::<u32>() == 4` larger than the pure length."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- `O(B + M + P1 + P2)` where:"]
+				#[doc = "  - `B` is `proposal` size in bytes (length-fee-bounded)"]
+				#[doc = "  - `M` is members-count (code- and governance-bounded)"]
+				#[doc = "  - `P1` is the complexity of `proposal` preimage."]
+				#[doc = "  - `P2` is proposal-count (code-bounded)"]
 				pub fn close(
 					&self,
 					proposal_hash: types::close::ProposalHash,
@@ -11143,9 +12727,9 @@ pub mod api {
 						"ProposalOf",
 						vec![],
 						[
-							168u8, 190u8, 239u8, 80u8, 93u8, 157u8, 13u8, 240u8, 64u8, 175u8, 34u8,
-							157u8, 112u8, 225u8, 16u8, 26u8, 178u8, 229u8, 213u8, 83u8, 90u8,
-							181u8, 115u8, 71u8, 78u8, 1u8, 106u8, 40u8, 8u8, 88u8, 74u8, 80u8,
+							205u8, 57u8, 170u8, 77u8, 119u8, 91u8, 101u8, 50u8, 66u8, 53u8, 68u8,
+							150u8, 77u8, 142u8, 125u8, 195u8, 21u8, 128u8, 157u8, 205u8, 100u8,
+							53u8, 234u8, 110u8, 82u8, 36u8, 39u8, 24u8, 207u8, 75u8, 196u8, 12u8,
 						],
 					)
 				}
@@ -11167,9 +12751,9 @@ pub mod api {
 							_0.borrow(),
 						)],
 						[
-							168u8, 190u8, 239u8, 80u8, 93u8, 157u8, 13u8, 240u8, 64u8, 175u8, 34u8,
-							157u8, 112u8, 225u8, 16u8, 26u8, 178u8, 229u8, 213u8, 83u8, 90u8,
-							181u8, 115u8, 71u8, 78u8, 1u8, 106u8, 40u8, 8u8, 88u8, 74u8, 80u8,
+							205u8, 57u8, 170u8, 77u8, 119u8, 91u8, 101u8, 50u8, 66u8, 53u8, 68u8,
+							150u8, 77u8, 142u8, 125u8, 195u8, 21u8, 128u8, 157u8, 205u8, 100u8,
+							53u8, 234u8, 110u8, 82u8, 36u8, 39u8, 24u8, 207u8, 75u8, 196u8, 12u8,
 						],
 					)
 				}
@@ -11262,7 +12846,7 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = " The prime member that helps determine the default vote behavior in case of absentations."]
+				#[doc = " The prime member that helps determine the default vote behavior in case of abstentions."]
 				pub fn prime(
 					&self,
 				) -> ::subxt::storage::address::Address<
@@ -11333,7 +12917,10 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::report_equivocation`]."]
+				#[doc = "Report voter equivocation/misbehavior. This method will verify the"]
+				#[doc = "equivocation proof and validate the given key ownership proof"]
+				#[doc = "against the extracted offender. If both are valid, the offence"]
+				#[doc = "will be reported."]
 				pub struct ReportEquivocation {
 					pub equivocation_proof:
 						::std::boxed::Box<report_equivocation::EquivocationProof>,
@@ -11365,7 +12952,15 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::report_equivocation_unsigned`]."]
+				#[doc = "Report voter equivocation/misbehavior. This method will verify the"]
+				#[doc = "equivocation proof and validate the given key ownership proof"]
+				#[doc = "against the extracted offender. If both are valid, the offence"]
+				#[doc = "will be reported."]
+				#[doc = ""]
+				#[doc = "This extrinsic must be called unsigned and it is expected that only"]
+				#[doc = "block authors will call it (validated in `ValidateUnsigned`), as such"]
+				#[doc = "if the block author is defined it will be defined as the equivocation"]
+				#[doc = "reporter."]
 				pub struct ReportEquivocationUnsigned {
 					pub equivocation_proof:
 						::std::boxed::Box<report_equivocation_unsigned::EquivocationProof>,
@@ -11397,7 +12992,18 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::note_stalled`]."]
+				#[doc = "Note that the current authority set of the GRANDPA finality gadget has stalled."]
+				#[doc = ""]
+				#[doc = "This will trigger a forced authority set change at the beginning of the next session, to"]
+				#[doc = "be enacted `delay` blocks after that. The `delay` should be high enough to safely assume"]
+				#[doc = "that the block signalling the forced change will not be re-orged e.g. 1000 blocks."]
+				#[doc = "The block production rate (which may be slowed down because of finality lagging) should"]
+				#[doc = "be taken into account when choosing the `delay`. The GRANDPA voters based on the new"]
+				#[doc = "authority will start voting on top of `best_finalized_block_number` for new finalized"]
+				#[doc = "blocks. `best_finalized_block_number` should be the highest of the latest finalized"]
+				#[doc = "block of all validators of the new authority set."]
+				#[doc = ""]
+				#[doc = "Only callable by root."]
 				pub struct NoteStalled {
 					pub delay: note_stalled::Delay,
 					pub best_finalized_block_number: note_stalled::BestFinalizedBlockNumber,
@@ -11414,7 +13020,10 @@ pub mod api {
 			}
 			pub struct TransactionApi;
 			impl TransactionApi {
-				#[doc = "See [`Pallet::report_equivocation`]."]
+				#[doc = "Report voter equivocation/misbehavior. This method will verify the"]
+				#[doc = "equivocation proof and validate the given key ownership proof"]
+				#[doc = "against the extracted offender. If both are valid, the offence"]
+				#[doc = "will be reported."]
 				pub fn report_equivocation(
 					&self,
 					equivocation_proof: types::report_equivocation::EquivocationProof,
@@ -11428,13 +13037,22 @@ pub mod api {
 							key_owner_proof,
 						},
 						[
-							11u8, 183u8, 81u8, 93u8, 41u8, 7u8, 70u8, 155u8, 8u8, 57u8, 177u8,
-							245u8, 131u8, 79u8, 236u8, 118u8, 147u8, 114u8, 40u8, 204u8, 177u8,
-							2u8, 43u8, 42u8, 2u8, 201u8, 202u8, 120u8, 150u8, 109u8, 108u8, 156u8,
+							197u8, 206u8, 246u8, 26u8, 171u8, 25u8, 214u8, 211u8, 138u8, 132u8,
+							148u8, 48u8, 66u8, 12u8, 92u8, 17u8, 190u8, 155u8, 121u8, 222u8, 226u8,
+							171u8, 208u8, 123u8, 253u8, 247u8, 253u8, 191u8, 90u8, 4u8, 224u8,
+							104u8,
 						],
 					)
 				}
-				#[doc = "See [`Pallet::report_equivocation_unsigned`]."]
+				#[doc = "Report voter equivocation/misbehavior. This method will verify the"]
+				#[doc = "equivocation proof and validate the given key ownership proof"]
+				#[doc = "against the extracted offender. If both are valid, the offence"]
+				#[doc = "will be reported."]
+				#[doc = ""]
+				#[doc = "This extrinsic must be called unsigned and it is expected that only"]
+				#[doc = "block authors will call it (validated in `ValidateUnsigned`), as such"]
+				#[doc = "if the block author is defined it will be defined as the equivocation"]
+				#[doc = "reporter."]
 				pub fn report_equivocation_unsigned(
 					&self,
 					equivocation_proof: types::report_equivocation_unsigned::EquivocationProof,
@@ -11448,13 +13066,24 @@ pub mod api {
 							key_owner_proof,
 						},
 						[
-							141u8, 133u8, 227u8, 65u8, 22u8, 181u8, 108u8, 9u8, 157u8, 27u8, 124u8,
-							53u8, 177u8, 27u8, 5u8, 16u8, 193u8, 66u8, 59u8, 87u8, 143u8, 238u8,
-							251u8, 167u8, 117u8, 138u8, 246u8, 236u8, 65u8, 148u8, 20u8, 131u8,
+							109u8, 97u8, 251u8, 184u8, 77u8, 61u8, 95u8, 187u8, 132u8, 146u8, 18u8,
+							105u8, 109u8, 124u8, 181u8, 74u8, 143u8, 171u8, 248u8, 188u8, 69u8,
+							63u8, 65u8, 92u8, 64u8, 42u8, 104u8, 131u8, 67u8, 202u8, 172u8, 73u8,
 						],
 					)
 				}
-				#[doc = "See [`Pallet::note_stalled`]."]
+				#[doc = "Note that the current authority set of the GRANDPA finality gadget has stalled."]
+				#[doc = ""]
+				#[doc = "This will trigger a forced authority set change at the beginning of the next session, to"]
+				#[doc = "be enacted `delay` blocks after that. The `delay` should be high enough to safely assume"]
+				#[doc = "that the block signalling the forced change will not be re-orged e.g. 1000 blocks."]
+				#[doc = "The block production rate (which may be slowed down because of finality lagging) should"]
+				#[doc = "be taken into account when choosing the `delay`. The GRANDPA voters based on the new"]
+				#[doc = "authority will start voting on top of `best_finalized_block_number` for new finalized"]
+				#[doc = "blocks. `best_finalized_block_number` should be the highest of the latest finalized"]
+				#[doc = "block of all validators of the new authority set."]
+				#[doc = ""]
+				#[doc = "Only callable by root."]
 				pub fn note_stalled(
 					&self,
 					delay: types::note_stalled::Delay,
@@ -11625,10 +13254,10 @@ pub mod api {
 						"PendingChange",
 						vec![],
 						[
-							150u8, 194u8, 185u8, 248u8, 239u8, 43u8, 141u8, 253u8, 61u8, 106u8,
-							74u8, 164u8, 209u8, 204u8, 206u8, 200u8, 32u8, 38u8, 11u8, 78u8, 84u8,
-							243u8, 181u8, 142u8, 179u8, 151u8, 81u8, 204u8, 244u8, 150u8, 137u8,
-							250u8,
+							32u8, 165u8, 141u8, 100u8, 109u8, 66u8, 58u8, 22u8, 118u8, 84u8, 92u8,
+							164u8, 119u8, 130u8, 104u8, 25u8, 244u8, 111u8, 223u8, 54u8, 184u8,
+							95u8, 196u8, 30u8, 244u8, 129u8, 110u8, 127u8, 200u8, 66u8, 226u8,
+							26u8,
 						],
 					)
 				}
@@ -11775,10 +13404,10 @@ pub mod api {
 						"Authorities",
 						vec![],
 						[
-							67u8, 196u8, 244u8, 13u8, 246u8, 245u8, 198u8, 98u8, 81u8, 55u8, 182u8,
-							187u8, 214u8, 5u8, 181u8, 76u8, 251u8, 213u8, 144u8, 166u8, 36u8,
-							153u8, 234u8, 181u8, 252u8, 55u8, 198u8, 175u8, 55u8, 211u8, 105u8,
-							85u8,
+							192u8, 157u8, 98u8, 244u8, 104u8, 38u8, 195u8, 114u8, 183u8, 62u8,
+							247u8, 18u8, 31u8, 152u8, 246u8, 206u8, 97u8, 13u8, 118u8, 211u8,
+							104u8, 54u8, 150u8, 152u8, 126u8, 170u8, 228u8, 158u8, 108u8, 129u8,
+							134u8, 44u8,
 						],
 					)
 				}
@@ -11867,90 +13496,23 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::propose_spend`]."]
-				pub struct ProposeSpend {
-					#[codec(compact)]
-					pub value: propose_spend::Value,
-					pub beneficiary: propose_spend::Beneficiary,
-				}
-				pub mod propose_spend {
-					use super::runtime_types;
-					pub type Value = ::core::primitive::u128;
-					pub type Beneficiary = ::subxt::utils::MultiAddress<
-						::subxt::utils::AccountId32,
-						::core::primitive::u32,
-					>;
-				}
-				impl ::subxt::blocks::StaticExtrinsic for ProposeSpend {
-					const PALLET: &'static str = "Treasury";
-					const CALL: &'static str = "propose_spend";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::reject_proposal`]."]
-				pub struct RejectProposal {
-					#[codec(compact)]
-					pub proposal_id: reject_proposal::ProposalId,
-				}
-				pub mod reject_proposal {
-					use super::runtime_types;
-					pub type ProposalId = ::core::primitive::u32;
-				}
-				impl ::subxt::blocks::StaticExtrinsic for RejectProposal {
-					const PALLET: &'static str = "Treasury";
-					const CALL: &'static str = "reject_proposal";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::approve_proposal`]."]
-				pub struct ApproveProposal {
-					#[codec(compact)]
-					pub proposal_id: approve_proposal::ProposalId,
-				}
-				pub mod approve_proposal {
-					use super::runtime_types;
-					pub type ProposalId = ::core::primitive::u32;
-				}
-				impl ::subxt::blocks::StaticExtrinsic for ApproveProposal {
-					const PALLET: &'static str = "Treasury";
-					const CALL: &'static str = "approve_proposal";
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::spend_local`]."]
+				#[doc = "Propose and approve a spend of treasury funds."]
+				#[doc = ""]
+				#[doc = "## Dispatch Origin"]
+				#[doc = ""]
+				#[doc = "Must be [`Config::SpendOrigin`] with the `Success` value being at least `amount`."]
+				#[doc = ""]
+				#[doc = "### Details"]
+				#[doc = "NOTE: For record-keeping purposes, the proposer is deemed to be equivalent to the"]
+				#[doc = "beneficiary."]
+				#[doc = ""]
+				#[doc = "### Parameters"]
+				#[doc = "- `amount`: The amount to be transferred from the treasury to the `beneficiary`."]
+				#[doc = "- `beneficiary`: The destination account for the transfer."]
+				#[doc = ""]
+				#[doc = "## Events"]
+				#[doc = ""]
+				#[doc = "Emits [`Event::SpendApproved`] if successful."]
 				pub struct SpendLocal {
 					#[codec(compact)]
 					pub amount: spend_local::Amount,
@@ -11981,7 +13543,27 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::remove_approval`]."]
+				#[doc = "Force a previously approved proposal to be removed from the approval queue."]
+				#[doc = ""]
+				#[doc = "## Dispatch Origin"]
+				#[doc = ""]
+				#[doc = "Must be [`Config::RejectOrigin`]."]
+				#[doc = ""]
+				#[doc = "## Details"]
+				#[doc = ""]
+				#[doc = "The original deposit will no longer be returned."]
+				#[doc = ""]
+				#[doc = "### Parameters"]
+				#[doc = "- `proposal_id`: The index of a proposal"]
+				#[doc = ""]
+				#[doc = "### Complexity"]
+				#[doc = "- O(A) where `A` is the number of approvals"]
+				#[doc = ""]
+				#[doc = "### Errors"]
+				#[doc = "- [`Error::ProposalNotApproved`]: The `proposal_id` supplied was not found in the"]
+				#[doc = "  approval queue, i.e., the proposal has not been approved. This could also mean the"]
+				#[doc = "  proposal does not exist altogether, thus there is no way it would have been approved"]
+				#[doc = "  in the first place."]
 				pub struct RemoveApproval {
 					#[codec(compact)]
 					pub proposal_id: remove_approval::ProposalId,
@@ -12007,7 +13589,32 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::spend`]."]
+				#[doc = "Propose and approve a spend of treasury funds."]
+				#[doc = ""]
+				#[doc = "## Dispatch Origin"]
+				#[doc = ""]
+				#[doc = "Must be [`Config::SpendOrigin`] with the `Success` value being at least"]
+				#[doc = "`amount` of `asset_kind` in the native asset. The amount of `asset_kind` is converted"]
+				#[doc = "for assertion using the [`Config::BalanceConverter`]."]
+				#[doc = ""]
+				#[doc = "## Details"]
+				#[doc = ""]
+				#[doc = "Create an approved spend for transferring a specific `amount` of `asset_kind` to a"]
+				#[doc = "designated beneficiary. The spend must be claimed using the `payout` dispatchable within"]
+				#[doc = "the [`Config::PayoutPeriod`]."]
+				#[doc = ""]
+				#[doc = "### Parameters"]
+				#[doc = "- `asset_kind`: An indicator of the specific asset class to be spent."]
+				#[doc = "- `amount`: The amount to be transferred from the treasury to the `beneficiary`."]
+				#[doc = "- `beneficiary`: The beneficiary of the spend."]
+				#[doc = "- `valid_from`: The block number from which the spend can be claimed. It can refer to"]
+				#[doc = "  the past if the resulting spend has not yet expired according to the"]
+				#[doc = "  [`Config::PayoutPeriod`]. If `None`, the spend can be claimed immediately after"]
+				#[doc = "  approval."]
+				#[doc = ""]
+				#[doc = "## Events"]
+				#[doc = ""]
+				#[doc = "Emits [`Event::AssetSpendApproved`] if successful."]
 				pub struct Spend {
 					pub asset_kind: ::std::boxed::Box<spend::AssetKind>,
 					#[codec(compact)]
@@ -12039,7 +13646,25 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::payout`]."]
+				#[doc = "Claim a spend."]
+				#[doc = ""]
+				#[doc = "## Dispatch Origin"]
+				#[doc = ""]
+				#[doc = "Must be signed"]
+				#[doc = ""]
+				#[doc = "## Details"]
+				#[doc = ""]
+				#[doc = "Spends must be claimed within some temporal bounds. A spend may be claimed within one"]
+				#[doc = "[`Config::PayoutPeriod`] from the `valid_from` block."]
+				#[doc = "In case of a payout failure, the spend status must be updated with the `check_status`"]
+				#[doc = "dispatchable before retrying with the current function."]
+				#[doc = ""]
+				#[doc = "### Parameters"]
+				#[doc = "- `index`: The spend index."]
+				#[doc = ""]
+				#[doc = "## Events"]
+				#[doc = ""]
+				#[doc = "Emits [`Event::Paid`] if successful."]
 				pub struct Payout {
 					pub index: payout::Index,
 				}
@@ -12064,7 +13689,25 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::check_status`]."]
+				#[doc = "Check the status of the spend and remove it from the storage if processed."]
+				#[doc = ""]
+				#[doc = "## Dispatch Origin"]
+				#[doc = ""]
+				#[doc = "Must be signed."]
+				#[doc = ""]
+				#[doc = "## Details"]
+				#[doc = ""]
+				#[doc = "The status check is a prerequisite for retrying a failed payout."]
+				#[doc = "If a spend has either succeeded or expired, it is removed from the storage by this"]
+				#[doc = "function. In such instances, transaction fees are refunded."]
+				#[doc = ""]
+				#[doc = "### Parameters"]
+				#[doc = "- `index`: The spend index."]
+				#[doc = ""]
+				#[doc = "## Events"]
+				#[doc = ""]
+				#[doc = "Emits [`Event::PaymentFailed`] if the spend payout has failed."]
+				#[doc = "Emits [`Event::SpendProcessed`] if the spend payout has succeed."]
 				pub struct CheckStatus {
 					pub index: check_status::Index,
 				}
@@ -12089,7 +13732,22 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::void_spend`]."]
+				#[doc = "Void previously approved spend."]
+				#[doc = ""]
+				#[doc = "## Dispatch Origin"]
+				#[doc = ""]
+				#[doc = "Must be [`Config::RejectOrigin`]."]
+				#[doc = ""]
+				#[doc = "## Details"]
+				#[doc = ""]
+				#[doc = "A spend void is only possible if the payout has not been attempted yet."]
+				#[doc = ""]
+				#[doc = "### Parameters"]
+				#[doc = "- `index`: The spend index."]
+				#[doc = ""]
+				#[doc = "## Events"]
+				#[doc = ""]
+				#[doc = "Emits [`Event::AssetSpendVoided`] if successful."]
 				pub struct VoidSpend {
 					pub index: void_spend::Index,
 				}
@@ -12104,56 +13762,23 @@ pub mod api {
 			}
 			pub struct TransactionApi;
 			impl TransactionApi {
-				#[doc = "See [`Pallet::propose_spend`]."]
-				pub fn propose_spend(
-					&self,
-					value: types::propose_spend::Value,
-					beneficiary: types::propose_spend::Beneficiary,
-				) -> ::subxt::tx::Payload<types::ProposeSpend> {
-					::subxt::tx::Payload::new_static(
-						"Treasury",
-						"propose_spend",
-						types::ProposeSpend { value, beneficiary },
-						[
-							82u8, 0u8, 77u8, 68u8, 172u8, 126u8, 179u8, 217u8, 173u8, 214u8, 69u8,
-							227u8, 243u8, 252u8, 100u8, 30u8, 205u8, 80u8, 99u8, 57u8, 63u8, 59u8,
-							142u8, 81u8, 38u8, 22u8, 243u8, 165u8, 131u8, 193u8, 135u8, 171u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::reject_proposal`]."]
-				pub fn reject_proposal(
-					&self,
-					proposal_id: types::reject_proposal::ProposalId,
-				) -> ::subxt::tx::Payload<types::RejectProposal> {
-					::subxt::tx::Payload::new_static(
-						"Treasury",
-						"reject_proposal",
-						types::RejectProposal { proposal_id },
-						[
-							18u8, 166u8, 80u8, 141u8, 222u8, 230u8, 4u8, 36u8, 7u8, 76u8, 12u8,
-							40u8, 145u8, 114u8, 12u8, 43u8, 223u8, 78u8, 189u8, 222u8, 120u8, 80u8,
-							225u8, 215u8, 119u8, 68u8, 200u8, 15u8, 25u8, 172u8, 192u8, 173u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::approve_proposal`]."]
-				pub fn approve_proposal(
-					&self,
-					proposal_id: types::approve_proposal::ProposalId,
-				) -> ::subxt::tx::Payload<types::ApproveProposal> {
-					::subxt::tx::Payload::new_static(
-						"Treasury",
-						"approve_proposal",
-						types::ApproveProposal { proposal_id },
-						[
-							154u8, 176u8, 152u8, 97u8, 167u8, 177u8, 78u8, 9u8, 235u8, 229u8,
-							199u8, 193u8, 214u8, 3u8, 16u8, 30u8, 4u8, 104u8, 27u8, 184u8, 100u8,
-							65u8, 179u8, 13u8, 91u8, 62u8, 115u8, 5u8, 219u8, 211u8, 251u8, 153u8,
-						],
-					)
-				}
-				#[doc = "See [`Pallet::spend_local`]."]
+				#[doc = "Propose and approve a spend of treasury funds."]
+				#[doc = ""]
+				#[doc = "## Dispatch Origin"]
+				#[doc = ""]
+				#[doc = "Must be [`Config::SpendOrigin`] with the `Success` value being at least `amount`."]
+				#[doc = ""]
+				#[doc = "### Details"]
+				#[doc = "NOTE: For record-keeping purposes, the proposer is deemed to be equivalent to the"]
+				#[doc = "beneficiary."]
+				#[doc = ""]
+				#[doc = "### Parameters"]
+				#[doc = "- `amount`: The amount to be transferred from the treasury to the `beneficiary`."]
+				#[doc = "- `beneficiary`: The destination account for the transfer."]
+				#[doc = ""]
+				#[doc = "## Events"]
+				#[doc = ""]
+				#[doc = "Emits [`Event::SpendApproved`] if successful."]
 				pub fn spend_local(
 					&self,
 					amount: types::spend_local::Amount,
@@ -12173,7 +13798,27 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::remove_approval`]."]
+				#[doc = "Force a previously approved proposal to be removed from the approval queue."]
+				#[doc = ""]
+				#[doc = "## Dispatch Origin"]
+				#[doc = ""]
+				#[doc = "Must be [`Config::RejectOrigin`]."]
+				#[doc = ""]
+				#[doc = "## Details"]
+				#[doc = ""]
+				#[doc = "The original deposit will no longer be returned."]
+				#[doc = ""]
+				#[doc = "### Parameters"]
+				#[doc = "- `proposal_id`: The index of a proposal"]
+				#[doc = ""]
+				#[doc = "### Complexity"]
+				#[doc = "- O(A) where `A` is the number of approvals"]
+				#[doc = ""]
+				#[doc = "### Errors"]
+				#[doc = "- [`Error::ProposalNotApproved`]: The `proposal_id` supplied was not found in the"]
+				#[doc = "  approval queue, i.e., the proposal has not been approved. This could also mean the"]
+				#[doc = "  proposal does not exist altogether, thus there is no way it would have been approved"]
+				#[doc = "  in the first place."]
 				pub fn remove_approval(
 					&self,
 					proposal_id: types::remove_approval::ProposalId,
@@ -12190,7 +13835,32 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::spend`]."]
+				#[doc = "Propose and approve a spend of treasury funds."]
+				#[doc = ""]
+				#[doc = "## Dispatch Origin"]
+				#[doc = ""]
+				#[doc = "Must be [`Config::SpendOrigin`] with the `Success` value being at least"]
+				#[doc = "`amount` of `asset_kind` in the native asset. The amount of `asset_kind` is converted"]
+				#[doc = "for assertion using the [`Config::BalanceConverter`]."]
+				#[doc = ""]
+				#[doc = "## Details"]
+				#[doc = ""]
+				#[doc = "Create an approved spend for transferring a specific `amount` of `asset_kind` to a"]
+				#[doc = "designated beneficiary. The spend must be claimed using the `payout` dispatchable within"]
+				#[doc = "the [`Config::PayoutPeriod`]."]
+				#[doc = ""]
+				#[doc = "### Parameters"]
+				#[doc = "- `asset_kind`: An indicator of the specific asset class to be spent."]
+				#[doc = "- `amount`: The amount to be transferred from the treasury to the `beneficiary`."]
+				#[doc = "- `beneficiary`: The beneficiary of the spend."]
+				#[doc = "- `valid_from`: The block number from which the spend can be claimed. It can refer to"]
+				#[doc = "  the past if the resulting spend has not yet expired according to the"]
+				#[doc = "  [`Config::PayoutPeriod`]. If `None`, the spend can be claimed immediately after"]
+				#[doc = "  approval."]
+				#[doc = ""]
+				#[doc = "## Events"]
+				#[doc = ""]
+				#[doc = "Emits [`Event::AssetSpendApproved`] if successful."]
 				pub fn spend(
 					&self,
 					asset_kind: types::spend::AssetKind,
@@ -12214,7 +13884,25 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::payout`]."]
+				#[doc = "Claim a spend."]
+				#[doc = ""]
+				#[doc = "## Dispatch Origin"]
+				#[doc = ""]
+				#[doc = "Must be signed"]
+				#[doc = ""]
+				#[doc = "## Details"]
+				#[doc = ""]
+				#[doc = "Spends must be claimed within some temporal bounds. A spend may be claimed within one"]
+				#[doc = "[`Config::PayoutPeriod`] from the `valid_from` block."]
+				#[doc = "In case of a payout failure, the spend status must be updated with the `check_status`"]
+				#[doc = "dispatchable before retrying with the current function."]
+				#[doc = ""]
+				#[doc = "### Parameters"]
+				#[doc = "- `index`: The spend index."]
+				#[doc = ""]
+				#[doc = "## Events"]
+				#[doc = ""]
+				#[doc = "Emits [`Event::Paid`] if successful."]
 				pub fn payout(
 					&self,
 					index: types::payout::Index,
@@ -12230,7 +13918,25 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::check_status`]."]
+				#[doc = "Check the status of the spend and remove it from the storage if processed."]
+				#[doc = ""]
+				#[doc = "## Dispatch Origin"]
+				#[doc = ""]
+				#[doc = "Must be signed."]
+				#[doc = ""]
+				#[doc = "## Details"]
+				#[doc = ""]
+				#[doc = "The status check is a prerequisite for retrying a failed payout."]
+				#[doc = "If a spend has either succeeded or expired, it is removed from the storage by this"]
+				#[doc = "function. In such instances, transaction fees are refunded."]
+				#[doc = ""]
+				#[doc = "### Parameters"]
+				#[doc = "- `index`: The spend index."]
+				#[doc = ""]
+				#[doc = "## Events"]
+				#[doc = ""]
+				#[doc = "Emits [`Event::PaymentFailed`] if the spend payout has failed."]
+				#[doc = "Emits [`Event::SpendProcessed`] if the spend payout has succeed."]
 				pub fn check_status(
 					&self,
 					index: types::check_status::Index,
@@ -12246,7 +13952,22 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::void_spend`]."]
+				#[doc = "Void previously approved spend."]
+				#[doc = ""]
+				#[doc = "## Dispatch Origin"]
+				#[doc = ""]
+				#[doc = "Must be [`Config::RejectOrigin`]."]
+				#[doc = ""]
+				#[doc = "## Details"]
+				#[doc = ""]
+				#[doc = "A spend void is only possible if the payout has not been attempted yet."]
+				#[doc = ""]
+				#[doc = "### Parameters"]
+				#[doc = "- `index`: The spend index."]
+				#[doc = ""]
+				#[doc = "## Events"]
+				#[doc = ""]
+				#[doc = "Emits [`Event::AssetSpendVoided`] if successful."]
 				pub fn void_spend(
 					&self,
 					index: types::void_spend::Index,
@@ -12268,31 +13989,6 @@ pub mod api {
 		pub type Event = runtime_types::pallet_treasury::pallet::Event;
 		pub mod events {
 			use super::runtime_types;
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "New proposal."]
-			pub struct Proposed {
-				pub proposal_index: proposed::ProposalIndex,
-			}
-			pub mod proposed {
-				use super::runtime_types;
-				pub type ProposalIndex = ::core::primitive::u32;
-			}
-			impl ::subxt::events::StaticEvent for Proposed {
-				const PALLET: &'static str = "Treasury";
-				const EVENT: &'static str = "Proposed";
-			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
 				:: subxt :: ext :: codec :: Encode,
@@ -12346,33 +14042,6 @@ pub mod api {
 			impl ::subxt::events::StaticEvent for Awarded {
 				const PALLET: &'static str = "Treasury";
 				const EVENT: &'static str = "Awarded";
-			}
-			#[derive(
-				:: subxt :: ext :: codec :: Decode,
-				:: subxt :: ext :: codec :: Encode,
-				:: subxt :: ext :: scale_decode :: DecodeAsType,
-				:: subxt :: ext :: scale_encode :: EncodeAsType,
-				Clone,
-				Debug,
-				Eq,
-				PartialEq,
-			)]
-			# [codec (crate = :: subxt :: ext :: codec)]
-			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-			#[doc = "A proposal was rejected; funds were slashed."]
-			pub struct Rejected {
-				pub proposal_index: rejected::ProposalIndex,
-				pub slashed: rejected::Slashed,
-			}
-			pub mod rejected {
-				use super::runtime_types;
-				pub type ProposalIndex = ::core::primitive::u32;
-				pub type Slashed = ::core::primitive::u128;
-			}
-			impl ::subxt::events::StaticEvent for Rejected {
-				const PALLET: &'static str = "Treasury";
-				const EVENT: &'static str = "Rejected";
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -12875,51 +14544,6 @@ pub mod api {
 			use super::runtime_types;
 			pub struct ConstantsApi;
 			impl ConstantsApi {
-				#[doc = " Fraction of a proposal's value that should be bonded in order to place the proposal."]
-				#[doc = " An accepted proposal gets these back. A rejected proposal does not."]
-				pub fn proposal_bond(
-					&self,
-				) -> ::subxt::constants::Address<runtime_types::sp_arithmetic::per_things::Permill>
-				{
-					::subxt::constants::Address::new_static(
-						"Treasury",
-						"ProposalBond",
-						[
-							65u8, 93u8, 120u8, 165u8, 204u8, 81u8, 159u8, 163u8, 93u8, 135u8,
-							114u8, 121u8, 147u8, 35u8, 215u8, 213u8, 4u8, 223u8, 83u8, 37u8, 225u8,
-							200u8, 189u8, 156u8, 140u8, 36u8, 58u8, 46u8, 42u8, 232u8, 155u8, 0u8,
-						],
-					)
-				}
-				#[doc = " Minimum amount of funds that should be placed in a deposit for making a proposal."]
-				pub fn proposal_bond_minimum(
-					&self,
-				) -> ::subxt::constants::Address<::core::primitive::u128> {
-					::subxt::constants::Address::new_static(
-						"Treasury",
-						"ProposalBondMinimum",
-						[
-							84u8, 157u8, 140u8, 4u8, 93u8, 57u8, 29u8, 133u8, 105u8, 200u8, 214u8,
-							27u8, 144u8, 208u8, 218u8, 160u8, 130u8, 109u8, 101u8, 54u8, 210u8,
-							136u8, 71u8, 63u8, 49u8, 237u8, 234u8, 15u8, 178u8, 98u8, 148u8, 156u8,
-						],
-					)
-				}
-				#[doc = " Maximum amount of funds that should be placed in a deposit for making a proposal."]
-				pub fn proposal_bond_maximum(
-					&self,
-				) -> ::subxt::constants::Address<::core::option::Option<::core::primitive::u128>> {
-					::subxt::constants::Address::new_static(
-						"Treasury",
-						"ProposalBondMaximum",
-						[
-							198u8, 51u8, 89u8, 159u8, 124u8, 251u8, 51u8, 80u8, 167u8, 193u8, 44u8,
-							199u8, 80u8, 36u8, 41u8, 130u8, 137u8, 229u8, 178u8, 208u8, 37u8,
-							215u8, 169u8, 183u8, 180u8, 191u8, 140u8, 240u8, 250u8, 61u8, 42u8,
-							147u8,
-						],
-					)
-				}
 				#[doc = " Period between successive spends."]
 				pub fn spend_period(&self) -> ::subxt::constants::Address<::core::primitive::u32> {
 					::subxt::constants::Address::new_static(
@@ -13019,7 +14643,7 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::sudo`]."]
+				#[doc = "Authenticates the sudo key and dispatches a function call with `Root` origin."]
 				pub struct Sudo {
 					pub call: ::std::boxed::Box<sudo::Call>,
 				}
@@ -13044,7 +14668,11 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::sudo_unchecked_weight`]."]
+				#[doc = "Authenticates the sudo key and dispatches a function call with `Root` origin."]
+				#[doc = "This function does not check the weight of the call, and instead allows the"]
+				#[doc = "Sudo user to specify the weight of the call."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_."]
 				pub struct SudoUncheckedWeight {
 					pub call: ::std::boxed::Box<sudo_unchecked_weight::Call>,
 					pub weight: sudo_unchecked_weight::Weight,
@@ -13071,7 +14699,8 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::set_key`]."]
+				#[doc = "Authenticates the current sudo key and sets the given AccountId (`new`) as the new sudo"]
+				#[doc = "key."]
 				pub struct SetKey {
 					pub new: set_key::New,
 				}
@@ -13099,7 +14728,10 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::sudo_as`]."]
+				#[doc = "Authenticates the sudo key and dispatches a function call with `Signed` origin from"]
+				#[doc = "a given account."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_."]
 				pub struct SudoAs {
 					pub who: sudo_as::Who,
 					pub call: ::std::boxed::Box<sudo_as::Call>,
@@ -13129,7 +14761,9 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::remove_key`]."]
+				#[doc = "Permanently removes the sudo key."]
+				#[doc = ""]
+				#[doc = "**This cannot be un-done.**"]
 				pub struct RemoveKey;
 				impl ::subxt::blocks::StaticExtrinsic for RemoveKey {
 					const PALLET: &'static str = "Sudo";
@@ -13138,7 +14772,7 @@ pub mod api {
 			}
 			pub struct TransactionApi;
 			impl TransactionApi {
-				#[doc = "See [`Pallet::sudo`]."]
+				#[doc = "Authenticates the sudo key and dispatches a function call with `Root` origin."]
 				pub fn sudo(&self, call: types::sudo::Call) -> ::subxt::tx::Payload<types::Sudo> {
 					::subxt::tx::Payload::new_static(
 						"Sudo",
@@ -13147,14 +14781,18 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							232u8, 155u8, 199u8, 156u8, 189u8, 209u8, 3u8, 154u8, 31u8, 184u8,
-							255u8, 30u8, 59u8, 105u8, 186u8, 123u8, 127u8, 134u8, 254u8, 7u8,
-							201u8, 73u8, 181u8, 181u8, 117u8, 155u8, 204u8, 201u8, 162u8, 123u8,
-							73u8, 184u8,
+							64u8, 184u8, 145u8, 37u8, 46u8, 221u8, 225u8, 131u8, 114u8, 34u8,
+							178u8, 28u8, 219u8, 254u8, 208u8, 177u8, 255u8, 234u8, 171u8, 104u8,
+							103u8, 229u8, 174u8, 143u8, 96u8, 31u8, 247u8, 74u8, 124u8, 16u8, 37u8,
+							214u8,
 						],
 					)
 				}
-				#[doc = "See [`Pallet::sudo_unchecked_weight`]."]
+				#[doc = "Authenticates the sudo key and dispatches a function call with `Root` origin."]
+				#[doc = "This function does not check the weight of the call, and instead allows the"]
+				#[doc = "Sudo user to specify the weight of the call."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_."]
 				pub fn sudo_unchecked_weight(
 					&self,
 					call: types::sudo_unchecked_weight::Call,
@@ -13168,13 +14806,15 @@ pub mod api {
 							weight,
 						},
 						[
-							134u8, 3u8, 20u8, 44u8, 68u8, 21u8, 224u8, 23u8, 245u8, 234u8, 165u8,
-							117u8, 141u8, 168u8, 82u8, 63u8, 29u8, 224u8, 197u8, 141u8, 236u8,
-							33u8, 208u8, 38u8, 62u8, 166u8, 164u8, 29u8, 30u8, 152u8, 81u8, 250u8,
+							246u8, 162u8, 15u8, 147u8, 208u8, 10u8, 235u8, 5u8, 249u8, 55u8, 98u8,
+							150u8, 48u8, 22u8, 74u8, 164u8, 116u8, 236u8, 12u8, 182u8, 144u8,
+							121u8, 179u8, 203u8, 104u8, 78u8, 66u8, 131u8, 70u8, 185u8, 195u8,
+							100u8,
 						],
 					)
 				}
-				#[doc = "See [`Pallet::set_key`]."]
+				#[doc = "Authenticates the current sudo key and sets the given AccountId (`new`) as the new sudo"]
+				#[doc = "key."]
 				pub fn set_key(
 					&self,
 					new: types::set_key::New,
@@ -13191,7 +14831,10 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::sudo_as`]."]
+				#[doc = "Authenticates the sudo key and dispatches a function call with `Signed` origin from"]
+				#[doc = "a given account."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_."]
 				pub fn sudo_as(
 					&self,
 					who: types::sudo_as::Who,
@@ -13205,13 +14848,16 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							52u8, 143u8, 115u8, 242u8, 30u8, 5u8, 194u8, 100u8, 41u8, 206u8, 225u8,
-							118u8, 59u8, 141u8, 125u8, 101u8, 189u8, 92u8, 190u8, 113u8, 248u8,
-							215u8, 157u8, 246u8, 82u8, 146u8, 125u8, 89u8, 57u8, 242u8, 68u8, 70u8,
+							39u8, 232u8, 208u8, 58u8, 161u8, 97u8, 110u8, 170u8, 217u8, 207u8,
+							240u8, 73u8, 178u8, 52u8, 181u8, 78u8, 169u8, 13u8, 182u8, 155u8,
+							115u8, 242u8, 255u8, 240u8, 36u8, 232u8, 166u8, 199u8, 248u8, 86u8,
+							214u8, 161u8,
 						],
 					)
 				}
-				#[doc = "See [`Pallet::remove_key`]."]
+				#[doc = "Permanently removes the sudo key."]
+				#[doc = ""]
+				#[doc = "**This cannot be un-done.**"]
 				pub fn remove_key(&self) -> ::subxt::tx::Payload<types::RemoveKey> {
 					::subxt::tx::Payload::new_static(
 						"Sudo",
@@ -13391,7 +15037,9 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::heartbeat`]."]
+				#[doc = "## Complexity:"]
+				#[doc = "- `O(K)` where K is length of `Keys` (heartbeat.validators_len)"]
+				#[doc = "  - `O(K)`: decoding of length `K`"]
 				pub struct Heartbeat {
 					pub heartbeat: heartbeat::Heartbeat,
 					pub signature: heartbeat::Signature,
@@ -13410,7 +15058,9 @@ pub mod api {
 			}
 			pub struct TransactionApi;
 			impl TransactionApi {
-				#[doc = "See [`Pallet::heartbeat`]."]
+				#[doc = "## Complexity:"]
+				#[doc = "- `O(K)` where K is length of `Keys` (heartbeat.validators_len)"]
+				#[doc = "  - `O(K)`: decoding of length `K`"]
 				pub fn heartbeat(
 					&self,
 					heartbeat: types::heartbeat::Heartbeat,
@@ -13424,9 +15074,10 @@ pub mod api {
 							signature,
 						},
 						[
-							41u8, 78u8, 115u8, 250u8, 94u8, 34u8, 215u8, 28u8, 33u8, 175u8, 203u8,
-							205u8, 14u8, 40u8, 197u8, 51u8, 24u8, 198u8, 173u8, 32u8, 119u8, 154u8,
-							213u8, 125u8, 219u8, 3u8, 128u8, 52u8, 166u8, 223u8, 241u8, 129u8,
+							166u8, 59u8, 152u8, 129u8, 84u8, 175u8, 182u8, 208u8, 78u8, 54u8,
+							170u8, 108u8, 255u8, 251u8, 152u8, 91u8, 83u8, 127u8, 16u8, 201u8,
+							12u8, 52u8, 160u8, 199u8, 247u8, 146u8, 10u8, 176u8, 4u8, 207u8, 117u8,
+							114u8,
 						],
 					)
 				}
@@ -13589,10 +15240,10 @@ pub mod api {
 						"Keys",
 						vec![],
 						[
-							111u8, 104u8, 188u8, 46u8, 152u8, 140u8, 137u8, 244u8, 52u8, 214u8,
-							115u8, 156u8, 39u8, 239u8, 15u8, 168u8, 193u8, 125u8, 57u8, 195u8,
-							250u8, 156u8, 234u8, 222u8, 222u8, 253u8, 135u8, 232u8, 196u8, 163u8,
-							29u8, 218u8,
+							35u8, 71u8, 73u8, 255u8, 160u8, 250u8, 38u8, 205u8, 32u8, 139u8, 236u8,
+							83u8, 194u8, 12u8, 20u8, 221u8, 114u8, 94u8, 196u8, 246u8, 136u8,
+							175u8, 70u8, 98u8, 91u8, 50u8, 236u8, 131u8, 131u8, 146u8, 150u8,
+							192u8,
 						],
 					)
 				}
@@ -13810,10 +15461,10 @@ pub mod api {
 						"Keys",
 						vec![],
 						[
-							111u8, 104u8, 188u8, 46u8, 152u8, 140u8, 137u8, 244u8, 52u8, 214u8,
-							115u8, 156u8, 39u8, 239u8, 15u8, 168u8, 193u8, 125u8, 57u8, 195u8,
-							250u8, 156u8, 234u8, 222u8, 222u8, 253u8, 135u8, 232u8, 196u8, 163u8,
-							29u8, 218u8,
+							35u8, 71u8, 73u8, 255u8, 160u8, 250u8, 38u8, 205u8, 32u8, 139u8, 236u8,
+							83u8, 194u8, 12u8, 20u8, 221u8, 114u8, 94u8, 196u8, 246u8, 136u8,
+							175u8, 70u8, 98u8, 91u8, 50u8, 236u8, 131u8, 131u8, 146u8, 150u8,
+							192u8,
 						],
 					)
 				}
@@ -13832,9 +15483,10 @@ pub mod api {
 						"NextKeys",
 						vec![],
 						[
-							171u8, 107u8, 15u8, 108u8, 125u8, 102u8, 193u8, 240u8, 127u8, 160u8,
-							53u8, 1u8, 208u8, 36u8, 134u8, 4u8, 216u8, 26u8, 156u8, 143u8, 154u8,
-							194u8, 153u8, 199u8, 46u8, 211u8, 153u8, 222u8, 244u8, 4u8, 165u8, 2u8,
+							54u8, 44u8, 61u8, 196u8, 2u8, 249u8, 185u8, 199u8, 245u8, 154u8, 178u8,
+							109u8, 237u8, 147u8, 72u8, 209u8, 72u8, 196u8, 31u8, 192u8, 217u8,
+							231u8, 71u8, 28u8, 148u8, 138u8, 29u8, 115u8, 247u8, 95u8, 185u8,
+							189u8,
 						],
 					)
 				}
@@ -14143,7 +15795,7 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::schedule`]."]
+				#[doc = "Anonymously schedule a task."]
 				pub struct Schedule {
 					pub when: schedule::When,
 					pub maybe_periodic: schedule::MaybePeriodic,
@@ -14175,7 +15827,7 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::cancel`]."]
+				#[doc = "Cancel an anonymously scheduled task."]
 				pub struct Cancel {
 					pub when: cancel::When,
 					pub index: cancel::Index,
@@ -14202,7 +15854,7 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::schedule_named`]."]
+				#[doc = "Schedule a named task."]
 				pub struct ScheduleNamed {
 					pub id: schedule_named::Id,
 					pub when: schedule_named::When,
@@ -14236,7 +15888,7 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::cancel_named`]."]
+				#[doc = "Cancel a named scheduled task."]
 				pub struct CancelNamed {
 					pub id: cancel_named::Id,
 				}
@@ -14261,7 +15913,7 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::schedule_after`]."]
+				#[doc = "Anonymously schedule a task after a delay."]
 				pub struct ScheduleAfter {
 					pub after: schedule_after::After,
 					pub maybe_periodic: schedule_after::MaybePeriodic,
@@ -14293,7 +15945,7 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::schedule_named_after`]."]
+				#[doc = "Schedule a named task after a delay."]
 				pub struct ScheduleNamedAfter {
 					pub id: schedule_named_after::Id,
 					pub after: schedule_named_after::After,
@@ -14314,10 +15966,140 @@ pub mod api {
 					const PALLET: &'static str = "Scheduler";
 					const CALL: &'static str = "schedule_named_after";
 				}
+				#[derive(
+					:: subxt :: ext :: codec :: Decode,
+					:: subxt :: ext :: codec :: Encode,
+					:: subxt :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: codec)]
+				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+				#[doc = "Set a retry configuration for a task so that, in case its scheduled run fails, it will"]
+				#[doc = "be retried after `period` blocks, for a total amount of `retries` retries or until it"]
+				#[doc = "succeeds."]
+				#[doc = ""]
+				#[doc = "Tasks which need to be scheduled for a retry are still subject to weight metering and"]
+				#[doc = "agenda space, same as a regular task. If a periodic task fails, it will be scheduled"]
+				#[doc = "normally while the task is retrying."]
+				#[doc = ""]
+				#[doc = "Tasks scheduled as a result of a retry for a periodic task are unnamed, non-periodic"]
+				#[doc = "clones of the original task. Their retry configuration will be derived from the"]
+				#[doc = "original task's configuration, but will have a lower value for `remaining` than the"]
+				#[doc = "original `total_retries`."]
+				pub struct SetRetry {
+					pub task: set_retry::Task,
+					pub retries: set_retry::Retries,
+					pub period: set_retry::Period,
+				}
+				pub mod set_retry {
+					use super::runtime_types;
+					pub type Task = (::core::primitive::u32, ::core::primitive::u32);
+					pub type Retries = ::core::primitive::u8;
+					pub type Period = ::core::primitive::u32;
+				}
+				impl ::subxt::blocks::StaticExtrinsic for SetRetry {
+					const PALLET: &'static str = "Scheduler";
+					const CALL: &'static str = "set_retry";
+				}
+				#[derive(
+					:: subxt :: ext :: codec :: Decode,
+					:: subxt :: ext :: codec :: Encode,
+					:: subxt :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: codec)]
+				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+				#[doc = "Set a retry configuration for a named task so that, in case its scheduled run fails, it"]
+				#[doc = "will be retried after `period` blocks, for a total amount of `retries` retries or until"]
+				#[doc = "it succeeds."]
+				#[doc = ""]
+				#[doc = "Tasks which need to be scheduled for a retry are still subject to weight metering and"]
+				#[doc = "agenda space, same as a regular task. If a periodic task fails, it will be scheduled"]
+				#[doc = "normally while the task is retrying."]
+				#[doc = ""]
+				#[doc = "Tasks scheduled as a result of a retry for a periodic task are unnamed, non-periodic"]
+				#[doc = "clones of the original task. Their retry configuration will be derived from the"]
+				#[doc = "original task's configuration, but will have a lower value for `remaining` than the"]
+				#[doc = "original `total_retries`."]
+				pub struct SetRetryNamed {
+					pub id: set_retry_named::Id,
+					pub retries: set_retry_named::Retries,
+					pub period: set_retry_named::Period,
+				}
+				pub mod set_retry_named {
+					use super::runtime_types;
+					pub type Id = [::core::primitive::u8; 32usize];
+					pub type Retries = ::core::primitive::u8;
+					pub type Period = ::core::primitive::u32;
+				}
+				impl ::subxt::blocks::StaticExtrinsic for SetRetryNamed {
+					const PALLET: &'static str = "Scheduler";
+					const CALL: &'static str = "set_retry_named";
+				}
+				#[derive(
+					:: subxt :: ext :: codec :: Decode,
+					:: subxt :: ext :: codec :: Encode,
+					:: subxt :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: codec)]
+				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+				#[doc = "Removes the retry configuration of a task."]
+				pub struct CancelRetry {
+					pub task: cancel_retry::Task,
+				}
+				pub mod cancel_retry {
+					use super::runtime_types;
+					pub type Task = (::core::primitive::u32, ::core::primitive::u32);
+				}
+				impl ::subxt::blocks::StaticExtrinsic for CancelRetry {
+					const PALLET: &'static str = "Scheduler";
+					const CALL: &'static str = "cancel_retry";
+				}
+				#[derive(
+					:: subxt :: ext :: codec :: Decode,
+					:: subxt :: ext :: codec :: Encode,
+					:: subxt :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: codec)]
+				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+				#[doc = "Cancel the retry configuration of a named task."]
+				pub struct CancelRetryNamed {
+					pub id: cancel_retry_named::Id,
+				}
+				pub mod cancel_retry_named {
+					use super::runtime_types;
+					pub type Id = [::core::primitive::u8; 32usize];
+				}
+				impl ::subxt::blocks::StaticExtrinsic for CancelRetryNamed {
+					const PALLET: &'static str = "Scheduler";
+					const CALL: &'static str = "cancel_retry_named";
+				}
 			}
 			pub struct TransactionApi;
 			impl TransactionApi {
-				#[doc = "See [`Pallet::schedule`]."]
+				#[doc = "Anonymously schedule a task."]
 				pub fn schedule(
 					&self,
 					when: types::schedule::When,
@@ -14335,14 +16117,14 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							225u8, 63u8, 98u8, 149u8, 80u8, 192u8, 243u8, 229u8, 181u8, 206u8,
-							163u8, 209u8, 225u8, 255u8, 178u8, 90u8, 163u8, 205u8, 54u8, 62u8,
-							95u8, 129u8, 85u8, 219u8, 39u8, 155u8, 60u8, 197u8, 149u8, 152u8, 67u8,
-							185u8,
+							12u8, 195u8, 64u8, 224u8, 116u8, 60u8, 10u8, 140u8, 230u8, 145u8,
+							190u8, 109u8, 65u8, 195u8, 74u8, 71u8, 114u8, 106u8, 86u8, 61u8, 189u8,
+							35u8, 221u8, 174u8, 139u8, 216u8, 172u8, 184u8, 193u8, 14u8, 221u8,
+							219u8,
 						],
 					)
 				}
-				#[doc = "See [`Pallet::cancel`]."]
+				#[doc = "Cancel an anonymously scheduled task."]
 				pub fn cancel(
 					&self,
 					when: types::cancel::When,
@@ -14360,7 +16142,7 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::schedule_named`]."]
+				#[doc = "Schedule a named task."]
 				pub fn schedule_named(
 					&self,
 					id: types::schedule_named::Id,
@@ -14380,14 +16162,13 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							120u8, 231u8, 101u8, 108u8, 60u8, 120u8, 115u8, 29u8, 105u8, 212u8,
-							148u8, 192u8, 148u8, 90u8, 161u8, 223u8, 64u8, 102u8, 152u8, 71u8,
-							236u8, 248u8, 145u8, 255u8, 99u8, 76u8, 91u8, 88u8, 71u8, 122u8, 176u8,
-							78u8,
+							8u8, 80u8, 81u8, 71u8, 107u8, 84u8, 124u8, 217u8, 225u8, 160u8, 75u8,
+							72u8, 108u8, 156u8, 88u8, 132u8, 203u8, 13u8, 52u8, 96u8, 43u8, 154u8,
+							225u8, 96u8, 26u8, 74u8, 183u8, 199u8, 211u8, 204u8, 235u8, 4u8,
 						],
 					)
 				}
-				#[doc = "See [`Pallet::cancel_named`]."]
+				#[doc = "Cancel a named scheduled task."]
 				pub fn cancel_named(
 					&self,
 					id: types::cancel_named::Id,
@@ -14403,7 +16184,7 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::schedule_after`]."]
+				#[doc = "Anonymously schedule a task after a delay."]
 				pub fn schedule_after(
 					&self,
 					after: types::schedule_after::After,
@@ -14421,13 +16202,13 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							148u8, 234u8, 169u8, 229u8, 192u8, 26u8, 82u8, 139u8, 28u8, 88u8, 97u8,
-							62u8, 186u8, 150u8, 239u8, 25u8, 207u8, 60u8, 129u8, 80u8, 248u8, 58u8,
-							39u8, 82u8, 120u8, 85u8, 53u8, 105u8, 40u8, 234u8, 105u8, 211u8,
+							162u8, 70u8, 41u8, 130u8, 94u8, 89u8, 206u8, 72u8, 240u8, 175u8, 74u8,
+							25u8, 230u8, 249u8, 176u8, 31u8, 13u8, 178u8, 57u8, 255u8, 57u8, 244u8,
+							230u8, 11u8, 254u8, 131u8, 43u8, 204u8, 33u8, 169u8, 36u8, 72u8,
 						],
 					)
 				}
-				#[doc = "See [`Pallet::schedule_named_after`]."]
+				#[doc = "Schedule a named task after a delay."]
 				pub fn schedule_named_after(
 					&self,
 					id: types::schedule_named_after::Id,
@@ -14447,10 +16228,110 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							255u8, 225u8, 121u8, 74u8, 192u8, 97u8, 133u8, 99u8, 113u8, 187u8,
-							254u8, 200u8, 161u8, 239u8, 127u8, 63u8, 38u8, 166u8, 217u8, 161u8,
-							41u8, 109u8, 241u8, 34u8, 43u8, 104u8, 145u8, 35u8, 55u8, 237u8, 245u8,
-							156u8,
+							245u8, 245u8, 19u8, 131u8, 42u8, 223u8, 55u8, 17u8, 168u8, 237u8,
+							126u8, 193u8, 22u8, 239u8, 209u8, 151u8, 106u8, 16u8, 9u8, 255u8, 13u8,
+							89u8, 195u8, 249u8, 112u8, 150u8, 125u8, 130u8, 237u8, 54u8, 164u8,
+							247u8,
+						],
+					)
+				}
+				#[doc = "Set a retry configuration for a task so that, in case its scheduled run fails, it will"]
+				#[doc = "be retried after `period` blocks, for a total amount of `retries` retries or until it"]
+				#[doc = "succeeds."]
+				#[doc = ""]
+				#[doc = "Tasks which need to be scheduled for a retry are still subject to weight metering and"]
+				#[doc = "agenda space, same as a regular task. If a periodic task fails, it will be scheduled"]
+				#[doc = "normally while the task is retrying."]
+				#[doc = ""]
+				#[doc = "Tasks scheduled as a result of a retry for a periodic task are unnamed, non-periodic"]
+				#[doc = "clones of the original task. Their retry configuration will be derived from the"]
+				#[doc = "original task's configuration, but will have a lower value for `remaining` than the"]
+				#[doc = "original `total_retries`."]
+				pub fn set_retry(
+					&self,
+					task: types::set_retry::Task,
+					retries: types::set_retry::Retries,
+					period: types::set_retry::Period,
+				) -> ::subxt::tx::Payload<types::SetRetry> {
+					::subxt::tx::Payload::new_static(
+						"Scheduler",
+						"set_retry",
+						types::SetRetry {
+							task,
+							retries,
+							period,
+						},
+						[
+							2u8, 242u8, 180u8, 69u8, 237u8, 168u8, 243u8, 93u8, 47u8, 222u8, 189u8,
+							74u8, 233u8, 106u8, 54u8, 40u8, 160u8, 61u8, 78u8, 138u8, 232u8, 20u8,
+							243u8, 17u8, 151u8, 194u8, 67u8, 200u8, 186u8, 192u8, 210u8, 214u8,
+						],
+					)
+				}
+				#[doc = "Set a retry configuration for a named task so that, in case its scheduled run fails, it"]
+				#[doc = "will be retried after `period` blocks, for a total amount of `retries` retries or until"]
+				#[doc = "it succeeds."]
+				#[doc = ""]
+				#[doc = "Tasks which need to be scheduled for a retry are still subject to weight metering and"]
+				#[doc = "agenda space, same as a regular task. If a periodic task fails, it will be scheduled"]
+				#[doc = "normally while the task is retrying."]
+				#[doc = ""]
+				#[doc = "Tasks scheduled as a result of a retry for a periodic task are unnamed, non-periodic"]
+				#[doc = "clones of the original task. Their retry configuration will be derived from the"]
+				#[doc = "original task's configuration, but will have a lower value for `remaining` than the"]
+				#[doc = "original `total_retries`."]
+				pub fn set_retry_named(
+					&self,
+					id: types::set_retry_named::Id,
+					retries: types::set_retry_named::Retries,
+					period: types::set_retry_named::Period,
+				) -> ::subxt::tx::Payload<types::SetRetryNamed> {
+					::subxt::tx::Payload::new_static(
+						"Scheduler",
+						"set_retry_named",
+						types::SetRetryNamed {
+							id,
+							retries,
+							period,
+						},
+						[
+							240u8, 102u8, 255u8, 253u8, 52u8, 81u8, 164u8, 170u8, 184u8, 178u8,
+							254u8, 126u8, 41u8, 247u8, 121u8, 22u8, 254u8, 136u8, 237u8, 37u8,
+							11u8, 42u8, 227u8, 234u8, 132u8, 83u8, 109u8, 168u8, 31u8, 44u8, 231u8,
+							70u8,
+						],
+					)
+				}
+				#[doc = "Removes the retry configuration of a task."]
+				pub fn cancel_retry(
+					&self,
+					task: types::cancel_retry::Task,
+				) -> ::subxt::tx::Payload<types::CancelRetry> {
+					::subxt::tx::Payload::new_static(
+						"Scheduler",
+						"cancel_retry",
+						types::CancelRetry { task },
+						[
+							142u8, 126u8, 127u8, 216u8, 64u8, 189u8, 42u8, 126u8, 63u8, 249u8,
+							211u8, 202u8, 224u8, 197u8, 199u8, 240u8, 58u8, 94u8, 219u8, 177u8,
+							20u8, 210u8, 153u8, 0u8, 127u8, 255u8, 235u8, 238u8, 170u8, 240u8,
+							44u8, 49u8,
+						],
+					)
+				}
+				#[doc = "Cancel the retry configuration of a named task."]
+				pub fn cancel_retry_named(
+					&self,
+					id: types::cancel_retry_named::Id,
+				) -> ::subxt::tx::Payload<types::CancelRetryNamed> {
+					::subxt::tx::Payload::new_static(
+						"Scheduler",
+						"cancel_retry_named",
+						types::CancelRetryNamed { id },
+						[
+							76u8, 157u8, 253u8, 113u8, 162u8, 54u8, 98u8, 21u8, 62u8, 44u8, 155u8,
+							202u8, 2u8, 28u8, 153u8, 219u8, 67u8, 166u8, 206u8, 79u8, 139u8, 3u8,
+							119u8, 182u8, 254u8, 134u8, 143u8, 121u8, 155u8, 220u8, 192u8, 209u8,
 						],
 					)
 				}
@@ -14557,6 +16438,64 @@ pub mod api {
 			# [codec (crate = :: subxt :: ext :: codec)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+			#[doc = "Set a retry configuration for some task."]
+			pub struct RetrySet {
+				pub task: retry_set::Task,
+				pub id: retry_set::Id,
+				pub period: retry_set::Period,
+				pub retries: retry_set::Retries,
+			}
+			pub mod retry_set {
+				use super::runtime_types;
+				pub type Task = (::core::primitive::u32, ::core::primitive::u32);
+				pub type Id = ::core::option::Option<[::core::primitive::u8; 32usize]>;
+				pub type Period = ::core::primitive::u32;
+				pub type Retries = ::core::primitive::u8;
+			}
+			impl ::subxt::events::StaticEvent for RetrySet {
+				const PALLET: &'static str = "Scheduler";
+				const EVENT: &'static str = "RetrySet";
+			}
+			#[derive(
+				:: subxt :: ext :: codec :: Decode,
+				:: subxt :: ext :: codec :: Encode,
+				:: subxt :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+			#[doc = "Cancel a retry configuration for some task."]
+			pub struct RetryCancelled {
+				pub task: retry_cancelled::Task,
+				pub id: retry_cancelled::Id,
+			}
+			pub mod retry_cancelled {
+				use super::runtime_types;
+				pub type Task = (::core::primitive::u32, ::core::primitive::u32);
+				pub type Id = ::core::option::Option<[::core::primitive::u8; 32usize]>;
+			}
+			impl ::subxt::events::StaticEvent for RetryCancelled {
+				const PALLET: &'static str = "Scheduler";
+				const EVENT: &'static str = "RetryCancelled";
+			}
+			#[derive(
+				:: subxt :: ext :: codec :: Decode,
+				:: subxt :: ext :: codec :: Encode,
+				:: subxt :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
 			#[doc = "The call for the provided hash was not found so the task has been aborted."]
 			pub struct CallUnavailable {
 				pub task: call_unavailable::Task,
@@ -14611,6 +16550,34 @@ pub mod api {
 			# [codec (crate = :: subxt :: ext :: codec)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+			#[doc = "The given task was unable to be retried since the agenda is full at that block or there"]
+			#[doc = "was not enough weight to reschedule it."]
+			pub struct RetryFailed {
+				pub task: retry_failed::Task,
+				pub id: retry_failed::Id,
+			}
+			pub mod retry_failed {
+				use super::runtime_types;
+				pub type Task = (::core::primitive::u32, ::core::primitive::u32);
+				pub type Id = ::core::option::Option<[::core::primitive::u8; 32usize]>;
+			}
+			impl ::subxt::events::StaticEvent for RetryFailed {
+				const PALLET: &'static str = "Scheduler";
+				const EVENT: &'static str = "RetryFailed";
+			}
+			#[derive(
+				:: subxt :: ext :: codec :: Decode,
+				:: subxt :: ext :: codec :: Encode,
+				:: subxt :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
 			#[doc = "The given task can never be executed since it is overweight."]
 			pub struct PermanentlyOverweight {
 				pub task: permanently_overweight::Task,
@@ -14651,6 +16618,13 @@ pub mod api {
 						>,
 					>;
 					pub type Param0 = ::core::primitive::u32;
+				}
+				pub mod retries {
+					use super::runtime_types;
+					pub type Retries =
+						runtime_types::pallet_scheduler::RetryConfig<::core::primitive::u32>;
+					pub type Param0 = ::core::primitive::u32;
+					pub type Param1 = ::core::primitive::u32;
 				}
 				pub mod lookup {
 					use super::runtime_types;
@@ -14722,6 +16696,80 @@ pub mod api {
 							186u8, 195u8, 92u8, 183u8, 10u8, 114u8, 156u8, 103u8, 130u8, 100u8,
 							144u8, 18u8, 249u8, 146u8, 126u8, 193u8, 139u8, 64u8, 113u8, 2u8, 82u8,
 							183u8, 14u8, 157u8, 168u8, 3u8, 84u8, 35u8, 76u8, 54u8, 2u8, 25u8,
+						],
+					)
+				}
+				#[doc = " Retry configurations for items to be executed, indexed by task address."]
+				pub fn retries_iter(
+					&self,
+				) -> ::subxt::storage::address::Address<
+					::subxt::storage::address::StaticStorageMapKey,
+					types::retries::Retries,
+					(),
+					(),
+					::subxt::storage::address::Yes,
+				> {
+					::subxt::storage::address::Address::new_static(
+						"Scheduler",
+						"Retries",
+						vec![],
+						[
+							164u8, 27u8, 208u8, 185u8, 19u8, 232u8, 190u8, 97u8, 137u8, 73u8,
+							146u8, 10u8, 241u8, 176u8, 251u8, 140u8, 133u8, 65u8, 190u8, 162u8,
+							59u8, 32u8, 77u8, 201u8, 27u8, 78u8, 183u8, 164u8, 74u8, 46u8, 139u8,
+							145u8,
+						],
+					)
+				}
+				#[doc = " Retry configurations for items to be executed, indexed by task address."]
+				pub fn retries_iter1(
+					&self,
+					_0: impl ::std::borrow::Borrow<types::retries::Param0>,
+				) -> ::subxt::storage::address::Address<
+					::subxt::storage::address::StaticStorageMapKey,
+					types::retries::Retries,
+					(),
+					(),
+					::subxt::storage::address::Yes,
+				> {
+					::subxt::storage::address::Address::new_static(
+						"Scheduler",
+						"Retries",
+						vec![::subxt::storage::address::make_static_storage_map_key(
+							_0.borrow(),
+						)],
+						[
+							164u8, 27u8, 208u8, 185u8, 19u8, 232u8, 190u8, 97u8, 137u8, 73u8,
+							146u8, 10u8, 241u8, 176u8, 251u8, 140u8, 133u8, 65u8, 190u8, 162u8,
+							59u8, 32u8, 77u8, 201u8, 27u8, 78u8, 183u8, 164u8, 74u8, 46u8, 139u8,
+							145u8,
+						],
+					)
+				}
+				#[doc = " Retry configurations for items to be executed, indexed by task address."]
+				pub fn retries(
+					&self,
+					_0: impl ::std::borrow::Borrow<types::retries::Param0>,
+					_1: impl ::std::borrow::Borrow<types::retries::Param1>,
+				) -> ::subxt::storage::address::Address<
+					::subxt::storage::address::StaticStorageMapKey,
+					types::retries::Retries,
+					::subxt::storage::address::Yes,
+					(),
+					(),
+				> {
+					::subxt::storage::address::Address::new_static(
+						"Scheduler",
+						"Retries",
+						vec![
+							::subxt::storage::address::make_static_storage_map_key(_0.borrow()),
+							::subxt::storage::address::make_static_storage_map_key(_1.borrow()),
+						],
+						[
+							164u8, 27u8, 208u8, 185u8, 19u8, 232u8, 190u8, 97u8, 137u8, 73u8,
+							146u8, 10u8, 241u8, 176u8, 251u8, 140u8, 133u8, 65u8, 190u8, 162u8,
+							59u8, 32u8, 77u8, 201u8, 27u8, 78u8, 183u8, 164u8, 74u8, 46u8, 139u8,
+							145u8,
 						],
 					)
 				}
@@ -14964,7 +17012,7 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::create_application_key`]."]
+				#[doc = "Creates an application key if `key` does not exist yet."]
 				pub struct CreateApplicationKey {
 					pub key: create_application_key::Key,
 				}
@@ -14991,7 +17039,6 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::submit_data`]."]
 				pub struct SubmitData {
 					pub data: submit_data::Data,
 				}
@@ -15018,7 +17065,6 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::submit_block_length_proposal`]."]
 				pub struct SubmitBlockLengthProposal {
 					pub rows: submit_block_length_proposal::Rows,
 					pub cols: submit_block_length_proposal::Cols,
@@ -15045,7 +17091,6 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::set_application_key`]."]
 				pub struct SetApplicationKey {
 					pub old_key: set_application_key::OldKey,
 					pub new_key: set_application_key::NewKey,
@@ -15076,7 +17121,6 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::set_submit_data_fee_modifier`]."]
 				pub struct SetSubmitDataFeeModifier {
 					pub modifier: set_submit_data_fee_modifier::Modifier,
 				}
@@ -15091,7 +17135,7 @@ pub mod api {
 			}
 			pub struct TransactionApi;
 			impl TransactionApi {
-				#[doc = "See [`Pallet::create_application_key`]."]
+				#[doc = "Creates an application key if `key` does not exist yet."]
 				pub fn create_application_key(
 					&self,
 					key: types::create_application_key::Key,
@@ -15108,7 +17152,6 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::submit_data`]."]
 				pub fn submit_data(
 					&self,
 					data: types::submit_data::Data,
@@ -15125,7 +17168,6 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::submit_block_length_proposal`]."]
 				pub fn submit_block_length_proposal(
 					&self,
 					rows: types::submit_block_length_proposal::Rows,
@@ -15143,7 +17185,6 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::set_application_key`]."]
 				pub fn set_application_key(
 					&self,
 					old_key: types::set_application_key::OldKey,
@@ -15160,7 +17201,6 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::set_submit_data_fee_modifier`]."]
 				pub fn set_submit_data_fee_modifier(
 					&self,
 					modifier: types::set_submit_data_fee_modifier::Modifier,
@@ -15552,7 +17592,10 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::note_preimage`]."]
+				#[doc = "Register a preimage on-chain."]
+				#[doc = ""]
+				#[doc = "If the preimage was previously requested, no fees or deposits are taken for providing"]
+				#[doc = "the preimage. Otherwise, a deposit is taken proportional to the size of the preimage."]
 				pub struct NotePreimage {
 					pub bytes: note_preimage::Bytes,
 				}
@@ -15577,7 +17620,12 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::unnote_preimage`]."]
+				#[doc = "Clear an unrequested preimage from the runtime storage."]
+				#[doc = ""]
+				#[doc = "If `len` is provided, then it will be a much cheaper operation."]
+				#[doc = ""]
+				#[doc = "- `hash`: The hash of the preimage to be removed from the store."]
+				#[doc = "- `len`: The length of the preimage of `hash`."]
 				pub struct UnnotePreimage {
 					pub hash: unnote_preimage::Hash,
 				}
@@ -15602,7 +17650,10 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::request_preimage`]."]
+				#[doc = "Request a preimage be uploaded to the chain without paying any fees or deposits."]
+				#[doc = ""]
+				#[doc = "If the preimage requests has already been provided on-chain, we unreserve any deposit"]
+				#[doc = "a user may have paid, and take the control of the preimage out of their hands."]
 				pub struct RequestPreimage {
 					pub hash: request_preimage::Hash,
 				}
@@ -15627,7 +17678,9 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::unrequest_preimage`]."]
+				#[doc = "Clear a previously made request for a preimage."]
+				#[doc = ""]
+				#[doc = "NOTE: THIS MUST NOT BE CALLED ON `hash` MORE TIMES THAN `request_preimage`."]
 				pub struct UnrequestPreimage {
 					pub hash: unrequest_preimage::Hash,
 				}
@@ -15652,7 +17705,9 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::ensure_updated`]."]
+				#[doc = "Ensure that the a bulk of pre-images is upgraded."]
+				#[doc = ""]
+				#[doc = "The caller pays no fee if at least 90% of pre-images were successfully updated."]
 				pub struct EnsureUpdated {
 					pub hashes: ensure_updated::Hashes,
 				}
@@ -15667,7 +17722,10 @@ pub mod api {
 			}
 			pub struct TransactionApi;
 			impl TransactionApi {
-				#[doc = "See [`Pallet::note_preimage`]."]
+				#[doc = "Register a preimage on-chain."]
+				#[doc = ""]
+				#[doc = "If the preimage was previously requested, no fees or deposits are taken for providing"]
+				#[doc = "the preimage. Otherwise, a deposit is taken proportional to the size of the preimage."]
 				pub fn note_preimage(
 					&self,
 					bytes: types::note_preimage::Bytes,
@@ -15683,7 +17741,12 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::unnote_preimage`]."]
+				#[doc = "Clear an unrequested preimage from the runtime storage."]
+				#[doc = ""]
+				#[doc = "If `len` is provided, then it will be a much cheaper operation."]
+				#[doc = ""]
+				#[doc = "- `hash`: The hash of the preimage to be removed from the store."]
+				#[doc = "- `len`: The length of the preimage of `hash`."]
 				pub fn unnote_preimage(
 					&self,
 					hash: types::unnote_preimage::Hash,
@@ -15700,7 +17763,10 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::request_preimage`]."]
+				#[doc = "Request a preimage be uploaded to the chain without paying any fees or deposits."]
+				#[doc = ""]
+				#[doc = "If the preimage requests has already been provided on-chain, we unreserve any deposit"]
+				#[doc = "a user may have paid, and take the control of the preimage out of their hands."]
 				pub fn request_preimage(
 					&self,
 					hash: types::request_preimage::Hash,
@@ -15716,7 +17782,9 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::unrequest_preimage`]."]
+				#[doc = "Clear a previously made request for a preimage."]
+				#[doc = ""]
+				#[doc = "NOTE: THIS MUST NOT BE CALLED ON `hash` MORE TIMES THAN `request_preimage`."]
 				pub fn unrequest_preimage(
 					&self,
 					hash: types::unrequest_preimage::Hash,
@@ -15733,7 +17801,9 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::ensure_updated`]."]
+				#[doc = "Ensure that the a bulk of pre-images is upgraded."]
+				#[doc = ""]
+				#[doc = "The caller pays no fee if at least 90% of pre-images were successfully updated."]
 				pub fn ensure_updated(
 					&self,
 					hashes: types::ensure_updated::Hashes,
@@ -16056,7 +18126,18 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::as_multi_threshold_1`]."]
+				#[doc = "Immediately dispatch a multi-signature call using a single approval from the caller."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_."]
+				#[doc = ""]
+				#[doc = "- `other_signatories`: The accounts (other than the sender) who are part of the"]
+				#[doc = "multi-signature, but do not participate in the approval process."]
+				#[doc = "- `call`: The call to be executed."]
+				#[doc = ""]
+				#[doc = "Result is equivalent to the dispatched result."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "O(Z + C) where Z is the length of the call and C its execution weight."]
 				pub struct AsMultiThreshold1 {
 					pub other_signatories: as_multi_threshold1::OtherSignatories,
 					pub call: ::std::boxed::Box<as_multi_threshold1::Call>,
@@ -16083,7 +18164,45 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::as_multi`]."]
+				#[doc = "Register approval for a dispatch to be made from a deterministic composite account if"]
+				#[doc = "approved by a total of `threshold - 1` of `other_signatories`."]
+				#[doc = ""]
+				#[doc = "If there are enough, then dispatch the call."]
+				#[doc = ""]
+				#[doc = "Payment: `DepositBase` will be reserved if this is the first approval, plus"]
+				#[doc = "`threshold` times `DepositFactor`. It is returned once this dispatch happens or"]
+				#[doc = "is cancelled."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_."]
+				#[doc = ""]
+				#[doc = "- `threshold`: The total number of approvals for this dispatch before it is executed."]
+				#[doc = "- `other_signatories`: The accounts (other than the sender) who can approve this"]
+				#[doc = "dispatch. May not be empty."]
+				#[doc = "- `maybe_timepoint`: If this is the first approval, then this must be `None`. If it is"]
+				#[doc = "not the first approval, then it must be `Some`, with the timepoint (block number and"]
+				#[doc = "transaction index) of the first approval transaction."]
+				#[doc = "- `call`: The call to be executed."]
+				#[doc = ""]
+				#[doc = "NOTE: Unless this is the final approval, you will generally want to use"]
+				#[doc = "`approve_as_multi` instead, since it only requires a hash of the call."]
+				#[doc = ""]
+				#[doc = "Result is equivalent to the dispatched result if `threshold` is exactly `1`. Otherwise"]
+				#[doc = "on success, result is `Ok` and the result from the interior call, if it was executed,"]
+				#[doc = "may be found in the deposited `MultisigExecuted` event."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- `O(S + Z + Call)`."]
+				#[doc = "- Up to one balance-reserve or unreserve operation."]
+				#[doc = "- One passthrough operation, one insert, both `O(S)` where `S` is the number of"]
+				#[doc = "  signatories. `S` is capped by `MaxSignatories`, with weight being proportional."]
+				#[doc = "- One call encode & hash, both of complexity `O(Z)` where `Z` is tx-len."]
+				#[doc = "- One encode & hash, both of complexity `O(S)`."]
+				#[doc = "- Up to one binary search and insert (`O(logS + S)`)."]
+				#[doc = "- I/O: 1 read `O(S)`, up to 1 mutate `O(S)`. Up to one remove."]
+				#[doc = "- One event."]
+				#[doc = "- The weight of the `call`."]
+				#[doc = "- Storage: inserts one item, value size bounded by `MaxSignatories`, with a deposit"]
+				#[doc = "  taken for its lifetime of `DepositBase + threshold * DepositFactor`."]
 				pub struct AsMulti {
 					pub threshold: as_multi::Threshold,
 					pub other_signatories: as_multi::OtherSignatories,
@@ -16118,7 +18237,36 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::approve_as_multi`]."]
+				#[doc = "Register approval for a dispatch to be made from a deterministic composite account if"]
+				#[doc = "approved by a total of `threshold - 1` of `other_signatories`."]
+				#[doc = ""]
+				#[doc = "Payment: `DepositBase` will be reserved if this is the first approval, plus"]
+				#[doc = "`threshold` times `DepositFactor`. It is returned once this dispatch happens or"]
+				#[doc = "is cancelled."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_."]
+				#[doc = ""]
+				#[doc = "- `threshold`: The total number of approvals for this dispatch before it is executed."]
+				#[doc = "- `other_signatories`: The accounts (other than the sender) who can approve this"]
+				#[doc = "dispatch. May not be empty."]
+				#[doc = "- `maybe_timepoint`: If this is the first approval, then this must be `None`. If it is"]
+				#[doc = "not the first approval, then it must be `Some`, with the timepoint (block number and"]
+				#[doc = "transaction index) of the first approval transaction."]
+				#[doc = "- `call_hash`: The hash of the call to be executed."]
+				#[doc = ""]
+				#[doc = "NOTE: If this is the final approval, you will want to use `as_multi` instead."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- `O(S)`."]
+				#[doc = "- Up to one balance-reserve or unreserve operation."]
+				#[doc = "- One passthrough operation, one insert, both `O(S)` where `S` is the number of"]
+				#[doc = "  signatories. `S` is capped by `MaxSignatories`, with weight being proportional."]
+				#[doc = "- One encode & hash, both of complexity `O(S)`."]
+				#[doc = "- Up to one binary search and insert (`O(logS + S)`)."]
+				#[doc = "- I/O: 1 read `O(S)`, up to 1 mutate `O(S)`. Up to one remove."]
+				#[doc = "- One event."]
+				#[doc = "- Storage: inserts one item, value size bounded by `MaxSignatories`, with a deposit"]
+				#[doc = "  taken for its lifetime of `DepositBase + threshold * DepositFactor`."]
 				pub struct ApproveAsMulti {
 					pub threshold: approve_as_multi::Threshold,
 					pub other_signatories: approve_as_multi::OtherSignatories,
@@ -16153,7 +18301,27 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::cancel_as_multi`]."]
+				#[doc = "Cancel a pre-existing, on-going multisig transaction. Any deposit reserved previously"]
+				#[doc = "for this operation will be unreserved on success."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_."]
+				#[doc = ""]
+				#[doc = "- `threshold`: The total number of approvals for this dispatch before it is executed."]
+				#[doc = "- `other_signatories`: The accounts (other than the sender) who can approve this"]
+				#[doc = "dispatch. May not be empty."]
+				#[doc = "- `timepoint`: The timepoint (block number and transaction index) of the first approval"]
+				#[doc = "transaction for this dispatch."]
+				#[doc = "- `call_hash`: The hash of the call to be executed."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- `O(S)`."]
+				#[doc = "- Up to one balance-reserve or unreserve operation."]
+				#[doc = "- One passthrough operation, one insert, both `O(S)` where `S` is the number of"]
+				#[doc = "  signatories. `S` is capped by `MaxSignatories`, with weight being proportional."]
+				#[doc = "- One encode & hash, both of complexity `O(S)`."]
+				#[doc = "- One event."]
+				#[doc = "- I/O: 1 read `O(S)`, one remove."]
+				#[doc = "- Storage: removes one item."]
 				pub struct CancelAsMulti {
 					pub threshold: cancel_as_multi::Threshold,
 					pub other_signatories: cancel_as_multi::OtherSignatories,
@@ -16175,7 +18343,18 @@ pub mod api {
 			}
 			pub struct TransactionApi;
 			impl TransactionApi {
-				#[doc = "See [`Pallet::as_multi_threshold_1`]."]
+				#[doc = "Immediately dispatch a multi-signature call using a single approval from the caller."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_."]
+				#[doc = ""]
+				#[doc = "- `other_signatories`: The accounts (other than the sender) who are part of the"]
+				#[doc = "multi-signature, but do not participate in the approval process."]
+				#[doc = "- `call`: The call to be executed."]
+				#[doc = ""]
+				#[doc = "Result is equivalent to the dispatched result."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "O(Z + C) where Z is the length of the call and C its execution weight."]
 				pub fn as_multi_threshold_1(
 					&self,
 					other_signatories: types::as_multi_threshold1::OtherSignatories,
@@ -16189,13 +18368,51 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							161u8, 110u8, 48u8, 10u8, 49u8, 254u8, 44u8, 63u8, 29u8, 83u8, 5u8,
-							151u8, 13u8, 227u8, 2u8, 177u8, 40u8, 98u8, 122u8, 7u8, 108u8, 65u8,
-							155u8, 141u8, 74u8, 225u8, 252u8, 43u8, 64u8, 182u8, 213u8, 49u8,
+							195u8, 204u8, 160u8, 66u8, 119u8, 233u8, 128u8, 144u8, 52u8, 130u8,
+							139u8, 51u8, 35u8, 121u8, 56u8, 176u8, 244u8, 17u8, 174u8, 32u8, 80u8,
+							104u8, 215u8, 175u8, 124u8, 251u8, 192u8, 41u8, 26u8, 54u8, 84u8, 1u8,
 						],
 					)
 				}
-				#[doc = "See [`Pallet::as_multi`]."]
+				#[doc = "Register approval for a dispatch to be made from a deterministic composite account if"]
+				#[doc = "approved by a total of `threshold - 1` of `other_signatories`."]
+				#[doc = ""]
+				#[doc = "If there are enough, then dispatch the call."]
+				#[doc = ""]
+				#[doc = "Payment: `DepositBase` will be reserved if this is the first approval, plus"]
+				#[doc = "`threshold` times `DepositFactor`. It is returned once this dispatch happens or"]
+				#[doc = "is cancelled."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_."]
+				#[doc = ""]
+				#[doc = "- `threshold`: The total number of approvals for this dispatch before it is executed."]
+				#[doc = "- `other_signatories`: The accounts (other than the sender) who can approve this"]
+				#[doc = "dispatch. May not be empty."]
+				#[doc = "- `maybe_timepoint`: If this is the first approval, then this must be `None`. If it is"]
+				#[doc = "not the first approval, then it must be `Some`, with the timepoint (block number and"]
+				#[doc = "transaction index) of the first approval transaction."]
+				#[doc = "- `call`: The call to be executed."]
+				#[doc = ""]
+				#[doc = "NOTE: Unless this is the final approval, you will generally want to use"]
+				#[doc = "`approve_as_multi` instead, since it only requires a hash of the call."]
+				#[doc = ""]
+				#[doc = "Result is equivalent to the dispatched result if `threshold` is exactly `1`. Otherwise"]
+				#[doc = "on success, result is `Ok` and the result from the interior call, if it was executed,"]
+				#[doc = "may be found in the deposited `MultisigExecuted` event."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- `O(S + Z + Call)`."]
+				#[doc = "- Up to one balance-reserve or unreserve operation."]
+				#[doc = "- One passthrough operation, one insert, both `O(S)` where `S` is the number of"]
+				#[doc = "  signatories. `S` is capped by `MaxSignatories`, with weight being proportional."]
+				#[doc = "- One call encode & hash, both of complexity `O(Z)` where `Z` is tx-len."]
+				#[doc = "- One encode & hash, both of complexity `O(S)`."]
+				#[doc = "- Up to one binary search and insert (`O(logS + S)`)."]
+				#[doc = "- I/O: 1 read `O(S)`, up to 1 mutate `O(S)`. Up to one remove."]
+				#[doc = "- One event."]
+				#[doc = "- The weight of the `call`."]
+				#[doc = "- Storage: inserts one item, value size bounded by `MaxSignatories`, with a deposit"]
+				#[doc = "  taken for its lifetime of `DepositBase + threshold * DepositFactor`."]
 				pub fn as_multi(
 					&self,
 					threshold: types::as_multi::Threshold,
@@ -16215,13 +18432,43 @@ pub mod api {
 							max_weight,
 						},
 						[
-							48u8, 176u8, 1u8, 69u8, 65u8, 192u8, 220u8, 62u8, 224u8, 84u8, 59u8,
-							25u8, 24u8, 152u8, 214u8, 139u8, 89u8, 23u8, 7u8, 122u8, 25u8, 216u8,
-							8u8, 25u8, 52u8, 87u8, 169u8, 67u8, 234u8, 212u8, 122u8, 200u8,
+							24u8, 254u8, 203u8, 65u8, 241u8, 152u8, 52u8, 197u8, 174u8, 116u8,
+							38u8, 31u8, 159u8, 177u8, 111u8, 93u8, 221u8, 225u8, 189u8, 45u8,
+							129u8, 20u8, 200u8, 252u8, 171u8, 75u8, 196u8, 65u8, 124u8, 90u8,
+							109u8, 201u8,
 						],
 					)
 				}
-				#[doc = "See [`Pallet::approve_as_multi`]."]
+				#[doc = "Register approval for a dispatch to be made from a deterministic composite account if"]
+				#[doc = "approved by a total of `threshold - 1` of `other_signatories`."]
+				#[doc = ""]
+				#[doc = "Payment: `DepositBase` will be reserved if this is the first approval, plus"]
+				#[doc = "`threshold` times `DepositFactor`. It is returned once this dispatch happens or"]
+				#[doc = "is cancelled."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_."]
+				#[doc = ""]
+				#[doc = "- `threshold`: The total number of approvals for this dispatch before it is executed."]
+				#[doc = "- `other_signatories`: The accounts (other than the sender) who can approve this"]
+				#[doc = "dispatch. May not be empty."]
+				#[doc = "- `maybe_timepoint`: If this is the first approval, then this must be `None`. If it is"]
+				#[doc = "not the first approval, then it must be `Some`, with the timepoint (block number and"]
+				#[doc = "transaction index) of the first approval transaction."]
+				#[doc = "- `call_hash`: The hash of the call to be executed."]
+				#[doc = ""]
+				#[doc = "NOTE: If this is the final approval, you will want to use `as_multi` instead."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- `O(S)`."]
+				#[doc = "- Up to one balance-reserve or unreserve operation."]
+				#[doc = "- One passthrough operation, one insert, both `O(S)` where `S` is the number of"]
+				#[doc = "  signatories. `S` is capped by `MaxSignatories`, with weight being proportional."]
+				#[doc = "- One encode & hash, both of complexity `O(S)`."]
+				#[doc = "- Up to one binary search and insert (`O(logS + S)`)."]
+				#[doc = "- I/O: 1 read `O(S)`, up to 1 mutate `O(S)`. Up to one remove."]
+				#[doc = "- One event."]
+				#[doc = "- Storage: inserts one item, value size bounded by `MaxSignatories`, with a deposit"]
+				#[doc = "  taken for its lifetime of `DepositBase + threshold * DepositFactor`."]
 				pub fn approve_as_multi(
 					&self,
 					threshold: types::approve_as_multi::Threshold,
@@ -16247,7 +18494,27 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::cancel_as_multi`]."]
+				#[doc = "Cancel a pre-existing, on-going multisig transaction. Any deposit reserved previously"]
+				#[doc = "for this operation will be unreserved on success."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_."]
+				#[doc = ""]
+				#[doc = "- `threshold`: The total number of approvals for this dispatch before it is executed."]
+				#[doc = "- `other_signatories`: The accounts (other than the sender) who can approve this"]
+				#[doc = "dispatch. May not be empty."]
+				#[doc = "- `timepoint`: The timepoint (block number and transaction index) of the first approval"]
+				#[doc = "transaction for this dispatch."]
+				#[doc = "- `call_hash`: The hash of the call to be executed."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- `O(S)`."]
+				#[doc = "- Up to one balance-reserve or unreserve operation."]
+				#[doc = "- One passthrough operation, one insert, both `O(S)` where `S` is the number of"]
+				#[doc = "  signatories. `S` is capped by `MaxSignatories`, with weight being proportional."]
+				#[doc = "- One encode & hash, both of complexity `O(S)`."]
+				#[doc = "- One event."]
+				#[doc = "- I/O: 1 read `O(S)`, one remove."]
+				#[doc = "- Storage: removes one item."]
 				pub fn cancel_as_multi(
 					&self,
 					threshold: types::cancel_as_multi::Threshold,
@@ -16577,7 +18844,16 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::rebag`]."]
+				#[doc = "Declare that some `dislocated` account has, through rewards or penalties, sufficiently"]
+				#[doc = "changed its score that it should properly fall into a different bag than its current"]
+				#[doc = "one."]
+				#[doc = ""]
+				#[doc = "Anyone can call this function about any potentially dislocated account."]
+				#[doc = ""]
+				#[doc = "Will always update the stored score of `dislocated` to the correct score, based on"]
+				#[doc = "`ScoreProvider`."]
+				#[doc = ""]
+				#[doc = "If `dislocated` does not exists, it returns an error."]
 				pub struct Rebag {
 					pub dislocated: rebag::Dislocated,
 				}
@@ -16605,7 +18881,16 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::put_in_front_of`]."]
+				#[doc = "Move the caller's Id directly in front of `lighter`."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ and can only be called by the Id of"]
+				#[doc = "the account going in front of `lighter`. Fee is payed by the origin under all"]
+				#[doc = "circumstances."]
+				#[doc = ""]
+				#[doc = "Only works if:"]
+				#[doc = ""]
+				#[doc = "- both nodes are within the same bag,"]
+				#[doc = "- and `origin` has a greater `Score` than `lighter`."]
 				pub struct PutInFrontOf {
 					pub lighter: put_in_front_of::Lighter,
 				}
@@ -16633,7 +18918,9 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::put_in_front_of_other`]."]
+				#[doc = "Same as [`Pallet::put_in_front_of`], but it can be called by anyone."]
+				#[doc = ""]
+				#[doc = "Fee is paid by the origin under all circumstances."]
 				pub struct PutInFrontOfOther {
 					pub heavier: put_in_front_of_other::Heavier,
 					pub lighter: put_in_front_of_other::Lighter,
@@ -16656,7 +18943,16 @@ pub mod api {
 			}
 			pub struct TransactionApi;
 			impl TransactionApi {
-				#[doc = "See [`Pallet::rebag`]."]
+				#[doc = "Declare that some `dislocated` account has, through rewards or penalties, sufficiently"]
+				#[doc = "changed its score that it should properly fall into a different bag than its current"]
+				#[doc = "one."]
+				#[doc = ""]
+				#[doc = "Anyone can call this function about any potentially dislocated account."]
+				#[doc = ""]
+				#[doc = "Will always update the stored score of `dislocated` to the correct score, based on"]
+				#[doc = "`ScoreProvider`."]
+				#[doc = ""]
+				#[doc = "If `dislocated` does not exists, it returns an error."]
 				pub fn rebag(
 					&self,
 					dislocated: types::rebag::Dislocated,
@@ -16672,7 +18968,16 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::put_in_front_of`]."]
+				#[doc = "Move the caller's Id directly in front of `lighter`."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ and can only be called by the Id of"]
+				#[doc = "the account going in front of `lighter`. Fee is payed by the origin under all"]
+				#[doc = "circumstances."]
+				#[doc = ""]
+				#[doc = "Only works if:"]
+				#[doc = ""]
+				#[doc = "- both nodes are within the same bag,"]
+				#[doc = "- and `origin` has a greater `Score` than `lighter`."]
 				pub fn put_in_front_of(
 					&self,
 					lighter: types::put_in_front_of::Lighter,
@@ -16688,7 +18993,9 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::put_in_front_of_other`]."]
+				#[doc = "Same as [`Pallet::put_in_front_of`], but it can be called by anyone."]
+				#[doc = ""]
+				#[doc = "Fee is paid by the origin under all circumstances."]
 				pub fn put_in_front_of_other(
 					&self,
 					heavier: types::put_in_front_of_other::Heavier,
@@ -17001,7 +19308,21 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::join`]."]
+				#[doc = "Stake funds with a pool. The amount to bond is transferred from the member to the pool"]
+				#[doc = "account and immediately increases the pools bond."]
+				#[doc = ""]
+				#[doc = "The method of transferring the amount to the pool account is determined by"]
+				#[doc = "[`adapter::StakeStrategyType`]. If the pool is configured to use"]
+				#[doc = "[`adapter::StakeStrategyType::Delegate`], the funds remain in the account of"]
+				#[doc = "the `origin`, while the pool gains the right to use these funds for staking."]
+				#[doc = ""]
+				#[doc = "# Note"]
+				#[doc = ""]
+				#[doc = "* An account can only be a member of a single pool."]
+				#[doc = "* An account cannot join the same pool multiple times."]
+				#[doc = "* This call will *not* dust the member account, so the member must have at least"]
+				#[doc = "  `existential deposit + amount` in their account."]
+				#[doc = "* Only a pool with [`PoolState::Open`] can be joined"]
 				pub struct Join {
 					#[codec(compact)]
 					pub amount: join::Amount,
@@ -17029,7 +19350,13 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::bond_extra`]."]
+				#[doc = "Bond `extra` more funds from `origin` into the pool to which they already belong."]
+				#[doc = ""]
+				#[doc = "Additional funds can come from either the free balance of the account, of from the"]
+				#[doc = "accumulated rewards, see [`BondExtra`]."]
+				#[doc = ""]
+				#[doc = "Bonding extra funds implies an automatic payout of all pending rewards as well."]
+				#[doc = "See `bond_extra_other` to bond pending rewards of `other` members."]
 				pub struct BondExtra {
 					pub extra: bond_extra::Extra,
 				}
@@ -17055,7 +19382,14 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::claim_payout`]."]
+				#[doc = "A bonded member can use this to claim their payout based on the rewards that the pool"]
+				#[doc = "has accumulated since their last claimed payout (OR since joining if this is their first"]
+				#[doc = "time claiming rewards). The payout will be transferred to the member's account."]
+				#[doc = ""]
+				#[doc = "The member will earn rewards pro rata based on the members stake vs the sum of the"]
+				#[doc = "members in the pools stake. Rewards do not \"expire\"."]
+				#[doc = ""]
+				#[doc = "See `claim_payout_other` to claim rewards on behalf of some `other` pool member."]
 				pub struct ClaimPayout;
 				impl ::subxt::blocks::StaticExtrinsic for ClaimPayout {
 					const PALLET: &'static str = "NominationPools";
@@ -17074,7 +19408,37 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::unbond`]."]
+				#[doc = "Unbond up to `unbonding_points` of the `member_account`'s funds from the pool. It"]
+				#[doc = "implicitly collects the rewards one last time, since not doing so would mean some"]
+				#[doc = "rewards would be forfeited."]
+				#[doc = ""]
+				#[doc = "Under certain conditions, this call can be dispatched permissionlessly (i.e. by any"]
+				#[doc = "account)."]
+				#[doc = ""]
+				#[doc = "# Conditions for a permissionless dispatch."]
+				#[doc = ""]
+				#[doc = "* The pool is blocked and the caller is either the root or bouncer. This is refereed to"]
+				#[doc = "  as a kick."]
+				#[doc = "* The pool is destroying and the member is not the depositor."]
+				#[doc = "* The pool is destroying, the member is the depositor and no other members are in the"]
+				#[doc = "  pool."]
+				#[doc = ""]
+				#[doc = "## Conditions for permissioned dispatch (i.e. the caller is also the"]
+				#[doc = "`member_account`):"]
+				#[doc = ""]
+				#[doc = "* The caller is not the depositor."]
+				#[doc = "* The caller is the depositor, the pool is destroying and no other members are in the"]
+				#[doc = "  pool."]
+				#[doc = ""]
+				#[doc = "# Note"]
+				#[doc = ""]
+				#[doc = "If there are too many unlocking chunks to unbond with the pool account,"]
+				#[doc = "[`Call::pool_withdraw_unbonded`] can be called to try and minimize unlocking chunks."]
+				#[doc = "The [`StakingInterface::unbond`] will implicitly call [`Call::pool_withdraw_unbonded`]"]
+				#[doc = "to try to free chunks if necessary (ie. if unbound was called and no unlocking chunks"]
+				#[doc = "are available). However, it may not be possible to release the current unlocking chunks,"]
+				#[doc = "in which case, the result of this call will likely be the `NoMoreChunks` error from the"]
+				#[doc = "staking system."]
 				pub struct Unbond {
 					pub member_account: unbond::MemberAccount,
 					#[codec(compact)]
@@ -17105,7 +19469,12 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::pool_withdraw_unbonded`]."]
+				#[doc = "Call `withdraw_unbonded` for the pools account. This call can be made by any account."]
+				#[doc = ""]
+				#[doc = "This is useful if there are too many unlocking chunks to call `unbond`, and some"]
+				#[doc = "can be cleared by withdrawing. In the case there are too many unlocking chunks, the user"]
+				#[doc = "would probably see an error like `NoMoreChunks` emitted from the staking system when"]
+				#[doc = "they attempt to unbond."]
 				pub struct PoolWithdrawUnbonded {
 					pub pool_id: pool_withdraw_unbonded::PoolId,
 					pub num_slashing_spans: pool_withdraw_unbonded::NumSlashingSpans,
@@ -17132,7 +19501,28 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::withdraw_unbonded`]."]
+				#[doc = "Withdraw unbonded funds from `member_account`. If no bonded funds can be unbonded, an"]
+				#[doc = "error is returned."]
+				#[doc = ""]
+				#[doc = "Under certain conditions, this call can be dispatched permissionlessly (i.e. by any"]
+				#[doc = "account)."]
+				#[doc = ""]
+				#[doc = "# Conditions for a permissionless dispatch"]
+				#[doc = ""]
+				#[doc = "* The pool is in destroy mode and the target is not the depositor."]
+				#[doc = "* The target is the depositor and they are the only member in the sub pools."]
+				#[doc = "* The pool is blocked and the caller is either the root or bouncer."]
+				#[doc = ""]
+				#[doc = "# Conditions for permissioned dispatch"]
+				#[doc = ""]
+				#[doc = "* The caller is the target and they are not the depositor."]
+				#[doc = ""]
+				#[doc = "# Note"]
+				#[doc = ""]
+				#[doc = "- If the target is the depositor, the pool will be destroyed."]
+				#[doc = "- If the pool has any pending slash, we also try to slash the member before letting them"]
+				#[doc = "withdraw. This calculation adds some weight overhead and is only defensive. In reality,"]
+				#[doc = "pool slashes must have been already applied via permissionless [`Call::apply_slash`]."]
 				pub struct WithdrawUnbonded {
 					pub member_account: withdraw_unbonded::MemberAccount,
 					pub num_slashing_spans: withdraw_unbonded::NumSlashingSpans,
@@ -17162,7 +19552,23 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::create`]."]
+				#[doc = "Create a new delegation pool."]
+				#[doc = ""]
+				#[doc = "# Arguments"]
+				#[doc = ""]
+				#[doc = "* `amount` - The amount of funds to delegate to the pool. This also acts of a sort of"]
+				#[doc = "  deposit since the pools creator cannot fully unbond funds until the pool is being"]
+				#[doc = "  destroyed."]
+				#[doc = "* `index` - A disambiguation index for creating the account. Likely only useful when"]
+				#[doc = "  creating multiple pools in the same extrinsic."]
+				#[doc = "* `root` - The account to set as [`PoolRoles::root`]."]
+				#[doc = "* `nominator` - The account to set as the [`PoolRoles::nominator`]."]
+				#[doc = "* `bouncer` - The account to set as the [`PoolRoles::bouncer`]."]
+				#[doc = ""]
+				#[doc = "# Note"]
+				#[doc = ""]
+				#[doc = "In addition to `amount`, the caller will transfer the existential deposit; so the caller"]
+				#[doc = "needs at have at least `amount + existential_deposit` transferable."]
 				pub struct Create {
 					#[codec(compact)]
 					pub amount: create::Amount,
@@ -17203,7 +19609,12 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::create_with_pool_id`]."]
+				#[doc = "Create a new delegation pool with a previously used pool id"]
+				#[doc = ""]
+				#[doc = "# Arguments"]
+				#[doc = ""]
+				#[doc = "same as `create` with the inclusion of"]
+				#[doc = "* `pool_id` - `A valid PoolId."]
 				pub struct CreateWithPoolId {
 					#[codec(compact)]
 					pub amount: create_with_pool_id::Amount,
@@ -17246,7 +19657,18 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::nominate`]."]
+				#[doc = "Nominate on behalf of the pool."]
+				#[doc = ""]
+				#[doc = "The dispatch origin of this call must be signed by the pool nominator or the pool"]
+				#[doc = "root role."]
+				#[doc = ""]
+				#[doc = "This directly forward the call to the staking pallet, on behalf of the pool bonded"]
+				#[doc = "account."]
+				#[doc = ""]
+				#[doc = "# Note"]
+				#[doc = ""]
+				#[doc = "In addition to a `root` or `nominator` role of `origin`, pool's depositor needs to have"]
+				#[doc = "at least `depositor_min_bond` in the pool to start nominating."]
 				pub struct Nominate {
 					pub pool_id: nominate::PoolId,
 					pub validators: nominate::Validators,
@@ -17273,7 +19695,16 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::set_state`]."]
+				#[doc = "Set a new state for the pool."]
+				#[doc = ""]
+				#[doc = "If a pool is already in the `Destroying` state, then under no condition can its state"]
+				#[doc = "change again."]
+				#[doc = ""]
+				#[doc = "The dispatch origin of this call must be either:"]
+				#[doc = ""]
+				#[doc = "1. signed by the bouncer, or the root role of the pool,"]
+				#[doc = "2. if the pool conditions to be open are NOT met (as described by `ok_to_be_open`), and"]
+				#[doc = "   then the state of the pool can be permissionlessly changed to `Destroying`."]
 				pub struct SetState {
 					pub pool_id: set_state::PoolId,
 					pub state: set_state::State,
@@ -17300,7 +19731,10 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::set_metadata`]."]
+				#[doc = "Set a new metadata for the pool."]
+				#[doc = ""]
+				#[doc = "The dispatch origin of this call must be signed by the bouncer, or the root role of the"]
+				#[doc = "pool."]
 				pub struct SetMetadata {
 					pub pool_id: set_metadata::PoolId,
 					pub metadata: set_metadata::Metadata,
@@ -17327,7 +19761,17 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::set_configs`]."]
+				#[doc = "Update configurations for the nomination pools. The origin for this call must be"]
+				#[doc = "[`Config::AdminOrigin`]."]
+				#[doc = ""]
+				#[doc = "# Arguments"]
+				#[doc = ""]
+				#[doc = "* `min_join_bond` - Set [`MinJoinBond`]."]
+				#[doc = "* `min_create_bond` - Set [`MinCreateBond`]."]
+				#[doc = "* `max_pools` - Set [`MaxPools`]."]
+				#[doc = "* `max_members` - Set [`MaxPoolMembers`]."]
+				#[doc = "* `max_members_per_pool` - Set [`MaxPoolMembersPerPool`]."]
+				#[doc = "* `global_max_commission` - Set [`GlobalMaxCommission`]."]
 				pub struct SetConfigs {
 					pub min_join_bond: set_configs::MinJoinBond,
 					pub min_create_bond: set_configs::MinCreateBond,
@@ -17369,7 +19813,13 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::update_roles`]."]
+				#[doc = "Update the roles of the pool."]
+				#[doc = ""]
+				#[doc = "The root is the only entity that can change any of the roles, including itself,"]
+				#[doc = "excluding the depositor, who can never change."]
+				#[doc = ""]
+				#[doc = "It emits an event, notifying UIs of the role change. This event is quite relevant to"]
+				#[doc = "most pool members and they should be informed of changes to pool roles."]
 				pub struct UpdateRoles {
 					pub pool_id: update_roles::PoolId,
 					pub new_root: update_roles::NewRoot,
@@ -17406,7 +19856,22 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::chill`]."]
+				#[doc = "Chill on behalf of the pool."]
+				#[doc = ""]
+				#[doc = "The dispatch origin of this call can be signed by the pool nominator or the pool"]
+				#[doc = "root role, same as [`Pallet::nominate`]."]
+				#[doc = ""]
+				#[doc = "Under certain conditions, this call can be dispatched permissionlessly (i.e. by any"]
+				#[doc = "account)."]
+				#[doc = ""]
+				#[doc = "# Conditions for a permissionless dispatch:"]
+				#[doc = "* When pool depositor has less than `MinNominatorBond` staked, otherwise  pool members"]
+				#[doc = "  are unable to unbond."]
+				#[doc = ""]
+				#[doc = "# Conditions for permissioned dispatch:"]
+				#[doc = "* The caller has a nominator or root role of the pool."]
+				#[doc = "This directly forward the call to the staking pallet, on behalf of the pool bonded"]
+				#[doc = "account."]
 				pub struct Chill {
 					pub pool_id: chill::PoolId,
 				}
@@ -17431,7 +19896,15 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::bond_extra_other`]."]
+				#[doc = "`origin` bonds funds from `extra` for some pool member `member` into their respective"]
+				#[doc = "pools."]
+				#[doc = ""]
+				#[doc = "`origin` can bond extra funds from free balance or pending rewards when `origin =="]
+				#[doc = "other`."]
+				#[doc = ""]
+				#[doc = "In the case of `origin != other`, `origin` can only bond extra pending rewards of"]
+				#[doc = "`other` members assuming set_claim_permission for the given member is"]
+				#[doc = "`PermissionlessCompound` or `PermissionlessAll`."]
 				pub struct BondExtraOther {
 					pub member: bond_extra_other::Member,
 					pub extra: bond_extra_other::Extra,
@@ -17462,7 +19935,13 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::set_claim_permission`]."]
+				#[doc = "Allows a pool member to set a claim permission to allow or disallow permissionless"]
+				#[doc = "bonding and withdrawing."]
+				#[doc = ""]
+				#[doc = "# Arguments"]
+				#[doc = ""]
+				#[doc = "* `origin` - Member of a pool."]
+				#[doc = "* `permission` - The permission to be applied."]
 				pub struct SetClaimPermission {
 					pub permission: set_claim_permission::Permission,
 				}
@@ -17487,7 +19966,10 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::claim_payout_other`]."]
+				#[doc = "`origin` can claim payouts on some pool member `other`'s behalf."]
+				#[doc = ""]
+				#[doc = "Pool member `other` must have a `PermissionlessWithdraw` or `PermissionlessAll` claim"]
+				#[doc = "permission for this call to be successful."]
 				pub struct ClaimPayoutOther {
 					pub other: claim_payout_other::Other,
 				}
@@ -17512,7 +19994,11 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::set_commission`]."]
+				#[doc = "Set the commission of a pool."]
+				#[doc = "Both a commission percentage and a commission payee must be provided in the `current`"]
+				#[doc = "tuple. Where a `current` of `None` is provided, any current commission will be removed."]
+				#[doc = ""]
+				#[doc = "- If a `None` is supplied to `new_commission`, existing commission will be removed."]
 				pub struct SetCommission {
 					pub pool_id: set_commission::PoolId,
 					pub new_commission: set_commission::NewCommission,
@@ -17542,7 +20028,11 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::set_commission_max`]."]
+				#[doc = "Set the maximum commission of a pool."]
+				#[doc = ""]
+				#[doc = "- Initial max can be set to any `Perbill`, and only smaller values thereafter."]
+				#[doc = "- Current commission will be lowered in the event it is higher than a new max"]
+				#[doc = "  commission."]
 				pub struct SetCommissionMax {
 					pub pool_id: set_commission_max::PoolId,
 					pub max_commission: set_commission_max::MaxCommission,
@@ -17569,7 +20059,10 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::set_commission_change_rate`]."]
+				#[doc = "Set the commission change rate for a pool."]
+				#[doc = ""]
+				#[doc = "Initial change rate is not bounded, whereas subsequent updates can only be more"]
+				#[doc = "restrictive than the current."]
 				pub struct SetCommissionChangeRate {
 					pub pool_id: set_commission_change_rate::PoolId,
 					pub change_rate: set_commission_change_rate::ChangeRate,
@@ -17599,7 +20092,11 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::claim_commission`]."]
+				#[doc = "Claim pending commission."]
+				#[doc = ""]
+				#[doc = "The dispatch origin of this call must be signed by the `root` role of the pool. Pending"]
+				#[doc = "commission is paid out and added to total claimed commission`. Total pending commission"]
+				#[doc = "is reset to zero. the current."]
 				pub struct ClaimCommission {
 					pub pool_id: claim_commission::PoolId,
 				}
@@ -17624,7 +20121,13 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::adjust_pool_deposit`]."]
+				#[doc = "Top up the deficit or withdraw the excess ED from the pool."]
+				#[doc = ""]
+				#[doc = "When a pool is created, the pool depositor transfers ED to the reward account of the"]
+				#[doc = "pool. ED is subject to change and over time, the deposit in the reward account may be"]
+				#[doc = "insufficient to cover the ED deficit of the pool or vice-versa where there is excess"]
+				#[doc = "deposit to the pool. This call allows anyone to adjust the ED deposit of the"]
+				#[doc = "pool by either topping up the deficit or claiming the excess."]
 				pub struct AdjustPoolDeposit {
 					pub pool_id: adjust_pool_deposit::PoolId,
 				}
@@ -17649,7 +20152,10 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::set_commission_claim_permission`]."]
+				#[doc = "Set or remove a pool's commission claim permission."]
+				#[doc = ""]
+				#[doc = "Determines who can claim the pool's pending commission. Only the `Root` role of the pool"]
+				#[doc = "is able to configure commission claim permissions."]
 				pub struct SetCommissionClaimPermission {
 					pub pool_id: set_commission_claim_permission::PoolId,
 					pub permission: set_commission_claim_permission::Permission,
@@ -17667,10 +20173,127 @@ pub mod api {
 					const PALLET: &'static str = "NominationPools";
 					const CALL: &'static str = "set_commission_claim_permission";
 				}
+				#[derive(
+					:: subxt :: ext :: codec :: Decode,
+					:: subxt :: ext :: codec :: Encode,
+					:: subxt :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: codec)]
+				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+				#[doc = "Apply a pending slash on a member."]
+				#[doc = ""]
+				#[doc = "Fails unless [`crate::pallet::Config::StakeAdapter`] is of strategy type:"]
+				#[doc = "[`adapter::StakeStrategyType::Delegate`]."]
+				#[doc = ""]
+				#[doc = "This call can be dispatched permissionlessly (i.e. by any account). If the member has"]
+				#[doc = "slash to be applied, caller may be rewarded with the part of the slash."]
+				pub struct ApplySlash {
+					pub member_account: apply_slash::MemberAccount,
+				}
+				pub mod apply_slash {
+					use super::runtime_types;
+					pub type MemberAccount = ::subxt::utils::MultiAddress<
+						::subxt::utils::AccountId32,
+						::core::primitive::u32,
+					>;
+				}
+				impl ::subxt::blocks::StaticExtrinsic for ApplySlash {
+					const PALLET: &'static str = "NominationPools";
+					const CALL: &'static str = "apply_slash";
+				}
+				#[derive(
+					:: subxt :: ext :: codec :: Decode,
+					:: subxt :: ext :: codec :: Encode,
+					:: subxt :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: codec)]
+				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+				#[doc = "Migrates delegated funds from the pool account to the `member_account`."]
+				#[doc = ""]
+				#[doc = "Fails unless [`crate::pallet::Config::StakeAdapter`] is of strategy type:"]
+				#[doc = "[`adapter::StakeStrategyType::Delegate`]."]
+				#[doc = ""]
+				#[doc = "This is a permission-less call and refunds any fee if claim is successful."]
+				#[doc = ""]
+				#[doc = "If the pool has migrated to delegation based staking, the staked tokens of pool members"]
+				#[doc = "can be moved and held in their own account. See [`adapter::DelegateStake`]"]
+				pub struct MigrateDelegation {
+					pub member_account: migrate_delegation::MemberAccount,
+				}
+				pub mod migrate_delegation {
+					use super::runtime_types;
+					pub type MemberAccount = ::subxt::utils::MultiAddress<
+						::subxt::utils::AccountId32,
+						::core::primitive::u32,
+					>;
+				}
+				impl ::subxt::blocks::StaticExtrinsic for MigrateDelegation {
+					const PALLET: &'static str = "NominationPools";
+					const CALL: &'static str = "migrate_delegation";
+				}
+				#[derive(
+					:: subxt :: ext :: codec :: Decode,
+					:: subxt :: ext :: codec :: Encode,
+					:: subxt :: ext :: scale_decode :: DecodeAsType,
+					:: subxt :: ext :: scale_encode :: EncodeAsType,
+					Clone,
+					Debug,
+					Eq,
+					PartialEq,
+				)]
+				# [codec (crate = :: subxt :: ext :: codec)]
+				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+				#[doc = "Migrate pool from [`adapter::StakeStrategyType::Transfer`] to"]
+				#[doc = "[`adapter::StakeStrategyType::Delegate`]."]
+				#[doc = ""]
+				#[doc = "Fails unless [`crate::pallet::Config::StakeAdapter`] is of strategy type:"]
+				#[doc = "[`adapter::StakeStrategyType::Delegate`]."]
+				#[doc = ""]
+				#[doc = "This call can be dispatched permissionlessly, and refunds any fee if successful."]
+				#[doc = ""]
+				#[doc = "If the pool has already migrated to delegation based staking, this call will fail."]
+				pub struct MigratePoolToDelegateStake {
+					pub pool_id: migrate_pool_to_delegate_stake::PoolId,
+				}
+				pub mod migrate_pool_to_delegate_stake {
+					use super::runtime_types;
+					pub type PoolId = ::core::primitive::u32;
+				}
+				impl ::subxt::blocks::StaticExtrinsic for MigratePoolToDelegateStake {
+					const PALLET: &'static str = "NominationPools";
+					const CALL: &'static str = "migrate_pool_to_delegate_stake";
+				}
 			}
 			pub struct TransactionApi;
 			impl TransactionApi {
-				#[doc = "See [`Pallet::join`]."]
+				#[doc = "Stake funds with a pool. The amount to bond is transferred from the member to the pool"]
+				#[doc = "account and immediately increases the pools bond."]
+				#[doc = ""]
+				#[doc = "The method of transferring the amount to the pool account is determined by"]
+				#[doc = "[`adapter::StakeStrategyType`]. If the pool is configured to use"]
+				#[doc = "[`adapter::StakeStrategyType::Delegate`], the funds remain in the account of"]
+				#[doc = "the `origin`, while the pool gains the right to use these funds for staking."]
+				#[doc = ""]
+				#[doc = "# Note"]
+				#[doc = ""]
+				#[doc = "* An account can only be a member of a single pool."]
+				#[doc = "* An account cannot join the same pool multiple times."]
+				#[doc = "* This call will *not* dust the member account, so the member must have at least"]
+				#[doc = "  `existential deposit + amount` in their account."]
+				#[doc = "* Only a pool with [`PoolState::Open`] can be joined"]
 				pub fn join(
 					&self,
 					amount: types::join::Amount,
@@ -17687,7 +20310,13 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::bond_extra`]."]
+				#[doc = "Bond `extra` more funds from `origin` into the pool to which they already belong."]
+				#[doc = ""]
+				#[doc = "Additional funds can come from either the free balance of the account, of from the"]
+				#[doc = "accumulated rewards, see [`BondExtra`]."]
+				#[doc = ""]
+				#[doc = "Bonding extra funds implies an automatic payout of all pending rewards as well."]
+				#[doc = "See `bond_extra_other` to bond pending rewards of `other` members."]
 				pub fn bond_extra(
 					&self,
 					extra: types::bond_extra::Extra,
@@ -17704,7 +20333,14 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::claim_payout`]."]
+				#[doc = "A bonded member can use this to claim their payout based on the rewards that the pool"]
+				#[doc = "has accumulated since their last claimed payout (OR since joining if this is their first"]
+				#[doc = "time claiming rewards). The payout will be transferred to the member's account."]
+				#[doc = ""]
+				#[doc = "The member will earn rewards pro rata based on the members stake vs the sum of the"]
+				#[doc = "members in the pools stake. Rewards do not \"expire\"."]
+				#[doc = ""]
+				#[doc = "See `claim_payout_other` to claim rewards on behalf of some `other` pool member."]
 				pub fn claim_payout(&self) -> ::subxt::tx::Payload<types::ClaimPayout> {
 					::subxt::tx::Payload::new_static(
 						"NominationPools",
@@ -17717,7 +20353,37 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::unbond`]."]
+				#[doc = "Unbond up to `unbonding_points` of the `member_account`'s funds from the pool. It"]
+				#[doc = "implicitly collects the rewards one last time, since not doing so would mean some"]
+				#[doc = "rewards would be forfeited."]
+				#[doc = ""]
+				#[doc = "Under certain conditions, this call can be dispatched permissionlessly (i.e. by any"]
+				#[doc = "account)."]
+				#[doc = ""]
+				#[doc = "# Conditions for a permissionless dispatch."]
+				#[doc = ""]
+				#[doc = "* The pool is blocked and the caller is either the root or bouncer. This is refereed to"]
+				#[doc = "  as a kick."]
+				#[doc = "* The pool is destroying and the member is not the depositor."]
+				#[doc = "* The pool is destroying, the member is the depositor and no other members are in the"]
+				#[doc = "  pool."]
+				#[doc = ""]
+				#[doc = "## Conditions for permissioned dispatch (i.e. the caller is also the"]
+				#[doc = "`member_account`):"]
+				#[doc = ""]
+				#[doc = "* The caller is not the depositor."]
+				#[doc = "* The caller is the depositor, the pool is destroying and no other members are in the"]
+				#[doc = "  pool."]
+				#[doc = ""]
+				#[doc = "# Note"]
+				#[doc = ""]
+				#[doc = "If there are too many unlocking chunks to unbond with the pool account,"]
+				#[doc = "[`Call::pool_withdraw_unbonded`] can be called to try and minimize unlocking chunks."]
+				#[doc = "The [`StakingInterface::unbond`] will implicitly call [`Call::pool_withdraw_unbonded`]"]
+				#[doc = "to try to free chunks if necessary (ie. if unbound was called and no unlocking chunks"]
+				#[doc = "are available). However, it may not be possible to release the current unlocking chunks,"]
+				#[doc = "in which case, the result of this call will likely be the `NoMoreChunks` error from the"]
+				#[doc = "staking system."]
 				pub fn unbond(
 					&self,
 					member_account: types::unbond::MemberAccount,
@@ -17737,7 +20403,12 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::pool_withdraw_unbonded`]."]
+				#[doc = "Call `withdraw_unbonded` for the pools account. This call can be made by any account."]
+				#[doc = ""]
+				#[doc = "This is useful if there are too many unlocking chunks to call `unbond`, and some"]
+				#[doc = "can be cleared by withdrawing. In the case there are too many unlocking chunks, the user"]
+				#[doc = "would probably see an error like `NoMoreChunks` emitted from the staking system when"]
+				#[doc = "they attempt to unbond."]
 				pub fn pool_withdraw_unbonded(
 					&self,
 					pool_id: types::pool_withdraw_unbonded::PoolId,
@@ -17758,7 +20429,28 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::withdraw_unbonded`]."]
+				#[doc = "Withdraw unbonded funds from `member_account`. If no bonded funds can be unbonded, an"]
+				#[doc = "error is returned."]
+				#[doc = ""]
+				#[doc = "Under certain conditions, this call can be dispatched permissionlessly (i.e. by any"]
+				#[doc = "account)."]
+				#[doc = ""]
+				#[doc = "# Conditions for a permissionless dispatch"]
+				#[doc = ""]
+				#[doc = "* The pool is in destroy mode and the target is not the depositor."]
+				#[doc = "* The target is the depositor and they are the only member in the sub pools."]
+				#[doc = "* The pool is blocked and the caller is either the root or bouncer."]
+				#[doc = ""]
+				#[doc = "# Conditions for permissioned dispatch"]
+				#[doc = ""]
+				#[doc = "* The caller is the target and they are not the depositor."]
+				#[doc = ""]
+				#[doc = "# Note"]
+				#[doc = ""]
+				#[doc = "- If the target is the depositor, the pool will be destroyed."]
+				#[doc = "- If the pool has any pending slash, we also try to slash the member before letting them"]
+				#[doc = "withdraw. This calculation adds some weight overhead and is only defensive. In reality,"]
+				#[doc = "pool slashes must have been already applied via permissionless [`Call::apply_slash`]."]
 				pub fn withdraw_unbonded(
 					&self,
 					member_account: types::withdraw_unbonded::MemberAccount,
@@ -17779,7 +20471,23 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::create`]."]
+				#[doc = "Create a new delegation pool."]
+				#[doc = ""]
+				#[doc = "# Arguments"]
+				#[doc = ""]
+				#[doc = "* `amount` - The amount of funds to delegate to the pool. This also acts of a sort of"]
+				#[doc = "  deposit since the pools creator cannot fully unbond funds until the pool is being"]
+				#[doc = "  destroyed."]
+				#[doc = "* `index` - A disambiguation index for creating the account. Likely only useful when"]
+				#[doc = "  creating multiple pools in the same extrinsic."]
+				#[doc = "* `root` - The account to set as [`PoolRoles::root`]."]
+				#[doc = "* `nominator` - The account to set as the [`PoolRoles::nominator`]."]
+				#[doc = "* `bouncer` - The account to set as the [`PoolRoles::bouncer`]."]
+				#[doc = ""]
+				#[doc = "# Note"]
+				#[doc = ""]
+				#[doc = "In addition to `amount`, the caller will transfer the existential deposit; so the caller"]
+				#[doc = "needs at have at least `amount + existential_deposit` transferable."]
 				pub fn create(
 					&self,
 					amount: types::create::Amount,
@@ -17803,7 +20511,12 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::create_with_pool_id`]."]
+				#[doc = "Create a new delegation pool with a previously used pool id"]
+				#[doc = ""]
+				#[doc = "# Arguments"]
+				#[doc = ""]
+				#[doc = "same as `create` with the inclusion of"]
+				#[doc = "* `pool_id` - `A valid PoolId."]
 				pub fn create_with_pool_id(
 					&self,
 					amount: types::create_with_pool_id::Amount,
@@ -17830,7 +20543,18 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::nominate`]."]
+				#[doc = "Nominate on behalf of the pool."]
+				#[doc = ""]
+				#[doc = "The dispatch origin of this call must be signed by the pool nominator or the pool"]
+				#[doc = "root role."]
+				#[doc = ""]
+				#[doc = "This directly forward the call to the staking pallet, on behalf of the pool bonded"]
+				#[doc = "account."]
+				#[doc = ""]
+				#[doc = "# Note"]
+				#[doc = ""]
+				#[doc = "In addition to a `root` or `nominator` role of `origin`, pool's depositor needs to have"]
+				#[doc = "at least `depositor_min_bond` in the pool to start nominating."]
 				pub fn nominate(
 					&self,
 					pool_id: types::nominate::PoolId,
@@ -17850,7 +20574,16 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::set_state`]."]
+				#[doc = "Set a new state for the pool."]
+				#[doc = ""]
+				#[doc = "If a pool is already in the `Destroying` state, then under no condition can its state"]
+				#[doc = "change again."]
+				#[doc = ""]
+				#[doc = "The dispatch origin of this call must be either:"]
+				#[doc = ""]
+				#[doc = "1. signed by the bouncer, or the root role of the pool,"]
+				#[doc = "2. if the pool conditions to be open are NOT met (as described by `ok_to_be_open`), and"]
+				#[doc = "   then the state of the pool can be permissionlessly changed to `Destroying`."]
 				pub fn set_state(
 					&self,
 					pool_id: types::set_state::PoolId,
@@ -17867,7 +20600,10 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::set_metadata`]."]
+				#[doc = "Set a new metadata for the pool."]
+				#[doc = ""]
+				#[doc = "The dispatch origin of this call must be signed by the bouncer, or the root role of the"]
+				#[doc = "pool."]
 				pub fn set_metadata(
 					&self,
 					pool_id: types::set_metadata::PoolId,
@@ -17884,7 +20620,17 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::set_configs`]."]
+				#[doc = "Update configurations for the nomination pools. The origin for this call must be"]
+				#[doc = "[`Config::AdminOrigin`]."]
+				#[doc = ""]
+				#[doc = "# Arguments"]
+				#[doc = ""]
+				#[doc = "* `min_join_bond` - Set [`MinJoinBond`]."]
+				#[doc = "* `min_create_bond` - Set [`MinCreateBond`]."]
+				#[doc = "* `max_pools` - Set [`MaxPools`]."]
+				#[doc = "* `max_members` - Set [`MaxPoolMembers`]."]
+				#[doc = "* `max_members_per_pool` - Set [`MaxPoolMembersPerPool`]."]
+				#[doc = "* `global_max_commission` - Set [`GlobalMaxCommission`]."]
 				pub fn set_configs(
 					&self,
 					min_join_bond: types::set_configs::MinJoinBond,
@@ -17913,7 +20659,13 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::update_roles`]."]
+				#[doc = "Update the roles of the pool."]
+				#[doc = ""]
+				#[doc = "The root is the only entity that can change any of the roles, including itself,"]
+				#[doc = "excluding the depositor, who can never change."]
+				#[doc = ""]
+				#[doc = "It emits an event, notifying UIs of the role change. This event is quite relevant to"]
+				#[doc = "most pool members and they should be informed of changes to pool roles."]
 				pub fn update_roles(
 					&self,
 					pool_id: types::update_roles::PoolId,
@@ -17938,7 +20690,22 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::chill`]."]
+				#[doc = "Chill on behalf of the pool."]
+				#[doc = ""]
+				#[doc = "The dispatch origin of this call can be signed by the pool nominator or the pool"]
+				#[doc = "root role, same as [`Pallet::nominate`]."]
+				#[doc = ""]
+				#[doc = "Under certain conditions, this call can be dispatched permissionlessly (i.e. by any"]
+				#[doc = "account)."]
+				#[doc = ""]
+				#[doc = "# Conditions for a permissionless dispatch:"]
+				#[doc = "* When pool depositor has less than `MinNominatorBond` staked, otherwise  pool members"]
+				#[doc = "  are unable to unbond."]
+				#[doc = ""]
+				#[doc = "# Conditions for permissioned dispatch:"]
+				#[doc = "* The caller has a nominator or root role of the pool."]
+				#[doc = "This directly forward the call to the staking pallet, on behalf of the pool bonded"]
+				#[doc = "account."]
 				pub fn chill(
 					&self,
 					pool_id: types::chill::PoolId,
@@ -17954,7 +20721,15 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::bond_extra_other`]."]
+				#[doc = "`origin` bonds funds from `extra` for some pool member `member` into their respective"]
+				#[doc = "pools."]
+				#[doc = ""]
+				#[doc = "`origin` can bond extra funds from free balance or pending rewards when `origin =="]
+				#[doc = "other`."]
+				#[doc = ""]
+				#[doc = "In the case of `origin != other`, `origin` can only bond extra pending rewards of"]
+				#[doc = "`other` members assuming set_claim_permission for the given member is"]
+				#[doc = "`PermissionlessCompound` or `PermissionlessAll`."]
 				pub fn bond_extra_other(
 					&self,
 					member: types::bond_extra_other::Member,
@@ -17972,7 +20747,13 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::set_claim_permission`]."]
+				#[doc = "Allows a pool member to set a claim permission to allow or disallow permissionless"]
+				#[doc = "bonding and withdrawing."]
+				#[doc = ""]
+				#[doc = "# Arguments"]
+				#[doc = ""]
+				#[doc = "* `origin` - Member of a pool."]
+				#[doc = "* `permission` - The permission to be applied."]
 				pub fn set_claim_permission(
 					&self,
 					permission: types::set_claim_permission::Permission,
@@ -17988,7 +20769,10 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::claim_payout_other`]."]
+				#[doc = "`origin` can claim payouts on some pool member `other`'s behalf."]
+				#[doc = ""]
+				#[doc = "Pool member `other` must have a `PermissionlessWithdraw` or `PermissionlessAll` claim"]
+				#[doc = "permission for this call to be successful."]
 				pub fn claim_payout_other(
 					&self,
 					other: types::claim_payout_other::Other,
@@ -18005,7 +20789,11 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::set_commission`]."]
+				#[doc = "Set the commission of a pool."]
+				#[doc = "Both a commission percentage and a commission payee must be provided in the `current`"]
+				#[doc = "tuple. Where a `current` of `None` is provided, any current commission will be removed."]
+				#[doc = ""]
+				#[doc = "- If a `None` is supplied to `new_commission`, existing commission will be removed."]
 				pub fn set_commission(
 					&self,
 					pool_id: types::set_commission::PoolId,
@@ -18025,7 +20813,11 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::set_commission_max`]."]
+				#[doc = "Set the maximum commission of a pool."]
+				#[doc = ""]
+				#[doc = "- Initial max can be set to any `Perbill`, and only smaller values thereafter."]
+				#[doc = "- Current commission will be lowered in the event it is higher than a new max"]
+				#[doc = "  commission."]
 				pub fn set_commission_max(
 					&self,
 					pool_id: types::set_commission_max::PoolId,
@@ -18046,7 +20838,10 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::set_commission_change_rate`]."]
+				#[doc = "Set the commission change rate for a pool."]
+				#[doc = ""]
+				#[doc = "Initial change rate is not bounded, whereas subsequent updates can only be more"]
+				#[doc = "restrictive than the current."]
 				pub fn set_commission_change_rate(
 					&self,
 					pool_id: types::set_commission_change_rate::PoolId,
@@ -18066,7 +20861,11 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::claim_commission`]."]
+				#[doc = "Claim pending commission."]
+				#[doc = ""]
+				#[doc = "The dispatch origin of this call must be signed by the `root` role of the pool. Pending"]
+				#[doc = "commission is paid out and added to total claimed commission`. Total pending commission"]
+				#[doc = "is reset to zero. the current."]
 				pub fn claim_commission(
 					&self,
 					pool_id: types::claim_commission::PoolId,
@@ -18082,7 +20881,13 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::adjust_pool_deposit`]."]
+				#[doc = "Top up the deficit or withdraw the excess ED from the pool."]
+				#[doc = ""]
+				#[doc = "When a pool is created, the pool depositor transfers ED to the reward account of the"]
+				#[doc = "pool. ED is subject to change and over time, the deposit in the reward account may be"]
+				#[doc = "insufficient to cover the ED deficit of the pool or vice-versa where there is excess"]
+				#[doc = "deposit to the pool. This call allows anyone to adjust the ED deposit of the"]
+				#[doc = "pool by either topping up the deficit or claiming the excess."]
 				pub fn adjust_pool_deposit(
 					&self,
 					pool_id: types::adjust_pool_deposit::PoolId,
@@ -18098,7 +20903,10 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::set_commission_claim_permission`]."]
+				#[doc = "Set or remove a pool's commission claim permission."]
+				#[doc = ""]
+				#[doc = "Determines who can claim the pool's pending commission. Only the `Root` role of the pool"]
+				#[doc = "is able to configure commission claim permissions."]
 				pub fn set_commission_claim_permission(
 					&self,
 					pool_id: types::set_commission_claim_permission::PoolId,
@@ -18115,6 +20923,76 @@ pub mod api {
 							2u8, 140u8, 135u8, 31u8, 180u8, 2u8, 245u8, 33u8, 34u8, 204u8, 192u8,
 							30u8, 131u8, 4u8, 108u8, 194u8, 154u8, 65u8, 104u8, 252u8, 84u8, 58u8,
 							10u8, 47u8, 238u8, 185u8, 91u8, 162u8, 190u8, 239u8, 74u8, 38u8,
+						],
+					)
+				}
+				#[doc = "Apply a pending slash on a member."]
+				#[doc = ""]
+				#[doc = "Fails unless [`crate::pallet::Config::StakeAdapter`] is of strategy type:"]
+				#[doc = "[`adapter::StakeStrategyType::Delegate`]."]
+				#[doc = ""]
+				#[doc = "This call can be dispatched permissionlessly (i.e. by any account). If the member has"]
+				#[doc = "slash to be applied, caller may be rewarded with the part of the slash."]
+				pub fn apply_slash(
+					&self,
+					member_account: types::apply_slash::MemberAccount,
+				) -> ::subxt::tx::Payload<types::ApplySlash> {
+					::subxt::tx::Payload::new_static(
+						"NominationPools",
+						"apply_slash",
+						types::ApplySlash { member_account },
+						[
+							2u8, 86u8, 29u8, 116u8, 16u8, 255u8, 232u8, 230u8, 97u8, 46u8, 104u8,
+							167u8, 171u8, 19u8, 51u8, 170u8, 98u8, 108u8, 58u8, 181u8, 17u8, 193u8,
+							172u8, 221u8, 119u8, 17u8, 249u8, 154u8, 61u8, 159u8, 31u8, 72u8,
+						],
+					)
+				}
+				#[doc = "Migrates delegated funds from the pool account to the `member_account`."]
+				#[doc = ""]
+				#[doc = "Fails unless [`crate::pallet::Config::StakeAdapter`] is of strategy type:"]
+				#[doc = "[`adapter::StakeStrategyType::Delegate`]."]
+				#[doc = ""]
+				#[doc = "This is a permission-less call and refunds any fee if claim is successful."]
+				#[doc = ""]
+				#[doc = "If the pool has migrated to delegation based staking, the staked tokens of pool members"]
+				#[doc = "can be moved and held in their own account. See [`adapter::DelegateStake`]"]
+				pub fn migrate_delegation(
+					&self,
+					member_account: types::migrate_delegation::MemberAccount,
+				) -> ::subxt::tx::Payload<types::MigrateDelegation> {
+					::subxt::tx::Payload::new_static(
+						"NominationPools",
+						"migrate_delegation",
+						types::MigrateDelegation { member_account },
+						[
+							26u8, 77u8, 30u8, 239u8, 89u8, 129u8, 167u8, 107u8, 181u8, 47u8, 99u8,
+							75u8, 90u8, 160u8, 86u8, 222u8, 233u8, 63u8, 208u8, 149u8, 44u8, 127u8,
+							9u8, 25u8, 249u8, 170u8, 186u8, 28u8, 100u8, 168u8, 13u8, 39u8,
+						],
+					)
+				}
+				#[doc = "Migrate pool from [`adapter::StakeStrategyType::Transfer`] to"]
+				#[doc = "[`adapter::StakeStrategyType::Delegate`]."]
+				#[doc = ""]
+				#[doc = "Fails unless [`crate::pallet::Config::StakeAdapter`] is of strategy type:"]
+				#[doc = "[`adapter::StakeStrategyType::Delegate`]."]
+				#[doc = ""]
+				#[doc = "This call can be dispatched permissionlessly, and refunds any fee if successful."]
+				#[doc = ""]
+				#[doc = "If the pool has already migrated to delegation based staking, this call will fail."]
+				pub fn migrate_pool_to_delegate_stake(
+					&self,
+					pool_id: types::migrate_pool_to_delegate_stake::PoolId,
+				) -> ::subxt::tx::Payload<types::MigratePoolToDelegateStake> {
+					::subxt::tx::Payload::new_static(
+						"NominationPools",
+						"migrate_pool_to_delegate_stake",
+						types::MigratePoolToDelegateStake { pool_id },
+						[
+							63u8, 137u8, 37u8, 37u8, 79u8, 184u8, 127u8, 89u8, 85u8, 219u8, 64u8,
+							6u8, 32u8, 115u8, 52u8, 74u8, 212u8, 117u8, 0u8, 128u8, 149u8, 225u8,
+							94u8, 113u8, 4u8, 209u8, 136u8, 188u8, 224u8, 220u8, 125u8, 167u8,
 						],
 					)
 				}
@@ -18358,14 +21236,18 @@ pub mod api {
 			#[doc = "A member has been removed from a pool."]
 			#[doc = ""]
 			#[doc = "The removal can be voluntary (withdrawn all unbonded funds) or involuntary (kicked)."]
+			#[doc = "Any funds that are still delegated (i.e. dangling delegation) are released and are"]
+			#[doc = "represented by `released_balance`."]
 			pub struct MemberRemoved {
 				pub pool_id: member_removed::PoolId,
 				pub member: member_removed::Member,
+				pub released_balance: member_removed::ReleasedBalance,
 			}
 			pub mod member_removed {
 				use super::runtime_types;
 				pub type PoolId = ::core::primitive::u32;
 				pub type Member = ::subxt::utils::AccountId32;
+				pub type ReleasedBalance = ::core::primitive::u128;
 			}
 			impl ::subxt::events::StaticEvent for MemberRemoved {
 				const PALLET: &'static str = "NominationPools";
@@ -19064,7 +21946,7 @@ pub mod api {
 					)
 				}
 				#[doc = " Reward pools. This is where there rewards for each pool accumulate. When a members payout is"]
-				#[doc = " claimed, the balance comes out fo the reward pool. Keyed by the bonded pools account."]
+				#[doc = " claimed, the balance comes out of the reward pool. Keyed by the bonded pools account."]
 				pub fn reward_pools_iter(
 					&self,
 				) -> ::subxt::storage::address::Address<
@@ -19087,7 +21969,7 @@ pub mod api {
 					)
 				}
 				#[doc = " Reward pools. This is where there rewards for each pool accumulate. When a members payout is"]
-				#[doc = " claimed, the balance comes out fo the reward pool. Keyed by the bonded pools account."]
+				#[doc = " claimed, the balance comes out of the reward pool. Keyed by the bonded pools account."]
 				pub fn reward_pools(
 					&self,
 					_0: impl ::std::borrow::Borrow<types::reward_pools::Param0>,
@@ -19294,8 +22176,8 @@ pub mod api {
 				}
 				#[doc = " A reverse lookup from the pool's account id to its id."]
 				#[doc = ""]
-				#[doc = " This is only used for slashing. In all other instances, the pool id is used, and the"]
-				#[doc = " accounts are deterministically derived from it."]
+				#[doc = " This is only used for slashing and on automatic withdraw update. In all other instances, the"]
+				#[doc = " pool id is used, and the accounts are deterministically derived from it."]
 				pub fn reverse_pool_id_lookup_iter(
 					&self,
 				) -> ::subxt::storage::address::Address<
@@ -19318,8 +22200,8 @@ pub mod api {
 				}
 				#[doc = " A reverse lookup from the pool's account id to its id."]
 				#[doc = ""]
-				#[doc = " This is only used for slashing. In all other instances, the pool id is used, and the"]
-				#[doc = " accounts are deterministically derived from it."]
+				#[doc = " This is only used for slashing and on automatic withdraw update. In all other instances, the"]
+				#[doc = " pool id is used, and the accounts are deterministically derived from it."]
 				pub fn reverse_pool_id_lookup(
 					&self,
 					_0: impl ::std::borrow::Borrow<types::reverse_pool_id_lookup::Param0>,
@@ -19380,9 +22262,9 @@ pub mod api {
 						"ClaimPermissions",
 						vec![],
 						[
-							98u8, 241u8, 185u8, 102u8, 61u8, 53u8, 215u8, 105u8, 2u8, 148u8, 197u8,
-							17u8, 107u8, 253u8, 74u8, 159u8, 14u8, 30u8, 213u8, 38u8, 35u8, 163u8,
-							249u8, 19u8, 140u8, 201u8, 182u8, 106u8, 0u8, 21u8, 102u8, 15u8,
+							127u8, 58u8, 154u8, 103u8, 97u8, 80u8, 68u8, 18u8, 167u8, 41u8, 93u8,
+							100u8, 94u8, 81u8, 82u8, 98u8, 13u8, 162u8, 122u8, 199u8, 216u8, 139u8,
+							238u8, 97u8, 174u8, 102u8, 11u8, 250u8, 247u8, 174u8, 185u8, 134u8,
 						],
 					)
 				}
@@ -19404,9 +22286,9 @@ pub mod api {
 							_0.borrow(),
 						)],
 						[
-							98u8, 241u8, 185u8, 102u8, 61u8, 53u8, 215u8, 105u8, 2u8, 148u8, 197u8,
-							17u8, 107u8, 253u8, 74u8, 159u8, 14u8, 30u8, 213u8, 38u8, 35u8, 163u8,
-							249u8, 19u8, 140u8, 201u8, 182u8, 106u8, 0u8, 21u8, 102u8, 15u8,
+							127u8, 58u8, 154u8, 103u8, 97u8, 80u8, 68u8, 18u8, 167u8, 41u8, 93u8,
+							100u8, 94u8, 81u8, 82u8, 98u8, 13u8, 162u8, 122u8, 199u8, 216u8, 139u8,
+							238u8, 97u8, 174u8, 102u8, 11u8, 250u8, 247u8, 174u8, 185u8, 134u8,
 						],
 					)
 				}
@@ -19498,7 +22380,13 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::add_registrar`]."]
+				#[doc = "Add a registrar to the system."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be `T::RegistrarOrigin`."]
+				#[doc = ""]
+				#[doc = "- `account`: the account of the registrar."]
+				#[doc = ""]
+				#[doc = "Emits `RegistrarAdded` if successful."]
 				pub struct AddRegistrar {
 					pub account: add_registrar::Account,
 				}
@@ -19526,7 +22414,16 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::set_identity`]."]
+				#[doc = "Set an account's identity information and reserve the appropriate deposit."]
+				#[doc = ""]
+				#[doc = "If the account already has identity information, the deposit is taken as part payment"]
+				#[doc = "for the new deposit."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_."]
+				#[doc = ""]
+				#[doc = "- `info`: The identity information."]
+				#[doc = ""]
+				#[doc = "Emits `IdentitySet` if successful."]
 				pub struct SetIdentity {
 					pub info: ::std::boxed::Box<set_identity::Info>,
 				}
@@ -19551,7 +22448,15 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::set_subs`]."]
+				#[doc = "Set the sub-accounts of the sender."]
+				#[doc = ""]
+				#[doc = "Payment: Any aggregate balance reserved by previous `set_subs` calls will be returned"]
+				#[doc = "and an amount `SubAccountDeposit` will be reserved for each item in `subs`."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ and the sender must have a registered"]
+				#[doc = "identity."]
+				#[doc = ""]
+				#[doc = "- `subs`: The identity's (new) sub-accounts."]
 				pub struct SetSubs {
 					pub subs: set_subs::Subs,
 				}
@@ -19579,7 +22484,14 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::clear_identity`]."]
+				#[doc = "Clear an account's identity info and all sub-accounts and return all deposits."]
+				#[doc = ""]
+				#[doc = "Payment: All reserved balances on the account are returned."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ and the sender must have a registered"]
+				#[doc = "identity."]
+				#[doc = ""]
+				#[doc = "Emits `IdentityCleared` if successful."]
 				pub struct ClearIdentity;
 				impl ::subxt::blocks::StaticExtrinsic for ClearIdentity {
 					const PALLET: &'static str = "Identity";
@@ -19598,7 +22510,22 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::request_judgement`]."]
+				#[doc = "Request a judgement from a registrar."]
+				#[doc = ""]
+				#[doc = "Payment: At most `max_fee` will be reserved for payment to the registrar if judgement"]
+				#[doc = "given."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ and the sender must have a"]
+				#[doc = "registered identity."]
+				#[doc = ""]
+				#[doc = "- `reg_index`: The index of the registrar whose judgement is requested."]
+				#[doc = "- `max_fee`: The maximum fee that may be paid. This should just be auto-populated as:"]
+				#[doc = ""]
+				#[doc = "```nocompile"]
+				#[doc = "Registrars::<T>::get().get(reg_index).unwrap().fee"]
+				#[doc = "```"]
+				#[doc = ""]
+				#[doc = "Emits `JudgementRequested` if successful."]
 				pub struct RequestJudgement {
 					#[codec(compact)]
 					pub reg_index: request_judgement::RegIndex,
@@ -19627,7 +22554,16 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::cancel_request`]."]
+				#[doc = "Cancel a previous request."]
+				#[doc = ""]
+				#[doc = "Payment: A previously reserved deposit is returned on success."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ and the sender must have a"]
+				#[doc = "registered identity."]
+				#[doc = ""]
+				#[doc = "- `reg_index`: The index of the registrar whose judgement is no longer requested."]
+				#[doc = ""]
+				#[doc = "Emits `JudgementUnrequested` if successful."]
 				pub struct CancelRequest {
 					pub reg_index: cancel_request::RegIndex,
 				}
@@ -19652,7 +22588,13 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::set_fee`]."]
+				#[doc = "Set the fee required for a judgement to be requested from a registrar."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ and the sender must be the account"]
+				#[doc = "of the registrar whose index is `index`."]
+				#[doc = ""]
+				#[doc = "- `index`: the index of the registrar whose fee is to be set."]
+				#[doc = "- `fee`: the new fee."]
 				pub struct SetFee {
 					#[codec(compact)]
 					pub index: set_fee::Index,
@@ -19681,7 +22623,13 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::set_account_id`]."]
+				#[doc = "Change the account associated with a registrar."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ and the sender must be the account"]
+				#[doc = "of the registrar whose index is `index`."]
+				#[doc = ""]
+				#[doc = "- `index`: the index of the registrar whose fee is to be set."]
+				#[doc = "- `new`: the new account ID."]
 				pub struct SetAccountId {
 					#[codec(compact)]
 					pub index: set_account_id::Index,
@@ -19712,7 +22660,13 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::set_fields`]."]
+				#[doc = "Set the field information for a registrar."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ and the sender must be the account"]
+				#[doc = "of the registrar whose index is `index`."]
+				#[doc = ""]
+				#[doc = "- `index`: the index of the registrar whose fee is to be set."]
+				#[doc = "- `fields`: the fields that the registrar concerns themselves with."]
 				pub struct SetFields {
 					#[codec(compact)]
 					pub index: set_fields::Index,
@@ -19740,7 +22694,21 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::provide_judgement`]."]
+				#[doc = "Provide a judgement for an account's identity."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ and the sender must be the account"]
+				#[doc = "of the registrar whose index is `reg_index`."]
+				#[doc = ""]
+				#[doc = "- `reg_index`: the index of the registrar whose judgement is being made."]
+				#[doc = "- `target`: the account whose identity the judgement is upon. This must be an account"]
+				#[doc = "  with a registered identity."]
+				#[doc = "- `judgement`: the judgement of the registrar of index `reg_index` about `target`."]
+				#[doc = "- `identity`: The hash of the [`IdentityInformationProvider`] for that the judgement is"]
+				#[doc = "  provided."]
+				#[doc = ""]
+				#[doc = "Note: Judgements do not apply to a username."]
+				#[doc = ""]
+				#[doc = "Emits `JudgementGiven` if successful."]
 				pub struct ProvideJudgement {
 					#[codec(compact)]
 					pub reg_index: provide_judgement::RegIndex,
@@ -19776,7 +22744,18 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::kill_identity`]."]
+				#[doc = "Remove an account's identity and sub-account information and slash the deposits."]
+				#[doc = ""]
+				#[doc = "Payment: Reserved balances from `set_subs` and `set_identity` are slashed and handled by"]
+				#[doc = "`Slash`. Verification request deposits are not returned; they should be cancelled"]
+				#[doc = "manually using `cancel_request`."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must match `T::ForceOrigin`."]
+				#[doc = ""]
+				#[doc = "- `target`: the account whose identity the judgement is upon. This must be an account"]
+				#[doc = "  with a registered identity."]
+				#[doc = ""]
+				#[doc = "Emits `IdentityKilled` if successful."]
 				pub struct KillIdentity {
 					pub target: kill_identity::Target,
 				}
@@ -19804,7 +22783,13 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::add_sub`]."]
+				#[doc = "Add the given account to the sender's subs."]
+				#[doc = ""]
+				#[doc = "Payment: Balance reserved by a previous `set_subs` call for one sub will be repatriated"]
+				#[doc = "to the sender."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ and the sender must have a registered"]
+				#[doc = "sub identity of `sub`."]
 				pub struct AddSub {
 					pub sub: add_sub::Sub,
 					pub data: add_sub::Data,
@@ -19834,7 +22819,10 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::rename_sub`]."]
+				#[doc = "Alter the associated name of the given sub-account."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ and the sender must have a registered"]
+				#[doc = "sub identity of `sub`."]
 				pub struct RenameSub {
 					pub sub: rename_sub::Sub,
 					pub data: rename_sub::Data,
@@ -19864,7 +22852,13 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::remove_sub`]."]
+				#[doc = "Remove the given account from the sender's subs."]
+				#[doc = ""]
+				#[doc = "Payment: Balance reserved by a previous `set_subs` call for one sub will be repatriated"]
+				#[doc = "to the sender."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ and the sender must have a registered"]
+				#[doc = "sub identity of `sub`."]
 				pub struct RemoveSub {
 					pub sub: remove_sub::Sub,
 				}
@@ -19892,7 +22886,16 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::quit_sub`]."]
+				#[doc = "Remove the sender as a sub-account."]
+				#[doc = ""]
+				#[doc = "Payment: Balance reserved by a previous `set_subs` call for one sub will be repatriated"]
+				#[doc = "to the sender (*not* the original depositor)."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ and the sender must have a registered"]
+				#[doc = "super-identity."]
+				#[doc = ""]
+				#[doc = "NOTE: This should not normally be used, but is provided in the case that the non-"]
+				#[doc = "controller of an account is maliciously registered as a sub-account."]
 				pub struct QuitSub;
 				impl ::subxt::blocks::StaticExtrinsic for QuitSub {
 					const PALLET: &'static str = "Identity";
@@ -19911,7 +22914,10 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::add_username_authority`]."]
+				#[doc = "Add an `AccountId` with permission to grant usernames with a given `suffix` appended."]
+				#[doc = ""]
+				#[doc = "The authority can grant up to `allocation` usernames. To top up their allocation, they"]
+				#[doc = "should just issue (or request via governance) a new `add_username_authority` call."]
 				pub struct AddUsernameAuthority {
 					pub authority: add_username_authority::Authority,
 					pub suffix: add_username_authority::Suffix,
@@ -19943,7 +22949,7 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::remove_username_authority`]."]
+				#[doc = "Remove `authority` from the username authorities."]
 				pub struct RemoveUsernameAuthority {
 					pub authority: remove_username_authority::Authority,
 				}
@@ -19971,7 +22977,15 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::set_username_for`]."]
+				#[doc = "Set the username for `who`. Must be called by a username authority."]
+				#[doc = ""]
+				#[doc = "The authority must have an `allocation`. Users can either pre-sign their usernames or"]
+				#[doc = "accept them later."]
+				#[doc = ""]
+				#[doc = "Usernames must:"]
+				#[doc = "  - Only contain lowercase ASCII characters or digits."]
+				#[doc = "  - When combined with the suffix of the issuing authority be _less than_ the"]
+				#[doc = "    `MaxUsernameLength`."]
 				pub struct SetUsernameFor {
 					pub who: set_username_for::Who,
 					pub username: set_username_for::Username,
@@ -20004,7 +23018,8 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::accept_username`]."]
+				#[doc = "Accept a given username that an `authority` granted. The call must include the full"]
+				#[doc = "username, as in `username.suffix`."]
 				pub struct AcceptUsername {
 					pub username: accept_username::Username,
 				}
@@ -20031,7 +23046,9 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::remove_expired_approval`]."]
+				#[doc = "Remove an expired username approval. The username was approved by an authority but never"]
+				#[doc = "accepted by the user and must now be beyond its expiration. The call must include the"]
+				#[doc = "full username, as in `username.suffix`."]
 				pub struct RemoveExpiredApproval {
 					pub username: remove_expired_approval::Username,
 				}
@@ -20058,7 +23075,7 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::set_primary_username`]."]
+				#[doc = "Set a given username as the primary. The username should include the suffix."]
 				pub struct SetPrimaryUsername {
 					pub username: set_primary_username::Username,
 				}
@@ -20085,7 +23102,8 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::remove_dangling_username`]."]
+				#[doc = "Remove a username that corresponds to an account with no identity. Exists when a user"]
+				#[doc = "gets a username but then calls `clear_identity`."]
 				pub struct RemoveDanglingUsername {
 					pub username: remove_dangling_username::Username,
 				}
@@ -20102,7 +23120,13 @@ pub mod api {
 			}
 			pub struct TransactionApi;
 			impl TransactionApi {
-				#[doc = "See [`Pallet::add_registrar`]."]
+				#[doc = "Add a registrar to the system."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be `T::RegistrarOrigin`."]
+				#[doc = ""]
+				#[doc = "- `account`: the account of the registrar."]
+				#[doc = ""]
+				#[doc = "Emits `RegistrarAdded` if successful."]
 				pub fn add_registrar(
 					&self,
 					account: types::add_registrar::Account,
@@ -20118,7 +23142,16 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::set_identity`]."]
+				#[doc = "Set an account's identity information and reserve the appropriate deposit."]
+				#[doc = ""]
+				#[doc = "If the account already has identity information, the deposit is taken as part payment"]
+				#[doc = "for the new deposit."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_."]
+				#[doc = ""]
+				#[doc = "- `info`: The identity information."]
+				#[doc = ""]
+				#[doc = "Emits `IdentitySet` if successful."]
 				pub fn set_identity(
 					&self,
 					info: types::set_identity::Info,
@@ -20137,7 +23170,15 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::set_subs`]."]
+				#[doc = "Set the sub-accounts of the sender."]
+				#[doc = ""]
+				#[doc = "Payment: Any aggregate balance reserved by previous `set_subs` calls will be returned"]
+				#[doc = "and an amount `SubAccountDeposit` will be reserved for each item in `subs`."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ and the sender must have a registered"]
+				#[doc = "identity."]
+				#[doc = ""]
+				#[doc = "- `subs`: The identity's (new) sub-accounts."]
 				pub fn set_subs(
 					&self,
 					subs: types::set_subs::Subs,
@@ -20154,7 +23195,14 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::clear_identity`]."]
+				#[doc = "Clear an account's identity info and all sub-accounts and return all deposits."]
+				#[doc = ""]
+				#[doc = "Payment: All reserved balances on the account are returned."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ and the sender must have a registered"]
+				#[doc = "identity."]
+				#[doc = ""]
+				#[doc = "Emits `IdentityCleared` if successful."]
 				pub fn clear_identity(&self) -> ::subxt::tx::Payload<types::ClearIdentity> {
 					::subxt::tx::Payload::new_static(
 						"Identity",
@@ -20168,7 +23216,22 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::request_judgement`]."]
+				#[doc = "Request a judgement from a registrar."]
+				#[doc = ""]
+				#[doc = "Payment: At most `max_fee` will be reserved for payment to the registrar if judgement"]
+				#[doc = "given."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ and the sender must have a"]
+				#[doc = "registered identity."]
+				#[doc = ""]
+				#[doc = "- `reg_index`: The index of the registrar whose judgement is requested."]
+				#[doc = "- `max_fee`: The maximum fee that may be paid. This should just be auto-populated as:"]
+				#[doc = ""]
+				#[doc = "```nocompile"]
+				#[doc = "Registrars::<T>::get().get(reg_index).unwrap().fee"]
+				#[doc = "```"]
+				#[doc = ""]
+				#[doc = "Emits `JudgementRequested` if successful."]
 				pub fn request_judgement(
 					&self,
 					reg_index: types::request_judgement::RegIndex,
@@ -20185,7 +23248,16 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::cancel_request`]."]
+				#[doc = "Cancel a previous request."]
+				#[doc = ""]
+				#[doc = "Payment: A previously reserved deposit is returned on success."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ and the sender must have a"]
+				#[doc = "registered identity."]
+				#[doc = ""]
+				#[doc = "- `reg_index`: The index of the registrar whose judgement is no longer requested."]
+				#[doc = ""]
+				#[doc = "Emits `JudgementUnrequested` if successful."]
 				pub fn cancel_request(
 					&self,
 					reg_index: types::cancel_request::RegIndex,
@@ -20202,7 +23274,13 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::set_fee`]."]
+				#[doc = "Set the fee required for a judgement to be requested from a registrar."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ and the sender must be the account"]
+				#[doc = "of the registrar whose index is `index`."]
+				#[doc = ""]
+				#[doc = "- `index`: the index of the registrar whose fee is to be set."]
+				#[doc = "- `fee`: the new fee."]
 				pub fn set_fee(
 					&self,
 					index: types::set_fee::Index,
@@ -20220,7 +23298,13 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::set_account_id`]."]
+				#[doc = "Change the account associated with a registrar."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ and the sender must be the account"]
+				#[doc = "of the registrar whose index is `index`."]
+				#[doc = ""]
+				#[doc = "- `index`: the index of the registrar whose fee is to be set."]
+				#[doc = "- `new`: the new account ID."]
 				pub fn set_account_id(
 					&self,
 					index: types::set_account_id::Index,
@@ -20238,7 +23322,13 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::set_fields`]."]
+				#[doc = "Set the field information for a registrar."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ and the sender must be the account"]
+				#[doc = "of the registrar whose index is `index`."]
+				#[doc = ""]
+				#[doc = "- `index`: the index of the registrar whose fee is to be set."]
+				#[doc = "- `fields`: the fields that the registrar concerns themselves with."]
 				pub fn set_fields(
 					&self,
 					index: types::set_fields::Index,
@@ -20256,7 +23346,21 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::provide_judgement`]."]
+				#[doc = "Provide a judgement for an account's identity."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ and the sender must be the account"]
+				#[doc = "of the registrar whose index is `reg_index`."]
+				#[doc = ""]
+				#[doc = "- `reg_index`: the index of the registrar whose judgement is being made."]
+				#[doc = "- `target`: the account whose identity the judgement is upon. This must be an account"]
+				#[doc = "  with a registered identity."]
+				#[doc = "- `judgement`: the judgement of the registrar of index `reg_index` about `target`."]
+				#[doc = "- `identity`: The hash of the [`IdentityInformationProvider`] for that the judgement is"]
+				#[doc = "  provided."]
+				#[doc = ""]
+				#[doc = "Note: Judgements do not apply to a username."]
+				#[doc = ""]
+				#[doc = "Emits `JudgementGiven` if successful."]
 				pub fn provide_judgement(
 					&self,
 					reg_index: types::provide_judgement::RegIndex,
@@ -20281,7 +23385,18 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::kill_identity`]."]
+				#[doc = "Remove an account's identity and sub-account information and slash the deposits."]
+				#[doc = ""]
+				#[doc = "Payment: Reserved balances from `set_subs` and `set_identity` are slashed and handled by"]
+				#[doc = "`Slash`. Verification request deposits are not returned; they should be cancelled"]
+				#[doc = "manually using `cancel_request`."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must match `T::ForceOrigin`."]
+				#[doc = ""]
+				#[doc = "- `target`: the account whose identity the judgement is upon. This must be an account"]
+				#[doc = "  with a registered identity."]
+				#[doc = ""]
+				#[doc = "Emits `IdentityKilled` if successful."]
 				pub fn kill_identity(
 					&self,
 					target: types::kill_identity::Target,
@@ -20297,7 +23412,13 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::add_sub`]."]
+				#[doc = "Add the given account to the sender's subs."]
+				#[doc = ""]
+				#[doc = "Payment: Balance reserved by a previous `set_subs` call for one sub will be repatriated"]
+				#[doc = "to the sender."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ and the sender must have a registered"]
+				#[doc = "sub identity of `sub`."]
 				pub fn add_sub(
 					&self,
 					sub: types::add_sub::Sub,
@@ -20314,7 +23435,10 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::rename_sub`]."]
+				#[doc = "Alter the associated name of the given sub-account."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ and the sender must have a registered"]
+				#[doc = "sub identity of `sub`."]
 				pub fn rename_sub(
 					&self,
 					sub: types::rename_sub::Sub,
@@ -20331,7 +23455,13 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::remove_sub`]."]
+				#[doc = "Remove the given account from the sender's subs."]
+				#[doc = ""]
+				#[doc = "Payment: Balance reserved by a previous `set_subs` call for one sub will be repatriated"]
+				#[doc = "to the sender."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ and the sender must have a registered"]
+				#[doc = "sub identity of `sub`."]
 				pub fn remove_sub(
 					&self,
 					sub: types::remove_sub::Sub,
@@ -20348,7 +23478,16 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::quit_sub`]."]
+				#[doc = "Remove the sender as a sub-account."]
+				#[doc = ""]
+				#[doc = "Payment: Balance reserved by a previous `set_subs` call for one sub will be repatriated"]
+				#[doc = "to the sender (*not* the original depositor)."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ and the sender must have a registered"]
+				#[doc = "super-identity."]
+				#[doc = ""]
+				#[doc = "NOTE: This should not normally be used, but is provided in the case that the non-"]
+				#[doc = "controller of an account is maliciously registered as a sub-account."]
 				pub fn quit_sub(&self) -> ::subxt::tx::Payload<types::QuitSub> {
 					::subxt::tx::Payload::new_static(
 						"Identity",
@@ -20362,7 +23501,10 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::add_username_authority`]."]
+				#[doc = "Add an `AccountId` with permission to grant usernames with a given `suffix` appended."]
+				#[doc = ""]
+				#[doc = "The authority can grant up to `allocation` usernames. To top up their allocation, they"]
+				#[doc = "should just issue (or request via governance) a new `add_username_authority` call."]
 				pub fn add_username_authority(
 					&self,
 					authority: types::add_username_authority::Authority,
@@ -20384,7 +23526,7 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::remove_username_authority`]."]
+				#[doc = "Remove `authority` from the username authorities."]
 				pub fn remove_username_authority(
 					&self,
 					authority: types::remove_username_authority::Authority,
@@ -20400,7 +23542,15 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::set_username_for`]."]
+				#[doc = "Set the username for `who`. Must be called by a username authority."]
+				#[doc = ""]
+				#[doc = "The authority must have an `allocation`. Users can either pre-sign their usernames or"]
+				#[doc = "accept them later."]
+				#[doc = ""]
+				#[doc = "Usernames must:"]
+				#[doc = "  - Only contain lowercase ASCII characters or digits."]
+				#[doc = "  - When combined with the suffix of the issuing authority be _less than_ the"]
+				#[doc = "    `MaxUsernameLength`."]
 				pub fn set_username_for(
 					&self,
 					who: types::set_username_for::Who,
@@ -20416,13 +23566,15 @@ pub mod api {
 							signature,
 						},
 						[
-							2u8, 132u8, 48u8, 100u8, 26u8, 161u8, 176u8, 128u8, 201u8, 9u8, 239u8,
-							116u8, 188u8, 205u8, 2u8, 24u8, 91u8, 91u8, 199u8, 151u8, 248u8, 47u8,
-							250u8, 83u8, 216u8, 218u8, 153u8, 119u8, 34u8, 47u8, 33u8, 219u8,
+							119u8, 226u8, 95u8, 20u8, 246u8, 247u8, 166u8, 193u8, 29u8, 99u8,
+							186u8, 184u8, 70u8, 45u8, 77u8, 247u8, 11u8, 153u8, 26u8, 121u8, 243u8,
+							250u8, 188u8, 85u8, 210u8, 43u8, 4u8, 220u8, 173u8, 191u8, 106u8,
+							221u8,
 						],
 					)
 				}
-				#[doc = "See [`Pallet::accept_username`]."]
+				#[doc = "Accept a given username that an `authority` granted. The call must include the full"]
+				#[doc = "username, as in `username.suffix`."]
 				pub fn accept_username(
 					&self,
 					username: types::accept_username::Username,
@@ -20438,7 +23590,9 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::remove_expired_approval`]."]
+				#[doc = "Remove an expired username approval. The username was approved by an authority but never"]
+				#[doc = "accepted by the user and must now be beyond its expiration. The call must include the"]
+				#[doc = "full username, as in `username.suffix`."]
 				pub fn remove_expired_approval(
 					&self,
 					username: types::remove_expired_approval::Username,
@@ -20454,7 +23608,7 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::set_primary_username`]."]
+				#[doc = "Set a given username as the primary. The username should include the suffix."]
 				pub fn set_primary_username(
 					&self,
 					username: types::set_primary_username::Username,
@@ -20470,7 +23624,8 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::remove_dangling_username`]."]
+				#[doc = "Remove a username that corresponds to an account with no identity. Exists when a user"]
+				#[doc = "gets a username but then calls `clear_identity`."]
 				pub fn remove_dangling_username(
 					&self,
 					username: types::remove_dangling_username::Username,
@@ -21436,7 +24591,7 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = " Maxmimum number of registrars allowed in the system. Needed to bound the complexity"]
+				#[doc = " Maximum number of registrars allowed in the system. Needed to bound the complexity"]
 				#[doc = " of, e.g., updating judgements."]
 				pub fn max_registrars(
 					&self,
@@ -21524,7 +24679,6 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::mandate`]."]
 				pub struct Mandate {
 					pub call: ::std::boxed::Box<mandate::Call>,
 				}
@@ -21539,7 +24693,6 @@ pub mod api {
 			}
 			pub struct TransactionApi;
 			impl TransactionApi {
-				#[doc = "See [`Pallet::mandate`]."]
 				pub fn mandate(
 					&self,
 					call: types::mandate::Call,
@@ -21551,10 +24704,9 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							178u8, 200u8, 194u8, 45u8, 84u8, 244u8, 0u8, 40u8, 229u8, 177u8, 83u8,
-							253u8, 168u8, 152u8, 246u8, 167u8, 122u8, 32u8, 110u8, 98u8, 233u8,
-							107u8, 191u8, 128u8, 211u8, 246u8, 99u8, 208u8, 115u8, 165u8, 212u8,
-							24u8,
+							254u8, 237u8, 161u8, 66u8, 7u8, 78u8, 255u8, 130u8, 184u8, 11u8, 136u8,
+							227u8, 36u8, 3u8, 214u8, 131u8, 244u8, 191u8, 46u8, 186u8, 39u8, 79u8,
+							83u8, 239u8, 36u8, 119u8, 105u8, 184u8, 185u8, 91u8, 73u8, 248u8,
 						],
 					)
 				}
@@ -21618,7 +24770,12 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::fulfill_call`]."]
+				#[doc = "The entrypoint for fulfilling a call."]
+				#[doc = "function_id Function identifier."]
+				#[doc = "input Function input."]
+				#[doc = "output Function output."]
+				#[doc = "proof  Function proof."]
+				#[doc = "slot  Function slot to update."]
 				pub struct FulfillCall {
 					pub function_id: fulfill_call::FunctionId,
 					pub input: fulfill_call::Input,
@@ -21658,7 +24815,7 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::execute`]."]
+				#[doc = "Executes message if a valid proofs are provided for the supported message type, assets and domains."]
 				pub struct Execute {
 					#[codec(compact)]
 					pub slot: execute::Slot,
@@ -21701,7 +24858,7 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::source_chain_froze`]."]
+				#[doc = "source_chain_froze froze source chain and prevent messages to be executed."]
 				pub struct SourceChainFroze {
 					#[codec(compact)]
 					pub source_chain_id: source_chain_froze::SourceChainId,
@@ -21729,7 +24886,7 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::send_message`]."]
+				#[doc = "send_message sends a message from an origin chain to the destination chain."]
 				pub struct SendMessage {
 					pub message: send_message::Message,
 					pub to: send_message::To,
@@ -21759,7 +24916,7 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::set_poseidon_hash`]."]
+				#[doc = "set_poseidon_hash sets poseidon hash of the sync committee for the particular period."]
 				pub struct SetPoseidonHash {
 					#[codec(compact)]
 					pub period: set_poseidon_hash::Period,
@@ -21790,7 +24947,7 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::set_broadcaster`]."]
+				#[doc = "set_broadcaster sets the broadcaster address of the message from the origin chain."]
 				pub struct SetBroadcaster {
 					#[codec(compact)]
 					pub broadcaster_domain: set_broadcaster::BroadcasterDomain,
@@ -21818,7 +24975,8 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::set_whitelisted_domains`]."]
+				#[doc = "The set_whitelisted_domains function allows the root (administrator) to set the whitelisted domains. It is a"]
+				#[doc = "privileged function intended for administrative purposes, used to manage a list of permitted domains."]
 				pub struct SetWhitelistedDomains {
 					pub value: set_whitelisted_domains::Value,
 				}
@@ -21845,7 +25003,8 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::set_configuration`]."]
+				#[doc = "The set_configuration function allows the root (administrator) to set the configuration. It is a"]
+				#[doc = "privileged function intended for administrative purposes, used to manage slots_per_period and finality_threshold values."]
 				pub struct SetConfiguration {
 					pub value: set_configuration::Value,
 				}
@@ -21870,7 +25029,6 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::set_function_ids`]."]
 				pub struct SetFunctionIds {
 					pub value: set_function_ids::Value,
 				}
@@ -21896,7 +25054,6 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::set_step_verification_key`]."]
 				pub struct SetStepVerificationKey {
 					pub value: set_step_verification_key::Value,
 				}
@@ -21925,7 +25082,6 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::set_rotate_verification_key`]."]
 				pub struct SetRotateVerificationKey {
 					pub value: set_rotate_verification_key::Value,
 				}
@@ -21954,7 +25110,6 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::failed_send_message_txs`]."]
 				pub struct FailedSendMessageTxs {
 					pub failed_txs: failed_send_message_txs::FailedTxs,
 				}
@@ -21980,7 +25135,6 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::set_updater`]."]
 				pub struct SetUpdater {
 					pub updater: set_updater::Updater,
 				}
@@ -21995,7 +25149,12 @@ pub mod api {
 			}
 			pub struct TransactionApi;
 			impl TransactionApi {
-				#[doc = "See [`Pallet::fulfill_call`]."]
+				#[doc = "The entrypoint for fulfilling a call."]
+				#[doc = "function_id Function identifier."]
+				#[doc = "input Function input."]
+				#[doc = "output Function output."]
+				#[doc = "proof  Function proof."]
+				#[doc = "slot  Function slot to update."]
 				pub fn fulfill_call(
 					&self,
 					function_id: types::fulfill_call::FunctionId,
@@ -22022,7 +25181,7 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::execute`]."]
+				#[doc = "Executes message if a valid proofs are provided for the supported message type, assets and domains."]
 				pub fn execute(
 					&self,
 					slot: types::execute::Slot,
@@ -22046,7 +25205,7 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::source_chain_froze`]."]
+				#[doc = "source_chain_froze froze source chain and prevent messages to be executed."]
 				pub fn source_chain_froze(
 					&self,
 					source_chain_id: types::source_chain_froze::SourceChainId,
@@ -22066,7 +25225,7 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::send_message`]."]
+				#[doc = "send_message sends a message from an origin chain to the destination chain."]
 				pub fn send_message(
 					&self,
 					message: types::send_message::Message,
@@ -22089,7 +25248,7 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::set_poseidon_hash`]."]
+				#[doc = "set_poseidon_hash sets poseidon hash of the sync committee for the particular period."]
 				pub fn set_poseidon_hash(
 					&self,
 					period: types::set_poseidon_hash::Period,
@@ -22109,7 +25268,7 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::set_broadcaster`]."]
+				#[doc = "set_broadcaster sets the broadcaster address of the message from the origin chain."]
 				pub fn set_broadcaster(
 					&self,
 					broadcaster_domain: types::set_broadcaster::BroadcasterDomain,
@@ -22130,7 +25289,8 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::set_whitelisted_domains`]."]
+				#[doc = "The set_whitelisted_domains function allows the root (administrator) to set the whitelisted domains. It is a"]
+				#[doc = "privileged function intended for administrative purposes, used to manage a list of permitted domains."]
 				pub fn set_whitelisted_domains(
 					&self,
 					value: types::set_whitelisted_domains::Value,
@@ -22147,7 +25307,8 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::set_configuration`]."]
+				#[doc = "The set_configuration function allows the root (administrator) to set the configuration. It is a"]
+				#[doc = "privileged function intended for administrative purposes, used to manage slots_per_period and finality_threshold values."]
 				pub fn set_configuration(
 					&self,
 					value: types::set_configuration::Value,
@@ -22163,7 +25324,6 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::set_function_ids`]."]
 				pub fn set_function_ids(
 					&self,
 					value: types::set_function_ids::Value,
@@ -22180,7 +25340,6 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::set_step_verification_key`]."]
 				pub fn set_step_verification_key(
 					&self,
 					value: types::set_step_verification_key::Value,
@@ -22196,7 +25355,6 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::set_rotate_verification_key`]."]
 				pub fn set_rotate_verification_key(
 					&self,
 					value: types::set_rotate_verification_key::Value,
@@ -22213,7 +25371,6 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::failed_send_message_txs`]."]
 				pub fn failed_send_message_txs(
 					&self,
 					failed_txs: types::failed_send_message_txs::FailedTxs,
@@ -22230,7 +25387,6 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::set_updater`]."]
 				pub fn set_updater(
 					&self,
 					updater: types::set_updater::Updater,
@@ -23324,7 +26480,15 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::proxy`]."]
+				#[doc = "Dispatch the given `call` from an account that the sender is authorised for through"]
+				#[doc = "`add_proxy`."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_."]
+				#[doc = ""]
+				#[doc = "Parameters:"]
+				#[doc = "- `real`: The account that the proxy will make a call on behalf of."]
+				#[doc = "- `force_proxy_type`: Specify the exact proxy type to be used and checked for this call."]
+				#[doc = "- `call`: The call to be made by the `real` account."]
 				pub struct Proxy {
 					pub real: proxy::Real,
 					pub force_proxy_type: proxy::ForceProxyType,
@@ -23357,7 +26521,15 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::add_proxy`]."]
+				#[doc = "Register a proxy account for the sender that is able to make calls on its behalf."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_."]
+				#[doc = ""]
+				#[doc = "Parameters:"]
+				#[doc = "- `proxy`: The account that the `caller` would like to make a proxy."]
+				#[doc = "- `proxy_type`: The permissions allowed for this proxy account."]
+				#[doc = "- `delay`: The announcement period required of the initial proxy. Will generally be"]
+				#[doc = "zero."]
 				pub struct AddProxy {
 					pub delegate: add_proxy::Delegate,
 					pub proxy_type: add_proxy::ProxyType,
@@ -23389,7 +26561,13 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::remove_proxy`]."]
+				#[doc = "Unregister a proxy account for the sender."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_."]
+				#[doc = ""]
+				#[doc = "Parameters:"]
+				#[doc = "- `proxy`: The account that the `caller` would like to remove as a proxy."]
+				#[doc = "- `proxy_type`: The permissions currently enabled for the removed proxy account."]
 				pub struct RemoveProxy {
 					pub delegate: remove_proxy::Delegate,
 					pub proxy_type: remove_proxy::ProxyType,
@@ -23421,7 +26599,12 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::remove_proxies`]."]
+				#[doc = "Unregister all proxy accounts for the sender."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_."]
+				#[doc = ""]
+				#[doc = "WARNING: This may be called on accounts created by `pure`, however if done, then"]
+				#[doc = "the unreserved fees will be inaccessible. **All access to this account will be lost.**"]
 				pub struct RemoveProxies;
 				impl ::subxt::blocks::StaticExtrinsic for RemoveProxies {
 					const PALLET: &'static str = "Proxy";
@@ -23440,7 +26623,24 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::create_pure`]."]
+				#[doc = "Spawn a fresh new account that is guaranteed to be otherwise inaccessible, and"]
+				#[doc = "initialize it with a proxy of `proxy_type` for `origin` sender."]
+				#[doc = ""]
+				#[doc = "Requires a `Signed` origin."]
+				#[doc = ""]
+				#[doc = "- `proxy_type`: The type of the proxy that the sender will be registered as over the"]
+				#[doc = "new account. This will almost always be the most permissive `ProxyType` possible to"]
+				#[doc = "allow for maximum flexibility."]
+				#[doc = "- `index`: A disambiguation index, in case this is called multiple times in the same"]
+				#[doc = "transaction (e.g. with `utility::batch`). Unless you're using `batch` you probably just"]
+				#[doc = "want to use `0`."]
+				#[doc = "- `delay`: The announcement period required of the initial proxy. Will generally be"]
+				#[doc = "zero."]
+				#[doc = ""]
+				#[doc = "Fails with `Duplicate` if this has already been called in this transaction, from the"]
+				#[doc = "same sender, with the same parameters."]
+				#[doc = ""]
+				#[doc = "Fails if there are insufficient funds to pay for deposit."]
 				pub struct CreatePure {
 					pub proxy_type: create_pure::ProxyType,
 					pub delay: create_pure::Delay,
@@ -23469,7 +26669,22 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::kill_pure`]."]
+				#[doc = "Removes a previously spawned pure proxy."]
+				#[doc = ""]
+				#[doc = "WARNING: **All access to this account will be lost.** Any funds held in it will be"]
+				#[doc = "inaccessible."]
+				#[doc = ""]
+				#[doc = "Requires a `Signed` origin, and the sender account must have been created by a call to"]
+				#[doc = "`pure` with corresponding parameters."]
+				#[doc = ""]
+				#[doc = "- `spawner`: The account that originally called `pure` to create this account."]
+				#[doc = "- `index`: The disambiguation index originally passed to `pure`. Probably `0`."]
+				#[doc = "- `proxy_type`: The proxy type originally passed to `pure`."]
+				#[doc = "- `height`: The height of the chain when the call to `pure` was processed."]
+				#[doc = "- `ext_index`: The extrinsic index in which the call to `pure` was processed."]
+				#[doc = ""]
+				#[doc = "Fails with `NoPermission` in case the caller is not a previously created pure"]
+				#[doc = "account whose `pure` call has corresponding parameters."]
 				pub struct KillPure {
 					pub spawner: kill_pure::Spawner,
 					pub proxy_type: kill_pure::ProxyType,
@@ -23507,7 +26722,21 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::announce`]."]
+				#[doc = "Publish the hash of a proxy-call that will be made in the future."]
+				#[doc = ""]
+				#[doc = "This must be called some number of blocks before the corresponding `proxy` is attempted"]
+				#[doc = "if the delay associated with the proxy relationship is greater than zero."]
+				#[doc = ""]
+				#[doc = "No more than `MaxPending` announcements may be made at any one time."]
+				#[doc = ""]
+				#[doc = "This will take a deposit of `AnnouncementDepositFactor` as well as"]
+				#[doc = "`AnnouncementDepositBase` if there are no other pending announcements."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ and a proxy of `real`."]
+				#[doc = ""]
+				#[doc = "Parameters:"]
+				#[doc = "- `real`: The account that the proxy will make a call on behalf of."]
+				#[doc = "- `call_hash`: The hash of the call to be made by the `real` account."]
 				pub struct Announce {
 					pub real: announce::Real,
 					pub call_hash: announce::CallHash,
@@ -23537,7 +26766,16 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::remove_announcement`]."]
+				#[doc = "Remove a given announcement."]
+				#[doc = ""]
+				#[doc = "May be called by a proxy account to remove a call they previously announced and return"]
+				#[doc = "the deposit."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_."]
+				#[doc = ""]
+				#[doc = "Parameters:"]
+				#[doc = "- `real`: The account that the proxy will make a call on behalf of."]
+				#[doc = "- `call_hash`: The hash of the call to be made by the `real` account."]
 				pub struct RemoveAnnouncement {
 					pub real: remove_announcement::Real,
 					pub call_hash: remove_announcement::CallHash,
@@ -23567,7 +26805,16 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::reject_announcement`]."]
+				#[doc = "Remove the given announcement of a delegate."]
+				#[doc = ""]
+				#[doc = "May be called by a target (proxied) account to remove a call that one of their delegates"]
+				#[doc = "(`delegate`) has announced they want to execute. The deposit is returned."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_."]
+				#[doc = ""]
+				#[doc = "Parameters:"]
+				#[doc = "- `delegate`: The account that previously announced the call."]
+				#[doc = "- `call_hash`: The hash of the call to be made."]
 				pub struct RejectAnnouncement {
 					pub delegate: reject_announcement::Delegate,
 					pub call_hash: reject_announcement::CallHash,
@@ -23597,7 +26844,17 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::proxy_announced`]."]
+				#[doc = "Dispatch the given `call` from an account that the sender is authorized for through"]
+				#[doc = "`add_proxy`."]
+				#[doc = ""]
+				#[doc = "Removes any corresponding announcement(s)."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_."]
+				#[doc = ""]
+				#[doc = "Parameters:"]
+				#[doc = "- `real`: The account that the proxy will make a call on behalf of."]
+				#[doc = "- `force_proxy_type`: Specify the exact proxy type to be used and checked for this call."]
+				#[doc = "- `call`: The call to be made by the `real` account."]
 				pub struct ProxyAnnounced {
 					pub delegate: proxy_announced::Delegate,
 					pub real: proxy_announced::Real,
@@ -23625,7 +26882,15 @@ pub mod api {
 			}
 			pub struct TransactionApi;
 			impl TransactionApi {
-				#[doc = "See [`Pallet::proxy`]."]
+				#[doc = "Dispatch the given `call` from an account that the sender is authorised for through"]
+				#[doc = "`add_proxy`."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_."]
+				#[doc = ""]
+				#[doc = "Parameters:"]
+				#[doc = "- `real`: The account that the proxy will make a call on behalf of."]
+				#[doc = "- `force_proxy_type`: Specify the exact proxy type to be used and checked for this call."]
+				#[doc = "- `call`: The call to be made by the `real` account."]
 				pub fn proxy(
 					&self,
 					real: types::proxy::Real,
@@ -23641,14 +26906,21 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							64u8, 23u8, 76u8, 227u8, 177u8, 253u8, 81u8, 243u8, 44u8, 14u8, 51u8,
-							146u8, 123u8, 228u8, 100u8, 216u8, 191u8, 34u8, 169u8, 236u8, 4u8,
-							52u8, 254u8, 115u8, 230u8, 240u8, 174u8, 164u8, 71u8, 133u8, 87u8,
-							125u8,
+							227u8, 61u8, 51u8, 125u8, 77u8, 209u8, 72u8, 191u8, 39u8, 245u8, 211u8,
+							189u8, 100u8, 132u8, 233u8, 248u8, 231u8, 61u8, 17u8, 216u8, 240u8,
+							121u8, 25u8, 118u8, 207u8, 0u8, 195u8, 41u8, 201u8, 182u8, 95u8, 50u8,
 						],
 					)
 				}
-				#[doc = "See [`Pallet::add_proxy`]."]
+				#[doc = "Register a proxy account for the sender that is able to make calls on its behalf."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_."]
+				#[doc = ""]
+				#[doc = "Parameters:"]
+				#[doc = "- `proxy`: The account that the `caller` would like to make a proxy."]
+				#[doc = "- `proxy_type`: The permissions allowed for this proxy account."]
+				#[doc = "- `delay`: The announcement period required of the initial proxy. Will generally be"]
+				#[doc = "zero."]
 				pub fn add_proxy(
 					&self,
 					delegate: types::add_proxy::Delegate,
@@ -23670,7 +26942,13 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::remove_proxy`]."]
+				#[doc = "Unregister a proxy account for the sender."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_."]
+				#[doc = ""]
+				#[doc = "Parameters:"]
+				#[doc = "- `proxy`: The account that the `caller` would like to remove as a proxy."]
+				#[doc = "- `proxy_type`: The permissions currently enabled for the removed proxy account."]
 				pub fn remove_proxy(
 					&self,
 					delegate: types::remove_proxy::Delegate,
@@ -23693,7 +26971,12 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::remove_proxies`]."]
+				#[doc = "Unregister all proxy accounts for the sender."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_."]
+				#[doc = ""]
+				#[doc = "WARNING: This may be called on accounts created by `pure`, however if done, then"]
+				#[doc = "the unreserved fees will be inaccessible. **All access to this account will be lost.**"]
 				pub fn remove_proxies(&self) -> ::subxt::tx::Payload<types::RemoveProxies> {
 					::subxt::tx::Payload::new_static(
 						"Proxy",
@@ -23707,7 +26990,24 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::create_pure`]."]
+				#[doc = "Spawn a fresh new account that is guaranteed to be otherwise inaccessible, and"]
+				#[doc = "initialize it with a proxy of `proxy_type` for `origin` sender."]
+				#[doc = ""]
+				#[doc = "Requires a `Signed` origin."]
+				#[doc = ""]
+				#[doc = "- `proxy_type`: The type of the proxy that the sender will be registered as over the"]
+				#[doc = "new account. This will almost always be the most permissive `ProxyType` possible to"]
+				#[doc = "allow for maximum flexibility."]
+				#[doc = "- `index`: A disambiguation index, in case this is called multiple times in the same"]
+				#[doc = "transaction (e.g. with `utility::batch`). Unless you're using `batch` you probably just"]
+				#[doc = "want to use `0`."]
+				#[doc = "- `delay`: The announcement period required of the initial proxy. Will generally be"]
+				#[doc = "zero."]
+				#[doc = ""]
+				#[doc = "Fails with `Duplicate` if this has already been called in this transaction, from the"]
+				#[doc = "same sender, with the same parameters."]
+				#[doc = ""]
+				#[doc = "Fails if there are insufficient funds to pay for deposit."]
 				pub fn create_pure(
 					&self,
 					proxy_type: types::create_pure::ProxyType,
@@ -23730,7 +27030,22 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::kill_pure`]."]
+				#[doc = "Removes a previously spawned pure proxy."]
+				#[doc = ""]
+				#[doc = "WARNING: **All access to this account will be lost.** Any funds held in it will be"]
+				#[doc = "inaccessible."]
+				#[doc = ""]
+				#[doc = "Requires a `Signed` origin, and the sender account must have been created by a call to"]
+				#[doc = "`pure` with corresponding parameters."]
+				#[doc = ""]
+				#[doc = "- `spawner`: The account that originally called `pure` to create this account."]
+				#[doc = "- `index`: The disambiguation index originally passed to `pure`. Probably `0`."]
+				#[doc = "- `proxy_type`: The proxy type originally passed to `pure`."]
+				#[doc = "- `height`: The height of the chain when the call to `pure` was processed."]
+				#[doc = "- `ext_index`: The extrinsic index in which the call to `pure` was processed."]
+				#[doc = ""]
+				#[doc = "Fails with `NoPermission` in case the caller is not a previously created pure"]
+				#[doc = "account whose `pure` call has corresponding parameters."]
 				pub fn kill_pure(
 					&self,
 					spawner: types::kill_pure::Spawner,
@@ -23756,7 +27071,21 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::announce`]."]
+				#[doc = "Publish the hash of a proxy-call that will be made in the future."]
+				#[doc = ""]
+				#[doc = "This must be called some number of blocks before the corresponding `proxy` is attempted"]
+				#[doc = "if the delay associated with the proxy relationship is greater than zero."]
+				#[doc = ""]
+				#[doc = "No more than `MaxPending` announcements may be made at any one time."]
+				#[doc = ""]
+				#[doc = "This will take a deposit of `AnnouncementDepositFactor` as well as"]
+				#[doc = "`AnnouncementDepositBase` if there are no other pending announcements."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_ and a proxy of `real`."]
+				#[doc = ""]
+				#[doc = "Parameters:"]
+				#[doc = "- `real`: The account that the proxy will make a call on behalf of."]
+				#[doc = "- `call_hash`: The hash of the call to be made by the `real` account."]
 				pub fn announce(
 					&self,
 					real: types::announce::Real,
@@ -23773,7 +27102,16 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::remove_announcement`]."]
+				#[doc = "Remove a given announcement."]
+				#[doc = ""]
+				#[doc = "May be called by a proxy account to remove a call they previously announced and return"]
+				#[doc = "the deposit."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_."]
+				#[doc = ""]
+				#[doc = "Parameters:"]
+				#[doc = "- `real`: The account that the proxy will make a call on behalf of."]
+				#[doc = "- `call_hash`: The hash of the call to be made by the `real` account."]
 				pub fn remove_announcement(
 					&self,
 					real: types::remove_announcement::Real,
@@ -23790,7 +27128,16 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::reject_announcement`]."]
+				#[doc = "Remove the given announcement of a delegate."]
+				#[doc = ""]
+				#[doc = "May be called by a target (proxied) account to remove a call that one of their delegates"]
+				#[doc = "(`delegate`) has announced they want to execute. The deposit is returned."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_."]
+				#[doc = ""]
+				#[doc = "Parameters:"]
+				#[doc = "- `delegate`: The account that previously announced the call."]
+				#[doc = "- `call_hash`: The hash of the call to be made."]
 				pub fn reject_announcement(
 					&self,
 					delegate: types::reject_announcement::Delegate,
@@ -23810,7 +27157,17 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::proxy_announced`]."]
+				#[doc = "Dispatch the given `call` from an account that the sender is authorized for through"]
+				#[doc = "`add_proxy`."]
+				#[doc = ""]
+				#[doc = "Removes any corresponding announcement(s)."]
+				#[doc = ""]
+				#[doc = "The dispatch origin for this call must be _Signed_."]
+				#[doc = ""]
+				#[doc = "Parameters:"]
+				#[doc = "- `real`: The account that the proxy will make a call on behalf of."]
+				#[doc = "- `force_proxy_type`: Specify the exact proxy type to be used and checked for this call."]
+				#[doc = "- `call`: The call to be made by the `real` account."]
 				pub fn proxy_announced(
 					&self,
 					delegate: types::proxy_announced::Delegate,
@@ -23828,10 +27185,10 @@ pub mod api {
 							call: ::std::boxed::Box::new(call),
 						},
 						[
-							145u8, 104u8, 7u8, 3u8, 25u8, 94u8, 53u8, 111u8, 65u8, 210u8, 218u8,
-							201u8, 96u8, 137u8, 238u8, 41u8, 106u8, 219u8, 190u8, 31u8, 53u8,
-							213u8, 254u8, 229u8, 237u8, 212u8, 168u8, 249u8, 146u8, 77u8, 176u8,
-							237u8,
+							195u8, 193u8, 250u8, 231u8, 68u8, 136u8, 145u8, 56u8, 89u8, 32u8,
+							208u8, 30u8, 141u8, 176u8, 19u8, 252u8, 93u8, 113u8, 7u8, 3u8, 212u8,
+							45u8, 156u8, 243u8, 188u8, 250u8, 73u8, 64u8, 243u8, 54u8, 195u8,
+							194u8,
 						],
 					)
 				}
@@ -24252,7 +27609,10 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::pause`]."]
+				#[doc = "Pause a call."]
+				#[doc = ""]
+				#[doc = "Can only be called by [`Config::PauseOrigin`]."]
+				#[doc = "Emits an [`Event::CallPaused`] event on success."]
 				pub struct Pause {
 					pub full_name: pause::FullName,
 				}
@@ -24284,7 +27644,10 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::unpause`]."]
+				#[doc = "Un-pause a call."]
+				#[doc = ""]
+				#[doc = "Can only be called by [`Config::UnpauseOrigin`]."]
+				#[doc = "Emits an [`Event::CallUnpaused`] event on success."]
 				pub struct Unpause {
 					pub ident: unpause::Ident,
 				}
@@ -24306,7 +27669,10 @@ pub mod api {
 			}
 			pub struct TransactionApi;
 			impl TransactionApi {
-				#[doc = "See [`Pallet::pause`]."]
+				#[doc = "Pause a call."]
+				#[doc = ""]
+				#[doc = "Can only be called by [`Config::PauseOrigin`]."]
+				#[doc = "Emits an [`Event::CallPaused`] event on success."]
 				pub fn pause(
 					&self,
 					full_name: types::pause::FullName,
@@ -24322,7 +27688,10 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::unpause`]."]
+				#[doc = "Un-pause a call."]
+				#[doc = ""]
+				#[doc = "Can only be called by [`Config::UnpauseOrigin`]."]
+				#[doc = "Emits an [`Event::CallUnpaused`] event on success."]
 				pub fn unpause(
 					&self,
 					ident: types::unpause::Ident,
@@ -24548,7 +27917,30 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::set_members`]."]
+				#[doc = "Set the collective's membership."]
+				#[doc = ""]
+				#[doc = "- `new_members`: The new member list. Be nice to the chain and provide it sorted."]
+				#[doc = "- `prime`: The prime member whose vote sets the default."]
+				#[doc = "- `old_count`: The upper bound for the previous number of members in storage. Used for"]
+				#[doc = "  weight estimation."]
+				#[doc = ""]
+				#[doc = "The dispatch of this call must be `SetMembersOrigin`."]
+				#[doc = ""]
+				#[doc = "NOTE: Does not enforce the expected `MaxMembers` limit on the amount of members, but"]
+				#[doc = "      the weight estimations rely on it to estimate dispatchable weight."]
+				#[doc = ""]
+				#[doc = "# WARNING:"]
+				#[doc = ""]
+				#[doc = "The `pallet-collective` can also be managed by logic outside of the pallet through the"]
+				#[doc = "implementation of the trait [`ChangeMembers`]."]
+				#[doc = "Any call to `set_members` must be careful that the member set doesn't get out of sync"]
+				#[doc = "with other logic managing the member set."]
+				#[doc = ""]
+				#[doc = "## Complexity:"]
+				#[doc = "- `O(MP + N)` where:"]
+				#[doc = "  - `M` old-members-count (code- and governance-bounded)"]
+				#[doc = "  - `N` new-members-count (code- and governance-bounded)"]
+				#[doc = "  - `P` proposals-count (code-bounded)"]
 				pub struct SetMembers {
 					pub new_members: set_members::NewMembers,
 					pub prime: set_members::Prime,
@@ -24577,7 +27969,15 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::execute`]."]
+				#[doc = "Dispatch a proposal from a member using the `Member` origin."]
+				#[doc = ""]
+				#[doc = "Origin must be a member of the collective."]
+				#[doc = ""]
+				#[doc = "## Complexity:"]
+				#[doc = "- `O(B + M + P)` where:"]
+				#[doc = "- `B` is `proposal` size in bytes (length-fee-bounded)"]
+				#[doc = "- `M` members-count (code-bounded)"]
+				#[doc = "- `P` complexity of dispatching `proposal`"]
 				pub struct Execute {
 					pub proposal: ::std::boxed::Box<execute::Proposal>,
 					#[codec(compact)]
@@ -24605,7 +28005,20 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::propose`]."]
+				#[doc = "Add a new proposal to either be voted on or executed directly."]
+				#[doc = ""]
+				#[doc = "Requires the sender to be member."]
+				#[doc = ""]
+				#[doc = "`threshold` determines whether `proposal` is executed directly (`threshold < 2`)"]
+				#[doc = "or put up for voting."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- `O(B + M + P1)` or `O(B + M + P2)` where:"]
+				#[doc = "  - `B` is `proposal` size in bytes (length-fee-bounded)"]
+				#[doc = "  - `M` is members-count (code- and governance-bounded)"]
+				#[doc = "  - branching is influenced by `threshold` where:"]
+				#[doc = "    - `P1` is proposal execution complexity (`threshold < 2`)"]
+				#[doc = "    - `P2` is proposals-count (code-bounded) (`threshold >= 2`)"]
 				pub struct Propose {
 					#[codec(compact)]
 					pub threshold: propose::Threshold,
@@ -24636,7 +28049,15 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::vote`]."]
+				#[doc = "Add an aye or nay vote for the sender to the given proposal."]
+				#[doc = ""]
+				#[doc = "Requires the sender to be a member."]
+				#[doc = ""]
+				#[doc = "Transaction fees will be waived if the member is voting on any particular proposal"]
+				#[doc = "for the first time and the call is successful. Subsequent vote changes will charge a"]
+				#[doc = "fee."]
+				#[doc = "## Complexity"]
+				#[doc = "- `O(M)` where `M` is members-count (code- and governance-bounded)"]
 				pub struct Vote {
 					pub proposal: vote::Proposal,
 					#[codec(compact)]
@@ -24666,7 +28087,16 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::disapprove_proposal`]."]
+				#[doc = "Disapprove a proposal, close, and remove it from the system, regardless of its current"]
+				#[doc = "state."]
+				#[doc = ""]
+				#[doc = "Must be called by the Root origin."]
+				#[doc = ""]
+				#[doc = "Parameters:"]
+				#[doc = "* `proposal_hash`: The hash of the proposal that should be disapproved."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "O(P) where P is the number of max proposals"]
 				pub struct DisapproveProposal {
 					pub proposal_hash: disapprove_proposal::ProposalHash,
 				}
@@ -24691,7 +28121,30 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				#[doc = "See [`Pallet::close`]."]
+				#[doc = "Close a vote that is either approved, disapproved or whose voting period has ended."]
+				#[doc = ""]
+				#[doc = "May be called by any signed account in order to finish voting and close the proposal."]
+				#[doc = ""]
+				#[doc = "If called before the end of the voting period it will only close the vote if it is"]
+				#[doc = "has enough votes to be approved or disapproved."]
+				#[doc = ""]
+				#[doc = "If called after the end of the voting period abstentions are counted as rejections"]
+				#[doc = "unless there is a prime member set and the prime member cast an approval."]
+				#[doc = ""]
+				#[doc = "If the close operation completes successfully with disapproval, the transaction fee will"]
+				#[doc = "be waived. Otherwise execution of the approved operation will be charged to the caller."]
+				#[doc = ""]
+				#[doc = "+ `proposal_weight_bound`: The maximum amount of weight consumed by executing the closed"]
+				#[doc = "proposal."]
+				#[doc = "+ `length_bound`: The upper bound for the length of the proposal in storage. Checked via"]
+				#[doc = "`storage::read` so it is `size_of::<u32>() == 4` larger than the pure length."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- `O(B + M + P1 + P2)` where:"]
+				#[doc = "  - `B` is `proposal` size in bytes (length-fee-bounded)"]
+				#[doc = "  - `M` is members-count (code- and governance-bounded)"]
+				#[doc = "  - `P1` is the complexity of `proposal` preimage."]
+				#[doc = "  - `P2` is proposal-count (code-bounded)"]
 				pub struct Close {
 					pub proposal_hash: close::ProposalHash,
 					#[codec(compact)]
@@ -24714,7 +28167,30 @@ pub mod api {
 			}
 			pub struct TransactionApi;
 			impl TransactionApi {
-				#[doc = "See [`Pallet::set_members`]."]
+				#[doc = "Set the collective's membership."]
+				#[doc = ""]
+				#[doc = "- `new_members`: The new member list. Be nice to the chain and provide it sorted."]
+				#[doc = "- `prime`: The prime member whose vote sets the default."]
+				#[doc = "- `old_count`: The upper bound for the previous number of members in storage. Used for"]
+				#[doc = "  weight estimation."]
+				#[doc = ""]
+				#[doc = "The dispatch of this call must be `SetMembersOrigin`."]
+				#[doc = ""]
+				#[doc = "NOTE: Does not enforce the expected `MaxMembers` limit on the amount of members, but"]
+				#[doc = "      the weight estimations rely on it to estimate dispatchable weight."]
+				#[doc = ""]
+				#[doc = "# WARNING:"]
+				#[doc = ""]
+				#[doc = "The `pallet-collective` can also be managed by logic outside of the pallet through the"]
+				#[doc = "implementation of the trait [`ChangeMembers`]."]
+				#[doc = "Any call to `set_members` must be careful that the member set doesn't get out of sync"]
+				#[doc = "with other logic managing the member set."]
+				#[doc = ""]
+				#[doc = "## Complexity:"]
+				#[doc = "- `O(MP + N)` where:"]
+				#[doc = "  - `M` old-members-count (code- and governance-bounded)"]
+				#[doc = "  - `N` new-members-count (code- and governance-bounded)"]
+				#[doc = "  - `P` proposals-count (code-bounded)"]
 				pub fn set_members(
 					&self,
 					new_members: types::set_members::NewMembers,
@@ -24737,7 +28213,15 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::execute`]."]
+				#[doc = "Dispatch a proposal from a member using the `Member` origin."]
+				#[doc = ""]
+				#[doc = "Origin must be a member of the collective."]
+				#[doc = ""]
+				#[doc = "## Complexity:"]
+				#[doc = "- `O(B + M + P)` where:"]
+				#[doc = "- `B` is `proposal` size in bytes (length-fee-bounded)"]
+				#[doc = "- `M` members-count (code-bounded)"]
+				#[doc = "- `P` complexity of dispatching `proposal`"]
 				pub fn execute(
 					&self,
 					proposal: types::execute::Proposal,
@@ -24751,14 +28235,27 @@ pub mod api {
 							length_bound,
 						},
 						[
-							53u8, 134u8, 9u8, 220u8, 130u8, 78u8, 167u8, 240u8, 118u8, 91u8, 141u8,
-							174u8, 96u8, 46u8, 205u8, 108u8, 43u8, 91u8, 157u8, 209u8, 235u8,
-							139u8, 15u8, 65u8, 236u8, 164u8, 19u8, 46u8, 193u8, 114u8, 200u8,
-							242u8,
+							208u8, 226u8, 10u8, 148u8, 245u8, 239u8, 200u8, 228u8, 162u8, 182u8,
+							67u8, 163u8, 157u8, 176u8, 1u8, 74u8, 6u8, 44u8, 26u8, 100u8, 215u8,
+							4u8, 128u8, 134u8, 70u8, 219u8, 151u8, 184u8, 193u8, 118u8, 210u8,
+							202u8,
 						],
 					)
 				}
-				#[doc = "See [`Pallet::propose`]."]
+				#[doc = "Add a new proposal to either be voted on or executed directly."]
+				#[doc = ""]
+				#[doc = "Requires the sender to be member."]
+				#[doc = ""]
+				#[doc = "`threshold` determines whether `proposal` is executed directly (`threshold < 2`)"]
+				#[doc = "or put up for voting."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- `O(B + M + P1)` or `O(B + M + P2)` where:"]
+				#[doc = "  - `B` is `proposal` size in bytes (length-fee-bounded)"]
+				#[doc = "  - `M` is members-count (code- and governance-bounded)"]
+				#[doc = "  - branching is influenced by `threshold` where:"]
+				#[doc = "    - `P1` is proposal execution complexity (`threshold < 2`)"]
+				#[doc = "    - `P2` is proposals-count (code-bounded) (`threshold >= 2`)"]
 				pub fn propose(
 					&self,
 					threshold: types::propose::Threshold,
@@ -24774,14 +28271,21 @@ pub mod api {
 							length_bound,
 						},
 						[
-							211u8, 213u8, 137u8, 188u8, 164u8, 144u8, 145u8, 233u8, 152u8, 25u8,
-							139u8, 106u8, 69u8, 44u8, 45u8, 189u8, 39u8, 205u8, 200u8, 145u8,
-							247u8, 213u8, 76u8, 211u8, 12u8, 219u8, 141u8, 43u8, 199u8, 15u8,
-							180u8, 84u8,
+							114u8, 78u8, 229u8, 234u8, 124u8, 94u8, 21u8, 122u8, 75u8, 240u8, 47u8,
+							172u8, 3u8, 134u8, 243u8, 38u8, 81u8, 203u8, 106u8, 5u8, 119u8, 0u8,
+							114u8, 213u8, 155u8, 2u8, 151u8, 167u8, 190u8, 119u8, 27u8, 139u8,
 						],
 					)
 				}
-				#[doc = "See [`Pallet::vote`]."]
+				#[doc = "Add an aye or nay vote for the sender to the given proposal."]
+				#[doc = ""]
+				#[doc = "Requires the sender to be a member."]
+				#[doc = ""]
+				#[doc = "Transaction fees will be waived if the member is voting on any particular proposal"]
+				#[doc = "for the first time and the call is successful. Subsequent vote changes will charge a"]
+				#[doc = "fee."]
+				#[doc = "## Complexity"]
+				#[doc = "- `O(M)` where `M` is members-count (code- and governance-bounded)"]
 				pub fn vote(
 					&self,
 					proposal: types::vote::Proposal,
@@ -24804,7 +28308,16 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::disapprove_proposal`]."]
+				#[doc = "Disapprove a proposal, close, and remove it from the system, regardless of its current"]
+				#[doc = "state."]
+				#[doc = ""]
+				#[doc = "Must be called by the Root origin."]
+				#[doc = ""]
+				#[doc = "Parameters:"]
+				#[doc = "* `proposal_hash`: The hash of the proposal that should be disapproved."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "O(P) where P is the number of max proposals"]
 				pub fn disapprove_proposal(
 					&self,
 					proposal_hash: types::disapprove_proposal::ProposalHash,
@@ -24820,7 +28333,30 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = "See [`Pallet::close`]."]
+				#[doc = "Close a vote that is either approved, disapproved or whose voting period has ended."]
+				#[doc = ""]
+				#[doc = "May be called by any signed account in order to finish voting and close the proposal."]
+				#[doc = ""]
+				#[doc = "If called before the end of the voting period it will only close the vote if it is"]
+				#[doc = "has enough votes to be approved or disapproved."]
+				#[doc = ""]
+				#[doc = "If called after the end of the voting period abstentions are counted as rejections"]
+				#[doc = "unless there is a prime member set and the prime member cast an approval."]
+				#[doc = ""]
+				#[doc = "If the close operation completes successfully with disapproval, the transaction fee will"]
+				#[doc = "be waived. Otherwise execution of the approved operation will be charged to the caller."]
+				#[doc = ""]
+				#[doc = "+ `proposal_weight_bound`: The maximum amount of weight consumed by executing the closed"]
+				#[doc = "proposal."]
+				#[doc = "+ `length_bound`: The upper bound for the length of the proposal in storage. Checked via"]
+				#[doc = "`storage::read` so it is `size_of::<u32>() == 4` larger than the pure length."]
+				#[doc = ""]
+				#[doc = "## Complexity"]
+				#[doc = "- `O(B + M + P1 + P2)` where:"]
+				#[doc = "  - `B` is `proposal` size in bytes (length-fee-bounded)"]
+				#[doc = "  - `M` is members-count (code- and governance-bounded)"]
+				#[doc = "  - `P1` is the complexity of `proposal` preimage."]
+				#[doc = "  - `P2` is proposal-count (code-bounded)"]
 				pub fn close(
 					&self,
 					proposal_hash: types::close::ProposalHash,
@@ -25127,9 +28663,9 @@ pub mod api {
 						"ProposalOf",
 						vec![],
 						[
-							168u8, 190u8, 239u8, 80u8, 93u8, 157u8, 13u8, 240u8, 64u8, 175u8, 34u8,
-							157u8, 112u8, 225u8, 16u8, 26u8, 178u8, 229u8, 213u8, 83u8, 90u8,
-							181u8, 115u8, 71u8, 78u8, 1u8, 106u8, 40u8, 8u8, 88u8, 74u8, 80u8,
+							205u8, 57u8, 170u8, 77u8, 119u8, 91u8, 101u8, 50u8, 66u8, 53u8, 68u8,
+							150u8, 77u8, 142u8, 125u8, 195u8, 21u8, 128u8, 157u8, 205u8, 100u8,
+							53u8, 234u8, 110u8, 82u8, 36u8, 39u8, 24u8, 207u8, 75u8, 196u8, 12u8,
 						],
 					)
 				}
@@ -25151,9 +28687,9 @@ pub mod api {
 							_0.borrow(),
 						)],
 						[
-							168u8, 190u8, 239u8, 80u8, 93u8, 157u8, 13u8, 240u8, 64u8, 175u8, 34u8,
-							157u8, 112u8, 225u8, 16u8, 26u8, 178u8, 229u8, 213u8, 83u8, 90u8,
-							181u8, 115u8, 71u8, 78u8, 1u8, 106u8, 40u8, 8u8, 88u8, 74u8, 80u8,
+							205u8, 57u8, 170u8, 77u8, 119u8, 91u8, 101u8, 50u8, 66u8, 53u8, 68u8,
+							150u8, 77u8, 142u8, 125u8, 195u8, 21u8, 128u8, 157u8, 205u8, 100u8,
+							53u8, 234u8, 110u8, 82u8, 36u8, 39u8, 24u8, 207u8, 75u8, 196u8, 12u8,
 						],
 					)
 				}
@@ -25246,7 +28782,7 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = " The prime member that helps determine the default vote behavior in case of absentations."]
+				#[doc = " The prime member that helps determine the default vote behavior in case of abstentions."]
 				pub fn prime(
 					&self,
 				) -> ::subxt::storage::address::Address<
@@ -25710,27 +29246,24 @@ pub mod api {
 				#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 				pub enum Call {
 					#[codec(index = 0)]
-					#[doc = "See [`Pallet::create_application_key`]."]
+					#[doc = "Creates an application key if `key` does not exist yet."]
 					create_application_key {
 						key: runtime_types::bounded_collections::bounded_vec::BoundedVec<
 							::core::primitive::u8,
 						>,
 					},
 					#[codec(index = 1)]
-					#[doc = "See [`Pallet::submit_data`]."]
 					submit_data {
 						data: runtime_types::bounded_collections::bounded_vec::BoundedVec<
 							::core::primitive::u8,
 						>,
 					},
 					#[codec(index = 2)]
-					#[doc = "See [`Pallet::submit_block_length_proposal`]."]
 					submit_block_length_proposal {
 						rows: ::core::primitive::u32,
 						cols: ::core::primitive::u32,
 					},
 					#[codec(index = 3)]
-					#[doc = "See [`Pallet::set_application_key`]."]
 					set_application_key {
 						old_key: runtime_types::bounded_collections::bounded_vec::BoundedVec<
 							::core::primitive::u8,
@@ -25740,7 +29273,6 @@ pub mod api {
 						>,
 					},
 					#[codec(index = 4)]
-					#[doc = "See [`Pallet::set_submit_data_fee_modifier`]."]
 					set_submit_data_fee_modifier {
 						modifier: runtime_types::frame_support::dispatch::DispatchFeeModifier,
 					},
@@ -26611,6 +30143,23 @@ pub mod api {
 							#[codec(index = 1)]
 							Reserved,
 						}
+						#[derive(
+							:: subxt :: ext :: codec :: Decode,
+							:: subxt :: ext :: codec :: Encode,
+							:: subxt :: ext :: scale_decode :: DecodeAsType,
+							:: subxt :: ext :: scale_encode :: EncodeAsType,
+							Clone,
+							Debug,
+							Eq,
+							PartialEq,
+						)]
+						# [codec (crate = :: subxt :: ext :: codec)]
+						#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+						#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+						pub struct IdAmount<_0, _1> {
+							pub id: _0,
+							pub amount: _1,
+						}
 					}
 				}
 			}
@@ -26884,25 +30433,30 @@ pub mod api {
 				#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 				pub enum Call {
 					#[codec(index = 0)]
-					#[doc = "See [`Pallet::remark`]."]
+					#[doc = "Make some on-chain remark."]
+					#[doc = ""]
+					#[doc = "Can be executed by every `origin`."]
 					remark {
 						remark: ::std::vec::Vec<::core::primitive::u8>,
 					},
 					#[codec(index = 1)]
-					#[doc = "See [`Pallet::set_heap_pages`]."]
+					#[doc = "Set the number of pages in the WebAssembly environment's heap."]
 					set_heap_pages { pages: ::core::primitive::u64 },
 					#[codec(index = 2)]
-					#[doc = "See [`Pallet::set_code`]."]
+					#[doc = "Set the new runtime code."]
 					set_code {
 						code: ::std::vec::Vec<::core::primitive::u8>,
 					},
 					#[codec(index = 3)]
-					#[doc = "See [`Pallet::set_code_without_checks`]."]
+					#[doc = "Set the new runtime code without doing any checks of the given `code`."]
+					#[doc = ""]
+					#[doc = "Note that runtime upgrades will not run if this is called with a not-increasing spec"]
+					#[doc = "version!"]
 					set_code_without_checks {
 						code: ::std::vec::Vec<::core::primitive::u8>,
 					},
 					#[codec(index = 4)]
-					#[doc = "See [`Pallet::set_storage`]."]
+					#[doc = "Set some items of storage."]
 					set_storage {
 						items: ::std::vec::Vec<(
 							::std::vec::Vec<::core::primitive::u8>,
@@ -26910,29 +30464,50 @@ pub mod api {
 						)>,
 					},
 					#[codec(index = 5)]
-					#[doc = "See [`Pallet::kill_storage`]."]
+					#[doc = "Kill some items from storage."]
 					kill_storage {
 						keys: ::std::vec::Vec<::std::vec::Vec<::core::primitive::u8>>,
 					},
 					#[codec(index = 6)]
-					#[doc = "See [`Pallet::kill_prefix`]."]
+					#[doc = "Kill all storage items with a key that starts with the given prefix."]
+					#[doc = ""]
+					#[doc = "**NOTE:** We rely on the Root origin to provide us the number of subkeys under"]
+					#[doc = "the prefix we are removing to accurately calculate the weight of this function."]
 					kill_prefix {
 						prefix: ::std::vec::Vec<::core::primitive::u8>,
 						subkeys: ::core::primitive::u32,
 					},
 					#[codec(index = 7)]
-					#[doc = "See [`Pallet::remark_with_event`]."]
+					#[doc = "Make some on-chain remark and emit event."]
 					remark_with_event {
 						remark: ::std::vec::Vec<::core::primitive::u8>,
 					},
 					#[codec(index = 9)]
-					#[doc = "See [`Pallet::authorize_upgrade`]."]
+					#[doc = "Authorize an upgrade to a given `code_hash` for the runtime. The runtime can be supplied"]
+					#[doc = "later."]
+					#[doc = ""]
+					#[doc = "This call requires Root origin."]
 					authorize_upgrade { code_hash: ::subxt::utils::H256 },
 					#[codec(index = 10)]
-					#[doc = "See [`Pallet::authorize_upgrade_without_checks`]."]
+					#[doc = "Authorize an upgrade to a given `code_hash` for the runtime. The runtime can be supplied"]
+					#[doc = "later."]
+					#[doc = ""]
+					#[doc = "WARNING: This authorizes an upgrade that will take place without any safety checks, for"]
+					#[doc = "example that the spec name remains the same and that the version number increases. Not"]
+					#[doc = "recommended for normal use. Use `authorize_upgrade` instead."]
+					#[doc = ""]
+					#[doc = "This call requires Root origin."]
 					authorize_upgrade_without_checks { code_hash: ::subxt::utils::H256 },
 					#[codec(index = 11)]
-					#[doc = "See [`Pallet::apply_authorized_upgrade`]."]
+					#[doc = "Provide the preimage (runtime binary) `code` for an upgrade that has been authorized."]
+					#[doc = ""]
+					#[doc = "If the authorization required a version check, this call will ensure the spec name"]
+					#[doc = "remains unchanged and that the spec version has increased."]
+					#[doc = ""]
+					#[doc = "Depending on the runtime's `OnSetCode` configuration, this function may directly apply"]
+					#[doc = "the new `code` in the same block or attempt to schedule the upgrade."]
+					#[doc = ""]
+					#[doc = "All origins are allowed."]
 					apply_authorized_upgrade {
 						code: ::std::vec::Vec<::core::primitive::u8>,
 					},
@@ -26980,6 +30555,9 @@ pub mod api {
 					#[codec(index = 7)]
 					#[doc = "The submitted code is not authorized."]
 					Unauthorized,
+					#[codec(index = 8)]
+					#[doc = "A multi-block migration is ongoing and prevents the current code from being replaced."]
+					MultiBlockMigrationsOngoing,
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -27149,7 +30727,10 @@ pub mod api {
 				#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 				pub enum Call {
 					#[codec(index = 0)]
-					#[doc = "See [`Pallet::report_equivocation`]."]
+					#[doc = "Report authority equivocation/misbehavior. This method will verify"]
+					#[doc = "the equivocation proof and validate the given key ownership proof"]
+					#[doc = "against the extracted offender. If both are valid, the offence will"]
+					#[doc = "be reported."]
 					report_equivocation {
 						equivocation_proof: ::std::boxed::Box<
 							runtime_types::sp_consensus_slots::EquivocationProof<
@@ -27163,7 +30744,14 @@ pub mod api {
 						key_owner_proof: runtime_types::sp_session::MembershipProof,
 					},
 					#[codec(index = 1)]
-					#[doc = "See [`Pallet::report_equivocation_unsigned`]."]
+					#[doc = "Report authority equivocation/misbehavior. This method will verify"]
+					#[doc = "the equivocation proof and validate the given key ownership proof"]
+					#[doc = "against the extracted offender. If both are valid, the offence will"]
+					#[doc = "be reported."]
+					#[doc = "This extrinsic must be called unsigned and it is expected that only"]
+					#[doc = "block authors will call it (validated in `ValidateUnsigned`), as such"]
+					#[doc = "if the block author is defined it will be defined as the equivocation"]
+					#[doc = "reporter."]
 					report_equivocation_unsigned {
 						equivocation_proof: ::std::boxed::Box<
 							runtime_types::sp_consensus_slots::EquivocationProof<
@@ -27177,7 +30765,10 @@ pub mod api {
 						key_owner_proof: runtime_types::sp_session::MembershipProof,
 					},
 					#[codec(index = 2)]
-					#[doc = "See [`Pallet::plan_config_change`]."]
+					#[doc = "Plan an epoch config change. The epoch config change is recorded and will be enacted on"]
+					#[doc = "the next call to `enact_epoch_change`. The config will be activated one epoch after."]
+					#[doc = "Multiple calls to this method will replace any existing planned config change that had"]
+					#[doc = "not been enacted yet."]
 					plan_config_change {
 						config: runtime_types::sp_consensus_babe::digests::NextConfigDescriptor,
 					},
@@ -27295,7 +30886,16 @@ pub mod api {
 				#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 				pub enum Call {
 					#[codec(index = 0)]
-					#[doc = "See [`Pallet::rebag`]."]
+					#[doc = "Declare that some `dislocated` account has, through rewards or penalties, sufficiently"]
+					#[doc = "changed its score that it should properly fall into a different bag than its current"]
+					#[doc = "one."]
+					#[doc = ""]
+					#[doc = "Anyone can call this function about any potentially dislocated account."]
+					#[doc = ""]
+					#[doc = "Will always update the stored score of `dislocated` to the correct score, based on"]
+					#[doc = "`ScoreProvider`."]
+					#[doc = ""]
+					#[doc = "If `dislocated` does not exists, it returns an error."]
 					rebag {
 						dislocated: ::subxt::utils::MultiAddress<
 							::subxt::utils::AccountId32,
@@ -27303,7 +30903,16 @@ pub mod api {
 						>,
 					},
 					#[codec(index = 1)]
-					#[doc = "See [`Pallet::put_in_front_of`]."]
+					#[doc = "Move the caller's Id directly in front of `lighter`."]
+					#[doc = ""]
+					#[doc = "The dispatch origin for this call must be _Signed_ and can only be called by the Id of"]
+					#[doc = "the account going in front of `lighter`. Fee is payed by the origin under all"]
+					#[doc = "circumstances."]
+					#[doc = ""]
+					#[doc = "Only works if:"]
+					#[doc = ""]
+					#[doc = "- both nodes are within the same bag,"]
+					#[doc = "- and `origin` has a greater `Score` than `lighter`."]
 					put_in_front_of {
 						lighter: ::subxt::utils::MultiAddress<
 							::subxt::utils::AccountId32,
@@ -27311,7 +30920,9 @@ pub mod api {
 						>,
 					},
 					#[codec(index = 2)]
-					#[doc = "See [`Pallet::put_in_front_of_other`]."]
+					#[doc = "Same as [`Pallet::put_in_front_of`], but it can be called by anyone."]
+					#[doc = ""]
+					#[doc = "Fee is paid by the origin under all circumstances."]
 					put_in_front_of_other {
 						heavier: ::subxt::utils::MultiAddress<
 							::subxt::utils::AccountId32,
@@ -27393,7 +31004,13 @@ pub mod api {
 				#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 				pub enum Call {
 					#[codec(index = 0)]
-					#[doc = "See [`Pallet::transfer_allow_death`]."]
+					#[doc = "Transfer some liquid free balance to another account."]
+					#[doc = ""]
+					#[doc = "`transfer_allow_death` will set the `FreeBalance` of the sender and receiver."]
+					#[doc = "If the sender's account is below the existential deposit as a result"]
+					#[doc = "of the transfer, the account will be reaped."]
+					#[doc = ""]
+					#[doc = "The dispatch origin for this call must be `Signed` by the transactor."]
 					transfer_allow_death {
 						dest: ::subxt::utils::MultiAddress<
 							::subxt::utils::AccountId32,
@@ -27403,7 +31020,8 @@ pub mod api {
 						value: ::core::primitive::u128,
 					},
 					#[codec(index = 2)]
-					#[doc = "See [`Pallet::force_transfer`]."]
+					#[doc = "Exactly as `transfer_allow_death`, except the origin must be root and the source account"]
+					#[doc = "may be specified."]
 					force_transfer {
 						source: ::subxt::utils::MultiAddress<
 							::subxt::utils::AccountId32,
@@ -27417,7 +31035,12 @@ pub mod api {
 						value: ::core::primitive::u128,
 					},
 					#[codec(index = 3)]
-					#[doc = "See [`Pallet::transfer_keep_alive`]."]
+					#[doc = "Same as the [`transfer_allow_death`] call, but with a check that the transfer will not"]
+					#[doc = "kill the origin account."]
+					#[doc = ""]
+					#[doc = "99% of the time you want [`transfer_allow_death`] instead."]
+					#[doc = ""]
+					#[doc = "[`transfer_allow_death`]: struct.Pallet.html#method.transfer"]
 					transfer_keep_alive {
 						dest: ::subxt::utils::MultiAddress<
 							::subxt::utils::AccountId32,
@@ -27427,7 +31050,21 @@ pub mod api {
 						value: ::core::primitive::u128,
 					},
 					#[codec(index = 4)]
-					#[doc = "See [`Pallet::transfer_all`]."]
+					#[doc = "Transfer the entire transferable balance from the caller account."]
+					#[doc = ""]
+					#[doc = "NOTE: This function only attempts to transfer _transferable_ balances. This means that"]
+					#[doc = "any locked, reserved, or existential deposits (when `keep_alive` is `true`), will not be"]
+					#[doc = "transferred by this function. To ensure that this function results in a killed account,"]
+					#[doc = "you might need to prepare the account by removing any reference counters, storage"]
+					#[doc = "deposits, etc..."]
+					#[doc = ""]
+					#[doc = "The dispatch origin of this call must be Signed."]
+					#[doc = ""]
+					#[doc = "- `dest`: The recipient of the transfer."]
+					#[doc = "- `keep_alive`: A boolean to determine if the `transfer_all` operation should send all"]
+					#[doc = "  of the funds the account has, causing the sender account to be killed (false), or"]
+					#[doc = "  transfer everything except at least the existential deposit, which will guarantee to"]
+					#[doc = "  keep the sender account alive (true)."]
 					transfer_all {
 						dest: ::subxt::utils::MultiAddress<
 							::subxt::utils::AccountId32,
@@ -27436,7 +31073,9 @@ pub mod api {
 						keep_alive: ::core::primitive::bool,
 					},
 					#[codec(index = 5)]
-					#[doc = "See [`Pallet::force_unreserve`]."]
+					#[doc = "Unreserve some balance from a user by force."]
+					#[doc = ""]
+					#[doc = "Can only be called by ROOT."]
 					force_unreserve {
 						who: ::subxt::utils::MultiAddress<
 							::subxt::utils::AccountId32,
@@ -27445,12 +31084,21 @@ pub mod api {
 						amount: ::core::primitive::u128,
 					},
 					#[codec(index = 6)]
-					#[doc = "See [`Pallet::upgrade_accounts`]."]
+					#[doc = "Upgrade a specified account."]
+					#[doc = ""]
+					#[doc = "- `origin`: Must be `Signed`."]
+					#[doc = "- `who`: The account to be upgraded."]
+					#[doc = ""]
+					#[doc = "This will waive the transaction fee if at least all but 10% of the accounts needed to"]
+					#[doc = "be upgraded. (We let some not have to be upgraded just in order to allow for the"]
+					#[doc = "possibility of churn)."]
 					upgrade_accounts {
 						who: ::std::vec::Vec<::subxt::utils::AccountId32>,
 					},
 					#[codec(index = 8)]
-					#[doc = "See [`Pallet::force_set_balance`]."]
+					#[doc = "Set the regular balance of a given account."]
+					#[doc = ""]
+					#[doc = "The dispatch origin for this call is `root`."]
 					force_set_balance {
 						who: ::subxt::utils::MultiAddress<
 							::subxt::utils::AccountId32,
@@ -27460,11 +31108,28 @@ pub mod api {
 						new_free: ::core::primitive::u128,
 					},
 					#[codec(index = 9)]
-					#[doc = "See [`Pallet::force_adjust_total_issuance`]."]
+					#[doc = "Adjust the total issuance in a saturating way."]
+					#[doc = ""]
+					#[doc = "Can only be called by root and always needs a positive `delta`."]
+					#[doc = ""]
+					#[doc = "# Example"]
 					force_adjust_total_issuance {
 						direction: runtime_types::pallet_balances::types::AdjustmentDirection,
 						#[codec(compact)]
 						delta: ::core::primitive::u128,
+					},
+					#[codec(index = 10)]
+					#[doc = "Burn the specified liquid free balance from the origin account."]
+					#[doc = ""]
+					#[doc = "If the origin's account ends up below the existential deposit as a result"]
+					#[doc = "of the burn and `keep_alive` is false, the account will be reaped."]
+					#[doc = ""]
+					#[doc = "Unlike sending funds to a _burn_ address, which merely makes the funds inaccessible,"]
+					#[doc = "this `burn` operation will reduce total issuance by the amount _burned_."]
+					burn {
+						#[codec(compact)]
+						value: ::core::primitive::u128,
+						keep_alive: ::core::primitive::bool,
 					},
 				}
 				#[derive(
@@ -27751,23 +31416,6 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct IdAmount<_0, _1> {
-					pub id: _0,
-					pub amount: _1,
-				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
 				pub enum Reasons {
 					#[codec(index = 0)]
 					Fee,
@@ -27815,21 +31463,65 @@ pub mod api {
 				#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 				pub enum Call {
 					#[codec(index = 0)]
-					#[doc = "See [`Pallet::set_members`]."]
+					#[doc = "Set the collective's membership."]
+					#[doc = ""]
+					#[doc = "- `new_members`: The new member list. Be nice to the chain and provide it sorted."]
+					#[doc = "- `prime`: The prime member whose vote sets the default."]
+					#[doc = "- `old_count`: The upper bound for the previous number of members in storage. Used for"]
+					#[doc = "  weight estimation."]
+					#[doc = ""]
+					#[doc = "The dispatch of this call must be `SetMembersOrigin`."]
+					#[doc = ""]
+					#[doc = "NOTE: Does not enforce the expected `MaxMembers` limit on the amount of members, but"]
+					#[doc = "      the weight estimations rely on it to estimate dispatchable weight."]
+					#[doc = ""]
+					#[doc = "# WARNING:"]
+					#[doc = ""]
+					#[doc = "The `pallet-collective` can also be managed by logic outside of the pallet through the"]
+					#[doc = "implementation of the trait [`ChangeMembers`]."]
+					#[doc = "Any call to `set_members` must be careful that the member set doesn't get out of sync"]
+					#[doc = "with other logic managing the member set."]
+					#[doc = ""]
+					#[doc = "## Complexity:"]
+					#[doc = "- `O(MP + N)` where:"]
+					#[doc = "  - `M` old-members-count (code- and governance-bounded)"]
+					#[doc = "  - `N` new-members-count (code- and governance-bounded)"]
+					#[doc = "  - `P` proposals-count (code-bounded)"]
 					set_members {
 						new_members: ::std::vec::Vec<::subxt::utils::AccountId32>,
 						prime: ::core::option::Option<::subxt::utils::AccountId32>,
 						old_count: ::core::primitive::u32,
 					},
 					#[codec(index = 1)]
-					#[doc = "See [`Pallet::execute`]."]
+					#[doc = "Dispatch a proposal from a member using the `Member` origin."]
+					#[doc = ""]
+					#[doc = "Origin must be a member of the collective."]
+					#[doc = ""]
+					#[doc = "## Complexity:"]
+					#[doc = "- `O(B + M + P)` where:"]
+					#[doc = "- `B` is `proposal` size in bytes (length-fee-bounded)"]
+					#[doc = "- `M` members-count (code-bounded)"]
+					#[doc = "- `P` complexity of dispatching `proposal`"]
 					execute {
 						proposal: ::std::boxed::Box<runtime_types::da_runtime::RuntimeCall>,
 						#[codec(compact)]
 						length_bound: ::core::primitive::u32,
 					},
 					#[codec(index = 2)]
-					#[doc = "See [`Pallet::propose`]."]
+					#[doc = "Add a new proposal to either be voted on or executed directly."]
+					#[doc = ""]
+					#[doc = "Requires the sender to be member."]
+					#[doc = ""]
+					#[doc = "`threshold` determines whether `proposal` is executed directly (`threshold < 2`)"]
+					#[doc = "or put up for voting."]
+					#[doc = ""]
+					#[doc = "## Complexity"]
+					#[doc = "- `O(B + M + P1)` or `O(B + M + P2)` where:"]
+					#[doc = "  - `B` is `proposal` size in bytes (length-fee-bounded)"]
+					#[doc = "  - `M` is members-count (code- and governance-bounded)"]
+					#[doc = "  - branching is influenced by `threshold` where:"]
+					#[doc = "    - `P1` is proposal execution complexity (`threshold < 2`)"]
+					#[doc = "    - `P2` is proposals-count (code-bounded) (`threshold >= 2`)"]
 					propose {
 						#[codec(compact)]
 						threshold: ::core::primitive::u32,
@@ -27838,7 +31530,15 @@ pub mod api {
 						length_bound: ::core::primitive::u32,
 					},
 					#[codec(index = 3)]
-					#[doc = "See [`Pallet::vote`]."]
+					#[doc = "Add an aye or nay vote for the sender to the given proposal."]
+					#[doc = ""]
+					#[doc = "Requires the sender to be a member."]
+					#[doc = ""]
+					#[doc = "Transaction fees will be waived if the member is voting on any particular proposal"]
+					#[doc = "for the first time and the call is successful. Subsequent vote changes will charge a"]
+					#[doc = "fee."]
+					#[doc = "## Complexity"]
+					#[doc = "- `O(M)` where `M` is members-count (code- and governance-bounded)"]
 					vote {
 						proposal: ::subxt::utils::H256,
 						#[codec(compact)]
@@ -27846,10 +31546,42 @@ pub mod api {
 						approve: ::core::primitive::bool,
 					},
 					#[codec(index = 5)]
-					#[doc = "See [`Pallet::disapprove_proposal`]."]
+					#[doc = "Disapprove a proposal, close, and remove it from the system, regardless of its current"]
+					#[doc = "state."]
+					#[doc = ""]
+					#[doc = "Must be called by the Root origin."]
+					#[doc = ""]
+					#[doc = "Parameters:"]
+					#[doc = "* `proposal_hash`: The hash of the proposal that should be disapproved."]
+					#[doc = ""]
+					#[doc = "## Complexity"]
+					#[doc = "O(P) where P is the number of max proposals"]
 					disapprove_proposal { proposal_hash: ::subxt::utils::H256 },
 					#[codec(index = 6)]
-					#[doc = "See [`Pallet::close`]."]
+					#[doc = "Close a vote that is either approved, disapproved or whose voting period has ended."]
+					#[doc = ""]
+					#[doc = "May be called by any signed account in order to finish voting and close the proposal."]
+					#[doc = ""]
+					#[doc = "If called before the end of the voting period it will only close the vote if it is"]
+					#[doc = "has enough votes to be approved or disapproved."]
+					#[doc = ""]
+					#[doc = "If called after the end of the voting period abstentions are counted as rejections"]
+					#[doc = "unless there is a prime member set and the prime member cast an approval."]
+					#[doc = ""]
+					#[doc = "If the close operation completes successfully with disapproval, the transaction fee will"]
+					#[doc = "be waived. Otherwise execution of the approved operation will be charged to the caller."]
+					#[doc = ""]
+					#[doc = "+ `proposal_weight_bound`: The maximum amount of weight consumed by executing the closed"]
+					#[doc = "proposal."]
+					#[doc = "+ `length_bound`: The upper bound for the length of the proposal in storage. Checked via"]
+					#[doc = "`storage::read` so it is `size_of::<u32>() == 4` larger than the pure length."]
+					#[doc = ""]
+					#[doc = "## Complexity"]
+					#[doc = "- `O(B + M + P1 + P2)` where:"]
+					#[doc = "  - `B` is `proposal` size in bytes (length-fee-bounded)"]
+					#[doc = "  - `M` is members-count (code- and governance-bounded)"]
+					#[doc = "  - `P1` is the complexity of `proposal` preimage."]
+					#[doc = "  - `P2` is proposal-count (code-bounded)"]
 					close {
 						proposal_hash: ::subxt::utils::H256,
 						#[codec(compact)]
@@ -27875,21 +31607,65 @@ pub mod api {
 				#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 				pub enum Call2 {
 					#[codec(index = 0)]
-					#[doc = "See [`Pallet::set_members`]."]
+					#[doc = "Set the collective's membership."]
+					#[doc = ""]
+					#[doc = "- `new_members`: The new member list. Be nice to the chain and provide it sorted."]
+					#[doc = "- `prime`: The prime member whose vote sets the default."]
+					#[doc = "- `old_count`: The upper bound for the previous number of members in storage. Used for"]
+					#[doc = "  weight estimation."]
+					#[doc = ""]
+					#[doc = "The dispatch of this call must be `SetMembersOrigin`."]
+					#[doc = ""]
+					#[doc = "NOTE: Does not enforce the expected `MaxMembers` limit on the amount of members, but"]
+					#[doc = "      the weight estimations rely on it to estimate dispatchable weight."]
+					#[doc = ""]
+					#[doc = "# WARNING:"]
+					#[doc = ""]
+					#[doc = "The `pallet-collective` can also be managed by logic outside of the pallet through the"]
+					#[doc = "implementation of the trait [`ChangeMembers`]."]
+					#[doc = "Any call to `set_members` must be careful that the member set doesn't get out of sync"]
+					#[doc = "with other logic managing the member set."]
+					#[doc = ""]
+					#[doc = "## Complexity:"]
+					#[doc = "- `O(MP + N)` where:"]
+					#[doc = "  - `M` old-members-count (code- and governance-bounded)"]
+					#[doc = "  - `N` new-members-count (code- and governance-bounded)"]
+					#[doc = "  - `P` proposals-count (code-bounded)"]
 					set_members {
 						new_members: ::std::vec::Vec<::subxt::utils::AccountId32>,
 						prime: ::core::option::Option<::subxt::utils::AccountId32>,
 						old_count: ::core::primitive::u32,
 					},
 					#[codec(index = 1)]
-					#[doc = "See [`Pallet::execute`]."]
+					#[doc = "Dispatch a proposal from a member using the `Member` origin."]
+					#[doc = ""]
+					#[doc = "Origin must be a member of the collective."]
+					#[doc = ""]
+					#[doc = "## Complexity:"]
+					#[doc = "- `O(B + M + P)` where:"]
+					#[doc = "- `B` is `proposal` size in bytes (length-fee-bounded)"]
+					#[doc = "- `M` members-count (code-bounded)"]
+					#[doc = "- `P` complexity of dispatching `proposal`"]
 					execute {
 						proposal: ::std::boxed::Box<runtime_types::da_runtime::RuntimeCall>,
 						#[codec(compact)]
 						length_bound: ::core::primitive::u32,
 					},
 					#[codec(index = 2)]
-					#[doc = "See [`Pallet::propose`]."]
+					#[doc = "Add a new proposal to either be voted on or executed directly."]
+					#[doc = ""]
+					#[doc = "Requires the sender to be member."]
+					#[doc = ""]
+					#[doc = "`threshold` determines whether `proposal` is executed directly (`threshold < 2`)"]
+					#[doc = "or put up for voting."]
+					#[doc = ""]
+					#[doc = "## Complexity"]
+					#[doc = "- `O(B + M + P1)` or `O(B + M + P2)` where:"]
+					#[doc = "  - `B` is `proposal` size in bytes (length-fee-bounded)"]
+					#[doc = "  - `M` is members-count (code- and governance-bounded)"]
+					#[doc = "  - branching is influenced by `threshold` where:"]
+					#[doc = "    - `P1` is proposal execution complexity (`threshold < 2`)"]
+					#[doc = "    - `P2` is proposals-count (code-bounded) (`threshold >= 2`)"]
 					propose {
 						#[codec(compact)]
 						threshold: ::core::primitive::u32,
@@ -27898,7 +31674,15 @@ pub mod api {
 						length_bound: ::core::primitive::u32,
 					},
 					#[codec(index = 3)]
-					#[doc = "See [`Pallet::vote`]."]
+					#[doc = "Add an aye or nay vote for the sender to the given proposal."]
+					#[doc = ""]
+					#[doc = "Requires the sender to be a member."]
+					#[doc = ""]
+					#[doc = "Transaction fees will be waived if the member is voting on any particular proposal"]
+					#[doc = "for the first time and the call is successful. Subsequent vote changes will charge a"]
+					#[doc = "fee."]
+					#[doc = "## Complexity"]
+					#[doc = "- `O(M)` where `M` is members-count (code- and governance-bounded)"]
 					vote {
 						proposal: ::subxt::utils::H256,
 						#[codec(compact)]
@@ -27906,10 +31690,42 @@ pub mod api {
 						approve: ::core::primitive::bool,
 					},
 					#[codec(index = 5)]
-					#[doc = "See [`Pallet::disapprove_proposal`]."]
+					#[doc = "Disapprove a proposal, close, and remove it from the system, regardless of its current"]
+					#[doc = "state."]
+					#[doc = ""]
+					#[doc = "Must be called by the Root origin."]
+					#[doc = ""]
+					#[doc = "Parameters:"]
+					#[doc = "* `proposal_hash`: The hash of the proposal that should be disapproved."]
+					#[doc = ""]
+					#[doc = "## Complexity"]
+					#[doc = "O(P) where P is the number of max proposals"]
 					disapprove_proposal { proposal_hash: ::subxt::utils::H256 },
 					#[codec(index = 6)]
-					#[doc = "See [`Pallet::close`]."]
+					#[doc = "Close a vote that is either approved, disapproved or whose voting period has ended."]
+					#[doc = ""]
+					#[doc = "May be called by any signed account in order to finish voting and close the proposal."]
+					#[doc = ""]
+					#[doc = "If called before the end of the voting period it will only close the vote if it is"]
+					#[doc = "has enough votes to be approved or disapproved."]
+					#[doc = ""]
+					#[doc = "If called after the end of the voting period abstentions are counted as rejections"]
+					#[doc = "unless there is a prime member set and the prime member cast an approval."]
+					#[doc = ""]
+					#[doc = "If the close operation completes successfully with disapproval, the transaction fee will"]
+					#[doc = "be waived. Otherwise execution of the approved operation will be charged to the caller."]
+					#[doc = ""]
+					#[doc = "+ `proposal_weight_bound`: The maximum amount of weight consumed by executing the closed"]
+					#[doc = "proposal."]
+					#[doc = "+ `length_bound`: The upper bound for the length of the proposal in storage. Checked via"]
+					#[doc = "`storage::read` so it is `size_of::<u32>() == 4` larger than the pure length."]
+					#[doc = ""]
+					#[doc = "## Complexity"]
+					#[doc = "- `O(B + M + P1 + P2)` where:"]
+					#[doc = "  - `B` is `proposal` size in bytes (length-fee-bounded)"]
+					#[doc = "  - `M` is members-count (code- and governance-bounded)"]
+					#[doc = "  - `P1` is the complexity of `proposal` preimage."]
+					#[doc = "  - `P2` is proposal-count (code-bounded)"]
 					close {
 						proposal_hash: ::subxt::utils::H256,
 						#[codec(compact)]
@@ -28203,7 +32019,7 @@ pub mod api {
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
 				#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 				pub enum Call {
-					# [codec (index = 0)] # [doc = "See [`Pallet::submit_unsigned`]."] submit_unsigned { raw_solution : :: std :: boxed :: Box < runtime_types :: pallet_election_provider_multi_phase :: RawSolution < runtime_types :: da_runtime :: constants :: staking :: NposSolution16 > > , witness : runtime_types :: pallet_election_provider_multi_phase :: SolutionOrSnapshotSize , } , # [codec (index = 1)] # [doc = "See [`Pallet::set_minimum_untrusted_score`]."] set_minimum_untrusted_score { maybe_next_score : :: core :: option :: Option < runtime_types :: sp_npos_elections :: ElectionScore > , } , # [codec (index = 2)] # [doc = "See [`Pallet::set_emergency_election_result`]."] set_emergency_election_result { supports : :: std :: vec :: Vec < (:: subxt :: utils :: AccountId32 , runtime_types :: sp_npos_elections :: Support < :: subxt :: utils :: AccountId32 > ,) > , } , # [codec (index = 3)] # [doc = "See [`Pallet::submit`]."] submit { raw_solution : :: std :: boxed :: Box < runtime_types :: pallet_election_provider_multi_phase :: RawSolution < runtime_types :: da_runtime :: constants :: staking :: NposSolution16 > > , } , # [codec (index = 4)] # [doc = "See [`Pallet::governance_fallback`]."] governance_fallback { maybe_max_voters : :: core :: option :: Option < :: core :: primitive :: u32 > , maybe_max_targets : :: core :: option :: Option < :: core :: primitive :: u32 > , } , }
+					# [codec (index = 0)] # [doc = "Submit a solution for the unsigned phase."] # [doc = ""] # [doc = "The dispatch origin fo this call must be __none__."] # [doc = ""] # [doc = "This submission is checked on the fly. Moreover, this unsigned solution is only"] # [doc = "validated when submitted to the pool from the **local** node. Effectively, this means"] # [doc = "that only active validators can submit this transaction when authoring a block (similar"] # [doc = "to an inherent)."] # [doc = ""] # [doc = "To prevent any incorrect solution (and thus wasted time/weight), this transaction will"] # [doc = "panic if the solution submitted by the validator is invalid in any way, effectively"] # [doc = "putting their authoring reward at risk."] # [doc = ""] # [doc = "No deposit or reward is associated with this submission."] submit_unsigned { raw_solution : :: std :: boxed :: Box < runtime_types :: pallet_election_provider_multi_phase :: RawSolution < runtime_types :: da_runtime :: constants :: staking :: NposSolution16 > > , witness : runtime_types :: pallet_election_provider_multi_phase :: SolutionOrSnapshotSize , } , # [codec (index = 1)] # [doc = "Set a new value for `MinimumUntrustedScore`."] # [doc = ""] # [doc = "Dispatch origin must be aligned with `T::ForceOrigin`."] # [doc = ""] # [doc = "This check can be turned off by setting the value to `None`."] set_minimum_untrusted_score { maybe_next_score : :: core :: option :: Option < runtime_types :: sp_npos_elections :: ElectionScore > , } , # [codec (index = 2)] # [doc = "Set a solution in the queue, to be handed out to the client of this pallet in the next"] # [doc = "call to `ElectionProvider::elect`."] # [doc = ""] # [doc = "This can only be set by `T::ForceOrigin`, and only when the phase is `Emergency`."] # [doc = ""] # [doc = "The solution is not checked for any feasibility and is assumed to be trustworthy, as any"] # [doc = "feasibility check itself can in principle cause the election process to fail (due to"] # [doc = "memory/weight constrains)."] set_emergency_election_result { supports : :: std :: vec :: Vec < (:: subxt :: utils :: AccountId32 , runtime_types :: sp_npos_elections :: Support < :: subxt :: utils :: AccountId32 > ,) > , } , # [codec (index = 3)] # [doc = "Submit a solution for the signed phase."] # [doc = ""] # [doc = "The dispatch origin fo this call must be __signed__."] # [doc = ""] # [doc = "The solution is potentially queued, based on the claimed score and processed at the end"] # [doc = "of the signed phase."] # [doc = ""] # [doc = "A deposit is reserved and recorded for the solution. Based on the outcome, the solution"] # [doc = "might be rewarded, slashed, or get all or a part of the deposit back."] submit { raw_solution : :: std :: boxed :: Box < runtime_types :: pallet_election_provider_multi_phase :: RawSolution < runtime_types :: da_runtime :: constants :: staking :: NposSolution16 > > , } , # [codec (index = 4)] # [doc = "Trigger the governance fallback."] # [doc = ""] # [doc = "This can only be called when [`Phase::Emergency`] is enabled, as an alternative to"] # [doc = "calling [`Call::set_emergency_election_result`]."] governance_fallback { maybe_max_voters : :: core :: option :: Option < :: core :: primitive :: u32 > , maybe_max_targets : :: core :: option :: Option < :: core :: primitive :: u32 > , } , }
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
 					:: subxt :: ext :: codec :: Encode,
@@ -28262,7 +32078,7 @@ pub mod api {
 					#[doc = "Submitted solution has too many winners"]
 					TooManyWinners,
 					#[codec(index = 14)]
-					#[doc = "Sumission was prepared for a different round."]
+					#[doc = "Submission was prepared for a different round."]
 					PreDispatchDifferentRound,
 				}
 				#[derive(
@@ -28284,7 +32100,7 @@ pub mod api {
 					#[doc = "A solution was stored with the given compute."]
 					#[doc = ""]
 					#[doc = "The `origin` indicates the origin of the solution. If `origin` is `Some(AccountId)`,"]
-					#[doc = "the stored solution was submited in the signed phase by a miner with the `AccountId`."]
+					#[doc = "the stored solution was submitted in the signed phase by a miner with the `AccountId`."]
 					#[doc = "Otherwise, the solution was stored either during the unsigned phase or by"]
 					#[doc = "`T::ForceOrigin`. The `bool` is `true` when a previous solution was ejected to make"]
 					#[doc = "room for this one."]
@@ -28498,7 +32314,10 @@ pub mod api {
 				#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 				pub enum Call {
 					#[codec(index = 0)]
-					#[doc = "See [`Pallet::report_equivocation`]."]
+					#[doc = "Report voter equivocation/misbehavior. This method will verify the"]
+					#[doc = "equivocation proof and validate the given key ownership proof"]
+					#[doc = "against the extracted offender. If both are valid, the offence"]
+					#[doc = "will be reported."]
 					report_equivocation {
 						equivocation_proof: ::std::boxed::Box<
 							runtime_types::sp_consensus_grandpa::EquivocationProof<
@@ -28509,7 +32328,15 @@ pub mod api {
 						key_owner_proof: runtime_types::sp_session::MembershipProof,
 					},
 					#[codec(index = 1)]
-					#[doc = "See [`Pallet::report_equivocation_unsigned`]."]
+					#[doc = "Report voter equivocation/misbehavior. This method will verify the"]
+					#[doc = "equivocation proof and validate the given key ownership proof"]
+					#[doc = "against the extracted offender. If both are valid, the offence"]
+					#[doc = "will be reported."]
+					#[doc = ""]
+					#[doc = "This extrinsic must be called unsigned and it is expected that only"]
+					#[doc = "block authors will call it (validated in `ValidateUnsigned`), as such"]
+					#[doc = "if the block author is defined it will be defined as the equivocation"]
+					#[doc = "reporter."]
 					report_equivocation_unsigned {
 						equivocation_proof: ::std::boxed::Box<
 							runtime_types::sp_consensus_grandpa::EquivocationProof<
@@ -28520,7 +32347,18 @@ pub mod api {
 						key_owner_proof: runtime_types::sp_session::MembershipProof,
 					},
 					#[codec(index = 2)]
-					#[doc = "See [`Pallet::note_stalled`]."]
+					#[doc = "Note that the current authority set of the GRANDPA finality gadget has stalled."]
+					#[doc = ""]
+					#[doc = "This will trigger a forced authority set change at the beginning of the next session, to"]
+					#[doc = "be enacted `delay` blocks after that. The `delay` should be high enough to safely assume"]
+					#[doc = "that the block signalling the forced change will not be re-orged e.g. 1000 blocks."]
+					#[doc = "The block production rate (which may be slowed down because of finality lagging) should"]
+					#[doc = "be taken into account when choosing the `delay`. The GRANDPA voters based on the new"]
+					#[doc = "authority will start voting on top of `best_finalized_block_number` for new finalized"]
+					#[doc = "blocks. `best_finalized_block_number` should be the highest of the latest finalized"]
+					#[doc = "block of all validators of the new authority set."]
+					#[doc = ""]
+					#[doc = "Only callable by root."]
 					note_stalled {
 						delay: ::core::primitive::u32,
 						best_finalized_block_number: ::core::primitive::u32,
@@ -28693,7 +32531,13 @@ pub mod api {
 				#[doc = "Identity pallet declaration."]
 				pub enum Call {
 					#[codec(index = 0)]
-					#[doc = "See [`Pallet::add_registrar`]."]
+					#[doc = "Add a registrar to the system."]
+					#[doc = ""]
+					#[doc = "The dispatch origin for this call must be `T::RegistrarOrigin`."]
+					#[doc = ""]
+					#[doc = "- `account`: the account of the registrar."]
+					#[doc = ""]
+					#[doc = "Emits `RegistrarAdded` if successful."]
 					add_registrar {
 						account: ::subxt::utils::MultiAddress<
 							::subxt::utils::AccountId32,
@@ -28701,13 +32545,30 @@ pub mod api {
 						>,
 					},
 					#[codec(index = 1)]
-					#[doc = "See [`Pallet::set_identity`]."]
+					#[doc = "Set an account's identity information and reserve the appropriate deposit."]
+					#[doc = ""]
+					#[doc = "If the account already has identity information, the deposit is taken as part payment"]
+					#[doc = "for the new deposit."]
+					#[doc = ""]
+					#[doc = "The dispatch origin for this call must be _Signed_."]
+					#[doc = ""]
+					#[doc = "- `info`: The identity information."]
+					#[doc = ""]
+					#[doc = "Emits `IdentitySet` if successful."]
 					set_identity {
 						info:
 							::std::boxed::Box<runtime_types::pallet_identity::legacy::IdentityInfo>,
 					},
 					#[codec(index = 2)]
-					#[doc = "See [`Pallet::set_subs`]."]
+					#[doc = "Set the sub-accounts of the sender."]
+					#[doc = ""]
+					#[doc = "Payment: Any aggregate balance reserved by previous `set_subs` calls will be returned"]
+					#[doc = "and an amount `SubAccountDeposit` will be reserved for each item in `subs`."]
+					#[doc = ""]
+					#[doc = "The dispatch origin for this call must be _Signed_ and the sender must have a registered"]
+					#[doc = "identity."]
+					#[doc = ""]
+					#[doc = "- `subs`: The identity's (new) sub-accounts."]
 					set_subs {
 						subs: ::std::vec::Vec<(
 							::subxt::utils::AccountId32,
@@ -28715,10 +32576,32 @@ pub mod api {
 						)>,
 					},
 					#[codec(index = 3)]
-					#[doc = "See [`Pallet::clear_identity`]."]
+					#[doc = "Clear an account's identity info and all sub-accounts and return all deposits."]
+					#[doc = ""]
+					#[doc = "Payment: All reserved balances on the account are returned."]
+					#[doc = ""]
+					#[doc = "The dispatch origin for this call must be _Signed_ and the sender must have a registered"]
+					#[doc = "identity."]
+					#[doc = ""]
+					#[doc = "Emits `IdentityCleared` if successful."]
 					clear_identity,
 					#[codec(index = 4)]
-					#[doc = "See [`Pallet::request_judgement`]."]
+					#[doc = "Request a judgement from a registrar."]
+					#[doc = ""]
+					#[doc = "Payment: At most `max_fee` will be reserved for payment to the registrar if judgement"]
+					#[doc = "given."]
+					#[doc = ""]
+					#[doc = "The dispatch origin for this call must be _Signed_ and the sender must have a"]
+					#[doc = "registered identity."]
+					#[doc = ""]
+					#[doc = "- `reg_index`: The index of the registrar whose judgement is requested."]
+					#[doc = "- `max_fee`: The maximum fee that may be paid. This should just be auto-populated as:"]
+					#[doc = ""]
+					#[doc = "```nocompile"]
+					#[doc = "Registrars::<T>::get().get(reg_index).unwrap().fee"]
+					#[doc = "```"]
+					#[doc = ""]
+					#[doc = "Emits `JudgementRequested` if successful."]
 					request_judgement {
 						#[codec(compact)]
 						reg_index: ::core::primitive::u32,
@@ -28726,10 +32609,25 @@ pub mod api {
 						max_fee: ::core::primitive::u128,
 					},
 					#[codec(index = 5)]
-					#[doc = "See [`Pallet::cancel_request`]."]
+					#[doc = "Cancel a previous request."]
+					#[doc = ""]
+					#[doc = "Payment: A previously reserved deposit is returned on success."]
+					#[doc = ""]
+					#[doc = "The dispatch origin for this call must be _Signed_ and the sender must have a"]
+					#[doc = "registered identity."]
+					#[doc = ""]
+					#[doc = "- `reg_index`: The index of the registrar whose judgement is no longer requested."]
+					#[doc = ""]
+					#[doc = "Emits `JudgementUnrequested` if successful."]
 					cancel_request { reg_index: ::core::primitive::u32 },
 					#[codec(index = 6)]
-					#[doc = "See [`Pallet::set_fee`]."]
+					#[doc = "Set the fee required for a judgement to be requested from a registrar."]
+					#[doc = ""]
+					#[doc = "The dispatch origin for this call must be _Signed_ and the sender must be the account"]
+					#[doc = "of the registrar whose index is `index`."]
+					#[doc = ""]
+					#[doc = "- `index`: the index of the registrar whose fee is to be set."]
+					#[doc = "- `fee`: the new fee."]
 					set_fee {
 						#[codec(compact)]
 						index: ::core::primitive::u32,
@@ -28737,7 +32635,13 @@ pub mod api {
 						fee: ::core::primitive::u128,
 					},
 					#[codec(index = 7)]
-					#[doc = "See [`Pallet::set_account_id`]."]
+					#[doc = "Change the account associated with a registrar."]
+					#[doc = ""]
+					#[doc = "The dispatch origin for this call must be _Signed_ and the sender must be the account"]
+					#[doc = "of the registrar whose index is `index`."]
+					#[doc = ""]
+					#[doc = "- `index`: the index of the registrar whose fee is to be set."]
+					#[doc = "- `new`: the new account ID."]
 					set_account_id {
 						#[codec(compact)]
 						index: ::core::primitive::u32,
@@ -28747,14 +32651,34 @@ pub mod api {
 						>,
 					},
 					#[codec(index = 8)]
-					#[doc = "See [`Pallet::set_fields`]."]
+					#[doc = "Set the field information for a registrar."]
+					#[doc = ""]
+					#[doc = "The dispatch origin for this call must be _Signed_ and the sender must be the account"]
+					#[doc = "of the registrar whose index is `index`."]
+					#[doc = ""]
+					#[doc = "- `index`: the index of the registrar whose fee is to be set."]
+					#[doc = "- `fields`: the fields that the registrar concerns themselves with."]
 					set_fields {
 						#[codec(compact)]
 						index: ::core::primitive::u32,
 						fields: ::core::primitive::u64,
 					},
 					#[codec(index = 9)]
-					#[doc = "See [`Pallet::provide_judgement`]."]
+					#[doc = "Provide a judgement for an account's identity."]
+					#[doc = ""]
+					#[doc = "The dispatch origin for this call must be _Signed_ and the sender must be the account"]
+					#[doc = "of the registrar whose index is `reg_index`."]
+					#[doc = ""]
+					#[doc = "- `reg_index`: the index of the registrar whose judgement is being made."]
+					#[doc = "- `target`: the account whose identity the judgement is upon. This must be an account"]
+					#[doc = "  with a registered identity."]
+					#[doc = "- `judgement`: the judgement of the registrar of index `reg_index` about `target`."]
+					#[doc = "- `identity`: The hash of the [`IdentityInformationProvider`] for that the judgement is"]
+					#[doc = "  provided."]
+					#[doc = ""]
+					#[doc = "Note: Judgements do not apply to a username."]
+					#[doc = ""]
+					#[doc = "Emits `JudgementGiven` if successful."]
 					provide_judgement {
 						#[codec(compact)]
 						reg_index: ::core::primitive::u32,
@@ -28768,7 +32692,18 @@ pub mod api {
 						identity: ::subxt::utils::H256,
 					},
 					#[codec(index = 10)]
-					#[doc = "See [`Pallet::kill_identity`]."]
+					#[doc = "Remove an account's identity and sub-account information and slash the deposits."]
+					#[doc = ""]
+					#[doc = "Payment: Reserved balances from `set_subs` and `set_identity` are slashed and handled by"]
+					#[doc = "`Slash`. Verification request deposits are not returned; they should be cancelled"]
+					#[doc = "manually using `cancel_request`."]
+					#[doc = ""]
+					#[doc = "The dispatch origin for this call must match `T::ForceOrigin`."]
+					#[doc = ""]
+					#[doc = "- `target`: the account whose identity the judgement is upon. This must be an account"]
+					#[doc = "  with a registered identity."]
+					#[doc = ""]
+					#[doc = "Emits `IdentityKilled` if successful."]
 					kill_identity {
 						target: ::subxt::utils::MultiAddress<
 							::subxt::utils::AccountId32,
@@ -28776,7 +32711,13 @@ pub mod api {
 						>,
 					},
 					#[codec(index = 11)]
-					#[doc = "See [`Pallet::add_sub`]."]
+					#[doc = "Add the given account to the sender's subs."]
+					#[doc = ""]
+					#[doc = "Payment: Balance reserved by a previous `set_subs` call for one sub will be repatriated"]
+					#[doc = "to the sender."]
+					#[doc = ""]
+					#[doc = "The dispatch origin for this call must be _Signed_ and the sender must have a registered"]
+					#[doc = "sub identity of `sub`."]
 					add_sub {
 						sub: ::subxt::utils::MultiAddress<
 							::subxt::utils::AccountId32,
@@ -28785,7 +32726,10 @@ pub mod api {
 						data: runtime_types::pallet_identity::types::Data,
 					},
 					#[codec(index = 12)]
-					#[doc = "See [`Pallet::rename_sub`]."]
+					#[doc = "Alter the associated name of the given sub-account."]
+					#[doc = ""]
+					#[doc = "The dispatch origin for this call must be _Signed_ and the sender must have a registered"]
+					#[doc = "sub identity of `sub`."]
 					rename_sub {
 						sub: ::subxt::utils::MultiAddress<
 							::subxt::utils::AccountId32,
@@ -28794,7 +32738,13 @@ pub mod api {
 						data: runtime_types::pallet_identity::types::Data,
 					},
 					#[codec(index = 13)]
-					#[doc = "See [`Pallet::remove_sub`]."]
+					#[doc = "Remove the given account from the sender's subs."]
+					#[doc = ""]
+					#[doc = "Payment: Balance reserved by a previous `set_subs` call for one sub will be repatriated"]
+					#[doc = "to the sender."]
+					#[doc = ""]
+					#[doc = "The dispatch origin for this call must be _Signed_ and the sender must have a registered"]
+					#[doc = "sub identity of `sub`."]
 					remove_sub {
 						sub: ::subxt::utils::MultiAddress<
 							::subxt::utils::AccountId32,
@@ -28802,10 +32752,22 @@ pub mod api {
 						>,
 					},
 					#[codec(index = 14)]
-					#[doc = "See [`Pallet::quit_sub`]."]
+					#[doc = "Remove the sender as a sub-account."]
+					#[doc = ""]
+					#[doc = "Payment: Balance reserved by a previous `set_subs` call for one sub will be repatriated"]
+					#[doc = "to the sender (*not* the original depositor)."]
+					#[doc = ""]
+					#[doc = "The dispatch origin for this call must be _Signed_ and the sender must have a registered"]
+					#[doc = "super-identity."]
+					#[doc = ""]
+					#[doc = "NOTE: This should not normally be used, but is provided in the case that the non-"]
+					#[doc = "controller of an account is maliciously registered as a sub-account."]
 					quit_sub,
 					#[codec(index = 15)]
-					#[doc = "See [`Pallet::add_username_authority`]."]
+					#[doc = "Add an `AccountId` with permission to grant usernames with a given `suffix` appended."]
+					#[doc = ""]
+					#[doc = "The authority can grant up to `allocation` usernames. To top up their allocation, they"]
+					#[doc = "should just issue (or request via governance) a new `add_username_authority` call."]
 					add_username_authority {
 						authority: ::subxt::utils::MultiAddress<
 							::subxt::utils::AccountId32,
@@ -28815,7 +32777,7 @@ pub mod api {
 						allocation: ::core::primitive::u32,
 					},
 					#[codec(index = 16)]
-					#[doc = "See [`Pallet::remove_username_authority`]."]
+					#[doc = "Remove `authority` from the username authorities."]
 					remove_username_authority {
 						authority: ::subxt::utils::MultiAddress<
 							::subxt::utils::AccountId32,
@@ -28823,7 +32785,15 @@ pub mod api {
 						>,
 					},
 					#[codec(index = 17)]
-					#[doc = "See [`Pallet::set_username_for`]."]
+					#[doc = "Set the username for `who`. Must be called by a username authority."]
+					#[doc = ""]
+					#[doc = "The authority must have an `allocation`. Users can either pre-sign their usernames or"]
+					#[doc = "accept them later."]
+					#[doc = ""]
+					#[doc = "Usernames must:"]
+					#[doc = "  - Only contain lowercase ASCII characters or digits."]
+					#[doc = "  - When combined with the suffix of the issuing authority be _less than_ the"]
+					#[doc = "    `MaxUsernameLength`."]
 					set_username_for {
 						who: ::subxt::utils::MultiAddress<
 							::subxt::utils::AccountId32,
@@ -28834,28 +32804,32 @@ pub mod api {
 							::core::option::Option<runtime_types::sp_runtime::MultiSignature>,
 					},
 					#[codec(index = 18)]
-					#[doc = "See [`Pallet::accept_username`]."]
+					#[doc = "Accept a given username that an `authority` granted. The call must include the full"]
+					#[doc = "username, as in `username.suffix`."]
 					accept_username {
 						username: runtime_types::bounded_collections::bounded_vec::BoundedVec<
 							::core::primitive::u8,
 						>,
 					},
 					#[codec(index = 19)]
-					#[doc = "See [`Pallet::remove_expired_approval`]."]
+					#[doc = "Remove an expired username approval. The username was approved by an authority but never"]
+					#[doc = "accepted by the user and must now be beyond its expiration. The call must include the"]
+					#[doc = "full username, as in `username.suffix`."]
 					remove_expired_approval {
 						username: runtime_types::bounded_collections::bounded_vec::BoundedVec<
 							::core::primitive::u8,
 						>,
 					},
 					#[codec(index = 20)]
-					#[doc = "See [`Pallet::set_primary_username`]."]
+					#[doc = "Set a given username as the primary. The username should include the suffix."]
 					set_primary_username {
 						username: runtime_types::bounded_collections::bounded_vec::BoundedVec<
 							::core::primitive::u8,
 						>,
 					},
 					#[codec(index = 21)]
-					#[doc = "See [`Pallet::remove_dangling_username`]."]
+					#[doc = "Remove a username that corresponds to an account with no identity. Exists when a user"]
+					#[doc = "gets a username but then calls `clear_identity`."]
 					remove_dangling_username {
 						username: runtime_types::bounded_collections::bounded_vec::BoundedVec<
 							::core::primitive::u8,
@@ -29280,7 +33254,9 @@ pub mod api {
 				#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 				pub enum Call {
 					#[codec(index = 0)]
-					#[doc = "See [`Pallet::heartbeat`]."]
+					#[doc = "## Complexity:"]
+					#[doc = "- `O(K)` where K is length of `Keys` (heartbeat.validators_len)"]
+					#[doc = "  - `O(K)`: decoding of length `K`"]
 					heartbeat {
 						heartbeat:
 							runtime_types::pallet_im_online::Heartbeat<::core::primitive::u32>,
@@ -29362,7 +33338,7 @@ pub mod api {
 					# [codec (crate = :: subxt :: ext :: codec)]
 					#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 					#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-					pub struct Public(pub runtime_types::sp_core::sr25519::Public);
+					pub struct Public(pub [::core::primitive::u8; 32usize]);
 					#[derive(
 						:: subxt :: ext :: codec :: Decode,
 						:: subxt :: ext :: codec :: Encode,
@@ -29376,7 +33352,7 @@ pub mod api {
 					# [codec (crate = :: subxt :: ext :: codec)]
 					#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 					#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-					pub struct Signature(pub runtime_types::sp_core::sr25519::Signature);
+					pub struct Signature(pub [::core::primitive::u8; 64usize]);
 				}
 			}
 			#[derive(
@@ -29419,10 +33395,32 @@ pub mod api {
 				#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 				pub enum Call {
 					#[codec(index = 0)]
-					#[doc = "See [`Pallet::claim`]."]
+					#[doc = "Assign an previously unassigned index."]
+					#[doc = ""]
+					#[doc = "Payment: `Deposit` is reserved from the sender account."]
+					#[doc = ""]
+					#[doc = "The dispatch origin for this call must be _Signed_."]
+					#[doc = ""]
+					#[doc = "- `index`: the index to be claimed. This must not be in use."]
+					#[doc = ""]
+					#[doc = "Emits `IndexAssigned` if successful."]
+					#[doc = ""]
+					#[doc = "## Complexity"]
+					#[doc = "- `O(1)`."]
 					claim { index: ::core::primitive::u32 },
 					#[codec(index = 1)]
-					#[doc = "See [`Pallet::transfer`]."]
+					#[doc = "Assign an index already owned by the sender to another account. The balance reservation"]
+					#[doc = "is effectively transferred to the new account."]
+					#[doc = ""]
+					#[doc = "The dispatch origin for this call must be _Signed_."]
+					#[doc = ""]
+					#[doc = "- `index`: the index to be re-assigned. This must be owned by the sender."]
+					#[doc = "- `new`: the new owner of the index. This function is a no-op if it is equal to sender."]
+					#[doc = ""]
+					#[doc = "Emits `IndexAssigned` if successful."]
+					#[doc = ""]
+					#[doc = "## Complexity"]
+					#[doc = "- `O(1)`."]
 					transfer {
 						new: ::subxt::utils::MultiAddress<
 							::subxt::utils::AccountId32,
@@ -29431,10 +33429,33 @@ pub mod api {
 						index: ::core::primitive::u32,
 					},
 					#[codec(index = 2)]
-					#[doc = "See [`Pallet::free`]."]
+					#[doc = "Free up an index owned by the sender."]
+					#[doc = ""]
+					#[doc = "Payment: Any previous deposit placed for the index is unreserved in the sender account."]
+					#[doc = ""]
+					#[doc = "The dispatch origin for this call must be _Signed_ and the sender must own the index."]
+					#[doc = ""]
+					#[doc = "- `index`: the index to be freed. This must be owned by the sender."]
+					#[doc = ""]
+					#[doc = "Emits `IndexFreed` if successful."]
+					#[doc = ""]
+					#[doc = "## Complexity"]
+					#[doc = "- `O(1)`."]
 					free { index: ::core::primitive::u32 },
 					#[codec(index = 3)]
-					#[doc = "See [`Pallet::force_transfer`]."]
+					#[doc = "Force an index to an account. This doesn't require a deposit. If the index is already"]
+					#[doc = "held, then any deposit is reimbursed to its current owner."]
+					#[doc = ""]
+					#[doc = "The dispatch origin for this call must be _Root_."]
+					#[doc = ""]
+					#[doc = "- `index`: the index to be (re-)assigned."]
+					#[doc = "- `new`: the new owner of the index. This function is a no-op if it is equal to sender."]
+					#[doc = "- `freeze`: if set to `true`, will freeze the index so it cannot be transferred."]
+					#[doc = ""]
+					#[doc = "Emits `IndexAssigned` if successful."]
+					#[doc = ""]
+					#[doc = "## Complexity"]
+					#[doc = "- `O(1)`."]
 					force_transfer {
 						new: ::subxt::utils::MultiAddress<
 							::subxt::utils::AccountId32,
@@ -29444,7 +33465,18 @@ pub mod api {
 						freeze: ::core::primitive::bool,
 					},
 					#[codec(index = 4)]
-					#[doc = "See [`Pallet::freeze`]."]
+					#[doc = "Freeze an index so it will always point to the sender account. This consumes the"]
+					#[doc = "deposit."]
+					#[doc = ""]
+					#[doc = "The dispatch origin for this call must be _Signed_ and the signing account must have a"]
+					#[doc = "non-frozen account `index`."]
+					#[doc = ""]
+					#[doc = "- `index`: the index to be frozen in place."]
+					#[doc = ""]
+					#[doc = "Emits `IndexFrozen` if successful."]
+					#[doc = ""]
+					#[doc = "## Complexity"]
+					#[doc = "- `O(1)`."]
 					freeze { index: ::core::primitive::u32 },
 				}
 				#[derive(
@@ -29531,7 +33563,6 @@ pub mod api {
 				#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 				pub enum Call {
 					#[codec(index = 0)]
-					#[doc = "See [`Pallet::mandate`]."]
 					mandate {
 						call: ::std::boxed::Box<runtime_types::da_runtime::RuntimeCall>,
 					},
@@ -29580,13 +33611,62 @@ pub mod api {
 				#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 				pub enum Call {
 					#[codec(index = 0)]
-					#[doc = "See [`Pallet::as_multi_threshold_1`]."]
+					#[doc = "Immediately dispatch a multi-signature call using a single approval from the caller."]
+					#[doc = ""]
+					#[doc = "The dispatch origin for this call must be _Signed_."]
+					#[doc = ""]
+					#[doc = "- `other_signatories`: The accounts (other than the sender) who are part of the"]
+					#[doc = "multi-signature, but do not participate in the approval process."]
+					#[doc = "- `call`: The call to be executed."]
+					#[doc = ""]
+					#[doc = "Result is equivalent to the dispatched result."]
+					#[doc = ""]
+					#[doc = "## Complexity"]
+					#[doc = "O(Z + C) where Z is the length of the call and C its execution weight."]
 					as_multi_threshold_1 {
 						other_signatories: ::std::vec::Vec<::subxt::utils::AccountId32>,
 						call: ::std::boxed::Box<runtime_types::da_runtime::RuntimeCall>,
 					},
 					#[codec(index = 1)]
-					#[doc = "See [`Pallet::as_multi`]."]
+					#[doc = "Register approval for a dispatch to be made from a deterministic composite account if"]
+					#[doc = "approved by a total of `threshold - 1` of `other_signatories`."]
+					#[doc = ""]
+					#[doc = "If there are enough, then dispatch the call."]
+					#[doc = ""]
+					#[doc = "Payment: `DepositBase` will be reserved if this is the first approval, plus"]
+					#[doc = "`threshold` times `DepositFactor`. It is returned once this dispatch happens or"]
+					#[doc = "is cancelled."]
+					#[doc = ""]
+					#[doc = "The dispatch origin for this call must be _Signed_."]
+					#[doc = ""]
+					#[doc = "- `threshold`: The total number of approvals for this dispatch before it is executed."]
+					#[doc = "- `other_signatories`: The accounts (other than the sender) who can approve this"]
+					#[doc = "dispatch. May not be empty."]
+					#[doc = "- `maybe_timepoint`: If this is the first approval, then this must be `None`. If it is"]
+					#[doc = "not the first approval, then it must be `Some`, with the timepoint (block number and"]
+					#[doc = "transaction index) of the first approval transaction."]
+					#[doc = "- `call`: The call to be executed."]
+					#[doc = ""]
+					#[doc = "NOTE: Unless this is the final approval, you will generally want to use"]
+					#[doc = "`approve_as_multi` instead, since it only requires a hash of the call."]
+					#[doc = ""]
+					#[doc = "Result is equivalent to the dispatched result if `threshold` is exactly `1`. Otherwise"]
+					#[doc = "on success, result is `Ok` and the result from the interior call, if it was executed,"]
+					#[doc = "may be found in the deposited `MultisigExecuted` event."]
+					#[doc = ""]
+					#[doc = "## Complexity"]
+					#[doc = "- `O(S + Z + Call)`."]
+					#[doc = "- Up to one balance-reserve or unreserve operation."]
+					#[doc = "- One passthrough operation, one insert, both `O(S)` where `S` is the number of"]
+					#[doc = "  signatories. `S` is capped by `MaxSignatories`, with weight being proportional."]
+					#[doc = "- One call encode & hash, both of complexity `O(Z)` where `Z` is tx-len."]
+					#[doc = "- One encode & hash, both of complexity `O(S)`."]
+					#[doc = "- Up to one binary search and insert (`O(logS + S)`)."]
+					#[doc = "- I/O: 1 read `O(S)`, up to 1 mutate `O(S)`. Up to one remove."]
+					#[doc = "- One event."]
+					#[doc = "- The weight of the `call`."]
+					#[doc = "- Storage: inserts one item, value size bounded by `MaxSignatories`, with a deposit"]
+					#[doc = "  taken for its lifetime of `DepositBase + threshold * DepositFactor`."]
 					as_multi {
 						threshold: ::core::primitive::u16,
 						other_signatories: ::std::vec::Vec<::subxt::utils::AccountId32>,
@@ -29597,7 +33677,36 @@ pub mod api {
 						max_weight: runtime_types::sp_weights::weight_v2::Weight,
 					},
 					#[codec(index = 2)]
-					#[doc = "See [`Pallet::approve_as_multi`]."]
+					#[doc = "Register approval for a dispatch to be made from a deterministic composite account if"]
+					#[doc = "approved by a total of `threshold - 1` of `other_signatories`."]
+					#[doc = ""]
+					#[doc = "Payment: `DepositBase` will be reserved if this is the first approval, plus"]
+					#[doc = "`threshold` times `DepositFactor`. It is returned once this dispatch happens or"]
+					#[doc = "is cancelled."]
+					#[doc = ""]
+					#[doc = "The dispatch origin for this call must be _Signed_."]
+					#[doc = ""]
+					#[doc = "- `threshold`: The total number of approvals for this dispatch before it is executed."]
+					#[doc = "- `other_signatories`: The accounts (other than the sender) who can approve this"]
+					#[doc = "dispatch. May not be empty."]
+					#[doc = "- `maybe_timepoint`: If this is the first approval, then this must be `None`. If it is"]
+					#[doc = "not the first approval, then it must be `Some`, with the timepoint (block number and"]
+					#[doc = "transaction index) of the first approval transaction."]
+					#[doc = "- `call_hash`: The hash of the call to be executed."]
+					#[doc = ""]
+					#[doc = "NOTE: If this is the final approval, you will want to use `as_multi` instead."]
+					#[doc = ""]
+					#[doc = "## Complexity"]
+					#[doc = "- `O(S)`."]
+					#[doc = "- Up to one balance-reserve or unreserve operation."]
+					#[doc = "- One passthrough operation, one insert, both `O(S)` where `S` is the number of"]
+					#[doc = "  signatories. `S` is capped by `MaxSignatories`, with weight being proportional."]
+					#[doc = "- One encode & hash, both of complexity `O(S)`."]
+					#[doc = "- Up to one binary search and insert (`O(logS + S)`)."]
+					#[doc = "- I/O: 1 read `O(S)`, up to 1 mutate `O(S)`. Up to one remove."]
+					#[doc = "- One event."]
+					#[doc = "- Storage: inserts one item, value size bounded by `MaxSignatories`, with a deposit"]
+					#[doc = "  taken for its lifetime of `DepositBase + threshold * DepositFactor`."]
 					approve_as_multi {
 						threshold: ::core::primitive::u16,
 						other_signatories: ::std::vec::Vec<::subxt::utils::AccountId32>,
@@ -29608,7 +33717,27 @@ pub mod api {
 						max_weight: runtime_types::sp_weights::weight_v2::Weight,
 					},
 					#[codec(index = 3)]
-					#[doc = "See [`Pallet::cancel_as_multi`]."]
+					#[doc = "Cancel a pre-existing, on-going multisig transaction. Any deposit reserved previously"]
+					#[doc = "for this operation will be unreserved on success."]
+					#[doc = ""]
+					#[doc = "The dispatch origin for this call must be _Signed_."]
+					#[doc = ""]
+					#[doc = "- `threshold`: The total number of approvals for this dispatch before it is executed."]
+					#[doc = "- `other_signatories`: The accounts (other than the sender) who can approve this"]
+					#[doc = "dispatch. May not be empty."]
+					#[doc = "- `timepoint`: The timepoint (block number and transaction index) of the first approval"]
+					#[doc = "transaction for this dispatch."]
+					#[doc = "- `call_hash`: The hash of the call to be executed."]
+					#[doc = ""]
+					#[doc = "## Complexity"]
+					#[doc = "- `O(S)`."]
+					#[doc = "- Up to one balance-reserve or unreserve operation."]
+					#[doc = "- One passthrough operation, one insert, both `O(S)` where `S` is the number of"]
+					#[doc = "  signatories. `S` is capped by `MaxSignatories`, with weight being proportional."]
+					#[doc = "- One encode & hash, both of complexity `O(S)`."]
+					#[doc = "- One event."]
+					#[doc = "- I/O: 1 read `O(S)`, one remove."]
+					#[doc = "- Storage: removes one item."]
 					cancel_as_multi {
 						threshold: ::core::primitive::u16,
 						other_signatories: ::std::vec::Vec<::subxt::utils::AccountId32>,
@@ -29785,24 +33914,81 @@ pub mod api {
 				#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 				pub enum Call {
 					#[codec(index = 0)]
-					#[doc = "See [`Pallet::join`]."]
+					#[doc = "Stake funds with a pool. The amount to bond is transferred from the member to the pool"]
+					#[doc = "account and immediately increases the pools bond."]
+					#[doc = ""]
+					#[doc = "The method of transferring the amount to the pool account is determined by"]
+					#[doc = "[`adapter::StakeStrategyType`]. If the pool is configured to use"]
+					#[doc = "[`adapter::StakeStrategyType::Delegate`], the funds remain in the account of"]
+					#[doc = "the `origin`, while the pool gains the right to use these funds for staking."]
+					#[doc = ""]
+					#[doc = "# Note"]
+					#[doc = ""]
+					#[doc = "* An account can only be a member of a single pool."]
+					#[doc = "* An account cannot join the same pool multiple times."]
+					#[doc = "* This call will *not* dust the member account, so the member must have at least"]
+					#[doc = "  `existential deposit + amount` in their account."]
+					#[doc = "* Only a pool with [`PoolState::Open`] can be joined"]
 					join {
 						#[codec(compact)]
 						amount: ::core::primitive::u128,
 						pool_id: ::core::primitive::u32,
 					},
 					#[codec(index = 1)]
-					#[doc = "See [`Pallet::bond_extra`]."]
+					#[doc = "Bond `extra` more funds from `origin` into the pool to which they already belong."]
+					#[doc = ""]
+					#[doc = "Additional funds can come from either the free balance of the account, of from the"]
+					#[doc = "accumulated rewards, see [`BondExtra`]."]
+					#[doc = ""]
+					#[doc = "Bonding extra funds implies an automatic payout of all pending rewards as well."]
+					#[doc = "See `bond_extra_other` to bond pending rewards of `other` members."]
 					bond_extra {
 						extra: runtime_types::pallet_nomination_pools::BondExtra<
 							::core::primitive::u128,
 						>,
 					},
 					#[codec(index = 2)]
-					#[doc = "See [`Pallet::claim_payout`]."]
+					#[doc = "A bonded member can use this to claim their payout based on the rewards that the pool"]
+					#[doc = "has accumulated since their last claimed payout (OR since joining if this is their first"]
+					#[doc = "time claiming rewards). The payout will be transferred to the member's account."]
+					#[doc = ""]
+					#[doc = "The member will earn rewards pro rata based on the members stake vs the sum of the"]
+					#[doc = "members in the pools stake. Rewards do not \"expire\"."]
+					#[doc = ""]
+					#[doc = "See `claim_payout_other` to claim rewards on behalf of some `other` pool member."]
 					claim_payout,
 					#[codec(index = 3)]
-					#[doc = "See [`Pallet::unbond`]."]
+					#[doc = "Unbond up to `unbonding_points` of the `member_account`'s funds from the pool. It"]
+					#[doc = "implicitly collects the rewards one last time, since not doing so would mean some"]
+					#[doc = "rewards would be forfeited."]
+					#[doc = ""]
+					#[doc = "Under certain conditions, this call can be dispatched permissionlessly (i.e. by any"]
+					#[doc = "account)."]
+					#[doc = ""]
+					#[doc = "# Conditions for a permissionless dispatch."]
+					#[doc = ""]
+					#[doc = "* The pool is blocked and the caller is either the root or bouncer. This is refereed to"]
+					#[doc = "  as a kick."]
+					#[doc = "* The pool is destroying and the member is not the depositor."]
+					#[doc = "* The pool is destroying, the member is the depositor and no other members are in the"]
+					#[doc = "  pool."]
+					#[doc = ""]
+					#[doc = "## Conditions for permissioned dispatch (i.e. the caller is also the"]
+					#[doc = "`member_account`):"]
+					#[doc = ""]
+					#[doc = "* The caller is not the depositor."]
+					#[doc = "* The caller is the depositor, the pool is destroying and no other members are in the"]
+					#[doc = "  pool."]
+					#[doc = ""]
+					#[doc = "# Note"]
+					#[doc = ""]
+					#[doc = "If there are too many unlocking chunks to unbond with the pool account,"]
+					#[doc = "[`Call::pool_withdraw_unbonded`] can be called to try and minimize unlocking chunks."]
+					#[doc = "The [`StakingInterface::unbond`] will implicitly call [`Call::pool_withdraw_unbonded`]"]
+					#[doc = "to try to free chunks if necessary (ie. if unbound was called and no unlocking chunks"]
+					#[doc = "are available). However, it may not be possible to release the current unlocking chunks,"]
+					#[doc = "in which case, the result of this call will likely be the `NoMoreChunks` error from the"]
+					#[doc = "staking system."]
 					unbond {
 						member_account: ::subxt::utils::MultiAddress<
 							::subxt::utils::AccountId32,
@@ -29812,13 +33998,39 @@ pub mod api {
 						unbonding_points: ::core::primitive::u128,
 					},
 					#[codec(index = 4)]
-					#[doc = "See [`Pallet::pool_withdraw_unbonded`]."]
+					#[doc = "Call `withdraw_unbonded` for the pools account. This call can be made by any account."]
+					#[doc = ""]
+					#[doc = "This is useful if there are too many unlocking chunks to call `unbond`, and some"]
+					#[doc = "can be cleared by withdrawing. In the case there are too many unlocking chunks, the user"]
+					#[doc = "would probably see an error like `NoMoreChunks` emitted from the staking system when"]
+					#[doc = "they attempt to unbond."]
 					pool_withdraw_unbonded {
 						pool_id: ::core::primitive::u32,
 						num_slashing_spans: ::core::primitive::u32,
 					},
 					#[codec(index = 5)]
-					#[doc = "See [`Pallet::withdraw_unbonded`]."]
+					#[doc = "Withdraw unbonded funds from `member_account`. If no bonded funds can be unbonded, an"]
+					#[doc = "error is returned."]
+					#[doc = ""]
+					#[doc = "Under certain conditions, this call can be dispatched permissionlessly (i.e. by any"]
+					#[doc = "account)."]
+					#[doc = ""]
+					#[doc = "# Conditions for a permissionless dispatch"]
+					#[doc = ""]
+					#[doc = "* The pool is in destroy mode and the target is not the depositor."]
+					#[doc = "* The target is the depositor and they are the only member in the sub pools."]
+					#[doc = "* The pool is blocked and the caller is either the root or bouncer."]
+					#[doc = ""]
+					#[doc = "# Conditions for permissioned dispatch"]
+					#[doc = ""]
+					#[doc = "* The caller is the target and they are not the depositor."]
+					#[doc = ""]
+					#[doc = "# Note"]
+					#[doc = ""]
+					#[doc = "- If the target is the depositor, the pool will be destroyed."]
+					#[doc = "- If the pool has any pending slash, we also try to slash the member before letting them"]
+					#[doc = "withdraw. This calculation adds some weight overhead and is only defensive. In reality,"]
+					#[doc = "pool slashes must have been already applied via permissionless [`Call::apply_slash`]."]
 					withdraw_unbonded {
 						member_account: ::subxt::utils::MultiAddress<
 							::subxt::utils::AccountId32,
@@ -29827,7 +34039,23 @@ pub mod api {
 						num_slashing_spans: ::core::primitive::u32,
 					},
 					#[codec(index = 6)]
-					#[doc = "See [`Pallet::create`]."]
+					#[doc = "Create a new delegation pool."]
+					#[doc = ""]
+					#[doc = "# Arguments"]
+					#[doc = ""]
+					#[doc = "* `amount` - The amount of funds to delegate to the pool. This also acts of a sort of"]
+					#[doc = "  deposit since the pools creator cannot fully unbond funds until the pool is being"]
+					#[doc = "  destroyed."]
+					#[doc = "* `index` - A disambiguation index for creating the account. Likely only useful when"]
+					#[doc = "  creating multiple pools in the same extrinsic."]
+					#[doc = "* `root` - The account to set as [`PoolRoles::root`]."]
+					#[doc = "* `nominator` - The account to set as the [`PoolRoles::nominator`]."]
+					#[doc = "* `bouncer` - The account to set as the [`PoolRoles::bouncer`]."]
+					#[doc = ""]
+					#[doc = "# Note"]
+					#[doc = ""]
+					#[doc = "In addition to `amount`, the caller will transfer the existential deposit; so the caller"]
+					#[doc = "needs at have at least `amount + existential_deposit` transferable."]
 					create {
 						#[codec(compact)]
 						amount: ::core::primitive::u128,
@@ -29845,7 +34073,12 @@ pub mod api {
 						>,
 					},
 					#[codec(index = 7)]
-					#[doc = "See [`Pallet::create_with_pool_id`]."]
+					#[doc = "Create a new delegation pool with a previously used pool id"]
+					#[doc = ""]
+					#[doc = "# Arguments"]
+					#[doc = ""]
+					#[doc = "same as `create` with the inclusion of"]
+					#[doc = "* `pool_id` - `A valid PoolId."]
 					create_with_pool_id {
 						#[codec(compact)]
 						amount: ::core::primitive::u128,
@@ -29864,25 +34097,58 @@ pub mod api {
 						pool_id: ::core::primitive::u32,
 					},
 					#[codec(index = 8)]
-					#[doc = "See [`Pallet::nominate`]."]
+					#[doc = "Nominate on behalf of the pool."]
+					#[doc = ""]
+					#[doc = "The dispatch origin of this call must be signed by the pool nominator or the pool"]
+					#[doc = "root role."]
+					#[doc = ""]
+					#[doc = "This directly forward the call to the staking pallet, on behalf of the pool bonded"]
+					#[doc = "account."]
+					#[doc = ""]
+					#[doc = "# Note"]
+					#[doc = ""]
+					#[doc = "In addition to a `root` or `nominator` role of `origin`, pool's depositor needs to have"]
+					#[doc = "at least `depositor_min_bond` in the pool to start nominating."]
 					nominate {
 						pool_id: ::core::primitive::u32,
 						validators: ::std::vec::Vec<::subxt::utils::AccountId32>,
 					},
 					#[codec(index = 9)]
-					#[doc = "See [`Pallet::set_state`]."]
+					#[doc = "Set a new state for the pool."]
+					#[doc = ""]
+					#[doc = "If a pool is already in the `Destroying` state, then under no condition can its state"]
+					#[doc = "change again."]
+					#[doc = ""]
+					#[doc = "The dispatch origin of this call must be either:"]
+					#[doc = ""]
+					#[doc = "1. signed by the bouncer, or the root role of the pool,"]
+					#[doc = "2. if the pool conditions to be open are NOT met (as described by `ok_to_be_open`), and"]
+					#[doc = "   then the state of the pool can be permissionlessly changed to `Destroying`."]
 					set_state {
 						pool_id: ::core::primitive::u32,
 						state: runtime_types::pallet_nomination_pools::PoolState,
 					},
 					#[codec(index = 10)]
-					#[doc = "See [`Pallet::set_metadata`]."]
+					#[doc = "Set a new metadata for the pool."]
+					#[doc = ""]
+					#[doc = "The dispatch origin of this call must be signed by the bouncer, or the root role of the"]
+					#[doc = "pool."]
 					set_metadata {
 						pool_id: ::core::primitive::u32,
 						metadata: ::std::vec::Vec<::core::primitive::u8>,
 					},
 					#[codec(index = 11)]
-					#[doc = "See [`Pallet::set_configs`]."]
+					#[doc = "Update configurations for the nomination pools. The origin for this call must be"]
+					#[doc = "[`Config::AdminOrigin`]."]
+					#[doc = ""]
+					#[doc = "# Arguments"]
+					#[doc = ""]
+					#[doc = "* `min_join_bond` - Set [`MinJoinBond`]."]
+					#[doc = "* `min_create_bond` - Set [`MinCreateBond`]."]
+					#[doc = "* `max_pools` - Set [`MaxPools`]."]
+					#[doc = "* `max_members` - Set [`MaxPoolMembers`]."]
+					#[doc = "* `max_members_per_pool` - Set [`MaxPoolMembersPerPool`]."]
+					#[doc = "* `global_max_commission` - Set [`GlobalMaxCommission`]."]
 					set_configs {
 						min_join_bond: runtime_types::pallet_nomination_pools::ConfigOp<
 							::core::primitive::u128,
@@ -29904,7 +34170,13 @@ pub mod api {
 						>,
 					},
 					#[codec(index = 12)]
-					#[doc = "See [`Pallet::update_roles`]."]
+					#[doc = "Update the roles of the pool."]
+					#[doc = ""]
+					#[doc = "The root is the only entity that can change any of the roles, including itself,"]
+					#[doc = "excluding the depositor, who can never change."]
+					#[doc = ""]
+					#[doc = "It emits an event, notifying UIs of the role change. This event is quite relevant to"]
+					#[doc = "most pool members and they should be informed of changes to pool roles."]
 					update_roles {
 						pool_id: ::core::primitive::u32,
 						new_root: runtime_types::pallet_nomination_pools::ConfigOp<
@@ -29918,10 +34190,33 @@ pub mod api {
 						>,
 					},
 					#[codec(index = 13)]
-					#[doc = "See [`Pallet::chill`]."]
+					#[doc = "Chill on behalf of the pool."]
+					#[doc = ""]
+					#[doc = "The dispatch origin of this call can be signed by the pool nominator or the pool"]
+					#[doc = "root role, same as [`Pallet::nominate`]."]
+					#[doc = ""]
+					#[doc = "Under certain conditions, this call can be dispatched permissionlessly (i.e. by any"]
+					#[doc = "account)."]
+					#[doc = ""]
+					#[doc = "# Conditions for a permissionless dispatch:"]
+					#[doc = "* When pool depositor has less than `MinNominatorBond` staked, otherwise  pool members"]
+					#[doc = "  are unable to unbond."]
+					#[doc = ""]
+					#[doc = "# Conditions for permissioned dispatch:"]
+					#[doc = "* The caller has a nominator or root role of the pool."]
+					#[doc = "This directly forward the call to the staking pallet, on behalf of the pool bonded"]
+					#[doc = "account."]
 					chill { pool_id: ::core::primitive::u32 },
 					#[codec(index = 14)]
-					#[doc = "See [`Pallet::bond_extra_other`]."]
+					#[doc = "`origin` bonds funds from `extra` for some pool member `member` into their respective"]
+					#[doc = "pools."]
+					#[doc = ""]
+					#[doc = "`origin` can bond extra funds from free balance or pending rewards when `origin =="]
+					#[doc = "other`."]
+					#[doc = ""]
+					#[doc = "In the case of `origin != other`, `origin` can only bond extra pending rewards of"]
+					#[doc = "`other` members assuming set_claim_permission for the given member is"]
+					#[doc = "`PermissionlessCompound` or `PermissionlessAll`."]
 					bond_extra_other {
 						member: ::subxt::utils::MultiAddress<
 							::subxt::utils::AccountId32,
@@ -29932,15 +34227,28 @@ pub mod api {
 						>,
 					},
 					#[codec(index = 15)]
-					#[doc = "See [`Pallet::set_claim_permission`]."]
+					#[doc = "Allows a pool member to set a claim permission to allow or disallow permissionless"]
+					#[doc = "bonding and withdrawing."]
+					#[doc = ""]
+					#[doc = "# Arguments"]
+					#[doc = ""]
+					#[doc = "* `origin` - Member of a pool."]
+					#[doc = "* `permission` - The permission to be applied."]
 					set_claim_permission {
 						permission: runtime_types::pallet_nomination_pools::ClaimPermission,
 					},
 					#[codec(index = 16)]
-					#[doc = "See [`Pallet::claim_payout_other`]."]
+					#[doc = "`origin` can claim payouts on some pool member `other`'s behalf."]
+					#[doc = ""]
+					#[doc = "Pool member `other` must have a `PermissionlessWithdraw` or `PermissionlessAll` claim"]
+					#[doc = "permission for this call to be successful."]
 					claim_payout_other { other: ::subxt::utils::AccountId32 },
 					#[codec(index = 17)]
-					#[doc = "See [`Pallet::set_commission`]."]
+					#[doc = "Set the commission of a pool."]
+					#[doc = "Both a commission percentage and a commission payee must be provided in the `current`"]
+					#[doc = "tuple. Where a `current` of `None` is provided, any current commission will be removed."]
+					#[doc = ""]
+					#[doc = "- If a `None` is supplied to `new_commission`, existing commission will be removed."]
 					set_commission {
 						pool_id: ::core::primitive::u32,
 						new_commission: ::core::option::Option<(
@@ -29949,13 +34257,20 @@ pub mod api {
 						)>,
 					},
 					#[codec(index = 18)]
-					#[doc = "See [`Pallet::set_commission_max`]."]
+					#[doc = "Set the maximum commission of a pool."]
+					#[doc = ""]
+					#[doc = "- Initial max can be set to any `Perbill`, and only smaller values thereafter."]
+					#[doc = "- Current commission will be lowered in the event it is higher than a new max"]
+					#[doc = "  commission."]
 					set_commission_max {
 						pool_id: ::core::primitive::u32,
 						max_commission: runtime_types::sp_arithmetic::per_things::Perbill,
 					},
 					#[codec(index = 19)]
-					#[doc = "See [`Pallet::set_commission_change_rate`]."]
+					#[doc = "Set the commission change rate for a pool."]
+					#[doc = ""]
+					#[doc = "Initial change rate is not bounded, whereas subsequent updates can only be more"]
+					#[doc = "restrictive than the current."]
 					set_commission_change_rate {
 						pool_id: ::core::primitive::u32,
 						change_rate: runtime_types::pallet_nomination_pools::CommissionChangeRate<
@@ -29963,13 +34278,26 @@ pub mod api {
 						>,
 					},
 					#[codec(index = 20)]
-					#[doc = "See [`Pallet::claim_commission`]."]
+					#[doc = "Claim pending commission."]
+					#[doc = ""]
+					#[doc = "The dispatch origin of this call must be signed by the `root` role of the pool. Pending"]
+					#[doc = "commission is paid out and added to total claimed commission`. Total pending commission"]
+					#[doc = "is reset to zero. the current."]
 					claim_commission { pool_id: ::core::primitive::u32 },
 					#[codec(index = 21)]
-					#[doc = "See [`Pallet::adjust_pool_deposit`]."]
+					#[doc = "Top up the deficit or withdraw the excess ED from the pool."]
+					#[doc = ""]
+					#[doc = "When a pool is created, the pool depositor transfers ED to the reward account of the"]
+					#[doc = "pool. ED is subject to change and over time, the deposit in the reward account may be"]
+					#[doc = "insufficient to cover the ED deficit of the pool or vice-versa where there is excess"]
+					#[doc = "deposit to the pool. This call allows anyone to adjust the ED deposit of the"]
+					#[doc = "pool by either topping up the deficit or claiming the excess."]
 					adjust_pool_deposit { pool_id: ::core::primitive::u32 },
 					#[codec(index = 22)]
-					#[doc = "See [`Pallet::set_commission_claim_permission`]."]
+					#[doc = "Set or remove a pool's commission claim permission."]
+					#[doc = ""]
+					#[doc = "Determines who can claim the pool's pending commission. Only the `Root` role of the pool"]
+					#[doc = "is able to configure commission claim permissions."]
 					set_commission_claim_permission {
 						pool_id: ::core::primitive::u32,
 						permission: ::core::option::Option<
@@ -29978,6 +34306,47 @@ pub mod api {
 							>,
 						>,
 					},
+					#[codec(index = 23)]
+					#[doc = "Apply a pending slash on a member."]
+					#[doc = ""]
+					#[doc = "Fails unless [`crate::pallet::Config::StakeAdapter`] is of strategy type:"]
+					#[doc = "[`adapter::StakeStrategyType::Delegate`]."]
+					#[doc = ""]
+					#[doc = "This call can be dispatched permissionlessly (i.e. by any account). If the member has"]
+					#[doc = "slash to be applied, caller may be rewarded with the part of the slash."]
+					apply_slash {
+						member_account: ::subxt::utils::MultiAddress<
+							::subxt::utils::AccountId32,
+							::core::primitive::u32,
+						>,
+					},
+					#[codec(index = 24)]
+					#[doc = "Migrates delegated funds from the pool account to the `member_account`."]
+					#[doc = ""]
+					#[doc = "Fails unless [`crate::pallet::Config::StakeAdapter`] is of strategy type:"]
+					#[doc = "[`adapter::StakeStrategyType::Delegate`]."]
+					#[doc = ""]
+					#[doc = "This is a permission-less call and refunds any fee if claim is successful."]
+					#[doc = ""]
+					#[doc = "If the pool has migrated to delegation based staking, the staked tokens of pool members"]
+					#[doc = "can be moved and held in their own account. See [`adapter::DelegateStake`]"]
+					migrate_delegation {
+						member_account: ::subxt::utils::MultiAddress<
+							::subxt::utils::AccountId32,
+							::core::primitive::u32,
+						>,
+					},
+					#[codec(index = 25)]
+					#[doc = "Migrate pool from [`adapter::StakeStrategyType::Transfer`] to"]
+					#[doc = "[`adapter::StakeStrategyType::Delegate`]."]
+					#[doc = ""]
+					#[doc = "Fails unless [`crate::pallet::Config::StakeAdapter`] is of strategy type:"]
+					#[doc = "[`adapter::StakeStrategyType::Delegate`]."]
+					#[doc = ""]
+					#[doc = "This call can be dispatched permissionlessly, and refunds any fee if successful."]
+					#[doc = ""]
+					#[doc = "If the pool has already migrated to delegation based staking, this call will fail."]
+					migrate_pool_to_delegate_stake { pool_id: ::core::primitive::u32 },
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -30003,6 +34372,10 @@ pub mod api {
 					SubPoolsNotFound,
 					#[codec(index = 4)]
 					BondedStashKilledPrematurely,
+					#[codec(index = 5)]
+					DelegationUnsupported,
+					#[codec(index = 6)]
+					SlashNotApplied,
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -30123,6 +34496,18 @@ pub mod api {
 					#[codec(index = 31)]
 					#[doc = "No imbalance in the ED deposit for the pool."]
 					NothingToAdjust,
+					#[codec(index = 32)]
+					#[doc = "No slash pending that can be applied to the member."]
+					NothingToSlash,
+					#[codec(index = 33)]
+					#[doc = "The pool or member delegation has already migrated to delegate stake."]
+					AlreadyMigrated,
+					#[codec(index = 34)]
+					#[doc = "The pool or member delegation has not migrated yet to delegate stake."]
+					NotMigrated,
+					#[codec(index = 35)]
+					#[doc = "This call is not allowed in the current state of the pallet."]
+					NotSupported,
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -30205,9 +34590,12 @@ pub mod api {
 					#[doc = "A member has been removed from a pool."]
 					#[doc = ""]
 					#[doc = "The removal can be voluntary (withdrawn all unbonded funds) or involuntary (kicked)."]
+					#[doc = "Any funds that are still delegated (i.e. dangling delegation) are released and are"]
+					#[doc = "represented by `released_balance`."]
 					MemberRemoved {
 						pool_id: ::core::primitive::u32,
 						member: ::subxt::utils::AccountId32,
+						released_balance: ::core::primitive::u128,
 					},
 					#[codec(index = 8)]
 					#[doc = "The roles of a pool have been updated to the given new roles. Note that the depositor"]
@@ -30625,21 +35013,36 @@ pub mod api {
 				#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 				pub enum Call {
 					#[codec(index = 0)]
-					#[doc = "See [`Pallet::note_preimage`]."]
+					#[doc = "Register a preimage on-chain."]
+					#[doc = ""]
+					#[doc = "If the preimage was previously requested, no fees or deposits are taken for providing"]
+					#[doc = "the preimage. Otherwise, a deposit is taken proportional to the size of the preimage."]
 					note_preimage {
 						bytes: ::std::vec::Vec<::core::primitive::u8>,
 					},
 					#[codec(index = 1)]
-					#[doc = "See [`Pallet::unnote_preimage`]."]
+					#[doc = "Clear an unrequested preimage from the runtime storage."]
+					#[doc = ""]
+					#[doc = "If `len` is provided, then it will be a much cheaper operation."]
+					#[doc = ""]
+					#[doc = "- `hash`: The hash of the preimage to be removed from the store."]
+					#[doc = "- `len`: The length of the preimage of `hash`."]
 					unnote_preimage { hash: ::subxt::utils::H256 },
 					#[codec(index = 2)]
-					#[doc = "See [`Pallet::request_preimage`]."]
+					#[doc = "Request a preimage be uploaded to the chain without paying any fees or deposits."]
+					#[doc = ""]
+					#[doc = "If the preimage requests has already been provided on-chain, we unreserve any deposit"]
+					#[doc = "a user may have paid, and take the control of the preimage out of their hands."]
 					request_preimage { hash: ::subxt::utils::H256 },
 					#[codec(index = 3)]
-					#[doc = "See [`Pallet::unrequest_preimage`]."]
+					#[doc = "Clear a previously made request for a preimage."]
+					#[doc = ""]
+					#[doc = "NOTE: THIS MUST NOT BE CALLED ON `hash` MORE TIMES THAN `request_preimage`."]
 					unrequest_preimage { hash: ::subxt::utils::H256 },
 					#[codec(index = 4)]
-					#[doc = "See [`Pallet::ensure_updated`]."]
+					#[doc = "Ensure that the a bulk of pre-images is upgraded."]
+					#[doc = ""]
+					#[doc = "The caller pays no fee if at least 90% of pre-images were successfully updated."]
 					ensure_updated {
 						hashes: ::std::vec::Vec<::subxt::utils::H256>,
 					},
@@ -30800,7 +35203,15 @@ pub mod api {
 				#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 				pub enum Call {
 					#[codec(index = 0)]
-					#[doc = "See [`Pallet::proxy`]."]
+					#[doc = "Dispatch the given `call` from an account that the sender is authorised for through"]
+					#[doc = "`add_proxy`."]
+					#[doc = ""]
+					#[doc = "The dispatch origin for this call must be _Signed_."]
+					#[doc = ""]
+					#[doc = "Parameters:"]
+					#[doc = "- `real`: The account that the proxy will make a call on behalf of."]
+					#[doc = "- `force_proxy_type`: Specify the exact proxy type to be used and checked for this call."]
+					#[doc = "- `call`: The call to be made by the `real` account."]
 					proxy {
 						real: ::subxt::utils::MultiAddress<
 							::subxt::utils::AccountId32,
@@ -30811,7 +35222,15 @@ pub mod api {
 						call: ::std::boxed::Box<runtime_types::da_runtime::RuntimeCall>,
 					},
 					#[codec(index = 1)]
-					#[doc = "See [`Pallet::add_proxy`]."]
+					#[doc = "Register a proxy account for the sender that is able to make calls on its behalf."]
+					#[doc = ""]
+					#[doc = "The dispatch origin for this call must be _Signed_."]
+					#[doc = ""]
+					#[doc = "Parameters:"]
+					#[doc = "- `proxy`: The account that the `caller` would like to make a proxy."]
+					#[doc = "- `proxy_type`: The permissions allowed for this proxy account."]
+					#[doc = "- `delay`: The announcement period required of the initial proxy. Will generally be"]
+					#[doc = "zero."]
 					add_proxy {
 						delegate: ::subxt::utils::MultiAddress<
 							::subxt::utils::AccountId32,
@@ -30821,7 +35240,13 @@ pub mod api {
 						delay: ::core::primitive::u32,
 					},
 					#[codec(index = 2)]
-					#[doc = "See [`Pallet::remove_proxy`]."]
+					#[doc = "Unregister a proxy account for the sender."]
+					#[doc = ""]
+					#[doc = "The dispatch origin for this call must be _Signed_."]
+					#[doc = ""]
+					#[doc = "Parameters:"]
+					#[doc = "- `proxy`: The account that the `caller` would like to remove as a proxy."]
+					#[doc = "- `proxy_type`: The permissions currently enabled for the removed proxy account."]
 					remove_proxy {
 						delegate: ::subxt::utils::MultiAddress<
 							::subxt::utils::AccountId32,
@@ -30831,17 +35256,54 @@ pub mod api {
 						delay: ::core::primitive::u32,
 					},
 					#[codec(index = 3)]
-					#[doc = "See [`Pallet::remove_proxies`]."]
+					#[doc = "Unregister all proxy accounts for the sender."]
+					#[doc = ""]
+					#[doc = "The dispatch origin for this call must be _Signed_."]
+					#[doc = ""]
+					#[doc = "WARNING: This may be called on accounts created by `pure`, however if done, then"]
+					#[doc = "the unreserved fees will be inaccessible. **All access to this account will be lost.**"]
 					remove_proxies,
 					#[codec(index = 4)]
-					#[doc = "See [`Pallet::create_pure`]."]
+					#[doc = "Spawn a fresh new account that is guaranteed to be otherwise inaccessible, and"]
+					#[doc = "initialize it with a proxy of `proxy_type` for `origin` sender."]
+					#[doc = ""]
+					#[doc = "Requires a `Signed` origin."]
+					#[doc = ""]
+					#[doc = "- `proxy_type`: The type of the proxy that the sender will be registered as over the"]
+					#[doc = "new account. This will almost always be the most permissive `ProxyType` possible to"]
+					#[doc = "allow for maximum flexibility."]
+					#[doc = "- `index`: A disambiguation index, in case this is called multiple times in the same"]
+					#[doc = "transaction (e.g. with `utility::batch`). Unless you're using `batch` you probably just"]
+					#[doc = "want to use `0`."]
+					#[doc = "- `delay`: The announcement period required of the initial proxy. Will generally be"]
+					#[doc = "zero."]
+					#[doc = ""]
+					#[doc = "Fails with `Duplicate` if this has already been called in this transaction, from the"]
+					#[doc = "same sender, with the same parameters."]
+					#[doc = ""]
+					#[doc = "Fails if there are insufficient funds to pay for deposit."]
 					create_pure {
 						proxy_type: runtime_types::da_runtime::impls::ProxyType,
 						delay: ::core::primitive::u32,
 						index: ::core::primitive::u16,
 					},
 					#[codec(index = 5)]
-					#[doc = "See [`Pallet::kill_pure`]."]
+					#[doc = "Removes a previously spawned pure proxy."]
+					#[doc = ""]
+					#[doc = "WARNING: **All access to this account will be lost.** Any funds held in it will be"]
+					#[doc = "inaccessible."]
+					#[doc = ""]
+					#[doc = "Requires a `Signed` origin, and the sender account must have been created by a call to"]
+					#[doc = "`pure` with corresponding parameters."]
+					#[doc = ""]
+					#[doc = "- `spawner`: The account that originally called `pure` to create this account."]
+					#[doc = "- `index`: The disambiguation index originally passed to `pure`. Probably `0`."]
+					#[doc = "- `proxy_type`: The proxy type originally passed to `pure`."]
+					#[doc = "- `height`: The height of the chain when the call to `pure` was processed."]
+					#[doc = "- `ext_index`: The extrinsic index in which the call to `pure` was processed."]
+					#[doc = ""]
+					#[doc = "Fails with `NoPermission` in case the caller is not a previously created pure"]
+					#[doc = "account whose `pure` call has corresponding parameters."]
 					kill_pure {
 						spawner: ::subxt::utils::MultiAddress<
 							::subxt::utils::AccountId32,
@@ -30855,7 +35317,21 @@ pub mod api {
 						ext_index: ::core::primitive::u32,
 					},
 					#[codec(index = 6)]
-					#[doc = "See [`Pallet::announce`]."]
+					#[doc = "Publish the hash of a proxy-call that will be made in the future."]
+					#[doc = ""]
+					#[doc = "This must be called some number of blocks before the corresponding `proxy` is attempted"]
+					#[doc = "if the delay associated with the proxy relationship is greater than zero."]
+					#[doc = ""]
+					#[doc = "No more than `MaxPending` announcements may be made at any one time."]
+					#[doc = ""]
+					#[doc = "This will take a deposit of `AnnouncementDepositFactor` as well as"]
+					#[doc = "`AnnouncementDepositBase` if there are no other pending announcements."]
+					#[doc = ""]
+					#[doc = "The dispatch origin for this call must be _Signed_ and a proxy of `real`."]
+					#[doc = ""]
+					#[doc = "Parameters:"]
+					#[doc = "- `real`: The account that the proxy will make a call on behalf of."]
+					#[doc = "- `call_hash`: The hash of the call to be made by the `real` account."]
 					announce {
 						real: ::subxt::utils::MultiAddress<
 							::subxt::utils::AccountId32,
@@ -30864,7 +35340,16 @@ pub mod api {
 						call_hash: ::subxt::utils::H256,
 					},
 					#[codec(index = 7)]
-					#[doc = "See [`Pallet::remove_announcement`]."]
+					#[doc = "Remove a given announcement."]
+					#[doc = ""]
+					#[doc = "May be called by a proxy account to remove a call they previously announced and return"]
+					#[doc = "the deposit."]
+					#[doc = ""]
+					#[doc = "The dispatch origin for this call must be _Signed_."]
+					#[doc = ""]
+					#[doc = "Parameters:"]
+					#[doc = "- `real`: The account that the proxy will make a call on behalf of."]
+					#[doc = "- `call_hash`: The hash of the call to be made by the `real` account."]
 					remove_announcement {
 						real: ::subxt::utils::MultiAddress<
 							::subxt::utils::AccountId32,
@@ -30873,7 +35358,16 @@ pub mod api {
 						call_hash: ::subxt::utils::H256,
 					},
 					#[codec(index = 8)]
-					#[doc = "See [`Pallet::reject_announcement`]."]
+					#[doc = "Remove the given announcement of a delegate."]
+					#[doc = ""]
+					#[doc = "May be called by a target (proxied) account to remove a call that one of their delegates"]
+					#[doc = "(`delegate`) has announced they want to execute. The deposit is returned."]
+					#[doc = ""]
+					#[doc = "The dispatch origin for this call must be _Signed_."]
+					#[doc = ""]
+					#[doc = "Parameters:"]
+					#[doc = "- `delegate`: The account that previously announced the call."]
+					#[doc = "- `call_hash`: The hash of the call to be made."]
 					reject_announcement {
 						delegate: ::subxt::utils::MultiAddress<
 							::subxt::utils::AccountId32,
@@ -30882,7 +35376,17 @@ pub mod api {
 						call_hash: ::subxt::utils::H256,
 					},
 					#[codec(index = 9)]
-					#[doc = "See [`Pallet::proxy_announced`]."]
+					#[doc = "Dispatch the given `call` from an account that the sender is authorized for through"]
+					#[doc = "`add_proxy`."]
+					#[doc = ""]
+					#[doc = "Removes any corresponding announcement(s)."]
+					#[doc = ""]
+					#[doc = "The dispatch origin for this call must be _Signed_."]
+					#[doc = ""]
+					#[doc = "Parameters:"]
+					#[doc = "- `real`: The account that the proxy will make a call on behalf of."]
+					#[doc = "- `force_proxy_type`: Specify the exact proxy type to be used and checked for this call."]
+					#[doc = "- `call`: The call to be made by the `real` account."]
 					proxy_announced {
 						delegate: ::subxt::utils::MultiAddress<
 							::subxt::utils::AccountId32,
@@ -31049,7 +35553,7 @@ pub mod api {
 				#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 				pub enum Call {
 					#[codec(index = 0)]
-					#[doc = "See [`Pallet::schedule`]."]
+					#[doc = "Anonymously schedule a task."]
 					schedule {
 						when: ::core::primitive::u32,
 						maybe_periodic: ::core::option::Option<(
@@ -31060,13 +35564,13 @@ pub mod api {
 						call: ::std::boxed::Box<runtime_types::da_runtime::RuntimeCall>,
 					},
 					#[codec(index = 1)]
-					#[doc = "See [`Pallet::cancel`]."]
+					#[doc = "Cancel an anonymously scheduled task."]
 					cancel {
 						when: ::core::primitive::u32,
 						index: ::core::primitive::u32,
 					},
 					#[codec(index = 2)]
-					#[doc = "See [`Pallet::schedule_named`]."]
+					#[doc = "Schedule a named task."]
 					schedule_named {
 						id: [::core::primitive::u8; 32usize],
 						when: ::core::primitive::u32,
@@ -31078,12 +35582,12 @@ pub mod api {
 						call: ::std::boxed::Box<runtime_types::da_runtime::RuntimeCall>,
 					},
 					#[codec(index = 3)]
-					#[doc = "See [`Pallet::cancel_named`]."]
+					#[doc = "Cancel a named scheduled task."]
 					cancel_named {
 						id: [::core::primitive::u8; 32usize],
 					},
 					#[codec(index = 4)]
-					#[doc = "See [`Pallet::schedule_after`]."]
+					#[doc = "Anonymously schedule a task after a delay."]
 					schedule_after {
 						after: ::core::primitive::u32,
 						maybe_periodic: ::core::option::Option<(
@@ -31094,7 +35598,7 @@ pub mod api {
 						call: ::std::boxed::Box<runtime_types::da_runtime::RuntimeCall>,
 					},
 					#[codec(index = 5)]
-					#[doc = "See [`Pallet::schedule_named_after`]."]
+					#[doc = "Schedule a named task after a delay."]
 					schedule_named_after {
 						id: [::core::primitive::u8; 32usize],
 						after: ::core::primitive::u32,
@@ -31104,6 +35608,52 @@ pub mod api {
 						)>,
 						priority: ::core::primitive::u8,
 						call: ::std::boxed::Box<runtime_types::da_runtime::RuntimeCall>,
+					},
+					#[codec(index = 6)]
+					#[doc = "Set a retry configuration for a task so that, in case its scheduled run fails, it will"]
+					#[doc = "be retried after `period` blocks, for a total amount of `retries` retries or until it"]
+					#[doc = "succeeds."]
+					#[doc = ""]
+					#[doc = "Tasks which need to be scheduled for a retry are still subject to weight metering and"]
+					#[doc = "agenda space, same as a regular task. If a periodic task fails, it will be scheduled"]
+					#[doc = "normally while the task is retrying."]
+					#[doc = ""]
+					#[doc = "Tasks scheduled as a result of a retry for a periodic task are unnamed, non-periodic"]
+					#[doc = "clones of the original task. Their retry configuration will be derived from the"]
+					#[doc = "original task's configuration, but will have a lower value for `remaining` than the"]
+					#[doc = "original `total_retries`."]
+					set_retry {
+						task: (::core::primitive::u32, ::core::primitive::u32),
+						retries: ::core::primitive::u8,
+						period: ::core::primitive::u32,
+					},
+					#[codec(index = 7)]
+					#[doc = "Set a retry configuration for a named task so that, in case its scheduled run fails, it"]
+					#[doc = "will be retried after `period` blocks, for a total amount of `retries` retries or until"]
+					#[doc = "it succeeds."]
+					#[doc = ""]
+					#[doc = "Tasks which need to be scheduled for a retry are still subject to weight metering and"]
+					#[doc = "agenda space, same as a regular task. If a periodic task fails, it will be scheduled"]
+					#[doc = "normally while the task is retrying."]
+					#[doc = ""]
+					#[doc = "Tasks scheduled as a result of a retry for a periodic task are unnamed, non-periodic"]
+					#[doc = "clones of the original task. Their retry configuration will be derived from the"]
+					#[doc = "original task's configuration, but will have a lower value for `remaining` than the"]
+					#[doc = "original `total_retries`."]
+					set_retry_named {
+						id: [::core::primitive::u8; 32usize],
+						retries: ::core::primitive::u8,
+						period: ::core::primitive::u32,
+					},
+					#[codec(index = 8)]
+					#[doc = "Removes the retry configuration of a task."]
+					cancel_retry {
+						task: (::core::primitive::u32, ::core::primitive::u32),
+					},
+					#[codec(index = 9)]
+					#[doc = "Cancel the retry configuration of a named task."]
+					cancel_retry_named {
+						id: [::core::primitive::u8; 32usize],
 					},
 				}
 				#[derive(
@@ -31173,24 +35723,63 @@ pub mod api {
 							::core::result::Result<(), runtime_types::sp_runtime::DispatchError>,
 					},
 					#[codec(index = 3)]
+					#[doc = "Set a retry configuration for some task."]
+					RetrySet {
+						task: (::core::primitive::u32, ::core::primitive::u32),
+						id: ::core::option::Option<[::core::primitive::u8; 32usize]>,
+						period: ::core::primitive::u32,
+						retries: ::core::primitive::u8,
+					},
+					#[codec(index = 4)]
+					#[doc = "Cancel a retry configuration for some task."]
+					RetryCancelled {
+						task: (::core::primitive::u32, ::core::primitive::u32),
+						id: ::core::option::Option<[::core::primitive::u8; 32usize]>,
+					},
+					#[codec(index = 5)]
 					#[doc = "The call for the provided hash was not found so the task has been aborted."]
 					CallUnavailable {
 						task: (::core::primitive::u32, ::core::primitive::u32),
 						id: ::core::option::Option<[::core::primitive::u8; 32usize]>,
 					},
-					#[codec(index = 4)]
+					#[codec(index = 6)]
 					#[doc = "The given task was unable to be renewed since the agenda is full at that block."]
 					PeriodicFailed {
 						task: (::core::primitive::u32, ::core::primitive::u32),
 						id: ::core::option::Option<[::core::primitive::u8; 32usize]>,
 					},
-					#[codec(index = 5)]
+					#[codec(index = 7)]
+					#[doc = "The given task was unable to be retried since the agenda is full at that block or there"]
+					#[doc = "was not enough weight to reschedule it."]
+					RetryFailed {
+						task: (::core::primitive::u32, ::core::primitive::u32),
+						id: ::core::option::Option<[::core::primitive::u8; 32usize]>,
+					},
+					#[codec(index = 8)]
 					#[doc = "The given task can never be executed since it is overweight."]
 					PermanentlyOverweight {
 						task: (::core::primitive::u32, ::core::primitive::u32),
 						id: ::core::option::Option<[::core::primitive::u8; 32usize]>,
 					},
 				}
+			}
+			#[derive(
+				:: subxt :: ext :: codec :: Decode,
+				:: subxt :: ext :: codec :: Encode,
+				:: subxt :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: codec)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+			pub struct RetryConfig<_0> {
+				pub total_retries: ::core::primitive::u8,
+				pub remaining: ::core::primitive::u8,
+				pub period: _0,
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -31235,13 +35824,32 @@ pub mod api {
 				#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 				pub enum Call {
 					#[codec(index = 0)]
-					#[doc = "See [`Pallet::set_keys`]."]
+					#[doc = "Sets the session key(s) of the function caller to `keys`."]
+					#[doc = "Allows an account to set its session key prior to becoming a validator."]
+					#[doc = "This doesn't take effect until the next session."]
+					#[doc = ""]
+					#[doc = "The dispatch origin of this function must be signed."]
+					#[doc = ""]
+					#[doc = "## Complexity"]
+					#[doc = "- `O(1)`. Actual cost depends on the number of length of `T::Keys::key_ids()` which is"]
+					#[doc = "  fixed."]
 					set_keys {
 						keys: runtime_types::da_runtime::primitives::SessionKeys,
 						proof: ::std::vec::Vec<::core::primitive::u8>,
 					},
 					#[codec(index = 1)]
-					#[doc = "See [`Pallet::purge_keys`]."]
+					#[doc = "Removes any session key(s) of the function caller."]
+					#[doc = ""]
+					#[doc = "This doesn't take effect until the next session."]
+					#[doc = ""]
+					#[doc = "The dispatch origin of this function must be Signed and the account must be either be"]
+					#[doc = "convertible to a validator ID using the chain's typical addressing system (this usually"]
+					#[doc = "means being a controller account) or directly convertible into a validator ID (which"]
+					#[doc = "usually means being a stash account)."]
+					#[doc = ""]
+					#[doc = "## Complexity"]
+					#[doc = "- `O(1)` in number of key types. Actual cost depends on the number of length of"]
+					#[doc = "  `T::Keys::key_ids()` which is fixed."]
 					purge_keys,
 				}
 				#[derive(
@@ -31321,7 +35929,22 @@ pub mod api {
 					#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 					pub enum Call {
 						#[codec(index = 0)]
-						#[doc = "See [`Pallet::bond`]."]
+						#[doc = "Take the origin account as a stash and lock up `value` of its balance. `controller` will"]
+						#[doc = "be the account that controls it."]
+						#[doc = ""]
+						#[doc = "`value` must be more than the `minimum_balance` specified by `T::Currency`."]
+						#[doc = ""]
+						#[doc = "The dispatch origin for this call must be _Signed_ by the stash account."]
+						#[doc = ""]
+						#[doc = "Emits `Bonded`."]
+						#[doc = "## Complexity"]
+						#[doc = "- Independent of the arguments. Moderate complexity."]
+						#[doc = "- O(1)."]
+						#[doc = "- Three extra DB entries."]
+						#[doc = ""]
+						#[doc = "NOTE: Two of the storage writes (`Self::bonded`, `Self::payee`) are _never_ cleaned"]
+						#[doc = "unless the `origin` falls below _existential deposit_ (or equal to 0) and gets removed"]
+						#[doc = "as dust."]
 						bond {
 							#[codec(compact)]
 							value: ::core::primitive::u128,
@@ -31330,29 +35953,95 @@ pub mod api {
 							>,
 						},
 						#[codec(index = 1)]
-						#[doc = "See [`Pallet::bond_extra`]."]
+						#[doc = "Add some extra amount that have appeared in the stash `free_balance` into the balance up"]
+						#[doc = "for staking."]
+						#[doc = ""]
+						#[doc = "The dispatch origin for this call must be _Signed_ by the stash, not the controller."]
+						#[doc = ""]
+						#[doc = "Use this if there are additional funds in your stash account that you wish to bond."]
+						#[doc = "Unlike [`bond`](Self::bond) or [`unbond`](Self::unbond) this function does not impose"]
+						#[doc = "any limitation on the amount that can be added."]
+						#[doc = ""]
+						#[doc = "Emits `Bonded`."]
+						#[doc = ""]
+						#[doc = "## Complexity"]
+						#[doc = "- Independent of the arguments. Insignificant complexity."]
+						#[doc = "- O(1)."]
 						bond_extra {
 							#[codec(compact)]
 							max_additional: ::core::primitive::u128,
 						},
 						#[codec(index = 2)]
-						#[doc = "See [`Pallet::unbond`]."]
+						#[doc = "Schedule a portion of the stash to be unlocked ready for transfer out after the bond"]
+						#[doc = "period ends. If this leaves an amount actively bonded less than"]
+						#[doc = "T::Currency::minimum_balance(), then it is increased to the full amount."]
+						#[doc = ""]
+						#[doc = "The dispatch origin for this call must be _Signed_ by the controller, not the stash."]
+						#[doc = ""]
+						#[doc = "Once the unlock period is done, you can call `withdraw_unbonded` to actually move"]
+						#[doc = "the funds out of management ready for transfer."]
+						#[doc = ""]
+						#[doc = "No more than a limited number of unlocking chunks (see `MaxUnlockingChunks`)"]
+						#[doc = "can co-exists at the same time. If there are no unlocking chunks slots available"]
+						#[doc = "[`Call::withdraw_unbonded`] is called to remove some of the chunks (if possible)."]
+						#[doc = ""]
+						#[doc = "If a user encounters the `InsufficientBond` error when calling this extrinsic,"]
+						#[doc = "they should call `chill` first in order to free up their bonded funds."]
+						#[doc = ""]
+						#[doc = "Emits `Unbonded`."]
+						#[doc = ""]
+						#[doc = "See also [`Call::withdraw_unbonded`]."]
 						unbond {
 							#[codec(compact)]
 							value: ::core::primitive::u128,
 						},
 						#[codec(index = 3)]
-						#[doc = "See [`Pallet::withdraw_unbonded`]."]
+						#[doc = "Remove any unlocked chunks from the `unlocking` queue from our management."]
+						#[doc = ""]
+						#[doc = "This essentially frees up that balance to be used by the stash account to do whatever"]
+						#[doc = "it wants."]
+						#[doc = ""]
+						#[doc = "The dispatch origin for this call must be _Signed_ by the controller."]
+						#[doc = ""]
+						#[doc = "Emits `Withdrawn`."]
+						#[doc = ""]
+						#[doc = "See also [`Call::unbond`]."]
+						#[doc = ""]
+						#[doc = "## Parameters"]
+						#[doc = ""]
+						#[doc = "- `num_slashing_spans` indicates the number of metadata slashing spans to clear when"]
+						#[doc = "this call results in a complete removal of all the data related to the stash account."]
+						#[doc = "In this case, the `num_slashing_spans` must be larger or equal to the number of"]
+						#[doc = "slashing spans associated with the stash account in the [`SlashingSpans`] storage type,"]
+						#[doc = "otherwise the call will fail. The call weight is directly proportional to"]
+						#[doc = "`num_slashing_spans`."]
+						#[doc = ""]
+						#[doc = "## Complexity"]
+						#[doc = "O(S) where S is the number of slashing spans to remove"]
+						#[doc = "NOTE: Weight annotation is the kill scenario, we refund otherwise."]
 						withdraw_unbonded {
 							num_slashing_spans: ::core::primitive::u32,
 						},
 						#[codec(index = 4)]
-						#[doc = "See [`Pallet::validate`]."]
+						#[doc = "Declare the desire to validate for the origin controller."]
+						#[doc = ""]
+						#[doc = "Effects will be felt at the beginning of the next era."]
+						#[doc = ""]
+						#[doc = "The dispatch origin for this call must be _Signed_ by the controller, not the stash."]
 						validate {
 							prefs: runtime_types::pallet_staking::ValidatorPrefs,
 						},
 						#[codec(index = 5)]
-						#[doc = "See [`Pallet::nominate`]."]
+						#[doc = "Declare the desire to nominate `targets` for the origin controller."]
+						#[doc = ""]
+						#[doc = "Effects will be felt at the beginning of the next era."]
+						#[doc = ""]
+						#[doc = "The dispatch origin for this call must be _Signed_ by the controller, not the stash."]
+						#[doc = ""]
+						#[doc = "## Complexity"]
+						#[doc = "- The transaction's complexity is proportional to the size of `targets` (N)"]
+						#[doc = "which is capped at CompactAssignments::LIMIT (T::MaxNominations)."]
+						#[doc = "- Both the reads and writes follow a similar pattern."]
 						nominate {
 							targets: ::std::vec::Vec<
 								::subxt::utils::MultiAddress<
@@ -31362,81 +36051,222 @@ pub mod api {
 							>,
 						},
 						#[codec(index = 6)]
-						#[doc = "See [`Pallet::chill`]."]
+						#[doc = "Declare no desire to either validate or nominate."]
+						#[doc = ""]
+						#[doc = "Effects will be felt at the beginning of the next era."]
+						#[doc = ""]
+						#[doc = "The dispatch origin for this call must be _Signed_ by the controller, not the stash."]
+						#[doc = ""]
+						#[doc = "## Complexity"]
+						#[doc = "- Independent of the arguments. Insignificant complexity."]
+						#[doc = "- Contains one read."]
+						#[doc = "- Writes are limited to the `origin` account key."]
 						chill,
 						#[codec(index = 7)]
-						#[doc = "See [`Pallet::set_payee`]."]
+						#[doc = "(Re-)set the payment target for a controller."]
+						#[doc = ""]
+						#[doc = "Effects will be felt instantly (as soon as this function is completed successfully)."]
+						#[doc = ""]
+						#[doc = "The dispatch origin for this call must be _Signed_ by the controller, not the stash."]
+						#[doc = ""]
+						#[doc = "## Complexity"]
+						#[doc = "- O(1)"]
+						#[doc = "- Independent of the arguments. Insignificant complexity."]
+						#[doc = "- Contains a limited number of reads."]
+						#[doc = "- Writes are limited to the `origin` account key."]
+						#[doc = "---------"]
 						set_payee {
 							payee: runtime_types::pallet_staking::RewardDestination<
 								::subxt::utils::AccountId32,
 							>,
 						},
 						#[codec(index = 8)]
-						#[doc = "See [`Pallet::set_controller`]."]
+						#[doc = "(Re-)sets the controller of a stash to the stash itself. This function previously"]
+						#[doc = "accepted a `controller` argument to set the controller to an account other than the"]
+						#[doc = "stash itself. This functionality has now been removed, now only setting the controller"]
+						#[doc = "to the stash, if it is not already."]
+						#[doc = ""]
+						#[doc = "Effects will be felt instantly (as soon as this function is completed successfully)."]
+						#[doc = ""]
+						#[doc = "The dispatch origin for this call must be _Signed_ by the stash, not the controller."]
+						#[doc = ""]
+						#[doc = "## Complexity"]
+						#[doc = "O(1)"]
+						#[doc = "- Independent of the arguments. Insignificant complexity."]
+						#[doc = "- Contains a limited number of reads."]
+						#[doc = "- Writes are limited to the `origin` account key."]
 						set_controller,
 						#[codec(index = 9)]
-						#[doc = "See [`Pallet::set_validator_count`]."]
+						#[doc = "Sets the ideal number of validators."]
+						#[doc = ""]
+						#[doc = "The dispatch origin must be Root."]
+						#[doc = ""]
+						#[doc = "## Complexity"]
+						#[doc = "O(1)"]
 						set_validator_count {
 							#[codec(compact)]
 							new: ::core::primitive::u32,
 						},
 						#[codec(index = 10)]
-						#[doc = "See [`Pallet::increase_validator_count`]."]
+						#[doc = "Increments the ideal number of validators up to maximum of"]
+						#[doc = "`ElectionProviderBase::MaxWinners`."]
+						#[doc = ""]
+						#[doc = "The dispatch origin must be Root."]
+						#[doc = ""]
+						#[doc = "## Complexity"]
+						#[doc = "Same as [`Self::set_validator_count`]."]
 						increase_validator_count {
 							#[codec(compact)]
 							additional: ::core::primitive::u32,
 						},
 						#[codec(index = 11)]
-						#[doc = "See [`Pallet::scale_validator_count`]."]
+						#[doc = "Scale up the ideal number of validators by a factor up to maximum of"]
+						#[doc = "`ElectionProviderBase::MaxWinners`."]
+						#[doc = ""]
+						#[doc = "The dispatch origin must be Root."]
+						#[doc = ""]
+						#[doc = "## Complexity"]
+						#[doc = "Same as [`Self::set_validator_count`]."]
 						scale_validator_count {
 							factor: runtime_types::sp_arithmetic::per_things::Percent,
 						},
 						#[codec(index = 12)]
-						#[doc = "See [`Pallet::force_no_eras`]."]
+						#[doc = "Force there to be no new eras indefinitely."]
+						#[doc = ""]
+						#[doc = "The dispatch origin must be Root."]
+						#[doc = ""]
+						#[doc = "# Warning"]
+						#[doc = ""]
+						#[doc = "The election process starts multiple blocks before the end of the era."]
+						#[doc = "Thus the election process may be ongoing when this is called. In this case the"]
+						#[doc = "election will continue until the next era is triggered."]
+						#[doc = ""]
+						#[doc = "## Complexity"]
+						#[doc = "- No arguments."]
+						#[doc = "- Weight: O(1)"]
 						force_no_eras,
 						#[codec(index = 13)]
-						#[doc = "See [`Pallet::force_new_era`]."]
+						#[doc = "Force there to be a new era at the end of the next session. After this, it will be"]
+						#[doc = "reset to normal (non-forced) behaviour."]
+						#[doc = ""]
+						#[doc = "The dispatch origin must be Root."]
+						#[doc = ""]
+						#[doc = "# Warning"]
+						#[doc = ""]
+						#[doc = "The election process starts multiple blocks before the end of the era."]
+						#[doc = "If this is called just before a new era is triggered, the election process may not"]
+						#[doc = "have enough blocks to get a result."]
+						#[doc = ""]
+						#[doc = "## Complexity"]
+						#[doc = "- No arguments."]
+						#[doc = "- Weight: O(1)"]
 						force_new_era,
 						#[codec(index = 14)]
-						#[doc = "See [`Pallet::set_invulnerables`]."]
+						#[doc = "Set the validators who cannot be slashed (if any)."]
+						#[doc = ""]
+						#[doc = "The dispatch origin must be Root."]
 						set_invulnerables {
 							invulnerables: ::std::vec::Vec<::subxt::utils::AccountId32>,
 						},
 						#[codec(index = 15)]
-						#[doc = "See [`Pallet::force_unstake`]."]
+						#[doc = "Force a current staker to become completely unstaked, immediately."]
+						#[doc = ""]
+						#[doc = "The dispatch origin must be Root."]
+						#[doc = ""]
+						#[doc = "## Parameters"]
+						#[doc = ""]
+						#[doc = "- `num_slashing_spans`: Refer to comments on [`Call::withdraw_unbonded`] for more"]
+						#[doc = "details."]
 						force_unstake {
 							stash: ::subxt::utils::AccountId32,
 							num_slashing_spans: ::core::primitive::u32,
 						},
 						#[codec(index = 16)]
-						#[doc = "See [`Pallet::force_new_era_always`]."]
+						#[doc = "Force there to be a new era at the end of sessions indefinitely."]
+						#[doc = ""]
+						#[doc = "The dispatch origin must be Root."]
+						#[doc = ""]
+						#[doc = "# Warning"]
+						#[doc = ""]
+						#[doc = "The election process starts multiple blocks before the end of the era."]
+						#[doc = "If this is called just before a new era is triggered, the election process may not"]
+						#[doc = "have enough blocks to get a result."]
 						force_new_era_always,
 						#[codec(index = 17)]
-						#[doc = "See [`Pallet::cancel_deferred_slash`]."]
+						#[doc = "Cancel enactment of a deferred slash."]
+						#[doc = ""]
+						#[doc = "Can be called by the `T::AdminOrigin`."]
+						#[doc = ""]
+						#[doc = "Parameters: era and indices of the slashes for that era to kill."]
 						cancel_deferred_slash {
 							era: ::core::primitive::u32,
 							slash_indices: ::std::vec::Vec<::core::primitive::u32>,
 						},
 						#[codec(index = 18)]
-						#[doc = "See [`Pallet::payout_stakers`]."]
+						#[doc = "Pay out next page of the stakers behind a validator for the given era."]
+						#[doc = ""]
+						#[doc = "- `validator_stash` is the stash account of the validator."]
+						#[doc = "- `era` may be any era between `[current_era - history_depth; current_era]`."]
+						#[doc = ""]
+						#[doc = "The origin of this call must be _Signed_. Any account can call this function, even if"]
+						#[doc = "it is not one of the stakers."]
+						#[doc = ""]
+						#[doc = "The reward payout could be paged in case there are too many nominators backing the"]
+						#[doc = "`validator_stash`. This call will payout unpaid pages in an ascending order. To claim a"]
+						#[doc = "specific page, use `payout_stakers_by_page`.`"]
+						#[doc = ""]
+						#[doc = "If all pages are claimed, it returns an error `InvalidPage`."]
 						payout_stakers {
 							validator_stash: ::subxt::utils::AccountId32,
 							era: ::core::primitive::u32,
 						},
 						#[codec(index = 19)]
-						#[doc = "See [`Pallet::rebond`]."]
+						#[doc = "Rebond a portion of the stash scheduled to be unlocked."]
+						#[doc = ""]
+						#[doc = "The dispatch origin must be signed by the controller."]
+						#[doc = ""]
+						#[doc = "## Complexity"]
+						#[doc = "- Time complexity: O(L), where L is unlocking chunks"]
+						#[doc = "- Bounded by `MaxUnlockingChunks`."]
 						rebond {
 							#[codec(compact)]
 							value: ::core::primitive::u128,
 						},
 						#[codec(index = 20)]
-						#[doc = "See [`Pallet::reap_stash`]."]
+						#[doc = "Remove all data structures concerning a staker/stash once it is at a state where it can"]
+						#[doc = "be considered `dust` in the staking system. The requirements are:"]
+						#[doc = ""]
+						#[doc = "1. the `total_balance` of the stash is below existential deposit."]
+						#[doc = "2. or, the `ledger.total` of the stash is below existential deposit."]
+						#[doc = "3. or, existential deposit is zero and either `total_balance` or `ledger.total` is zero."]
+						#[doc = ""]
+						#[doc = "The former can happen in cases like a slash; the latter when a fully unbonded account"]
+						#[doc = "is still receiving staking rewards in `RewardDestination::Staked`."]
+						#[doc = ""]
+						#[doc = "It can be called by anyone, as long as `stash` meets the above requirements."]
+						#[doc = ""]
+						#[doc = "Refunds the transaction fees upon successful execution."]
+						#[doc = ""]
+						#[doc = "## Parameters"]
+						#[doc = ""]
+						#[doc = "- `num_slashing_spans`: Refer to comments on [`Call::withdraw_unbonded`] for more"]
+						#[doc = "details."]
 						reap_stash {
 							stash: ::subxt::utils::AccountId32,
 							num_slashing_spans: ::core::primitive::u32,
 						},
 						#[codec(index = 21)]
-						#[doc = "See [`Pallet::kick`]."]
+						#[doc = "Remove the given nominations from the calling validator."]
+						#[doc = ""]
+						#[doc = "Effects will be felt at the beginning of the next era."]
+						#[doc = ""]
+						#[doc = "The dispatch origin for this call must be _Signed_ by the controller, not the stash."]
+						#[doc = ""]
+						#[doc = "- `who`: A list of nominator stash accounts who are nominating this validator which"]
+						#[doc = "  should no longer be nominating this validator."]
+						#[doc = ""]
+						#[doc = "Note: Making this call only makes sense if you first set the validator preferences to"]
+						#[doc = "block any further nominations."]
 						kick {
 							who: ::std::vec::Vec<
 								::subxt::utils::MultiAddress<
@@ -31446,7 +36276,23 @@ pub mod api {
 							>,
 						},
 						#[codec(index = 22)]
-						#[doc = "See [`Pallet::set_staking_configs`]."]
+						#[doc = "Update the various staking configurations ."]
+						#[doc = ""]
+						#[doc = "* `min_nominator_bond`: The minimum active bond needed to be a nominator."]
+						#[doc = "* `min_validator_bond`: The minimum active bond needed to be a validator."]
+						#[doc = "* `max_nominator_count`: The max number of users who can be a nominator at once. When"]
+						#[doc = "  set to `None`, no limit is enforced."]
+						#[doc = "* `max_validator_count`: The max number of users who can be a validator at once. When"]
+						#[doc = "  set to `None`, no limit is enforced."]
+						#[doc = "* `chill_threshold`: The ratio of `max_nominator_count` or `max_validator_count` which"]
+						#[doc = "  should be filled in order for the `chill_other` transaction to work."]
+						#[doc = "* `min_commission`: The minimum amount of commission that each validators must maintain."]
+						#[doc = "  This is checked only upon calling `validate`. Existing validators are not affected."]
+						#[doc = ""]
+						#[doc = "RuntimeOrigin must be Root to call this function."]
+						#[doc = ""]
+						#[doc = "NOTE: Existing nominators and validators will not be affected by this update."]
+						#[doc = "to kick people under the new limits, `chill_other` should be called."]
 						set_staking_configs {
 							min_nominator_bond:
 								runtime_types::pallet_staking::pallet::pallet::ConfigOp<
@@ -31471,39 +36317,124 @@ pub mod api {
 							min_commission: runtime_types::pallet_staking::pallet::pallet::ConfigOp<
 								runtime_types::sp_arithmetic::per_things::Perbill,
 							>,
+							max_staked_rewards:
+								runtime_types::pallet_staking::pallet::pallet::ConfigOp<
+									runtime_types::sp_arithmetic::per_things::Percent,
+								>,
 						},
 						#[codec(index = 23)]
-						#[doc = "See [`Pallet::chill_other`]."]
+						#[doc = "Declare a `controller` to stop participating as either a validator or nominator."]
+						#[doc = ""]
+						#[doc = "Effects will be felt at the beginning of the next era."]
+						#[doc = ""]
+						#[doc = "The dispatch origin for this call must be _Signed_, but can be called by anyone."]
+						#[doc = ""]
+						#[doc = "If the caller is the same as the controller being targeted, then no further checks are"]
+						#[doc = "enforced, and this function behaves just like `chill`."]
+						#[doc = ""]
+						#[doc = "If the caller is different than the controller being targeted, the following conditions"]
+						#[doc = "must be met:"]
+						#[doc = ""]
+						#[doc = "* `controller` must belong to a nominator who has become non-decodable,"]
+						#[doc = ""]
+						#[doc = "Or:"]
+						#[doc = ""]
+						#[doc = "* A `ChillThreshold` must be set and checked which defines how close to the max"]
+						#[doc = "  nominators or validators we must reach before users can start chilling one-another."]
+						#[doc = "* A `MaxNominatorCount` and `MaxValidatorCount` must be set which is used to determine"]
+						#[doc = "  how close we are to the threshold."]
+						#[doc = "* A `MinNominatorBond` and `MinValidatorBond` must be set and checked, which determines"]
+						#[doc = "  if this is a person that should be chilled because they have not met the threshold"]
+						#[doc = "  bond required."]
+						#[doc = ""]
+						#[doc = "This can be helpful if bond requirements are updated, and we need to remove old users"]
+						#[doc = "who do not satisfy these requirements."]
 						chill_other { stash: ::subxt::utils::AccountId32 },
 						#[codec(index = 24)]
-						#[doc = "See [`Pallet::force_apply_min_commission`]."]
+						#[doc = "Force a validator to have at least the minimum commission. This will not affect a"]
+						#[doc = "validator who already has a commission greater than or equal to the minimum. Any account"]
+						#[doc = "can call this."]
 						force_apply_min_commission {
 							validator_stash: ::subxt::utils::AccountId32,
 						},
 						#[codec(index = 25)]
-						#[doc = "See [`Pallet::set_min_commission`]."]
+						#[doc = "Sets the minimum amount of commission that each validators must maintain."]
+						#[doc = ""]
+						#[doc = "This call has lower privilege requirements than `set_staking_config` and can be called"]
+						#[doc = "by the `T::AdminOrigin`. Root can always call this."]
 						set_min_commission {
 							new: runtime_types::sp_arithmetic::per_things::Perbill,
 						},
 						#[codec(index = 26)]
-						#[doc = "See [`Pallet::payout_stakers_by_page`]."]
+						#[doc = "Pay out a page of the stakers behind a validator for the given era and page."]
+						#[doc = ""]
+						#[doc = "- `validator_stash` is the stash account of the validator."]
+						#[doc = "- `era` may be any era between `[current_era - history_depth; current_era]`."]
+						#[doc = "- `page` is the page index of nominators to pay out with value between 0 and"]
+						#[doc = "  `num_nominators / T::MaxExposurePageSize`."]
+						#[doc = ""]
+						#[doc = "The origin of this call must be _Signed_. Any account can call this function, even if"]
+						#[doc = "it is not one of the stakers."]
+						#[doc = ""]
+						#[doc = "If a validator has more than [`Config::MaxExposurePageSize`] nominators backing"]
+						#[doc = "them, then the list of nominators is paged, with each page being capped at"]
+						#[doc = "[`Config::MaxExposurePageSize`.] If a validator has more than one page of nominators,"]
+						#[doc = "the call needs to be made for each page separately in order for all the nominators"]
+						#[doc = "backing a validator to receive the reward. The nominators are not sorted across pages"]
+						#[doc = "and so it should not be assumed the highest staker would be on the topmost page and vice"]
+						#[doc = "versa. If rewards are not claimed in [`Config::HistoryDepth`] eras, they are lost."]
 						payout_stakers_by_page {
 							validator_stash: ::subxt::utils::AccountId32,
 							era: ::core::primitive::u32,
 							page: ::core::primitive::u32,
 						},
 						#[codec(index = 27)]
-						#[doc = "See [`Pallet::update_payee`]."]
+						#[doc = "Migrates an account's `RewardDestination::Controller` to"]
+						#[doc = "`RewardDestination::Account(controller)`."]
+						#[doc = ""]
+						#[doc = "Effects will be felt instantly (as soon as this function is completed successfully)."]
+						#[doc = ""]
+						#[doc = "This will waive the transaction fee if the `payee` is successfully migrated."]
 						update_payee {
 							controller: ::subxt::utils::AccountId32,
 						},
 						#[codec(index = 28)]
-						#[doc = "See [`Pallet::deprecate_controller_batch`]."]
+						#[doc = "Updates a batch of controller accounts to their corresponding stash account if they are"]
+						#[doc = "not the same. Ignores any controller accounts that do not exist, and does not operate if"]
+						#[doc = "the stash and controller are already the same."]
+						#[doc = ""]
+						#[doc = "Effects will be felt instantly (as soon as this function is completed successfully)."]
+						#[doc = ""]
+						#[doc = "The dispatch origin must be `T::AdminOrigin`."]
 						deprecate_controller_batch {
 							controllers:
 								runtime_types::bounded_collections::bounded_vec::BoundedVec<
 									::subxt::utils::AccountId32,
 								>,
+						},
+						#[codec(index = 29)]
+						#[doc = "Restores the state of a ledger which is in an inconsistent state."]
+						#[doc = ""]
+						#[doc = "The requirements to restore a ledger are the following:"]
+						#[doc = "* The stash is bonded; or"]
+						#[doc = "* The stash is not bonded but it has a staking lock left behind; or"]
+						#[doc = "* If the stash has an associated ledger and its state is inconsistent; or"]
+						#[doc = "* If the ledger is not corrupted *but* its staking lock is out of sync."]
+						#[doc = ""]
+						#[doc = "The `maybe_*` input parameters will overwrite the corresponding data and metadata of the"]
+						#[doc = "ledger associated with the stash. If the input parameters are not set, the ledger will"]
+						#[doc = "be reset values from on-chain state."]
+						restore_ledger {
+							stash: ::subxt::utils::AccountId32,
+							maybe_controller: ::core::option::Option<::subxt::utils::AccountId32>,
+							maybe_total: ::core::option::Option<::core::primitive::u128>,
+							maybe_unlocking: ::core::option::Option<
+								runtime_types::bounded_collections::bounded_vec::BoundedVec<
+									runtime_types::pallet_staking::UnlockChunk<
+										::core::primitive::u128,
+									>,
+								>,
+							>,
 						},
 					}
 					#[derive(
@@ -31627,6 +36558,18 @@ pub mod api {
 						#[codec(index = 26)]
 						#[doc = "Used when attempting to use deprecated controller account logic."]
 						ControllerDeprecated,
+						#[codec(index = 27)]
+						#[doc = "Cannot reset a ledger."]
+						CannotRestoreLedger,
+						#[codec(index = 28)]
+						#[doc = "Provided reward destination is not allowed."]
+						RewardDestinationRestricted,
+						#[codec(index = 29)]
+						#[doc = "Not enough funds available to withdraw."]
+						NotEnoughFunds,
+						#[codec(index = 30)]
+						#[doc = "Operation not allowed for virtual stakers."]
+						VirtualStakerNotAllowed,
 					}
 					#[derive(
 						:: subxt :: ext :: codec :: Decode,
@@ -31740,6 +36683,9 @@ pub mod api {
 						ForceEra {
 							mode: runtime_types::pallet_staking::Forcing,
 						},
+						#[codec(index = 17)]
+						#[doc = "Report of a controller batch deprecation."]
+						ControllerBatchDeprecated { failures: ::core::primitive::u32 },
 					}
 				}
 			}
@@ -31989,18 +36935,23 @@ pub mod api {
 				#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 				pub enum Call {
 					#[codec(index = 0)]
-					#[doc = "See [`Pallet::sudo`]."]
+					#[doc = "Authenticates the sudo key and dispatches a function call with `Root` origin."]
 					sudo {
 						call: ::std::boxed::Box<runtime_types::da_runtime::RuntimeCall>,
 					},
 					#[codec(index = 1)]
-					#[doc = "See [`Pallet::sudo_unchecked_weight`]."]
+					#[doc = "Authenticates the sudo key and dispatches a function call with `Root` origin."]
+					#[doc = "This function does not check the weight of the call, and instead allows the"]
+					#[doc = "Sudo user to specify the weight of the call."]
+					#[doc = ""]
+					#[doc = "The dispatch origin for this call must be _Signed_."]
 					sudo_unchecked_weight {
 						call: ::std::boxed::Box<runtime_types::da_runtime::RuntimeCall>,
 						weight: runtime_types::sp_weights::weight_v2::Weight,
 					},
 					#[codec(index = 2)]
-					#[doc = "See [`Pallet::set_key`]."]
+					#[doc = "Authenticates the current sudo key and sets the given AccountId (`new`) as the new sudo"]
+					#[doc = "key."]
 					set_key {
 						new: ::subxt::utils::MultiAddress<
 							::subxt::utils::AccountId32,
@@ -32008,7 +36959,10 @@ pub mod api {
 						>,
 					},
 					#[codec(index = 3)]
-					#[doc = "See [`Pallet::sudo_as`]."]
+					#[doc = "Authenticates the sudo key and dispatches a function call with `Signed` origin from"]
+					#[doc = "a given account."]
+					#[doc = ""]
+					#[doc = "The dispatch origin for this call must be _Signed_."]
 					sudo_as {
 						who: ::subxt::utils::MultiAddress<
 							::subxt::utils::AccountId32,
@@ -32017,7 +36971,9 @@ pub mod api {
 						call: ::std::boxed::Box<runtime_types::da_runtime::RuntimeCall>,
 					},
 					#[codec(index = 4)]
-					#[doc = "See [`Pallet::remove_key`]."]
+					#[doc = "Permanently removes the sudo key."]
+					#[doc = ""]
+					#[doc = "**This cannot be un-done.**"]
 					remove_key,
 				}
 				#[derive(
@@ -32098,7 +37054,25 @@ pub mod api {
 				#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 				pub enum Call {
 					#[codec(index = 0)]
-					#[doc = "See [`Pallet::set`]."]
+					#[doc = "Set the current time."]
+					#[doc = ""]
+					#[doc = "This call should be invoked exactly once per block. It will panic at the finalization"]
+					#[doc = "phase, if this call hasn't been invoked by that time."]
+					#[doc = ""]
+					#[doc = "The timestamp should be greater than the previous one by the amount specified by"]
+					#[doc = "[`Config::MinimumPeriod`]."]
+					#[doc = ""]
+					#[doc = "The dispatch origin for this call must be _None_."]
+					#[doc = ""]
+					#[doc = "This dispatch class is _Mandatory_ to ensure it gets executed in the block. Be aware"]
+					#[doc = "that changing the complexity of this call could result exhausting the resources in a"]
+					#[doc = "block to execute any other calls."]
+					#[doc = ""]
+					#[doc = "## Complexity"]
+					#[doc = "- `O(1)` (Note that implementations of `OnTimestampSet` must also be `O(1)`)"]
+					#[doc = "- 1 storage read and 1 storage mutation (codec `O(1)` because of `DidUpdate::take` in"]
+					#[doc = "  `on_finalize`)"]
+					#[doc = "- 1 event handler `on_timestamp_set`. Must be `O(1)`."]
 					set {
 						#[codec(compact)]
 						now: ::core::primitive::u64,
@@ -32188,30 +37162,24 @@ pub mod api {
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
 				#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 				pub enum Call {
-					#[codec(index = 0)]
-					#[doc = "See [`Pallet::propose_spend`]."]
-					propose_spend {
-						#[codec(compact)]
-						value: ::core::primitive::u128,
-						beneficiary: ::subxt::utils::MultiAddress<
-							::subxt::utils::AccountId32,
-							::core::primitive::u32,
-						>,
-					},
-					#[codec(index = 1)]
-					#[doc = "See [`Pallet::reject_proposal`]."]
-					reject_proposal {
-						#[codec(compact)]
-						proposal_id: ::core::primitive::u32,
-					},
-					#[codec(index = 2)]
-					#[doc = "See [`Pallet::approve_proposal`]."]
-					approve_proposal {
-						#[codec(compact)]
-						proposal_id: ::core::primitive::u32,
-					},
 					#[codec(index = 3)]
-					#[doc = "See [`Pallet::spend_local`]."]
+					#[doc = "Propose and approve a spend of treasury funds."]
+					#[doc = ""]
+					#[doc = "## Dispatch Origin"]
+					#[doc = ""]
+					#[doc = "Must be [`Config::SpendOrigin`] with the `Success` value being at least `amount`."]
+					#[doc = ""]
+					#[doc = "### Details"]
+					#[doc = "NOTE: For record-keeping purposes, the proposer is deemed to be equivalent to the"]
+					#[doc = "beneficiary."]
+					#[doc = ""]
+					#[doc = "### Parameters"]
+					#[doc = "- `amount`: The amount to be transferred from the treasury to the `beneficiary`."]
+					#[doc = "- `beneficiary`: The destination account for the transfer."]
+					#[doc = ""]
+					#[doc = "## Events"]
+					#[doc = ""]
+					#[doc = "Emits [`Event::SpendApproved`] if successful."]
 					spend_local {
 						#[codec(compact)]
 						amount: ::core::primitive::u128,
@@ -32221,13 +37189,58 @@ pub mod api {
 						>,
 					},
 					#[codec(index = 4)]
-					#[doc = "See [`Pallet::remove_approval`]."]
+					#[doc = "Force a previously approved proposal to be removed from the approval queue."]
+					#[doc = ""]
+					#[doc = "## Dispatch Origin"]
+					#[doc = ""]
+					#[doc = "Must be [`Config::RejectOrigin`]."]
+					#[doc = ""]
+					#[doc = "## Details"]
+					#[doc = ""]
+					#[doc = "The original deposit will no longer be returned."]
+					#[doc = ""]
+					#[doc = "### Parameters"]
+					#[doc = "- `proposal_id`: The index of a proposal"]
+					#[doc = ""]
+					#[doc = "### Complexity"]
+					#[doc = "- O(A) where `A` is the number of approvals"]
+					#[doc = ""]
+					#[doc = "### Errors"]
+					#[doc = "- [`Error::ProposalNotApproved`]: The `proposal_id` supplied was not found in the"]
+					#[doc = "  approval queue, i.e., the proposal has not been approved. This could also mean the"]
+					#[doc = "  proposal does not exist altogether, thus there is no way it would have been approved"]
+					#[doc = "  in the first place."]
 					remove_approval {
 						#[codec(compact)]
 						proposal_id: ::core::primitive::u32,
 					},
 					#[codec(index = 5)]
-					#[doc = "See [`Pallet::spend`]."]
+					#[doc = "Propose and approve a spend of treasury funds."]
+					#[doc = ""]
+					#[doc = "## Dispatch Origin"]
+					#[doc = ""]
+					#[doc = "Must be [`Config::SpendOrigin`] with the `Success` value being at least"]
+					#[doc = "`amount` of `asset_kind` in the native asset. The amount of `asset_kind` is converted"]
+					#[doc = "for assertion using the [`Config::BalanceConverter`]."]
+					#[doc = ""]
+					#[doc = "## Details"]
+					#[doc = ""]
+					#[doc = "Create an approved spend for transferring a specific `amount` of `asset_kind` to a"]
+					#[doc = "designated beneficiary. The spend must be claimed using the `payout` dispatchable within"]
+					#[doc = "the [`Config::PayoutPeriod`]."]
+					#[doc = ""]
+					#[doc = "### Parameters"]
+					#[doc = "- `asset_kind`: An indicator of the specific asset class to be spent."]
+					#[doc = "- `amount`: The amount to be transferred from the treasury to the `beneficiary`."]
+					#[doc = "- `beneficiary`: The beneficiary of the spend."]
+					#[doc = "- `valid_from`: The block number from which the spend can be claimed. It can refer to"]
+					#[doc = "  the past if the resulting spend has not yet expired according to the"]
+					#[doc = "  [`Config::PayoutPeriod`]. If `None`, the spend can be claimed immediately after"]
+					#[doc = "  approval."]
+					#[doc = ""]
+					#[doc = "## Events"]
+					#[doc = ""]
+					#[doc = "Emits [`Event::AssetSpendApproved`] if successful."]
 					spend {
 						asset_kind: ::std::boxed::Box<()>,
 						#[codec(compact)]
@@ -32236,13 +37249,64 @@ pub mod api {
 						valid_from: ::core::option::Option<::core::primitive::u32>,
 					},
 					#[codec(index = 6)]
-					#[doc = "See [`Pallet::payout`]."]
+					#[doc = "Claim a spend."]
+					#[doc = ""]
+					#[doc = "## Dispatch Origin"]
+					#[doc = ""]
+					#[doc = "Must be signed"]
+					#[doc = ""]
+					#[doc = "## Details"]
+					#[doc = ""]
+					#[doc = "Spends must be claimed within some temporal bounds. A spend may be claimed within one"]
+					#[doc = "[`Config::PayoutPeriod`] from the `valid_from` block."]
+					#[doc = "In case of a payout failure, the spend status must be updated with the `check_status`"]
+					#[doc = "dispatchable before retrying with the current function."]
+					#[doc = ""]
+					#[doc = "### Parameters"]
+					#[doc = "- `index`: The spend index."]
+					#[doc = ""]
+					#[doc = "## Events"]
+					#[doc = ""]
+					#[doc = "Emits [`Event::Paid`] if successful."]
 					payout { index: ::core::primitive::u32 },
 					#[codec(index = 7)]
-					#[doc = "See [`Pallet::check_status`]."]
+					#[doc = "Check the status of the spend and remove it from the storage if processed."]
+					#[doc = ""]
+					#[doc = "## Dispatch Origin"]
+					#[doc = ""]
+					#[doc = "Must be signed."]
+					#[doc = ""]
+					#[doc = "## Details"]
+					#[doc = ""]
+					#[doc = "The status check is a prerequisite for retrying a failed payout."]
+					#[doc = "If a spend has either succeeded or expired, it is removed from the storage by this"]
+					#[doc = "function. In such instances, transaction fees are refunded."]
+					#[doc = ""]
+					#[doc = "### Parameters"]
+					#[doc = "- `index`: The spend index."]
+					#[doc = ""]
+					#[doc = "## Events"]
+					#[doc = ""]
+					#[doc = "Emits [`Event::PaymentFailed`] if the spend payout has failed."]
+					#[doc = "Emits [`Event::SpendProcessed`] if the spend payout has succeed."]
 					check_status { index: ::core::primitive::u32 },
 					#[codec(index = 8)]
-					#[doc = "See [`Pallet::void_spend`]."]
+					#[doc = "Void previously approved spend."]
+					#[doc = ""]
+					#[doc = "## Dispatch Origin"]
+					#[doc = ""]
+					#[doc = "Must be [`Config::RejectOrigin`]."]
+					#[doc = ""]
+					#[doc = "## Details"]
+					#[doc = ""]
+					#[doc = "A spend void is only possible if the payout has not been attempted yet."]
+					#[doc = ""]
+					#[doc = "### Parameters"]
+					#[doc = "- `index`: The spend index."]
+					#[doc = ""]
+					#[doc = "## Events"]
+					#[doc = ""]
+					#[doc = "Emits [`Event::AssetSpendVoided`] if successful."]
 					void_spend { index: ::core::primitive::u32 },
 				}
 				#[derive(
@@ -32261,40 +37325,37 @@ pub mod api {
 				#[doc = "Error for the treasury pallet."]
 				pub enum Error {
 					#[codec(index = 0)]
-					#[doc = "Proposer's balance is too low."]
-					InsufficientProposersBalance,
-					#[codec(index = 1)]
 					#[doc = "No proposal, bounty or spend at that index."]
 					InvalidIndex,
-					#[codec(index = 2)]
+					#[codec(index = 1)]
 					#[doc = "Too many approvals in the queue."]
 					TooManyApprovals,
-					#[codec(index = 3)]
+					#[codec(index = 2)]
 					#[doc = "The spend origin is valid but the amount it is allowed to spend is lower than the"]
 					#[doc = "amount to be spent."]
 					InsufficientPermission,
-					#[codec(index = 4)]
+					#[codec(index = 3)]
 					#[doc = "Proposal has not been approved."]
 					ProposalNotApproved,
-					#[codec(index = 5)]
+					#[codec(index = 4)]
 					#[doc = "The balance of the asset kind is not convertible to the balance of the native asset."]
 					FailedToConvertBalance,
-					#[codec(index = 6)]
+					#[codec(index = 5)]
 					#[doc = "The spend has expired and cannot be claimed."]
 					SpendExpired,
-					#[codec(index = 7)]
+					#[codec(index = 6)]
 					#[doc = "The spend is not yet eligible for payout."]
 					EarlyPayout,
-					#[codec(index = 8)]
+					#[codec(index = 7)]
 					#[doc = "The payment has already been attempted."]
 					AlreadyAttempted,
-					#[codec(index = 9)]
+					#[codec(index = 8)]
 					#[doc = "There was some issue with the mechanism of payment."]
 					PayoutError,
-					#[codec(index = 10)]
+					#[codec(index = 9)]
 					#[doc = "The payout was not yet attempted/claimed."]
 					NotAttempted,
-					#[codec(index = 11)]
+					#[codec(index = 10)]
 					#[doc = "The payment has neither failed nor succeeded yet."]
 					Inconclusive,
 				}
@@ -32314,55 +37375,44 @@ pub mod api {
 				#[doc = "The `Event` enum of this pallet"]
 				pub enum Event {
 					#[codec(index = 0)]
-					#[doc = "New proposal."]
-					Proposed {
-						proposal_index: ::core::primitive::u32,
-					},
-					#[codec(index = 1)]
 					#[doc = "We have ended a spend period and will now allocate funds."]
 					Spending {
 						budget_remaining: ::core::primitive::u128,
 					},
-					#[codec(index = 2)]
+					#[codec(index = 1)]
 					#[doc = "Some funds have been allocated."]
 					Awarded {
 						proposal_index: ::core::primitive::u32,
 						award: ::core::primitive::u128,
 						account: ::subxt::utils::AccountId32,
 					},
-					#[codec(index = 3)]
-					#[doc = "A proposal was rejected; funds were slashed."]
-					Rejected {
-						proposal_index: ::core::primitive::u32,
-						slashed: ::core::primitive::u128,
-					},
-					#[codec(index = 4)]
+					#[codec(index = 2)]
 					#[doc = "Some of our funds have been burnt."]
 					Burnt {
 						burnt_funds: ::core::primitive::u128,
 					},
-					#[codec(index = 5)]
+					#[codec(index = 3)]
 					#[doc = "Spending has finished; this is the amount that rolls over until next spend."]
 					Rollover {
 						rollover_balance: ::core::primitive::u128,
 					},
-					#[codec(index = 6)]
+					#[codec(index = 4)]
 					#[doc = "Some funds have been deposited."]
 					Deposit { value: ::core::primitive::u128 },
-					#[codec(index = 7)]
+					#[codec(index = 5)]
 					#[doc = "A new spend proposal has been approved."]
 					SpendApproved {
 						proposal_index: ::core::primitive::u32,
 						amount: ::core::primitive::u128,
 						beneficiary: ::subxt::utils::AccountId32,
 					},
-					#[codec(index = 8)]
+					#[codec(index = 6)]
 					#[doc = "The inactive funds of the pallet have been updated."]
 					UpdatedInactive {
 						reactivated: ::core::primitive::u128,
 						deactivated: ::core::primitive::u128,
 					},
-					#[codec(index = 9)]
+					#[codec(index = 7)]
 					#[doc = "A new asset spend proposal has been approved."]
 					AssetSpendApproved {
 						index: ::core::primitive::u32,
@@ -32372,22 +37422,22 @@ pub mod api {
 						valid_from: ::core::primitive::u32,
 						expire_at: ::core::primitive::u32,
 					},
-					#[codec(index = 10)]
+					#[codec(index = 8)]
 					#[doc = "An approved spend was voided."]
 					AssetSpendVoided { index: ::core::primitive::u32 },
-					#[codec(index = 11)]
+					#[codec(index = 9)]
 					#[doc = "A payment happened."]
 					Paid {
 						index: ::core::primitive::u32,
 						payment_id: (),
 					},
-					#[codec(index = 12)]
+					#[codec(index = 10)]
 					#[doc = "A payment failed and can be retried."]
 					PaymentFailed {
 						index: ::core::primitive::u32,
 						payment_id: (),
 					},
-					#[codec(index = 13)]
+					#[codec(index = 11)]
 					#[doc = "A spend was processed and removed from the storage. It might have been successfully"]
 					#[doc = "paid or it may have expired."]
 					SpendProcessed { index: ::core::primitive::u32 },
@@ -32477,7 +37527,10 @@ pub mod api {
 				#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 				pub enum Call {
 					#[codec(index = 0)]
-					#[doc = "See [`Pallet::pause`]."]
+					#[doc = "Pause a call."]
+					#[doc = ""]
+					#[doc = "Can only be called by [`Config::PauseOrigin`]."]
+					#[doc = "Emits an [`Event::CallPaused`] event on success."]
 					pause {
 						full_name: (
 							runtime_types::bounded_collections::bounded_vec::BoundedVec<
@@ -32489,7 +37542,10 @@ pub mod api {
 						),
 					},
 					#[codec(index = 1)]
-					#[doc = "See [`Pallet::unpause`]."]
+					#[doc = "Un-pause a call."]
+					#[doc = ""]
+					#[doc = "Can only be called by [`Config::UnpauseOrigin`]."]
+					#[doc = "Emits an [`Event::CallUnpaused`] event on success."]
 					unpause {
 						ident: (
 							runtime_types::bounded_collections::bounded_vec::BoundedVec<
@@ -32590,34 +37646,97 @@ pub mod api {
 				#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 				pub enum Call {
 					#[codec(index = 0)]
-					#[doc = "See [`Pallet::batch`]."]
+					#[doc = "Send a batch of dispatch calls."]
+					#[doc = ""]
+					#[doc = "May be called from any origin except `None`."]
+					#[doc = ""]
+					#[doc = "- `calls`: The calls to be dispatched from the same origin. The number of call must not"]
+					#[doc = "  exceed the constant: `batched_calls_limit` (available in constant metadata)."]
+					#[doc = ""]
+					#[doc = "If origin is root then the calls are dispatched without checking origin filter. (This"]
+					#[doc = "includes bypassing `frame_system::Config::BaseCallFilter`)."]
+					#[doc = ""]
+					#[doc = "## Complexity"]
+					#[doc = "- O(C) where C is the number of calls to be batched."]
+					#[doc = ""]
+					#[doc = "This will return `Ok` in all circumstances. To determine the success of the batch, an"]
+					#[doc = "event is deposited. If a call failed and the batch was interrupted, then the"]
+					#[doc = "`BatchInterrupted` event is deposited, along with the number of successful calls made"]
+					#[doc = "and the error of the failed call. If all were successful, then the `BatchCompleted`"]
+					#[doc = "event is deposited."]
 					batch {
 						calls: ::std::vec::Vec<runtime_types::da_runtime::RuntimeCall>,
 					},
 					#[codec(index = 1)]
-					#[doc = "See [`Pallet::as_derivative`]."]
+					#[doc = "Send a call through an indexed pseudonym of the sender."]
+					#[doc = ""]
+					#[doc = "Filter from origin are passed along. The call will be dispatched with an origin which"]
+					#[doc = "use the same filter as the origin of this call."]
+					#[doc = ""]
+					#[doc = "NOTE: If you need to ensure that any account-based filtering is not honored (i.e."]
+					#[doc = "because you expect `proxy` to have been used prior in the call stack and you do not want"]
+					#[doc = "the call restrictions to apply to any sub-accounts), then use `as_multi_threshold_1`"]
+					#[doc = "in the Multisig pallet instead."]
+					#[doc = ""]
+					#[doc = "NOTE: Prior to version *12, this was called `as_limited_sub`."]
+					#[doc = ""]
+					#[doc = "The dispatch origin for this call must be _Signed_."]
 					as_derivative {
 						index: ::core::primitive::u16,
 						call: ::std::boxed::Box<runtime_types::da_runtime::RuntimeCall>,
 					},
 					#[codec(index = 2)]
-					#[doc = "See [`Pallet::batch_all`]."]
+					#[doc = "Send a batch of dispatch calls and atomically execute them."]
+					#[doc = "The whole transaction will rollback and fail if any of the calls failed."]
+					#[doc = ""]
+					#[doc = "May be called from any origin except `None`."]
+					#[doc = ""]
+					#[doc = "- `calls`: The calls to be dispatched from the same origin. The number of call must not"]
+					#[doc = "  exceed the constant: `batched_calls_limit` (available in constant metadata)."]
+					#[doc = ""]
+					#[doc = "If origin is root then the calls are dispatched without checking origin filter. (This"]
+					#[doc = "includes bypassing `frame_system::Config::BaseCallFilter`)."]
+					#[doc = ""]
+					#[doc = "## Complexity"]
+					#[doc = "- O(C) where C is the number of calls to be batched."]
 					batch_all {
 						calls: ::std::vec::Vec<runtime_types::da_runtime::RuntimeCall>,
 					},
 					#[codec(index = 3)]
-					#[doc = "See [`Pallet::dispatch_as`]."]
+					#[doc = "Dispatches a function call with a provided origin."]
+					#[doc = ""]
+					#[doc = "The dispatch origin for this call must be _Root_."]
+					#[doc = ""]
+					#[doc = "## Complexity"]
+					#[doc = "- O(1)."]
 					dispatch_as {
 						as_origin: ::std::boxed::Box<runtime_types::da_runtime::OriginCaller>,
 						call: ::std::boxed::Box<runtime_types::da_runtime::RuntimeCall>,
 					},
 					#[codec(index = 4)]
-					#[doc = "See [`Pallet::force_batch`]."]
+					#[doc = "Send a batch of dispatch calls."]
+					#[doc = "Unlike `batch`, it allows errors and won't interrupt."]
+					#[doc = ""]
+					#[doc = "May be called from any origin except `None`."]
+					#[doc = ""]
+					#[doc = "- `calls`: The calls to be dispatched from the same origin. The number of call must not"]
+					#[doc = "  exceed the constant: `batched_calls_limit` (available in constant metadata)."]
+					#[doc = ""]
+					#[doc = "If origin is root then the calls are dispatch without checking origin filter. (This"]
+					#[doc = "includes bypassing `frame_system::Config::BaseCallFilter`)."]
+					#[doc = ""]
+					#[doc = "## Complexity"]
+					#[doc = "- O(C) where C is the number of calls to be batched."]
 					force_batch {
 						calls: ::std::vec::Vec<runtime_types::da_runtime::RuntimeCall>,
 					},
 					#[codec(index = 5)]
-					#[doc = "See [`Pallet::with_weight`]."]
+					#[doc = "Dispatch a function call with a specified weight."]
+					#[doc = ""]
+					#[doc = "This function does not check the weight of the call, and instead allows the"]
+					#[doc = "Root origin to specify the weight of the call."]
+					#[doc = ""]
+					#[doc = "The dispatch origin for this call must be _Root_."]
 					with_weight {
 						call: ::std::boxed::Box<runtime_types::da_runtime::RuntimeCall>,
 						weight: runtime_types::sp_weights::weight_v2::Weight,
@@ -32707,7 +37826,12 @@ pub mod api {
 				#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
 				pub enum Call {
 					#[codec(index = 0)]
-					#[doc = "See [`Pallet::fulfill_call`]."]
+					#[doc = "The entrypoint for fulfilling a call."]
+					#[doc = "function_id Function identifier."]
+					#[doc = "input Function input."]
+					#[doc = "output Function output."]
+					#[doc = "proof  Function proof."]
+					#[doc = "slot  Function slot to update."]
 					fulfill_call {
 						function_id: ::subxt::utils::H256,
 						input: runtime_types::bounded_collections::bounded_vec::BoundedVec<
@@ -32723,7 +37847,7 @@ pub mod api {
 						slot: ::core::primitive::u64,
 					},
 					#[codec(index = 1)]
-					#[doc = "See [`Pallet::execute`]."]
+					#[doc = "Executes message if a valid proofs are provided for the supported message type, assets and domains."]
 					execute {
 						#[codec(compact)]
 						slot: ::core::primitive::u64,
@@ -32741,14 +37865,14 @@ pub mod api {
 						>,
 					},
 					#[codec(index = 2)]
-					#[doc = "See [`Pallet::source_chain_froze`]."]
+					#[doc = "source_chain_froze froze source chain and prevent messages to be executed."]
 					source_chain_froze {
 						#[codec(compact)]
 						source_chain_id: ::core::primitive::u32,
 						frozen: ::core::primitive::bool,
 					},
 					#[codec(index = 3)]
-					#[doc = "See [`Pallet::send_message`]."]
+					#[doc = "send_message sends a message from an origin chain to the destination chain."]
 					send_message {
 						message: runtime_types::avail_core::data_proof::message::Message,
 						to: ::subxt::utils::H256,
@@ -32756,7 +37880,7 @@ pub mod api {
 						domain: ::core::primitive::u32,
 					},
 					#[codec(index = 4)]
-					#[doc = "See [`Pallet::set_poseidon_hash`]."]
+					#[doc = "set_poseidon_hash sets poseidon hash of the sync committee for the particular period."]
 					set_poseidon_hash {
 						#[codec(compact)]
 						period: ::core::primitive::u64,
@@ -32765,31 +37889,31 @@ pub mod api {
 						>,
 					},
 					#[codec(index = 5)]
-					#[doc = "See [`Pallet::set_broadcaster`]."]
+					#[doc = "set_broadcaster sets the broadcaster address of the message from the origin chain."]
 					set_broadcaster {
 						#[codec(compact)]
 						broadcaster_domain: ::core::primitive::u32,
 						broadcaster: ::subxt::utils::H256,
 					},
 					#[codec(index = 6)]
-					#[doc = "See [`Pallet::set_whitelisted_domains`]."]
+					#[doc = "The set_whitelisted_domains function allows the root (administrator) to set the whitelisted domains. It is a"]
+					#[doc = "privileged function intended for administrative purposes, used to manage a list of permitted domains."]
 					set_whitelisted_domains {
 						value: runtime_types::bounded_collections::bounded_vec::BoundedVec<
 							::core::primitive::u32,
 						>,
 					},
 					#[codec(index = 7)]
-					#[doc = "See [`Pallet::set_configuration`]."]
+					#[doc = "The set_configuration function allows the root (administrator) to set the configuration. It is a"]
+					#[doc = "privileged function intended for administrative purposes, used to manage slots_per_period and finality_threshold values."]
 					set_configuration {
 						value: runtime_types::pallet_vector::state::Configuration,
 					},
 					#[codec(index = 8)]
-					#[doc = "See [`Pallet::set_function_ids`]."]
 					set_function_ids {
 						value: ::core::option::Option<(::subxt::utils::H256, ::subxt::utils::H256)>,
 					},
 					#[codec(index = 9)]
-					#[doc = "See [`Pallet::set_step_verification_key`]."]
 					set_step_verification_key {
 						value: ::core::option::Option<
 							runtime_types::bounded_collections::bounded_vec::BoundedVec<
@@ -32798,7 +37922,6 @@ pub mod api {
 						>,
 					},
 					#[codec(index = 10)]
-					#[doc = "See [`Pallet::set_rotate_verification_key`]."]
 					set_rotate_verification_key {
 						value: ::core::option::Option<
 							runtime_types::bounded_collections::bounded_vec::BoundedVec<
@@ -32807,13 +37930,11 @@ pub mod api {
 						>,
 					},
 					#[codec(index = 11)]
-					#[doc = "See [`Pallet::failed_send_message_txs`]."]
 					failed_send_message_txs {
 						failed_txs:
 							::std::vec::Vec<::subxt::ext::codec::Compact<::core::primitive::u32>>,
 					},
 					#[codec(index = 12)]
-					#[doc = "See [`Pallet::set_updater`]."]
 					set_updater { updater: ::subxt::utils::H256 },
 				}
 				#[derive(
@@ -33191,7 +38312,7 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct Public(pub runtime_types::sp_core::sr25519::Public);
+				pub struct Public(pub [::core::primitive::u8; 32usize]);
 			}
 		}
 		pub mod sp_consensus_babe {
@@ -33211,7 +38332,7 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct Public(pub runtime_types::sp_core::sr25519::Public);
+				pub struct Public(pub [::core::primitive::u8; 32usize]);
 			}
 			pub mod digests {
 				use super::runtime_types;
@@ -33368,7 +38489,7 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct Public(pub runtime_types::sp_core::ed25519::Public);
+				pub struct Public(pub [::core::primitive::u8; 32usize]);
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
 					:: subxt :: ext :: codec :: Encode,
@@ -33382,7 +38503,7 @@ pub mod api {
 				# [codec (crate = :: subxt :: ext :: codec)]
 				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct Signature(pub runtime_types::sp_core::ed25519::Signature);
+				pub struct Signature(pub [::core::primitive::u8; 64usize]);
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -33489,54 +38610,6 @@ pub mod api {
 				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
 				pub struct KeyTypeId(pub [::core::primitive::u8; 4usize]);
 			}
-			pub mod ecdsa {
-				use super::runtime_types;
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct Signature(pub [::core::primitive::u8; 65usize]);
-			}
-			pub mod ed25519 {
-				use super::runtime_types;
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct Public(pub [::core::primitive::u8; 32usize]);
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct Signature(pub [::core::primitive::u8; 64usize]);
-			}
 			pub mod sr25519 {
 				use super::runtime_types;
 				pub mod vrf {
@@ -33559,34 +38632,6 @@ pub mod api {
 						pub proof: [::core::primitive::u8; 64usize],
 					}
 				}
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct Public(pub [::core::primitive::u8; 32usize]);
-				#[derive(
-					:: subxt :: ext :: codec :: Decode,
-					:: subxt :: ext :: codec :: Encode,
-					:: subxt :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: codec)]
-				#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
-				#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
-				pub struct Signature(pub [::core::primitive::u8; 64usize]);
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
@@ -34322,11 +39367,11 @@ pub mod api {
 			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
 			pub enum MultiSignature {
 				#[codec(index = 0)]
-				Ed25519(runtime_types::sp_core::ed25519::Signature),
+				Ed25519([::core::primitive::u8; 64usize]),
 				#[codec(index = 1)]
-				Sr25519(runtime_types::sp_core::sr25519::Signature),
+				Sr25519([::core::primitive::u8; 64usize]),
 				#[codec(index = 2)]
-				Ecdsa(runtime_types::sp_core::ecdsa::Signature),
+				Ecdsa([::core::primitive::u8; 65usize]),
 			}
 			#[derive(
 				:: subxt :: ext :: codec :: Decode,
