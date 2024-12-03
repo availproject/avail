@@ -678,6 +678,8 @@ impl pallet_mmr::Config for Runtime {
 	type WeightInfo = ();
 	type BlockHashProvider = pallet_mmr::DefaultBlockHashProvider<Runtime>;
 	const INDEXING_PREFIX: &'static [u8] = b"mmr";
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = ();
 }
 
 /// The type used to represent the kinds of proxying allowed.

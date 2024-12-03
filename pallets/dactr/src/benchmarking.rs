@@ -8,9 +8,7 @@ use avail_core::{
 	BLOCK_CHUNK_SIZE, DA_DISPATCH_RATIO,
 };
 use codec::{Decode, Encode};
-use frame_benchmarking::{
-	impl_benchmark_test_suite, v1::BenchmarkError, v2::*, whitelisted_caller,
-};
+use frame_benchmarking::{v1::BenchmarkError, v2::*, whitelisted_caller};
 use frame_support::traits::Get;
 use frame_system::{
 	limits::BlockLength, native::hosted_header_builder::hosted_header_builder, RawOrigin,

@@ -238,7 +238,7 @@ substrate-prometheus-endpoint = { git = "https://github.com/availproject/polkado
 # Patch from forked pallets
 [patch."https://github.com/availproject/polkadot-sdk.git"]
 frame-system = { path = "pallets/system" }
-# frame-system-benchmarking = { path = "pallets/system/benchmarking" }
+frame-system-benchmarking = { path = "pallets/system/benchmarking" }
 frame-system-rpc-runtime-api = { path = "pallets/system/rpc/runtime-api" }
 
 [patch.crates-io]
