@@ -1,200 +1,51 @@
-use crate::rpcs::Rpc;
-use crate::sdk::WaitFor;
-use crate::{avail, AccountId, AvailBlocksClient, AvailConfig, TxApi, H256};
+use crate::AOnlineClient;
+use crate::{avail, AccountId};
 
-use std::str::FromStr;
-use subxt::blocks::ExtrinsicEvents;
-use subxt_signer::sr25519::Keypair;
+use super::Transaction;
+use subxt::backend::rpc::reconnecting_rpc_client::RpcClient;
 
-use avail::balances::events as BalancesEvents;
-use avail::system::events as SystemEvents;
-
-use super::options::{from_options_to_params, Options};
-use super::progress_transaction_ex;
-
-#[derive(Debug)]
-pub struct TransferAllTxSuccess {
-	pub event: BalancesEvents::Transfer,
-	pub event2: Option<SystemEvents::KilledAccount>,
-	pub events: ExtrinsicEvents<AvailConfig>,
-	pub tx_hash: H256,
-	pub tx_index: u32,
-	pub block_hash: H256,
-	pub block_number: u32,
-}
-
-#[derive(Debug)]
-pub struct TransferAllowDeathTxSuccess {
-	pub event: BalancesEvents::Transfer,
-	pub event2: Option<SystemEvents::KilledAccount>,
-	pub events: ExtrinsicEvents<AvailConfig>,
-	pub tx_hash: H256,
-	pub tx_index: u32,
-	pub block_hash: H256,
-	pub block_number: u32,
-}
-
-#[derive(Debug)]
-pub struct TransferKeepAliveTxSuccess {
-	pub event: BalancesEvents::Transfer,
-	pub events: ExtrinsicEvents<AvailConfig>,
-	pub tx_hash: H256,
-	pub tx_index: u32,
-	pub block_hash: H256,
-	pub block_number: u32,
-}
+pub type TransferAllCall = avail::balances::calls::types::TransferAll;
+pub type TransferAllowDeathCall = avail::balances::calls::types::TransferAllowDeath;
+pub type TransferKeepAliveCall = avail::balances::calls::types::TransferKeepAlive;
 
 #[derive(Clone)]
 pub struct Balances {
-	api: TxApi,
-	rpc_client: Rpc,
-	blocks: AvailBlocksClient,
+	online_client: AOnlineClient,
+	rpc_client: RpcClient,
 }
 
 impl Balances {
-	pub fn new(api: TxApi, rpc_client: Rpc, blocks: AvailBlocksClient) -> Self {
+	pub fn new(online_client: AOnlineClient, rpc_client: RpcClient) -> Self {
 		Self {
-			api,
+			online_client,
 			rpc_client,
-			blocks,
 		}
 	}
 
-	pub async fn transfer_all(
-		&self,
-		dest: &str,
-		keep_alive: bool,
-		wait_for: WaitFor,
-		account: &Keypair,
-		options: Option<Options>,
-	) -> Result<TransferAllTxSuccess, String> {
-		let dest = match AccountId::from_str(dest) {
-			Ok(dest) => dest,
-			Err(error) => return Err(std::format!("{:?}", error)),
-		};
-
-		let account_id = account.public_key().to_account_id();
-		let params =
-			from_options_to_params(options, &self.rpc_client, account_id, &self.blocks).await?;
-		let call = avail::tx().balances().transfer_all(dest.into(), keep_alive);
-
-		let maybe_tx_progress = self
-			.api
-			.sign_and_submit_then_watch(&call, account, params)
-			.await;
-
-		let (events, data) =
-			progress_transaction_ex(maybe_tx_progress, wait_for, &self.blocks).await?;
-		let (block_hash, block_number, tx_hash, tx_index) = data;
-
-		let event = events.find_first::<BalancesEvents::Transfer>();
-		let Some(event) = event.ok().flatten() else {
-			return Err(String::from("Failed to find Transfer event"));
-		};
-
-		let event2 = events.find_first::<SystemEvents::KilledAccount>();
-		let event2 = event2.ok().flatten();
-
-		Ok(TransferAllTxSuccess {
-			event,
-			event2,
-			events,
-			tx_hash,
-			tx_index,
-			block_hash,
-			block_number,
-		})
+	pub fn transfer_all(&self, dest: AccountId, keep_alive: bool) -> Transaction<TransferAllCall> {
+		let payload = avail::tx().balances().transfer_all(dest.into(), keep_alive);
+		Transaction::new(self.online_client.clone(), self.rpc_client.clone(), payload)
 	}
 
-	pub async fn transfer_allow_death(
+	pub fn transfer_allow_death(
 		&self,
-		dest: &str,
+		dest: AccountId,
 		amount: u128,
-		wait_for: WaitFor,
-		account: &Keypair,
-		options: Option<Options>,
-	) -> Result<TransferAllowDeathTxSuccess, String> {
-		let dest = match AccountId::from_str(dest) {
-			Ok(dest) => dest,
-			Err(error) => return Err(std::format!("{:?}", error)),
-		};
-
-		let account_id = account.public_key().to_account_id();
-		let params =
-			from_options_to_params(options, &self.rpc_client, account_id, &self.blocks).await?;
-		let call = avail::tx()
+	) -> Transaction<TransferAllowDeathCall> {
+		let payload = avail::tx()
 			.balances()
 			.transfer_allow_death(dest.into(), amount);
-
-		let maybe_tx_progress = self
-			.api
-			.sign_and_submit_then_watch(&call, account, params)
-			.await;
-
-		let (events, data) =
-			progress_transaction_ex(maybe_tx_progress, wait_for, &self.blocks).await?;
-		let (block_hash, block_number, tx_hash, tx_index) = data;
-
-		let event = events.find_first::<BalancesEvents::Transfer>();
-		let Some(event) = event.ok().flatten() else {
-			return Err(String::from("Failed to find Transfer event"));
-		};
-
-		let event2 = events.find_first::<SystemEvents::KilledAccount>();
-		let event2 = event2.ok().flatten();
-
-		Ok(TransferAllowDeathTxSuccess {
-			event,
-			event2,
-			events,
-			tx_hash,
-			tx_index,
-			block_hash,
-			block_number,
-		})
+		Transaction::new(self.online_client.clone(), self.rpc_client.clone(), payload)
 	}
 
-	pub async fn transfer_keep_alive(
+	pub fn transfer_keep_alive(
 		&self,
-		dest: &str,
+		dest: AccountId,
 		value: u128,
-		wait_for: WaitFor,
-		account: &Keypair,
-		options: Option<Options>,
-	) -> Result<TransferKeepAliveTxSuccess, String> {
-		let dest = match AccountId::from_str(dest) {
-			Ok(dest) => dest,
-			Err(error) => return Err(std::format!("{:?}", error)),
-		};
-
-		let account_id = account.public_key().to_account_id();
-		let params =
-			from_options_to_params(options, &self.rpc_client, account_id, &self.blocks).await?;
-		let call = avail::tx()
+	) -> Transaction<TransferKeepAliveCall> {
+		let payload = avail::tx()
 			.balances()
 			.transfer_keep_alive(dest.into(), value);
-
-		let maybe_tx_progress = self
-			.api
-			.sign_and_submit_then_watch(&call, account, params)
-			.await;
-
-		let (events, data) =
-			progress_transaction_ex(maybe_tx_progress, wait_for, &self.blocks).await?;
-		let (block_hash, block_number, tx_hash, tx_index) = data;
-
-		let event = events.find_first::<BalancesEvents::Transfer>();
-		let Some(event) = event.ok().flatten() else {
-			return Err(String::from("Failed to find Transfer event"));
-		};
-
-		Ok(TransferKeepAliveTxSuccess {
-			event,
-			events,
-			tx_hash,
-			tx_index,
-			block_hash,
-			block_number,
-		})
+		Transaction::new(self.online_client.clone(), self.rpc_client.clone(), payload)
 	}
 }

@@ -11,7 +11,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn create_application_key(&self, key: Key, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<CreateApplicationKeyTxSuccess, String>;
+async fn create_application_key(&self, key: Key, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<CreateApplicationKeyTx, String>;
 ```
 
 #### Parameters
@@ -45,7 +45,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -61,7 +61,7 @@ async fn main() -> Result<(), String> {
 		.create_application_key(key, wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	result.print_debug();
 
 	Ok(())
 }
@@ -79,10 +79,10 @@ Error: "Runtime error: Pallet error: DataAvailability::AppKeyAlreadyExists"
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `CreateApplicationKeyTxSuccess`.
+If the operation is successful, the function will return a object of type `CreateApplicationKeyTx`.
 
 ```rust
-CreateApplicationKeyTxSuccess {
+CreateApplicationKeyTx {
     event: ApplicationKeyCreated {
         key: BoundedVec(...),
         owner: AccountId32(...),
@@ -111,7 +111,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn submit_data(&self, data: Data, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<SubmitDataTxSuccess, String>;
+async fn submit_data(&self, data: Data, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<SubmitDataTx, String>;
 ```
 
 #### Parameters
@@ -145,7 +145,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -161,7 +161,7 @@ async fn main() -> Result<(), String> {
 		.submit_data(data, wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	result.print_debug();
 
 	Ok(())
 }
@@ -175,10 +175,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `SubmitDataTxSuccess`.
+If the operation is successful, the function will return a object of type `SubmitDataTx`.
 
 ```rust
-SubmitDataTxSuccess {
+SubmitDataTx {
     event: DataSubmitted {
         who: AccountId32(...),
         data_hash: 0x8846d900ea89aab9bce96402846c0ac74a853acc00cb99ff5ddb1a0f052594bd,
@@ -209,7 +209,7 @@ Origin Level: Root
 ### Interface
 
 ```rust
-async fn submit_block_length_proposal(&self, rows: u32, cols: u32, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<SubmitBlockLengthProposalTxSuccess, String>;
+async fn submit_block_length_proposal(&self, rows: u32, cols: u32, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<SubmitBlockLengthProposalTx, String>;
 ```
 
 #### Parameters
@@ -244,7 +244,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -278,7 +278,7 @@ Origin Level: Root
 ### Interface
 
 ```rust
-async fn set_application_key(&self, old_key: Key, new_key: Key, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<SetApplicationKeyTxSuccess, String>;
+async fn set_application_key(&self, old_key: Key, new_key: Key, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<SetApplicationKeyTx, String>;
 ```
 
 #### Parameters
@@ -313,7 +313,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -352,7 +352,7 @@ Origin Level: Root
 ### Interface
 
 ```rust
-async fn set_submit_data_fee_modifier(&self, modifier: DispatchFeeModifier, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<SetSubmitDataFeeModifierTxSuccess, String>;
+async fn set_submit_data_fee_modifier(&self, modifier: DispatchFeeModifier, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<SetSubmitDataFeeModifierTx, String>;
 ```
 
 #### Parameters
@@ -386,7 +386,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -406,7 +406,7 @@ async fn main() -> Result<(), String> {
 		.set_submit_data_fee_modifier(modifier, wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	result.print_debug();
 
 	Ok(())
 }
@@ -420,10 +420,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `SetSubmitDataFeeModifierTxSuccess`.
+If the operation is successful, the function will return a object of type `SetSubmitDataFeeModifierTx`.
 
 ```rust
-SetSubmitDataFeeModifierTxSuccess {
+SetSubmitDataFeeModifierTx {
     event: SubmitDataFeeModifierSet {
         value: DispatchFeeModifier {
             weight_maximum_fee: None,
@@ -462,7 +462,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn transfer_keep_alive(&self, dest: &str, value: u128, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<TransferKeepAliveTxSuccess, String>;
+async fn transfer_keep_alive(&self, dest: &str, value: u128, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<TransferKeepAliveTx, String>;
 ```
 
 #### Parameters
@@ -497,7 +497,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -513,7 +513,7 @@ async fn main() -> Result<(), String> {
 		.transfer_keep_alive(dest, amount, wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	result.print_debug();
 
 	Ok(())
 }
@@ -527,10 +527,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `TransferKeepAliveTxSuccess`.
+If the operation is successful, the function will return a object of type `TransferKeepAliveTx`.
 
 ```rust
-TransferKeepAliveTxSuccess {
+TransferKeepAliveTx {
     event: Transfer {
         from: AccountId32(...),
         to: AccountId32(...),
@@ -559,7 +559,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn transfer_allow_death(&self, dest: &str, value: u128, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<TransferAllowDeathTxSuccess, String>;
+async fn transfer_allow_death(&self, dest: &str, value: u128, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<TransferAllowDeathTx, String>;
 ```
 
 #### Parameters
@@ -594,7 +594,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -614,7 +614,7 @@ async fn main() -> Result<(), String> {
 		println!("Killed={}", event.account);
 	}
 
-	dbg!(result);
+	result.print_debug();
 
 	Ok(())
 }
@@ -628,10 +628,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `TransferAllowDeathTxSuccess`.
+If the operation is successful, the function will return a object of type `TransferAllowDeathTx`.
 
 ```rust
-TransferAllowDeathTxSuccess {
+TransferAllowDeathTx {
     event: Transfer {
         from: AccountId32(...),
         to: AccountId32(...),
@@ -661,7 +661,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn transfer_all(&self, dest: &str, keep_alive: bool, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<TransferAllTxSuccess, String>;
+async fn transfer_all(&self, dest: &str, keep_alive: bool, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<TransferAllTx, String>;
 ```
 
 #### Parameters
@@ -696,7 +696,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -716,7 +716,7 @@ async fn main() -> Result<(), String> {
 		println!("Killed={}", event.account);
 	}
 
-	dbg!(result);
+	result.print_debug();
 
 	Ok(())
 }
@@ -730,10 +730,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `TransferAllTxSuccess`.
+If the operation is successful, the function will return a object of type `TransferAllTx`.
 
 ```rust
-TransferAllTxSuccess {
+TransferAllTx {
     event: Transfer {
         from: AccountId32(...),
         to: AccountId32(...),
@@ -773,7 +773,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn bond(&self, value: u128, payee: RewardDestination, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<BondTxSuccess, String>;
+async fn bond(&self, value: u128, payee: RewardDestination, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<BondTx, String>;
 ```
 
 #### Parameters
@@ -808,7 +808,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -824,7 +824,7 @@ async fn main() -> Result<(), String> {
 		.bond(value, payee, wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	result.print_debug();
 
 	Ok(())
 }
@@ -838,10 +838,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `BondTxSuccess`.
+If the operation is successful, the function will return a object of type `BondTx`.
 
 ```rust
-BondTxSuccess {
+BondTx {
     event: Bonded {
         stash: AccountId32(...),
         amount: 100000000000000000000000,
@@ -869,7 +869,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn bond_extra(&self, max_additional: u128, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<BondExtraTxSuccess, String>;
+async fn bond_extra(&self, max_additional: u128, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<BondExtraTx, String>;
 ```
 
 #### Parameters
@@ -903,7 +903,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -918,7 +918,7 @@ async fn main() -> Result<(), String> {
 		.bond_extra(max_additional, wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	result.print_debug();
 
 	Ok(())
 }
@@ -932,10 +932,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `BondExtraTxSuccess`.
+If the operation is successful, the function will return a object of type `BondExtraTx`.
 
 ```rust
-BondExtraTxSuccess {
+BondExtraTx {
     event: Bonded {
         stash: AccountId32(...),
         amount: 1000000000000000000,
@@ -963,7 +963,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn chill(&self, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<ChillTxSuccess, String>;
+async fn chill(&self, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<ChillTx, String>;
 ```
 
 #### Parameters
@@ -996,7 +996,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice//stash").unwrap();
@@ -1010,7 +1010,7 @@ async fn main() -> Result<(), String> {
 		.chill(wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	result.print_debug();
 
 	Ok(())
 }
@@ -1024,10 +1024,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `ChillTxSuccess`.
+If the operation is successful, the function will return a object of type `ChillTx`.
 
 ```rust
-ChillTxSuccess {
+ChillTx {
     event: Some(
         Chilled {
             stash: AccountId32(...),
@@ -1056,7 +1056,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn chill_other(&self, stash: &str, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<ChillOtherTxSuccess, String>;
+async fn chill_other(&self, stash: &str, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<ChillOtherTx, String>;
 ```
 
 #### Parameters
@@ -1090,7 +1090,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -1105,7 +1105,7 @@ async fn main() -> Result<(), String> {
 		.chill_other(stash, wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	result.print_debug();
 
 	Ok(())
 }
@@ -1118,7 +1118,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn nominate( &self, targets: &[String], wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<NominateTxSuccess, String>;
+async fn nominate( &self, targets: &[String], wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<NominateTx, String>;
 ```
 
 #### Parameters
@@ -1152,7 +1152,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -1170,7 +1170,7 @@ async fn main() -> Result<(), String> {
 		.nominate(&targets, wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	result.print_debug();
 
 	Ok(())
 }
@@ -1188,10 +1188,10 @@ Error: "Runtime error: Pallet error: Staking::NotController"
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `NominateTxSuccess`.
+If the operation is successful, the function will return a object of type `NominateTx`.
 
 ```rust
-NominateTxSuccess {
+NominateTx {
     events: ExtrinsicEvents {
         ext_hash: 0x6e0ae6fde353974f8b46aace441c49ba7ab135fa3743e0e1331d35c4528dacfb,
         idx: 1,
@@ -1221,7 +1221,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn unbond(&self, value: u128, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<UnbondTxSuccess, String>;
+async fn unbond(&self, value: u128, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<UnbondTx, String>;
 ```
 
 #### Parameters
@@ -1255,7 +1255,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -1270,7 +1270,7 @@ async fn main() -> Result<(), String> {
 		.unbond(value, wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	result.print_debug();
 
 	Ok(())
 }
@@ -1284,10 +1284,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `UnbondTxSuccess`.
+If the operation is successful, the function will return a object of type `UnbondTx`.
 
 ```rust
-UnbondTxSuccess {
+UnbondTx {
     event: Unbonded {
         stash: AccountId32(...),
         amount: 1000000000000000000,
@@ -1315,7 +1315,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn validate(&self, commission: u8, blocked: bool, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<ValidateTxSuccess, String>;
+async fn validate(&self, commission: u8, blocked: bool, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<ValidateTx, String>;
 ```
 
 #### Parameters
@@ -1350,7 +1350,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -1366,7 +1366,7 @@ async fn main() -> Result<(), String> {
 		.validate(commission, blocked, wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	result.print_debug();
 
 	Ok(())
 }
@@ -1380,10 +1380,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `ValidateTxSuccess`.
+If the operation is successful, the function will return a object of type `ValidateTx`.
 
 ```rust
-ValidateTxSuccess {
+ValidateTx {
     event: ValidatorPrefsSet {
         stash: AccountId32(...),
         prefs: ValidatorPrefs {
@@ -1456,7 +1456,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -1472,7 +1472,7 @@ async fn main() -> Result<(), String> {
 		.set_keys(keys, wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	result.print_debug();
 
 	Ok(())
 }
@@ -1486,7 +1486,7 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `BondTxSuccess`.
+If the operation is successful, the function will return a object of type `BondTx`.
 
 ```rust
 SetKeysTxSuccess {
@@ -1536,7 +1536,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn create(&self, amount: u128, root: &str, nominator: &str, bouncer: &str, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolCreateWithPoolIdTxSuccess, String>;
+async fn create(&self, amount: u128, root: &str, nominator: &str, bouncer: &str, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<CreateWithPoolIdTx, String>;
 ```
 
 #### Parameters
@@ -1573,7 +1573,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -1599,7 +1599,7 @@ async fn main() -> Result<(), String> {
 		)
 		.await?;
 
-	dbg!(result);
+	result.print_debug();
 
 	Ok(())
 }
@@ -1613,10 +1613,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `PoolCreateTxSuccess`.
+If the operation is successful, the function will return a object of type `CreateTx`.
 
 ```rust
-PoolCreateTxSuccess {
+CreateTx {
     event: Created {
         depositor: AccountId32(...),
         pool_id: 1,
@@ -1650,7 +1650,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn create_with_pool_id(&self, amount: u128, root: &str, nominator: &str, bouncer: &str, pool_id: u32, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolCreateWithPoolIdTxSuccess, String>;
+async fn create_with_pool_id(&self, amount: u128, root: &str, nominator: &str, bouncer: &str, pool_id: u32, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<CreateWithPoolIdTx, String>;
 ```
 
 #### Parameters
@@ -1688,7 +1688,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -1716,7 +1716,7 @@ async fn main() -> Result<(), String> {
 		)
 		.await?;
 
-	dbg!(result);
+	result.print_debug();
 
 	Ok(())
 }
@@ -1730,10 +1730,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `PoolCreateWithPoolIdTxSuccess`.
+If the operation is successful, the function will return a object of type `CreateWithPoolIdTx`.
 
 ```rust
-PoolCreateWithPoolIdTxSuccess {
+CreateWithPoolIdTx {
     event: Created {
         depositor: AccountId32(...),
         pool_id: 0,
@@ -1767,7 +1767,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn join(&self, amount: u128, pool_id: u32, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolJoinTxSuccess, String>;
+async fn join(&self, amount: u128, pool_id: u32, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<JoinTx, String>;
 ```
 
 #### Parameters
@@ -1802,7 +1802,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Bob").unwrap();
@@ -1818,7 +1818,7 @@ async fn main() -> Result<(), String> {
 		.join(amount, pool_id, wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	result.print_debug();
 
 	Ok(())
 }
@@ -1832,10 +1832,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `PoolJoinTxSuccess`.
+If the operation is successful, the function will return a object of type `JoinTx`.
 
 ```rust
-PoolJoinTxSuccess {
+JoinTx {
     event: Bonded {
         member: AccountId32(...),
         pool_id: 1,
@@ -1865,7 +1865,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn nominate(&self, pool_id: u32, validators: Vec<String>, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolNominateTxSuccess, String>;
+async fn nominate(&self, pool_id: u32, validators: Vec<String>, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<NominateTx, String>;
 ```
 
 #### Parameters
@@ -1900,7 +1900,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -1919,7 +1919,7 @@ async fn main() -> Result<(), String> {
 		.nominate(pool_id, validators, wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	result.print_debug();
 
 	Ok(())
 }
@@ -1933,10 +1933,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `PoolNominateTxSuccess`.
+If the operation is successful, the function will return a object of type `NominateTx`.
 
 ```rust
-PoolNominateTxSuccess {
+NominateTx {
     events: ExtrinsicEvents {
         ext_hash: 0xde74e9df59143b84ed216e4e52fd58ec8bd557fae4b54d992a9abb1adf750446,
         idx: 1,
@@ -1967,7 +1967,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn bond_extra(&self, extra: BondExtra<u128>, wait_for: WaitFor, account: &Keypair, options: Option<Options>,) -> Result<PoolBondExtraTxSuccess, String>;
+async fn bond_extra(&self, extra: BondExtra<u128>, wait_for: WaitFor, account: &Keypair, options: Option<Options>,) -> Result<BondExtraTx, String>;
 ```
 
 #### Parameters
@@ -2001,7 +2001,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -2016,7 +2016,7 @@ async fn main() -> Result<(), String> {
 		.bond_extra(extra, wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	result.print_debug();
 
 	Ok(())
 }
@@ -2030,10 +2030,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `PoolBondExtraTxSuccess`.
+If the operation is successful, the function will return a object of type `BondExtraTx`.
 
 ```rust
-PoolBondExtraTxSuccess {
+BondExtraTx {
     event: Bonded {
         member: AccountId32(...),
         pool_id: 1,
@@ -2063,7 +2063,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn set_commission(&self, pool_id: u32, new_commission: Option<NewCommission>, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolSetCommissionTxSuccess, String>;
+async fn set_commission(&self, pool_id: u32, new_commission: Option<NewCommission>, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<SetCommissionTx, String>;
 ```
 
 #### Parameters
@@ -2098,7 +2098,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -2123,7 +2123,7 @@ async fn main() -> Result<(), String> {
 		)
 		.await?;
 
-	dbg!(result);
+	result.print_debug();
 
 	Ok(())
 }
@@ -2137,10 +2137,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `PoolSetCommissionTxSuccess`.
+If the operation is successful, the function will return a object of type `SetCommissionTx`.
 
 ```rust
-PoolSetCommissionTxSuccess {
+SetCommissionTx {
     event: PoolCommissionUpdated {
         pool_id: 1,
         current: Some(
@@ -2175,7 +2175,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn set_metadata(&self, pool_id: u32, metadata: Vec<u8>, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolSetMetadataTxSuccess, String>;
+async fn set_metadata(&self, pool_id: u32, metadata: Vec<u8>, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<SetMetadataTx, String>;
 ```
 
 #### Parameters
@@ -2210,7 +2210,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -2226,7 +2226,7 @@ async fn main() -> Result<(), String> {
 		.set_metadata(pool_id, metadata, wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	result.print_debug();
 
 	Ok(())
 }
@@ -2240,10 +2240,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `PoolSetMetadataTxSuccess`.
+If the operation is successful, the function will return a object of type `SetMetadataTx`.
 
 ```rust
-PoolSetMetadataTxSuccess {
+SetMetadataTx {
     events: ExtrinsicEvents {
         ext_hash: 0x0b4c5b4dbc573e88fa96729622c8f3a303ae35db2144365ed951b55c9a9a0f9e,
         idx: 1,
@@ -2267,7 +2267,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn set_claim_permission(&self, permission: Permission, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolSetClaimPermissionTxSuccess, String>;
+async fn set_claim_permission(&self, permission: Permission, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<SetClaimPermissionTx, String>;
 ```
 
 #### Parameters
@@ -2303,7 +2303,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -2318,7 +2318,7 @@ async fn main() -> Result<(), String> {
 		.set_claim_permission(permission, wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	result.print_debug();
 
 	Ok(())
 }
@@ -2332,10 +2332,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `PoolSetClaimPermissionTxSuccess`.
+If the operation is successful, the function will return a object of type `SetClaimPermissionTx`.
 
 ```rust
-PoolSetClaimPermissionTxSuccess {
+SetClaimPermissionTx {
     events: ExtrinsicEvents {
         ext_hash: 0xf69cea124fe7823532821f73d3cb4c93dac58951b3bc28b770c54fc323b94bc0,
         idx: 1,
@@ -2359,7 +2359,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn set_state(&self, pool_id: u32, state: State, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolSetStateTxSuccess, String>;
+async fn set_state(&self, pool_id: u32, state: State, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<SetStateTx, String>;
 ```
 
 #### Parameters
@@ -2394,7 +2394,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -2410,7 +2410,7 @@ async fn main() -> Result<(), String> {
 		.set_state(pool_id, state, wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	result.print_debug();
 
 	Ok(())
 }
@@ -2424,10 +2424,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `PoolSetStateTxSuccess`.
+If the operation is successful, the function will return a object of type `SetStateTx`.
 
 ```rust
-PoolSetStateTxSuccess {
+SetStateTx {
     event: None,
     events: ExtrinsicEvents {
         ext_hash: 0xa5745e02a0a257e79b193efc66c9ac85138cb2a454eb52235687013430e1b932,
@@ -2452,7 +2452,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn unbond(&self, member_account: &str, unbonding_points: u128, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolUnbondTxSuccess, String>;
+async fn unbond(&self, member_account: &str, unbonding_points: u128, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<UnbondTx, String>;
 ```
 
 #### Parameters
@@ -2487,7 +2487,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -2509,7 +2509,7 @@ async fn main() -> Result<(), String> {
 		)
 		.await?;
 
-	dbg!(result);
+	result.print_debug();
 
 	Ok(())
 }
@@ -2523,10 +2523,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `PoolUnbondTxSuccess`.
+If the operation is successful, the function will return a object of type `UnbondTx`.
 
 ```rust
-PoolUnbondTxSuccess {
+UnbondTx {
     event: Some(
         Unbonded {
             member: AccountId32(...),
@@ -2559,7 +2559,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn withdraw_unbonded(&self, member_account: &str, num_slashing_spans: u32, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolWithdrawUnbondedTxSuccess, String>;
+async fn withdraw_unbonded(&self, member_account: &str, num_slashing_spans: u32, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<WithdrawUnbondedTx, String>;
 ```
 
 #### Parameters
@@ -2594,7 +2594,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -2616,7 +2616,7 @@ async fn main() -> Result<(), String> {
 		)
 		.await?;
 
-	dbg!(result);
+	result.print_debug();
 
 	Ok(())
 }
@@ -2630,10 +2630,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `PoolWithdrawUnbondedTxSuccess`.
+If the operation is successful, the function will return a object of type `WithdrawUnbondedTx`.
 
 ```rust
-PoolWithdrawUnbondedTxSuccess {
+WithdrawUnbondedTx {
     event: Some(
         Withdrawn {
             member: AccountId32(...),
@@ -2665,7 +2665,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn chill(&self, pool_id: u32, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolChillTxSuccess, String>;
+async fn chill(&self, pool_id: u32, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<ChillTx, String>;
 ```
 
 #### Parameters
@@ -2699,7 +2699,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -2714,7 +2714,7 @@ async fn main() -> Result<(), String> {
 		.chill(pool_id, wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	result.print_debug();
 
 	Ok(())
 }
@@ -2728,10 +2728,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `PoolChillTxSuccess`.
+If the operation is successful, the function will return a object of type `ChillTx`.
 
 ```rust
-PoolChillTxSuccess {
+ChillTx {
     events: ExtrinsicEvents {
         ext_hash: 0xef47e23b303005a010bfc854a73143596849fc6e2b3db4b01d4b1f53800cde94,
         idx: 1,
@@ -2755,7 +2755,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn claim_payout(&self, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolClaimPayoutTxSuccess, String>;
+async fn claim_payout(&self, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<ClaimPayoutTx, String>;
 ```
 
 #### Parameters
@@ -2788,7 +2788,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -2802,7 +2802,7 @@ async fn main() -> Result<(), String> {
 		.claim_payout(wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	result.print_debug();
 
 	Ok(())
 }
@@ -2816,10 +2816,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `PoolClaimPayoutTxSuccess`.
+If the operation is successful, the function will return a object of type `ClaimPayoutTx`.
 
 ```rust
-PoolClaimPayoutTxSuccess {
+ClaimPayoutTx {
     event: Some(
         PaidOut {
             member: AccountId32(...),
@@ -2850,7 +2850,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn claim_commission(&self, pool_id: u32, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolClaimCommissionTxSuccess, String>;
+async fn claim_commission(&self, pool_id: u32, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<ClaimCommissionTx, String>;
 ```
 
 #### Parameters
@@ -2884,7 +2884,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -2899,7 +2899,7 @@ async fn main() -> Result<(), String> {
 		.claim_commission(pool_id, wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	result.print_debug();
 
 	Ok(())
 }
@@ -2913,10 +2913,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `PoolClaimCommissionTxSuccess`.
+If the operation is successful, the function will return a object of type `ClaimCommissionTx`.
 
 ```rust
-PoolClaimCommissionTxSuccess {
+ClaimCommissionTx {
     event: PoolCommissionClaimed {
         pool_id: 1,
         commission: 2952048955361375559,
@@ -2944,7 +2944,7 @@ Origin Level: Signed
 ### Interface
 
 ```rust
-async fn claim_payout_other(&self, other: &str, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<PoolClaimPayoutOtherTxSuccess, String>;
+async fn claim_payout_other(&self, other: &str, wait_for: WaitFor, account: &Keypair, options: Option<Options>) -> Result<ClaimPayoutOtherTx, String>;
 ```
 
 #### Parameters
@@ -2978,7 +2978,7 @@ use core::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), String> {
-	let sdk = SDK::new("ws://127.0.0.1:9944").await.unwrap();
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
 
 	// Input
 	let secret_uri = SecretUri::from_str("//Alice").unwrap();
@@ -2993,7 +2993,7 @@ async fn main() -> Result<(), String> {
 		.claim_payout_other(other, wait_for, &account, Some(options))
 		.await?;
 
-	dbg!(result);
+	result.print_debug();
 
 	Ok(())
 }
@@ -3007,10 +3007,10 @@ If the operation fails, the function will return an error message indicating the
 
 #### On Success
 
-If the operation is successful, the function will return a object of type `PoolClaimPayoutOtherTxSuccess`.
+If the operation is successful, the function will return a object of type `ClaimPayoutOtherTx`.
 
 ```rust
-PoolClaimPayoutOtherTxSuccess {
+ClaimPayoutOtherTx {
     event: Some(
         PaidOut {
             member: AccountId32(...),
