@@ -1,8 +1,7 @@
 use avail_rust::{
 	avail::{self, runtime_types::bounded_collections::bounded_vec::BoundedVec},
 	error::ClientError,
-	transactions::options::parse_options,
-	utils, Cell, Options, SDK,
+	utils, Cell, Options, PopulatedOptions, SDK,
 };
 
 pub async fn run() -> Result<(), ClientError> {
@@ -84,8 +83,14 @@ pub async fn run() -> Result<(), ClientError> {
 		.submit_data(BoundedVec(vec![1]));
 	let keypair = SDK::alice()?;
 	let account = keypair.public_key().to_account_id();
+
 	let options = Some(Options::new().app_id(1));
-	let params = parse_options(&sdk.online_client, &sdk.rpc_client, &account, options).await?;
+	let populated_options = options
+		.unwrap_or_default()
+		.build(&sdk.online_client, &sdk.rpc_client, &account)
+		.await?;
+
+	let params = populated_options.build(&sdk.rpc_client).await?;
 	let tx = sdk
 		.online_client
 		.tx()

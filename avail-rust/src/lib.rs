@@ -39,7 +39,7 @@ pub use sp_core;
 pub use subxt;
 pub use subxt::config::polkadot::U256;
 pub use subxt_signer;
-pub use transactions::{Mortality, Nonce, Options};
+pub use transactions::{Mortality, Nonce, Options, PopulatedOptions};
 
 pub mod nomination_pools_types {
 	pub use crate::avail::nomination_pools::calls::types::set_claim_permission::Permission;

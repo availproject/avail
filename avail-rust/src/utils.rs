@@ -14,8 +14,9 @@ use crate::{
 	block::Block,
 	error::ClientError,
 	rpcs::{account_next_index, get_block_hash},
-	transactions::{options::parse_options, TransactionDetails, TransactionFailed},
-	AExtrinsicEvents, AOnlineClient, AccountId, AppUncheckedExtrinsic, Options, WaitFor,
+	transactions::{Params, TransactionDetails, TransactionFailed},
+	AExtrinsicEvents, AOnlineClient, AccountId, AppUncheckedExtrinsic, Options, PopulatedOptions,
+	WaitFor,
 };
 
 use core::str::FromStr;
@@ -39,7 +40,12 @@ where
 	T: StaticExtrinsic + EncodeAsFields,
 {
 	let account_id = account.public_key().to_account_id();
-	let params = parse_options(online_client, rpc_client, &account_id, options).await?;
+	let options = options
+		.unwrap_or_default()
+		.build(online_client, rpc_client, &account_id)
+		.await?;
+
+	let params = options.build(rpc_client).await?;
 
 	let tx_client = online_client.tx();
 	let tx_hash = tx_client
@@ -63,10 +69,17 @@ pub async fn execute_and_watch_transaction<T>(
 where
 	T: StaticExtrinsic + EncodeAsFields,
 {
+	let account_id = account.public_key().to_account_id();
+
+	let options = options
+		.unwrap_or_default()
+		.build(online_client, rpc_client, &account_id)
+		.await?;
+
 	let mut retry_count = retry_count.unwrap_or(0);
 	loop {
 		let tx_hash =
-			execute_transaction(online_client, rpc_client, account, call, options).await?;
+			execute_transaction(online_client, rpc_client, account, call, options.clone()).await?;
 		let result = watch_transaction(online_client, tx_hash, wait_for, block_timeout).await;
 		let error = match result {
 			Ok(details) => return Ok(details),
@@ -98,14 +111,24 @@ pub async fn execute_transaction<T>(
 	rpc_client: &RpcClient,
 	account: &Keypair,
 	call: &DefaultPayload<T>,
-	options: Option<Options>,
+	options: PopulatedOptions,
 ) -> Result<H256, ClientError>
 where
 	T: StaticExtrinsic + EncodeAsFields,
 {
-	let account_id = account.public_key().to_account_id();
-	let params = parse_options(online_client, rpc_client, &account_id, options).await?;
+	let params = options.build(rpc_client).await?;
+	execute_transaction_raw_params(online_client, account, call, params).await
+}
 
+pub async fn execute_transaction_raw_params<T>(
+	online_client: &AOnlineClient,
+	account: &Keypair,
+	call: &DefaultPayload<T>,
+	params: Params,
+) -> Result<H256, ClientError>
+where
+	T: StaticExtrinsic + EncodeAsFields,
+{
 	let tx_client = online_client.tx();
 	if log_enabled!(log::Level::Debug) {
 		let address = account.public_key().to_account_id().to_string();
@@ -183,7 +206,7 @@ pub async fn watch_transaction(
 			Ok(b) => b,
 			Err(e) => {
 				if e.is_disconnected_will_reconnect() {
-					debug!("The RPC connection was lost and we may have missed a few blocks");
+					warn!("The RPC connection was lost and we may have missed a few blocks");
 					continue;
 				}
 

@@ -13,8 +13,7 @@ use crate::{
 	AExtrinsicEvents, AOnlineClient, AvailConfig, WaitFor, H256,
 };
 
-use options::parse_options;
-pub use options::{Mortality, Nonce, Options};
+pub use options::{Mortality, Nonce, Options, PopulatedOptions};
 use subxt_signer::sr25519::Keypair;
 
 use std::sync::Arc;
@@ -329,8 +328,12 @@ where
 		options: Option<Options>,
 	) -> Result<u128, ClientError> {
 		let account_id = account.public_key().to_account_id();
-		let params =
-			parse_options(&self.online_client, &self.rpc_client, &account_id, options).await?;
+		let options = options
+			.unwrap_or_default()
+			.build(&self.online_client, &self.rpc_client, &account_id)
+			.await?;
+
+		let params = options.build(&self.rpc_client).await?;
 		let tx = self
 			.online_client
 			.tx()
@@ -346,8 +349,12 @@ where
 		options: Option<Options>,
 	) -> Result<FeeDetails, ClientError> {
 		let account_id = account.public_key().to_account_id();
-		let params =
-			parse_options(&self.online_client, &self.rpc_client, &account_id, options).await?;
+		let options = options
+			.unwrap_or_default()
+			.build(&self.online_client, &self.rpc_client, &account_id)
+			.await?;
+
+		let params = options.build(&self.rpc_client).await?;
 		let tx = self
 			.online_client
 			.tx()
