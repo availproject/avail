@@ -26,9 +26,7 @@ codec = { package = "parity-scale-codec", version = "3", default-features = fals
 	"derive",
 ] }
 frame-support = { workspace = true, default-features = false }
-frame-system = { path = "../../pallets/system", default-features = false, features = [
-	"serde",
-] }
+frame-system = { path = "../../pallets/system", default-features = false }
 pallet-transaction-payment = { workspace = true, default-features = false }
 pallet-babe = { workspace = true, default-features = false }
 pallet-balances = { workspace = true, default-features = false }
