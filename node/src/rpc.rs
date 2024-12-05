@@ -129,6 +129,7 @@ where
 	B: sc_client_api::Backend<Block> + Send + Sync + 'static,
 	B::State: sc_client_api::backend::StateBackend<sp_runtime::traits::HashingFor<Block>>,
 {
+	use kate_rpc::fork_blocks::{ForkBlocks, ForksServer};
 	use kate_rpc::metrics::KateApiMetricsServer;
 	use kate_rpc::{Kate, KateApiServer};
 	use mmr_rpc::{Mmr, MmrApiServer};
@@ -224,7 +225,7 @@ where
 		.into_rpc(),
 	)?;
 
-	io.merge(StateMigration::new(client.clone(), backend, deny_unsafe).into_rpc())?;
+	io.merge(StateMigration::new(client.clone(), backend.clone(), deny_unsafe).into_rpc())?;
 
 	if is_dev_chain || kate_rpc_metrics_enabled {
 		io.merge(KateApiMetricsServer::into_rpc(Kate::<C, Block>::new(
@@ -235,7 +236,7 @@ where
 
 	if is_dev_chain || kate_rpc_enabled || kate_rpc_metrics_enabled {
 		io.merge(KateApiServer::into_rpc(Kate::<C, Block>::new(
-			client,
+			client.clone(),
 			kate_max_cells_size,
 		)))?;
 	}
@@ -243,5 +244,9 @@ where
 	#[cfg(feature = "testing-environment")]
 	io.merge(TestingApiServer::into_rpc(TestingEnv))?;
 
+	io.merge(ForksServer::into_rpc(ForkBlocks::<B, C, Block>::new(
+		client,
+		backend,
+	)))?;
 	Ok(io)
 }
