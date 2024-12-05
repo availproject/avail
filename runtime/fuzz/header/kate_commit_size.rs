@@ -39,7 +39,7 @@ fn runtime_ext(total_app_ids: NonZeroUsize) -> TestExternalities {
 		.unwrap();
 
 	pallet_babe::GenesisConfig::<Runtime> {
-		epoch_config: Some(da_runtime::constants::babe::GENESIS_EPOCH_CONFIG),
+		epoch_config: da_runtime::constants::babe::GENESIS_EPOCH_CONFIG,
 		..Default::default()
 	}
 	.assimilate_storage(&mut t)
@@ -118,11 +118,11 @@ impl<'a> Arbitrary<'a> for TestData {
 		let max_app_data_len: u8 = 128;
 		// Get an iterator of arbitrary `T`s.
 		let pre_total_app_id = usize::arbitrary(u).unwrap_or(1);
-		let total_app_id = max(1, min(pre_total_app_id, MAX_IDS));
+		let total_app_id = pre_total_app_id.clamp(1, MAX_IDS);
 		let total_app_id = unsafe { NonZeroUsize::new_unchecked(total_app_id) };
 
 		let len = u.arbitrary_len::<usize>().unwrap_or(1);
-		let len = max(1, min(len, MAX_TXS));
+		let len = len.clamp(1, MAX_TXS);
 		let mut data_lens = Vec::with_capacity(len);
 
 		/*

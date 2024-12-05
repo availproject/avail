@@ -208,4 +208,10 @@ impl<T: frame_system::Config> pallet_scheduler::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
+
+	fn schedule_retry(_: u32) -> frame_election_provider_support::Weight { todo!() }
+    fn set_retry() -> frame_election_provider_support::Weight { todo!() }
+    fn set_retry_named() -> frame_election_provider_support::Weight { todo!() }
+    fn cancel_retry() -> frame_election_provider_support::Weight { todo!() }
+    fn cancel_retry_named() -> frame_election_provider_support::Weight { todo!() }
 }

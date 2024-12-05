@@ -55,7 +55,7 @@ where
 	///  - `Utility::batch/batch_all/force_batch(..)` extrinsic can use `AppId != 0` If the wrapped calls are ALL `DataAvailability::submit_data(..)`.
 	///  - Any other call must use `AppId == 0`.
 	///  - It also ensures that Kate's evaluation grid can be generated during the header
-	///  production.
+	///    production.
 	pub fn do_validate(
 		&self,
 		call: &<T as SystemConfig>::RuntimeCall,
@@ -175,13 +175,13 @@ where
 impl<T> SignedExtension for CheckAppId<T>
 where
 	T: DAConfig + VectorConfig + UtilityConfig + Send + Sync,
-	<T as frame_system::Config>::RuntimeCall:
+	<T as SystemConfig>::RuntimeCall:
 		IsSubType<DACall<T>> + IsSubType<pallet_utility::Call<T>> + IsSubType<VectorCall<T>>,
 	[u8; 32]: From<<T as frame_system::Config>::AccountId>,
 {
-	type AccountId = T::AccountId;
+	type AccountId = <T as SystemConfig>::AccountId;
 	type AdditionalSigned = ();
-	type Call = <T as frame_system::Config>::RuntimeCall;
+	type Call = <T as SystemConfig>::RuntimeCall;
 	type Pre = ();
 
 	const IDENTIFIER: &'static str = "CheckAppId";
