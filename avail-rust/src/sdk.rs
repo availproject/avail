@@ -15,7 +15,6 @@ pub struct SDK {
 
 impl SDK {
 	pub async fn new(endpoint: &str) -> Result<Self, ClientError> {
-		env_logger::builder().init();
 		let (online_client, rpc_client) = initialize_api(endpoint).await?;
 
 		let rpc = Rpc::new(rpc_client.clone()).await;
@@ -32,12 +31,7 @@ impl SDK {
 	pub async fn new_custom(
 		online_client: AOnlineClient,
 		rpc_client: RpcClient,
-		enable_logging: bool,
 	) -> Result<Self, ClientError> {
-		if enable_logging {
-			env_logger::builder().init();
-		}
-
 		let rpc = Rpc::new(rpc_client.clone()).await;
 		let tx = Transactions::new(online_client.clone(), rpc_client.clone());
 

@@ -1,7 +1,6 @@
 use avail_rust::{
 	avail::{self, runtime_types::bounded_collections::bounded_vec::BoundedVec},
 	error::ClientError,
-	rpcs,
 	utils::account_id_from_str,
 	AccountId, Block, SDK,
 };
@@ -109,6 +108,29 @@ pub async fn staking_bonded_iter() -> Result<(), ClientError> {
 	Ok(())
 }
 
+pub async fn system_account() -> Result<(), ClientError> {
+	let sdk = SDK::new(SDK::local_endpoint()).await?;
+	let (online_client, rpc_client) = (&sdk.online_client, &sdk.rpc_client);
+
+	let account = SDK::alice()?;
+	let account_id = account.public_key().to_account_id();
+	let storage_query = avail::storage().system().account(account_id);
+
+	let best_block_hash = Block::fetch_best_block_hash(rpc_client).await?;
+	let storage = online_client.storage().at(best_block_hash);
+	let result = storage.fetch(&storage_query).await?;
+
+	if let Some(account) = result {
+		dbg!(account.consumers);
+		dbg!(account.data);
+		dbg!(account.nonce);
+		dbg!(account.providers);
+		dbg!(account.sufficients);
+	}
+
+	Ok(())
+}
+
 pub async fn system_account_iter() -> Result<(), ClientError> {
 	let sdk = SDK::new(SDK::local_endpoint()).await?;
 	let (online_client, rpc_client) = (&sdk.online_client, &sdk.rpc_client);
@@ -142,6 +164,8 @@ pub async fn run() -> Result<(), ClientError> {
 	staking_bonded().await?;
 	println!("staking_bonded_iter");
 	staking_bonded_iter().await?;
+	println!("system_account");
+	system_account().await?;
 	println!("system_account_iter");
 	system_account_iter().await?;
 
