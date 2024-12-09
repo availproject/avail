@@ -1,83 +1,27 @@
 use crate::avail::runtime_types::da_runtime::primitives::SessionKeys;
-use crate::rpcs::Rpc;
-use crate::sdk::WaitFor;
-use crate::utils_raw::fetch_transaction;
-use crate::{avail, AvailBlocksClient, AvailConfig, TxApi, H256};
+use crate::{avail, AOnlineClient};
 
-use subxt::blocks::ExtrinsicEvents;
-use subxt_signer::sr25519::Keypair;
+use super::Transaction;
+use subxt::backend::rpc::reconnecting_rpc_client::RpcClient;
 
-use super::options::from_options_to_params;
-use super::{options::Options, progress_transaction_ex};
-
-use avail::session::calls::types as SessionCalls;
-
-#[derive(Debug)]
-pub struct SetKeysTxSuccess {
-	pub events: ExtrinsicEvents<AvailConfig>,
-	pub tx_data: SessionCalls::SetKeys,
-	pub tx_hash: H256,
-	pub tx_index: u32,
-	pub block_hash: H256,
-	pub block_number: u32,
-}
+pub type SetKeysCall = avail::session::calls::types::SetKeys;
 
 #[derive(Clone)]
 pub struct Session {
-	api: TxApi,
-	rpc_client: Rpc,
-	blocks: AvailBlocksClient,
+	online_client: AOnlineClient,
+	rpc_client: RpcClient,
 }
 
 impl Session {
-	pub fn new(api: TxApi, rpc_client: Rpc, blocks: AvailBlocksClient) -> Self {
+	pub fn new(online_client: AOnlineClient, rpc_client: RpcClient) -> Self {
 		Self {
-			api,
+			online_client,
 			rpc_client,
-			blocks,
 		}
 	}
 
-	pub async fn set_keys(
-		&self,
-		keys: SessionKeys,
-		wait_for: WaitFor,
-		account: &Keypair,
-		options: Option<Options>,
-	) -> Result<SetKeysTxSuccess, String> {
-		let account_id = account.public_key().to_account_id();
-		let params =
-			from_options_to_params(options, &self.rpc_client, account_id, &self.blocks).await?;
-		let call = avail::tx().session().set_keys(keys, vec![]);
-
-		let maybe_tx_progress = self
-			.api
-			.sign_and_submit_then_watch(&call, account, params)
-			.await;
-
-		let (events, data) =
-			progress_transaction_ex(maybe_tx_progress, wait_for, &self.blocks).await?;
-		let (block_hash, block_number, tx_hash, tx_index) = data;
-
-		let tx_data = tx_data_session_set_keys(block_hash, tx_hash, &self.blocks).await?;
-
-		Ok(SetKeysTxSuccess {
-			events,
-			tx_data,
-			tx_hash,
-			tx_index,
-			block_hash,
-			block_number,
-		})
+	pub fn set_keys(&self, keys: SessionKeys) -> Transaction<SetKeysCall> {
+		let payload = avail::tx().session().set_keys(keys, vec![]);
+		Transaction::new(self.online_client.clone(), self.rpc_client.clone(), payload)
 	}
-}
-
-pub async fn tx_data_session_set_keys(
-	block_hash: H256,
-	tx_hash: H256,
-	blocks: &AvailBlocksClient,
-) -> Result<SessionCalls::SetKeys, String> {
-	let transaction = fetch_transaction::<SessionCalls::SetKeys>(block_hash, tx_hash, blocks).await;
-	let transaction = transaction.map_err(|err| err.to_string())?;
-	Ok(transaction.value)
 }

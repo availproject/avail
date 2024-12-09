@@ -291,7 +291,7 @@ function setSubmitDataFeeModifier(modifier: DispatchFeeModifier, waitFor: WaitFo
 ### Minimal Example
 
 ```js
-import { SDK, WaitFor, Keyring, BN, sdkTransactions } from "avail-js-sdk"
+import { SDK, WaitFor, Keyring, sdkTransactions } from "avail-js-sdk"
 
 const main = async () => {
   const providerEndpoint = "ws://127.0.0.1:9944"
@@ -300,7 +300,7 @@ const main = async () => {
   // Input
   const account = new Keyring({ type: "sr25519" }).addFromUri("//Alice")
   const modifier = {
-    weightMaximumFee: new BN("10").pow(new BN("18")),
+    weightMaximumFee: SDK.oneAvail(),
     weightFeeDivider: 20,
   } as sdkTransactions.DispatchFeeModifier
 
@@ -382,7 +382,7 @@ const main = async () => {
   // Input
   const account = new Keyring({ type: "sr25519" }).addFromUri("//Alice")
   const dest = "5HGjWAeFDfFCWPsjFQdVV2Msvz2XtMktvgocEZcCj68kUMaw" // Eve
-  const amount = new BN(10).pow(new BN(18)) // one Avail
+  const amount = SDK.oneAvail()
 
   const result = await sdk.tx.balances.transferKeepAlive(dest, amount, WaitFor.BlockInclusion, account)
   if (result.isErr) {
@@ -455,7 +455,7 @@ const main = async () => {
   // Input
   const account = new Keyring({ type: "sr25519" }).addFromUri("//Alice")
   const dest = "5HGjWAeFDfFCWPsjFQdVV2Msvz2XtMktvgocEZcCj68kUMaw" // Eve
-  const amount = new BN(10).pow(new BN(18)) // one Avail
+  const amount = SDK.oneAvail()
 
   const result = await sdk.tx.balances.transferAllowDeath(dest, amount, WaitFor.BlockInclusion, account)
   if (result.isErr) {
@@ -677,7 +677,7 @@ const main = async () => {
 
   // Input
   const account = new Keyring({ type: "sr25519" }).addFromUri("//Alice//stash")
-  const maxAdditional = new BN(10).pow(new BN(18)) // one Avail
+  const maxAdditional = SDK.oneAvail()
 
   const result = await sdk.tx.staking.bondExtra(maxAdditional, WaitFor.BlockInclusion, account)
   if (result.isErr) {
@@ -946,7 +946,7 @@ const main = async () => {
 
   // Input
   const account = new Keyring({ type: "sr25519" }).addFromUri("//Alice")
-  const value = new BN(10).pow(new BN(18)) // one Avail
+  const value = SDK.oneAvail()
 
   const result = await sdk.tx.staking.unbond(value, WaitFor.BlockInclusion, account)
   if (result.isErr) {
@@ -1097,7 +1097,7 @@ const main = async () => {
 
   // Input
   const account = new Keyring({ type: "sr25519" }).addFromUri("//Alice")
-  const amount = new BN(10).pow(new BN(18)).mul(new BN(10000)) // 10_000 Avail
+  const amount = SDK.oneAvail().mul(new BN(10000)) // 10_000 Avail
 
   const root: string = "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY" // Alice
   const nominator: string = "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY" // Alice
@@ -1180,7 +1180,7 @@ const main = async () => {
 
   // Input
   const account = new Keyring({ type: "sr25519" }).addFromUri("//Bob")
-  const amount = new BN(10).pow(new BN(18)).mul(new BN(10000)) // 10_000 Avail
+  const amount = SDK.oneAvail().mul(new BN(10000)) // 10_000 Avail
 
   const root: string = "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY" // Alice
   const nominator: string = "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY" // Alice
@@ -1269,7 +1269,7 @@ const main = async () => {
 
   // Input
   const account = new Keyring({ type: "sr25519" }).addFromUri("//Bob")
-  const amount = new BN(10).pow(new BN(18)).mul(new BN(10000)) // 10_000 Avail
+  const amount = SDK.oneAvail().mul(new BN(10000)) // 10_000 Avail
   const poolId = 1
 
   const result = await sdk.tx.nominationPools.join(amount, poolId, WaitFor.BlockInclusion, account)
@@ -1411,7 +1411,7 @@ const main = async () => {
 
   // Input
   const account = new Keyring({ type: "sr25519" }).addFromUri("//Alice")
-  const amount = new BN(10).pow(new BN(18)).mul(new BN(10000)) // 10_000 Avail
+  const amount = SDK.oneAvail().mul(new BN(10000)) // 10_000 Avail
   const bondExtra = { FreeBalance: amount } as BondExtra
 
   const result = await sdk.tx.nominationPools.bondExtra(bondExtra, WaitFor.BlockInclusion, account)
@@ -1552,7 +1552,7 @@ const main = async () => {
   // Input
   const account = new Keyring({ type: "sr25519" }).addFromUri("//Alice")
   const memberAccount = "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY" // Alice
-  const unbondingPoints = new BN(10).pow(new BN(18)).mul(new BN(100)) // 100 Avail
+  const unbondingPoints = SDK.oneAvail().mul(new BN(100)) // 100 Avail
 
   const result = await sdk.tx.nominationPools.unbond(memberAccount, unbondingPoints, WaitFor.BlockInclusion, account)
   if (result.isErr) {
