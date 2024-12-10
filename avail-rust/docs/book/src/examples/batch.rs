@@ -54,10 +54,9 @@ pub async fn run() -> Result<(), ClientError> {
 	// The whole transaction will rollback and fail if any of the calls failed.
 	let payload = avail::tx().utility().batch_all(calls.clone());
 	let tx = Transaction::new(sdk.online_client.clone(), sdk.rpc_client.clone(), payload);
-	_ = tx
-		.execute_wait_for_inclusion(&account, options)
-		.await
-		.expect_err("Extrinsic Failed");
+	let res = tx.execute_wait_for_inclusion(&account, options).await?;
+	res.check_if_transaction_was_successful(&sdk.online_client)
+		.expect_err("It should fail");
 
 	// Force Batch
 	// Send a batch of dispatch calls.
