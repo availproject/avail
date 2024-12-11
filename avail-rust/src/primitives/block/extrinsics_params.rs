@@ -59,6 +59,7 @@ pub struct DefaultExtrinsicParamsBuilder<T: Config> {
 	app_id: crate::AppId,
 }
 
+#[derive(Debug, Clone)]
 struct Mortality<Hash> {
 	/// Block hash that mortality starts from
 	checkpoint_hash: Hash,
