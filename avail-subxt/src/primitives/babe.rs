@@ -2,7 +2,8 @@ use codec::Decode;
 use serde::{ser::SerializeStruct, Serialize, Serializer};
 use serde_hex::{SerHex, StrictPfx};
 
-use crate::api::runtime_types::{sp_consensus_babe::app::Public, sp_core::sr25519::Signature};
+use crate::api::runtime_types::pallet_im_online::sr25519::app_sr25519::Signature;
+use crate::api::runtime_types::sp_consensus_babe::app::Public;
 
 #[derive(Decode)]
 pub struct AuthorityId(pub Public);
@@ -12,7 +13,7 @@ impl Serialize for AuthorityId {
 	where
 		S: Serializer,
 	{
-		let raw = hex::encode(self.0 .0 .0);
+		let raw = hex::encode(self.0 .0);
 		serializer.serialize_str(&raw)
 	}
 }

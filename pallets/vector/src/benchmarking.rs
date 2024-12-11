@@ -5,9 +5,7 @@ use crate::{
 };
 use avail_core::data_proof::BOUNDED_DATA_MAX_LENGTH;
 use avail_core::data_proof::{AddressedMessage, Message};
-use frame_benchmarking::{
-	impl_benchmark_test_suite, v2::benchmarks, whitelisted_caller, BenchmarkError,
-};
+use frame_benchmarking::{v2::*, whitelisted_caller, BenchmarkError};
 use frame_support::traits::DefensiveTruncateFrom;
 use frame_support::{traits::Currency, BoundedVec};
 use frame_system::RawOrigin;

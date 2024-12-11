@@ -123,10 +123,7 @@ where
 	type Error = ConsensusError;
 
 	/// It verifies that header extension (Kate commitment & data root) is properly calculated.
-	async fn import_block(
-		&mut self,
-		block: BlockImportParams<B>,
-	) -> Result<ImportResult, Self::Error> {
+	async fn import_block(&self, block: BlockImportParams<B>) -> Result<ImportResult, Self::Error> {
 		let _metric_observer = MetricObserver::new(ObserveKind::ImportBlockTotalExecutionTime);
 
 		// We only want to check for blocks that are not from "Own"
@@ -148,10 +145,7 @@ where
 		result.map_err(Into::into)
 	}
 
-	async fn check_block(
-		&mut self,
-		block: BlockCheckParams<B>,
-	) -> Result<ImportResult, Self::Error> {
+	async fn check_block(&self, block: BlockCheckParams<B>) -> Result<ImportResult, Self::Error> {
 		self.inner.check_block(block).await.map_err(Into::into)
 	}
 }
