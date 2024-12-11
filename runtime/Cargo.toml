@@ -59,7 +59,7 @@ sp-storage = { workspace = true, default-features = false }
 
 ## frame dependencies
 frame-support = { workspace = true, default-features = false }
-frame-system = { workspace = true, default-features = false, features = ["serde"] }
+frame-system = { workspace = true, default-features = false }
 frame-executive = { workspace = true, default-features = false }
 frame-try-runtime = { workspace = true, default-features = false, optional = true }
 
