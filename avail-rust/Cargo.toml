@@ -38,17 +38,17 @@ scale-info = { version = "2.5.0", features = ["bit-vec"] }
 avail-core = {  git = "https://github.com/availproject/avail-core", tag = "core-node-4", default-features = false, features = ["serde", "runtime"] }
 hex = { version = "0.4" }
 base58 = { version = "0.2.0" }
-sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10", default-features = false }
+sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "9fb27e7926940a4f6c570d658f1a7efe54360d80", default-features = false }
 bounded-collections = { version = "0.2.0", features = ["serde"] }
 primitive-types = { version = "0.13.1", default-features = false }
 log = { version = "0.4.22", default-features = false }
 env_logger = { version = "0.11.5" }
 
 [patch.crates-io]
-sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10" }
-sp-io = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10" }
-sp-runtime = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10" }
-sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-10" }
+sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "9fb27e7926940a4f6c570d658f1a7efe54360d80" }
+sp-io = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "9fb27e7926940a4f6c570d658f1a7efe54360d80" }
+sp-runtime = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "9fb27e7926940a4f6c570d658f1a7efe54360d80" }
+sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "9fb27e7926940a4f6c570d658f1a7efe54360d80" }
 
 [features]
 reconnecting-rpc-client = ["subxt/reconnecting-rpc-client"]

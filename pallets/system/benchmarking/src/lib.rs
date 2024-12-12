@@ -21,7 +21,7 @@
 #![cfg(feature = "runtime-benchmarks")]
 
 use codec::Encode;
-use frame_benchmarking::{impl_benchmark_test_suite, v2::*};
+use frame_benchmarking::v2::*;
 use frame_support::{dispatch::DispatchClass, storage, traits::Get};
 use frame_system::{
 	native::hosted_header_builder::HeaderExtensionBuilder, Call, Pallet as System, RawOrigin,

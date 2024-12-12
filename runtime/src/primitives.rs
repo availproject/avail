@@ -65,6 +65,9 @@ pub type SignedExtra = (
 pub type SignedPayload = generic::SignedPayload<RuntimeCall, SignedExtra>;
 /// Extrinsic type that has already been checked.
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, SignedExtra>;
+// Staking pallet migrations as a result of new validator disabling strategy
+// ref: https://github.com/paritytech/polkadot-sdk/pull/2226
+pub type Migrations = pallet_staking::migrations::v15::MigrateV14ToV15<Runtime>;
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
 	Runtime,
@@ -72,6 +75,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
+	Migrations,
 >;
 
 /// ID type for named reserves.

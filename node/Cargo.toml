@@ -100,7 +100,7 @@ frame-benchmarking = { workspace = true, default-features = false }
 frame-benchmarking-cli = { workspace = true, default-features = false }
 
 # Try-runtime
-try-runtime-cli = { workspace = true, default-features = false, optional = true }
+# try-runtime-cli = { workspace = true, default-features = false, optional = true }
 
 [build-dependencies]
 substrate-build-script-utils = { workspace = true, default-features = false }
@@ -130,5 +130,5 @@ try-runtime = [
 	"da-control/try-runtime",
 	"da-runtime/try-runtime",
 	"frame-system/try-runtime",
-	"try-runtime-cli/try-runtime",
+	# "try-runtime-cli/try-runtime",
 ]
