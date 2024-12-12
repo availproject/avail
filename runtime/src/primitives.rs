@@ -75,7 +75,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
-	Migrations
+	Migrations,
 >;
 
 /// ID type for named reserves.
