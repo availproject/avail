@@ -1650,7 +1650,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// True if the account has at least one provider reference and adding `amount` consumer
-	/// references would not take it above the the maximum.
+	/// references would not take it above the maximum.
 	pub fn can_accrue_consumers(who: &T::AccountId, amount: u32) -> bool {
 		let a = Account::<T>::get(who);
 		match a.consumers.checked_add(amount) {
