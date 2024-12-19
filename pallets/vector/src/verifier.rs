@@ -128,9 +128,7 @@ impl VerifyingKeyJson {
 				delta_g2,
 				gamma_abc_g1,
 			}),
-			Err(_) => {
-				return Err(VerificationError::InvalidVK);
-			},
+			Err(_) => Err(VerificationError::InvalidVK),
 		}
 	}
 }
