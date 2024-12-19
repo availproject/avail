@@ -199,18 +199,12 @@ pub async fn fetch_events(
 	tx_index: Option<u32>,
 ) -> Result<Vec<AExtrinsicEvents>, ClientError> {
 	let mut events = Vec::new();
-	let iter = transactions.iter();
-	for details in iter {
-		let ev = details.events().await?;
-		if let Some(tx_index) = tx_index {
-			if details.index() == tx_index {
-				events.push(ev);
-			}
-		} else {
-			events.push(ev);
-		}
+	for details in transactions
+		.iter()
+		.filter(|tx| tx_index.map_or(true, |index| details.index() == index))
+	{
+		events.push(details.events().await?);
 	}
-
 	Ok(events)
 }
 
@@ -303,13 +297,10 @@ pub fn data_submissions_by_hash(
 	transactions: &AExtrinsics,
 	tx_hash: H256,
 ) -> Option<DataSubmission> {
-	let all_submissions: Vec<DataSubmission> =
-		transaction_by_hash_static::<DataAvailabilityCalls::SubmitData>(transactions, tx_hash)
-			.into_iter()
-			.map(|tx| DataSubmission::from_static(tx))
-			.collect();
-
-	all_submissions.into_iter().next()
+	transaction_by_hash_static::<DataAvailabilityCalls::SubmitData>(transactions, tx_hash)
+		.into_iter()
+		.map(|tx| DataSubmission::from_static(tx))
+		.next()
 }
 
 pub fn transaction_by_app_id(transactions: &AExtrinsics, app_id: u32) -> Vec<AExtrinsicDetails> {
