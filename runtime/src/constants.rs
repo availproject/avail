@@ -352,7 +352,7 @@ pub mod da {
 		pub const MinBlockRows: BlockLengthRows = BlockLengthRows(32);
 		pub const MaxBlockRows: BlockLengthRows = BlockLengthRows(1024);
 		pub const MinBlockCols: BlockLengthColumns = BlockLengthColumns(64);
-		pub const MaxBlockCols: BlockLengthColumns = kate::config::MAX_BLOCK_COLUMNS;
+		pub const MaxBlockCols: BlockLengthColumns = BlockLengthColumns(1024);
 	}
 	pub type MaxAppKeyLength = ConstU32<64>;
 	pub type MaxAppDataLength = ConstU32<524_288>; // 512 Kb
