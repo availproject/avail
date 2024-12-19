@@ -22,6 +22,11 @@ sp-std = { workspace = true, default-features = false }
 sp-staking = { workspace = true, default-features = false, features = ["serde"] }
 pallet-balances = { workspace = true, default-features = false }
 pallet-staking = { workspace = true, default-features = false }
+pallet-staking-reward-curve = { workspace = true, default-features = false }
+frame-election-provider-support = { workspace = true, default-features = false }
+pallet-timestamp = { workspace = true, default-features = false }
+pallet-session = { workspace = true, default-features = false }
+pallet-authorship = { workspace = true, default-features = false }
 
 # Benchmarking
 frame-benchmarking = { workspace = true, default-features = false, optional = true }
@@ -29,6 +34,7 @@ frame-benchmarking = { workspace = true, default-features = false, optional = tr
 [dev-dependencies]
 sp-core = { workspace = true, default-features = false }
 avail-core = { workspace = true, default-features = false }
+hex = "0.4"
 
 [features]
 default = [ "std" ]

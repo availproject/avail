@@ -345,9 +345,9 @@ pub mod api {
 			.hash();
 		runtime_metadata_hash
 			== [
-				235u8, 141u8, 44u8, 1u8, 145u8, 126u8, 6u8, 151u8, 57u8, 92u8, 236u8, 153u8, 218u8,
-				77u8, 251u8, 108u8, 30u8, 211u8, 180u8, 87u8, 26u8, 145u8, 233u8, 4u8, 53u8, 102u8,
-				99u8, 157u8, 6u8, 149u8, 84u8, 69u8,
+				83u8, 22u8, 114u8, 125u8, 171u8, 37u8, 46u8, 59u8, 199u8, 52u8, 95u8, 60u8, 204u8,
+				31u8, 150u8, 132u8, 79u8, 149u8, 112u8, 99u8, 238u8, 33u8, 65u8, 156u8, 90u8,
+				221u8, 235u8, 49u8, 5u8, 231u8, 61u8, 86u8,
 			]
 	}
 	pub mod system {
@@ -1481,9 +1481,9 @@ pub mod api {
 						"Events",
 						(),
 						[
-							1u8, 131u8, 12u8, 66u8, 93u8, 51u8, 176u8, 171u8, 166u8, 233u8, 19u8,
-							182u8, 110u8, 254u8, 154u8, 95u8, 122u8, 208u8, 185u8, 112u8, 210u8,
-							197u8, 68u8, 37u8, 94u8, 59u8, 41u8, 92u8, 210u8, 77u8, 177u8, 38u8,
+							84u8, 255u8, 139u8, 24u8, 186u8, 236u8, 7u8, 246u8, 216u8, 50u8, 158u8,
+							164u8, 240u8, 202u8, 160u8, 213u8, 70u8, 49u8, 122u8, 84u8, 175u8, 4u8,
+							122u8, 234u8, 80u8, 185u8, 18u8, 214u8, 167u8, 109u8, 225u8, 25u8,
 						],
 					)
 				}
@@ -29441,13 +29441,14 @@ pub mod api {
 			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
 			#[doc = "Event triggered when one or multiple slashes are cancelled"]
 			pub struct FusionSlashCancelled {
-				pub pool_id: fusion_slash_cancelled::PoolId,
+				pub pool_ids: fusion_slash_cancelled::PoolIds,
 				pub slash_era: fusion_slash_cancelled::SlashEra,
 				pub validators: fusion_slash_cancelled::Validators,
 			}
 			pub mod fusion_slash_cancelled {
 				use super::runtime_types;
-				pub type PoolId = ::core::primitive::u32;
+				pub type PoolIds =
+					::subxt::ext::subxt_core::alloc::vec::Vec<::core::primitive::u32>;
 				pub type SlashEra = ::core::primitive::u32;
 				pub type Validators = ::subxt::ext::subxt_core::alloc::vec::Vec<
 					::subxt::ext::subxt_core::utils::AccountId32,
@@ -29520,6 +29521,32 @@ pub mod api {
 			impl ::subxt::ext::subxt_core::events::StaticEvent for UserBoostAllocationsOptimized {
 				const PALLET: &'static str = "Fusion";
 				const EVENT: &'static str = "UserBoostAllocationsOptimized";
+			}
+			#[derive(
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+				:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+				:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+				:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+				Clone,
+				Debug,
+				Eq,
+				PartialEq,
+			)]
+			# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+			#[codec(dumb_trait_bound)]
+			#[decode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode")]
+			#[encode_as_type(crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode")]
+			#[doc = "An error has happened in an automatic function"]
+			pub struct ErrorDataEvent {
+				pub detail: error_data_event::Detail,
+			}
+			pub mod error_data_event {
+				use super::runtime_types;
+				pub type Detail = ::subxt::ext::subxt_core::alloc::string::String;
+			}
+			impl ::subxt::ext::subxt_core::events::StaticEvent for ErrorDataEvent {
+				const PALLET: &'static str = "Fusion";
+				const EVENT: &'static str = "ErrorDataEvent";
 			}
 		}
 		pub mod storage {
@@ -29616,7 +29643,7 @@ pub mod api {
 				}
 				pub mod has_pending_slash {
 					use super::runtime_types;
-					pub type HasPendingSlash = ::core::primitive::bool;
+					pub type HasPendingSlash = ::core::primitive::u32;
 					pub type Param0 = ::core::primitive::u32;
 					pub type Param1 = (
 						::subxt::ext::subxt_core::utils::AccountId32,
@@ -30585,8 +30612,8 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = " Stores true if for a given era, a validator and a pool funds account, a slash is pending"]
-				#[doc = " (era, (validator, funds_account)) => has_pending_slash"]
+				#[doc = " Stores the number of slashes for a given era, a validator and a pool funds account"]
+				#[doc = " (era, (validator, funds_account)) => number of pending_slash"]
 				#[doc = " Used mainly to quickly determine if a slashed nominator is from Fusion pallet"]
 				pub fn has_pending_slash_iter(
 					&self,
@@ -30602,15 +30629,15 @@ pub mod api {
 						"HasPendingSlash",
 						(),
 						[
-							210u8, 14u8, 171u8, 251u8, 232u8, 60u8, 75u8, 192u8, 126u8, 127u8,
-							231u8, 148u8, 189u8, 22u8, 251u8, 201u8, 24u8, 158u8, 204u8, 71u8,
-							117u8, 69u8, 227u8, 213u8, 115u8, 30u8, 245u8, 74u8, 72u8, 98u8, 86u8,
-							38u8,
+							198u8, 22u8, 16u8, 185u8, 188u8, 239u8, 237u8, 190u8, 164u8, 188u8,
+							61u8, 165u8, 48u8, 41u8, 144u8, 204u8, 208u8, 2u8, 18u8, 248u8, 113u8,
+							244u8, 145u8, 238u8, 60u8, 167u8, 245u8, 118u8, 33u8, 194u8, 148u8,
+							9u8,
 						],
 					)
 				}
-				#[doc = " Stores true if for a given era, a validator and a pool funds account, a slash is pending"]
-				#[doc = " (era, (validator, funds_account)) => has_pending_slash"]
+				#[doc = " Stores the number of slashes for a given era, a validator and a pool funds account"]
+				#[doc = " (era, (validator, funds_account)) => number of pending_slash"]
 				#[doc = " Used mainly to quickly determine if a slashed nominator is from Fusion pallet"]
 				pub fn has_pending_slash_iter1(
 					&self,
@@ -30631,15 +30658,15 @@ pub mod api {
 							_0.borrow(),
 						),
 						[
-							210u8, 14u8, 171u8, 251u8, 232u8, 60u8, 75u8, 192u8, 126u8, 127u8,
-							231u8, 148u8, 189u8, 22u8, 251u8, 201u8, 24u8, 158u8, 204u8, 71u8,
-							117u8, 69u8, 227u8, 213u8, 115u8, 30u8, 245u8, 74u8, 72u8, 98u8, 86u8,
-							38u8,
+							198u8, 22u8, 16u8, 185u8, 188u8, 239u8, 237u8, 190u8, 164u8, 188u8,
+							61u8, 165u8, 48u8, 41u8, 144u8, 204u8, 208u8, 2u8, 18u8, 248u8, 113u8,
+							244u8, 145u8, 238u8, 60u8, 167u8, 245u8, 118u8, 33u8, 194u8, 148u8,
+							9u8,
 						],
 					)
 				}
-				#[doc = " Stores true if for a given era, a validator and a pool funds account, a slash is pending"]
-				#[doc = " (era, (validator, funds_account)) => has_pending_slash"]
+				#[doc = " Stores the number of slashes for a given era, a validator and a pool funds account"]
+				#[doc = " (era, (validator, funds_account)) => number of pending_slash"]
 				#[doc = " Used mainly to quickly determine if a slashed nominator is from Fusion pallet"]
 				pub fn has_pending_slash(
 					&self,
@@ -30671,10 +30698,10 @@ pub mod api {
 							),
 						),
 						[
-							210u8, 14u8, 171u8, 251u8, 232u8, 60u8, 75u8, 192u8, 126u8, 127u8,
-							231u8, 148u8, 189u8, 22u8, 251u8, 201u8, 24u8, 158u8, 204u8, 71u8,
-							117u8, 69u8, 227u8, 213u8, 115u8, 30u8, 245u8, 74u8, 72u8, 98u8, 86u8,
-							38u8,
+							198u8, 22u8, 16u8, 185u8, 188u8, 239u8, 237u8, 190u8, 164u8, 188u8,
+							61u8, 165u8, 48u8, 41u8, 144u8, 204u8, 208u8, 2u8, 18u8, 248u8, 113u8,
+							244u8, 145u8, 238u8, 60u8, 167u8, 245u8, 118u8, 33u8, 194u8, 148u8,
+							9u8,
 						],
 					)
 				}
@@ -32117,7 +32144,7 @@ pub mod api {
 				#[codec(index = 41)]
 				TxPause(runtime_types::pallet_tx_pause::pallet::Call),
 				#[codec(index = 42)]
-				TreasuryCommittee(runtime_types::pallet_collective::pallet::Call2),
+				TreasuryCommittee(runtime_types::pallet_collective::pallet::Call),
 				#[codec(index = 43)]
 				Fusion(runtime_types::pallet_fusion::pallet::Call),
 			}
@@ -34062,79 +34089,6 @@ pub mod api {
 				#[encode_as_type(
 					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
 				)]
-				#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
-				pub enum Call2 {
-					#[codec(index = 0)]
-					#[doc = "See [`Pallet::set_members`]."]
-					set_members {
-						new_members: ::subxt::ext::subxt_core::alloc::vec::Vec<
-							::subxt::ext::subxt_core::utils::AccountId32,
-						>,
-						prime: ::core::option::Option<::subxt::ext::subxt_core::utils::AccountId32>,
-						old_count: ::core::primitive::u32,
-					},
-					#[codec(index = 1)]
-					#[doc = "See [`Pallet::execute`]."]
-					execute {
-						proposal: ::subxt::ext::subxt_core::alloc::boxed::Box<
-							runtime_types::da_runtime::RuntimeCall,
-						>,
-						#[codec(compact)]
-						length_bound: ::core::primitive::u32,
-					},
-					#[codec(index = 2)]
-					#[doc = "See [`Pallet::propose`]."]
-					propose {
-						#[codec(compact)]
-						threshold: ::core::primitive::u32,
-						proposal: ::subxt::ext::subxt_core::alloc::boxed::Box<
-							runtime_types::da_runtime::RuntimeCall,
-						>,
-						#[codec(compact)]
-						length_bound: ::core::primitive::u32,
-					},
-					#[codec(index = 3)]
-					#[doc = "See [`Pallet::vote`]."]
-					vote {
-						proposal: ::subxt::ext::subxt_core::utils::H256,
-						#[codec(compact)]
-						index: ::core::primitive::u32,
-						approve: ::core::primitive::bool,
-					},
-					#[codec(index = 5)]
-					#[doc = "See [`Pallet::disapprove_proposal`]."]
-					disapprove_proposal {
-						proposal_hash: ::subxt::ext::subxt_core::utils::H256,
-					},
-					#[codec(index = 6)]
-					#[doc = "See [`Pallet::close`]."]
-					close {
-						proposal_hash: ::subxt::ext::subxt_core::utils::H256,
-						#[codec(compact)]
-						index: ::core::primitive::u32,
-						proposal_weight_bound: runtime_types::sp_weights::weight_v2::Weight,
-						#[codec(compact)]
-						length_bound: ::core::primitive::u32,
-					},
-				}
-				#[derive(
-					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
-					:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
-					:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
-				#[codec(dumb_trait_bound)]
-				#[decode_as_type(
-					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
-				)]
-				#[encode_as_type(
-					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
-				)]
 				#[doc = "The `Error` enum of this pallet."]
 				pub enum Error {
 					#[codec(index = 0)]
@@ -34916,7 +34870,7 @@ pub mod api {
 					#[doc = "The APY for a pool cannot be 0"]
 					InvalidAPY,
 					#[codec(index = 26)]
-					#[doc = "The provided amount is not valid (canno't be 0)"]
+					#[doc = "The provided amount is not valid (cannot be 0)"]
 					InvalidAmount,
 					#[codec(index = 27)]
 					#[doc = "The amount to unbond is invalid"]
@@ -35003,7 +34957,7 @@ pub mod api {
 					#[doc = "The user does not have enough AVAIL to allocate to the boosted pools."]
 					NotEnoughAvailForBoost,
 					#[codec(index = 55)]
-					#[doc = "The TC canno't set a controller address for a user, it can only remove (to clean)"]
+					#[doc = "The TC cannot set a controller address for a user, it can only remove (to clean)"]
 					RootCanOnlyRemoveController,
 					#[codec(index = 56)]
 					#[doc = "TODO Temp, we'll see when bridge com is done"]
@@ -35242,7 +35196,7 @@ pub mod api {
 					#[codec(index = 27)]
 					#[doc = "Event triggered when one or multiple slashes are cancelled"]
 					FusionSlashCancelled {
-						pool_id: ::core::primitive::u32,
+						pool_ids: ::subxt::ext::subxt_core::alloc::vec::Vec<::core::primitive::u32>,
 						slash_era: ::core::primitive::u32,
 						validators: ::subxt::ext::subxt_core::alloc::vec::Vec<
 							::subxt::ext::subxt_core::utils::AccountId32,
@@ -35264,6 +35218,11 @@ pub mod api {
 							::subxt::ext::subxt_core::alloc::vec::Vec<::core::primitive::u32>,
 						pools_removed:
 							::subxt::ext::subxt_core::alloc::vec::Vec<::core::primitive::u32>,
+					},
+					#[codec(index = 30)]
+					#[doc = "An error has happened in an automatic function"]
+					ErrorDataEvent {
+						detail: ::subxt::ext::subxt_core::alloc::string::String,
 					},
 				}
 			}

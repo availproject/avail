@@ -270,28 +270,8 @@ impl<T: Config> FusionCurrency<T> {
 
 impl<T: Config> FusionPool<T> {
 	/// Helper to check if the pool is in Open state
-	pub fn is_open(&self) -> bool {
-		self.state == FusionPoolState::Open
-	}
-	/// Helper to check if the pool is in Blocked state
-	pub fn is_blocked(&self) -> bool {
-		self.state == FusionPoolState::Blocked
-	}
-	/// Helper to check if the pool is in Open state
-	pub fn is_paused(&self) -> bool {
-		self.state == FusionPoolState::Paused
-	}
-	/// Helper to check if the pool is in Open state
-	pub fn is_destroying(&self) -> bool {
-		self.state == FusionPoolState::Destroying
-	}
-	/// Helper to check if the pool is in Open state
 	pub fn is_active(&self) -> bool {
 		self.state == FusionPoolState::Open || self.state == FusionPoolState::Blocked
-	}
-	/// Helper to check if the pool is in Open state
-	pub fn is_inactive(&self) -> bool {
-		self.state == FusionPoolState::Paused || self.state == FusionPoolState::Destroying
 	}
 	/// Converts a given amount of points to its equivalent in external currency.
 	pub fn points_to_currency(

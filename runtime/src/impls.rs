@@ -11,6 +11,7 @@ use avail_core::{
 	currency::{Balance, AVAIL, CENTS, NANO_AVAIL, PICO_AVAIL},
 	AppId, NORMAL_DISPATCH_RATIO,
 };
+use pallet_staking::UnappliedSlash;
 
 use crate::Vec;
 use codec::{Decode, Encode, MaxEncodedLen};
@@ -148,8 +149,6 @@ parameter_types! {
 	pub const MaxTargets: u32 = 16;
 	pub const MaxUnbonding: u32 = 8;
 	pub const HistoryDepth: u32 = 84;
-	pub const MinimumBalanceToOperate: Balance = 100 * AVAIL;
-	pub const MaxSlashes: u32 = 1000;
 	pub const MaxSlashesPerPool: u32 = 100; // If we have 100 slashes during 27 eras, we have bigger problems
 	pub const MaxPoolsPerValidator: u32 = 100;
 }
@@ -174,10 +173,11 @@ impl pallet_fusion::Config for Runtime {
 	type RewardRemainder = Treasury;
 	type HistoryDepth = HistoryDepth;
 	type StakingFusionDataProvider = Self;
+	type PoolAccountProvider = ();
 	type WeightInfo = weights::pallet_fusion::WeightInfo<Runtime>;
 }
 
-impl pallet_fusion::StakingFusionDataProvider<AccountId> for Runtime {
+impl pallet_fusion::StakingFusionDataProvider<Self> for Runtime {
 	fn active_era() -> EraIndex {
 		pallet_staking::Pallet::<Self>::active_era()
 			.map(|era_info| era_info.index)
@@ -195,6 +195,40 @@ impl pallet_fusion::StakingFusionDataProvider<AccountId> for Runtime {
 		accounts
 			.iter()
 			.any(|account| era_points.contains_key(account))
+	}
+	fn unapplied_slashes(era: EraIndex) -> Vec<UnappliedSlash<AccountId, Balance>> {
+		pallet_staking::UnappliedSlashes::<Self>::get(era)
+	}
+	#[cfg(feature = "runtime-benchmarks")]
+	fn add_dummy_validator(account: AccountId) {
+		pallet_session::Validators::<Self>::mutate(|validators| {
+			validators.push(account.clone());
+		});
+
+		let default_prefs = pallet_staking::ValidatorPrefs {
+			commission: Perbill::from_percent(0),
+			blocked: false,
+		};
+		pallet_staking::Validators::<Self>::insert(account.clone(), default_prefs);
+	}
+	#[cfg(feature = "runtime-benchmarks")]
+	fn add_dummy_era_points(validator: AccountId, era: EraIndex) {
+		pallet_staking::ErasRewardPoints::<Self>::mutate(era, |reward_points| {
+			let points = reward_points
+				.individual
+				.entry(validator.clone())
+				.or_insert(0);
+			*points += 100;
+		});
+	}
+	#[cfg(feature = "runtime-benchmarks")]
+	fn set_dummy_active_era(era: EraIndex) {
+		pallet_staking::ActiveEra::<Self>::mutate(|active_era| {
+			*active_era = Some(pallet_staking::ActiveEraInfo {
+				index: era,
+				start: None,
+			});
+		});
 	}
 }
 
