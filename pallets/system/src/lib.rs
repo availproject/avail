@@ -1775,6 +1775,7 @@ impl<T: Config> Pallet<T> {
 	/// Remove temporary "environment" entries in storage, compute the storage root and return the
 	/// resulting header for this block.
 	pub fn finalize() -> HeaderFor<T> {
+		let start_time = std::time::Instant::now();
 		log::debug!(
 			target: LOG_TARGET,
 			"[{:?}] {} extrinsics, length: {} (normal {}%, op: {}%, mandatory {}%) / normal weight:\
@@ -1885,7 +1886,8 @@ impl<T: Config> Pallet<T> {
 			header.hash(),
 			header
 		);
-
+		let duration = start_time.elapsed();
+		log::info!(target: LOG_TARGET, "header_time: {:?}", duration);
 		header
 	}
 
