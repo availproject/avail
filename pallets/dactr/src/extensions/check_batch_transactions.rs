@@ -29,17 +29,14 @@ where
 	[u8; 32]: From<<T as frame_system::Config>::AccountId>,
 {
 	pub fn is_submit_data_call(&self) -> bool {
-		match self.0.is_sub_type() {
-			Some(DACall::<T>::submit_data { .. }) => true,
-			_ => false,
-		}
+		matches!(self.0.is_sub_type(), Some(DACall::<T>::submit_data { .. }))
 	}
 
 	pub fn is_send_message_call(&self) -> bool {
-		match self.0.is_sub_type() {
-			Some(VectorCall::<T>::send_message { .. }) => true,
-			_ => false,
-		}
+		matches!(
+			self.0.is_sub_type(),
+			Some(VectorCall::<T>::send_message { .. })
+		)
 	}
 
 	pub fn get_batch_call(&self) -> Option<&Vec<<T as UtilityConfig>::RuntimeCall>> {
@@ -67,6 +64,7 @@ where
 		IsSubType<DACall<T>> + IsSubType<UtilityCall<T>> + IsSubType<VectorCall<T>>,
 	[u8; 32]: From<<T as frame_system::Config>::AccountId>,
 {
+	#[allow(clippy::new_without_default)]
 	pub fn new() -> Self {
 		Self(sp_std::marker::PhantomData)
 	}
@@ -84,7 +82,7 @@ where
 
 		Self::recursive_validate_call(calls, 0)?;
 
-		return Ok(ValidTransaction::default());
+		Ok(ValidTransaction::default())
 	}
 
 	fn recursive_validate_call(
@@ -117,7 +115,7 @@ where
 			Self::recursive_validate_call(calls, iteration + 1)?;
 		}
 
-		return Ok(ValidTransaction::default());
+		Ok(ValidTransaction::default())
 	}
 }
 

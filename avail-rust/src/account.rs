@@ -135,11 +135,7 @@ impl Account {
 		online_client: &AOnlineClient,
 		rpc_client: &RpcClient,
 	) -> Result<Vec<u32>, String> {
-		let keys = match self.get_app_keys(online_client, rpc_client).await {
-			Ok(k) => k,
-			Err(e) => return Err(e),
-		};
-
+		let keys = self.get_app_keys(online_client, rpc_client).await?;
 		Ok(keys.into_iter().map(|v| v.1).collect())
 	}
 }
