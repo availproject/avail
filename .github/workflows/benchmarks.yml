@@ -53,7 +53,7 @@ jobs:
         run: |
           # We altered the path to avoid old actions to overwrite it
           if [ ! -f ~/.cargo/bin/sccache ]; then
-            cargo install sccache \
+            rustup run stable cargo install sccache \
               --git https://github.com/purestake/sccache.git \
               --rev $CARGO_SCCACHE_COMMIT \
               --force --no-default-features --features=dist-client
@@ -133,7 +133,7 @@ jobs:
         run: |
           # We altered the path to avoid old actions to overwrite it
           if [ ! -f ~/.cargo/bin/sccache ]; then
-            cargo install sccache \
+            rustup run stable cargo install sccache \
               --git https://github.com/purestake/sccache.git \
               --rev $CARGO_SCCACHE_COMMIT \
               --force --no-default-features --features=dist-client
