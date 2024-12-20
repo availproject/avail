@@ -414,10 +414,8 @@ pub mod weight_helper {
 	pub fn submit_data<T: Config>(data_len: usize) -> Weight {
 		/* Compute regular substrate weight. */
 		let data_len: u32 = data_len.saturated_into();
-		let data_prefix_len: u32 = match compact_len(&data_len) {
-			Some(value) => value,
-			None => 4, // We imply the maximum
-		};
+		let data_prefix_len: u32 =
+			compact_len(&data_len).unwrap_or(4 /* We imply the maximum */);
 		// Get the encoded len.
 		let encoded_data_len: u32 = match data_len.checked_add(data_prefix_len) {
 			Some(l) => l,

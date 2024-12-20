@@ -12,7 +12,7 @@ How to build the API
 
 and
 
-Inisde `pub mod api { pub mod runtime_types { pub mod pallet_collective { pub mod pallet }}}` duplicate the whole `pub enum Call` enum and
+Inside `pub mod api { pub mod runtime_types { pub mod pallet_collective { pub mod pallet }}}` duplicate the whole `pub enum Call` enum and
 call it `pub enum Call2`. (Around line 30168)
 
 Should look like this

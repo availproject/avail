@@ -1,4 +1,4 @@
-FROM ubuntu:22.04 as builder
+FROM ubuntu:22.04 AS builder
 
 # This installs all dependencies that we need (besides Rust).
 RUN apt update -y && \

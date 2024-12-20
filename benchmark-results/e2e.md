@@ -13,7 +13,7 @@
 | Sample 9 | 0.28 |
 | Sample 10 | 0.22 |
 | Total | 2.56 |
-| Avgerage | 0.26 |
+| Average | 0.26 |
 
 ### Query Data Proof
 | Operation | Duration (ms) |
@@ -29,7 +29,7 @@
 | Sample 9 | 4.13 |
 | Sample 10 | 4.58 |
 | Total | 44.77 |
-| Avgerage | 4.48 |
+| Average | 4.48 |
 
 ### Query Proof
 | Operation | Duration (ms) |
@@ -45,7 +45,7 @@
 | Sample 9 | 3550.53 |
 | Sample 10 | 3579.67 |
 | Total | 35487.70 |
-| Avgerage | 3548.77 |
+| Average | 3548.77 |
 
 ### Query Rows
 | Operation | Duration (ms) |
@@ -61,4 +61,4 @@
 | Sample 9 | 92.17 |
 | Sample 10 | 88.14 |
 | Total | 887.31 |
-| Avgerage | 88.73 |
+| Average | 88.73 |
