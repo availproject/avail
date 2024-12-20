@@ -80,7 +80,7 @@ pub trait HostedKate {
 				let proof = poly
 					.proof(srs, &cell)?
 					.to_bytes()
-					.map(|b| GProof(b))
+					.map(GProof)
 					.map_err(|_| Error::Proof)?;
 
 				Ok((data, proof))
