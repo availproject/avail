@@ -109,7 +109,7 @@ docker run --rm -p 30333:30333 -p 9944:9944 -v ./output:/output:z availnode --de
 ```
 
 ### Podman
-To run the Avail Node using Docker, follow these steps:
+To run the Avail Node using Podman, follow these steps:
 
 ```bash
 # Build the Docker image for the Avail Node:
@@ -190,7 +190,7 @@ There you can learn how to:
 
 
 ## Interact with the chain
-You can find on this repository many example on how to interact with any avail chain.
+You can find on this repository many examples on how to interact with any avail chain.
 - In the [avail-js](./avail-js/) folder, you will find our wrapper for polkadot-js including multiple helpers.
     - The [example](./avail-js/examples/) folder inside avail-js contains some examples using node-js and an example web app to setup the extension.
 - In the [avail-subxt](./avail-subxt/) folder, you will find our fork of subxt with some example that are moved to [e2e folder](./e2e/src/tests/).
