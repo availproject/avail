@@ -35,7 +35,7 @@ pub type ABlockDetailsRPC = BlockDetailsRPC<AvailConfig>;
 pub type ABlockRPC = BlockRPC<AvailConfig>;
 
 /// A struct representing the signed extra and additional parameters required
-/// to construct a transaction for a avail node.
+/// to construct a transaction for an avail node.
 pub type AvailExtrinsicParams<T> = DefaultExtrinsicParams<T>;
 
 /// A builder which leads to [`PolkadotExtrinsicParams`] being constructed.

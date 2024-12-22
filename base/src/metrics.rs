@@ -10,7 +10,7 @@ pub mod avail;
 pub use avail::AvailMetrics;
 use sp_std::fmt::Display;
 
-/// Creates an histogram using exponential buckets
+/// Creates a histogram using exponential buckets
 #[allow(dead_code)]
 fn exp_histogram<S: Into<String> + Display + Clone>(
 	registry: &Registry,
@@ -34,7 +34,7 @@ fn exp_histogram<S: Into<String> + Display + Clone>(
 	Ok(histogram)
 }
 
-/// Creates an histogram using linear buckets
+/// Creates a histogram using linear buckets
 #[allow(dead_code)]
 fn linear_histogram<S: Into<String> + Display + Clone>(
 	registry: &Registry,
