@@ -978,7 +978,7 @@ pub mod pallet {
 				},
 			};
 
-			let message_id = Self::fetch_curr_message_id().map_err(|e| e)?;
+			let message_id = Self::fetch_curr_message_id()?;
 
 			Self::deposit_event(Event::MessageSubmitted {
 				from: who,

@@ -1,5 +1,5 @@
 #### Labels
-- L1 - Available throught SDK as a function
+- L1 - Available through SDK as a function
 - L2 - Can be done but requires extra work
 
 ## Extrinsics
