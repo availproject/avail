@@ -21,7 +21,7 @@ sp-std = { workspace = true, default-features = false }
 sp-core = { workspace = true, default-features = false }
 frame-benchmarking = { workspace = true, default-features = false, optional = true }
 # TODO add a release version
-sp1-verifier = { git = "https://github.com/succinctlabs/sp1", tag = "v3.3.0", default-features = false }
+sp1-verifier = { git = "https://github.com/succinctlabs/sp1", version = "3.4.0", default-features = false }
 alloy-sol-types = { version = "0.8.12", default-features = false }
 
 ark-bn254.workspace = true
@@ -41,8 +41,7 @@ ethabi.workspace = true
 [dev-dependencies]
 pallet-balances = { workspace = true, default-features = false, features = ["std"] }
 pallet-timestamp = { workspace = true, default-features = false }
-# TODO add a release version
-sp1-sdk = { git = "https://github.com/succinctlabs/sp1",  tag = "v3.3.0", default-features = false }
+sp1-sdk = { git = "https://github.com/succinctlabs/sp1",  version = "3.4.0", default-features = false }
 
 [features]
 default = [ "std" ]

@@ -841,6 +841,8 @@ pub mod pallet {
 
 			let sp1_vk = SP1VerificationKey::<T>::get();
 
+			// Can throw panic in the sp1 v3.4.0 library if the proof is not valid in some cases
+			// and, it will be fixed in sp1 version v4.0.0
 			let is_valid = Groth16Verifier::verify(
 				&proof,
 				&public_values,
