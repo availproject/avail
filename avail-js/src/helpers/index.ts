@@ -121,7 +121,7 @@ export const decodeHexAppId = (value: `0x${string}`): string => {
  * @param {string} blockHash the hash of the block to query at.
  * @param {string} extrinsicHash the hash of the extrinsic to query at.
  * @return {Promise<string>} the bytes representing the data
- * @throws {Error} If the api is not connected, the block is empty or non existant, the extrinsic hash is non existant
+ * @throws {Error} If the api is not connected, the block is empty or non existent, the extrinsic hash is non existent
  */
 export const extractData = async (api: ApiPromise, blockHash: string, extrinsicHash: string): Promise<string> => {
   const block = await api.rpc.chain.getBlock(blockHash)

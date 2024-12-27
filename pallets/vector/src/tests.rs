@@ -551,14 +551,14 @@ fn test_execute_message_with_already_executed_message() {
 
 		assert_ok!(ok);
 		let balance_after_transfer = Balances::balance(&Bridge::account_id());
-		let expected_transfered_value = 1000000000000000000u128;
+		let expected_transferred_value = 1000000000000000000u128;
 		assert_eq!(
 			balance_before_transfer,
-			balance_after_transfer.saturating_add(expected_transfered_value)
+			balance_after_transfer.saturating_add(expected_transferred_value)
 		);
 		let account_balance = Balances::balance(&account);
 		assert_eq!(account_balance_before, 0);
-		assert_eq!(account_balance, expected_transfered_value);
+		assert_eq!(account_balance, expected_transferred_value);
 
 		let fail = Bridge::execute(
 			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),

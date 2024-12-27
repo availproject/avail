@@ -274,7 +274,7 @@ pub async fn empty_commitments_test() -> Result<()> {
 
 #[test(tokio::test)]
 pub async fn rpc_query_block_length_test() -> Result<()> {
-	let _cg = no_concurrency("rpc_queries::block_lenght_test").await;
+	let _cg = no_concurrency("rpc_queries::block_length_test").await;
 	let client = local_connection().await?;
 	let alice = dev::alice();
 

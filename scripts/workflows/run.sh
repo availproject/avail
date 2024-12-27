@@ -3,7 +3,7 @@
 ENGINE="${ENGINE:-docker}"
 if [ -z "$SCRIPT_LOC" ]; then
     echo Make sure that ENV variable SCRIPT_LOC is set to a script path.
-    echo Exmaple
+    echo Example
     echo "  SCRIPT_LOC=./scripts/workflows/releaser_wasm.sh ./scripts/workflows/run.sh"
     exit
 fi

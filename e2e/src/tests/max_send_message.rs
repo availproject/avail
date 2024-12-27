@@ -56,7 +56,7 @@ async fn max_send_message(
 		.vector()
 		.send_message(message.into(), to_bob, INVALID_DOMAIN);
 	let nonce = alice_nonce().await.fetch_add(max_calls as u64, Relaxed);
-	trace!("Minumum `vector::send_message` call created (invalid domain), reserved nonces {max_calls} from {nonce}");
+	trace!("Minimum `vector::send_message` call created (invalid domain), reserved nonces {max_calls} from {nonce}");
 
 	// Send Txs.
 	let txs_progress = (0..max_calls)
