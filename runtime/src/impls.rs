@@ -804,7 +804,7 @@ parameter_types! {
 	pub const BlockHashCount: BlockNumber = 2400;
 	pub const Version: RuntimeVersion = VERSION;
 	pub RuntimeBlockLength: BlockLength =
-		BlockLength::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
+		BlockLength::max_with_normal_ratio(16 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
 }
 
 // Configure FRAME pallets to include in runtime.

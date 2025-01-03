@@ -121,10 +121,10 @@ pub mod system {
 	const MAXIMUM_BLOCK_WEIGHT: Weight =
 		Weight::from_parts(WEIGHT_REF_TIME_PER_SECOND.saturating_mul(2), u64::MAX);
 
-	/// We allow for 5 seconds of compute with a 20 second average block time, with maximum proof size.
+	/// We allow for 10 seconds of compute with a 20 second average block time, with maximum proof size.
 	#[cfg(not(feature = "fast-runtime"))]
 	const MAXIMUM_BLOCK_WEIGHT: Weight =
-		Weight::from_parts(WEIGHT_REF_TIME_PER_SECOND.saturating_mul(5), u64::MAX);
+		Weight::from_parts(WEIGHT_REF_TIME_PER_SECOND.saturating_mul(10), u64::MAX);
 
 	parameter_types! {
 		pub RuntimeBlockWeights: SystemBlockWeights = SystemBlockWeights::builder()
@@ -350,9 +350,9 @@ pub mod da {
 
 	parameter_types! {
 		pub const MinBlockRows: BlockLengthRows = BlockLengthRows(32);
-		pub const MaxBlockRows: BlockLengthRows = BlockLengthRows(1024);
+		pub const MaxBlockRows: BlockLengthRows = BlockLengthRows(2048);
 		pub const MinBlockCols: BlockLengthColumns = BlockLengthColumns(64);
-		pub const MaxBlockCols: BlockLengthColumns = BlockLengthColumns(1024);
+		pub const MaxBlockCols: BlockLengthColumns = BlockLengthColumns(2048);
 	}
 	pub type MaxAppKeyLength = ConstU32<64>;
 	pub type MaxAppDataLength = ConstU32<524_288>; // 512 Kb
