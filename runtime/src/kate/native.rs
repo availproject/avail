@@ -8,7 +8,7 @@ use kate::{
 	com::Cell,
 	couscous::multiproof_params,
 	gridgen::{AsBytes as _, EvaluationGrid as EGrid},
-	pmp::m1_blst::M1NoPrecomp,
+	M1NoPrecomp
 };
 use sp_runtime::SaturatedConversion as _;
 use sp_runtime_interface::runtime_interface;
