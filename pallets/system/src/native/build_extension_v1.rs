@@ -17,7 +17,7 @@ use avail_core::{
 use kate::{
 	couscous::multiproof_params,
 	gridgen::{AsBytes, EvaluationGrid},
-	Seed, M1NoPrecomp
+	M1NoPrecomp, Seed,
 };
 use sp_core::H256;
 use sp_runtime::SaturatedConversion;
