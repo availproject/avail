@@ -269,6 +269,7 @@ uint = { git = "https://github.com/paritytech/parity-common.git", tag = "uint-v0
 rlp = { git = "https://github.com/paritytech/parity-common.git", tag = "rlp-v0.5.2" }
 borsh = { git = "https://github.com/near/borsh-rs.git", tag = "borsh-v1.5.4", default-features = false, features = [
 	"derive",
+	"hashbrown",
 ] }
 
 [workspace.lints.rust]
