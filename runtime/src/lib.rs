@@ -149,6 +149,7 @@ construct_runtime!(
 		Proxy: pallet_proxy = 40,
 		TxPause: pallet_tx_pause = 41,
 		TreasuryCommittee: pallet_collective::<Instance1> = 42,
+		Nexus: pallet_nexus = 43,
 	}
 );
 

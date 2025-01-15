@@ -80,6 +80,8 @@ impl pallet_vector::Config for Runtime {
 	type AvailDomain = ConstU32<1>;
 }
 
+impl pallet_nexus::Config for Runtime {}
+
 parameter_types! {
 	pub const BasicDeposit: Balance = 100 * AVAIL;
 	pub const ByteDeposit: Balance = constants::currency::deposit(0,1);

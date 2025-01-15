@@ -21,6 +21,7 @@ kate = { workspace = true, default-features = false }
 da-control = { workspace = true, default-features = false }
 pallet-mandate = { workspace = true, default-features = false }
 pallet-vector = { workspace = true, default-features = false }
+pallet-nexus = { workspace = true, default-features = false }
 
 # External 
 static_assertions.workspace = true
@@ -32,8 +33,12 @@ thiserror-no-std.workspace = true
 derive_more.workspace = true
 
 # Substrate
-scale-info = { workspace = true, default-features = false, features = [ "derive" ] }
-codec = { package = "parity-scale-codec", version = "3", default-features = false, features = [ "derive", ] }
+scale-info = { workspace = true, default-features = false, features = [
+	"derive",
+] }
+codec = { package = "parity-scale-codec", version = "3", default-features = false, features = [
+	"derive",
+] }
 binary-merkle-tree = { workspace = true, default-features = false }
 
 ## primitives
@@ -63,7 +68,9 @@ frame-executive = { workspace = true, default-features = false }
 frame-try-runtime = { workspace = true, default-features = false, optional = true }
 
 pallet-balances = { workspace = true, default-features = false }
-pallet-session = { workspace = true, default-features = false, features = ['historical'] }
+pallet-session = { workspace = true, default-features = false, features = [
+	'historical',
+] }
 pallet-im-online = { workspace = true, default-features = false }
 pallet-grandpa = { workspace = true, default-features = false }
 pallet-timestamp = { workspace = true, default-features = false }
@@ -95,7 +102,7 @@ pallet-tx-pause = { workspace = true, default-features = false }
 
 ## RPCs
 pallet-transaction-payment-rpc-runtime-api = { workspace = true, default-features = false }
-frame-system-rpc-runtime-api = { workspace = true , default-features = false }
+frame-system-rpc-runtime-api = { workspace = true, default-features = false }
 
 ## benchmarking
 frame-benchmarking = { workspace = true, default-features = false, optional = true }
@@ -135,12 +142,12 @@ name = "header_kate_commitment_divan"
 harness = false
 
 [features]
-default = [ "std" ]
-with-tracing = [ "frame-executive/with-tracing" ]
+default = ["std"]
+with-tracing = ["frame-executive/with-tracing"]
 fast-runtime = []
-testing-environment = [ "frame-system/testing-environment" ]
+testing-environment = ["frame-system/testing-environment"]
 # codspeed = []
-header_commitment_corruption = [ "frame-system/header_commitment_corruption" ]
+header_commitment_corruption = ["frame-system/header_commitment_corruption"]
 std = [
 	"avail-base/std",
 	"avail-core/std",
@@ -187,6 +194,7 @@ std = [
 	"pallet-tx-pause/std",
 	"pallet-utility/std",
 	"pallet-vector/std",
+	"pallet-nexus/std",
 	"scale-info/std",
 	"serde",
 	"sp-api/std",
