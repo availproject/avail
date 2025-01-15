@@ -1446,8 +1446,7 @@ dependencies = [
 [[package]]
 name = "borsh"
 version = "1.5.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9fb65153674e51d3a42c8f27b05b9508cea85edfaade8aa46bc8fc18cecdfef3"
+source = "git+https://github.com/near/borsh-rs.git?tag=borsh-v1.5.4#fe78005d4ec26cdfd33bdb78b06a1b411aa810ce"
 dependencies = [
  "borsh-derive",
  "cfg_aliases 0.2.1",
@@ -1456,8 +1455,7 @@ dependencies = [
 [[package]]
 name = "borsh-derive"
 version = "1.5.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a396e17ad94059c650db3d253bb6e25927f1eb462eede7e7a153bb6e75dce0a7"
+source = "git+https://github.com/near/borsh-rs.git?tag=borsh-v1.5.4#fe78005d4ec26cdfd33bdb78b06a1b411aa810ce"
 dependencies = [
  "once_cell",
  "proc-macro-crate 3.2.0",
