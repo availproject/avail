@@ -63,8 +63,8 @@ fn create_avail_pool() -> types::FusionPool<mock::Test> {
 		AVAIL_POOL_ID,
 		None,
 		Some(FusionPoolState::Open),
-		None,
-		None,
+		ConfigOp::Noop,
+		ConfigOp::Noop,
 		None
 	));
 
@@ -126,8 +126,8 @@ fn create_btc_pool() -> types::FusionPool<mock::Test> {
 		BTC_POOL_ID,
 		None,
 		Some(FusionPoolState::Open),
-		None,
-		None,
+		ConfigOp::Noop,
+		ConfigOp::Noop,
 		None
 	));
 
@@ -868,8 +868,8 @@ mod set_pool {
 			let root: RuntimeOrigin = RawOrigin::Root.into();
 			let new_apy = Some(Perbill::from_percent(8));
 			let new_state = Some(FusionPoolState::Paused);
-			let new_nominator: Option<Option<u64>> = Some(Some(ALICE));
-			let new_boost_data_option = Some(Some((Perbill::from_percent(2), 1 * AVAIL)));
+			let new_nominator = ConfigOp::Set(ALICE);
+			let new_boost_data_option = ConfigOp::Set((Perbill::from_percent(2), 1 * AVAIL));
 
 			assert_ok!(Fusion::set_pool(
 				root,
@@ -885,8 +885,8 @@ mod set_pool {
 
 			assert_eq!(pool.apy, new_apy.unwrap());
 			assert_eq!(pool.state, new_state.unwrap());
-			assert_eq!(pool.nominator, new_nominator.unwrap());
-			let new_boost_data = new_boost_data_option.unwrap().unwrap();
+			assert_eq!(pool.nominator, Some(ALICE));
+			let new_boost_data = (Perbill::from_percent(2), 1 * AVAIL);
 			let pool_boost_data = pool.boost_data.unwrap();
 			assert_eq!(new_boost_data.0, pool_boost_data.additional_apy);
 			assert_eq!(new_boost_data.1, pool_boost_data.min_avail_to_earn);
@@ -929,8 +929,8 @@ mod set_pool {
 				BTC_POOL_ID,
 				Some(Perbill::from_percent(100)),
 				None,
-				None,
-				None,
+				ConfigOp::Noop,
+				ConfigOp::Noop,
 				None
 			));
 
@@ -973,8 +973,8 @@ mod set_pool {
 				BTC_POOL_ID,
 				None,
 				Some(FusionPoolState::Open), // Not mandatory to set pool to open to put rewards
-				None,
-				None,
+				ConfigOp::Noop,
+				ConfigOp::Noop,
 				Some(retry_rewards_for_eras)
 			));
 
@@ -991,8 +991,8 @@ mod set_pool {
 				pool_id: 1,
 				apy: None,
 				state: Some(FusionPoolState::Open),
-				nominator: None,
-				boost_data: None,
+				nominator: ConfigOp::Noop,
+				boost_data: ConfigOp::Noop,
 			}));
 		});
 	}
@@ -1028,8 +1028,8 @@ mod set_pool {
 				BTC_POOL_ID,
 				None,
 				Some(FusionPoolState::Paused),
-				None,
-				None,
+				ConfigOp::Noop,
+				ConfigOp::Noop,
 				None
 			));
 
@@ -1050,8 +1050,8 @@ mod set_pool {
 				BTC_POOL_ID,
 				None,
 				Some(FusionPoolState::Open),
-				None,
-				None,
+				ConfigOp::Noop,
+				ConfigOp::Noop,
 				None
 			));
 
@@ -1078,8 +1078,8 @@ mod set_pool {
 					AVAIL_POOL_ID,
 					None,
 					state,
-					None,
-					None,
+					ConfigOp::Noop,
+					ConfigOp::Noop,
 					None
 				),
 				BadOrigin
@@ -1096,8 +1096,8 @@ mod set_pool {
 
 			let apy = Some(Perbill::from_percent(5));
 			let state = Some(FusionPoolState::Open);
-			let nominator: Option<Option<u64>> = Some(Some(POOL_NOMINATOR_ROLE_ACCOUNT));
-			let boost_data: Option<Option<(Perbill, u128)>> = None;
+			let nominator: ConfigOp<u64> = ConfigOp::Set(POOL_NOMINATOR_ROLE_ACCOUNT);
+			let boost_data: ConfigOp<(Perbill, u128)> = ConfigOp::Noop;
 
 			assert_noop!(
 				Fusion::set_pool(root, INVALID_ID, apy, state, nominator, boost_data, None),
@@ -1118,8 +1118,8 @@ mod set_pool {
 			let root: RuntimeOrigin = RawOrigin::Root.into();
 			let apy = Some(Perbill::from_percent(5));
 			let state = Some(FusionPoolState::Open);
-			let nominator: Option<Option<u64>> = Some(Some(POOL_NOMINATOR_ROLE_ACCOUNT));
-			let boost_data: Option<Option<(Perbill, u128)>> = None;
+			let nominator: ConfigOp<u64> = ConfigOp::Set(POOL_NOMINATOR_ROLE_ACCOUNT);
+			let boost_data: ConfigOp<(Perbill, u128)> = ConfigOp::Noop;
 
 			assert_noop!(
 				Fusion::set_pool(root, AVAIL_POOL_ID, apy, state, nominator, boost_data, None),
@@ -1137,8 +1137,8 @@ mod set_pool {
 			let root: RuntimeOrigin = RawOrigin::Root.into();
 			let invalid_apy = Some(Perbill::zero());
 			let state = Some(FusionPoolState::Open);
-			let nominator: Option<Option<u64>> = Some(Some(POOL_NOMINATOR_ROLE_ACCOUNT));
-			let boost_data: Option<Option<(Perbill, u128)>> = None;
+			let nominator: ConfigOp<u64> = ConfigOp::Set(POOL_NOMINATOR_ROLE_ACCOUNT);
+			let boost_data: ConfigOp<(Perbill, u128)> = ConfigOp::Noop;
 
 			assert_noop!(
 				Fusion::set_pool(
@@ -1164,8 +1164,8 @@ mod set_pool {
 			let root: RuntimeOrigin = RawOrigin::Root.into();
 			let apy = Some(Perbill::from_percent(5));
 			let state = Some(FusionPoolState::Destroying);
-			let nominator: Option<Option<u64>> = Some(Some(POOL_NOMINATOR_ROLE_ACCOUNT));
-			let boost_data: Option<Option<(Perbill, u128)>> = None;
+			let nominator: ConfigOp<u64> = ConfigOp::Set(POOL_NOMINATOR_ROLE_ACCOUNT);
+			let boost_data: ConfigOp<(Perbill, u128)> = ConfigOp::Noop;
 
 			assert_noop!(
 				Fusion::set_pool(root, AVAIL_POOL_ID, apy, state, nominator, boost_data, None),
@@ -1186,8 +1186,8 @@ mod set_pool {
 			let root: RuntimeOrigin = RawOrigin::Root.into();
 			let apy = Some(Perbill::from_percent(5));
 			let state = Some(FusionPoolState::Open);
-			let nominator: Option<Option<u64>> = Some(Some(POOL_NOMINATOR_ROLE_ACCOUNT));
-			let boost_data: Option<Option<(Perbill, u128)>> = None;
+			let nominator: ConfigOp<u64> = ConfigOp::Set(POOL_NOMINATOR_ROLE_ACCOUNT);
+			let boost_data: ConfigOp<(Perbill, u128)> = ConfigOp::Noop;
 
 			assert_noop!(
 				Fusion::set_pool(root, AVAIL_POOL_ID, apy, state, nominator, boost_data, None),
@@ -1205,8 +1205,8 @@ mod set_pool {
 
 			let apy = Some(Perbill::from_percent(5));
 			let state = Some(FusionPoolState::Open);
-			let nominator: Option<Option<u64>> = Some(Some(POOL_NOMINATOR_ROLE_ACCOUNT));
-			let boost_data: Option<Option<(Perbill, u128)>> = None;
+			let nominator: ConfigOp<u64> = ConfigOp::Set(POOL_NOMINATOR_ROLE_ACCOUNT);
+			let boost_data: ConfigOp<(Perbill, u128)> = ConfigOp::Noop;
 
 			Currencies::<Test>::remove(AVAIL_CURRENCY_ID);
 
@@ -1230,8 +1230,8 @@ mod set_pool {
 			let root: RuntimeOrigin = RawOrigin::Root.into();
 			let apy = Some(Perbill::from_percent(5));
 			let state = Some(FusionPoolState::Open);
-			let nominator: Option<Option<u64>> = Some(Some(POOL_NOMINATOR_ROLE_ACCOUNT));
-			let boost_data: Option<Option<(Perbill, u128)>> = None;
+			let nominator: ConfigOp<u64> = ConfigOp::Set(POOL_NOMINATOR_ROLE_ACCOUNT);
+			let boost_data: ConfigOp<(Perbill, u128)> = ConfigOp::Noop;
 
 			assert_noop!(
 				Fusion::set_pool(root, AVAIL_POOL_ID, apy, state, nominator, boost_data, None),
@@ -1256,8 +1256,8 @@ mod set_pool {
 				BTC_POOL_ID,
 				None,
 				None,
-				None,
-				Some(None),
+				ConfigOp::Noop,
+				ConfigOp::Remove,
 				None
 			));
 
@@ -1274,8 +1274,8 @@ mod set_pool {
 				BTC_POOL_ID,
 				None,
 				None,
-				None,
-				Some(Some((Perbill::from_percent(2), 1 * AVAIL))),
+				ConfigOp::Noop,
+				ConfigOp::Set((Perbill::from_percent(2), 1 * AVAIL)),
 				None
 			));
 			let boost_data = BoostData::<Test> {
@@ -1337,8 +1337,8 @@ mod set_pool {
 				BTC_POOL_ID,
 				None,
 				None,
-				None,
-				Some(Some((Perbill::from_percent(2), 1_000_000 * AVAIL))),
+				ConfigOp::Noop,
+				ConfigOp::Set((Perbill::from_percent(2), 1_000_000 * AVAIL)),
 				None
 			));
 			// And we check that user still has boost, cause we was part of it before
@@ -1363,8 +1363,8 @@ mod set_pool {
 				BTC_POOL_ID,
 				None,
 				None,
-				None,
-				Some(None),
+				ConfigOp::Noop,
+				ConfigOp::Remove,
 				None
 			));
 			assert!(Pools::<Test>::get(BTC_POOL_ID)
@@ -2849,8 +2849,8 @@ mod claim_rewards {
 				BTC_POOL_ID,
 				None,
 				None,
-				None,
-				Some(Some((Perbill::from_percent(10), 0))),
+				ConfigOp::Noop,
+				ConfigOp::Set((Perbill::from_percent(10), 0)),
 				None
 			));
 			assert_ok!(Fusion::set_pool_boost_allocations(
@@ -4302,8 +4302,8 @@ mod set_pool_boost_allocations {
 				BTC_POOL_ID,
 				None,
 				None,
-				None,
-				Some(Some((Perbill::from_percent(5), 1 * AVAIL))),
+				ConfigOp::Noop,
+				ConfigOp::Set((Perbill::from_percent(5), 1 * AVAIL)),
 				None
 			));
 			assert_ok!(Fusion::set_pool(
@@ -4311,8 +4311,8 @@ mod set_pool_boost_allocations {
 				AVAIL_POOL_ID,
 				None,
 				None,
-				None,
-				Some(Some((Perbill::from_percent(5), 2 * AVAIL))),
+				ConfigOp::Noop,
+				ConfigOp::Set((Perbill::from_percent(5), 2 * AVAIL)),
 				None
 			));
 
@@ -4374,8 +4374,8 @@ mod set_pool_boost_allocations {
 				AVAIL_POOL_ID,
 				None,
 				None,
-				None,
-				Some(Some((Perbill::from_percent(5), 1 * AVAIL))),
+				ConfigOp::Noop,
+				ConfigOp::Set((Perbill::from_percent(5), 1 * AVAIL)),
 				None
 			));
 
@@ -4448,8 +4448,8 @@ mod set_pool_boost_allocations {
 				BTC_POOL_ID,
 				None,
 				None,
-				None,
-				Some(Some((Perbill::from_percent(5), 1 * AVAIL))),
+				ConfigOp::Noop,
+				ConfigOp::Set((Perbill::from_percent(5), 1 * AVAIL)),
 				None
 			));
 
@@ -4568,8 +4568,8 @@ mod set_pool_boost_allocations {
 				BTC_POOL_ID,
 				None,
 				None,
-				None,
-				Some(Some((Perbill::from_percent(5), 2 * AVAIL))),
+				ConfigOp::Noop,
+				ConfigOp::Set((Perbill::from_percent(5), 2 * AVAIL)),
 				None
 			));
 			assert_ok!(Fusion::set_pool(
@@ -4577,8 +4577,8 @@ mod set_pool_boost_allocations {
 				AVAIL_POOL_ID,
 				None,
 				None,
-				None,
-				Some(Some((Perbill::from_percent(5), 1 * AVAIL))),
+				ConfigOp::Noop,
+				ConfigOp::Set((Perbill::from_percent(5), 1 * AVAIL)),
 				None
 			));
 

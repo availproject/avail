@@ -399,8 +399,8 @@ pub mod pallet {
 			pool_id: PoolId,
 			apy: Option<Perbill>,
 			state: Option<FusionPoolState>,
-			nominator: Option<Option<T::AccountId>>,
-			boost_data: Option<Option<(Perbill, FusionCurrencyBalance)>>,
+			nominator: ConfigOp<T::AccountId>,
+			boost_data: ConfigOp<(Perbill, FusionCurrencyBalance)>,
 		},
 		/// Event triggered when a user joins a pool
 		PoolJoined {
@@ -889,21 +889,19 @@ pub mod pallet {
 			pool_id: PoolId,
 			apy: Option<Perbill>,
 			state: Option<FusionPoolState>,
-			nominator: Option<Option<T::AccountId>>,
-			boost_data: Option<Option<(Perbill, FusionCurrencyBalance)>>, // Additional apy, min to earn
+			nominator: ConfigOp<T::AccountId>,
+			boost_data: ConfigOp<(Perbill, FusionCurrencyBalance)>, // Additional apy, min to earn
 			retry_rewards_for_eras: Option<BoundedVec<EraIndex, T::HistoryDepth>>,
 		) -> DispatchResult {
 			ensure_root(origin)?;
-
-			let mut pool_is_active = false;
 
 			Pools::<T>::try_mutate(pool_id, |maybe_pool| -> DispatchResult {
 				let pool = maybe_pool.as_mut().ok_or(Error::<T>::PoolNotFound)?;
 
 				let is_only_retry = retry_rewards_for_eras.is_some()
 					&& apy.is_none() && state.is_none()
-					&& nominator.is_none()
-					&& boost_data.is_none();
+					&& matches!(nominator, ConfigOp::Noop)
+					&& matches!(boost_data, ConfigOp::Noop);
 
 				ensure!(
 					pool.state != FusionPoolState::Destroying || is_only_retry,
@@ -930,17 +928,17 @@ pub mod pallet {
 					pool.state = state;
 				}
 
-				if let Some(nominator) = nominator.clone() {
-					pool.nominator = nominator;
-				}
+				pool.nominator = match nominator.clone() {
+					ConfigOp::Noop => pool.nominator.clone(),
+					ConfigOp::Remove => None,
+					ConfigOp::Set(value) => Some(value),
+				};
 
-				if let Some(boost_data) = boost_data {
-					pool.set_boost(pool_id, boost_data)?;
-				}
-
-				if pool.is_active() {
-					pool_is_active = true;
-				}
+				match boost_data {
+					ConfigOp::Remove => pool.set_boost(pool_id, None)?,
+					ConfigOp::Set(value) => pool.set_boost(pool_id, Some(value))?,
+					_ => { /* Do Nothing */ },
+				};
 
 				Ok(())
 			})?;

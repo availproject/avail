@@ -1,3 +1,4 @@
+use codec::Codec;
 use frame_support::pallet_prelude::*;
 use sp_core::{H160, H256, H512};
 use sp_runtime::Perbill;
@@ -38,6 +39,17 @@ pub type CurrencyId = u32;
 
 /// Type of the pool id
 pub type PoolId = u32;
+
+/// Possible operations on the configuration values of this pallet.
+#[derive(TypeInfo, Debug, Clone, Encode, Decode, PartialEq)]
+pub enum ConfigOp<T: Codec> {
+	/// Don't change.
+	Noop,
+	/// Set the given value.
+	Set(T),
+	/// Remove the value.
+	Remove,
+}
 
 /// The type of account being created.
 #[derive(Encode, Decode)]

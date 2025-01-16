@@ -107,8 +107,8 @@ fn create_avail_pool<T: Config>() {
 		pool_id,
 		None,
 		Some(FusionPoolState::Open),
-		None,
-		None,
+		ConfigOp::Noop,
+		ConfigOp::Noop,
 		None
 	));
 }
@@ -169,8 +169,8 @@ fn create_btc_pool<T: Config>() {
 		pool_id,
 		None,
 		Some(FusionPoolState::Open),
-		None,
-		None,
+		ConfigOp::Noop,
+		ConfigOp::Noop,
 		None
 	));
 }
@@ -364,8 +364,8 @@ mod benchmarks {
 		let pool_id = 0;
 		let apy = Some(Perbill::from_percent(15));
 		let state = Some(FusionPoolState::Open);
-		let nominator = Some(Some(get_account::<T>("DAVE")));
-		let boost_data = Some(Some((Perbill::from_percent(5), 1_000_000_000_000_000_000)));
+		let nominator = ConfigOp::Set(get_account::<T>("DAVE"));
+		let boost_data = ConfigOp::Set((Perbill::from_percent(5), 1_000_000_000_000_000_000));
 		let retry_rewards_for_eras = None;
 
 		#[extrinsic_call]
@@ -393,8 +393,8 @@ mod benchmarks {
 		let pool_id = 1;
 		let apy = Some(Perbill::from_percent(15));
 		let state = Some(FusionPoolState::Open);
-		let nominator = Some(Some(get_account::<T>("DAVE")));
-		let boost_data = Some(Some((Perbill::from_percent(5), 1_000_000_000_000_000_000)));
+		let nominator = ConfigOp::Set(get_account::<T>("DAVE"));
+		let boost_data = ConfigOp::Set((Perbill::from_percent(5), 1_000_000_000_000_000_000));
 		let retry_rewards_for_eras = Some(BoundedVec::try_from(vec![1]).unwrap());
 
 		let fusion_address = FusionAddress::new_evm(H160::zero());
@@ -609,8 +609,8 @@ mod benchmarks {
 			1,
 			None,
 			None,
-			None,
-			Some(Some((Perbill::from_percent(5), 1_000_000_000_000_000_000))),
+			ConfigOp::Noop,
+			ConfigOp::Set((Perbill::from_percent(5), 1_000_000_000_000_000_000)),
 			None,
 		)
 		.unwrap();
@@ -665,8 +665,8 @@ mod benchmarks {
 			1,
 			None,
 			None,
-			None,
-			Some(Some((Perbill::from_percent(5), 1_000_000_000_000_000_000))),
+			ConfigOp::Noop,
+			ConfigOp::Set((Perbill::from_percent(5), 1_000_000_000_000_000_000)),
 			None,
 		)
 		.unwrap();
@@ -752,8 +752,8 @@ mod benchmarks {
 			0,
 			None,
 			None,
-			None,
-			Some(Some((Perbill::from_percent(5), 1_000_000_000_000_000_000))),
+			ConfigOp::Noop,
+			ConfigOp::Set((Perbill::from_percent(5), 1_000_000_000_000_000_000)),
 			None,
 		)
 		.unwrap();
@@ -762,8 +762,8 @@ mod benchmarks {
 			1,
 			None,
 			None,
-			None,
-			Some(Some((Perbill::from_percent(5), 1_000_000_000_000_000_000))),
+			ConfigOp::Noop,
+			ConfigOp::Set((Perbill::from_percent(5), 1_000_000_000_000_000_000)),
 			None,
 		)
 		.unwrap();
