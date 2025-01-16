@@ -140,7 +140,8 @@ default = [ "std" ]
 with-tracing = [ "frame-executive/with-tracing" ]
 fast-runtime = []
 testing-environment = [ "frame-system/testing-environment" ]
-# codspeed = []
+codspeed = []
+secure_padding_fill = []
 header_commitment_corruption = [ "frame-system/header_commitment_corruption" ]
 std = [
 	"avail-base/std",

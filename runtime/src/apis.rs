@@ -373,9 +373,7 @@ impl_runtime_apis! {
 		fn check_if_extrinsic_is_post_inherent(uxt: &<Block as BlockT>::Extrinsic) -> bool {
 			use frame_support::traits::ExtrinsicCall;
 
-			let Ok(xt) =  TryInto::<&RTExtrinsic>::try_into(uxt) else {
-				return false;
-			};
+			let Ok(xt) = TryInto::<&RTExtrinsic>::try_into(uxt);
 
 			let vector_pallet_call = match xt.call() {
 				RuntimeCall::Vector(call) => call,
