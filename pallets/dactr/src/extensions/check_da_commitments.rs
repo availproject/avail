@@ -19,6 +19,7 @@ use sp_std::{
 	marker::PhantomData,
 };
 
+use super::native::build_da_commitments::{build_da_commitments, DaCommitmentsError};
 
 /// Check for DA Commitments.
 ///
@@ -58,6 +59,33 @@ where
 				!self.da_commitments().is_empty(),
 				InvalidTransaction::Custom(0)
 			);
+
+			 // Fetch the block_length value from the frame_system pallet
+			let block_length = frame_system::Pallet::<T>::block_length();
+			let seed = [0u8; 32];
+
+			match build_da_commitments(data.to_vec().clone(), block_length, seed) {
+				Ok(commitments) => {
+					log::info!(target: LOG_TARGET, "Generated commitments: {:?}", commitments);
+					log::info!(target: LOG_TARGET, "Passed commitments: {:?}", self.da_commitments());
+					ensure!(
+						commitments == self.da_commitments(),
+						InvalidTransaction::Custom(1)
+					);
+				},
+				Err(DaCommitmentsError::GridConstructionFailed(_)) => {
+					return Err(TransactionValidityError::Invalid(InvalidTransaction::Custom(2)));
+				},
+				Err(DaCommitmentsError::MakePolynomialGridFailed(_)) => {
+					return Err(TransactionValidityError::Invalid(InvalidTransaction::Custom(3)));
+				},
+				Err(DaCommitmentsError::GridExtensionFailed(_)) => {
+					return Err(TransactionValidityError::Invalid(InvalidTransaction::Custom(4)));
+				},
+				Err(DaCommitmentsError::CommitmentSerializationFailed(_)) => {
+					return Err(TransactionValidityError::Invalid(InvalidTransaction::Custom(5)));
+				},
+			}
 		}
 		Ok(ValidTransaction::default())
 	}
