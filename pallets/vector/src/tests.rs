@@ -1529,7 +1529,7 @@ fn test_fulfill_successfully_sync_committee_not_set() {
 	});
 }
 
-// TODO this panics
+// TODO verify_groth16_raw is not part of the sp1 v4.0.0 release which will fix panics
 // #[test]
 // fn test_fulfill_incorrect_proof() {
 //     new_test_ext().execute_with(|| {
