@@ -1,6 +1,6 @@
 use crate::{
 	avail::{TxInBlock, TxProgress, TxStatus},
-	primitives::new_params_from_app_id,
+	primitives::{new_params_from_app_id, new_params_from_app_id_and_commitments},
 	AccountId, AppId, AvailConfig,
 };
 
@@ -74,6 +74,25 @@ where
 	A: Into<AppId>,
 {
 	let params = new_params_from_app_id(app_id.into());
+	client
+		.tx()
+		.sign_and_submit_then_watch(call, signer, params)
+		.await
+}
+
+pub async fn send_with_da_commits<C, S, A>(
+	client: &OnlineClient<AvailConfig>,
+	call: &C,
+	signer: &S,
+	app_id: A,
+	da_commitments: &[u8],
+) -> Result<TxProgress, Error>
+where
+	C: TxPayload,
+	S: SignerT<AvailConfig>,
+	A: Into<AppId>,
+{
+	let params = new_params_from_app_id_and_commitments(app_id.into(), da_commitments);
 	client
 		.tx()
 		.sign_and_submit_then_watch(call, signer, params)

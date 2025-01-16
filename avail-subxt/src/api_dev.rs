@@ -335,9 +335,9 @@ pub mod api {
 			.hash();
 		runtime_metadata_hash
 			== [
-				157u8, 105u8, 146u8, 18u8, 155u8, 83u8, 176u8, 100u8, 196u8, 223u8, 205u8, 93u8,
-				34u8, 205u8, 24u8, 114u8, 206u8, 11u8, 234u8, 222u8, 119u8, 43u8, 230u8, 65u8,
-				48u8, 205u8, 215u8, 228u8, 85u8, 109u8, 147u8, 180u8,
+				114u8, 86u8, 213u8, 65u8, 182u8, 118u8, 98u8, 90u8, 75u8, 245u8, 164u8, 6u8, 255u8,
+				126u8, 110u8, 58u8, 22u8, 190u8, 240u8, 77u8, 249u8, 75u8, 195u8, 215u8, 42u8,
+				221u8, 228u8, 230u8, 111u8, 211u8, 202u8, 119u8,
 			]
 	}
 	pub mod system {
@@ -1628,8 +1628,7 @@ pub mod api {
 				#[doc = " The maximum length of a block (in bytes)."]
 				pub fn block_length(
 					&self,
-				) -> ::subxt::constants::Address<runtime_types::frame_system::limits::BlockLength>
-				{
+				) -> ::subxt::constants::Address<runtime_types::frame_system::limits::BlockLength> {
 					::subxt::constants::Address::new_static(
 						"System",
 						"BlockLength",
@@ -12913,8 +12912,7 @@ pub mod api {
 				#[doc = " Maximum amount of funds that should be placed in a deposit for making a proposal."]
 				pub fn proposal_bond_maximum(
 					&self,
-				) -> ::subxt::constants::Address<::core::option::Option<::core::primitive::u128>>
-				{
+				) -> ::subxt::constants::Address<::core::option::Option<::core::primitive::u128>> {
 					::subxt::constants::Address::new_static(
 						"Treasury",
 						"ProposalBondMaximum",
@@ -15503,8 +15501,7 @@ pub mod api {
 				#[doc = " Minimum number of cols in a block."]
 				pub fn min_block_cols(
 					&self,
-				) -> ::subxt::constants::Address<runtime_types::avail_core::BlockLengthColumns>
-				{
+				) -> ::subxt::constants::Address<runtime_types::avail_core::BlockLengthColumns> {
 					::subxt::constants::Address::new_static(
 						"DataAvailability",
 						"MinBlockCols",
@@ -15518,8 +15515,7 @@ pub mod api {
 				#[doc = " Maximum number of cols in a block."]
 				pub fn max_block_cols(
 					&self,
-				) -> ::subxt::constants::Address<runtime_types::avail_core::BlockLengthColumns>
-				{
+				) -> ::subxt::constants::Address<runtime_types::avail_core::BlockLengthColumns> {
 					::subxt::constants::Address::new_static(
 						"DataAvailability",
 						"MaxBlockCols",
@@ -22745,6 +22741,7 @@ pub mod api {
 			# [codec (crate = :: subxt :: ext :: codec)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+			#[doc = "Emit new SP1 verification key."]
 			pub struct NewSP1VerificationKey {
 				pub old: new_sp1_verification_key::Old,
 				pub new: new_sp1_verification_key::New,
@@ -22771,6 +22768,7 @@ pub mod api {
 			# [codec (crate = :: subxt :: ext :: codec)]
 			#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 			#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+			#[doc = "Emit when new sync committee is updated."]
 			pub struct SyncCommitteeHashUpdated {
 				pub period: sync_committee_hash_updated::Period,
 				pub hash: sync_committee_hash_updated::Hash,
@@ -22811,11 +22809,6 @@ pub mod api {
 				pub mod sync_committee_poseidons {
 					use super::runtime_types;
 					pub type SyncCommitteePoseidons = runtime_types::primitive_types::U256;
-					pub type Param0 = ::core::primitive::u64;
-				}
-				pub mod sync_committee_hashes {
-					use super::runtime_types;
-					pub type SyncCommitteeHashes = ::subxt::utils::H256;
 					pub type Param0 = ::core::primitive::u64;
 				}
 				pub mod configuration_storage {
@@ -22886,6 +22879,11 @@ pub mod api {
 				pub mod updater {
 					use super::runtime_types;
 					pub type Updater = ::subxt::utils::H256;
+				}
+				pub mod sync_committee_hashes {
+					use super::runtime_types;
+					pub type SyncCommitteeHashes = ::subxt::utils::H256;
+					pub type Param0 = ::core::primitive::u64;
 				}
 				pub mod sp1_verification_key {
 					use super::runtime_types;
@@ -23094,53 +23092,6 @@ pub mod api {
 							42u8, 212u8, 16u8, 100u8, 95u8, 97u8, 54u8, 157u8, 85u8, 121u8, 7u8,
 							250u8, 175u8, 242u8, 182u8, 62u8, 41u8, 109u8, 229u8, 93u8, 234u8,
 							72u8, 43u8, 223u8, 208u8, 0u8, 83u8, 250u8, 22u8, 76u8, 35u8, 104u8,
-						],
-					)
-				}
-				#[doc = " Maps from a period to the poseidon commitment for the sync committee."]
-				pub fn sync_committee_hashes_iter(
-					&self,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					types::sync_committee_hashes::SyncCommitteeHashes,
-					(),
-					::subxt::storage::address::Yes,
-					::subxt::storage::address::Yes,
-				> {
-					::subxt::storage::address::Address::new_static(
-						"Vector",
-						"SyncCommitteeHashes",
-						vec![],
-						[
-							51u8, 118u8, 71u8, 185u8, 193u8, 166u8, 64u8, 107u8, 217u8, 216u8,
-							61u8, 74u8, 64u8, 98u8, 20u8, 23u8, 57u8, 104u8, 188u8, 189u8, 195u8,
-							162u8, 238u8, 137u8, 19u8, 17u8, 252u8, 175u8, 185u8, 16u8, 133u8,
-							142u8,
-						],
-					)
-				}
-				#[doc = " Maps from a period to the poseidon commitment for the sync committee."]
-				pub fn sync_committee_hashes(
-					&self,
-					_0: impl ::std::borrow::Borrow<types::sync_committee_hashes::Param0>,
-				) -> ::subxt::storage::address::Address<
-					::subxt::storage::address::StaticStorageMapKey,
-					types::sync_committee_hashes::SyncCommitteeHashes,
-					::subxt::storage::address::Yes,
-					::subxt::storage::address::Yes,
-					(),
-				> {
-					::subxt::storage::address::Address::new_static(
-						"Vector",
-						"SyncCommitteeHashes",
-						vec![::subxt::storage::address::make_static_storage_map_key(
-							_0.borrow(),
-						)],
-						[
-							51u8, 118u8, 71u8, 185u8, 193u8, 166u8, 64u8, 107u8, 217u8, 216u8,
-							61u8, 74u8, 64u8, 98u8, 20u8, 23u8, 57u8, 104u8, 188u8, 189u8, 195u8,
-							162u8, 238u8, 137u8, 19u8, 17u8, 252u8, 175u8, 185u8, 16u8, 133u8,
-							142u8,
 						],
 					)
 				}
@@ -23501,6 +23452,54 @@ pub mod api {
 						],
 					)
 				}
+				#[doc = " Maps from a period to the the sync committee hash."]
+				pub fn sync_committee_hashes_iter(
+					&self,
+				) -> ::subxt::storage::address::Address<
+					::subxt::storage::address::StaticStorageMapKey,
+					types::sync_committee_hashes::SyncCommitteeHashes,
+					(),
+					::subxt::storage::address::Yes,
+					::subxt::storage::address::Yes,
+				> {
+					::subxt::storage::address::Address::new_static(
+						"Vector",
+						"SyncCommitteeHashes",
+						vec![],
+						[
+							51u8, 118u8, 71u8, 185u8, 193u8, 166u8, 64u8, 107u8, 217u8, 216u8,
+							61u8, 74u8, 64u8, 98u8, 20u8, 23u8, 57u8, 104u8, 188u8, 189u8, 195u8,
+							162u8, 238u8, 137u8, 19u8, 17u8, 252u8, 175u8, 185u8, 16u8, 133u8,
+							142u8,
+						],
+					)
+				}
+				#[doc = " Maps from a period to the the sync committee hash."]
+				pub fn sync_committee_hashes(
+					&self,
+					_0: impl ::std::borrow::Borrow<types::sync_committee_hashes::Param0>,
+				) -> ::subxt::storage::address::Address<
+					::subxt::storage::address::StaticStorageMapKey,
+					types::sync_committee_hashes::SyncCommitteeHashes,
+					::subxt::storage::address::Yes,
+					::subxt::storage::address::Yes,
+					(),
+				> {
+					::subxt::storage::address::Address::new_static(
+						"Vector",
+						"SyncCommitteeHashes",
+						vec![::subxt::storage::address::make_static_storage_map_key(
+							_0.borrow(),
+						)],
+						[
+							51u8, 118u8, 71u8, 185u8, 193u8, 166u8, 64u8, 107u8, 217u8, 216u8,
+							61u8, 74u8, 64u8, 98u8, 20u8, 23u8, 57u8, 104u8, 188u8, 189u8, 195u8,
+							162u8, 238u8, 137u8, 19u8, 17u8, 252u8, 175u8, 185u8, 16u8, 133u8,
+							142u8,
+						],
+					)
+				}
+				#[doc = " SP1 program verification key."]
 				pub fn sp1_verification_key(
 					&self,
 				) -> ::subxt::storage::address::Address<
@@ -25950,6 +25949,25 @@ pub mod api {
 					#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
 					#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
 					pub struct CheckAppId(pub runtime_types::avail_core::AppId);
+				}
+				pub mod check_da_commitments {
+					use super::runtime_types;
+					#[derive(
+						:: subxt :: ext :: codec :: Decode,
+						:: subxt :: ext :: codec :: Encode,
+						:: subxt :: ext :: scale_decode :: DecodeAsType,
+						:: subxt :: ext :: scale_encode :: EncodeAsType,
+						Clone,
+						Debug,
+						Eq,
+						PartialEq,
+					)]
+					# [codec (crate = :: subxt :: ext :: codec)]
+					#[decode_as_type(crate_path = ":: subxt :: ext :: scale_decode")]
+					#[encode_as_type(crate_path = ":: subxt :: ext :: scale_encode")]
+					pub struct CheckDaCommitments(
+						pub ::std::vec::Vec<[::core::primitive::u8; 48usize]>,
+					);
 				}
 			}
 			pub mod pallet {
@@ -33205,11 +33223,11 @@ pub mod api {
 					#[doc = "Cannot get current message id"]
 					CurrentMessageIdNotFound,
 					#[codec(index = 34)]
+					#[doc = "Public values decoding error."]
 					CannotDecodePublicValue,
 					#[codec(index = 35)]
+					#[doc = "Sync committee hash is already set for given period."]
 					SyncCommitteeHashAlreadySet,
-					#[codec(index = 36)]
-					CurrentSyncCommitteeNotEqual,
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,
@@ -33308,11 +33326,13 @@ pub mod api {
 						new: ::subxt::utils::H256,
 					},
 					#[codec(index = 12)]
+					#[doc = "Emit new SP1 verification key."]
 					NewSP1VerificationKey {
 						old: ::subxt::utils::H256,
 						new: ::subxt::utils::H256,
 					},
 					#[codec(index = 13)]
+					#[doc = "Emit when new sync committee is updated."]
 					SyncCommitteeHashUpdated {
 						period: ::core::primitive::u64,
 						hash: ::subxt::utils::H256,

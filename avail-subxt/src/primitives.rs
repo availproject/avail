@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 pub mod extrinsic_params;
 pub use extrinsic_params::{
-	new_params_from_app_id, CheckAppId, Extra, ExtrinsicParams, OnlyCodecExtra,
+	new_params_from_app_id, new_params_from_app_id_and_commitments, CheckAppId, Extra, ExtrinsicParams, OnlyCodecExtra,
 };
 
 pub mod header;

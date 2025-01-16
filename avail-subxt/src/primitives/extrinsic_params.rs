@@ -1,4 +1,5 @@
 use crate::{api::runtime_types::sp_runtime::generic::era::Era, AppId, AvailConfig};
+use avail_core::DaCommitments;
 
 use codec::{Compact, Encode};
 use scale_info::PortableRegistry;
@@ -25,6 +26,7 @@ pub type OnlyCodecExtra = (
 	(),            // CheckWeight<Runtime>,
 	Compact<u128>, // ChargeTransactionPayment<Runtime>,
 	AppId,         // CheckAppId<Runtime>,
+	DaCommitments, // CheckDaCommitments<Runtime>,
 );
 
 pub type Extra = (
@@ -36,6 +38,7 @@ pub type Extra = (
 	CheckNonce,
 	ChargeTransactionPayment,
 	CheckAppId,
+	CheckDaCommitments,
 );
 
 pub type ExtrinsicParams = AnyOf<AvailConfig, Extra>;
@@ -51,6 +54,31 @@ pub fn new_params_from_app_id<Id: Into<AppId>>(id: Id) -> OtherParams {
 		(),
 		Default::default(),
 		id.into(),
+		Default::default(),
+	)
+}
+
+pub fn new_params_from_app_id_and_commitments<Id: Into<AppId>>(
+	id: Id,
+	commitments: &[u8],
+) -> OtherParams {
+	let da_commitments = commitments
+		.chunks(48)
+		.map(|chunk| {
+			let mut array = [0u8; 48];
+			array.copy_from_slice(chunk);
+			array
+		})
+		.collect();
+	(
+		(),
+		(),
+		(),
+		Default::default(),
+		(),
+		Default::default(),
+		id.into(),
+		da_commitments,
 	)
 }
 
@@ -79,6 +107,36 @@ impl<T: Config> subxt::config::ExtrinsicParams<T> for CheckAppId {
 impl ExtrinsicParamsEncoder for CheckAppId {
 	fn encode_extra_to(&self, v: &mut Vec<u8>) {
 		Compact::<u32>(self.0 .0).encode_to(v);
+	}
+
+	fn encode_additional_to(&self, _: &mut Vec<u8>) {}
+}
+
+pub struct CheckDaCommitments(pub DaCommitments);
+
+impl<T: Config> SignedExtension<T> for CheckDaCommitments {
+	type Decoded = DaCommitments;
+
+	fn matches(identifier: &str, _type_id: u32, _types: &PortableRegistry) -> bool {
+		identifier == "CheckDaCommitments"
+	}
+}
+
+impl<T: Config> subxt::config::ExtrinsicParams<T> for CheckDaCommitments {
+	type OtherParams = DaCommitments;
+
+	fn new<Client: OfflineClientT<T>>(
+		_nonce: u64,
+		_client: Client,
+		commitments: Self::OtherParams,
+	) -> Result<Self, ExtrinsicParamsError> {
+		Ok(CheckDaCommitments(commitments))
+	}
+}
+
+impl ExtrinsicParamsEncoder for CheckDaCommitments {
+	fn encode_extra_to(&self, v: &mut Vec<u8>) {
+		self.0.encode_to(v);
 	}
 
 	fn encode_additional_to(&self, _: &mut Vec<u8>) {}
