@@ -899,7 +899,8 @@ pub mod pallet {
 				let pool = maybe_pool.as_mut().ok_or(Error::<T>::PoolNotFound)?;
 
 				let is_only_retry = retry_rewards_for_eras.is_some()
-					&& apy.is_none() && state.is_none()
+					&& apy.is_none()
+					&& state.is_none()
 					&& matches!(nominator, ConfigOp::Noop)
 					&& matches!(boost_data, ConfigOp::Noop);
 

@@ -213,7 +213,7 @@ pub mod staking {
 	const REWARD_CURVE: PiecewiseLinear<'static> = curve!(
 		min_inflation: 0_010_000, // minimum_inflation_rate = 1%
 		max_inflation: 0_050_000, // maximum_inflation_rate = 5%
-		ideal_stake: 0_500_000, // target_staking_rate = 50%
+		ideal_stake: 0_750_000, // target_staking_rate = 75%
 		falloff: 0_050_000,  // inflation_decay = 5%
 		max_piece_count: 40,
 		test_precision: 0_005_000,
@@ -355,7 +355,7 @@ pub mod da {
 		pub const MinBlockRows: BlockLengthRows = BlockLengthRows(32);
 		pub const MaxBlockRows: BlockLengthRows = BlockLengthRows(1024);
 		pub const MinBlockCols: BlockLengthColumns = BlockLengthColumns(64);
-		pub const MaxBlockCols: BlockLengthColumns = kate::config::MAX_BLOCK_COLUMNS;
+		pub const MaxBlockCols: BlockLengthColumns = BlockLengthColumns(1024);
 	}
 	pub type MaxAppKeyLength = ConstU32<64>;
 	pub type MaxAppDataLength = ConstU32<524_288>; // 512 Kb
