@@ -4,8 +4,8 @@ use avail_base::header_extension::{
 };
 use avail_core::{
 	data_proof::{tx_uid, AddressedMessage},
-	traits::{GetAppId, MaybeCaller},
-	AppExtrinsic, AppId, OpaqueExtrinsic,
+	traits::{GetAppId, GetDaCommitments, MaybeCaller},
+	AppExtrinsic, AppId, OpaqueExtrinsic, DaCommitments,
 };
 
 use da_control::Call as DACall;
@@ -27,6 +27,7 @@ impl HeaderExtensionDataFilter for Runtime {
 
 		let app_id = unchecked_extrinsic.app_id();
 		let maybe_caller = unchecked_extrinsic.caller();
+		let da_commitments = unchecked_extrinsic.da_commitments();
 
 		match &unchecked_extrinsic.function {
 			Call::Vector(call) => {
@@ -34,7 +35,7 @@ impl HeaderExtensionDataFilter for Runtime {
 			},
 			Call::DataAvailability(call) => {
 				let app_extrinsic = AppExtrinsic::from(unchecked_extrinsic.clone());
-				filter_da_call(app_extrinsic, call, app_id, tx_index)
+				filter_da_call(app_extrinsic, call, app_id, da_commitments, tx_index)
 			},
 			_ => None,
 		}
@@ -62,6 +63,7 @@ fn filter_da_call(
 	app_extrinsic: AppExtrinsic,
 	call: &DACall<Runtime>,
 	app_id: AppId,
+	_da_commitments: DaCommitments,
 	tx_index: usize,
 ) -> Option<ExtractedTxData> {
 	let DACall::submit_data { data } = call else {

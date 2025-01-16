@@ -8,8 +8,7 @@ use crate::{
 	UncheckedExtrinsic, VoterList, MINUTES, SLOT_DURATION, VERSION,
 };
 use avail_core::{
-	currency::{Balance, AVAIL, CENTS, NANO_AVAIL, PICO_AVAIL},
-	AppId, NORMAL_DISPATCH_RATIO,
+	currency::{Balance, AVAIL, CENTS, NANO_AVAIL, PICO_AVAIL}, AppId, NORMAL_DISPATCH_RATIO
 };
 
 use codec::{Decode, Encode, MaxEncodedLen};
@@ -909,6 +908,7 @@ where
 			frame_system::CheckWeight::<Runtime>::new(),
 			pallet_transaction_payment::ChargeTransactionPayment::<Runtime>::from(tip),
 			da_control::CheckAppId::<Runtime>::from(AppId(0)),
+			da_control::CheckDaCommitments::<Runtime>::new(),
 		);
 		let raw_payload = SignedPayload::new(call, extra)
 			.map_err(|e| {

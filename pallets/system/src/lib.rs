@@ -102,7 +102,7 @@ use avail_base::{HeaderExtensionBuilderData, HeaderExtensionDataFilter};
 use avail_core::{
 	ensure,
 	header::{Header as DaHeader, HeaderExtension},
-	traits::{ExtendedBlock, ExtendedHeader, GetAppId, MaybeCaller},
+	traits::{ExtendedBlock, ExtendedHeader, GetAppId, GetDaCommitments, MaybeCaller},
 };
 
 use codec::{Decode, Encode, EncodeLike, FullCodec, MaxEncodedLen};
@@ -547,6 +547,7 @@ pub mod pallet {
 			+ Decode
 			+ ExtrinsicCall<Call = Self::RuntimeCall>
 			+ GetAppId
+			+ GetDaCommitments
 			+ MaybeCaller<Self::AccountId>;
 
 		type Header: ExtendedHeader<Extension = HeaderExtension, Hash = Self::Hash>;

@@ -11,7 +11,7 @@ use std::{
 };
 
 use avail_core::header::HeaderExtension;
-use da_control::{pallet::Call as DaControlCall, AppDataFor, CheckAppId};
+use da_control::{pallet::Call as DaControlCall, AppDataFor, CheckAppId, CheckDaCommitments};
 use da_runtime::{
 	AppId, Executive, Header, Runtime, RuntimeCall, RuntimeGenesisConfig, SignedExtra,
 	SignedPayload, Timestamp, UncheckedExtrinsic, AVAIL,
@@ -82,6 +82,7 @@ fn submit_data(
 		CheckWeight::<Runtime>::new(),
 		ChargeTransactionPayment::<Runtime>::from(0),
 		CheckAppId::<Runtime>::from(app_id),
+		CheckDaCommitments::<Runtime>::new(),
 	);
 	let payload =
 		SignedPayload::new(call, extra).map_err(|e| anyhow!("Failed to create payload: {e:?}"))?;

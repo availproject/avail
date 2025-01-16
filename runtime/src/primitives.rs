@@ -59,6 +59,7 @@ pub type SignedExtra = (
 	frame_system::CheckWeight<Runtime>,
 	pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
 	da_control::CheckAppId<Runtime>,
+	da_control::CheckDaCommitments<Runtime>,
 );
 
 /// The payload being signed in transactions.

@@ -18,8 +18,8 @@
 //! Provide types to help defining a mock environment when testing pallets.
 
 use avail_core::{
-	traits::{GetAppId, MaybeCaller},
-	AppId, OpaqueExtrinsic,
+	traits::{GetAppId, GetDaCommitments, MaybeCaller},
+	AppId, DaCommitments, OpaqueExtrinsic,
 };
 use codec::{Decode, Encode};
 use frame_support::traits::ExtrinsicCall;
@@ -96,6 +96,12 @@ impl<T: Config> MaybeCaller<T::AccountId> for MockUncheckedExtrinsic<T> {
 impl<T: Config> GetAppId for MockUncheckedExtrinsic<T> {
 	fn app_id(&self) -> AppId {
 		AppId::default()
+	}
+}
+
+impl<T: Config> GetDaCommitments for MockUncheckedExtrinsic<T> {
+	fn da_commitments(&self) -> DaCommitments {
+		DaCommitments::new()
 	}
 }
 

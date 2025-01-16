@@ -137,6 +137,7 @@ pub fn create_extrinsic(
 		frame_system::CheckWeight::<Runtime>::new(),
 		ChargeTransactionPayment::<Runtime>::from(tip),
 		da_control::CheckAppId::<Runtime>::from(app_id),
+		da_control::CheckDaCommitments::<Runtime>::new(),
 	);
 
 	let raw_payload = da_runtime::SignedPayload::from_raw(
@@ -152,6 +153,7 @@ pub fn create_extrinsic(
 			(),
 			(),
 			(),
+			()
 		),
 	);
 	let signature = raw_payload.using_encoded(|e| sender.sign(e));
