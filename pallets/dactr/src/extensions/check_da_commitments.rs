@@ -55,19 +55,13 @@ where
 		log::info!(target: LOG_TARGET, "CheckDaCommitments::do_validate");
 		if let Some(DACall::<T>::submit_data { data }) = call.is_sub_type() {
 			ensure!(
-				!data.is_empty(),
+				!self.da_commitments().is_empty(),
 				InvalidTransaction::Custom(0)
 			);
 		}
 		Ok(ValidTransaction::default())
 	}
 }
-
-// impl<T: DAConfig + Send + Sync> Default for CheckDaCommitments<T> {
-// 	fn default() -> Self {
-// 		Self(DaCommitments::new(), PhantomData)
-// 	}
-// }
 
 impl<T> Debug for CheckDaCommitments<T>
 where
