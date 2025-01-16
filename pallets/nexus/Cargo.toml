@@ -32,7 +32,9 @@ rlp.workspace = true
 primitive-types.workspace = true
 ethabi.workspace = true
 risc0-zkvm = { version = "1.2.0", default-features = false }
-
+borsh = { version = "1.5.4", default-features = false, features = [
+	"hashbrown",
+] }
 
 [dev-dependencies]
 pallet-balances = { workspace = true, default-features = false, features = [

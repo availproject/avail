@@ -15,6 +15,7 @@ pub mod pallet {
 	use scale_info::TypeInfo;
 	use serde::{Deserialize, Serialize};
 	use sp_core::{bytes::deserialize, RuntimeDebug, H256};
+  use sp_std::vec::Vec;
 
 	#[pallet::error]
 	pub enum Error<T> {
