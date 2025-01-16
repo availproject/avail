@@ -1703,6 +1703,7 @@ dependencies = [
  "derive_more",
  "futures",
  "hex",
+ "hex-literal",
  "indicatif",
  "kate",
  "kate-recovery",
