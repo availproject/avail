@@ -1,7 +1,7 @@
 use super::{alice_nonce, allow_concurrency, local_connection};
 
 use avail_core::AppId;
-use avail_subxt::{api, api::runtime_types::bounded_collections::bounded_vec::BoundedVec, submit::submit_data_with_commitments,tx};
+use avail_subxt::{submit::submit_data_with_commitments,tx};
 use subxt_signer::sr25519::dev;
 
 use anyhow::Result;
@@ -19,7 +19,7 @@ async fn test() -> Result<()> {
 	let alice = dev::alice();
 
 	let data = b"test".to_vec();
-	let da_commitments =  hex!("884aa48a15ed57c2632f0c666490975c480bb8a0fc7b6b30ed68d5321e1c8855401730fa8f7d22648361124b56b6a700004aa48a15ed57c2632f0c666490975c480bb8a0fc7b6b30ed68d5321e1c8855401730fa8f7d22648361124b56b6a708");
+	let da_commitments =  hex!("884aa48a15ed57c2632f0c666490975c480bb8a0fc7b6b30ed68d5321e1c8855401730fa8f7d22648361124b56b6a708884aa48a15ed57c2632f0c666490975c480bb8a0fc7b6b30ed68d5321e1c8855401730fa8f7d22648361124b56b6a708");
 	let tx_progress = submit_data_with_commitments(
 		&client,
 		&alice,

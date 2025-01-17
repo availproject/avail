@@ -19,6 +19,7 @@ use sp_std::{
 	marker::PhantomData,
 };
 
+use sp_core::hexdisplay::HexDisplay;
 use super::native::build_da_commitments::{build_da_commitments, DaCommitmentsError};
 
 /// Check for DA Commitments.
@@ -66,8 +67,10 @@ where
 
 			match build_da_commitments(data.to_vec().clone(), block_length, seed) {
 				Ok(commitments) => {
-					log::info!(target: LOG_TARGET, "Generated commitments: {:?}", commitments);
-					log::info!(target: LOG_TARGET, "Passed commitments: {:?}", self.da_commitments());
+					let flattened_commitments: Vec<u8> = commitments.iter().flat_map(|c| c.to_vec()).collect();
+					let flattened_self_commitments: Vec<u8> = self.da_commitments().iter().flat_map(|c| c.to_vec()).collect();
+					log::info!(target: LOG_TARGET, "Generated commitments: {:?}", HexDisplay::from(&flattened_commitments));
+					log::info!(target: LOG_TARGET, "Passed commitments: {:?}", HexDisplay::from(&flattened_self_commitments));
 					ensure!(
 						commitments == self.da_commitments(),
 						InvalidTransaction::Custom(1)
