@@ -1799,6 +1799,21 @@ mod nominate {
 	}
 
 	#[test]
+	fn active_pool_needs_targets() {
+		new_test_ext().execute_with(|| {
+			create_avail_currency();
+			create_avail_pool();
+
+			let empty_targets: BoundedVec<u64, MaxTargets> = vec![].try_into().unwrap();
+
+			assert_noop!(
+				Fusion::nominate(RawOrigin::Root.into(), AVAIL_POOL_ID, empty_targets),
+				Error::<Test>::ActivePoolNeedsTargets
+			);
+		});
+	}
+
+	#[test]
 	fn no_valid_validators() {
 		new_test_ext().execute_with(|| {
 			create_avail_currency();

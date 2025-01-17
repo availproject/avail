@@ -345,9 +345,9 @@ pub mod api {
 			.hash();
 		runtime_metadata_hash
 			== [
-				84u8, 173u8, 29u8, 248u8, 83u8, 121u8, 188u8, 31u8, 197u8, 146u8, 178u8, 147u8,
-				233u8, 176u8, 219u8, 5u8, 219u8, 244u8, 253u8, 102u8, 31u8, 188u8, 197u8, 227u8,
-				81u8, 65u8, 80u8, 113u8, 40u8, 181u8, 81u8, 102u8,
+				17u8, 57u8, 89u8, 93u8, 53u8, 77u8, 32u8, 62u8, 151u8, 2u8, 199u8, 174u8, 23u8,
+				63u8, 166u8, 238u8, 43u8, 18u8, 191u8, 104u8, 170u8, 1u8, 189u8, 180u8, 15u8,
+				198u8, 224u8, 200u8, 19u8, 122u8, 234u8, 224u8,
 			]
 	}
 	pub mod system {
@@ -35289,42 +35289,45 @@ pub mod api {
 					#[doc = "The state cannot be set to open if the pool is not nominating"]
 					PoolIsNotNominating,
 					#[codec(index = 44)]
+					#[doc = "The pool needs target if its state is open or blocked"]
+					ActivePoolNeedsTargets,
+					#[codec(index = 45)]
 					#[doc = "The controller of the slash destination can only be set with the correct extrinsic"]
 					CannotSetControllerForSlashDestination,
-					#[codec(index = 45)]
+					#[codec(index = 46)]
 					#[doc = "A user tried to claim but the account is empty, can try again later"]
 					NotEnoughClaimableBalanceInPool,
-					#[codec(index = 46)]
+					#[codec(index = 47)]
 					#[doc = "The maximum TVL was reached"]
 					MaxTVLReached,
-					#[codec(index = 47)]
+					#[codec(index = 48)]
 					#[doc = "No valid validators was provided in the targets"]
 					NoValidValidators,
-					#[codec(index = 48)]
+					#[codec(index = 49)]
 					#[doc = "Era duration was not recorded properly so we cannot retry"]
 					EraDurationNotFound,
-					#[codec(index = 49)]
+					#[codec(index = 50)]
 					#[doc = "Pool has leftover funds, but we did not specify where it should go"]
 					NoLeftoverDestinationProvided,
-					#[codec(index = 50)]
+					#[codec(index = 51)]
 					#[doc = "The limit in the pool pending slashes have been reached"]
 					PendingSlashLimitReached,
-					#[codec(index = 51)]
+					#[codec(index = 52)]
 					#[doc = "Slash not found in pool"]
 					SlashNotFound,
-					#[codec(index = 52)]
+					#[codec(index = 53)]
 					#[doc = "The user does not have a membership in the AVAIL pool."]
 					NoAvailMembership,
-					#[codec(index = 53)]
+					#[codec(index = 54)]
 					#[doc = "The pool does not have boost configured."]
 					PoolHasNoBoost,
-					#[codec(index = 54)]
+					#[codec(index = 55)]
 					#[doc = "The user does not have enough AVAIL to allocate to the boosted pools."]
 					NotEnoughAvailForBoost,
-					#[codec(index = 55)]
+					#[codec(index = 56)]
 					#[doc = "The TC cannot set a controller address for a user, it can only remove (to clean)"]
 					RootCanOnlyRemoveController,
-					#[codec(index = 56)]
+					#[codec(index = 57)]
 					#[doc = "TODO Temp, we'll see when bridge com is done"]
 					CannotDepositAvailCurrency,
 				}

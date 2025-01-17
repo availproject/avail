@@ -583,6 +583,8 @@ pub mod pallet {
 		CannotSetCompoudingWithLessThanMinimum,
 		/// The state cannot be set to open if the pool is not nominating
 		PoolIsNotNominating,
+		/// The pool needs target if its state is open or blocked
+		ActivePoolNeedsTargets,
 		/// The controller of the slash destination can only be set with the correct extrinsic
 		CannotSetControllerForSlashDestination,
 		/// A user tried to claim but the account is empty, can try again later
@@ -1053,6 +1055,11 @@ pub mod pallet {
 					pool.state != FusionPoolState::Destroying,
 					Error::<T>::PoolIsDestroying
 				);
+
+				// If the pool is open or blocked, nomination must not be empty
+				if pool.state == FusionPoolState::Open || pool.state == FusionPoolState::Blocked {
+					ensure!(targets.len() > 0, Error::<T>::ActivePoolNeedsTargets);
+				}
 
 				// Check that targets contains only validators
 				ensure!(
