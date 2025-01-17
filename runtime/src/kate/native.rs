@@ -2,7 +2,6 @@ use super::{Error, GDataProof, GMultiProof, GProof, GRawScalar, GRow};
 use avail_core::{AppExtrinsic, AppId, BlockLengthColumns, BlockLengthRows};
 use core::num::NonZeroU16;
 use frame_system::{limits::BlockLength, native::hosted_header_builder::MIN_WIDTH};
-use kate::{gridgen::ArkScalar, Seed};
 #[cfg(feature = "std")]
 use kate::{
 	com::Cell,
@@ -10,6 +9,7 @@ use kate::{
 	gridgen::{AsBytes as _, EvaluationGrid as EGrid},
 	M1NoPrecomp,
 };
+use kate::{gridgen::ArkScalar, Seed};
 use kate_recovery::matrix::Dimensions;
 use sp_runtime::SaturatedConversion as _;
 use sp_runtime_interface::runtime_interface;
@@ -110,22 +110,28 @@ pub trait HostedKate {
 			.map(|(row, col)| -> Result<GMultiProof, Error> {
 				let cell = Cell::new(BlockLengthRows(row), BlockLengthColumns(col));
 				let target_dims = Dimensions::new(16, 64).expect("16,64>0");
-        // TODO: This isn't correct, need to put in the correct mp grid dim
-        // TODO: safety
-        if cell.row.0 >= grid.dims().height() as u32 || cell.col.0 >= grid.dims().width() as u32 {
-          return Err(Error::MissingCell { row, col });
-        }
+				// TODO: This isn't correct, need to put in the correct mp grid dim
+				// TODO: safety
+				if cell.row.0 >= grid.dims().height() as u32
+					|| cell.col.0 >= grid.dims().width() as u32
+				{
+					return Err(Error::MissingCell { row, col });
+				}
 				let mp = poly.multiproof(srs, &cell, &grid, target_dims)?;
 				let data = mp
 					.evals
 					.into_iter()
-          .flatten()
-					.map(|e: ArkScalar| e.to_bytes().map(GRawScalar::from).map_err(|_| Error::InvalidScalarAtRow(row)))
+					.flatten()
+					.map(|e: ArkScalar| {
+						e.to_bytes()
+							.map(GRawScalar::from)
+							.map_err(|_| Error::InvalidScalarAtRow(row))
+					})
 					.collect::<Result<Vec<GRawScalar>, _>>()?;
 
-        let proof = mp.proof.to_bytes().map(GProof).map_err(|_| Error::Proof)?;
+				let proof = mp.proof.to_bytes().map(GProof).map_err(|_| Error::Proof)?;
 
-        // TODO: should we also return the block coords in mp.block?
+				// TODO: should we also return the block coords in mp.block?
 				Ok((data, proof))
 			})
 			.collect::<Result<Vec<GMultiProof>, _>>()?;

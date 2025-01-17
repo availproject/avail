@@ -1,6 +1,9 @@
 use super::kate::{Error as RTKateError, GDataProof, GRow};
 use crate::{
-	constants, kate::GMultiProof, mmr, version::VERSION, AccountId, AuthorityDiscovery, Babe, Block, BlockNumber, EpochDuration, Executive, Grandpa, Historical, Index, InherentDataExt, Mmr, NominationPools, OpaqueMetadata, Runtime, RuntimeCall, RuntimeGenesisConfig, SessionKeys, Staking, System, TransactionPayment, LOG_TARGET
+	constants, kate::GMultiProof, mmr, version::VERSION, AccountId, AuthorityDiscovery, Babe,
+	Block, BlockNumber, EpochDuration, Executive, Grandpa, Historical, Index, InherentDataExt, Mmr,
+	NominationPools, OpaqueMetadata, Runtime, RuntimeCall, RuntimeGenesisConfig, SessionKeys,
+	Staking, System, TransactionPayment, LOG_TARGET,
 };
 use avail_base::{HeaderExtensionBuilderData, ProvidePostInherent};
 use avail_core::{

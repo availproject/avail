@@ -2,7 +2,7 @@ pub mod native;
 pub mod runtime;
 
 // Reexport
-pub use runtime::{grid, proof, multiproof};
+pub use runtime::{grid, multiproof, proof};
 
 use codec::{Decode, Encode};
 use core::num::TryFromIntError;
