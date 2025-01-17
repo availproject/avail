@@ -1,9 +1,11 @@
 #![cfg_attr(not(feature = "std"), no_std)]
-
 pub use pallet::*;
+
+pub mod nexus_h256;
 
 #[frame_support::pallet(dev_mode)]
 pub mod pallet {
+	use crate::nexus_h256::H256 as NexusH256;
 	use codec::{Decode, Encode, MaxEncodedLen};
 	use frame_support::{
 		dispatch::DispatchResult,
@@ -15,14 +17,14 @@ pub mod pallet {
 	use scale_info::TypeInfo;
 	use serde::{Deserialize, Serialize};
 	use sp_core::{bytes::deserialize, RuntimeDebug, H256};
-  use sp_std::vec::Vec;
+	use sp_std::vec::Vec;
 
 	#[pallet::error]
 	pub enum Error<T> {
 		NotLatestState,
-        IncorrectHeaderEncoding,
+		IncorrectHeaderEncoding,
 		WrongFork,
-        MockError,
+		MockError,
 		IncorrectReceiptEncoding,
 		ProofVerificationFailed,
 		InvalidProof,
@@ -42,11 +44,11 @@ pub mod pallet {
 		MaxEncodedLen,
 	)]
 	pub struct NexusHeader {
-		pub parent_hash: H256,
-		pub prev_state_root: H256,
-		pub state_root: H256,
-		pub tx_root: H256,
-		pub avail_header_hash: H256,
+		pub parent_hash: NexusH256,
+		pub prev_state_root: NexusH256,
+		pub state_root: NexusH256,
+		pub tx_root: NexusH256,
+		pub avail_header_hash: NexusH256,
 		pub number: u32,
 	}
 
@@ -115,7 +117,7 @@ pub mod pallet {
 
 			LatestStateRoot::<T>::put(NexusStateRoot {
 				number: nexus_header.number,
-				state_root: nexus_header.state_root,
+				state_root: H256::from(nexus_header.state_root.as_fixed_slice()),
 			});
 
 			Ok(())

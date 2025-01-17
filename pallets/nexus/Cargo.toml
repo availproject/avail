@@ -28,6 +28,7 @@ serde.workspace = true
 serde_json.workspace = true
 log.workspace = true
 hex-literal.workspace = true
+hex.workspace = true
 rlp.workspace = true
 primitive-types.workspace = true
 ethabi.workspace = true
