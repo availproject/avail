@@ -19,12 +19,11 @@ pub mod pallet {
 
 	#[pallet::error]
 	pub enum Error<T> {
-		/// Each collectible must have a unique identifier
 		NotLatestState,
-		/// An account can't exceed the `MaximumOwned` constant
+        IncorrectHeaderEncoding,
 		WrongFork,
+        MockError,
 		IncorrectReceiptEncoding,
-		IncorrectHeaderEncoding,
 		ProofVerificationFailed,
 		InvalidProof,
 		ImageIDNotSet,
@@ -48,12 +47,12 @@ pub mod pallet {
 		pub state_root: H256,
 		pub tx_root: H256,
 		pub avail_header_hash: H256,
-		pub number: u64,
+		pub number: u32,
 	}
 
 	#[derive(Clone, Encode, Decode, PartialEq, Copy, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 	pub struct NexusStateRoot {
-		pub number: u64,
+		pub number: u32,
 		pub state_root: H256,
 	}
 
