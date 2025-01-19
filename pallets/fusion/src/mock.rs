@@ -458,7 +458,7 @@ pub fn run_to_block(n: u32) {
 		// Make validators claims their payouts if we're are at a new era block + 1
 		let era_duration = Offset::get() + (Period::get() * SessionsPerEra::get());
 		if current_block % era_duration == 0 {
-			let era = Staking::current_era().unwrap();
+			let era = Staking::active_era().unwrap().index;
 			if era > 1 {
 				make_all_reward_payment(era.saturating_sub(1));
 			}
@@ -484,7 +484,6 @@ pub fn run_to_block(n: u32) {
 pub fn run_to_era(target_era: u32) {
 	let end = Offset::get() + (target_era * Period::get() * SessionsPerEra::get()) + 1;
 	run_to_block(end);
-	assert_eq!(Staking::current_era(), Some(target_era));
 	assert_eq!(Staking::active_era().unwrap().index, target_era);
 }
 

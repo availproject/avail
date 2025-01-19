@@ -1443,7 +1443,7 @@ mod destroy_pool {
 				BTC_POOL_ID
 			));
 
-			let era = Staking::current_era().unwrap();
+			let era = Staking::active_era().unwrap().index;
 			let unbonding_period = FusionBondingDuration::get();
 			run_to_era(era + unbonding_period);
 
@@ -1457,7 +1457,7 @@ mod destroy_pool {
 			));
 
 			//  Now that there is not user left, we need to claim all additional rewards
-			let era = Staking::current_era().unwrap();
+			let era = Staking::active_era().unwrap().index;
 			let history_depth = HistoryDepth::get();
 			let start_era = era.saturating_sub(history_depth);
 			for era in start_era..era {
@@ -3775,8 +3775,8 @@ mod withdraw_unbonded_currency {
 			));
 
 			let bonding_duration = FusionBondingDuration::get();
-			let current_era = Staking::current_era().unwrap();
-			run_to_era(current_era + bonding_duration + 1);
+			let active_era = Staking::active_era().unwrap().index;
+			run_to_era(active_era + bonding_duration + 1);
 
 			assert_ok!(Fusion::withdraw_unbonded_currency(
 				RawOrigin::Signed(controller_address).into(),
@@ -3941,8 +3941,8 @@ mod withdraw_unbonded_currency {
 			));
 
 			let bonding_duration = FusionBondingDuration::get();
-			let current_era = Staking::current_era().unwrap();
-			run_to_era(current_era + bonding_duration + 1);
+			let active_era = Staking::active_era().unwrap().index;
+			run_to_era(active_era + bonding_duration + 1);
 
 			assert_noop!(
 				Fusion::withdraw_unbonded_currency(
@@ -4101,8 +4101,8 @@ mod withdraw_unbonded_currency_other {
 			));
 
 			let bonding_duration = FusionBondingDuration::get();
-			let current_era = Staking::current_era().unwrap();
-			run_to_era(current_era + bonding_duration);
+			let active_era = Staking::active_era().unwrap().index;
+			run_to_era(active_era + bonding_duration);
 
 			let mut pool = Pools::<Test>::get(BTC_POOL_ID).unwrap();
 			pool.state = FusionPoolState::Destroying;
@@ -4749,8 +4749,7 @@ mod sanity_checks {
 			// Progress to the start of era 5
 			run_to_era(5);
 
-			// Check the current era and active era
-			assert_eq!(Staking::current_era().unwrap(), 5);
+			// Check the active era
 			assert_eq!(Staking::active_era().unwrap().index, 5);
 			assert_eq!(Session::validators(), vec![VALIDATOR_1, VALIDATOR_2]);
 

@@ -1484,11 +1484,11 @@ impl<T: Config> Pallet<T> {
 
 	/// Returns true if the pool has unclaimed rewards
 	fn pool_has_unclaimed_rewards(pool_id: PoolId) -> bool {
-		let current_era = T::StakingFusionDataProvider::current_era();
+		let active_era = T::StakingFusionDataProvider::active_era();
 		let history_depth = T::HistoryDepth::get();
-		let start_era = current_era.saturating_sub(history_depth);
+		let start_era = active_era.saturating_sub(history_depth);
 
-		for era in start_era..current_era {
+		for era in start_era..active_era {
 			if let Some(reward) = EraRewards::<T>::get(era, pool_id) {
 				if reward.rewards != reward.claimed_rewards
 					|| reward.additional_rewards != reward.additional_claimed_rewards
@@ -1962,7 +1962,7 @@ impl<T: Config> Pallet<T> {
 			// Insert new membership for user
 			let new_membership = FusionMembership::<T> {
 				fusion_address,
-				joined_era: T::StakingFusionDataProvider::current_era(),
+				joined_era: T::StakingFusionDataProvider::active_era(),
 				active_points: points,
 				unbonding_eras: BoundedVec::default(),
 				is_compounding: true,
@@ -2157,7 +2157,7 @@ impl<T: Config> Pallet<T> {
 		);
 
 		// Get current era
-		let current_era = T::StakingFusionDataProvider::current_era();
+		let current_era = T::StakingFusionDataProvider::active_era();
 
 		// Add the unbonding chunk to the related storage
 		let mut era_pool_unbonding_chunk = UnbondingChunks::<T>::get(pool_id, current_era);
@@ -2691,7 +2691,7 @@ impl<T: Config> Pallet<T> {
 
 impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>, PoolId> for Pallet<T> {
 	fn set_fusion_exposures() {
-		let era = T::StakingFusionDataProvider::current_era();
+		let era = T::StakingFusionDataProvider::active_era();
 		let planned_era = era.saturating_add(1);
 		let mut at_least_one = false;
 		// Iterate over all pools
@@ -2790,12 +2790,12 @@ impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>, PoolId> for Pallet<T> {
 
 	fn get_fusion_voters() -> Vec<(T::AccountId, u64, Vec<T::AccountId>)> {
 		// We take the planned era here
-		let planned_era = T::StakingFusionDataProvider::current_era().saturating_add(1);
+		let era = T::StakingFusionDataProvider::active_era().saturating_add(1);
 		let mut fusion_voters: Vec<(T::AccountId, u64, Vec<T::AccountId>)> = Vec::new();
 
 		let total_issuance = T::Currency::total_issuance();
 
-		for (pool_id, exposure) in Exposures::<T>::iter_prefix(planned_era) {
+		for (pool_id, exposure) in Exposures::<T>::iter_prefix(era) {
 			if exposure.targets.is_empty() || exposure.total_avail.is_zero() {
 				continue;
 			}
@@ -2809,8 +2809,8 @@ impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>, PoolId> for Pallet<T> {
 	}
 
 	fn get_active_pool_count() -> usize {
-		let planned_era = T::StakingFusionDataProvider::current_era().saturating_add(1);
-		Exposures::<T>::iter_prefix(planned_era).count()
+		let era = T::StakingFusionDataProvider::active_era().saturating_add(1);
+		Exposures::<T>::iter_prefix(era).count()
 	}
 
 	fn get_pool_id_from_funds_account(account: &T::AccountId) -> Option<PoolId> {
