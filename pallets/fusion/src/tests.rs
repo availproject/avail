@@ -1498,7 +1498,7 @@ mod destroy_pool {
 			assert!(Pools::<Test>::get(BTC_POOL_ID).is_none());
 			System::assert_has_event(RuntimeEvent::Fusion(Event::PoolDeleted {
 				pool_id: BTC_POOL_ID,
-				leftover: 1000004677160839005421,
+				leftover: 1000004677160839005423,
 			}));
 		});
 	}

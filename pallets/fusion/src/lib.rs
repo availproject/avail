@@ -676,6 +676,9 @@ pub mod pallet {
 				ensure!(min_amount == 0, Error::<T>::NoMinAmountForAvailCurrency);
 			}
 
+			// Fill pallet main account with ED if empty
+			Self::ensure_account_has_ed(&Self::avail_account());
+
 			let new_currency = FusionCurrency::<T> {
 				name: name.clone(),
 				nb_decimals,
@@ -839,6 +842,9 @@ pub mod pallet {
 
 			let funds_account = Self::get_pool_funds_account(pool_id);
 			let claimable_account = Self::get_pool_claimable_account(pool_id);
+
+			Self::ensure_account_has_ed(&funds_account);
+			Self::ensure_account_has_ed(&claimable_account);
 
 			let new_pool = FusionPool::<T> {
 				currency_id,
@@ -2051,7 +2057,7 @@ impl<T: Config> Pallet<T> {
 				&pool_claimable_account,
 				&Self::avail_account(),
 				total_user_rewards,
-				ExistenceRequirement::AllowDeath,
+				ExistenceRequirement::KeepAlive,
 			)?;
 
 			// We can now add the equivalent in fusion currency
@@ -2398,7 +2404,7 @@ impl<T: Config> Pallet<T> {
 			&Self::avail_account(),
 			&controller_account,
 			balance_avail,
-			ExistenceRequirement::AllowDeath,
+			ExistenceRequirement::KeepAlive,
 		)?;
 
 		// Remove the user's AVAIL currency balance after minting
@@ -2686,6 +2692,15 @@ impl<T: Config> Pallet<T> {
 			});
 		}
 		result
+	}
+
+	fn ensure_account_has_ed(account: &T::AccountId) {
+		let free_balance = T::Currency::free_balance(account);
+		let ed = T::Currency::minimum_balance();
+		if free_balance < ed {
+			let to_deposit = ed.saturating_sub(free_balance);
+			let _ = T::Currency::deposit_creating(account, to_deposit);
+		}
 	}
 }
 
