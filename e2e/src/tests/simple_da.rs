@@ -1,14 +1,14 @@
-use super::{alice_nonce, allow_concurrency, local_connection};
+use super::{allow_concurrency, local_connection};
 
-use avail_core::{AppExtrinsic, AppId, BlockLengthColumns, BlockLengthRows};
-use avail_subxt::{submit::submit_data_with_commitments,tx};
+use avail_core::AppId;
+use avail_subxt::{submit::submit_data_with_commitments, tx};
 use subxt_signer::sr25519::dev;
 
+use super::build_da_commitments;
 use anyhow::Result;
+use kate::Seed;
 use test_log::test;
 use tracing::trace;
-use hex_literal::hex;
-use kate::{com::par_build_commitments_v2, metrics::IgnoreMetrics, Seed};
 
 /// This example demonstrates submitting the data with commitments
 #[test(tokio::test)]
@@ -20,16 +20,20 @@ async fn test() -> Result<()> {
 	let alice = dev::alice();
 
 	let data = b"test".to_vec();
-	let ext = AppExtrinsic::from(data.to_vec());
-	let metrics = IgnoreMetrics {};
-	let (_, da_commitments, _, _) = par_build_commitments_v2::<32, _>(BlockLengthRows(256), BlockLengthColumns(256), &[ext], Seed::default(), &metrics).unwrap();
+	let da_commitments =
+		build_da_commitments::build_da_commitments(data.clone(), 256, 256, Seed::default())
+			.unwrap();
+
+	let flattened_commitments: Vec<u8> = da_commitments.iter().flat_map(|c| c.to_vec()).collect();
+
 	let tx_progress = submit_data_with_commitments(
 		&client,
 		&alice,
-		data.as_slice(),
+		&*data.as_slice(),
 		AppId(1),
-		&da_commitments,
-	).await?;
+		&flattened_commitments,
+	)
+	.await?;
 	let block_hash = tx::in_finalized(tx_progress).await?.block_hash();
 
 	trace!("DataSubmitted, block hash: {block_hash:?}");

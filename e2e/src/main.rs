@@ -122,6 +122,7 @@ mod tests {
 	}
 
 	// mod accounts_from_mnemonics;
+	pub mod build_da_commitments;
 	// mod create_app_key;
 	// mod download_digest_items;
 	// mod headers;
@@ -131,8 +132,8 @@ mod tests {
 	// mod retrieve_data_hash;
 	// mod retrieve_data_subscription;
 	// mod rpc_queries;
+	mod simple_da;
 	// mod submit_block_length_proposal;
 	// mod submit_data;
-	mod simple_da;
 	// mod vector_send_msg;
 }

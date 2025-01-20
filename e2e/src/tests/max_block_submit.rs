@@ -2,8 +2,10 @@ use super::{alice_nonce, local_connection, no_concurrency};
 
 use avail_core::AppId;
 use avail_subxt::{api, tx, BoundedVec};
+use kate::Seed;
 use subxt_signer::sr25519::dev;
 
+use super::build_da_commitments::build_da_commitments;
 use futures::stream::{FuturesOrdered, TryStreamExt as _};
 use std::sync::atomic::Ordering::Relaxed;
 use test_log::test;
@@ -30,13 +32,31 @@ async fn max_block_submit() -> anyhow::Result<()> {
 	let calls = (0..NUM_CHUNKS)
 		.map(|i| {
 			let data = BoundedVec(vec![(i & 255) as u8; TX_MAX_SIZE]);
-			api::tx().data_availability().submit_data(data)
+			let da_commitments =
+				build_da_commitments(data.0.clone(), 256, 256, Seed::default()).unwrap();
+			let flattened_commitments: Vec<u8> =
+				da_commitments.iter().flat_map(|c| c.to_vec()).collect();
+			(
+				api::tx().data_availability().submit_data(data),
+				flattened_commitments,
+			)
 		})
 		.collect::<Vec<_>>();
+	let submittions_end = start.elapsed();
+	println!("Data & DaComms done in {submittions_end:?}");
 	let txs = calls
 		.iter()
 		.enumerate()
-		.map(|(idx, call)| tx::send_with_nonce(&client, call, &alice, AppId(1), nonce + idx as u64))
+		.map(|(idx, (call, da_commitments))| {
+			tx::send_with_da_commits_and_nonce(
+				&client,
+				call,
+				&alice,
+				AppId(1),
+				da_commitments,
+				nonce + idx as u64,
+			)
+		})
 		.collect::<FuturesOrdered<_>>()
 		.try_collect::<Vec<_>>()
 		.await?;
