@@ -5,7 +5,7 @@ use avail_base::header_extension::{
 use avail_core::{
 	data_proof::{tx_uid, AddressedMessage},
 	traits::{GetAppId, GetDaCommitments, MaybeCaller},
-	AppExtrinsic, AppId, OpaqueExtrinsic, DaCommitments,
+	AppExtrinsic, AppId, DaCommitments, OpaqueExtrinsic,
 };
 
 use da_control::Call as DACall;

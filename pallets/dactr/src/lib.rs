@@ -28,8 +28,8 @@ pub mod mock;
 #[cfg(test)]
 mod tests;
 pub use extensions::check_app_id::CheckAppId;
-pub use extensions::check_da_commitments::CheckDaCommitments;
 pub use extensions::check_batch_transactions::CheckBatchTransactions;
+pub use extensions::check_da_commitments::CheckDaCommitments;
 use frame_support::dispatch::DispatchFeeModifier;
 pub mod weights;
 

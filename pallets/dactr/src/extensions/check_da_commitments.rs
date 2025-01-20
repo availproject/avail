@@ -1,10 +1,7 @@
-use avail_core::{traits::GetDaCommitments, DaCommitments};
 use crate::{Call as DACall, Config as DAConfig, LOG_TARGET};
+use avail_core::{traits::GetDaCommitments, DaCommitments};
 use codec::{Decode, Encode};
-use frame_support::{
-	ensure,
-	traits::IsSubType,
-};
+use frame_support::{ensure, traits::IsSubType};
 use frame_system::Config as SystemConfig;
 use scale_info::TypeInfo;
 use sp_runtime::{
@@ -19,8 +16,8 @@ use sp_std::{
 	marker::PhantomData,
 };
 
-use sp_core::hexdisplay::HexDisplay;
 use super::native::build_da_commitments::{build_da_commitments, DaCommitmentsError};
+use sp_core::hexdisplay::HexDisplay;
 
 /// Check for DA Commitments.
 ///
@@ -35,11 +32,9 @@ pub struct CheckDaCommitments<T: DAConfig + Send + Sync>(pub DaCommitments, Phan
 impl<T> CheckDaCommitments<T>
 where
 	T: DAConfig + Send + Sync,
-	<T as SystemConfig>::RuntimeCall:
-		IsSubType<DACall<T>>
+	<T as SystemConfig>::RuntimeCall: IsSubType<DACall<T>>,
 {
-
-    pub fn new() -> Self {
+	pub fn new() -> Self {
 		Self(Default::default(), PhantomData)
 	}
 
@@ -61,14 +56,19 @@ where
 				InvalidTransaction::Custom(0)
 			);
 
-			 // Fetch the block_length value from the frame_system pallet
+			// Fetch the block_length value from the frame_system pallet
 			let block_length = frame_system::Pallet::<T>::block_length();
 			let seed = [0u8; 32];
 
 			match build_da_commitments(data.to_vec().clone(), block_length, seed) {
 				Ok(commitments) => {
-					let flattened_commitments: Vec<u8> = commitments.iter().flat_map(|c| c.to_vec()).collect();
-					let flattened_self_commitments: Vec<u8> = self.da_commitments().iter().flat_map(|c| c.to_vec()).collect();
+					let flattened_commitments: Vec<u8> =
+						commitments.iter().flat_map(|c| c.to_vec()).collect();
+					let flattened_self_commitments: Vec<u8> = self
+						.da_commitments()
+						.iter()
+						.flat_map(|c| c.to_vec())
+						.collect();
 					log::info!(target: LOG_TARGET, "Generated commitments: {:?}", HexDisplay::from(&flattened_commitments));
 					log::info!(target: LOG_TARGET, "Passed commitments: {:?}", HexDisplay::from(&flattened_self_commitments));
 					ensure!(
@@ -77,16 +77,24 @@ where
 					);
 				},
 				Err(DaCommitmentsError::GridConstructionFailed(_)) => {
-					return Err(TransactionValidityError::Invalid(InvalidTransaction::Custom(2)));
+					return Err(TransactionValidityError::Invalid(
+						InvalidTransaction::Custom(2),
+					));
 				},
 				Err(DaCommitmentsError::MakePolynomialGridFailed(_)) => {
-					return Err(TransactionValidityError::Invalid(InvalidTransaction::Custom(3)));
+					return Err(TransactionValidityError::Invalid(
+						InvalidTransaction::Custom(3),
+					));
 				},
 				Err(DaCommitmentsError::GridExtensionFailed(_)) => {
-					return Err(TransactionValidityError::Invalid(InvalidTransaction::Custom(4)));
+					return Err(TransactionValidityError::Invalid(
+						InvalidTransaction::Custom(4),
+					));
 				},
 				Err(DaCommitmentsError::CommitmentSerializationFailed(_)) => {
-					return Err(TransactionValidityError::Invalid(InvalidTransaction::Custom(5)));
+					return Err(TransactionValidityError::Invalid(
+						InvalidTransaction::Custom(5),
+					));
 				},
 			}
 		}
@@ -112,8 +120,7 @@ where
 impl<T> SignedExtension for CheckDaCommitments<T>
 where
 	T: DAConfig + Send + Sync,
-	<T as frame_system::Config>::RuntimeCall:
-		IsSubType<DACall<T>>,
+	<T as frame_system::Config>::RuntimeCall: IsSubType<DACall<T>>,
 {
 	type AccountId = T::AccountId;
 	type AdditionalSigned = ();

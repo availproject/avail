@@ -28,7 +28,11 @@ pub enum DaCommitmentsError {
 	CommitmentSerializationFailed(String),
 }
 
-fn build_grid(data: Vec<u8>, block_length: BlockLength, seed: Seed) -> Result<EvaluationGrid, DaCommitmentsError> {
+fn build_grid(
+	data: Vec<u8>,
+	block_length: BlockLength,
+	seed: Seed,
+) -> Result<EvaluationGrid, DaCommitmentsError> {
 	let app_ext = AppExtrinsic::from(data);
 	let grid = EvaluationGrid::from_extrinsics(
 		vec![app_ext],
@@ -57,14 +61,23 @@ fn build_commitment(grid: &EvaluationGrid) -> Result<Vec<u8>, DaCommitmentsError
 	for c in extended_grid.iter() {
 		match c.to_bytes() {
 			Ok(bytes) => commitment.extend(bytes),
-			Err(e) => return Err(DaCommitmentsError::CommitmentSerializationFailed(format!("{:?}", e))),
+			Err(e) => {
+				return Err(DaCommitmentsError::CommitmentSerializationFailed(format!(
+					"{:?}",
+					e
+				)))
+			},
 		}
 	}
 
 	Ok(commitment)
 }
 
-pub fn build_da_commitments(data: Vec<u8>, block_length: BlockLength, seed: Seed) -> Result<DaCommitments, DaCommitmentsError> {
+pub fn build_da_commitments(
+	data: Vec<u8>,
+	block_length: BlockLength,
+	seed: Seed,
+) -> Result<DaCommitments, DaCommitmentsError> {
 	let grid = build_grid(data, block_length, seed)?;
 
 	let commitments = build_commitment(&grid)?;
