@@ -119,6 +119,27 @@ where
 		.await
 }
 
+pub async fn send_with_da_commits_and_nonce<C, S, A>(
+	client: &OnlineClient<AvailConfig>,
+	call: &C,
+	signer: &S,
+	app_id: A,
+	da_commitments: &[u8],
+	nonce: u64,
+) -> Result<TxProgress, Error>
+where
+	C: TxPayload,
+	S: SignerT<AvailConfig>,
+	A: Into<AppId>,
+{
+	let params = new_params_from_app_id_and_commitments(app_id.into(), da_commitments);
+	client
+		.tx()
+		.create_signed_with_nonce(call, signer, nonce, params)?
+		.submit_and_watch()
+		.await
+}
+
 pub async fn nonce<S>(client: &OnlineClient<AvailConfig>, signer: &S) -> Result<u64, Error>
 where
 	S: SignerT<AvailConfig>,
