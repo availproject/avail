@@ -60,16 +60,8 @@ pub fn new_params_from_app_id<Id: Into<AppId>>(id: Id) -> OtherParams {
 
 pub fn new_params_from_app_id_and_commitments<Id: Into<AppId>>(
 	id: Id,
-	commitments: &[u8],
+	commitments: Vec<u8>,
 ) -> OtherParams {
-	let da_commitments = commitments
-		.chunks(48)
-		.map(|chunk| {
-			let mut array = [0u8; 48];
-			array.copy_from_slice(chunk);
-			array
-		})
-		.collect();
 	(
 		(),
 		(),
@@ -78,7 +70,7 @@ pub fn new_params_from_app_id_and_commitments<Id: Into<AppId>>(
 		(),
 		Default::default(),
 		id.into(),
-		da_commitments,
+		commitments,
 	)
 }
 

@@ -41,7 +41,7 @@ pub async fn submit_data_with_commitments<S, ID, D>(
 	signer: &S,
 	data: D,
 	app_id: ID,
-	da_commitments: &[u8],
+	da_commitments: Vec<u8>,
 ) -> Result<TxProgress, Error>
 where
 	ID: Into<AppId>,

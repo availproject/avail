@@ -85,7 +85,7 @@ pub async fn send_with_da_commits<C, S, A>(
 	call: &C,
 	signer: &S,
 	app_id: A,
-	da_commitments: &[u8],
+	da_commitments: Vec<u8>,
 ) -> Result<TxProgress, Error>
 where
 	C: TxPayload,
@@ -124,7 +124,7 @@ pub async fn send_with_da_commits_and_nonce<C, S, A>(
 	call: &C,
 	signer: &S,
 	app_id: A,
-	da_commitments: &[u8],
+	da_commitments: Vec<u8>,
 	nonce: u64,
 ) -> Result<TxProgress, Error>
 where
