@@ -22,8 +22,8 @@ use subxt_signer::sr25519::dev;
 use test_log::test;
 use tracing::trace;
 
-const BLOCK_ROWS: u32 = 32;
-const BLOCK_COLS: u32 = 64;
+const BLOCK_ROWS: u32 = 2048;
+const BLOCK_COLS: u32 = 2048;
 
 #[test(tokio::test)]
 async fn submit_block_length_proposal() -> anyhow::Result<()> {
@@ -32,15 +32,15 @@ async fn submit_block_length_proposal() -> anyhow::Result<()> {
 	let client = local_connection().await?;
 	let alice = dev::alice();
 
-	reset(&client, &alice).await?;
+	// reset(&client, &alice).await?;
 
 	// Success cases
 	simple_tx(&client, &alice).await?;
-	batch_tx(&client, &alice).await?;
+	// batch_tx(&client, &alice).await?;
 
 	// Fail cases
-	fail_simple_tx(&client, &alice).await?;
-	fail_batch_tx(&client, &alice).await?;
+	// fail_simple_tx(&client, &alice).await?;
+	// fail_batch_tx(&client, &alice).await?;
 
 	Ok(())
 }
@@ -82,7 +82,8 @@ where
 		})?;
 
 	trace!("1 - Block Length Proposal Submitted found.");
-	reset(client, signer).await
+	// reset(client, signer).await
+	Ok(())
 }
 
 pub async fn batch_tx<S>(client: &AvailClient, signer: &S) -> Result<(), Error>

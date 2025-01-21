@@ -350,12 +350,12 @@ pub mod da {
 
 	parameter_types! {
 		pub const MinBlockRows: BlockLengthRows = BlockLengthRows(32);
-		pub const MaxBlockRows: BlockLengthRows = BlockLengthRows(1024);
+		pub const MaxBlockRows: BlockLengthRows = BlockLengthRows(2048);
 		pub const MinBlockCols: BlockLengthColumns = BlockLengthColumns(64);
-		pub const MaxBlockCols: BlockLengthColumns = BlockLengthColumns(1024);
+		pub const MaxBlockCols: BlockLengthColumns = BlockLengthColumns(2048);
 	}
 	pub type MaxAppKeyLength = ConstU32<64>;
-	pub type MaxAppDataLength = ConstU32<524_288>; // 512 Kb
+	pub type MaxAppDataLength = ConstU32<5_242_880>; // 5 Mb
 }
 
 /// Macro to set a value (e.g. when using the `parameter_types` macro) to either a production value

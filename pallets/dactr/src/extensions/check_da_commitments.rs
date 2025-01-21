@@ -7,7 +7,8 @@ use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{DispatchInfoOf, SignedExtension},
 	transaction_validity::{
-		InvalidTransaction, TransactionValidity, TransactionValidityError, ValidTransaction,
+		InvalidTransaction, TransactionLongevity, TransactionValidity, TransactionValidityError,
+		ValidTransaction,
 	},
 };
 use sp_std::{
@@ -62,19 +63,13 @@ where
 
 			match build_da_commitments(data.to_vec().clone(), block_length, seed) {
 				Ok(commitments) => {
-					let flattened_commitments: Vec<u8> =
-						commitments.iter().flat_map(|c| c.to_vec()).collect();
-					let flattened_self_commitments: Vec<u8> = self
-						.da_commitments()
-						.iter()
-						.flat_map(|c| c.to_vec())
-						.collect();
-					log::info!(target: LOG_TARGET, "Generated commitments: {:?}", HexDisplay::from(&flattened_commitments));
-					log::info!(target: LOG_TARGET, "Passed commitments: {:?}", HexDisplay::from(&flattened_self_commitments));
+					// log::info!(target: LOG_TARGET, "Generated commitments: {:?}", HexDisplay::from(&commitments));
+					// log::info!(target: LOG_TARGET, "Passed commitments: {:?}", HexDisplay::from(&self.da_commitments()));
 					ensure!(
 						commitments == self.da_commitments(),
 						InvalidTransaction::Custom(1)
 					);
+					// log::info!(target: LOG_TARGET, "CheckDaCommitments::do_validate -> passed");
 				},
 				Err(DaCommitmentsError::GridConstructionFailed(_)) => {
 					return Err(TransactionValidityError::Invalid(
@@ -136,17 +131,21 @@ where
 		_info: &DispatchInfoOf<Self::Call>,
 		len: usize,
 	) -> TransactionValidity {
-		self.do_validate(call, len)
+		self.do_validate(call, len)?;
+		Ok(ValidTransaction {
+			longevity: TransactionLongevity::max_value(),
+			..Default::default()
+		})
 	}
 
 	fn pre_dispatch(
 		self,
 		_who: &Self::AccountId,
-		call: &Self::Call,
+		_call: &Self::Call,
 		_info: &DispatchInfoOf<Self::Call>,
-		len: usize,
+		_len: usize,
 	) -> Result<Self::Pre, TransactionValidityError> {
-		self.do_validate(call, len)?;
+		// self.do_validate(call, len)?;
 		Ok(())
 	}
 

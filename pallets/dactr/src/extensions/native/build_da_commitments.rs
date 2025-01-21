@@ -3,9 +3,10 @@
 use avail_core::{AppExtrinsic, DaCommitments};
 use frame_system::limits::BlockLength;
 use kate::{
-	couscous::multiproof_params,
 	gridgen::{AsBytes, EvaluationGrid},
 	pmp::m1_blst::M1NoPrecomp,
+	// couscous::multiproof_params,
+	testnet::multiproof_params as public_params,
 	Seed,
 };
 use sp_runtime::SaturatedConversion;
@@ -47,7 +48,9 @@ fn build_grid(
 }
 
 fn build_commitment(grid: &EvaluationGrid) -> Result<Vec<u8>, DaCommitmentsError> {
-	let pmp = PMP.get_or_init(multiproof_params);
+	// let pmp = PMP.get_or_init(multiproof_params);
+	// pregenerated  SRS supports degree upto 1024 only, so using testnet params here
+	let pmp = PMP.get_or_init(|| public_params(2048, 2048));
 
 	let poly_grid = grid
 		.make_polynomial_grid()
@@ -78,16 +81,11 @@ pub fn build_da_commitments(
 	block_length: BlockLength,
 	seed: Seed,
 ) -> Result<DaCommitments, DaCommitmentsError> {
+	let start = std::time::Instant::now();
 	let grid = build_grid(data, block_length, seed)?;
 
 	let commitments = build_commitment(&grid)?;
-	let da_commitments = commitments
-		.chunks(48)
-		.map(|chunk| {
-			let mut array = [0u8; 48];
-			array.copy_from_slice(chunk);
-			array
-		})
-		.collect();
-	Ok(da_commitments)
+	let commitment_time = start.elapsed();
+	log::info!("CommitmentGeration time: {:?}", commitment_time);
+	Ok(commitments)
 }
