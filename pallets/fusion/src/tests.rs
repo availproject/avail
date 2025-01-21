@@ -966,7 +966,7 @@ mod set_pool {
 			));
 
 			// We retry generating reward for this era
-			let retry_rewards_for_eras: BoundedVec<EraIndex, HistoryDepth> =
+			let retry_rewards_for_eras: BoundedVec<EraIndex, ConstU32<10>> =
 				vec![3].try_into().unwrap();
 			assert_ok!(Fusion::set_pool(
 				RawOrigin::Root.into(),

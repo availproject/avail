@@ -885,12 +885,14 @@ pub mod pallet {
 		/// This can only be used to pause all pools using a batch call.
 		#[pallet::call_index(5)]
 		#[pallet::weight(({
-			let base_weight = T::WeightInfo::set_pool();
 			let nb_retry_eras = retry_rewards_for_eras
 				.as_ref()
 				.map_or(0, |eras| eras.len() as u32);
-			let retry_weight = T::WeightInfo::set_pool_with_retry(nb_retry_eras);
-			base_weight.saturating_add(retry_weight)
+			if nb_retry_eras > 0 {
+				T::WeightInfo::set_pool()
+			} else {
+				T::WeightInfo::set_pool_with_retry(nb_retry_eras)
+			}
 		}, DispatchClass::Normal))]
 		pub fn set_pool(
 			origin: OriginFor<T>,
