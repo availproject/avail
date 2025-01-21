@@ -54,7 +54,7 @@ pub trait WeightInfo {
 	fn set_currency_conversion_rate() -> Weight;
 	fn create_pool() -> Weight;
 	fn set_pool() -> Weight;
-	fn set_pool_with_retry() -> Weight;
+	fn set_pool_with_retry(e: u32) -> Weight;
 	fn destroy_pool() -> Weight;
 	fn fill_pool_account() -> Weight;
 	fn nominate() -> Weight;
@@ -164,26 +164,31 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Proof: `Fusion::Pools` (`max_values`: None, `max_size`: Some(14604742), added: 14607217, mode: `MaxEncodedLen`)
 	/// Storage: `Fusion::Currencies` (r:1 w:0)
 	/// Proof: `Fusion::Currencies` (`max_values`: None, `max_size`: Some(127), added: 2602, mode: `MaxEncodedLen`)
-	/// Storage: `Fusion::EraDurations` (r:1 w:0)
+	/// Storage: `Fusion::EraDurations` (r:10 w:0)
 	/// Proof: `Fusion::EraDurations` (`max_values`: None, `max_size`: Some(20), added: 2495, mode: `MaxEncodedLen`)
-	/// Storage: `Fusion::Exposures` (r:2 w:0)
+	/// Storage: `Fusion::Exposures` (r:20 w:0)
 	/// Proof: `Fusion::Exposures` (`max_values`: None, `max_size`: Some(14601391), added: 14603866, mode: `MaxEncodedLen`)
-	/// Storage: `Fusion::EraRewards` (r:1 w:1)
+	/// Storage: `Fusion::EraRewards` (r:10 w:10)
 	/// Proof: `Fusion::EraRewards` (`max_values`: None, `max_size`: Some(88), added: 2563, mode: `MaxEncodedLen`)
-	/// Storage: `Staking::ErasRewardPoints` (r:1 w:0)
-	/// Proof: `Staking::ErasRewardPoints` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	/// Storage: `System::Account` (r:2 w:2)
 	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
 	/// Storage: `Fusion::PoolsWithBoost` (r:0 w:1)
 	/// Proof: `Fusion::PoolsWithBoost` (`max_values`: None, `max_size`: Some(28), added: 2503, mode: `MaxEncodedLen`)
-	fn set_pool_with_retry() -> Weight {
+	/// The range of component `e` is `[0, 10]`.
+	fn set_pool_with_retry(e: u32, ) -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `4751897`
-		//  Estimated: `29208722`
-		// Minimum execution time: 17_740_535_000 picoseconds.
-		Weight::from_parts(18_065_522_000, 29208722)
-			.saturating_add(T::DbWeight::get().reads(9_u64))
-			.saturating_add(T::DbWeight::get().writes(5_u64))
+		//  Measured:  `1850730 + e * (2900322 ±0)`
+		//  Estimated: `14608207 + e * (29207732 ±0)`
+		// Minimum execution time: 72_618_800_000 picoseconds.
+		Weight::from_parts(73_665_302_277, 0)
+			.saturating_add(Weight::from_parts(0, 14608207))
+			// Standard Error: 226_110_695
+			.saturating_add(Weight::from_parts(170_480_782_933, 0).saturating_mul(e.into()))
+			.saturating_add(T::DbWeight::get().reads(2))
+			.saturating_add(T::DbWeight::get().reads((4_u64).saturating_mul(e.into())))
+			.saturating_add(T::DbWeight::get().writes(2))
+			.saturating_add(T::DbWeight::get().writes((1_u64).saturating_mul(e.into())))
+			.saturating_add(Weight::from_parts(0, 29207732).saturating_mul(e.into()))
 	}
 	/// Storage: `Fusion::Pools` (r:1 w:1)
 	/// Proof: `Fusion::Pools` (`max_values`: None, `max_size`: Some(14604742), added: 14607217, mode: `MaxEncodedLen`)
@@ -541,26 +546,31 @@ impl WeightInfo for () {
 	/// Proof: `Fusion::Pools` (`max_values`: None, `max_size`: Some(14604742), added: 14607217, mode: `MaxEncodedLen`)
 	/// Storage: `Fusion::Currencies` (r:1 w:0)
 	/// Proof: `Fusion::Currencies` (`max_values`: None, `max_size`: Some(127), added: 2602, mode: `MaxEncodedLen`)
-	/// Storage: `Fusion::EraDurations` (r:1 w:0)
+	/// Storage: `Fusion::EraDurations` (r:10 w:0)
 	/// Proof: `Fusion::EraDurations` (`max_values`: None, `max_size`: Some(20), added: 2495, mode: `MaxEncodedLen`)
-	/// Storage: `Fusion::Exposures` (r:2 w:0)
+	/// Storage: `Fusion::Exposures` (r:20 w:0)
 	/// Proof: `Fusion::Exposures` (`max_values`: None, `max_size`: Some(14601391), added: 14603866, mode: `MaxEncodedLen`)
-	/// Storage: `Fusion::EraRewards` (r:1 w:1)
+	/// Storage: `Fusion::EraRewards` (r:10 w:10)
 	/// Proof: `Fusion::EraRewards` (`max_values`: None, `max_size`: Some(88), added: 2563, mode: `MaxEncodedLen`)
-	/// Storage: `Staking::ErasRewardPoints` (r:1 w:0)
-	/// Proof: `Staking::ErasRewardPoints` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	/// Storage: `System::Account` (r:2 w:2)
 	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
 	/// Storage: `Fusion::PoolsWithBoost` (r:0 w:1)
 	/// Proof: `Fusion::PoolsWithBoost` (`max_values`: None, `max_size`: Some(28), added: 2503, mode: `MaxEncodedLen`)
-	fn set_pool_with_retry() -> Weight {
+	/// The range of component `e` is `[0, 10]`.
+	fn set_pool_with_retry(e: u32, ) -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `4751897`
-		//  Estimated: `29208722`
-		// Minimum execution time: 17_740_535_000 picoseconds.
-		Weight::from_parts(18_065_522_000, 29208722)
-			.saturating_add(RocksDbWeight::get().reads(9_u64))
-			.saturating_add(RocksDbWeight::get().writes(5_u64))
+		//  Measured:  `1850730 + e * (2900322 ±0)`
+		//  Estimated: `14608207 + e * (29207732 ±0)`
+		// Minimum execution time: 72_618_800_000 picoseconds.
+		Weight::from_parts(73_665_302_277, 0)
+			.saturating_add(Weight::from_parts(0, 14608207))
+			// Standard Error: 226_110_695
+			.saturating_add(Weight::from_parts(170_480_782_933, 0).saturating_mul(e.into()))
+			.saturating_add(RocksDbWeight::get().reads(2))
+			.saturating_add(RocksDbWeight::get().reads((4_u64).saturating_mul(e.into())))
+			.saturating_add(RocksDbWeight::get().writes(2))
+			.saturating_add(RocksDbWeight::get().writes((1_u64).saturating_mul(e.into())))
+			.saturating_add(Weight::from_parts(0, 29207732).saturating_mul(e.into()))
 	}
 	/// Storage: `Fusion::Pools` (r:1 w:1)
 	/// Proof: `Fusion::Pools` (`max_values`: None, `max_size`: Some(14604742), added: 14607217, mode: `MaxEncodedLen`)

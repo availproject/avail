@@ -383,7 +383,7 @@ mod benchmarks {
 	}
 
 	#[benchmark]
-	fn set_pool_with_retry() -> Result<(), BenchmarkError> {
+	fn set_pool_with_retry(e: Linear<0, 10>) -> Result<(), BenchmarkError> {
 		init_benchmarks::<T>();
 		create_avail_currency::<T>();
 		create_avail_pool::<T>();
@@ -395,17 +395,21 @@ mod benchmarks {
 		let state = Some(FusionPoolState::Open);
 		let nominator = ConfigOp::Set(get_account::<T>("DAVE"));
 		let boost_data = ConfigOp::Set((Perbill::from_percent(5), 1_000_000_000_000_000_000));
-		let retry_rewards_for_eras = Some(BoundedVec::try_from(vec![1]).unwrap());
-
 		let fusion_address = FusionAddress::new_evm(H160::zero());
 		fill_pool_with_dummy_members::<T>(1);
-		fill_era_data::<T>(
-			1,
-			get_account::<T>("BOB"),
-			fusion_address,
-			1,
-			1_000_000_000_000_000_000_000,
-		);
+
+		for era in 1..=e {
+			fill_era_data::<T>(
+				era,
+				get_account::<T>("BOB"),
+				fusion_address,
+				pool_id,
+				1_000_000_000_000_000_000_000,
+			);
+		}
+
+		let retry_rewards_for_eras =
+			Some(BoundedVec::try_from((1..=e).collect::<Vec<_>>()).unwrap());
 
 		let origin = RawOrigin::Root;
 		#[extrinsic_call]

@@ -888,8 +888,8 @@ pub mod pallet {
 			let base_weight = T::WeightInfo::set_pool();
 			let nb_retry_eras = retry_rewards_for_eras
 				.as_ref()
-				.map_or(0, |eras| eras.len() as u64);
-			let retry_weight = T::WeightInfo::set_pool_with_retry().saturating_mul(nb_retry_eras);
+				.map_or(0, |eras| eras.len() as u32);
+			let retry_weight = T::WeightInfo::set_pool_with_retry(nb_retry_eras);
 			base_weight.saturating_add(retry_weight)
 		}, DispatchClass::Normal))]
 		pub fn set_pool(
@@ -899,7 +899,7 @@ pub mod pallet {
 			state: Option<FusionPoolState>,
 			nominator: ConfigOp<T::AccountId>,
 			boost_data: ConfigOp<(Perbill, FusionCurrencyBalance)>, // Additional apy, min to earn
-			retry_rewards_for_eras: Option<BoundedVec<EraIndex, T::HistoryDepth>>,
+			retry_rewards_for_eras: Option<BoundedVec<EraIndex, ConstU32<10>>>,
 		) -> DispatchResult {
 			ensure_root(origin)?;
 
