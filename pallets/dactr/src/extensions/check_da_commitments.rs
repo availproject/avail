@@ -18,7 +18,7 @@ use sp_std::{
 };
 
 use super::native::build_da_commitments::{build_da_commitments, DaCommitmentsError};
-use sp_core::hexdisplay::HexDisplay;
+// use sp_core::hexdisplay::HexDisplay;
 
 /// Check for DA Commitments.
 ///
