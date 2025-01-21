@@ -1613,6 +1613,8 @@ impl<T: Config> Pallet<T> {
 				None => true,
 			});
 
+		let is_retry = maybe_pool_id.is_some();
+
 		for (pool_id, fusion_exposure) in exposures_iter {
 			let Some(mut pool) = Pools::<T>::get(pool_id) else {
 				Self::deposit_event(Event::ErrorDataEvent {
@@ -1653,13 +1655,20 @@ impl<T: Config> Pallet<T> {
 
 			// Check that the pool actually backed a validator and that this validator has earned points during the era
 			let mut should_earn_rewards = false;
-			if let Some(native_exposure_data) = fusion_exposure.native_exposure_data {
-				let validators_backed: Vec<T::AccountId> = native_exposure_data
-					.into_iter()
-					.map(|(account_id, _balance)| account_id)
-					.collect();
-				should_earn_rewards =
-					T::StakingFusionDataProvider::has_earned_era_points(era, &validators_backed);
+			if is_retry {
+				should_earn_rewards = true;
+			}
+			if !should_earn_rewards {
+				if let Some(native_exposure_data) = fusion_exposure.native_exposure_data {
+					let validators_backed: Vec<T::AccountId> = native_exposure_data
+						.into_iter()
+						.map(|(account_id, _balance)| account_id)
+						.collect();
+					should_earn_rewards = T::StakingFusionDataProvider::has_earned_era_points(
+						era,
+						&validators_backed,
+					);
+				}
 			}
 
 			if !should_earn_rewards {
