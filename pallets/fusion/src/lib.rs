@@ -2050,7 +2050,7 @@ impl<T: Config> Pallet<T> {
 			)?;
 
 			// Transfer claimable avail to avail fusion currency account for holding
-			let pool_claimable_account = Self::get_pool_funds_account(pool_id);
+			let pool_claimable_account = Self::get_pool_claimable_account(pool_id);
 
 			// Check that it has enough funds
 			let pool_claimable_balance = T::Currency::free_balance(&pool_claimable_account);
