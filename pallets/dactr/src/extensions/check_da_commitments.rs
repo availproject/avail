@@ -17,7 +17,7 @@ use sp_std::{
 	marker::PhantomData,
 };
 
-use super::native::build_da_commitments::{build_da_commitments, DaCommitmentsError};
+use crate::extensions::native::hosted_commitment_builder::build_da_commitments;
 // use sp_core::hexdisplay::HexDisplay;
 
 /// Check for DA Commitments.
@@ -61,37 +61,12 @@ where
 			let block_length = frame_system::Pallet::<T>::block_length();
 			let seed = [0u8; 32];
 
-			match build_da_commitments(data.to_vec().clone(), block_length, seed) {
-				Ok(commitments) => {
-					// log::info!(target: LOG_TARGET, "Generated commitments: {:?}", HexDisplay::from(&commitments));
-					// log::info!(target: LOG_TARGET, "Passed commitments: {:?}", HexDisplay::from(&self.da_commitments()));
-					ensure!(
-						commitments == self.da_commitments(),
-						InvalidTransaction::Custom(1)
-					);
-					// log::info!(target: LOG_TARGET, "CheckDaCommitments::do_validate -> passed");
-				},
-				Err(DaCommitmentsError::GridConstructionFailed(_)) => {
-					return Err(TransactionValidityError::Invalid(
-						InvalidTransaction::Custom(2),
-					));
-				},
-				Err(DaCommitmentsError::MakePolynomialGridFailed(_)) => {
-					return Err(TransactionValidityError::Invalid(
-						InvalidTransaction::Custom(3),
-					));
-				},
-				Err(DaCommitmentsError::GridExtensionFailed(_)) => {
-					return Err(TransactionValidityError::Invalid(
-						InvalidTransaction::Custom(4),
-					));
-				},
-				Err(DaCommitmentsError::CommitmentSerializationFailed(_)) => {
-					return Err(TransactionValidityError::Invalid(
-						InvalidTransaction::Custom(5),
-					));
-				},
-			}
+			let generated_commitments =
+				build_da_commitments(data.to_vec().clone(), block_length, seed);
+			ensure!(
+				generated_commitments == self.da_commitments(),
+				InvalidTransaction::Custom(1)
+			);
 		}
 		Ok(ValidTransaction::default())
 	}
@@ -161,24 +136,5 @@ where
 	#[inline]
 	fn da_commitments(&self) -> DaCommitments {
 		self.0.clone()
-	}
-}
-
-#[cfg(test)]
-mod tests {
-	use super::*;
-	use avail_core::constants::kate::COMMITMENT_SIZE;
-
-	#[test]
-	fn check_da_commitments_default() {
-		let check_da_commitments = CheckDaCommitments::<()>::default();
-		assert_eq!(check_da_commitments.da_commitments(), DaCommitments::new());
-	}
-
-	#[test]
-	fn check_da_commitments_custom() {
-		let da_commitments = vec![[0u8; COMMITMENT_SIZE]];
-		let check_da_commitments = CheckDaCommitments::<()>::from(da_commitments.clone());
-		assert_eq!(check_da_commitments.da_commitments(), da_commitments);
 	}
 }

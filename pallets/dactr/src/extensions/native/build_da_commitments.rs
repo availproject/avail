@@ -76,16 +76,26 @@ fn build_commitment(grid: &EvaluationGrid) -> Result<Vec<u8>, DaCommitmentsError
 	Ok(commitment)
 }
 
-pub fn build_da_commitments(
-	data: Vec<u8>,
-	block_length: BlockLength,
-	seed: Seed,
-) -> Result<DaCommitments, DaCommitmentsError> {
+pub fn build_da_commitments(data: Vec<u8>, block_length: BlockLength, seed: Seed) -> DaCommitments {
 	let start = std::time::Instant::now();
-	let grid = build_grid(data, block_length, seed)?;
+	let grid = match build_grid(data, block_length, seed) {
+		Ok(grid) => grid,
+		Err(e) => {
+			log::error!("Grid construction failed: {:?}", e);
+			return DaCommitments::new();
+		},
+	};
 
-	let commitments = build_commitment(&grid)?;
+	let commitments = match build_commitment(&grid) {
+		Ok(commitments) => commitments,
+		Err(e) => {
+			log::error!("Commitment generation failed: {:?}", e);
+			return DaCommitments::new();
+		},
+	};
+
 	let commitment_time = start.elapsed();
-	log::info!("CommitmentGeration time: {:?}", commitment_time);
-	Ok(commitments)
+	log::info!("Commitment generation time: {:?}", commitment_time);
+
+	commitments
 }

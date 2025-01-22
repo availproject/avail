@@ -3,7 +3,8 @@ use crate::{Runtime, SignedExtra, UncheckedExtrinsic};
 
 use avail_base::HeaderExtensionBuilderData;
 use avail_core::data_proof::{BoundedData, Message, TxDataRoots};
-use da_control::{AppDataFor, Call as DaCall, CheckAppId};
+use avail_core::DaCommitments;
+use da_control::{AppDataFor, Call as DaCall, CheckAppId, CheckDaCommitments};
 use frame_system::{
 	CheckEra, CheckGenesis, CheckNonZeroSender, CheckNonce, CheckSpecVersion, CheckTxVersion,
 	CheckWeight,
@@ -112,6 +113,7 @@ fn extra() -> SignedExtra {
 		CheckWeight::<Runtime>::new(),
 		ChargeTransactionPayment::<Runtime>::from(0),
 		CheckAppId::<Runtime>::from(AppId(1)),
+		CheckDaCommitments::<Runtime>::from(DaCommitments::new()),
 	)
 }
 fn additional_signed() -> <SignedExtra as SignedExtension>::AdditionalSigned {
@@ -120,7 +122,7 @@ fn additional_signed() -> <SignedExtra as SignedExtension>::AdditionalSigned {
 	let genesis = H256::default();
 	let era = H256::repeat_byte(1);
 
-	((), spec_ver, tx_ver, genesis, era, (), (), (), ())
+	((), spec_ver, tx_ver, genesis, era, (), (), (), (), ())
 }
 
 fn signed_extrinsic(function: RuntimeCall) -> Vec<u8> {

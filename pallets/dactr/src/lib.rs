@@ -22,7 +22,7 @@ pub use crate::{pallet::*, weights::WeightInfo};
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
-mod extensions;
+pub mod extensions;
 #[cfg(feature = "std")]
 pub mod mock;
 #[cfg(test)]
