@@ -3227,7 +3227,7 @@ mod claim_rewards {
 
 			run_to_era(4);
 
-			let pool_claimable_account = Fusion::get_pool_funds_account(BTC_POOL_ID);
+			let pool_claimable_account = Fusion::get_pool_claimable_account(BTC_POOL_ID);
 			assert_ok!(Balances::force_set_balance(
 				RawOrigin::Root.into(),
 				pool_claimable_account,
