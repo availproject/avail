@@ -1079,7 +1079,7 @@ dependencies = [
 [[package]]
 name = "avail-core"
 version = "0.6.2"
-source = "git+https://github.com/utsire/avail-core?branch=mmp/lc_integration#0f2dbb3ed9b0f0072f7a66cf47c17b2e039d96f9"
+source = "git+https://github.com/utsire/avail-core?rev=a4e539dedada70a103a1d364e36465b7bdeb533c#a4e539dedada70a103a1d364e36465b7bdeb533c"
 dependencies = [
  "binary-merkle-tree",
  "blake2b_simd",
@@ -5550,9 +5550,8 @@ dependencies = [
 [[package]]
 name = "kate"
 version = "0.9.2"
-source = "git+https://github.com/utsire/avail-core?branch=mmp/lc_integration#0f2dbb3ed9b0f0072f7a66cf47c17b2e039d96f9"
+source = "git+https://github.com/utsire/avail-core?rev=a4e539dedada70a103a1d364e36465b7bdeb533c#a4e539dedada70a103a1d364e36465b7bdeb533c"
 dependencies = [
- "ark-bls12-381",
  "avail-core",
  "derive_more 0.99.18",
  "dusk-bytes",
@@ -5578,7 +5577,7 @@ dependencies = [
 [[package]]
 name = "kate-recovery"
 version = "0.10.0"
-source = "git+https://github.com/utsire/avail-core?branch=mmp/lc_integration#0f2dbb3ed9b0f0072f7a66cf47c17b2e039d96f9"
+source = "git+https://github.com/utsire/avail-core?rev=a4e539dedada70a103a1d364e36465b7bdeb533c#a4e539dedada70a103a1d364e36465b7bdeb533c"
 dependencies = [
  "avail-core",
  "derive_more 0.99.18",
@@ -8437,7 +8436,7 @@ dependencies = [
 [[package]]
 name = "poly-multiproof"
 version = "0.1.1"
-source = "git+https://github.com/availproject/poly-multiproof#0e46c89762b5531b1767e4e8e923e0ed982f0e49"
+source = "git+https://github.com/aphoh/poly-multiproof#494468b86ac8e16dca21d465d921990c578eaad3"
 dependencies = [
  "ark-bls12-381",
  "ark-ec 0.4.2",
@@ -8447,7 +8446,7 @@ dependencies = [
  "ark-std 0.4.0",
  "blst",
  "merlin",
- "thiserror",
+ "thiserror 2.0.11",
 ]
 
 [[package]]

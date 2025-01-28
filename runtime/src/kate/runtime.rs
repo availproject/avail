@@ -1,4 +1,4 @@
-use super::{native::hosted_kate, Error, GDataProof, GMultiProof, GProof, GRow};
+use super::{native::hosted_kate, Error, GDataProof, GMultiProof, GRow};
 use da_control::LOG_TARGET as DALOG_TARGET;
 
 use avail_core::AppExtrinsic;
