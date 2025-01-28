@@ -2,6 +2,7 @@ use super::MAX_ITERATIONS;
 use crate::{Call as DACall, CheckBatchTransactions, Config as DAConfig, Pallet, LOG_TARGET};
 use avail_core::{traits::GetAppId, AppId, InvalidTransactionCustomId};
 
+use crate::extensions::native::hosted_commitment_builder::build_da_commitments;
 use codec::{Decode, Encode};
 use frame_support::{
 	ensure,
@@ -62,14 +63,33 @@ where
 		len: usize,
 	) -> TransactionValidity {
 		self.ensure_valid_app_id(call)?;
-		if let Some(DACall::<T>::submit_data { .. }) = call.is_sub_type() {
-			let all_extrinsics_len = self
-				.next_all_extrinsics_len(len)
-				.ok_or(InvalidTransaction::ExhaustsResources)?;
-			AllExtrinsicsLen::<T>::put(all_extrinsics_len);
-		}
+		// if let Some(DACall::<T>::submit_data { .. }) = call.is_sub_type() {
+		// 	let all_extrinsics_len = self
+		// 		.next_all_extrinsics_len(len)
+		// 		.ok_or(InvalidTransaction::ExhaustsResources)?;
+		// 	AllExtrinsicsLen::<T>::put(all_extrinsics_len);
+		// }
 
 		CheckBatchTransactions::<T>::new().do_validate(call, len)?;
+		if let Some(DACall::<T>::submit_data_with_commitments { data, commitments }) =
+			call.is_sub_type()
+		{
+			ensure!(
+				!commitments.to_vec().is_empty(),
+				InvalidTransaction::Custom(0)
+			);
+
+			// Fetch the block_length value from the frame_system pallet
+			let block_length = frame_system::Pallet::<T>::block_length();
+			let seed = [0u8; 32];
+
+			let generated_commitments =
+				build_da_commitments(data.to_vec().clone(), block_length, seed);
+			ensure!(
+				generated_commitments == commitments.to_vec(),
+				InvalidTransaction::Custom(1)
+			);
+		}
 		Ok(ValidTransaction::default())
 	}
 

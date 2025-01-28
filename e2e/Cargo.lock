@@ -1716,6 +1716,7 @@ dependencies = [
  "subxt",
  "subxt-signer",
  "test-log",
+ "thiserror-no-std",
  "tokio",
  "tracing",
 ]

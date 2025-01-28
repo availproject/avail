@@ -3,9 +3,10 @@
 // !!!!
 
 use crate::{limits::BlockLength, Config, LOG_TARGET};
+use avail_base::header_extension::SubmittedData;
 #[cfg(feature = "std")]
 use avail_core::HeaderVersion;
-use avail_core::{header::HeaderExtension, traits::ExtendedHeader, AppExtrinsic};
+use avail_core::{header::HeaderExtension, traits::ExtendedHeader};
 pub use kate::{
 	metrics::{IgnoreMetrics, Metrics},
 	Seed,
@@ -22,6 +23,7 @@ pub const MIN_WIDTH: usize = 4;
 pub mod da {
 	use core::marker::PhantomData;
 
+	use avail_base::header_extension::SubmittedData;
 	use avail_core::header::{Header as DaHeader, HeaderExtension};
 	use sp_runtime::traits::BlakeTwo256;
 
@@ -38,7 +40,7 @@ pub mod da {
 
 		#[inline]
 		fn build(
-			submitted: Vec<AppExtrinsic>,
+			submitted: Vec<SubmittedData>,
 			data_root: H256,
 			block_length: BlockLength,
 			block_number: u32,
@@ -62,7 +64,7 @@ pub trait HeaderExtensionBuilder {
 
 	/// Creates the header using the given parameters.
 	fn build(
-		app_extrinsics: Vec<AppExtrinsic>,
+		app_extrinsics: Vec<SubmittedData>,
 		data_root: H256,
 		block_length: BlockLength,
 		block_number: u32,
@@ -93,13 +95,14 @@ pub trait HostedHeaderBuilder {
 	/// of the `build` hosted function, while retaining the existing ones.
 	#[version(1)]
 	fn build(
-		submitted: Vec<AppExtrinsic>,
+		submitted: Vec<SubmittedData>,
 		data_root: H256,
 		block_length: BlockLength,
 		block_number: u32,
 		seed: Seed,
 	) -> HeaderExtension {
-		crate::native::build_extension_v1::build_extension(
+		// TODO: update this
+		crate::native::build_extension_v2::build_extension(
 			submitted,
 			data_root,
 			block_length,
@@ -113,7 +116,7 @@ pub trait HostedHeaderBuilder {
 	/// of the `build` hosted function, while retaining the existing ones.
 	#[version(2)]
 	fn build(
-		submitted: Vec<AppExtrinsic>,
+		submitted: Vec<SubmittedData>,
 		data_root: H256,
 		block_length: BlockLength,
 		block_number: u32,

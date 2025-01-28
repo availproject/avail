@@ -25,6 +25,7 @@ pub struct SubmittedData {
 	pub id: AppId,
 	pub tx_index: u32,
 	pub data: Vec<u8>,
+	pub commitments: Vec<u8>,
 }
 
 impl GetAppId for SubmittedData {

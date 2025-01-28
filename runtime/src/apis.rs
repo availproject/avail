@@ -365,16 +365,14 @@ impl_runtime_apis! {
 			use frame_system::native::hosted_header_builder::da::HeaderExtensionBuilder;
 			use frame_system::HeaderExtensionBuilder as _;
 
-			let app_extrinsics = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block_number, &extrinsics).to_app_extrinsics();
+			let app_extrinsics = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block_number, &extrinsics).data_submissions;
 			HeaderExtensionBuilder::<Runtime>::build(app_extrinsics, data_root, block_length, block_number)
 		}
 
 		fn check_if_extrinsic_is_post_inherent(uxt: &<Block as BlockT>::Extrinsic) -> bool {
 			use frame_support::traits::ExtrinsicCall;
 
-			let Ok(xt) =  TryInto::<&RTExtrinsic>::try_into(uxt) else {
-				return false;
-			};
+			let Ok(xt) =  TryInto::<&RTExtrinsic>::try_into(uxt);
 
 			let vector_pallet_call = match xt.call() {
 				RuntimeCall::Vector(call) => call,

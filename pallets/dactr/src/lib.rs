@@ -22,7 +22,7 @@ pub use crate::{pallet::*, weights::WeightInfo};
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
-mod extensions;
+pub mod extensions;
 #[cfg(feature = "std")]
 pub mod mock;
 #[cfg(test)]
@@ -290,6 +290,26 @@ pub mod pallet {
 			SubmitDataFeeModifier::<T>::put(modifier);
 
 			Self::deposit_event(Event::SubmitDataFeeModifierSet { value: modifier });
+
+			Ok(().into())
+		}
+
+		#[pallet::call_index(5)]
+		#[pallet::weight(T::WeightInfo::submit_data(data.len() as u32))]
+		pub fn submit_data_with_commitments(
+			origin: OriginFor<T>,
+			data: AppDataFor<T>,
+			// TODO: Update the bounds to appropriate one
+			_commitments: AppDataFor<T>,
+		) -> DispatchResultWithPostInfo {
+			let who = ensure_signed(origin)?;
+			ensure!(!data.is_empty(), Error::<T>::DataCannotBeEmpty);
+
+			let data_hash = blake2_256(&data);
+			Self::deposit_event(Event::DataSubmitted {
+				who,
+				data_hash: H256(data_hash),
+			});
 
 			Ok(().into())
 		}

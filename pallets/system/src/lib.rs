@@ -1861,10 +1861,10 @@ impl<T: Config> Pallet<T> {
 		let extrinsics_root = extrinsics_data_root::<T::Hashing>(extrinsics);
 
 		let block_length = Self::block_length();
-
+		let data_root = header_extension_builder_data.data_root();
 		let extension = native::hosted_header_builder::da::HeaderExtensionBuilder::<T>::build(
-			header_extension_builder_data.to_app_extrinsics(),
-			header_extension_builder_data.data_root(),
+			header_extension_builder_data.data_submissions,
+			data_root,
 			block_length,
 			number.unique_saturated_into(),
 		);
