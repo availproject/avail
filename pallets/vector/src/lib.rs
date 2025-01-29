@@ -33,6 +33,7 @@ mod weights;
 pub use pallet::*;
 
 sol! {
+	#[derive(Debug)]
 	 struct ProofOutputs {
 		bytes32 executionStateRoot;
 		bytes32 newHeader;
@@ -41,6 +42,8 @@ sol! {
 		bytes32 prevHeader;
 		uint256 prevHead;
 		bytes32 syncCommitteeHash;
+		// Hash of the current sync committee that signed the previous update.
+		bytes32 startSyncCommitteeHash;
 	}
 }
 
@@ -134,6 +137,8 @@ pub mod pallet {
 		CannotDecodePublicValue,
 		/// Sync committee hash is already set for given period.
 		SyncCommitteeHashAlreadySet,
+		/// Emit when start sync committee does not match.
+		SyncCommitteeStartMismatch,
 	}
 
 	#[pallet::event]
@@ -838,6 +843,18 @@ pub mod pallet {
 			let head = Head::<T>::get();
 			let new_head: u64 = proof_outputs.newHead.to();
 			ensure!(new_head > head, Error::<T>::SlotBehindHead);
+			let config = ConfigurationStorage::<T>::get();
+
+			let current_period = head
+				.checked_div(config.slots_per_period)
+				.ok_or(Error::<T>::ConfigurationNotSet)?;
+
+			let current_sync_committee_hash = SyncCommitteeHashes::<T>::get(current_period);
+			// The "start" sync committee hash is the hash of the sync committee that should sign the next update.
+			ensure!(
+				current_sync_committee_hash == H256::from(proof_outputs.startSyncCommitteeHash.0),
+				Error::<T>::SyncCommitteeStartMismatch
+			);
 
 			let sp1_vk = SP1VerificationKey::<T>::get();
 
@@ -873,7 +890,6 @@ pub mod pallet {
 				execution_state_root: new_execution_state_root,
 			});
 
-			let config = ConfigurationStorage::<T>::get();
 			let period = new_head
 				.checked_div(config.slots_per_period)
 				.ok_or(Error::<T>::ConfigurationNotSet)?;
