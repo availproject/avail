@@ -22,7 +22,7 @@ homepage = "https://www.availproject.org/"
 
 
 [workspace.dependencies]
-avail-core = { git = "https://github.com/utsire/avail-core", rev = "a4e539dedada70a103a1d364e36465b7bdeb533c", default-features = false, features = [ "runtime"] }
+avail-core = { git = "https://github.com/availproject/avail-core.git", rev = "e4505c6cdad6bbd0e71e6875a9ef1c6b79de2cd1", default-features = false, features = [ "runtime"] }
 kate = { git = "https://github.com/utsire/avail-core", rev="a4e539dedada70a103a1d364e36465b7bdeb533c", default-features = false }
 kate-recovery = { git = "https://github.com/utsire/avail-core", rev = "a4e539dedada70a103a1d364e36465b7bdeb533c", default-features = false  }
 #avail-core = { path = "../avail-core/core", default-features = false, features = [ "runtime"] }
