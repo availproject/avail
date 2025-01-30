@@ -134,7 +134,9 @@ where
 		let mut iterations = 0;
 
 		while let Some(call) = stack.pop() {
-			if let Some(DACall::<T>::submit_data { .. }) = call.is_sub_type() {
+			if let Some(DACall::<T>::submit_data { .. })
+			| Some(DACall::<T>::submit_data_with_commitments { .. }) = call.is_sub_type()
+			{
 				let next_app_id =
 					maybe_next_app_id.get_or_insert_with(<Pallet<T>>::peek_next_application_id);
 				ensure!(
