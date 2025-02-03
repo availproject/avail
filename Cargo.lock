@@ -1057,7 +1057,7 @@ checksum = "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26"
 name = "avail-base"
 version = "0.1.0"
 dependencies = [
- "avail-core",
+ "avail-core 0.6.2 (git+https://github.com/availproject/avail-core.git?rev=e4505c6cdad6bbd0e71e6875a9ef1c6b79de2cd1)",
  "binary-merkle-tree",
  "derive_more 0.99.18",
  "frame-support",
@@ -1080,6 +1080,30 @@ dependencies = [
 name = "avail-core"
 version = "0.6.2"
 source = "git+https://github.com/utsire/avail-core?rev=a4e539dedada70a103a1d364e36465b7bdeb533c#a4e539dedada70a103a1d364e36465b7bdeb533c"
+dependencies = [
+ "blake2b_simd",
+ "bounded-collections",
+ "derive_more 0.99.18",
+ "ethabi-decode",
+ "hash-db 0.16.0",
+ "hash256-std-hasher",
+ "log",
+ "parity-scale-codec",
+ "primitive-types 0.12.2",
+ "scale-info",
+ "sha2 0.10.8",
+ "sha3",
+ "sp-arithmetic",
+ "sp-std",
+ "static_assertions",
+ "thiserror-no-std",
+ "tiny-keccak",
+]
+
+[[package]]
+name = "avail-core"
+version = "0.6.2"
+source = "git+https://github.com/availproject/avail-core.git?rev=e4505c6cdad6bbd0e71e6875a9ef1c6b79de2cd1#e4505c6cdad6bbd0e71e6875a9ef1c6b79de2cd1"
 dependencies = [
  "binary-merkle-tree",
  "blake2b_simd",
@@ -1116,7 +1140,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "avail-base",
- "avail-core",
+ "avail-core 0.6.2 (git+https://github.com/availproject/avail-core.git?rev=e4505c6cdad6bbd0e71e6875a9ef1c6b79de2cd1)",
  "clap 4.5.26",
  "clap-num",
  "clap_complete",
@@ -2516,7 +2540,7 @@ name = "da-control"
 version = "1.0.1"
 dependencies = [
  "avail-base",
- "avail-core",
+ "avail-core 0.6.2 (git+https://github.com/availproject/avail-core.git?rev=e4505c6cdad6bbd0e71e6875a9ef1c6b79de2cd1)",
  "derive_more 0.99.18",
  "frame-benchmarking",
  "frame-support",
@@ -2546,7 +2570,7 @@ name = "da-runtime"
 version = "7.0.1"
 dependencies = [
  "avail-base",
- "avail-core",
+ "avail-core 0.6.2 (git+https://github.com/availproject/avail-core.git?rev=e4505c6cdad6bbd0e71e6875a9ef1c6b79de2cd1)",
  "binary-merkle-tree",
  "criterion",
  "da-control",
@@ -2566,7 +2590,7 @@ dependencies = [
  "iai",
  "iai-callgrind",
  "kate",
- "kate-recovery",
+ "kate-recovery 0.10.0 (git+https://github.com/utsire/avail-core?rev=a4e539dedada70a103a1d364e36465b7bdeb533c)",
  "log",
  "pallet-authority-discovery",
  "pallet-authorship",
@@ -2638,7 +2662,7 @@ dependencies = [
  "afl",
  "anyhow",
  "arbitrary",
- "avail-core",
+ "avail-core 0.6.2 (git+https://github.com/availproject/avail-core.git?rev=e4505c6cdad6bbd0e71e6875a9ef1c6b79de2cd1)",
  "da-control",
  "da-runtime",
  "frame-support",
@@ -3958,7 +3982,7 @@ name = "frame-system"
 version = "4.0.0-dev"
 dependencies = [
  "avail-base",
- "avail-core",
+ "avail-core 0.6.2 (git+https://github.com/availproject/avail-core.git?rev=e4505c6cdad6bbd0e71e6875a9ef1c6b79de2cd1)",
  "binary-merkle-tree",
  "bounded-collections",
  "cfg-if",
@@ -3990,7 +4014,7 @@ dependencies = [
 name = "frame-system-benchmarking"
 version = "4.0.0-dev"
 dependencies = [
- "avail-core",
+ "avail-core 0.6.2 (git+https://github.com/availproject/avail-core.git?rev=e4505c6cdad6bbd0e71e6875a9ef1c6b79de2cd1)",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -5550,15 +5574,15 @@ dependencies = [
 [[package]]
 name = "kate"
 version = "0.9.2"
-source = "git+https://github.com/utsire/avail-core?rev=a4e539dedada70a103a1d364e36465b7bdeb533c#a4e539dedada70a103a1d364e36465b7bdeb533c"
+source = "git+https://github.com/availproject/avail-core.git?rev=e4505c6cdad6bbd0e71e6875a9ef1c6b79de2cd1#e4505c6cdad6bbd0e71e6875a9ef1c6b79de2cd1"
 dependencies = [
- "avail-core",
+ "avail-core 0.6.2 (git+https://github.com/availproject/avail-core.git?rev=e4505c6cdad6bbd0e71e6875a9ef1c6b79de2cd1)",
  "derive_more 0.99.18",
  "dusk-bytes",
  "dusk-plonk",
  "hex",
  "hex-literal",
- "kate-recovery",
+ "kate-recovery 0.10.0 (git+https://github.com/availproject/avail-core.git?rev=e4505c6cdad6bbd0e71e6875a9ef1c6b79de2cd1)",
  "log",
  "nalgebra 0.32.6",
  "once_cell",
@@ -5579,7 +5603,22 @@ name = "kate-recovery"
 version = "0.10.0"
 source = "git+https://github.com/utsire/avail-core?rev=a4e539dedada70a103a1d364e36465b7bdeb533c#a4e539dedada70a103a1d364e36465b7bdeb533c"
 dependencies = [
- "avail-core",
+ "avail-core 0.6.2 (git+https://github.com/utsire/avail-core?rev=a4e539dedada70a103a1d364e36465b7bdeb533c)",
+ "derive_more 0.99.18",
+ "dusk-plonk",
+ "parity-scale-codec",
+ "sp-arithmetic",
+ "sp-std",
+ "static_assertions",
+ "thiserror-no-std",
+]
+
+[[package]]
+name = "kate-recovery"
+version = "0.10.0"
+source = "git+https://github.com/availproject/avail-core.git?rev=e4505c6cdad6bbd0e71e6875a9ef1c6b79de2cd1#e4505c6cdad6bbd0e71e6875a9ef1c6b79de2cd1"
+dependencies = [
+ "avail-core 0.6.2 (git+https://github.com/availproject/avail-core.git?rev=e4505c6cdad6bbd0e71e6875a9ef1c6b79de2cd1)",
  "derive_more 0.99.18",
  "dusk-bytes",
  "dusk-plonk",
@@ -5599,13 +5638,13 @@ name = "kate-rpc"
 version = "0.3.0"
 dependencies = [
  "avail-base",
- "avail-core",
+ "avail-core 0.6.2 (git+https://github.com/availproject/avail-core.git?rev=e4505c6cdad6bbd0e71e6875a9ef1c6b79de2cd1)",
  "da-runtime",
  "frame-support",
  "frame-system",
  "jsonrpsee",
  "kate",
- "kate-recovery",
+ "kate-recovery 0.10.0 (git+https://github.com/utsire/avail-core?rev=a4e539dedada70a103a1d364e36465b7bdeb533c)",
  "log",
  "sc-client-api",
  "sp-api",
@@ -7679,7 +7718,7 @@ dependencies = [
 name = "pallet-mandate"
 version = "1.0.0"
 dependencies = [
- "avail-core",
+ "avail-core 0.6.2 (git+https://github.com/availproject/avail-core.git?rev=e4505c6cdad6bbd0e71e6875a9ef1c6b79de2cd1)",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -8041,7 +8080,7 @@ dependencies = [
  "ark-groth16",
  "ark-std 0.4.0",
  "avail-base",
- "avail-core",
+ "avail-core 0.6.2 (git+https://github.com/availproject/avail-core.git?rev=e4505c6cdad6bbd0e71e6875a9ef1c6b79de2cd1)",
  "ethabi",
  "frame-benchmarking",
  "frame-support",
@@ -12968,7 +13007,7 @@ name = "testing-rpc"
 version = "0.3.0"
 dependencies = [
  "avail-base",
- "avail-core",
+ "avail-core 0.6.2 (git+https://github.com/availproject/avail-core.git?rev=e4505c6cdad6bbd0e71e6875a9ef1c6b79de2cd1)",
  "jsonrpsee",
  "log",
  "sc-client-api",
