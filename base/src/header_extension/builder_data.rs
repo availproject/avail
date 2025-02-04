@@ -253,10 +253,7 @@ mod tests {
 
 	#[test]
 	fn test_from_raw_extrinsics() {
-		let extrinsics: Vec<Vec<u8>> = vec![
-			vec![1, 2, 3],
-			vec![4, 5, 6],
-		];
+		let extrinsics: Vec<Vec<u8>> = vec![vec![1, 2, 3], vec![4, 5, 6]];
 		let builder_data = HeaderExtensionBuilderData::from_raw_extrinsics::<()>(1, &extrinsics);
 		assert_eq!(builder_data.app_extrinsics.len(), 0);
 		assert_eq!(builder_data.data_submissions.len(), 0);
@@ -352,7 +349,14 @@ mod tests {
 		// Sort data_submissions by app_id
 		builder_data.data_submissions.sort_by_key(|data| data.id);
 
-		let sorted_ids: Vec<(AppId, u32)> = builder_data.data_submissions.iter().map(|d| (d.id, d.tx_index)).collect();
-		assert_eq!(sorted_ids, vec![(AppId(1), 1), (AppId(1), 3), (AppId(2), 2), (AppId(3), 0)]);
+		let sorted_ids: Vec<(AppId, u32)> = builder_data
+			.data_submissions
+			.iter()
+			.map(|d| (d.id, d.tx_index))
+			.collect();
+		assert_eq!(
+			sorted_ids,
+			vec![(AppId(1), 1), (AppId(1), 3), (AppId(2), 2), (AppId(3), 0)]
+		);
 	}
 }

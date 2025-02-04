@@ -9,9 +9,11 @@ use crate::limits::BlockLength;
 use avail_base::header_extension::SubmittedData;
 use avail_core::{
 	app_extrinsic::AppExtrinsic,
+	constants::kate::DATA_CHUNK_SIZE,
 	header::{extension as he, HeaderExtension},
-	kate_commitment as kc, DataLookup, HeaderVersion,
+	kate_commitment as kc, AppId, DataLookup, HeaderVersion,
 };
+use codec::{Compact, CompactLen as _};
 use kate::{
 	couscous::multiproof_params,
 	gridgen::{AsBytes, EvaluationGrid},
@@ -91,7 +93,7 @@ fn build_commitment(grid: &EvaluationGrid) -> Result<Vec<u8>, String> {
 pub fn build_extension(
 	mut submitted: Vec<SubmittedData>,
 	data_root: H256,
-	_block_length: BlockLength,
+	block_length: BlockLength,
 	_block_number: u32,
 	_seed: Seed,
 	version: HeaderVersion,
@@ -114,15 +116,33 @@ pub fn build_extension(
 		return HeaderExtension::get_empty_header(data_root, version);
 	}
 
-	let app_lookup = DataLookup::default();
+	let max_columns = block_length.cols.0 as usize;
+
 	let total_commitments: usize = submitted
 		.iter()
 		.map(|da_call| da_call.commitments.len())
 		.sum();
 	let mut commitment = Vec::with_capacity(total_commitments);
+
+	let mut app_rows: Vec<(AppId, usize)> = Vec::new();
+
 	for da_call in submitted.iter() {
 		commitment.extend(da_call.commitments.clone());
+		let app_id = da_call.id;
+		let data_len = get_data_len(da_call);
+		let rows_taken =
+			(data_len + (max_columns * DATA_CHUNK_SIZE) - 1) / (max_columns * DATA_CHUNK_SIZE); // Calculate rows taken by rounding up
+
+		// Update app_rows
+		if let Some((_, existing_rows)) = app_rows.iter_mut().find(|(id, _)| *id == app_id) {
+			*existing_rows += rows_taken;
+		} else {
+			app_rows.push((app_id, rows_taken));
+		}
 	}
+
+	let app_lookup = DataLookup::from_id_and_len_iter(app_rows.into_iter())
+		.expect("Failed to create DataLookup");
 
 	match version {
 		HeaderVersion::V3 => {
@@ -134,4 +154,12 @@ pub fn build_extension(
 			.into()
 		},
 	}
+}
+
+/// computes the amount of bytes this data will take on the data_grid including encoding of data & app_id
+fn get_data_len(data: &SubmittedData) -> usize {
+	let len = data.data.len();
+	//  since currently we're using default app_id, we're considering 1 extra byte for app_id, if we intend to use actual app_id, should get the compact len of given app_id
+	let total_len = len + Compact::<u32>::compact_len(&(len as u32)) + 1;
+	total_len
 }
