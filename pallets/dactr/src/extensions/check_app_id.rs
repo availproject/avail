@@ -15,7 +15,8 @@ use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{DispatchInfoOf, SignedExtension},
 	transaction_validity::{
-		InvalidTransaction, TransactionValidity, TransactionValidityError, ValidTransaction,
+		InvalidTransaction, TransactionLongevity, TransactionValidity, TransactionValidityError,
+		ValidTransaction,
 	},
 };
 use sp_std::{
@@ -215,17 +216,22 @@ where
 		_info: &DispatchInfoOf<Self::Call>,
 		len: usize,
 	) -> TransactionValidity {
-		self.do_validate(call, len)
+		self.do_validate(call, len)?;
+		Ok(ValidTransaction {
+			longevity: TransactionLongevity::max_value(),
+			..Default::default()
+		})
 	}
 
 	fn pre_dispatch(
 		self,
 		_who: &Self::AccountId,
-		call: &Self::Call,
+		_call: &Self::Call,
 		_info: &DispatchInfoOf<Self::Call>,
-		len: usize,
+		_len: usize,
 	) -> Result<Self::Pre, TransactionValidityError> {
-		self.do_validate(call, len)?;
+		// Disabling the validation here on purpose
+		// self.do_validate(call, len)?;
 		Ok(())
 	}
 
