@@ -577,10 +577,10 @@ impl WeightInfo for () {
 	/// Proof: `Vector::Timestamps` (`max_values`: None, `max_size`: Some(16), added: 2491, mode: `MaxEncodedLen`)
 	fn fulfill() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `614`
+		//  Measured:  `644`
 		//  Estimated: `6020`
-		// Minimum execution time: 519_421_000_000 picoseconds.
-		Weight::from_parts(527_224_000_000, 6020)
+		// Minimum execution time: 345_438_000_000 picoseconds.
+		Weight::from_parts(349_841_000_000, 6020)
 			.saturating_add(RocksDbWeight::get().reads(9_u64))
 			.saturating_add(RocksDbWeight::get().writes(5_u64))
 	}
