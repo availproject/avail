@@ -9,7 +9,7 @@ use kate::{
 	gridgen::{AsBytes as _, EvaluationGrid as EGrid},
 	M1NoPrecomp,
 };
-use kate::{gridgen::ArkScalar, Seed};
+use kate::{ArkScalar, Seed};
 use kate_recovery::matrix::Dimensions;
 use sp_runtime::SaturatedConversion as _;
 use sp_runtime_interface::runtime_interface;
