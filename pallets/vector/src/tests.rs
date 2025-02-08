@@ -10,9 +10,11 @@ use crate::{
 	RotateVerificationKey, SP1VerificationKey, SourceChainFrozen, StepVerificationKey,
 	SyncCommitteeHashes, SyncCommitteePoseidons, Updater, ValidProof, WhitelistedDomains,
 };
+use alloy_sol_types::private::primitives::hex::ToHex;
 use alloy_sol_types::SolValue;
 use avail_core::data_proof::Message::FungibleToken;
 use avail_core::data_proof::{tx_uid, AddressedMessage, Message};
+use codec::Encode;
 use frame_support::{
 	assert_err, assert_ok,
 	traits::{fungible::Inspect, DefensiveTruncateFrom},
@@ -32,7 +34,7 @@ const TEST_SENDER_ACCOUNT: AccountId32 = AccountId32::new(TEST_SENDER_VEC);
 // Generated with SP1 Helios https://github.com/succinctlabs/sp1-helios/blob/main/README.md
 // cargo prove key —-elf (sp1 helios elf) in SP1 Helios
 const SP1_VERIFICATION_KEY: [u8; 32] =
-	hex!("00788ce8dc2970920a3d3c072c8c07843d15f1307a53b3dd31b113c3e71c28e8");
+	hex!("0093fd9e0a8cab12921a4fa01c6a8ac309c226e039c48713db998fe75a8dd9e8");
 
 pub const PROOF_FILE: &str = "test/proof.bin";
 
@@ -1416,14 +1418,25 @@ fn test_fulfill_successfully() {
 	new_test_ext().execute_with(|| {
 		let sp1_proof_with_public_values = SP1ProofWithPublicValues::load(PROOF_FILE).unwrap();
 		let proof = sp1_proof_with_public_values.bytes();
-		let public_inputs = sp1_proof_with_public_values.public_values.to_vec();
-		SP1VerificationKey::<Test>::set(H256(SP1_VERIFICATION_KEY));
 
+		let public_inputs = sp1_proof_with_public_values.public_values.to_vec();
+
+		SP1VerificationKey::<Test>::set(H256(SP1_VERIFICATION_KEY));
 		let proof_outputs: ProofOutputs = SolValue::abi_decode(&public_inputs, true).unwrap();
 		let slots_per_period = 8192;
 		let finality_threshold = 342u16;
-		let slot = 6178816u64;
-		let current_period = slot / slots_per_period;
+		let last_slot = 6867616u64;
+		let current_period = last_slot / slots_per_period;
+		Head::<Test>::set(last_slot);
+
+		SyncCommitteeHashes::<Test>::set(
+			current_period,
+			H256(hex!(
+				"1010a184305750d5dbc946a74673f8391044ff0600b64a5d08b970fcdea4c055"
+			)),
+		);
+
+		let new_head = 6867936u64;
 
 		ConfigurationStorage::<Test>::set(Configuration {
 			slots_per_period,
@@ -1431,10 +1444,6 @@ fn test_fulfill_successfully() {
 		});
 
 		Updater::<Test>::set(H256(TEST_SENDER_VEC));
-		SyncCommitteeHashes::<Test>::set(
-			current_period,
-			H256::from(proof_outputs.syncCommitteeHash.0),
-		);
 
 		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
 		let ok = Bridge::fulfill(
@@ -1445,26 +1454,35 @@ fn test_fulfill_successfully() {
 
 		assert_ok!(ok);
 
-		let header = Headers::<Test>::get(6178816);
+		let header = Headers::<Test>::get(new_head);
 		assert_eq!(
 			H256(hex!(
-				"95eb3a41a42b59787608d52c6aada0b590902283a91144ef47ad6860b92a5c08"
+				"60d50794a5e1606dec159b5355fa24c59bb142e4f6ccd7ee1ab24ed4c569bac9"
 			)),
 			header
 		);
-		let execution_state_root = ExecutionStateRoots::<Test>::get(6178816);
+		let execution_state_root = ExecutionStateRoots::<Test>::get(new_head);
 		assert_eq!(
 			H256(hex!(
-				"009c4d92c7f0d1a15c9e62d578ee917c8aded8d9d5ab9de1ffa278c00d282f80"
+				"0b069d85ef05bb9ef9b803d8a3bc0a87ba417ab48755e34110d98200711a914f"
 			)),
 			execution_state_root
 		);
-		let sync_committee_hash = SyncCommitteeHashes::<Test>::get((6178816 / 8192) + 1);
+
+		let sync_committee_hash = SyncCommitteeHashes::<Test>::get(new_head / 8192);
 		assert_eq!(
 			H256(hex!(
-				"f4887c7e675fa7c166c1d17e03d0dd746aa595756b66a8fb8d8fad1215d4caaf"
+				"1010a184305750d5dbc946a74673f8391044ff0600b64a5d08b970fcdea4c055"
 			)),
 			sync_committee_hash
+		);
+
+		let next_sync_committee_hash = SyncCommitteeHashes::<Test>::get((new_head / 8192) + 1);
+		assert_eq!(
+			H256(hex!(
+				"ade9dc800ea6fd6a4364e8db7f776b92c3736bca8ceea7b8eba4e37ea60a3a39"
+			)),
+			next_sync_committee_hash
 		);
 	});
 }
@@ -1480,6 +1498,16 @@ fn test_fulfill_successfully_sync_committee_not_set() {
 		let proof_outputs: ProofOutputs = SolValue::abi_decode(&public_inputs, true).unwrap();
 		let slots_per_period = 8192;
 		let finality_threshold = 342u16;
+		let last_slot = 6867616u64;
+		let current_period = last_slot / slots_per_period;
+		Head::<Test>::set(last_slot);
+
+		SyncCommitteeHashes::<Test>::set(
+			current_period,
+			H256(hex!(
+				"1010a184305750d5dbc946a74673f8391044ff0600b64a5d08b970fcdea4c055"
+			)),
+		);
 
 		ConfigurationStorage::<Test>::set(Configuration {
 			slots_per_period,
@@ -1496,13 +1524,14 @@ fn test_fulfill_successfully_sync_committee_not_set() {
 		);
 
 		assert_ok!(ok);
+		let new_head = 6867936u64;
 
-		let header = Headers::<Test>::get(6178816);
+		let header = Headers::<Test>::get(new_head);
 
 		// assert proof outputs
-		let period = 6178816 / 8192;
+		let period = new_head / 8192;
 		assert_eq!(H256(proof_outputs.newHeader.0), header);
-		let execution_state_root = ExecutionStateRoots::<Test>::get(6178816);
+		let execution_state_root = ExecutionStateRoots::<Test>::get(new_head);
 		assert_eq!(
 			H256(proof_outputs.executionStateRoot.0),
 			execution_state_root
@@ -1518,7 +1547,7 @@ fn test_fulfill_successfully_sync_committee_not_set() {
 	});
 }
 
-// TODO this panics
+// TODO verify_groth16_raw is not part of the sp1 v4.0.0 release which will fix panics
 // #[test]
 // fn test_fulfill_incorrect_proof() {
 //     new_test_ext().execute_with(|| {
@@ -1533,7 +1562,7 @@ fn test_fulfill_successfully_sync_committee_not_set() {
 //         let proof_outputs: ProofOutputs = SolValue::abi_decode(&public_inputs, true).unwrap();
 //         let slots_per_period = 8192;
 //         let finality_threshold = 342;
-//         let slot = 6178816u64;
+//         let slot = 6724864u64;
 //         let current_period = slot / slots_per_period;
 //
 //         ConfigurationStorage::<Test>::set(Configuration {
@@ -1557,6 +1586,7 @@ fn test_fulfill_successfully_sync_committee_not_set() {
 //         assert_err!(err, Error::<Test>::VerificationFailed);
 //     });
 // }
+
 #[test]
 fn test_fulfill_incorrect_proof_output() {
 	new_test_ext().execute_with(|| {
@@ -1574,20 +1604,23 @@ fn test_fulfill_incorrect_proof_output() {
 
 		let proof_outputs: ProofOutputs = SolValue::abi_decode(&proof_outputs_vec, true).unwrap();
 		let slots_per_period = 8192;
-		let finality_threshold = 342;
-		let slot = 6178816u64;
-		let current_period = slot / slots_per_period;
+		let finality_threshold = 342u16;
+		let last_slot = 6867616u64;
+		let current_period = last_slot / slots_per_period;
+		Head::<Test>::set(last_slot);
+		SyncCommitteeHashes::<Test>::set(
+			current_period,
+			H256(hex!(
+				"1010a184305750d5dbc946a74673f8391044ff0600b64a5d08b970fcdea4c055"
+			)),
+		);
 
 		ConfigurationStorage::<Test>::set(Configuration {
 			slots_per_period,
-			finality_threshold: finality_threshold as u16,
+			finality_threshold,
 		});
 
 		Updater::<Test>::set(H256(TEST_SENDER_VEC));
-		SyncCommitteeHashes::<Test>::set(
-			current_period,
-			H256::from(proof_outputs.syncCommitteeHash.0),
-		);
 
 		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
 		let err = Bridge::fulfill(
@@ -1610,9 +1643,17 @@ fn test_fulfill_head_not_greater() {
 
 		let proof_outputs: ProofOutputs = SolValue::abi_decode(&public_inputs, true).unwrap();
 		let slots_per_period = 8192;
-		let finality_threshold = 342;
-		let slot = 6178816u64;
-		let current_period = slot / slots_per_period;
+		let finality_threshold = 342u16;
+		let last_slot = 6867616u64;
+		let current_period = last_slot / slots_per_period;
+		SyncCommitteeHashes::<Test>::set(
+			current_period,
+			H256(hex!(
+				"1010a184305750d5dbc946a74673f8391044ff0600b64a5d08b970fcdea4c055"
+			)),
+		);
+
+		let new_head = 6867936u64;
 
 		ConfigurationStorage::<Test>::set(Configuration {
 			slots_per_period,
@@ -1620,7 +1661,7 @@ fn test_fulfill_head_not_greater() {
 		});
 
 		// set current head
-		Head::<Test>::set(slot + 1);
+		Head::<Test>::set(new_head + 1);
 
 		Updater::<Test>::set(H256(TEST_SENDER_VEC));
 		SyncCommitteeHashes::<Test>::set(
@@ -1640,7 +1681,7 @@ fn test_fulfill_head_not_greater() {
 }
 
 #[test]
-fn test_fulfill_next_period_already_set() {
+fn test_fulfill_next_without_continuation() {
 	new_test_ext().execute_with(|| {
 		let sp1_proof_with_public_values = SP1ProofWithPublicValues::load(PROOF_FILE).unwrap();
 		let proof = sp1_proof_with_public_values.bytes();
@@ -1649,17 +1690,14 @@ fn test_fulfill_next_period_already_set() {
 
 		let proof_outputs: ProofOutputs = SolValue::abi_decode(&public_inputs, true).unwrap();
 		let slots_per_period = 8192;
-		let finality_threshold = 342;
-		let slot = 6178816u64;
-		let current_period = slot / slots_per_period;
+		let finality_threshold = 342u16;
+		let last_slot = 6867616u64;
+		let current_period = last_slot / slots_per_period;
 
 		ConfigurationStorage::<Test>::set(Configuration {
 			slots_per_period,
-			finality_threshold: finality_threshold as u16,
+			finality_threshold,
 		});
-
-		// set current head before the one in the proof
-		Head::<Test>::set(slot + 1);
 
 		Updater::<Test>::set(H256(TEST_SENDER_VEC));
 		SyncCommitteeHashes::<Test>::set(
@@ -1674,7 +1712,7 @@ fn test_fulfill_next_period_already_set() {
 			BoundedVec::truncate_from(public_inputs),
 		);
 
-		assert_err!(err, Error::<Test>::SlotBehindHead);
+		assert_err!(err, Error::<Test>::SyncCommitteeStartMismatch);
 	});
 }
 
@@ -1688,7 +1726,7 @@ fn test_fulfill_configuration_not_set() {
 
 		let proof_outputs: ProofOutputs = SolValue::abi_decode(&public_inputs, true).unwrap();
 		let slots_per_period = 8192;
-		let slot = 6178816u64;
+		let slot = 6724864u64;
 		let current_period = slot / slots_per_period;
 
 		ConfigurationStorage::<Test>::set(Configuration {

@@ -310,12 +310,13 @@ impl<T: frame_system::Config> pallet_vector::WeightInfo for WeightInfo<T> {
 	/// Proof: `Vector::Timestamps` (`max_values`: None, `max_size`: Some(16), added: 2491, mode: `MaxEncodedLen`)
 	fn fulfill() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `614`
+		//  Measured:  `644`
 		//  Estimated: `6020`
-		// Minimum execution time: 533_498_000_000 picoseconds.
-		Weight::from_parts(537_142_000_000, 0)
+		// Minimum execution time: 345_974_000_000 picoseconds.
+		Weight::from_parts(347_505_000_000, 0)
 			.saturating_add(Weight::from_parts(0, 6020))
 			.saturating_add(T::DbWeight::get().reads(9))
 			.saturating_add(T::DbWeight::get().writes(5))
 	}
 }
+

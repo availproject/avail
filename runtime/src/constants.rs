@@ -358,7 +358,7 @@ pub mod da {
 		pub const MaxBlockCols: BlockLengthColumns = BlockLengthColumns(1024);
 	}
 	pub type MaxAppKeyLength = ConstU32<64>;
-	pub type MaxAppDataLength = ConstU32<524_288>; // 512 Kb
+	pub type MaxAppDataLength = ConstU32<1_048_576>; // 1 Mb
 }
 
 /// Macro to set a value (e.g. when using the `parameter_types` macro) to either a production value

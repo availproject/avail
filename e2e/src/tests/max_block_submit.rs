@@ -14,8 +14,8 @@ use tracing::trace;
 /// to the next block. The limit for the transaction is currently set to 512 kB, and limit for the block
 /// is 2 MB, so this means 128 data transactions are needed to fill the block. Depending on the network,
 /// it may not be possible to transfer so many in 20 s (the default block time)
-const BLOCK_SIZE: usize = 2 * 1024 * 1024;
-const TX_MAX_SIZE: usize = 512 * 1024;
+const BLOCK_SIZE: usize = 4 * 1024 * 1024;
+const TX_MAX_SIZE: usize = 1024 * 1024;
 const NUM_CHUNKS: u64 = (BLOCK_SIZE / TX_MAX_SIZE) as u64;
 
 #[test(tokio::test)]
