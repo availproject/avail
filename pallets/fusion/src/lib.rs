@@ -1243,11 +1243,11 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			fusion_address: FusionAddress,
 			pool_id: PoolId,
-			unbond_amount: FusionCurrencyBalance,
+			unbond_amount: Option<FusionCurrencyBalance>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 			Self::ensure_valid_fusion_origin(who, fusion_address)?;
-			Self::do_unbond(fusion_address, pool_id, Some(unbond_amount), false)?;
+			Self::do_unbond(fusion_address, pool_id, unbond_amount, false)?;
 			Ok(())
 		}
 

@@ -650,7 +650,7 @@ mod benchmarks {
 		UnbondingChunks::<T>::insert(1, T::BondingDuration::get(), unbonding_chunk);
 
 		#[extrinsic_call]
-		_(origin, fusion_address, 1, 100_000_000);
+		_(origin, fusion_address, 1, Some(100_000_000));
 
 		Ok(())
 	}
@@ -708,7 +708,7 @@ mod benchmarks {
 			.unwrap();
 		UnbondingChunks::<T>::insert(1, T::BondingDuration::get(), unbonding_chunk);
 
-		Fusion::<T>::unbond_currency(origin.clone().into(), fusion_address, 1, 100_000_000)
+		Fusion::<T>::unbond_currency(origin.clone().into(), fusion_address, 1, Some(100_000_000))
 			.unwrap();
 
 		T::StakingFusionDataProvider::set_dummy_active_era(T::BondingDuration::get() + 1);

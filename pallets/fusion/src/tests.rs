@@ -3393,7 +3393,7 @@ mod unbond_currency {
 				RawOrigin::Signed(controller_address).into(),
 				fusion_address,
 				BTC_POOL_ID,
-				partial_unbond_amount
+				Some(partial_unbond_amount)
 			));
 
 			let membership = Memberships::<Test>::get(fusion_address, BTC_POOL_ID).unwrap();
@@ -3414,12 +3414,11 @@ mod unbond_currency {
 				era: 4,
 			}));
 
-			let full_unbond_amount = 50_000_000;
 			assert_ok!(Fusion::unbond_currency(
 				RawOrigin::Signed(controller_address).into(),
 				fusion_address,
 				BTC_POOL_ID,
-				full_unbond_amount
+				None
 			));
 
 			let membership = Memberships::<Test>::get(fusion_address, BTC_POOL_ID).unwrap();
@@ -3429,8 +3428,8 @@ mod unbond_currency {
 				fusion_address,
 				pool_id: BTC_POOL_ID,
 				currency_id: BTC_CURRENCY_ID,
-				unbonded_amount: full_unbond_amount,
-				points: pool.currency_to_points(full_unbond_amount, None).unwrap(),
+				unbonded_amount: 50_000_000,
+				points: pool.currency_to_points(50_000_000, None).unwrap(),
 				era: 4,
 			}));
 		});
@@ -3465,7 +3464,7 @@ mod unbond_currency {
 					RawOrigin::Signed(incorrect_controller_address).into(),
 					fusion_address,
 					BTC_POOL_ID,
-					unbond_amount
+					Some(unbond_amount)
 				),
 				Error::<Test>::InvalidSubstrateAddress
 			);
@@ -3489,7 +3488,7 @@ mod unbond_currency {
 					RawOrigin::Signed(FUSION_STAKER).into(),
 					fusion_address,
 					BTC_POOL_ID,
-					staked_amount
+					Some(staked_amount)
 				),
 				Error::<Test>::MembershipNotFound
 			);
@@ -3520,7 +3519,7 @@ mod unbond_currency {
 				RawOrigin::Signed(FUSION_STAKER).into(),
 				fusion_address,
 				BTC_POOL_ID,
-				100_000_000
+				Some(100_000_000)
 			));
 
 			assert_noop!(
@@ -3528,7 +3527,7 @@ mod unbond_currency {
 					RawOrigin::Signed(FUSION_STAKER).into(),
 					fusion_address,
 					BTC_POOL_ID,
-					50_000_000
+					Some(50_000_000)
 				),
 				Error::<Test>::NoActivePointsToUnbond
 			);
@@ -3562,7 +3561,7 @@ mod unbond_currency {
 					RawOrigin::Signed(FUSION_STAKER).into(),
 					fusion_address,
 					BTC_POOL_ID,
-					50_000_000
+					Some(50_000_000)
 				),
 				Error::<Test>::PoolNotFound
 			);
@@ -3596,7 +3595,7 @@ mod unbond_currency {
 					RawOrigin::Signed(FUSION_STAKER).into(),
 					fusion_address,
 					BTC_POOL_ID,
-					50_000_000
+					Some(50_000_000)
 				),
 				Error::<Test>::CurrencyNotFound
 			);
@@ -3655,7 +3654,7 @@ mod unbond_currency {
 					RawOrigin::Signed(FUSION_STAKER).into(),
 					fusion_address,
 					BTC_POOL_ID,
-					0
+					Some(0)
 				),
 				Error::<Test>::InvalidAmount
 			);
@@ -3687,7 +3686,7 @@ mod unbond_currency {
 					RawOrigin::Signed(FUSION_STAKER).into(),
 					fusion_address,
 					BTC_POOL_ID,
-					200_000_000
+					Some(200_000_000)
 				),
 				Error::<Test>::InvalidUnbondAmount
 			);
@@ -3725,7 +3724,7 @@ mod unbond_currency {
 					RawOrigin::Signed(FUSION_STAKER).into(),
 					fusion_address,
 					BTC_POOL_ID,
-					75_000_000
+					Some(75_000_000)
 				),
 				Error::<Test>::AmountWillGoBelowMinimum
 			);
@@ -3768,7 +3767,7 @@ mod unbond_currency {
 					RawOrigin::Signed(controller_address).into(),
 					fusion_address,
 					BTC_POOL_ID,
-					50_000_000
+					Some(50_000_000)
 				),
 				Error::<Test>::PoolMemberLimitReached
 			);
@@ -3812,7 +3811,7 @@ mod unbond_currency {
 					RawOrigin::Signed(controller_address).into(),
 					fusion_address,
 					BTC_POOL_ID,
-					50_000_000
+					Some(50_000_000)
 				),
 				Error::<Test>::MaxUnbondingChunksExceeded
 			);
@@ -3849,7 +3848,7 @@ mod withdraw_unbonded_currency {
 				RawOrigin::Signed(controller_address).into(),
 				fusion_address,
 				BTC_POOL_ID,
-				staked_amount
+				Some(staked_amount)
 			));
 
 			let bonding_duration = FusionBondingDuration::get();
@@ -4085,7 +4084,7 @@ mod withdraw_unbonded_currency {
 				RawOrigin::Signed(controller_address).into(),
 				fusion_address,
 				BTC_POOL_ID,
-				staked_amount
+				Some(staked_amount)
 			));
 
 			run_to_era(3);
@@ -4175,7 +4174,7 @@ mod withdraw_unbonded_currency_other {
 				RawOrigin::Signed(controller_address).into(),
 				fusion_address,
 				BTC_POOL_ID,
-				staked_amount
+				Some(staked_amount)
 			));
 
 			let bonding_duration = FusionBondingDuration::get();
@@ -5265,7 +5264,7 @@ mod slashing {
 				RawOrigin::Signed(controller_address).into(),
 				fusion_address,
 				BTC_POOL_ID,
-				staked_amount
+				Some(staked_amount)
 			));
 			let pool = Pools::<Test>::get(BTC_POOL_ID).unwrap();
 			let old_unbonding_amount = pool.total_unbonding_native;
