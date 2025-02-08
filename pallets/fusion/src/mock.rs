@@ -242,7 +242,7 @@ impl pallet_fusion::StakingFusionDataProvider<Test> for MockStakingFusionDataPro
 			&& !pallet_staking::Validators::<Test>::get(account).blocked
 	}
 
-	fn has_earned_era_points(era: EraIndex, accounts: &Vec<AccountId>) -> bool {
+	fn has_earned_era_points(era: EraIndex, accounts: &[AccountId]) -> bool {
 		let era_points = pallet_staking::ErasRewardPoints::<Test>::get(era).individual;
 		accounts
 			.iter()

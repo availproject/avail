@@ -11,7 +11,7 @@ pub trait StakingFusionDataProvider<T: Config> {
 	/// Checks if an account is a validator.
 	fn is_valid_validator(account: &T::AccountId) -> bool;
 	/// Checks if a validator has earned era points for an era (meaning he'll get rewards).
-	fn has_earned_era_points(era: EraIndex, accounts: &Vec<T::AccountId>) -> bool;
+	fn has_earned_era_points(era: EraIndex, accounts: &[T::AccountId]) -> bool;
 	/// Gets the unapplied slashes for an era
 	fn unapplied_slashes(era: EraIndex) -> Vec<UnappliedSlash<T::AccountId, BalanceOf<T>>>;
 	/// Adds a dummy validator to both the Session and Staking pallets.
@@ -34,7 +34,7 @@ impl<T: Config> StakingFusionDataProvider<T> for () {
 	fn is_valid_validator(_account: &T::AccountId) -> bool {
 		false
 	}
-	fn has_earned_era_points(_era: EraIndex, _accounts: &Vec<T::AccountId>) -> bool {
+	fn has_earned_era_points(_era: EraIndex, _accounts: &[T::AccountId]) -> bool {
 		false
 	}
 	fn unapplied_slashes(_era: EraIndex) -> Vec<UnappliedSlash<T::AccountId, BalanceOf<T>>> {

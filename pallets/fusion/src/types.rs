@@ -181,6 +181,7 @@ pub struct FusionExposure<T: Config> {
 	pub targets: BoundedVec<T::AccountId, T::MaxTargets>,
 	/// Used to store the validator(s) actually backed alongside the amount
 	/// This is populated when exposure are collected
+	#[allow(clippy::type_complexity)]
 	pub native_exposure_data: Option<BoundedVec<(T::AccountId, BalanceOf<T>), T::MaxTargets>>,
 	/// Boost additional APY
 	pub boost_additional_apy: Perbill,

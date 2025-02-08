@@ -190,7 +190,7 @@ impl pallet_fusion::StakingFusionDataProvider<Self> for Runtime {
 		pallet_staking::Validators::<Self>::contains_key(account)
 			&& !pallet_staking::Validators::<Self>::get(account).blocked
 	}
-	fn has_earned_era_points(era: EraIndex, accounts: &Vec<AccountId>) -> bool {
+	fn has_earned_era_points(era: EraIndex, accounts: &[AccountId]) -> bool {
 		let era_points = pallet_staking::ErasRewardPoints::<Self>::get(era).individual;
 		accounts
 			.iter()
@@ -706,7 +706,7 @@ pub struct U256ToBalance;
 
 impl Convert<sp_core::U256, Balance> for U256ToBalance {
 	fn convert(n: sp_core::U256) -> Balance {
-		n.try_into().unwrap_or(Balance::max_value())
+		n.try_into().unwrap_or(Balance::MAX)
 	}
 }
 
@@ -729,7 +729,7 @@ impl pallet_nomination_pools::Config for Runtime {
 parameter_types! {
 	pub const SpendPayoutPeriod: BlockNumber = 30 * DAYS;
 	pub TreasuryAccount: AccountId = Treasury::account_id();
-	pub const MaxBalance: Balance = Balance::max_value();
+	pub const MaxBalance: Balance = Balance::MAX;
 	pub const MaxTreasurySpend: Balance = 10_000_000 * AVAIL; // 10 Million AVAILs
 }
 

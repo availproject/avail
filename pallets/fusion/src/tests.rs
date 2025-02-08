@@ -335,6 +335,32 @@ mod create_currency {
 			);
 		});
 	}
+
+	#[test]
+	fn entity_zero_does_not_exist() {
+		new_test_ext().execute_with(|| {
+			let root: RuntimeOrigin = RawOrigin::Root.into();
+			let avail_decimal: u8 = 18;
+			let avail_max: u128 = 1_000_000 * AVAIL;
+			let avail_min: u128 = 0;
+			let avail_conversion_rate = AVAIL;
+			let avail_name: BoundedVec<u8, MaxCurrencyNameLength> =
+				b"Random".to_vec().try_into().unwrap();
+
+			assert_noop!(
+				Fusion::create_currency(
+					root,
+					111,
+					avail_name,
+					avail_decimal,
+					avail_max,
+					avail_min,
+					avail_conversion_rate
+				),
+				Error::<Test>::EntityZeroDoesNotExist
+			);
+		});
+	}
 }
 
 mod set_currency {
@@ -576,14 +602,15 @@ mod destroy_currency {
 		new_test_ext().execute_with(|| {
 			let root: RuntimeOrigin = RawOrigin::Root.into();
 			create_avail_currency();
+			create_btc_currency();
 
-			assert_ok!(Fusion::destroy_currency(root, AVAIL_CURRENCY_ID));
+			assert_ok!(Fusion::destroy_currency(root, BTC_CURRENCY_ID));
 
-			let currency = Currencies::<Test>::get(AVAIL_CURRENCY_ID).unwrap();
+			let currency = Currencies::<Test>::get(BTC_CURRENCY_ID).unwrap();
 			assert!(currency.is_destroyed);
 
 			System::assert_last_event(RuntimeEvent::Fusion(Event::CurrencyDeleted {
-				currency_id: AVAIL_CURRENCY_ID,
+				currency_id: BTC_CURRENCY_ID,
 			}));
 		});
 	}
@@ -592,10 +619,11 @@ mod destroy_currency {
 	fn bad_origin() {
 		new_test_ext().execute_with(|| {
 			create_avail_currency();
+			create_btc_currency();
 			let non_root_origin: RuntimeOrigin = RawOrigin::Signed(ALICE).into();
 
 			assert_noop!(
-				Fusion::destroy_currency(non_root_origin, AVAIL_CURRENCY_ID),
+				Fusion::destroy_currency(non_root_origin, BTC_CURRENCY_ID),
 				BadOrigin
 			);
 		});
@@ -606,11 +634,13 @@ mod destroy_currency {
 		new_test_ext().execute_with(|| {
 			create_avail_currency();
 			create_avail_pool();
+			create_btc_currency();
+			create_btc_pool();
 
 			let root: RuntimeOrigin = RawOrigin::Root.into();
 
 			assert_noop!(
-				Fusion::destroy_currency(root, AVAIL_CURRENCY_ID),
+				Fusion::destroy_currency(root, BTC_CURRENCY_ID),
 				Error::<Test>::PoolExistsForCurrency
 			);
 		});
@@ -632,13 +662,29 @@ mod destroy_currency {
 	fn currency_destroyed() {
 		new_test_ext().execute_with(|| {
 			let root: RuntimeOrigin = RawOrigin::Root.into();
-			let (mut currency, _, _) = create_avail_currency();
+			create_avail_currency();
+			let (mut currency, _, _) = create_btc_currency();
+
 			currency.is_destroyed = true;
-			Currencies::<Test>::insert(AVAIL_CURRENCY_ID, currency);
+			Currencies::<Test>::insert(BTC_CURRENCY_ID, currency);
+
+			assert_noop!(
+				Fusion::destroy_currency(root, BTC_CURRENCY_ID),
+				Error::<Test>::CurrencyDestroyed
+			);
+		});
+	}
+
+	#[test]
+	fn cannot_destroy_avail_currency() {
+		new_test_ext().execute_with(|| {
+			create_avail_currency();
+			create_btc_currency();
+			let root: RuntimeOrigin = RawOrigin::Root.into();
 
 			assert_noop!(
 				Fusion::destroy_currency(root, AVAIL_CURRENCY_ID),
-				Error::<Test>::CurrencyDestroyed
+				Error::<Test>::CannotDestroyAvailCurrency
 			);
 		});
 	}
@@ -851,6 +897,22 @@ mod create_pool {
 			assert_noop!(
 				Fusion::create_pool(root, AVAIL_POOL_ID, AVAIL_CURRENCY_ID, apy, nominator),
 				Error::<Test>::CurrencyDestroyed
+			);
+		});
+	}
+
+	#[test]
+	fn entity_zero_does_not_exist() {
+		new_test_ext().execute_with(|| {
+			create_avail_currency();
+
+			let root: RuntimeOrigin = RawOrigin::Root.into();
+			let apy = Perbill::from_percent(5);
+			let nominator: Option<u64> = Some(POOL_NOMINATOR_ROLE_ACCOUNT);
+
+			assert_noop!(
+				Fusion::create_pool(root, BTC_POOL_ID, AVAIL_CURRENCY_ID, apy, nominator),
+				Error::<Test>::EntityZeroDoesNotExist
 			);
 		});
 	}
@@ -1598,6 +1660,22 @@ mod destroy_pool {
 			assert_noop!(
 				Fusion::destroy_pool(root, AVAIL_POOL_ID, None),
 				Error::<Test>::NoLeftoverDestinationProvided
+			);
+		});
+	}
+
+	#[test]
+	fn other_pools_exist() {
+		new_test_ext().execute_with(|| {
+			create_avail_currency();
+			create_avail_pool();
+			create_btc_currency();
+			create_btc_pool();
+			let root: RuntimeOrigin = RawOrigin::Root.into();
+
+			assert_noop!(
+				Fusion::destroy_pool(root, AVAIL_POOL_ID, Some(RANDOM_POT)),
+				Error::<Test>::OtherPoolsExist
 			);
 		});
 	}
@@ -4353,9 +4431,8 @@ mod set_pool_boost_allocations {
 				3 * AVAIL
 			));
 
-			let random_address = ALICE;
 			assert_ok!(Fusion::set_pool_boost_allocations(
-				RawOrigin::Signed(random_address).into(),
+				RawOrigin::Root.into(),
 				fusion_address,
 				BoundedVec::try_from(vec![BTC_POOL_ID]).unwrap()
 			));
@@ -4413,10 +4490,9 @@ mod set_pool_boost_allocations {
 				BoundedVec::try_from(vec![AVAIL_POOL_ID]).unwrap()
 			));
 
-			let random_address = ALICE;
 			assert_noop!(
 				Fusion::set_pool_boost_allocations(
-					RawOrigin::Signed(random_address).into(),
+					RawOrigin::Root.into(),
 					fusion_address,
 					BoundedVec::try_from(vec![BTC_POOL_ID]).unwrap()
 				),
@@ -4429,6 +4505,7 @@ mod set_pool_boost_allocations {
 	fn no_avail_membership() {
 		new_test_ext().execute_with(|| {
 			create_avail_currency();
+			create_avail_pool();
 			create_btc_currency();
 			create_btc_pool();
 

@@ -311,9 +311,10 @@ mod benchmarks {
 	fn destroy_currency() -> Result<(), BenchmarkError> {
 		init_benchmarks::<T>();
 		create_avail_currency::<T>();
+		create_btc_currency::<T>();
 
 		let origin = RawOrigin::Root;
-		let currency_id = 0;
+		let currency_id = 1;
 
 		#[extrinsic_call]
 		_(origin, currency_id);
@@ -586,6 +587,10 @@ mod benchmarks {
 			1_000_000_000_000_000_000_000,
 		);
 		create_era_reward::<T>(0, 1, 1_000_000_000_000_000_000);
+
+		let pool = Fusion::<T>::pools(pool_id).unwrap();
+		let balance: BalanceOf<T> = 10_000_000_000_000_000_000_000u128.saturated_into();
+		T::Currency::make_free_balance_be(&pool.claimable_account, balance);
 
 		let origin = RawOrigin::Signed(get_account::<T>("ALICE"));
 		#[extrinsic_call]

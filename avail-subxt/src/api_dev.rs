@@ -345,9 +345,9 @@ pub mod api {
 			.hash();
 		runtime_metadata_hash
 			== [
-				17u8, 57u8, 89u8, 93u8, 53u8, 77u8, 32u8, 62u8, 151u8, 2u8, 199u8, 174u8, 23u8,
-				63u8, 166u8, 238u8, 43u8, 18u8, 191u8, 104u8, 170u8, 1u8, 189u8, 180u8, 15u8,
-				198u8, 224u8, 200u8, 19u8, 122u8, 234u8, 224u8,
+				213u8, 251u8, 5u8, 193u8, 193u8, 161u8, 91u8, 233u8, 197u8, 89u8, 186u8, 108u8,
+				250u8, 213u8, 116u8, 81u8, 126u8, 47u8, 115u8, 215u8, 180u8, 76u8, 135u8, 16u8,
+				188u8, 139u8, 151u8, 47u8, 127u8, 83u8, 69u8, 249u8,
 			]
 	}
 	pub mod system {
@@ -32466,7 +32466,7 @@ pub mod api {
 				#[doc = "The `Error` enum of this pallet."]
 				pub enum Error {
 					#[codec(index = 0)]
-					#[doc = "The id is already used."]
+					#[doc = "The id is already used"]
 					CurrencyAlreadyExists,
 					#[codec(index = 1)]
 					#[doc = "No currency with the specified id"]
@@ -32625,18 +32625,27 @@ pub mod api {
 					#[doc = "Slash not found in pool"]
 					SlashNotFound,
 					#[codec(index = 53)]
-					#[doc = "The user does not have a membership in the AVAIL pool."]
+					#[doc = "The user does not have a membership in the AVAIL pool"]
 					NoAvailMembership,
 					#[codec(index = 54)]
-					#[doc = "The pool does not have boost configured."]
+					#[doc = "The pool does not have boost configured"]
 					PoolHasNoBoost,
 					#[codec(index = 55)]
-					#[doc = "The user does not have enough AVAIL to allocate to the boosted pools."]
+					#[doc = "The user does not have enough AVAIL to allocate to the boosted pools"]
 					NotEnoughAvailForBoost,
 					#[codec(index = 56)]
 					#[doc = "The TC cannot set a controller address for a user, it can only remove (to clean)"]
 					RootCanOnlyRemoveController,
 					#[codec(index = 57)]
+					#[doc = "We cannot delete Avail currency"]
+					CannotDestroyAvailCurrency,
+					#[codec(index = 58)]
+					#[doc = "Action cannot be performed because the entity id 0 was not created (avail currency or avail pool)"]
+					EntityZeroDoesNotExist,
+					#[codec(index = 59)]
+					#[doc = "Action cannot be performed because other pools still exist"]
+					OtherPoolsExist,
+					#[codec(index = 60)]
 					#[doc = "TODO Temp, we'll see when bridge com is done"]
 					CannotDepositAvailCurrency,
 				}
@@ -37625,6 +37634,9 @@ pub mod api {
 					#[codec(index = 35)]
 					#[doc = "Sync committee hash is already set for given period."]
 					SyncCommitteeHashAlreadySet,
+					#[codec(index = 36)]
+					#[doc = "Emit when start sync committee does not match."]
+					SyncCommitteeStartMismatch,
 				}
 				#[derive(
 					:: subxt :: ext :: codec :: Decode,

@@ -495,7 +495,7 @@ pub mod pallet {
 
 	#[pallet::error]
 	pub enum Error<T> {
-		/// The id is already used.
+		/// The id is already used
 		CurrencyAlreadyExists,
 		/// No currency with the specified id
 		CurrencyNotFound,
@@ -601,14 +601,20 @@ pub mod pallet {
 		PendingSlashLimitReached,
 		/// Slash not found in pool
 		SlashNotFound,
-		/// The user does not have a membership in the AVAIL pool.
+		/// The user does not have a membership in the AVAIL pool
 		NoAvailMembership,
-		/// The pool does not have boost configured.
+		/// The pool does not have boost configured
 		PoolHasNoBoost,
-		/// The user does not have enough AVAIL to allocate to the boosted pools.
+		/// The user does not have enough AVAIL to allocate to the boosted pools
 		NotEnoughAvailForBoost,
 		/// The TC cannot set a controller address for a user, it can only remove (to clean)
 		RootCanOnlyRemoveController,
+		/// We cannot delete Avail currency
+		CannotDestroyAvailCurrency,
+		/// Action cannot be performed because the entity id 0 was not created (avail currency or avail pool)
+		EntityZeroDoesNotExist,
+		/// Action cannot be performed because other pools still exist
+		OtherPoolsExist,
 		/// TODO Temp, we'll see when bridge com is done
 		CannotDepositAvailCurrency,
 	}
@@ -660,6 +666,12 @@ pub mod pallet {
 				!Currencies::<T>::contains_key(currency_id),
 				Error::<T>::CurrencyAlreadyExists
 			);
+			if currency_id != 0 {
+				ensure!(
+					Currencies::<T>::contains_key(AVAIL_CURRENCY_ID),
+					Error::<T>::EntityZeroDoesNotExist
+				);
+			}
 
 			ensure!(name.len() > 0, Error::<T>::InvalidName);
 			ensure!(nb_decimals > 0, Error::<T>::InvalidNumberOfDecimals);
@@ -776,6 +788,11 @@ pub mod pallet {
 			let pool_exists = Pools::<T>::iter().any(|(_, pool)| pool.currency_id == currency_id);
 			ensure!(!pool_exists, Error::<T>::PoolExistsForCurrency);
 
+			ensure!(
+				currency_id != AVAIL_CURRENCY_ID,
+				Error::<T>::CannotDestroyAvailCurrency
+			);
+
 			Currencies::<T>::try_mutate(currency_id, |currency_opt| {
 				let currency = currency_opt.as_mut().ok_or(Error::<T>::CurrencyNotFound)?;
 				ensure!(!currency.is_destroyed, Error::<T>::CurrencyDestroyed);
@@ -834,6 +851,12 @@ pub mod pallet {
 				!Pools::<T>::contains_key(pool_id),
 				Error::<T>::PoolAlreadyExists
 			);
+			if pool_id != 0 {
+				ensure!(
+					Pools::<T>::contains_key(AVAIL_POOL_ID),
+					Error::<T>::EntityZeroDoesNotExist
+				);
+			}
 
 			ensure!(apy > Perbill::zero(), Error::<T>::InvalidAPY);
 
@@ -988,6 +1011,13 @@ pub mod pallet {
 			leftover_destination: Option<T::AccountId>,
 		) -> DispatchResult {
 			ensure_root(origin)?;
+
+			if pool_id == AVAIL_POOL_ID {
+				ensure!(
+					Pools::<T>::iter_keys().count() == 1,
+					Error::<T>::OtherPoolsExist
+				)
+			}
 
 			Pools::<T>::try_mutate(pool_id, |maybe_pool| -> DispatchResult {
 				let pool = maybe_pool.as_mut().ok_or(Error::<T>::PoolNotFound)?;
@@ -1285,9 +1315,13 @@ pub mod pallet {
 			fusion_address: FusionAddress,
 			pool_ids: BoundedVec<PoolId, ConstU32<50>>,
 		) -> DispatchResult {
-			let who = ensure_signed(origin)?;
-			let is_valid_origin = Self::ensure_valid_fusion_origin(who, fusion_address).is_ok();
-			Self::do_set_pool_boost_allocations(fusion_address, pool_ids, is_valid_origin)?;
+			let mut is_root = false;
+			if let Some(who) = ensure_signed_or_root(origin)? {
+				Self::ensure_valid_fusion_origin(who, fusion_address)?;
+			} else {
+				is_root = true;
+			}
+			Self::do_set_pool_boost_allocations(fusion_address, pool_ids, is_root)?;
 			Ok(())
 		}
 
@@ -1703,12 +1737,14 @@ impl<T: Config> Pallet<T> {
 				continue;
 			}
 
-			if let Err(_) = T::Currency::transfer(
+			if T::Currency::transfer(
 				&pool.funds_account,
 				&pool.claimable_account,
 				era_rewards_with_boost,
 				ExistenceRequirement::KeepAlive,
-			) {
+			)
+			.is_err()
+			{
 				Self::pause_pool(
 					pool_id,
 					&mut pool,
@@ -1737,7 +1773,7 @@ impl<T: Config> Pallet<T> {
 		}
 
 		// Record Era duration in case we need it later, eg. for a retry
-		if !EraDurations::<T>::get(era).is_some() {
+		if EraDurations::<T>::get(era).is_none() {
 			EraDurations::<T>::insert(era, era_duration);
 		}
 
@@ -2033,14 +2069,14 @@ impl<T: Config> Pallet<T> {
 				Error::<T>::NoRewardsToClaim
 			);
 
+			// Fetch avail currency
+			let avail_currency =
+				Currencies::<T>::get(AVAIL_CURRENCY_ID).ok_or(Error::<T>::CurrencyNotFound)?;
+
 			// Update the claimed rewards field by adding the user's reward
 			era_rewards.claimed_rewards = era_rewards
 				.claimed_rewards
 				.saturating_add(total_user_rewards);
-
-			// Fetch avail currency
-			let avail_currency =
-				Currencies::<T>::get(AVAIL_CURRENCY_ID).ok_or(Error::<T>::CurrencyNotFound)?;
 
 			// Convert the avail reward to avail currency
 			let avail_in_currency = avail_currency.avail_to_currency(
@@ -2573,7 +2609,7 @@ impl<T: Config> Pallet<T> {
 	pub fn do_set_pool_boost_allocations(
 		fusion_address: FusionAddress,
 		pool_ids: BoundedVec<PoolId, ConstU32<50>>,
-		is_valid_origin: bool,
+		is_root: bool,
 	) -> DispatchResult {
 		// Get user's current boost allocations to check for permission
 		let user_memberships: Vec<PoolId> =
@@ -2585,9 +2621,9 @@ impl<T: Config> Pallet<T> {
 			}
 		}
 
-		// This extrinsic is permissionless only if the user has no current boost allocation
+		// This extrinsic can be called by root only if the user has no current boost allocation
 		ensure!(
-			current_boost_pools.is_empty() || is_valid_origin,
+			current_boost_pools.is_empty() || !is_root,
 			Error::<T>::NotAuthorized
 		);
 
@@ -3045,7 +3081,7 @@ impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>, PoolId> for Pallet<T> {
 
 				slashes_to_cancel
 					.entry(pool_id)
-					.or_insert_with(Vec::new)
+					.or_default()
 					.push(pool_slash_to_remove_index);
 				slashes_to_cancel_pools.entry(pool_id).or_insert(pool);
 			}
@@ -3084,7 +3120,7 @@ impl<T: Config> FusionExt<T::AccountId, BalanceOf<T>, PoolId> for Pallet<T> {
 			}
 		}
 
-		if validators.len() > 0 {
+		if !validators.is_empty() {
 			Self::deposit_event(Event::<T>::FusionSlashCancelled {
 				pool_ids,
 				slash_era: era,
