@@ -1178,6 +1178,7 @@ dependencies = [
  "substrate-frame-rpc-system",
  "substrate-prometheus-endpoint",
  "substrate-state-trie-migration-rpc",
+ "system-rpc",
  "tempfile",
  "testing-rpc",
  "try-runtime-cli",
@@ -4001,7 +4002,9 @@ name = "frame-system-rpc-runtime-api"
 version = "4.0.0-dev"
 dependencies = [
  "parity-scale-codec",
+ "scale-info",
  "sp-api",
+ "sp-std",
 ]
 
 [[package]]
@@ -12879,6 +12882,17 @@ checksum = "8e1d1b10ced5ca923a1fcb8d03e96b8d3268065d724548c0211415ff6ac6bac4"
 dependencies = [
  "core-foundation-sys",
  "libc",
+]
+
+[[package]]
+name = "system-rpc"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "avail-base",
+ "jsonrpsee",
+ "serde",
+ "sp-core",
 ]
 
 [[package]]
