@@ -241,8 +241,8 @@ mod test {
 		));
 
 		let trimmed_value = hex!("eee07ead3b0877b420f4f13c67d4449fa051db6a6b877de1265def8f1f3f99");
-		let padded_value_resutl = rlp_to_h256(trimmed_value.as_slice());
-		assert_eq!(expected_value, padded_value_resutl.unwrap());
+		let padded_value_result = rlp_to_h256(trimmed_value.as_slice());
+		assert_eq!(expected_value, padded_value_result.unwrap());
 
 		let exact_value = hex!("00eee07ead3b0877b420f4f13c67d4449fa051db6a6b877de1265def8f1f3f99");
 		let padded_exact_value = rlp_to_h256(exact_value.as_slice());
