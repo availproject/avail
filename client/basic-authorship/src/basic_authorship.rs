@@ -53,9 +53,9 @@ use substrate_prometheus_endpoint::Registry as PrometheusRegistry;
 /// Be aware that there is also an upper packet size on what the networking code
 /// will accept. If the block doesn't fit in such a package, it can not be
 /// transferred to other nodes.
-pub const DEFAULT_BLOCK_SIZE_LIMIT: usize = 4 * 1024 * 1024 + 512;
+pub const DEFAULT_BLOCK_SIZE_LIMIT: usize = 256 * 1024 * 1024 + 512;
 
-const DEFAULT_SOFT_DEADLINE_PERCENT: Percent = Percent::from_percent(50);
+const DEFAULT_SOFT_DEADLINE_PERCENT: Percent = Percent::from_percent(75);
 
 const LOG_TARGET: &'static str = "basic-authorship";
 

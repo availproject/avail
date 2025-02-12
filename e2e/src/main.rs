@@ -126,7 +126,7 @@ mod tests {
 	// mod create_app_key;
 	// mod download_digest_items;
 	// mod headers;
-	// mod max_block_submit;
+	mod max_block_submit;
 	// mod max_send_message;
 	// mod query_proof;
 	// mod retrieve_data_hash;
@@ -135,5 +135,6 @@ mod tests {
 	// mod submit_block_length_proposal;
 	// mod submit_data;
 	// mod vector_send_msg;
-	mod simple_da;
+	// mod multi_da_txs;
+	// mod simple_da;
 }
