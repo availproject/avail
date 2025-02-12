@@ -240,8 +240,10 @@ impl_runtime_apis! {
 
 
 	impl frame_system_rpc_runtime_api::SystemEventsApi<Block> for Runtime {
-		fn fetch_events() -> Vec<frame_system_rpc_runtime_api::TransactionSuccessStatus> {
+		fn fetch_transaction_success_status() -> Vec<frame_system_rpc_runtime_api::TransactionSuccessStatus> {
 			use frame_system_rpc_runtime_api::TransactionSuccessStatus;
+			use frame_system::Event;
+
 			let mut results: Vec<TransactionSuccessStatus> = Vec::new();
 			let event_records = System::read_events_no_consensus();
 			for event_record in event_records {
@@ -250,14 +252,14 @@ impl_runtime_apis! {
 					_ => continue
 				};
 
-				match &event_record.event {
-					crate::RuntimeEvent::System(system_event) => {
-						match system_event {
-							frame_system::Event::<Runtime>::ExtrinsicSuccess{dispatch_info: _} => results.push(TransactionSuccessStatus {tx_index: id, tx_success: true}),
-							frame_system::Event::<Runtime>::ExtrinsicFailed{dispatch_error: _, dispatch_info: _} => results.push(TransactionSuccessStatus {tx_index: id, tx_success: false}),
-							_ => continue,
-						}
-					}
+				let system_event = match &event_record.event {
+					crate::RuntimeEvent::System(x) => x,
+					_ => continue,
+				};
+
+				match system_event {
+					Event::<Runtime>::ExtrinsicSuccess{dispatch_info: _} => results.push(TransactionSuccessStatus {tx_index: id, tx_success: true}),
+					Event::<Runtime>::ExtrinsicFailed{dispatch_error: _, dispatch_info: _} => results.push(TransactionSuccessStatus {tx_index: id, tx_success: false}),
 					_ => continue,
 				}
 			}

@@ -297,11 +297,8 @@ pub fn new_partial(
 	let mut system_rpc_deps = None;
 	let mut tx_state_deps = None;
 	if tx_state_cli_deps.enabled {
-		let (search_send, search_recv) =
-			channel::<system_rpc::TxStateChannel>(tx_state_cli_deps.search_channel_capacity);
-
-		let (block_send, block_recv) =
-			channel::<transaction_state::BlockDetails>(tx_state_cli_deps.block_channel_capacity);
+		let (search_send, search_recv) = channel::<system_rpc::TxStateChannel>(10_000);
+		let (block_send, block_recv) = channel::<transaction_state::BlockDetails>(50_000);
 
 		let deps = transaction_state::Deps {
 			block_receiver: block_recv,
@@ -678,6 +675,7 @@ pub fn new_full_base(
 			rpc_handlers: rpc_handlers.clone(),
 			client: client.clone(),
 			sender: deps.block_sender.clone(),
+			max_stored_block_count: deps.cli.max_stored_block_count,
 		};
 
 		let db = transaction_state::Database::new(
@@ -717,11 +715,9 @@ pub fn new_full(config: Configuration, cli: Cli) -> Result<TaskManager, ServiceE
 		rpc_metrics_enabled: cli.kate_rpc_metrics_enabled,
 	};
 	let tx_state_cli_deps = transaction_state::CliDeps {
-		max_search_results: 10,
-		max_stored_block_count: 256,
-		block_channel_capacity: 50_000,
-		search_channel_capacity: 1024,
-		enabled: true,
+		max_search_results: cli.tx_state_rpc_max_search_results,
+		max_stored_block_count: cli.tx_state_rpc_max_stored_block_count,
+		enabled: cli.tx_state_rpc_enabled,
 	};
 	let task_manager = new_full_base(
 		config,

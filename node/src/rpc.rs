@@ -236,7 +236,6 @@ where
 	}
 
 	if let Some(deps) = system_rpc_deps {
-		println!("RPC is UP!");
 		io.merge(system_rpc::TransactionStateServer::into_rpc(
 			system_rpc::System::new(deps),
 		))?;
