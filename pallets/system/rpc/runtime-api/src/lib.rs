@@ -23,6 +23,8 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use sp_std::vec::Vec;
+
 sp_api::decl_runtime_apis! {
 	/// The API to query account nonce.
 	pub trait AccountNonceApi<AccountId, Nonce> where
@@ -32,4 +34,15 @@ sp_api::decl_runtime_apis! {
 		/// Get current account nonce of given `AccountId`.
 		fn account_nonce(account: AccountId) -> Nonce;
 	}
+
+	#[api_version(1)]
+	pub trait SystemEventsApi {
+		fn fetch_transaction_success_status() -> Vec<TransactionSuccessStatus>;
+	}
+}
+
+#[derive(Debug, Clone, Copy, scale_info::TypeInfo, codec::Decode, codec::Encode)]
+pub struct TransactionSuccessStatus {
+	pub tx_index: u32,
+	pub tx_success: bool,
 }
