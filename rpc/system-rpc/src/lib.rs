@@ -60,12 +60,12 @@ impl TransactionStateServer for System {
 	async fn transaction_state(
 		&self,
 		txhash: H256,
-		is_finalized: Option<bool>,
+		finalized: Option<bool>,
 	) -> RpcResult<Vec<TransactionState>> {
 		let (response_tx, response_rx) = oneshot::channel();
 
-		let is_finalized = is_finalized.unwrap_or(false);
-		let res = self.sender.send((txhash, is_finalized, response_tx)).await;
+		let finalized = finalized.unwrap_or(false);
+		let res = self.sender.send((txhash, finalized, response_tx)).await;
 		if let Err(e) = res {
 			return Err(internal_error(e.to_string()));
 		}

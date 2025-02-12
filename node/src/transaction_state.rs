@@ -314,13 +314,13 @@ impl Database {
 	}
 }
 
-pub struct InclusionWorker {
+pub struct IncludedWorker {
 	pub rpc_handlers: RpcHandlers,
 	pub client: Arc<FullClient>,
 	pub sender: Sender<BlockDetails>,
 }
 
-impl InclusionWorker {
+impl IncludedWorker {
 	pub async fn run(self) {
 		wait_for_sync(&self.rpc_handlers).await;
 

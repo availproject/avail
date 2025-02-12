@@ -665,7 +665,7 @@ pub fn new_full_base(
 	// Spawning Transaction Info Workers
 
 	if let Some(deps) = tx_state_deps {
-		let worker_1 = transaction_state::InclusionWorker {
+		let worker_1 = transaction_state::IncludedWorker {
 			rpc_handlers: rpc_handlers.clone(),
 			client: client.clone(),
 			sender: deps.block_sender.clone(),
