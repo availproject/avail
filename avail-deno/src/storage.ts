@@ -21,9 +21,9 @@ export class Staking {
 	}
 
 	async bonded(account?: string): Promise<[string[], string][]> {
-		const entires = await this.api.query.staking.bonded.entries();
+		const entries = await this.api.query.staking.bonded.entries();
 		console.log("Hello");
-		for(const entry of entires) {
+		for(const entry of entries) {
 			console.log(entry[0].toJSON());
 			const address2 = entry[1].toString();
 		}
