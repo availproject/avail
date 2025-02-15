@@ -55,6 +55,10 @@ where
   /// This specifies the indices to validate the proof against
   /// * commitment indices should be taken from (`start_y`, `end_y`)
   /// * field elements should be taken from ('start_x`, `end_x`)
+  /// The data in each [`GMultiProof`] is both the underlying field values in the corresponding
+  /// cell block in row-major order and the multiproof for that block.
+  /// Ex: the first cell in [`GMultiProof.0`] is the top-left cell in the block with underlying
+  /// grid indices `start_y` and `start_x`.
 	#[method(name = "kate_queryMultiProof")]
 	async fn query_multiproof(
 		&self,
