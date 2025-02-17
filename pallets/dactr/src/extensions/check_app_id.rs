@@ -94,6 +94,7 @@ where
 		Ok(ValidTransaction::default())
 	}
 
+	#[allow(dead_code)]
 	fn next_all_extrinsics_len(&self, len: usize) -> Option<ExtrinsicLenOf<T>> {
 		let app_id = self.app_id();
 		let len = u32::try_from(len).ok()?;
