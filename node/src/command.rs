@@ -70,8 +70,8 @@ impl SubstrateCli for Cli {
 					"Please specify which chain you want to run, e.g. --chain mainnet".into(),
 				)
 			},
-			"dev" => Box::new(chains::dev::chain_spec()),
-			"dev.tri" => Box::new(chains::dev_tri::chain_spec()),
+			"dev" => Box::new(chains::dev::chain_spec(self.network_name.clone())),
+			"dev.tri" => Box::new(chains::dev_tri::chain_spec(self.network_name.clone())),
 			"devnet0" => Box::new(chains::devnet0::chain_spec()?),
 			"mainnet" => Box::new(chains::mainnet::chain_spec()?),
 			"turing" => Box::new(chains::turing::chain_spec()?),

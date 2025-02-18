@@ -58,6 +58,12 @@ pub struct Cli {
 	/// Max size cannot exceed 10_000
 	#[arg(long, default_value_t = 64, value_parser=kate_max_cells_size_upper_bound)]
 	pub kate_max_cells_size: usize,
+
+	/// The name of the network.
+	///
+	/// This parameter can be used to update the network name and id of the `dev` and `dev_tri` chains.
+	#[arg(long)]
+	pub network_name: Option<String>,
 }
 
 fn kate_max_cells_size_upper_bound(s: &str) -> Result<usize, String> {
