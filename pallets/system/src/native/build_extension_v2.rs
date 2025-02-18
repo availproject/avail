@@ -146,6 +146,7 @@ pub fn build_extension(
 
 	match version {
 		HeaderVersion::V3 => {
+			// TODO: Based on the approach we select for ASDR, either we should update the KateCommitment struct or correctly update the rows & cols values here
 			let commitment = kc::v3::KateCommitment::new(0, 0, data_root, commitment);
 			he::v3::HeaderExtension {
 				app_lookup,

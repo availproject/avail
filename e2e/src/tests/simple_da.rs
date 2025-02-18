@@ -37,7 +37,7 @@ async fn test() -> Result<()> {
 
 	let alice = dev::alice();
 	let nonce = alice_nonce().await.fetch_add(1, Relaxed);
-	let tx_progress = tx::send_with_nonce(&client, &call, &alice, AppId(0), nonce).await?;
+	let tx_progress = tx::send_with_nonce(&client, &call, &alice, AppId(1), nonce).await?;
 	let block_hash = tx::in_finalized(tx_progress).await?.block_hash();
 
 	trace!("DataSubmitted, block hash: {block_hash:?}");

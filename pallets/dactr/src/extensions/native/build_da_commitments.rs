@@ -35,9 +35,10 @@ fn build_grid(
 	block_length: BlockLength,
 	seed: Seed,
 ) -> Result<EvaluationGrid, DaCommitmentsError> {
-	let app_ext = AppExtrinsic::from(data);
-	let grid = EvaluationGrid::from_extrinsics(
-		vec![app_ext],
+	// let app_ext = AppExtrinsic::from(data);
+	// let grid = EvaluationGrid::from_extrinsics(
+		let grid = EvaluationGrid::from_data(
+		data,
 		MIN_WIDTH,
 		block_length.cols.0.saturated_into(), // even if we run on a u16 target this is fine
 		block_length.rows.0.saturated_into(),
