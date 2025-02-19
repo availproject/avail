@@ -1186,6 +1186,7 @@ dependencies = [
  "substrate-state-trie-migration-rpc",
  "tempfile",
  "testing-rpc",
+ "transaction-rpc",
  "try-runtime-cli",
 ]
 
@@ -4009,7 +4010,9 @@ name = "frame-system-rpc-runtime-api"
 version = "4.0.0-dev"
 dependencies = [
  "parity-scale-codec",
+ "scale-info",
  "sp-api",
+ "sp-std",
 ]
 
 [[package]]
@@ -13492,6 +13495,17 @@ dependencies = [
  "tracing",
  "tracing-core",
  "tracing-log 0.2.0",
+]
+
+[[package]]
+name = "transaction-rpc"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "avail-base",
+ "jsonrpsee",
+ "serde",
+ "sp-core",
 ]
 
 [[package]]
