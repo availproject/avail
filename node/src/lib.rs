@@ -9,4 +9,4 @@ pub mod service;
 
 mod transaction_state;
 
-pub const NODE_VERSION: &str = "2.2.1";
+pub const NODE_VERSION: &str = "2.3.0";
