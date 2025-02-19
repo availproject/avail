@@ -59,6 +59,18 @@ where
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<Vec<GDataProof>>;
 
+  /// This method returns a multiproof for the given cells.
+  /// The multiproof grid size can be calculated using [`kate::gridgen::multiproof_dims`]
+  /// Cell indices must be valid for the dimensions returned by [`kate::gridgen::multiproof_dims`].
+  /// Each cell index will return a proof for a 2d-contiguous block of underlying grid cells.
+  /// You can figure out which using the [`kate::gridgen::multiproof_block`] method.
+  /// This specifies the indices to validate the proof against
+  /// * commitment indices should be taken from (`start_y`, `end_y`)
+  /// * field elements should be taken from ('start_x`, `end_x`)
+  /// The data in each [`GMultiProof`] is both the underlying field values in the corresponding
+  /// cell block in row-major order and the multiproof for that block.
+  /// Ex: the first cell in [`GMultiProof.0`] is the top-left cell in the block with underlying
+  /// grid indices `start_y` and `start_x`.
 	#[method(name = "kate_queryMultiProof")]
 	async fn query_multiproof(
 		&self,
