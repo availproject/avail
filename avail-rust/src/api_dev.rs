@@ -335,9 +335,9 @@ pub mod api {
 			.hash();
 		runtime_metadata_hash
 			== [
-				69u8, 62u8, 25u8, 43u8, 239u8, 65u8, 163u8, 188u8, 120u8, 25u8, 100u8, 190u8, 43u8,
-				28u8, 158u8, 77u8, 58u8, 178u8, 71u8, 204u8, 124u8, 65u8, 145u8, 78u8, 241u8,
-				102u8, 93u8, 104u8, 183u8, 216u8, 97u8, 247u8,
+				209u8, 72u8, 79u8, 156u8, 116u8, 119u8, 210u8, 164u8, 49u8, 83u8, 236u8, 238u8,
+				246u8, 35u8, 238u8, 144u8, 59u8, 160u8, 195u8, 79u8, 108u8, 58u8, 148u8, 46u8,
+				189u8, 134u8, 178u8, 14u8, 73u8, 24u8, 181u8, 58u8,
 			]
 	}
 	pub mod system {
@@ -30515,79 +30515,79 @@ pub mod api {
 						length_bound: ::core::primitive::u32,
 					},
 				}
-				#[derive(
-					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
-					:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
-					:: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
-					:: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
-					Clone,
-					Debug,
-					Eq,
-					PartialEq,
-				)]
-				# [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
-				#[codec(dumb_trait_bound)]
-				#[decode_as_type(
-					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
-				)]
-				#[encode_as_type(
-					crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
-				)]
-				#[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
-				pub enum Call2 {
-					#[codec(index = 0)]
-					#[doc = "See [`Pallet::set_members`]."]
-					set_members {
-						new_members: ::subxt::ext::subxt_core::alloc::vec::Vec<
-							::subxt::ext::subxt_core::utils::AccountId32,
-						>,
-						prime: ::core::option::Option<::subxt::ext::subxt_core::utils::AccountId32>,
-						old_count: ::core::primitive::u32,
-					},
-					#[codec(index = 1)]
-					#[doc = "See [`Pallet::execute`]."]
-					execute {
-						proposal: ::subxt::ext::subxt_core::alloc::boxed::Box<
-							runtime_types::da_runtime::RuntimeCall,
-						>,
-						#[codec(compact)]
-						length_bound: ::core::primitive::u32,
-					},
-					#[codec(index = 2)]
-					#[doc = "See [`Pallet::propose`]."]
-					propose {
-						#[codec(compact)]
-						threshold: ::core::primitive::u32,
-						proposal: ::subxt::ext::subxt_core::alloc::boxed::Box<
-							runtime_types::da_runtime::RuntimeCall,
-						>,
-						#[codec(compact)]
-						length_bound: ::core::primitive::u32,
-					},
-					#[codec(index = 3)]
-					#[doc = "See [`Pallet::vote`]."]
-					vote {
-						proposal: ::subxt::ext::subxt_core::utils::H256,
-						#[codec(compact)]
-						index: ::core::primitive::u32,
-						approve: ::core::primitive::bool,
-					},
-					#[codec(index = 5)]
-					#[doc = "See [`Pallet::disapprove_proposal`]."]
-					disapprove_proposal {
-						proposal_hash: ::subxt::ext::subxt_core::utils::H256,
-					},
-					#[codec(index = 6)]
-					#[doc = "See [`Pallet::close`]."]
-					close {
-						proposal_hash: ::subxt::ext::subxt_core::utils::H256,
-						#[codec(compact)]
-						index: ::core::primitive::u32,
-						proposal_weight_bound: runtime_types::sp_weights::weight_v2::Weight,
-						#[codec(compact)]
-						length_bound: ::core::primitive::u32,
-					},
-				}
+                #[derive(
+                    :: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
+                    :: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
+                    :: subxt :: ext :: subxt_core :: ext :: scale_decode :: DecodeAsType,
+                    :: subxt :: ext :: subxt_core :: ext :: scale_encode :: EncodeAsType,
+                    Clone,
+                    Debug,
+                    Eq,
+                    PartialEq,
+                )]
+                # [codec (crate = :: subxt :: ext :: subxt_core :: ext :: codec)]
+                #[codec(dumb_trait_bound)]
+                #[decode_as_type(
+                    crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_decode"
+                )]
+                #[encode_as_type(
+                    crate_path = ":: subxt :: ext :: subxt_core :: ext :: scale_encode"
+                )]
+                #[doc = "Contains a variant per dispatchable extrinsic that this pallet has."]
+                pub enum Call2 {
+                    #[codec(index = 0)]
+                    #[doc = "See [`Pallet::set_members`]."]
+                    set_members {
+                        new_members: ::subxt::ext::subxt_core::alloc::vec::Vec<
+                            ::subxt::ext::subxt_core::utils::AccountId32,
+                        >,
+                        prime: ::core::option::Option<::subxt::ext::subxt_core::utils::AccountId32>,
+                        old_count: ::core::primitive::u32,
+                    },
+                    #[codec(index = 1)]
+                    #[doc = "See [`Pallet::execute`]."]
+                    execute {
+                        proposal: ::subxt::ext::subxt_core::alloc::boxed::Box<
+                            runtime_types::da_runtime::RuntimeCall,
+                        >,
+                        #[codec(compact)]
+                        length_bound: ::core::primitive::u32,
+                    },
+                    #[codec(index = 2)]
+                    #[doc = "See [`Pallet::propose`]."]
+                    propose {
+                        #[codec(compact)]
+                        threshold: ::core::primitive::u32,
+                        proposal: ::subxt::ext::subxt_core::alloc::boxed::Box<
+                            runtime_types::da_runtime::RuntimeCall,
+                        >,
+                        #[codec(compact)]
+                        length_bound: ::core::primitive::u32,
+                    },
+                    #[codec(index = 3)]
+                    #[doc = "See [`Pallet::vote`]."]
+                    vote {
+                        proposal: ::subxt::ext::subxt_core::utils::H256,
+                        #[codec(compact)]
+                        index: ::core::primitive::u32,
+                        approve: ::core::primitive::bool,
+                    },
+                    #[codec(index = 5)]
+                    #[doc = "See [`Pallet::disapprove_proposal`]."]
+                    disapprove_proposal {
+                        proposal_hash: ::subxt::ext::subxt_core::utils::H256,
+                    },
+                    #[codec(index = 6)]
+                    #[doc = "See [`Pallet::close`]."]
+                    close {
+                        proposal_hash: ::subxt::ext::subxt_core::utils::H256,
+                        #[codec(compact)]
+                        index: ::core::primitive::u32,
+                        proposal_weight_bound: runtime_types::sp_weights::weight_v2::Weight,
+                        #[codec(compact)]
+                        length_bound: ::core::primitive::u32,
+                    },
+                }
 				#[derive(
 					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,
 					:: subxt :: ext :: subxt_core :: ext :: codec :: Encode,
@@ -35993,6 +35993,9 @@ pub mod api {
 					#[codec(index = 35)]
 					#[doc = "Sync committee hash is already set for given period."]
 					SyncCommitteeHashAlreadySet,
+					#[codec(index = 36)]
+					#[doc = "Emit when start sync committee does not match."]
+					SyncCommitteeStartMismatch,
 				}
 				#[derive(
 					:: subxt :: ext :: subxt_core :: ext :: codec :: Decode,

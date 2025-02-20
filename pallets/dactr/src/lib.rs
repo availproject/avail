@@ -73,9 +73,9 @@ pub mod pallet {
 			pub const MinBlockRows: BlockLengthRows = BlockLengthRows(32);
 			pub const MaxBlockRows: BlockLengthRows = BlockLengthRows(1024);
 			pub const MinBlockCols: BlockLengthColumns = BlockLengthColumns(32);
-			pub const MaxBlockCols: BlockLengthColumns = BlockLengthColumns(256);
+			pub const MaxBlockCols: BlockLengthColumns = BlockLengthColumns(1024);
 			pub const MaxAppKeyLength: u32 = 32;
-			pub const MaxAppDataLength: u32 = 524_288; // 512 Kb
+			pub const MaxAppDataLength: u32 = 1_048_576; // 1 Mb
 		}
 
 		#[frame_support::register_default_impl(TestDefaultConfig)]
