@@ -725,6 +725,7 @@ dependencies = [
 [[package]]
 name = "avail-core"
 version = "0.6.2"
+source = "git+https://github.com/availproject/avail-core?rev=128bec2e7065c0671efdad9e8e07ea798cfdb6c4#128bec2e7065c0671efdad9e8e07ea798cfdb6c4"
 dependencies = [
  "binary-merkle-tree",
  "blake2b_simd",
