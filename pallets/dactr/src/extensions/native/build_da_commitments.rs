@@ -1,6 +1,6 @@
 #![cfg(feature = "std")]
 
-use avail_core::AppExtrinsic;
+// use avail_core::AppExtrinsic;
 use frame_system::limits::BlockLength;
 use kate::{
 	gridgen::{AsBytes, EvaluationGrid},
@@ -39,7 +39,8 @@ fn build_grid(
 	// let grid = EvaluationGrid::from_extrinsics(
 		let grid = EvaluationGrid::from_data(
 		data,
-		MIN_WIDTH,
+		// MIN_WIDTH,
+		block_length.cols.0.saturated_into(), // To make sure every row is of fixed length by padding
 		block_length.cols.0.saturated_into(), // even if we run on a u16 target this is fine
 		block_length.rows.0.saturated_into(),
 		seed,

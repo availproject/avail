@@ -34,7 +34,7 @@ fn build_grid(
 ) -> Result<EvaluationGrid, DaCommitmentsError> {
 	// let app_ext = AppExtrinsic::from(data);
 	let grid =
-		EvaluationGrid::from_data(data, MIN_WIDTH, max_width, max_height, seed)
+		EvaluationGrid::from_data(data, max_width, max_width, max_height, seed)
 			.map_err(|e| DaCommitmentsError::GridConstructionFailed(format!("{:?}", e)))?;
 
 	Ok(grid)
