@@ -13,7 +13,6 @@ use avail_core::{
 	header::{extension as he, HeaderExtension},
 	kate_commitment as kc, AppId, DataLookup, HeaderVersion,
 };
-use codec::{Compact, CompactLen as _};
 use kate::{
 	couscous::multiproof_params,
 	gridgen::{AsBytes, EvaluationGrid},
@@ -117,6 +116,10 @@ pub fn build_extension(
 	}
 
 	let max_columns = block_length.cols.0 as usize;
+	if max_columns == 0 {
+		// Blocks with 0 columns will have empty commitments, ideally we should never reach here
+		return HeaderExtension::get_empty_header(data_root, version);
+	}
 
 	let total_commitments: usize = submitted
 		.iter()
@@ -129,9 +132,12 @@ pub fn build_extension(
 	for da_call in submitted.iter() {
 		commitment.extend(da_call.commitments.clone());
 		let app_id = da_call.id;
-		let data_len = get_data_len(da_call);
-		let rows_taken =
-			(data_len + (max_columns * DATA_CHUNK_SIZE) - 1) / (max_columns * DATA_CHUNK_SIZE); // Calculate rows taken by rounding up
+		// No longer need additional bytes on encoding
+		let data_len = da_call.data.len();
+		let rows_taken = match (data_len + (max_columns * DATA_CHUNK_SIZE)).checked_sub(1) {
+			Some(value) => value / (max_columns * DATA_CHUNK_SIZE),
+			None => return HeaderExtension::get_empty_header(data_root, version),
+		};
 
 		// Update app_rows
 		if let Some((_, existing_rows)) = app_rows.iter_mut().find(|(id, _)| *id == app_id) {
@@ -141,13 +147,20 @@ pub fn build_extension(
 		}
 	}
 
-	let app_lookup = DataLookup::from_id_and_len_iter(app_rows.into_iter())
-		.expect("Failed to create DataLookup");
+	let app_lookup = match DataLookup::from_id_and_len_iter(app_rows.into_iter()) {
+		Ok(lookup) => lookup,
+		Err(_) => return HeaderExtension::get_faulty_header(data_root, version),
+	};
 
 	match version {
 		HeaderVersion::V3 => {
 			// TODO: Based on the approach we select for ASDR, either we should update the KateCommitment struct or correctly update the rows & cols values here
-			let commitment = kc::v3::KateCommitment::new(0, 0, data_root, commitment);
+			let commitment = kc::v3::KateCommitment::new(
+				app_lookup.len().try_into().unwrap_or_default(),
+				max_columns.try_into().unwrap_or_default(),
+				data_root,
+				commitment,
+			);
 			he::v3::HeaderExtension {
 				app_lookup,
 				commitment,
@@ -155,12 +168,4 @@ pub fn build_extension(
 			.into()
 		},
 	}
-}
-
-/// computes the amount of bytes this data will take on the data_grid including encoding of data & app_id
-fn get_data_len(data: &SubmittedData) -> usize {
-	let len = data.data.len();
-	//  since currently we're using default app_id, we're considering 1 extra byte for app_id, if we intend to use actual app_id, should get the compact len of given app_id
-	let total_len = len + Compact::<u32>::compact_len(&(len as u32)) + 1;
-	total_len
 }

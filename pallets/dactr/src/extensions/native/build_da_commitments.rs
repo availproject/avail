@@ -37,7 +37,7 @@ fn build_grid(
 ) -> Result<EvaluationGrid, DaCommitmentsError> {
 	// let app_ext = AppExtrinsic::from(data);
 	// let grid = EvaluationGrid::from_extrinsics(
-		let grid = EvaluationGrid::from_data(
+	let grid = EvaluationGrid::from_data(
 		data,
 		// MIN_WIDTH,
 		block_length.cols.0.saturated_into(), // To make sure every row is of fixed length by padding
