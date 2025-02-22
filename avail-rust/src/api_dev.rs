@@ -23110,7 +23110,7 @@ pub mod api {
 						],
 					)
 				}
-				#[doc = " Maxmimum number of registrars allowed in the system. Needed to bound the complexity"]
+				#[doc = " Maximum number of registrars allowed in the system. Needed to bound the complexity"]
 				#[doc = " of, e.g., updating judgements."]
 				pub fn max_registrars(
 					&self,
