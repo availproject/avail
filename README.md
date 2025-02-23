@@ -109,7 +109,7 @@ docker run --rm -p 30333:30333 -p 9944:9944 -v ./output:/output:z availnode --de
 ```
 
 ### Podman
-To run the Avail Node using Docker, follow these steps:
+To run the Avail Node using Podman, follow these steps:
 
 ```bash
 # Build the Docker image for the Avail Node:
