@@ -13,8 +13,8 @@ pub mod dev {
 	use da_runtime::wasm_binary_unwrap;
 	use sc_chain_spec::ChainType;
 
-	pub fn chain_spec() -> ChainSpec {
-		ChainSpec::builder(wasm_binary_unwrap(), Default::default())
+	pub fn chain_spec(network_name: Option<String>) -> ChainSpec {
+		let mut builder = ChainSpec::builder(wasm_binary_unwrap(), Default::default())
 			.with_name("Avail Development Network")
 			.with_id("avail_development_network")
 			.with_chain_type(ChainType::Development)
@@ -22,8 +22,13 @@ pub mod dev {
 			.with_telemetry_endpoints(super::to_telemetry_endpoint(TESTNET_TELEMETRY_URL.into()))
 			.with_protocol_id(PROTOCOL_ID)
 			.with_properties(chain_properties())
-			.with_boot_nodes(vec![])
-			.build()
+			.with_boot_nodes(vec![]);
+
+		if let Some(name) = network_name {
+			let id = name.to_lowercase().replace(" ", "_");
+			builder = builder.with_name(&name).with_id(&id);
+		}
+		builder.build()
 	}
 
 	pub fn genesis_constructor() -> Value {
@@ -35,7 +40,7 @@ pub mod dev {
 
 	#[test]
 	fn test_chain_spec_creation() {
-		chain_spec().build_storage().unwrap();
+		chain_spec(None).build_storage().unwrap();
 	}
 }
 
@@ -44,8 +49,8 @@ pub mod dev_tri {
 	use da_runtime::wasm_binary_unwrap;
 	use sc_chain_spec::ChainType;
 
-	pub fn chain_spec() -> ChainSpec {
-		ChainSpec::builder(wasm_binary_unwrap(), Default::default())
+	pub fn chain_spec(network_name: Option<String>) -> ChainSpec {
+		let mut builder = ChainSpec::builder(wasm_binary_unwrap(), Default::default())
 			.with_name("Avail Tri Development Network")
 			.with_id("avail_tri_development_network")
 			.with_chain_type(ChainType::Development)
@@ -53,8 +58,13 @@ pub mod dev_tri {
 			.with_telemetry_endpoints(super::to_telemetry_endpoint(TESTNET_TELEMETRY_URL.into()))
 			.with_protocol_id(PROTOCOL_ID)
 			.with_properties(chain_properties())
-			.with_boot_nodes(vec![])
-			.build()
+			.with_boot_nodes(vec![]);
+
+		if let Some(name) = network_name {
+			let id = name.to_lowercase().replace(" ", "_");
+			builder = builder.with_name(&name).with_id(&id);
+		}
+		builder.build()
 	}
 
 	pub fn genesis_constructor() -> Value {
@@ -73,7 +83,7 @@ pub mod dev_tri {
 
 	#[test]
 	fn test_chain_spec_creation() {
-		chain_spec().build_storage().unwrap();
+		chain_spec(None).build_storage().unwrap();
 	}
 }
 
