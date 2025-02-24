@@ -3,7 +3,7 @@ use avail_core::{
 	data_proof::ProofResponse, header::HeaderExtension, traits::ExtendedHeader, OpaqueExtrinsic,
 };
 use da_runtime::apis::{DataAvailApi, KateApi as RTKateApi};
-use da_runtime::kate::{GDataProof, GMultiProof, GRow};
+use da_runtime::kate::{GCellBlock, GDataProof, GMultiProof, GRow};
 use kate::com::Cell;
 
 use frame_support::BoundedVec;
@@ -52,7 +52,7 @@ where
 		&self,
 		cells: Cells,
 		at: Option<HashOf<Block>>,
-	) -> RpcResult<Vec<GMultiProof>>;
+	) -> RpcResult<Vec<(GMultiProof, GCellBlock)>>;
 
 	#[method(name = "kate_blockLength")]
 	async fn query_block_length(&self, at: Option<HashOf<Block>>) -> RpcResult<BlockLength>;
@@ -251,7 +251,7 @@ where
 		&self,
 		cells: Cells,
 		at: Option<HashOf<Block>>,
-	) -> RpcResult<Vec<GMultiProof>> {
+	) -> RpcResult<Vec<(GMultiProof, GCellBlock)>> {
 		if cells.len() > self.max_cells_size {
 			return Err(
 				internal_err!(

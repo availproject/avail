@@ -1,4 +1,4 @@
-use super::{Error, GDataProof, GMultiProof, GProof, GRawScalar, GRow};
+use super::{Error, GCellBlock, GDataProof, GMultiProof, GProof, GRawScalar, GRow};
 use avail_core::{AppExtrinsic, AppId, BlockLengthColumns, BlockLengthRows};
 use core::num::NonZeroU16;
 use frame_system::{limits::BlockLength, native::hosted_header_builder::MIN_WIDTH};
@@ -96,7 +96,7 @@ pub trait HostedKate {
 		block_len: BlockLength,
 		seed: Seed,
 		cells: Vec<(u32, u32)>,
-	) -> Result<Vec<GMultiProof>, Error> {
+	) -> Result<Vec<(GMultiProof, GCellBlock)>, Error> {
 		let srs = SRS.get_or_init(multiproof_params);
 		let (max_width, max_height) = to_width_height(&block_len);
 		let grid = EGrid::from_extrinsics(extrinsics, MIN_WIDTH, max_width, max_height, seed)?
@@ -107,7 +107,7 @@ pub trait HostedKate {
 
 		let proofs = cells
 			.into_par_iter()
-			.map(|(row, col)| -> Result<GMultiProof, Error> {
+			.map(|(row, col)| -> Result<(GMultiProof, GCellBlock), Error> {
 				let cell = Cell::new(BlockLengthRows(row), BlockLengthColumns(col));
 				let target_dims = Dimensions::new(16, 64).expect("16,64>0");
 				// TODO: This isn't correct, need to put in the correct mp grid dim
@@ -131,10 +131,9 @@ pub trait HostedKate {
 
 				let proof = mp.proof.to_bytes().map(GProof).map_err(|_| Error::Proof)?;
 
-				// TODO: should we also return the block coords in mp.block?
-				Ok((data, proof))
+				Ok(((data, proof), GCellBlock::from(mp.block)))
 			})
-			.collect::<Result<Vec<GMultiProof>, _>>()?;
+			.collect::<Result<Vec<_>, _>>()?;
 
 		Ok(proofs)
 	}
