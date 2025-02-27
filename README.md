@@ -10,6 +10,23 @@
 
 ![demo](./.github/img/terminal.jpg)
 
+## Verifying Avail Node Binary Signatures
+Our release binaries are GPG signed for security. To verify a download:
+
+1. Import our public key. Make sure you change the version to the correct version:
+`curl -s https://github.com/availproject/avail/releases/download/vX.Y.Z/gpg-public-key.asc | gpg --import`
+2. Verify the binary's signature:
+`gpg --verify DOWNLOADED_BINARY.tar.gz.sig DOWNLOADED_BINARY.tar.gz`
+3. Verify the checksum file:
+`gpg --verify YOUR_DOWNLOADED_FILE.tar.gz.sha256.sig YOUR_DOWNLOADED_FILE.tar.gz.sha256`
+4. Verify the checksum:
+`sha256sum -c YOUR_DOWNLOADED_FILE.tar.gz.sha256`
+
+A successful verification will display:
+"Good signature from 'Your Project Release Key `key's email address`'"
+
+You have now verified that the binary is signed by Avail and that its checksum is correct.
+
 ## Running Avail Node
 ### Manually
 
