@@ -5601,8 +5601,7 @@ checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 [[package]]
 name = "subxt"
 version = "0.34.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b3323d5c27898b139d043dc1ee971f602f937b99354ee33ee933bd90e0009fbd"
+source = "git+https://github.com/ToufeeqP/subxt.git?rev=c4d8cb3cba5d86fc164fc912cb456870e9a2d1d2#c4d8cb3cba5d86fc164fc912cb456870e9a2d1d2"
 dependencies = [
  "async-trait",
  "base58",
@@ -5637,8 +5636,7 @@ dependencies = [
 [[package]]
 name = "subxt-codegen"
 version = "0.34.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2d0e58c3f88651cff26aa52bae0a0a85f806a2e923a20eb438c16474990743ea"
+source = "git+https://github.com/ToufeeqP/subxt.git?rev=c4d8cb3cba5d86fc164fc912cb456870e9a2d1d2#c4d8cb3cba5d86fc164fc912cb456870e9a2d1d2"
 dependencies = [
  "frame-metadata 16.0.0",
  "heck 0.4.1",
@@ -5658,8 +5656,7 @@ dependencies = [
 [[package]]
 name = "subxt-lightclient"
 version = "0.34.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ecec7066ba7bc0c3608fcd1d0c7d9584390990cd06095b6ae4f114f74c4b8550"
+source = "git+https://github.com/ToufeeqP/subxt.git?rev=c4d8cb3cba5d86fc164fc912cb456870e9a2d1d2#c4d8cb3cba5d86fc164fc912cb456870e9a2d1d2"
 dependencies = [
  "futures",
  "futures-util",
@@ -5675,8 +5672,7 @@ dependencies = [
 [[package]]
 name = "subxt-macro"
 version = "0.34.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "365251668613323064803427af8c7c7bc366cd8b28e33639640757669dafebd5"
+source = "git+https://github.com/ToufeeqP/subxt.git?rev=c4d8cb3cba5d86fc164fc912cb456870e9a2d1d2#c4d8cb3cba5d86fc164fc912cb456870e9a2d1d2"
 dependencies = [
  "darling 0.20.10",
  "parity-scale-codec",
@@ -5690,8 +5686,7 @@ dependencies = [
 [[package]]
 name = "subxt-metadata"
 version = "0.34.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c02aca8d39a1f6c55fff3a8fd81557d30a610fedc1cef03f889a81bc0f8f0b52"
+source = "git+https://github.com/ToufeeqP/subxt.git?rev=c4d8cb3cba5d86fc164fc912cb456870e9a2d1d2#c4d8cb3cba5d86fc164fc912cb456870e9a2d1d2"
 dependencies = [
  "frame-metadata 16.0.0",
  "parity-scale-codec",

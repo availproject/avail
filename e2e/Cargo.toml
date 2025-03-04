@@ -44,3 +44,4 @@ sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "689
 sp-io = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "6899f04ba1559296b74c3c837a6c929c56f3f84c" }
 sp-runtime = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "6899f04ba1559296b74c3c837a6c929c56f3f84c" }
 sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "6899f04ba1559296b74c3c837a6c929c56f3f84c" }
+subxt = { git = "https://github.com/ToufeeqP/subxt.git", rev = "c4d8cb3cba5d86fc164fc912cb456870e9a2d1d2" }
