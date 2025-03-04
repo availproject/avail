@@ -1,9 +1,8 @@
 use avail_core::{AppExtrinsic, BlockLengthColumns};
 use kate::{
-	// couscous::multiproof_params,
+	couscous::multiproof_params,
 	gridgen::{AsBytes, EvaluationGrid},
 	pmp::m1_blst::M1NoPrecomp,
-	testnet::multiproof_params as public_params,
 	Seed,
 };
 use std::{sync::OnceLock, vec::Vec};
@@ -42,9 +41,7 @@ fn build_grid(
 
 fn build_commitment(grid: &EvaluationGrid) -> Result<Vec<u8>, DaCommitmentsError> {
 	let start = std::time::Instant::now();
-	// let pmp = PMP.get_or_init(multiproof_params);
-	// pregenerated  SRS supports degree upto 1024 only, so using testnet params here
-	let pmp = PMP.get_or_init(|| public_params(2048, 2048));
+	let pmp = PMP.get_or_init(multiproof_params);
 	let pmp_time = start.elapsed();
 	println!("PMP initialization time: {:?}", pmp_time);
 

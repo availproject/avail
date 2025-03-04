@@ -5,8 +5,7 @@ use frame_system::limits::BlockLength;
 use kate::{
 	gridgen::{AsBytes, EvaluationGrid},
 	pmp::m1_blst::M1NoPrecomp,
-	// couscous::multiproof_params,
-	testnet::multiproof_params as public_params,
+	couscous::multiproof_params,
 	Seed,
 };
 use sp_runtime::SaturatedConversion;
@@ -51,9 +50,7 @@ fn build_grid(
 }
 
 fn build_commitment(grid: &EvaluationGrid) -> Result<Vec<u8>, DaCommitmentsError> {
-	// let pmp = PMP.get_or_init(multiproof_params);
-	// pregenerated  SRS supports degree upto 1024 only, so using testnet params here
-	let pmp = PMP.get_or_init(|| public_params(2048, 2048));
+	let pmp = PMP.get_or_init(multiproof_params);
 
 	let poly_grid = grid
 		.make_polynomial_grid()
