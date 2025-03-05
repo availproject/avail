@@ -1,1 +1,0 @@
-The project has moved to a new repo: [avail-go-sdk](https://github.com/availproject/avail-go-sdk)

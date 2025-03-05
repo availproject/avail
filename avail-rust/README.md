@@ -1,1 +1,0 @@
-The project has moved to a new repo: [avail-rust](https://github.com/availproject/avail-rust)
