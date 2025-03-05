@@ -1,7 +1,6 @@
 use super::{get_account_id_from_seed, AuthorityKeys};
 use avail_core::{BLOCK_CHUNK_SIZE, DA_DISPATCH_RATIO};
 
-
 use da_runtime::{
 	constants, AccountId, Balance, DataAvailabilityConfig, SessionKeys, StakerStatus,
 };
