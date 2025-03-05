@@ -194,6 +194,8 @@ pub mod pallet {
 		NewSP1VerificationKey { old: H256, new: H256 },
 		/// Emit when new sync committee is updated.
 		SyncCommitteeHashUpdated { period: u64, hash: H256 },
+		/// Emit when verification is enabled/disabled.
+		VerificationDisabled { disabled: bool },
 	}
 
 	/// Storage for a head updates.
@@ -294,6 +296,11 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn sp1_verification_key)]
 	pub type SP1VerificationKey<T: Config> = StorageValue<_, H256, ValueQuery>;
+
+	/// Disable verification flag.
+	#[pallet::storage]
+	#[pallet::getter(fn verification_disabled)]
+	pub type VerificationDisabled<T: Config> = StorageValue<_, bool, ValueQuery>;
 
 	/// Default implementations of [`DefaultConfig`], which can be used to implement [`Config`].
 	pub mod config_preludes {
@@ -860,13 +867,15 @@ pub mod pallet {
 
 			// Can throw panic in the sp1 v3.4.0 library if the proof is not valid in some cases
 			// and, it will be fixed in sp1 version v4.0.0
-			let is_valid = Groth16Verifier::verify(
-				&proof,
-				&public_values,
-				&format!("{:?}", sp1_vk),
-				&GROTH16_VK_BYTES,
-			);
-			ensure!(is_valid.is_ok(), Error::<T>::VerificationFailed);
+			if !VerificationDisabled::<T>::get() {
+				let is_valid = Groth16Verifier::verify(
+					&proof,
+					&public_values,
+					&format!("{:?}", sp1_vk),
+					&GROTH16_VK_BYTES,
+				);
+				ensure!(is_valid.is_ok(), Error::<T>::VerificationFailed);
+			}
 
 			Head::<T>::set(new_head);
 			let header = Headers::<T>::get(new_head);
@@ -955,6 +964,17 @@ pub mod pallet {
 
 			SyncCommitteeHashes::<T>::insert(period, hash);
 			Self::deposit_event(Event::SyncCommitteeHashUpdated { period, hash });
+
+			Ok(())
+		}
+
+		#[pallet::call_index(16)]
+		#[pallet::weight(T::WeightInfo::set_sync_committee_hash())]
+		pub fn disable_verification(origin: OriginFor<T>, disabled: bool) -> DispatchResult {
+			ensure_root(origin)?;
+
+			VerificationDisabled::<T>::set(disabled);
+			Self::deposit_event(Event::VerificationDisabled { disabled });
 
 			Ok(())
 		}
