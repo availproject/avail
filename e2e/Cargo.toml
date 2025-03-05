@@ -5,38 +5,9 @@ edition = "2021"
 
 [workspace]
 
-[dev-dependencies]
-avail-subxt = { path = "../avail-subxt" }
-kate-recovery = { git = "https://github.com/availproject/avail-core", tag = "core-node-7" }
-kate = { git = "https://github.com/availproject/avail-core", tag = "core-node-7" }
-avail-core = {  git = "https://github.com/availproject/avail-core", tag = "core-node-7" }
-
-# Parity
-sp-keyring = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-12" }
-sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-12" }
-codec = { package = "parity-scale-codec", version = "3", default-features = false, features = [ "derive", "full", "bit-vec"] }
-binary-merkle-tree = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-12" }
-
-# SubXt
-subxt = "0.34"
-subxt-signer = "0.34"
+[dependencies]
+avail-rust = { git = "https://github.com/availproject/avail-rust", tag = "v0.1.4" }
 
 # Other
-anyhow = "1.0.66"
 serde = { version = "1.0.195", default-features = false, features = [ "derive", "alloc" ] }
-futures = "0.3.25"
-rand = "0.8.5"
-derive_more = "0.99.17"
-serde_json = { version = "1.0", features = ["arbitrary_precision"] }
-indicatif = "0.17"
-hex = "0.4"
-test-log = { version = "0.2.16", features = ["trace"] }
-tokio = { version = "1.37.0", features = ["sync", "fs", "macros"] }
-tracing = "0.1.40"
-
-# Dependency `subxt` uses it's own 'version' of sp-core so we need to patch it :)
-[patch.crates-io]
-sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-12" }
-sp-io = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-12" }
-sp-runtime = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-12" }
-sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-12" }
+tokio = { version = "1.43.0", features = ["sync", "fs", "macros", "rt-multi-thread"] }

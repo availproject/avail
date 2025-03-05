@@ -34,13 +34,15 @@ use frame_support::{
 	ensure,
 	weights::{constants, Weight},
 };
-use kate::config::{MAX_BLOCK_COLUMNS, MAX_BLOCK_ROWS};
 use scale_info::{build::Fields, Path, Type, TypeInfo};
 use serde::{Deserialize, Serialize};
 use sp_runtime::{traits::Bounded, Perbill, RuntimeDebug};
 use sp_runtime_interface::pass_by::PassByCodec;
 use sp_std::vec::Vec;
 use static_assertions::const_assert;
+
+pub const MAX_BLOCK_COLUMNS: BlockLengthColumns = BlockLengthColumns(512);
+pub const MAX_BLOCK_ROWS: BlockLengthRows = BlockLengthRows(256);
 
 /// Block length limit configuration.
 #[derive(RuntimeDebug, PartialEq, Clone, PassByCodec, MaxEncodedLen, Serialize, Deserialize)]

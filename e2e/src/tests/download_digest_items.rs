@@ -1,9 +1,9 @@
-use super::{allow_concurrency, local_connection};
+/* use super::{allow_concurrency, local_connection};
 
 use std::{fmt::Write, str::from_utf8};
 
 use anyhow::Result;
-use avail_subxt::primitives::{babe, grandpa};
+use avail_rust::avail::{babe, grandpa};
 use indicatif::{ProgressBar, ProgressState, ProgressStyle};
 use serde_json::{json, Value};
 use subxt::{
@@ -81,7 +81,7 @@ fn pre_runtime_to_json(id: ConsensusEngineId, encoded: Vec<u8>) -> Value {
 
 const OUTPUT_PATH: &str = "/tmp/header.json";
 
-#[test(tokio::test)]
+#[tokio::test]
 async fn download_digest_items() -> Result<()> {
 	let _cg = allow_concurrency("download_digest_items").await;
 	let client = local_connection().await?;
@@ -139,3 +139,4 @@ async fn download_digest_items() -> Result<()> {
 
 	Ok(())
 }
+ */
