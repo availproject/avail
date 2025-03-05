@@ -528,6 +528,16 @@ mod benchmarks {
 		Ok(())
 	}
 
+	#[benchmark]
+	fn disable_verification() -> Result<(), BenchmarkError> {
+		let origin = RawOrigin::Root;
+
+		#[extrinsic_call]
+		_(origin, true);
+
+		Ok(())
+	}
+
 	impl_benchmark_test_suite!(Pallet, crate::mock::new_test_ext(), crate::mock::Test);
 }
 
