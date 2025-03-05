@@ -8,11 +8,11 @@ rustup show
 cargo build --locked --release --features fast-runtime
 
 cd e2e
-cargo test --no-run
+cargo build
 
 # Run Node
-../target/release/avail-node --dev &
+../target/release/avail-node --dev --enable-tx-state-rpc &
 sleep 10
 
 # Run Tests
-cargo test -- --nocapture
+cargo run

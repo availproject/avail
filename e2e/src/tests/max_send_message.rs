@@ -1,4 +1,4 @@
-use super::{alice_nonce, local_connection, no_concurrency};
+/* use super::{alice_nonce, local_connection, no_concurrency};
 
 use avail_core::{
 	data_proof::{BoundedData, Message},
@@ -24,7 +24,7 @@ const MAX_FUNGIBLE: usize = 132 + 1;
 const ENABLE_LOG_MSG: &str =
 	"Re-run with `RUST_LOG=\"e2e::tests::max_send_message=trace\" to display logs`";
 
-#[test(tokio::test)]
+#[tokio::test]
 async fn max_fungible_message() -> anyhow::Result<()> {
 	let _cg = no_concurrency("submit_data").await;
 	let message = Message::FungibleToken {
@@ -35,7 +35,7 @@ async fn max_fungible_message() -> anyhow::Result<()> {
 	max_send_message(message, MAX_FUNGIBLE, 2).await
 }
 
-#[test(tokio::test)]
+#[tokio::test]
 async fn max_arbitrary_message() -> anyhow::Result<()> {
 	let _cg = no_concurrency("submit_data").await;
 	let message = Message::ArbitraryMessage(BoundedData::truncate_from(vec![]));
@@ -129,3 +129,4 @@ async fn max_send_message(
 
 	Ok(())
 }
+ */

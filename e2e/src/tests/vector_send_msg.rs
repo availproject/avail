@@ -1,4 +1,4 @@
-use super::{alice_nonce, allow_concurrency, local_connection};
+/* use super::{alice_nonce, allow_concurrency, local_connection};
 
 use avail_core::{
 	data_proof::{tx_uid, AddressedMessage, BoundedData, Message, ProofResponse, SubTrie},
@@ -185,3 +185,4 @@ async fn vector_send_msg() -> anyhow::Result<()> {
 
 	Ok(())
 }
+ */

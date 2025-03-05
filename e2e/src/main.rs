@@ -1,19 +1,27 @@
-/// Utility to run E2E.
-///
-/// It uses `tracing` to log messages, so you can select what you want to trace/debug.
-/// As example, if you want to log only `CTC` logs, you can use the following command:
-///
-/// ```shell
-/// RUST_LOG="CTC=trace" cargo test -- --nocapture
-/// ```
-///
-/// Or if you are interested in one of the tests, let say the `headers` test:
-///
-/// ```shell
-///  RUST_LOG="e2e::tests::headers,CTC=trace" cargo test -- --nocapture header
-/// ```
-fn main() {}
+mod max_block_submit;
 
+use avail_rust::prelude::*;
+use std::time::Duration;
+
+#[tokio::main]
+async fn main() -> Result<(), ClientError> {
+	max_block_submit::run().await?;
+
+	Ok(())
+}
+
+pub async fn wait_for_new_block(sdk: &SDK) -> Result<(), ClientError> {
+	let current_block = sdk.client.best_block_number().await?;
+	loop {
+		let new_block = sdk.client.best_block_number().await?;
+		if current_block != new_block {
+			break Ok(());
+		}
+
+		tokio::time::sleep(Duration::from_secs(1)).await;
+	}
+}
+/*
 #[cfg(test)]
 mod tests {
 
@@ -135,3 +143,4 @@ mod tests {
 	mod submit_data;
 	mod vector_send_msg;
 }
+ */

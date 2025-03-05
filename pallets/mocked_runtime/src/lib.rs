@@ -110,7 +110,7 @@ parameter_types! {
 	pub const MinBlockRows: BlockLengthRows = BlockLengthRows(32);
 	pub const MaxBlockRows: BlockLengthRows = BlockLengthRows(1024);
 	pub const MinBlockCols: BlockLengthColumns = BlockLengthColumns(32);
-	pub const MaxBlockCols: BlockLengthColumns = kate::config::MAX_BLOCK_COLUMNS;
+	pub const MaxBlockCols: BlockLengthColumns = frame_system::limits::MAX_BLOCK_COLUMNS;
 }
 
 #[derive(Clone, Copy)]
