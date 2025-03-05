@@ -1493,20 +1493,18 @@ fn test_fulfill_successfully() {
 fn test_fulfill_successfully_verification_disabled() {
 	new_test_ext().execute_with(|| {
 		let sp1_proof_with_public_values = SP1ProofWithPublicValues::load(PROOF_FILE).unwrap();
-		// proof dummy
+		// proof dummy that should pass when verification is disabled
 		let proof = vec![0x01, 0x02, 0x03, 0x04, 0x05, 0x06];
-
 		let public_inputs = sp1_proof_with_public_values.public_values.to_vec();
 
 		SP1VerificationKey::<Test>::set(H256(SP1_VERIFICATION_KEY));
 		let proof_outputs: ProofOutputs = SolValue::abi_decode(&public_inputs, true).unwrap();
+		let new_head = 6867936u64;
 		let slots_per_period = 8192;
 		let finality_threshold = 342u16;
 		let last_slot = 6867616u64;
 		let current_period = last_slot / slots_per_period;
 		Head::<Test>::set(last_slot);
-		// set verification disabled flag
-		VerificationDisabled::<Test>::set(true);
 		SyncCommitteeHashes::<Test>::set(
 			current_period,
 			H256(hex!(
@@ -1514,14 +1512,14 @@ fn test_fulfill_successfully_verification_disabled() {
 			)),
 		);
 
-		let new_head = 6867936u64;
-
 		ConfigurationStorage::<Test>::set(Configuration {
 			slots_per_period,
 			finality_threshold,
 		});
-
 		Updater::<Test>::set(H256(TEST_SENDER_VEC));
+
+		// set verification disabled flag
+		VerificationDisabled::<Test>::set(true);
 
 		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
 		let ok = Bridge::fulfill(
