@@ -969,7 +969,7 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(16)]
-		#[pallet::weight(T::WeightInfo::set_sync_committee_hash())]
+		#[pallet::weight(T::WeightInfo::disable_verification())]
 		pub fn disable_verification(origin: OriginFor<T>, disabled: bool) -> DispatchResult {
 			ensure_root(origin)?;
 
