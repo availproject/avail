@@ -1,0 +1,1 @@
+The project has moved to a new repo: [avail-js](https://github.com/availproject/avail-js)
