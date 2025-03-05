@@ -5,7 +5,7 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rust_install.sh && c
 . "$HOME/.cargo/env"
 
 rustup show
-cargo build --locked --release --features fast-runtime
+cargo build --locked --release 
 
 cd e2e
 cargo build
