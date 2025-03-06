@@ -17,7 +17,7 @@ jobs:
 
       - name: Import GPG key
         id: import_gpg
-        uses: crazy-max/ghaction-import-gpg@ab19e6ac15ddb413f244b6f27bc699903b41f2b2 # v5.0.0
+        uses: crazy-max/ghaction-import-gpg@cb9bde2e2525e640591a934b1fd28eef1dcaf5e5 # v6.2.0
         with:
           gpg_private_key: ${{ secrets.GPG_SIGNING_KEY }}
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
@@ -86,7 +86,7 @@ jobs:
             echo "tag_name=${TAG}" >> $GITHUB_OUTPUT
 
       - name: Import GPG key
-        uses: crazy-max/ghaction-import-gpg@ab19e6ac15ddb413f244b6f27bc699903b41f2b2 # v5.0.0
+        uses: crazy-max/ghaction-import-gpg@cb9bde2e2525e640591a934b1fd28eef1dcaf5e5 # v6.2.0
         with:
           gpg_private_key: ${{ secrets.GPG_SIGNING_KEY }}
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
@@ -176,7 +176,7 @@ jobs:
             echo "tag_name=${TAG}" >> $GITHUB_OUTPUT
 
       - name: Import GPG key
-        uses: crazy-max/ghaction-import-gpg@ab19e6ac15ddb413f244b6f27bc699903b41f2b2 # v5.0.0
+        uses: crazy-max/ghaction-import-gpg@cb9bde2e2525e640591a934b1fd28eef1dcaf5e5 # v6.2.0
         with:
           gpg_private_key: ${{ secrets.GPG_SIGNING_KEY }}
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
@@ -265,7 +265,7 @@ jobs:
             echo "tag_name=${TAG}" >> $GITHUB_OUTPUT
 
       - name: Import GPG key
-        uses: crazy-max/ghaction-import-gpg@ab19e6ac15ddb413f244b6f27bc699903b41f2b2 # v5.0.0
+        uses: crazy-max/ghaction-import-gpg@cb9bde2e2525e640591a934b1fd28eef1dcaf5e5 # v6.2.0
         with:
           gpg_private_key: ${{ secrets.GPG_SIGNING_KEY }}
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
