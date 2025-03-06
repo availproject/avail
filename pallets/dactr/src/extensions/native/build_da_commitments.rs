@@ -3,9 +3,9 @@
 // use avail_core::AppExtrinsic;
 use frame_system::limits::BlockLength;
 use kate::{
+	couscous::multiproof_params,
 	gridgen::{AsBytes, EvaluationGrid},
 	pmp::m1_blst::M1NoPrecomp,
-	couscous::multiproof_params,
 	Seed,
 };
 use sp_runtime::SaturatedConversion;
@@ -57,7 +57,7 @@ fn build_commitment(grid: &EvaluationGrid) -> Result<Vec<u8>, DaCommitmentsError
 		.map_err(|e| DaCommitmentsError::MakePolynomialGridFailed(format!("{:?}", e)))?;
 
 	let extended_grid = poly_grid
-		.extended_commitments(pmp, 2)
+		.commitments(pmp)
 		.map_err(|e| DaCommitmentsError::GridExtensionFailed(format!("{:?}", e)))?;
 
 	let mut commitment = Vec::new();

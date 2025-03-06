@@ -967,7 +967,7 @@ dependencies = [
 [[package]]
 name = "avail-core"
 version = "0.6.2"
-source = "git+https://github.com/availproject/avail-core?rev=a264105135c4807e63f4ab50b7316e2cfd2c62a8#a264105135c4807e63f4ab50b7316e2cfd2c62a8"
+source = "git+https://github.com/availproject/avail-core?rev=9eef4934f174c4977f379b1c3043a9dab5b51031#9eef4934f174c4977f379b1c3043a9dab5b51031"
 dependencies = [
  "binary-merkle-tree",
  "blake2b_simd",
@@ -5397,7 +5397,7 @@ dependencies = [
 [[package]]
 name = "kate"
 version = "0.9.2"
-source = "git+https://github.com/availproject/avail-core?rev=a264105135c4807e63f4ab50b7316e2cfd2c62a8#a264105135c4807e63f4ab50b7316e2cfd2c62a8"
+source = "git+https://github.com/availproject/avail-core?rev=9eef4934f174c4977f379b1c3043a9dab5b51031#9eef4934f174c4977f379b1c3043a9dab5b51031"
 dependencies = [
  "avail-core",
  "derive_more 0.99.18",
@@ -5407,6 +5407,7 @@ dependencies = [
  "hex-literal 0.3.4",
  "kate-recovery",
  "log",
+ "lru 0.7.8",
  "nalgebra 0.32.6",
  "once_cell",
  "parity-scale-codec",
@@ -5424,7 +5425,7 @@ dependencies = [
 [[package]]
 name = "kate-recovery"
 version = "0.10.0"
-source = "git+https://github.com/availproject/avail-core?rev=a264105135c4807e63f4ab50b7316e2cfd2c62a8#a264105135c4807e63f4ab50b7316e2cfd2c62a8"
+source = "git+https://github.com/availproject/avail-core?rev=9eef4934f174c4977f379b1c3043a9dab5b51031#9eef4934f174c4977f379b1c3043a9dab5b51031"
 dependencies = [
  "avail-core",
  "derive_more 0.99.18",
@@ -6125,6 +6126,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a7a70ba024b9dc04c27ea2f0c0548feb474ec5c54bba33a7f72f873a39d07b24"
 dependencies = [
  "serde",
+]
+
+[[package]]
+name = "lru"
+version = "0.7.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e999beba7b6e8345721bd280141ed958096a2e4abdf74f67ff4ce49b4b54e47a"
+dependencies = [
+ "hashbrown 0.12.3",
 ]
 
 [[package]]

@@ -31,19 +31,22 @@ async fn max_block_submit() -> anyhow::Result<()> {
 
 	let start = std::time::Instant::now();
 	let data = vec![200; TX_MAX_SIZE];
-	let da_commitments =
-		build_da_commitments(data.clone(), 1024, 1024, Seed::default())
-			.unwrap();
+	let da_commitments = build_da_commitments(data.clone(), 1024, 1024, Seed::default()).unwrap();
 
 	let calls = (0..NUM_CHUNKS)
 		.map(|_| {
-			api::tx().data_availability().submit_data_with_commitments(BoundedVec(data.clone()), BoundedVec(da_commitments.clone()))
+			api::tx().data_availability().submit_data_with_commitments(
+				BoundedVec(data.clone()),
+				BoundedVec(da_commitments.clone()),
+			)
 		})
 		.collect::<Vec<_>>();
 	let txs = calls
 		.iter()
 		.enumerate()
-		.map(|(idx, call)| tx::send_with_nonce(&client, call, &sender, AppId(1), nonce + idx as u64))
+		.map(|(idx, call)| {
+			tx::send_with_nonce(&client, call, &sender, AppId(1), nonce + idx as u64)
+		})
 		.collect::<FuturesOrdered<_>>()
 		.try_collect::<Vec<_>>()
 		.await?;

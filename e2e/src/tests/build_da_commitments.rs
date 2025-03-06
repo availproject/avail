@@ -32,9 +32,8 @@ fn build_grid(
 	seed: Seed,
 ) -> Result<EvaluationGrid, DaCommitmentsError> {
 	// let app_ext = AppExtrinsic::from(data);
-	let grid =
-		EvaluationGrid::from_data(data, max_width, max_width, max_height, seed)
-			.map_err(|e| DaCommitmentsError::GridConstructionFailed(format!("{:?}", e)))?;
+	let grid = EvaluationGrid::from_data(data, max_width, max_width, max_height, seed)
+		.map_err(|e| DaCommitmentsError::GridConstructionFailed(format!("{:?}", e)))?;
 
 	Ok(grid)
 }
@@ -53,12 +52,12 @@ fn build_commitment(grid: &EvaluationGrid) -> Result<Vec<u8>, DaCommitmentsError
 	println!("Make polynomial grid time: {:?}", poly_grid_time - pmp_time);
 
 	let extended_grid = poly_grid
-		.extended_commitments(pmp, 2)
+		.commitments(pmp)
 		.map_err(|e| DaCommitmentsError::GridExtensionFailed(format!("{:?}", e)))?;
 
 	let extended_grid_time = start.elapsed();
 	println!(
-		"Extended commitments time: {:?}",
+		" Commitments build time: {:?}",
 		extended_grid_time - poly_grid_time
 	);
 	let mut commitment = Vec::new();

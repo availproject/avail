@@ -152,11 +152,28 @@ pub fn build_extension(
 		Err(_) => return HeaderExtension::get_faulty_header(data_root, version),
 	};
 
+	let original_rows = app_lookup.len();
+	let padded_rows = original_rows.next_power_of_two();
+	// We can reduce the header size further letting the verification clients to do this padding since anyway they're extending the commitments
+	if padded_rows > original_rows {
+		let (_, padded_row_commitment) =
+			kate::gridgen::get_pregenerated_row_and_commitment(max_columns)
+				.expect("lets hope, it works :)");
+		commitment = commitment
+			.into_iter()
+			.chain(
+				std::iter::repeat(padded_row_commitment)
+					.take((padded_rows - original_rows) as usize)
+					.flat_map(|x| x),
+			)
+			.collect();
+	}
+
 	match version {
 		HeaderVersion::V3 => {
 			// TODO: Based on the approach we select for ASDR, either we should update the KateCommitment struct or correctly update the rows & cols values here
 			let commitment = kc::v3::KateCommitment::new(
-				app_lookup.len().try_into().unwrap_or_default(),
+				padded_rows.try_into().unwrap_or_default(),
 				max_columns.try_into().unwrap_or_default(),
 				data_root,
 				commitment,
