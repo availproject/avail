@@ -476,7 +476,16 @@ where
 			futures_timer::Delay::new(deadline.saturating_duration_since((self.now)()) / 8).fuse();
 
 		let mut pending_iterator = select! {
-			res = t1 => res,
+			res = t1 => match res {
+                           Ok(value) => value,
+                           Err(e) => {
+                               error!(target: LOG_TARGET, 
+                                   "NODE_CRITICAL_ERROR_005 - Transaction pool error at block #{}: {:?}", 
+                                   self.parent_number, e
+                                );
+                           self.transaction_pool.ready()
+                        }
+                },
 			_ = t2 => {
 				warn!(target: LOG_TARGET,
 					"Timeout fired waiting for transaction pool at block #{}. \
@@ -635,11 +644,12 @@ where
 		};
 
 		info!(
-			"🎁 Prepared block for proposing at {} ({} ms) [hash: {:?}; parent_hash: {}; {extrinsics_summary}",
+			"🎁 Prepared block for proposing at {} ({} ms) [hash: {:?}; parent_hash: {}; {extrinsics_summary}]",
 			block.header().number(),
 			block_took.as_millis(),
 			<Block as BlockT>::Hash::from(block.header().hash()),
 			block.header().parent_hash(),
+			extrinsics_summary
 		);
 		telemetry!(
 			self.telemetry;
