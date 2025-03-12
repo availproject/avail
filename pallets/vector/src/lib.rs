@@ -976,8 +976,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// The entrypoint for fulfill a call.
-		/// proof Input proof value.
+		/// The entrypoint for mock_fulfill call.
 		/// public_values Input public values.
 		#[pallet::call_index(17)]
 		#[pallet::weight(T::WeightInfo::fulfill())]
