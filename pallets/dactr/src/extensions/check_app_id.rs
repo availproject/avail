@@ -57,7 +57,7 @@ where
 	///  - `Utility::batch/batch_all/force_batch(..)` extrinsic can use `AppId != 0` If the wrapped calls are ALL `DataAvailability::submit_data(..)`.
 	///  - Any other call must use `AppId == 0`.
 	///  - It also ensures that Kate's evaluation grid can be generated during the header
-	///  production.
+	///    production.
 	pub fn do_validate(
 		&self,
 		call: &<T as SystemConfig>::RuntimeCall,
@@ -219,7 +219,7 @@ where
 	) -> TransactionValidity {
 		self.do_validate(call, len)?;
 		Ok(ValidTransaction {
-			longevity: TransactionLongevity::max_value(),
+			longevity: TransactionLongevity::MAX,
 			..Default::default()
 		})
 	}

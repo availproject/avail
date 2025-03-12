@@ -64,8 +64,8 @@ pub trait HostedKate {
 		let grids: Vec<EGrid> = extrinsics
 			.into_iter()
 			.map(|ext| EGrid::from_data(ext.data, max_width, max_width, max_height, seed))
-			.collect::<Result<_, _>>()?; 
-		// Create a universal grid by merging individual tx grids 
+			.collect::<Result<_, _>>()?;
+		// Create a universal grid by merging individual tx grids
 		let uni_grid = EGrid::merge_with_padding(grids)?
 			.extend_columns(NonZeroU16::new(2).expect("2 > 0"))
 			.map_err(|_| Error::ColumnExtension)?;

@@ -164,7 +164,7 @@ pub fn build_extension(
 			.chain(
 				std::iter::repeat(padded_row_commitment)
 					.take((padded_rows - original_rows) as usize)
-					.flat_map(|x| x),
+					.flatten(),
 			)
 			.collect();
 	}
