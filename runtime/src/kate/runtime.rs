@@ -1,4 +1,5 @@
 use super::{native::hosted_kate, Error, GDataProof, GRow};
+use avail_base::header_extension::SubmittedData;
 use da_control::LOG_TARGET as DALOG_TARGET;
 
 use avail_core::AppExtrinsic;
@@ -34,10 +35,10 @@ pub fn grid<T: SystemConfig>(
 }
 
 pub fn proof<T: SystemConfig>(
-	app_extrinsics: Vec<AppExtrinsic>,
+	da_extrinsics: Vec<SubmittedData>,
 	block_len: BlockLength,
 	cells: Vec<(u32, u32)>,
 ) -> Result<Vec<GDataProof>, Error> {
 	let seed = random_seed::<T>();
-	hosted_kate::proof(app_extrinsics, block_len, seed, cells)
+	hosted_kate::proof(da_extrinsics, block_len, seed, cells)
 }

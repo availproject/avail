@@ -1,4 +1,5 @@
 use super::{Error, GDataProof, GProof, GRawScalar, GRow};
+use avail_base::header_extension::SubmittedData;
 use avail_core::{AppExtrinsic, AppId, BlockLengthColumns, BlockLengthRows};
 use core::num::NonZeroU16;
 use frame_system::{limits::BlockLength, native::hosted_header_builder::MIN_WIDTH};
@@ -53,39 +54,46 @@ pub trait HostedKate {
 	}
 
 	fn proof(
-		extrinsics: Vec<AppExtrinsic>,
+		extrinsics: Vec<SubmittedData>,
 		block_len: BlockLength,
 		seed: Seed,
 		cells: Vec<(u32, u32)>,
 	) -> Result<Vec<GDataProof>, Error> {
 		let srs = SRS.get_or_init(multiproof_params);
 		let (max_width, max_height) = to_width_height(&block_len);
-		let grid = EGrid::from_extrinsics(extrinsics, MIN_WIDTH, max_width, max_height, seed)?
-			.extend_columns(NonZeroU16::new(2).expect("2>0"))
+		let grids: Vec<EGrid> = extrinsics
+			.into_iter()
+			.map(|ext| EGrid::from_data(ext.data, max_width, max_width, max_height, seed))
+			.collect::<Result<_, _>>()?; 
+		// Create a universal grid by merging individual tx grids 
+		let uni_grid = EGrid::merge_with_padding(grids)?
+			.extend_columns(NonZeroU16::new(2).expect("2 > 0"))
 			.map_err(|_| Error::ColumnExtension)?;
 
-		let poly = grid.make_polynomial_grid()?;
+		let poly = uni_grid.make_polynomial_grid()?;
 
-		let proofs = cells
+		let proofs: Vec<GDataProof> = cells
 			.into_par_iter()
 			.map(|(row, col)| -> Result<GDataProof, Error> {
-				let data: GRawScalar = grid
+				let data = uni_grid
 					.get(row as usize, col as usize)
 					.ok_or(Error::MissingCell { row, col })?
 					.to_bytes()
 					.map(GRawScalar::from)
 					.map_err(|_| Error::InvalidScalarAtRow(row))?;
 
-				let cell = Cell::new(BlockLengthRows(row), BlockLengthColumns(col));
 				let proof = poly
-					.proof(srs, &cell)?
+					.proof(
+						srs,
+						&Cell::new(BlockLengthRows(row), BlockLengthColumns(col)),
+					)?
 					.to_bytes()
 					.map(GProof)
 					.map_err(|_| Error::Proof)?;
 
 				Ok((data, proof))
 			})
-			.collect::<Result<Vec<_>, _>>()?;
+			.collect::<Result<_, _>>()?;
 
 		Ok(proofs)
 	}

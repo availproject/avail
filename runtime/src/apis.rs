@@ -468,8 +468,8 @@ impl_runtime_apis! {
 		}
 
 		fn proof(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, cells: Vec<(u32,u32)> ) -> Result<Vec<GDataProof>, RTKateError> {
-			let app_extrinsics = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block_number, &extrinsics).to_app_extrinsics();
-			let data_proofs = super::kate::proof::<Runtime>(app_extrinsics, block_len, cells)?;
+			let da_extrinsics = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block_number, &extrinsics).data_submissions;
+			let data_proofs = super::kate::proof::<Runtime>(da_extrinsics, block_len, cells)?;
 			log::trace!(target: LOG_TARGET, "KateApi::proof: data_proofs={data_proofs:#?}");
 			Ok(data_proofs)
 		}

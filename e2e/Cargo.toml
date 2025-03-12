@@ -7,9 +7,9 @@ edition = "2021"
 
 [dev-dependencies]
 avail-subxt = { path = "../avail-subxt" }
-kate-recovery = { git = "https://github.com/availproject/avail-core", rev = "e7ef1fde8a057b0d4413ee9f020ff1ac4db2401c" }
-kate = { git = "https://github.com/availproject/avail-core", rev = "e7ef1fde8a057b0d4413ee9f020ff1ac4db2401c" }
-avail-core = {  git = "https://github.com/availproject/avail-core", rev = "e7ef1fde8a057b0d4413ee9f020ff1ac4db2401c" }
+kate-recovery = { git = "https://github.com/availproject/avail-core", rev = "f137faa28e3e63275865c216e36dc71167cb7826" }
+kate = { git = "https://github.com/availproject/avail-core", rev = "f137faa28e3e63275865c216e36dc71167cb7826" }
+avail-core = {  git = "https://github.com/availproject/avail-core", rev = "f137faa28e3e63275865c216e36dc71167cb7826" }
 # kate-recovery = { path = "../../avail-core/kate/recovery" }
 # kate = { path = "../../avail-core/kate" }
 # avail-core = { path = "../../avail-core/core", features = ["serde"] }
