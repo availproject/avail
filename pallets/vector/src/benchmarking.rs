@@ -529,7 +529,7 @@ mod benchmarks {
 	}
 
 	#[benchmark]
-	fn disable_verification() -> Result<(), BenchmarkError> {
+	fn enable_mock() -> Result<(), BenchmarkError> {
 		let origin = RawOrigin::Root;
 
 		#[extrinsic_call]
