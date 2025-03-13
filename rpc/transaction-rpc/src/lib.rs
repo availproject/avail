@@ -38,7 +38,7 @@ pub trait TransactionState {
 	#[method(name = "transaction_state")]
 	async fn transaction_state(
 		&self,
-		txhash: H256,
+		tx_hash: H256,
 		is_finalized: Option<bool>,
 	) -> RpcResult<Vec<TransactionState>>;
 }
@@ -59,13 +59,13 @@ impl System {
 impl TransactionStateServer for System {
 	async fn transaction_state(
 		&self,
-		txhash: H256,
+		tx_hash: H256,
 		finalized: Option<bool>,
 	) -> RpcResult<Vec<TransactionState>> {
 		let (response_tx, response_rx) = oneshot::channel();
 
 		let finalized = finalized.unwrap_or(false);
-		let res = self.sender.send((txhash, finalized, response_tx)).await;
+		let res = self.sender.send((tx_hash, finalized, response_tx)).await;
 		if let Err(e) = res {
 			return Err(internal_error(e.to_string()));
 		}
