@@ -24,7 +24,7 @@ pub struct Cli {
 	pub subcommand: Option<Subcommand>,
 
 	#[allow(missing_docs)]
-	#[clap(flatten)]
+	#[command(flatten)]
 	pub run: sc_cli::RunCmd,
 
 	/// Disable automatic hardware benchmarks.
@@ -42,15 +42,15 @@ pub struct Cli {
 	pub unsafe_da_sync: bool,
 
 	/// Provides storage monitoring options on the node
-	#[clap(flatten)]
+	#[command(flatten)]
 	pub storage_monitor: sc_storage_monitor::StorageMonitorParams,
 
 	/// Enable Kate RPC
-	#[clap(long = "enable-kate-rpc", default_value_t = false)]
+	#[arg(long = "enable-kate-rpc", default_value_t = false)]
 	pub kate_rpc_enabled: bool,
 
 	/// Enable Kate RPC Metrics
-	#[clap(long = "enable-kate-rpc-metrics", default_value_t = false)]
+	#[arg(long = "enable-kate-rpc-metrics", default_value_t = false)]
 	pub kate_rpc_metrics_enabled: bool,
 
 	/// The maximum number of cells that can be requested in one go.
@@ -67,26 +67,26 @@ pub struct Cli {
 
 	/// Enable Transaction State RPC. This allows querying the transaction state (success or failure)
 	/// using only a transaction hash.
-	#[clap(long = "enable-tx-state-rpc", default_value_t = false)]
+	#[arg(long = "enable-tx-state-rpc", default_value_t = false)]
 	pub tx_state_rpc_enabled: bool,
 
 	/// The maximum number of results the transaction state RPC will return for a transaction hash.
 	/// If a transaction hash appears in multiple blocks, the RPC will return only the top `X` transaction states.  
 	/// In most cases, the transaction hash is unique, so this parameter is usually irrelevant.
-	#[clap(long, default_value_t = 10)]
+	#[arg(long, default_value_t = 10)]
 	pub tx_state_rpc_max_search_results: usize,
 
 	/// The maximum number of blocks preserved and stored in the transaction state RPC database.
 	///
 	/// The default is 31 days' worth of blocks.
-	#[clap(long, default_value_t = 133920)]
+	#[arg(long, default_value_t = 133920)]
 	pub tx_state_rpc_max_stored_block_count: usize,
 
 	/// Logging interval for transaction state, in milliseconds.
 	/// A lower value results in more frequent log updates.
 	///
 	/// The default is 300_000 milliseconds (300 seconds).
-	#[clap(long, default_value_t = 300_000)]
+	#[arg(long, default_value_t = 300_000)]
 	pub tx_state_logging_interval: u64,
 }
 
