@@ -2115,6 +2115,7 @@ dependencies = [
  "log",
  "pallet-balances",
  "pallet-multisig",
+ "pallet-preimage",
  "pallet-proxy",
  "pallet-scheduler",
  "pallet-timestamp",

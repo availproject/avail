@@ -10,6 +10,14 @@ use frame_system::{
 use pallet_transaction_payment::FungibleAdapter;
 use sp_core::ConstU32;
 use sp_runtime::{AccountId32, BuildStorage};
+use frame_support::traits::InstanceFilter;
+use codec::{Encode, Decode, MaxEncodedLen};
+use frame_support::pallet_prelude::RuntimeDebug;
+use sp_runtime::traits::BlakeTwo256;
+use frame_system::EnsureRoot;
+use frame_support::traits::EqualPrivilegeOnly;
+use frame_support::traits::fungible::HoldConsideration;
+use frame_support::traits::LinearStoragePrice;
 
 use crate::{self as da_control, *};
 
@@ -29,6 +37,9 @@ frame_support::construct_runtime!(
 		DataAvailability: da_control,
 		Vector: pallet_vector,
 		Multisig: pallet_multisig,
+		Proxy: pallet_proxy,
+		Scheduler: pallet_scheduler,
+		Preimage: pallet_preimage,
 	}
 );
 
@@ -84,6 +95,117 @@ impl pallet_vector::Config for Test {
 
 #[derive_impl(pallet_timestamp::config_preludes::TestDefaultConfig as pallet_timestamp::DefaultConfig)]
 impl pallet_timestamp::Config for Test {}
+
+parameter_types! {
+	// One storage item; key size 32, value size 8; .
+	pub const ProxyDepositBase: Balance = 10 * 1;
+	// Additional storage item size of 33 bytes.
+	pub const ProxyDepositFactor: Balance = 3 * 1;
+	pub const AnnouncementDepositBase: Balance = 10 * 1;
+	pub const AnnouncementDepositFactor: Balance = 5 * 1;
+}
+
+/// The type used to represent the kinds of proxying allowed.
+#[derive(
+	Copy,
+	Clone,
+	Eq,
+	PartialEq,
+	Ord,
+	PartialOrd,
+	Encode,
+	Decode,
+	RuntimeDebug,
+	MaxEncodedLen,
+	scale_info::TypeInfo,
+)]
+pub enum ProxyType {
+	Any,
+	NonTransfer,
+	Governance,
+	Staking,
+	IdentityJudgement,
+	NominationPools,
+}
+impl Default for ProxyType {
+	fn default() -> Self {
+		Self::Any
+	}
+}
+impl InstanceFilter<RuntimeCall> for ProxyType {
+	fn filter(&self, c: &RuntimeCall) -> bool {
+		match self {
+			_ => true,
+		}
+	}
+	fn is_superset(&self, o: &Self) -> bool {
+		match (self, o) {
+			(x, y) if x == y => true,
+			(ProxyType::Any, _) => true,
+			(_, ProxyType::Any) => false,
+			(ProxyType::NonTransfer, _) => true,
+			_ => false,
+		}
+	}
+}
+
+impl pallet_proxy::Config for Test {
+	type RuntimeCall = RuntimeCall;
+	type RuntimeEvent = RuntimeEvent;
+	type Currency = Balances;
+	type ProxyType = ProxyType;
+	type ProxyDepositBase = ProxyDepositBase;
+	type ProxyDepositFactor = ProxyDepositFactor;
+	type MaxProxies = ConstU32<32>;
+	type WeightInfo = ();
+	type MaxPending = ConstU32<32>;
+	type CallHasher = BlakeTwo256;
+	type AnnouncementDepositBase = AnnouncementDepositBase;
+	type AnnouncementDepositFactor = AnnouncementDepositFactor;
+}
+
+parameter_types! {
+	pub MaximumSchedulerWeight: Weight = (Perbill::from_percent(80) * 1).into();
+	pub const MaxScheduledPerBlock: u32 = 50;
+}
+
+
+impl pallet_scheduler::Config for Test {
+	type RuntimeCall = RuntimeCall;
+	type RuntimeEvent = RuntimeEvent;
+	type MaxScheduledPerBlock = ConstU32<512>;
+	type MaximumWeight = MaximumSchedulerWeight;
+	type OriginPrivilegeCmp = EqualPrivilegeOnly;
+	type PalletsOrigin = OriginCaller;
+	type Preimages = Preimage;
+	type RuntimeOrigin = RuntimeOrigin;
+	type ScheduleOrigin = EnsureRoot<AccountId32>;
+	type WeightInfo = ();
+}
+
+parameter_types! {
+	pub const PreimageBaseDeposit: Balance = 1 * 1;
+	// One cent: $10,000 / MB
+	pub const PreimageByteDeposit: Balance = 1 * 1;
+	pub const PreimageHoldReason: RuntimeHoldReason = RuntimeHoldReason::Preimage(pallet_preimage::HoldReason::Preimage);
+}
+
+impl pallet_preimage::Config for Test {
+	type Consideration = HoldConsideration<
+		AccountId32,
+		Balances,
+		PreimageHoldReason,
+		LinearStoragePrice<
+		PreimageBaseDeposit,
+		PreimageByteDeposit,
+			Balance,
+		>,
+	>;
+	type Currency = Balances;
+	type ManagerOrigin = EnsureRoot<AccountId32>;
+	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = ();
+}
 
 parameter_types! {
 	pub const DepositBase: Balance = 2 * 1;
