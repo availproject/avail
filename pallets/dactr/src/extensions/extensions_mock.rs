@@ -1,23 +1,23 @@
 #![cfg(test)]
 
+use codec::{Decode, Encode, MaxEncodedLen};
+use frame_support::pallet_prelude::RuntimeDebug;
 use frame_support::parameter_types;
+use frame_support::traits::fungible::HoldConsideration;
+use frame_support::traits::EqualPrivilegeOnly;
+use frame_support::traits::InstanceFilter;
+use frame_support::traits::LinearStoragePrice;
 use frame_support::weights::WeightToFee;
 use frame_support::{derive_impl, weights::IdentityFee};
+use frame_system::EnsureRoot;
 use frame_system::{
 	mocking::MockUncheckedExtrinsic, native::hosted_header_builder::da::HeaderExtensionBuilder,
 	test_utils::TestRandomness,
 };
 use pallet_transaction_payment::FungibleAdapter;
 use sp_core::ConstU32;
-use sp_runtime::{AccountId32, BuildStorage};
-use frame_support::traits::InstanceFilter;
-use codec::{Encode, Decode, MaxEncodedLen};
-use frame_support::pallet_prelude::RuntimeDebug;
 use sp_runtime::traits::BlakeTwo256;
-use frame_system::EnsureRoot;
-use frame_support::traits::EqualPrivilegeOnly;
-use frame_support::traits::fungible::HoldConsideration;
-use frame_support::traits::LinearStoragePrice;
+use sp_runtime::{AccountId32, BuildStorage};
 
 use crate::{self as da_control, *};
 
@@ -169,7 +169,6 @@ parameter_types! {
 	pub const MaxScheduledPerBlock: u32 = 50;
 }
 
-
 impl pallet_scheduler::Config for Test {
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
@@ -195,11 +194,7 @@ impl pallet_preimage::Config for Test {
 		AccountId32,
 		Balances,
 		PreimageHoldReason,
-		LinearStoragePrice<
-		PreimageBaseDeposit,
-		PreimageByteDeposit,
-			Balance,
-		>,
+		LinearStoragePrice<PreimageBaseDeposit, PreimageByteDeposit, Balance>,
 	>;
 	type Currency = Balances;
 	type ManagerOrigin = EnsureRoot<AccountId32>;
