@@ -25,7 +25,7 @@ use rayon::iter::{IntoParallelIterator, ParallelIterator};
 #[runtime_interface]
 pub trait HostedKate {
 	fn grid(
-		submitted: Vec<AppExtrinsic>,
+		submitted: Vec<SubmittedData>,
 		block_length: BlockLength,
 		seed: Seed,
 		selected_rows: Vec<u32>,
@@ -36,13 +36,21 @@ pub trait HostedKate {
 			.map(usize::try_from)
 			.collect::<Result<Vec<_>, _>>()?;
 
-		let grid = EGrid::from_extrinsics(submitted, MIN_WIDTH, max_width, max_height, seed)?
-			.extend_columns(NonZeroU16::new(2).expect("2>0"))
+		let grids: Vec<EGrid> = submitted
+			.into_iter()
+			.map(|ext| EGrid::from_data(ext.data, max_width, max_width, max_height, seed))
+			.collect::<Result<_, _>>()?;
+		// Create a universal grid by merging individual tx grids
+		let uni_grid = EGrid::merge_with_padding(grids)?
+		// Do we need to extend the columns here? get the confirmation from its consumers 
+			.extend_columns(NonZeroU16::new(2).expect("2 > 0"))
 			.map_err(|_| Error::ColumnExtension)?;
 		let rows = selected_rows
 			.into_par_iter()
 			.map(|row_idx| {
-				let row = grid.row(row_idx).ok_or(Error::MissingRow(row_idx as u32))?;
+				let row = uni_grid
+					.row(row_idx)
+					.ok_or(Error::MissingRow(row_idx as u32))?;
 				row.iter()
 					.map(|scalar| scalar.to_bytes().map(GRawScalar::from))
 					.collect::<Result<Vec<_>, _>>()

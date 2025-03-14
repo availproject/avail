@@ -461,8 +461,8 @@ impl_runtime_apis! {
 		}
 
 		fn rows(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, rows: Vec<u32>) -> Result<Vec<GRow>, RTKateError> {
-			let app_extrinsics = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block_number, &extrinsics).to_app_extrinsics();
-			let grid_rows = super::kate::grid::<Runtime>(app_extrinsics, block_len, rows)?;
+			let da_extrinsics = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block_number, &extrinsics).data_submissions;
+			let grid_rows = super::kate::grid::<Runtime>(da_extrinsics, block_len, rows)?;
 			log::trace!(target: LOG_TARGET, "KateApi::rows: rows={grid_rows:#?}");
 			Ok(grid_rows)
 		}

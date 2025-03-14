@@ -2,7 +2,6 @@ use super::{native::hosted_kate, Error, GDataProof, GRow};
 use avail_base::header_extension::SubmittedData;
 use da_control::LOG_TARGET as DALOG_TARGET;
 
-use avail_core::AppExtrinsic;
 use frame_system::{limits::BlockLength, Config as SystemConfig};
 use kate::Seed;
 
@@ -26,7 +25,7 @@ fn random_seed<T: SystemConfig>() -> Seed {
 }
 
 pub fn grid<T: SystemConfig>(
-	app_extrinsics: Vec<AppExtrinsic>,
+	app_extrinsics: Vec<SubmittedData>,
 	block_length: BlockLength,
 	selected_rows: Vec<u32>,
 ) -> Result<Vec<GRow>, Error> {
