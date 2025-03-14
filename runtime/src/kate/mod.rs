@@ -1,6 +1,7 @@
 pub mod native;
 pub mod runtime;
 
+#[cfg(feature = "std")]
 use kate::gridgen::CellBlock;
 // Reexport
 pub use runtime::{grid, multiproof, proof};
@@ -22,7 +23,8 @@ pub type GRawScalar = U256;
 pub type GRow = Vec<GRawScalar>;
 pub type GDataProof = (GRawScalar, GProof);
 pub type GMultiProof = (Vec<GRawScalar>, GProof);
-#[derive(Encode, Decode, TypeInfo, PassByCodec, Debug, Clone, Serialize, Deserialize)]
+#[derive(Encode, Decode, TypeInfo, PassByCodec, Debug, Clone)]
+#[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
 pub struct GCellBlock {
 	pub start_x: u32,
 	pub start_y: u32,
@@ -31,6 +33,7 @@ pub struct GCellBlock {
 }
 
 impl GCellBlock {
+	#[cfg(feature = "std")]
 	pub fn from(block: CellBlock) -> Self {
 		Self {
 			start_x: block.start_x as u32,
