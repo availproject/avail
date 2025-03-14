@@ -39,6 +39,7 @@ sp-runtime-interface = { workspace = true, default-features = false }
 pallet-utility = { workspace = true, default-features = false }
 
 [dev-dependencies]
+hex-literal.workspace = true
 pallet-balances = { workspace = true, default-features = false, features = ["std"] }
 pallet-timestamp = { workspace = true, default-features = false, features = ["std"] }
 test-case.workspace = true

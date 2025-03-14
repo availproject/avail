@@ -28,8 +28,12 @@ where
 		IsSubType<DACall<T>> + IsSubType<UtilityCall<T>> + IsSubType<VectorCall<T>>,
 	[u8; 32]: From<<T as frame_system::Config>::AccountId>,
 {
+	// since we no longer use submit_data call in data_root leaf, only submit_data_with_commitments are prohibited from batching
 	pub fn is_submit_data_call(&self) -> bool {
-		matches!(self.0.is_sub_type(), Some(DACall::<T>::submit_data { .. }))
+		matches!(
+			self.0.is_sub_type(),
+			Some(DACall::<T>::submit_data_with_commitments { .. })
+		)
 	}
 
 	pub fn is_send_message_call(&self) -> bool {
@@ -130,9 +134,12 @@ mod tests {
 		},
 	};
 	use frame_system::pallet::Call as SysCall;
+	use hex_literal::hex;
 	use pallet_utility::pallet::Call as UtilityCall;
 	use sp_core::H256;
-	use sp_runtime::transaction_validity::{InvalidTransaction, TransactionValidityError};
+	use sp_runtime::transaction_validity::{
+		InvalidTransaction, TransactionLongevity, TransactionValidityError, ValidTransaction,
+	};
 	use test_case::test_case;
 
 	use super::*;
@@ -147,8 +154,12 @@ mod tests {
 	}
 
 	fn submit_data_call() -> RuntimeCall {
-		RuntimeCall::DataAvailability(DACall::submit_data {
-			data: vec![].try_into().unwrap(),
+		// pre-generated data & its commitment
+		let data = hex!("74657374").to_vec();
+		let commitments = hex!("a0c09cf53aabf7105cdbde5746cd3d8051d204e60daabe068dd286b99f3ba0d034d6baae339492bcbde7f963528312e8").to_vec();
+		RuntimeCall::DataAvailability(DACall::submit_data_with_commitments {
+			data: data.try_into().unwrap(),
+			commitments: commitments.try_into().unwrap(),
 		})
 	}
 
@@ -182,6 +193,13 @@ mod tests {
 		))
 	}
 
+	fn valid_with_max_longevity() -> TransactionValidity {
+		Ok(ValidTransaction {
+			longevity: TransactionLongevity::MAX,
+			..Default::default()
+		})
+	}
+
 	fn validate(call: RuntimeCall) -> TransactionValidity {
 		let extrinsic =
 			AppUncheckedExtrinsic::<u32, RuntimeCall, (), ()>::new_unsigned(call.clone());
@@ -203,7 +221,7 @@ mod tests {
 		);
 	}
 
-	#[test_case(submit_data_call() =>  Ok(ValidTransaction::default()); "Single Submit Data call should be allowed" )]
+	#[test_case(submit_data_call() =>  valid_with_max_longevity(); "Single Submit Data call should be allowed" )]
 	#[test_case(send_message_call() =>  Ok(ValidTransaction::default()); "Single Send Message call should be allowed" )]
 	#[test_case(remark_call() =>  Ok(ValidTransaction::default()); "Single Non-Submit-Data and Non-Send-Message call should be allowed" )]
 	fn test_single_call(call: RuntimeCall) -> TransactionValidity {
