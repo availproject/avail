@@ -20,6 +20,7 @@ pallet-transaction-payment = { workspace = true, default-features = false }
 pallet-vector = { workspace = true, default-features = false }
 pallet-multisig = { workspace = true, default-features = false }
 pallet-proxy = { workspace = true, default-features = false }
+pallet-scheduler = { workspace = true, default-features = false }
 
 # Others
 log.workspace = true
@@ -59,6 +60,7 @@ std = [
 	"pallet-vector/std",
 	"pallet-multisig/std",
 	"pallet-proxy/std",
+	"pallet-scheduler/std",
 	"scale-info/std",
 	"serde",
 	"sp-arithmetic/std",

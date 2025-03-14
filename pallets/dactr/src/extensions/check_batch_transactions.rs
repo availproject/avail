@@ -10,6 +10,7 @@ use frame_support::{
 use frame_system::Config as SystemConfig;
 use pallet_multisig::{Call as MultisigCall, Config as MultisigConfig};
 use pallet_proxy::{Call as ProxyCall, Config as ProxyConfig};
+use pallet_scheduler::{Call as SchedulerCall, Config as SchedulerConfig};
 use pallet_utility::{Call as UtilityCall, Config as UtilityConfig};
 use pallet_vector::{Call as VectorCall, Config as VectorConfig};
 use scale_info::TypeInfo;
@@ -18,22 +19,38 @@ use sp_std::{default::Default, vec::Vec};
 
 struct WrappedCall<'a, T>(pub &'a <T as SystemConfig>::RuntimeCall)
 where
-	T: DAConfig + UtilityConfig + VectorConfig + MultisigConfig + ProxyConfig + Send + Sync,
+	T: DAConfig
+		+ UtilityConfig
+		+ VectorConfig
+		+ MultisigConfig
+		+ ProxyConfig
+		+ SchedulerConfig
+		+ Send
+		+ Sync,
 	<T as SystemConfig>::RuntimeCall: IsSubType<DACall<T>>
 		+ IsSubType<UtilityCall<T>>
 		+ IsSubType<VectorCall<T>>
 		+ IsSubType<MultisigCall<T>>
-		+ IsSubType<ProxyCall<T>>,
+		+ IsSubType<ProxyCall<T>>
+		+ IsSubType<SchedulerCall<T>>,
 	[u8; 32]: From<<T as frame_system::Config>::AccountId>;
 
 impl<'a, T> WrappedCall<'a, T>
 where
-	T: DAConfig + UtilityConfig + VectorConfig + MultisigConfig + ProxyConfig + Send + Sync,
+	T: DAConfig
+		+ UtilityConfig
+		+ VectorConfig
+		+ MultisigConfig
+		+ ProxyConfig
+		+ SchedulerConfig
+		+ Send
+		+ Sync,
 	<T as SystemConfig>::RuntimeCall: IsSubType<DACall<T>>
 		+ IsSubType<UtilityCall<T>>
 		+ IsSubType<VectorCall<T>>
 		+ IsSubType<MultisigCall<T>>
-		+ IsSubType<ProxyCall<T>>,
+		+ IsSubType<ProxyCall<T>>
+		+ IsSubType<SchedulerCall<T>>,
 	[u8; 32]: From<<T as frame_system::Config>::AccountId>,
 {
 	pub fn is_submit_data_call(&self) -> bool {
@@ -47,6 +64,38 @@ where
 		match self.0.is_sub_type() {
 			Some(VectorCall::<T>::send_message { .. }) => true,
 			_ => false,
+		}
+	}
+
+	pub fn get_scheduler_call(&self) -> Option<&<T as SchedulerConfig>::RuntimeCall> {
+		match self.0.is_sub_type() {
+			Some(SchedulerCall::<T>::schedule {
+				call,
+				when: _,
+				maybe_periodic: _,
+				priority: _,
+			})
+			| Some(SchedulerCall::<T>::schedule_after {
+				after: _,
+				maybe_periodic: _,
+				priority: _,
+				call,
+			})
+			| Some(SchedulerCall::<T>::schedule_named {
+				id: _,
+				when: _,
+				maybe_periodic: _,
+				priority: _,
+				call,
+			})
+			| Some(SchedulerCall::<T>::schedule_named_after {
+				id: _,
+				after: _,
+				maybe_periodic: _,
+				priority: _,
+				call,
+			}) => Some(call),
+			_ => None,
 		}
 	}
 
@@ -67,6 +116,10 @@ where
 				other_signatories: _,
 				maybe_timepoint: _,
 				max_weight: _,
+			})
+			| Some(MultisigCall::as_multi_threshold_1 {
+				other_signatories: _,
+				call,
 			}) => {
 				//
 				Some(call)
@@ -92,17 +145,35 @@ where
 #[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
 #[scale_info(skip_type_params(T))]
 pub struct CheckBatchTransactions<
-	T: DAConfig + UtilityConfig + MultisigConfig + ProxyConfig + Send + Sync,
+	T: DAConfig + UtilityConfig + MultisigConfig + ProxyConfig + SchedulerConfig + Send + Sync,
 >(sp_std::marker::PhantomData<T>);
 
 impl<T> CheckBatchTransactions<T>
 where
-	T: DAConfig + UtilityConfig + VectorConfig + MultisigConfig + ProxyConfig + Send + Sync,
+	T: DAConfig
+		+ UtilityConfig
+		+ VectorConfig
+		+ MultisigConfig
+		+ ProxyConfig
+		+ SchedulerConfig
+		+ Send
+		+ Sync,
+	<T as MultisigConfig>::RuntimeCall: IsSubType<VectorCall<T>>
+		+ IsSubType<ProxyCall<T>>
+		+ IsSubType<UtilityCall<T>>
+		+ IsSubType<MultisigCall<T>>
+		+ IsSubType<SchedulerCall<T>>,
+	<T as SchedulerConfig>::RuntimeCall: IsSubType<VectorCall<T>>
+		+ IsSubType<ProxyCall<T>>
+		+ IsSubType<UtilityCall<T>>
+		+ IsSubType<MultisigCall<T>>
+		+ IsSubType<SchedulerCall<T>>,
 	<T as SystemConfig>::RuntimeCall: IsSubType<DACall<T>>
 		+ IsSubType<UtilityCall<T>>
 		+ IsSubType<VectorCall<T>>
 		+ IsSubType<MultisigCall<T>>
-		+ IsSubType<ProxyCall<T>>,
+		+ IsSubType<ProxyCall<T>>
+		+ IsSubType<SchedulerCall<T>>,
 	[u8; 32]: From<<T as frame_system::Config>::AccountId>,
 {
 	pub fn new() -> Self {
@@ -115,47 +186,37 @@ where
 		call: &<T as SystemConfig>::RuntimeCall,
 		_len: usize,
 	) -> TransactionValidity {
+		let iterations = 0;
 		let call = WrappedCall::<T>(call);
-		if let Some(calls) = call.get_batch_call() {
-			Self::recursive_validate_call(calls, 0)?;
+
+		if let Some(call) = call.get_proxy_call() {
+			Self::recursive_proxy_call(call, iterations, false)?;
 			return Ok(ValidTransaction::default());
 		}
 
 		if let Some(call) = call.get_as_multi_call() {
-			/* 			let call: &<T as SystemConfig>::RuntimeCall = call.into_ref();
-			let call = WrappedCall::<T>(call);
-			match call.is_sub_type() {
-				Some(ProxyCall::<T>::proxy {
-					call,
-					real: _,
-					force_proxy_type: _,
-				}) => Some(call),
-				_ => None,
-			}; */
+			Self::recursive_multisig_call(call, iterations, false)?;
 			return Ok(ValidTransaction::default());
-		};
+		}
 
-		/* 		if let Some(call) = call.get_proxy_call() {
-			let call: &<T as SystemConfig>::RuntimeCall = call.into_ref();
-			let call = WrappedCall::<T>(call);
-
-			if call.is_send_message_call() {
-				return Ok(ValidTransaction::default());
-			}
-
-			if call.is_submit_data_call() {
-				return Ok(ValidTransaction::default());
-			}
-
+		if let Some(calls) = call.get_batch_call() {
+			Self::recursive_batch_call(calls, iterations, false)?;
 			return Ok(ValidTransaction::default());
-		}; */
+		}
+
+		if let Some(call) = call.get_scheduler_call() {
+			Self::recursive_scheduler_call(call, iterations, false)?;
+			return Ok(ValidTransaction::default());
+		}
 
 		return Ok(ValidTransaction::default());
 	}
 
-	fn recursive_validate_call(
+	// No Send Message or Submit Data calls are allowed inside Batch Call
+	fn recursive_batch_call(
 		calls: &Vec<<T as UtilityConfig>::RuntimeCall>,
 		iteration: usize,
+		inside_batch: bool,
 	) -> TransactionValidity {
 		use InvalidTransactionCustomId::*;
 
@@ -176,13 +237,247 @@ where
 				InvalidTransaction::Custom(UnexpectedSendMessageCall as u8)
 			);
 
-			let Some(calls) = call.get_batch_call() else {
-				continue;
+			if let Some(call) = call.get_proxy_call() {
+				Self::recursive_proxy_call(call, iteration + 1, true)?;
 			};
 
-			Self::recursive_validate_call(calls, iteration + 1)?;
+			if let Some(call) = call.get_as_multi_call() {
+				Self::recursive_multisig_call(call, iteration + 1, true)?;
+			};
+
+			if let Some(calls) = call.get_batch_call() {
+				if inside_batch {
+					return Err(InvalidTransaction::Custom(MaxRecursionExceeded as u8).into());
+				}
+				Self::recursive_batch_call(calls, iteration + 1, true)?;
+			};
+
+			if let Some(call) = call.get_scheduler_call() {
+				Self::recursive_scheduler_call(call, iteration + 1, true)?;
+			};
 		}
 
+		return Ok(ValidTransaction::default());
+	}
+
+	// Send Message is allowed if it is behind a zero, single or double transaction that accepts a call.
+	fn recursive_proxy_call(
+		call: &<T as ProxyConfig>::RuntimeCall,
+		iteration: usize,
+		inside_batch: bool,
+	) -> TransactionValidity {
+		use InvalidTransactionCustomId::*;
+		if iteration >= MAX_ITERATIONS {
+			return Err(InvalidTransaction::Custom(MaxRecursionExceeded as u8).into());
+		}
+
+		let call: &<T as SystemConfig>::RuntimeCall = call.into_ref();
+		let call = WrappedCall::<T>(call);
+
+		if iteration > 1 || inside_batch {
+			ensure!(
+				!call.is_send_message_call(),
+				InvalidTransaction::Custom(UnexpectedSendMessageCall as u8)
+			);
+		}
+
+		if let Some(call) = call.get_proxy_call() {
+			return Self::recursive_proxy_call(call, iteration + 1, inside_batch);
+		}
+
+		if let Some(call) = call.get_as_multi_call() {
+			return Self::recursive_multisig_call(call, iteration + 1, inside_batch);
+		}
+
+		if let Some(calls) = call.get_batch_call() {
+			return Self::recursive_batch_call(calls, iteration + 1, inside_batch);
+		}
+
+		if let Some(call) = call.get_scheduler_call() {
+			return Self::recursive_scheduler_call(call, iteration + 1, inside_batch);
+		};
+
+		// Everything else is OK
+		return Ok(ValidTransaction::default());
+	}
+
+	// Send Message is allowed if it is behind a zero, single or double transaction that accepts a call.
+	fn recursive_multisig_call(
+		call: &<T as MultisigConfig>::RuntimeCall,
+		iteration: usize,
+		inside_batch: bool,
+	) -> TransactionValidity {
+		use InvalidTransactionCustomId::*;
+		if iteration >= MAX_ITERATIONS {
+			return Err(InvalidTransaction::Custom(MaxRecursionExceeded as u8).into());
+		}
+
+		if iteration > 1 || inside_batch {
+			match call.is_sub_type() {
+				Some(VectorCall::<T>::send_message { .. }) => {
+					return Err(InvalidTransaction::Custom(UnexpectedSendMessageCall as u8).into())
+				},
+				_ => (),
+			}
+		}
+
+		match call.is_sub_type() {
+			Some(ProxyCall::<T>::proxy {
+				call,
+				real: _,
+				force_proxy_type: _,
+			}) => return Self::recursive_proxy_call(call, iteration + 1, inside_batch),
+			_ => (),
+		}
+
+		match call.is_sub_type() {
+			Some(UtilityCall::<T>::batch { calls })
+			| Some(UtilityCall::<T>::batch_all { calls })
+			| Some(UtilityCall::<T>::force_batch { calls }) => {
+				return Self::recursive_batch_call(calls, iteration + 1, inside_batch);
+			},
+			_ => (),
+		}
+
+		match call.is_sub_type() {
+			Some(MultisigCall::<T>::as_multi {
+				call,
+				threshold: _,
+				other_signatories: _,
+				maybe_timepoint: _,
+				max_weight: _,
+			})
+			| Some(MultisigCall::as_multi_threshold_1 {
+				other_signatories: _,
+				call,
+			}) => {
+				return Self::recursive_multisig_call(call, iteration + 1, inside_batch);
+			},
+			_ => (),
+		}
+
+		match call.is_sub_type() {
+			Some(SchedulerCall::<T>::schedule {
+				call,
+				when: _,
+				maybe_periodic: _,
+				priority: _,
+			})
+			| Some(SchedulerCall::<T>::schedule_after {
+				after: _,
+				maybe_periodic: _,
+				priority: _,
+				call,
+			})
+			| Some(SchedulerCall::<T>::schedule_named {
+				id: _,
+				when: _,
+				maybe_periodic: _,
+				priority: _,
+				call,
+			})
+			| Some(SchedulerCall::<T>::schedule_named_after {
+				id: _,
+				after: _,
+				maybe_periodic: _,
+				priority: _,
+				call,
+			}) => {
+				return Self::recursive_scheduler_call(call, iteration + 1, inside_batch);
+			},
+			_ => (),
+		}
+
+		// Everything else is OK
+		return Ok(ValidTransaction::default());
+	}
+
+	// Send Message is not allowed at all
+	fn recursive_scheduler_call(
+		call: &<T as SchedulerConfig>::RuntimeCall,
+		iteration: usize,
+		inside_batch: bool,
+	) -> TransactionValidity {
+		use InvalidTransactionCustomId::*;
+		if iteration >= MAX_ITERATIONS {
+			return Err(InvalidTransaction::Custom(MaxRecursionExceeded as u8).into());
+		}
+
+		match call.is_sub_type() {
+			Some(VectorCall::<T>::send_message { .. }) => {
+				return Err(InvalidTransaction::Custom(UnexpectedSendMessageCall as u8).into())
+			},
+			_ => (),
+		}
+
+		match call.is_sub_type() {
+			Some(ProxyCall::<T>::proxy {
+				call,
+				real: _,
+				force_proxy_type: _,
+			}) => return Self::recursive_proxy_call(call, iteration + 1, inside_batch),
+			_ => (),
+		}
+
+		match call.is_sub_type() {
+			Some(UtilityCall::<T>::batch { calls })
+			| Some(UtilityCall::<T>::batch_all { calls })
+			| Some(UtilityCall::<T>::force_batch { calls }) => {
+				return Self::recursive_batch_call(calls, iteration + 1, inside_batch);
+			},
+			_ => (),
+		}
+
+		match call.is_sub_type() {
+			Some(MultisigCall::<T>::as_multi {
+				call,
+				threshold: _,
+				other_signatories: _,
+				maybe_timepoint: _,
+				max_weight: _,
+			})
+			| Some(MultisigCall::as_multi_threshold_1 {
+				other_signatories: _,
+				call,
+			}) => {
+				return Self::recursive_multisig_call(call, iteration + 1, inside_batch);
+			},
+			_ => (),
+		}
+
+		match call.is_sub_type() {
+			Some(SchedulerCall::<T>::schedule {
+				call,
+				when: _,
+				maybe_periodic: _,
+				priority: _,
+			})
+			| Some(SchedulerCall::<T>::schedule_after {
+				after: _,
+				maybe_periodic: _,
+				priority: _,
+				call,
+			})
+			| Some(SchedulerCall::<T>::schedule_named {
+				id: _,
+				when: _,
+				maybe_periodic: _,
+				priority: _,
+				call,
+			})
+			| Some(SchedulerCall::<T>::schedule_named_after {
+				id: _,
+				after: _,
+				maybe_periodic: _,
+				priority: _,
+				call,
+			}) => {
+				return Self::recursive_scheduler_call(call, iteration + 1, inside_batch);
+			},
+			_ => (),
+		}
+
+		// Everything else is OK
 		return Ok(ValidTransaction::default());
 	}
 }

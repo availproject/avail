@@ -2116,6 +2116,7 @@ dependencies = [
  "pallet-balances",
  "pallet-multisig",
  "pallet-proxy",
+ "pallet-scheduler",
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-utility",
