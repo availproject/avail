@@ -8,6 +8,8 @@ use frame_support::{
 	traits::{IsSubType, IsType},
 };
 use frame_system::Config as SystemConfig;
+use pallet_multisig::{Call as MultisigCall, Config as MultisigConfig};
+use pallet_proxy::{Call as ProxyCall, Config as ProxyConfig};
 use pallet_utility::{Call as UtilityCall, Config as UtilityConfig};
 use pallet_vector::{Call as VectorCall, Config as VectorConfig};
 use scale_info::TypeInfo;
@@ -16,16 +18,22 @@ use sp_std::{default::Default, vec::Vec};
 
 struct WrappedCall<'a, T>(pub &'a <T as SystemConfig>::RuntimeCall)
 where
-	T: DAConfig + UtilityConfig + VectorConfig + Send + Sync,
-	<T as SystemConfig>::RuntimeCall:
-		IsSubType<DACall<T>> + IsSubType<UtilityCall<T>> + IsSubType<VectorCall<T>>,
+	T: DAConfig + UtilityConfig + VectorConfig + MultisigConfig + ProxyConfig + Send + Sync,
+	<T as SystemConfig>::RuntimeCall: IsSubType<DACall<T>>
+		+ IsSubType<UtilityCall<T>>
+		+ IsSubType<VectorCall<T>>
+		+ IsSubType<MultisigCall<T>>
+		+ IsSubType<ProxyCall<T>>,
 	[u8; 32]: From<<T as frame_system::Config>::AccountId>;
 
 impl<'a, T> WrappedCall<'a, T>
 where
-	T: DAConfig + UtilityConfig + VectorConfig + Send + Sync,
-	<T as SystemConfig>::RuntimeCall:
-		IsSubType<DACall<T>> + IsSubType<UtilityCall<T>> + IsSubType<VectorCall<T>>,
+	T: DAConfig + UtilityConfig + VectorConfig + MultisigConfig + ProxyConfig + Send + Sync,
+	<T as SystemConfig>::RuntimeCall: IsSubType<DACall<T>>
+		+ IsSubType<UtilityCall<T>>
+		+ IsSubType<VectorCall<T>>
+		+ IsSubType<MultisigCall<T>>
+		+ IsSubType<ProxyCall<T>>,
 	[u8; 32]: From<<T as frame_system::Config>::AccountId>,
 {
 	pub fn is_submit_data_call(&self) -> bool {
@@ -50,21 +58,51 @@ where
 			_ => None,
 		}
 	}
+
+	pub fn get_as_multi_call(&self) -> Option<&<T as MultisigConfig>::RuntimeCall> {
+		match self.0.is_sub_type() {
+			Some(MultisigCall::<T>::as_multi {
+				call,
+				threshold: _,
+				other_signatories: _,
+				maybe_timepoint: _,
+				max_weight: _,
+			}) => {
+				//
+				Some(call)
+			},
+			_ => None,
+		}
+	}
+
+	pub fn get_proxy_call(&self) -> Option<&<T as ProxyConfig>::RuntimeCall> {
+		match self.0.is_sub_type() {
+			Some(ProxyCall::<T>::proxy {
+				call,
+				real: _,
+				force_proxy_type: _,
+			}) => Some(call),
+			_ => None,
+		}
+	}
 }
 
 /// TODO
 ///
 #[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
 #[scale_info(skip_type_params(T))]
-pub struct CheckBatchTransactions<T: DAConfig + UtilityConfig + Send + Sync>(
-	sp_std::marker::PhantomData<T>,
-);
+pub struct CheckBatchTransactions<
+	T: DAConfig + UtilityConfig + MultisigConfig + ProxyConfig + Send + Sync,
+>(sp_std::marker::PhantomData<T>);
 
 impl<T> CheckBatchTransactions<T>
 where
-	T: DAConfig + UtilityConfig + VectorConfig + Send + Sync,
-	<T as SystemConfig>::RuntimeCall:
-		IsSubType<DACall<T>> + IsSubType<UtilityCall<T>> + IsSubType<VectorCall<T>>,
+	T: DAConfig + UtilityConfig + VectorConfig + MultisigConfig + ProxyConfig + Send + Sync,
+	<T as SystemConfig>::RuntimeCall: IsSubType<DACall<T>>
+		+ IsSubType<UtilityCall<T>>
+		+ IsSubType<VectorCall<T>>
+		+ IsSubType<MultisigCall<T>>
+		+ IsSubType<ProxyCall<T>>,
 	[u8; 32]: From<<T as frame_system::Config>::AccountId>,
 {
 	pub fn new() -> Self {
@@ -78,11 +116,39 @@ where
 		_len: usize,
 	) -> TransactionValidity {
 		let call = WrappedCall::<T>(call);
-		let Some(calls) = call.get_batch_call() else {
+		if let Some(calls) = call.get_batch_call() {
+			Self::recursive_validate_call(calls, 0)?;
+			return Ok(ValidTransaction::default());
+		}
+
+		if let Some(call) = call.get_as_multi_call() {
+			/* 			let call: &<T as SystemConfig>::RuntimeCall = call.into_ref();
+			let call = WrappedCall::<T>(call);
+			match call.is_sub_type() {
+				Some(ProxyCall::<T>::proxy {
+					call,
+					real: _,
+					force_proxy_type: _,
+				}) => Some(call),
+				_ => None,
+			}; */
 			return Ok(ValidTransaction::default());
 		};
 
-		Self::recursive_validate_call(calls, 0)?;
+		/* 		if let Some(call) = call.get_proxy_call() {
+			let call: &<T as SystemConfig>::RuntimeCall = call.into_ref();
+			let call = WrappedCall::<T>(call);
+
+			if call.is_send_message_call() {
+				return Ok(ValidTransaction::default());
+			}
+
+			if call.is_submit_data_call() {
+				return Ok(ValidTransaction::default());
+			}
+
+			return Ok(ValidTransaction::default());
+		}; */
 
 		return Ok(ValidTransaction::default());
 	}

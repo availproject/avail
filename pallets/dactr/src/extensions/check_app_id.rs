@@ -8,6 +8,8 @@ use frame_support::{
 	traits::{IsSubType, IsType},
 };
 use frame_system::{AllExtrinsicsLen, Config as SystemConfig, DynamicBlockLength, ExtrinsicLenOf};
+use pallet_multisig::{Call as MultisigCall, Config as MultisigConfig};
+use pallet_proxy::{Call as ProxyCall, Config as ProxyConfig};
 use pallet_utility::{Call as UtilityCall, Config as UtilityConfig};
 use pallet_vector::{Call as VectorCall, Config as VectorConfig};
 use scale_info::TypeInfo;
@@ -32,16 +34,19 @@ use sp_std::{
 ///
 #[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
 #[scale_info(skip_type_params(T))]
-pub struct CheckAppId<T: DAConfig + UtilityConfig + Send + Sync>(
+pub struct CheckAppId<T: DAConfig + UtilityConfig + MultisigConfig + ProxyConfig + Send + Sync>(
 	pub AppId,
 	sp_std::marker::PhantomData<T>,
 );
 
 impl<T> CheckAppId<T>
 where
-	T: DAConfig + VectorConfig + UtilityConfig + Send + Sync,
-	<T as SystemConfig>::RuntimeCall:
-		IsSubType<DACall<T>> + IsSubType<UtilityCall<T>> + IsSubType<VectorCall<T>>,
+	T: DAConfig + VectorConfig + UtilityConfig + MultisigConfig + ProxyConfig + Send + Sync,
+	<T as SystemConfig>::RuntimeCall: IsSubType<DACall<T>>
+		+ IsSubType<UtilityCall<T>>
+		+ IsSubType<VectorCall<T>>
+		+ IsSubType<MultisigCall<T>>
+		+ IsSubType<ProxyCall<T>>,
 	[u8; 32]: From<<T as frame_system::Config>::AccountId>,
 {
 	/// utility constructor. Used only in client/factory code.
@@ -151,7 +156,9 @@ where
 	}
 }
 
-impl<T: DAConfig + UtilityConfig + VectorConfig + Send + Sync> Default for CheckAppId<T> {
+impl<T: DAConfig + UtilityConfig + VectorConfig + MultisigConfig + ProxyConfig + Send + Sync>
+	Default for CheckAppId<T>
+{
 	fn default() -> Self {
 		Self(AppId::default(), PhantomData)
 	}
@@ -159,7 +166,7 @@ impl<T: DAConfig + UtilityConfig + VectorConfig + Send + Sync> Default for Check
 
 impl<T> Debug for CheckAppId<T>
 where
-	T: DAConfig + UtilityConfig + VectorConfig + Send + Sync,
+	T: DAConfig + UtilityConfig + VectorConfig + MultisigConfig + ProxyConfig + Send + Sync,
 {
 	#[cfg(feature = "std")]
 	fn fmt(&self, f: &mut Formatter) -> fmt::Result {
@@ -174,9 +181,12 @@ where
 
 impl<T> SignedExtension for CheckAppId<T>
 where
-	T: DAConfig + VectorConfig + UtilityConfig + Send + Sync,
-	<T as frame_system::Config>::RuntimeCall:
-		IsSubType<DACall<T>> + IsSubType<pallet_utility::Call<T>> + IsSubType<VectorCall<T>>,
+	T: DAConfig + VectorConfig + UtilityConfig + MultisigConfig + ProxyConfig + Send + Sync,
+	<T as frame_system::Config>::RuntimeCall: IsSubType<DACall<T>>
+		+ IsSubType<pallet_utility::Call<T>>
+		+ IsSubType<VectorCall<T>>
+		+ IsSubType<MultisigCall<T>>
+		+ IsSubType<ProxyCall<T>>,
 	[u8; 32]: From<<T as frame_system::Config>::AccountId>,
 {
 	type AccountId = T::AccountId;
@@ -214,7 +224,7 @@ where
 
 impl<T> GetAppId for CheckAppId<T>
 where
-	T: DAConfig + UtilityConfig + VectorConfig + Send + Sync,
+	T: DAConfig + UtilityConfig + VectorConfig + MultisigConfig + ProxyConfig + Send + Sync,
 {
 	#[inline]
 	fn app_id(&self) -> AppId {

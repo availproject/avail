@@ -1,5 +1,6 @@
 #![cfg(test)]
 
+use frame_support::parameter_types;
 use frame_support::weights::WeightToFee;
 use frame_support::{derive_impl, weights::IdentityFee};
 use frame_system::{
@@ -7,6 +8,7 @@ use frame_system::{
 	test_utils::TestRandomness,
 };
 use pallet_transaction_payment::FungibleAdapter;
+use sp_core::ConstU32;
 use sp_runtime::{AccountId32, BuildStorage};
 
 use crate::{self as da_control, *};
@@ -26,6 +28,7 @@ frame_support::construct_runtime!(
 		TransactionPayment: pallet_transaction_payment,
 		DataAvailability: da_control,
 		Vector: pallet_vector,
+		Multisig: pallet_multisig,
 	}
 );
 
@@ -81,6 +84,23 @@ impl pallet_vector::Config for Test {
 
 #[derive_impl(pallet_timestamp::config_preludes::TestDefaultConfig as pallet_timestamp::DefaultConfig)]
 impl pallet_timestamp::Config for Test {}
+
+parameter_types! {
+	pub const DepositBase: Balance = 2 * 1;
+	// Additional storage item size of 32 bytes.
+	pub const DepositFactor: Balance = 5 * 1;
+}
+
+impl pallet_multisig::Config for Test {
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeCall = RuntimeCall;
+	type Currency = Balances;
+	type DepositBase = DepositBase;
+	type DepositFactor = DepositFactor;
+	type MaxSignatories = ConstU32<100>;
+	#[doc = " Weight information for extrinsics in this pallet."]
+	type WeightInfo = ();
+}
 
 fn u8_to_account_id(value: u8) -> AccountId32 {
 	let mut account = [0u8; 32];

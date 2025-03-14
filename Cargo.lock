@@ -2114,6 +2114,8 @@ dependencies = [
  "kate",
  "log",
  "pallet-balances",
+ "pallet-multisig",
+ "pallet-proxy",
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-utility",
