@@ -50,11 +50,13 @@ where
 		+ Send
 		+ Sync,
 	<T as MultisigConfig>::RuntimeCall: IsSubType<VectorCall<T>>
+		+ IsSubType<DACall<T>>
 		+ IsSubType<ProxyCall<T>>
 		+ IsSubType<UtilityCall<T>>
 		+ IsSubType<MultisigCall<T>>
 		+ IsSubType<SchedulerCall<T>>,
 	<T as SchedulerConfig>::RuntimeCall: IsSubType<VectorCall<T>>
+		+ IsSubType<DACall<T>>
 		+ IsSubType<ProxyCall<T>>
 		+ IsSubType<UtilityCall<T>>
 		+ IsSubType<MultisigCall<T>>
@@ -223,11 +225,13 @@ where
 		+ Send
 		+ Sync,
 	<T as MultisigConfig>::RuntimeCall: IsSubType<VectorCall<T>>
+		+ IsSubType<DACall<T>>
 		+ IsSubType<ProxyCall<T>>
 		+ IsSubType<UtilityCall<T>>
 		+ IsSubType<MultisigCall<T>>
 		+ IsSubType<SchedulerCall<T>>,
 	<T as SchedulerConfig>::RuntimeCall: IsSubType<VectorCall<T>>
+		+ IsSubType<DACall<T>>
 		+ IsSubType<ProxyCall<T>>
 		+ IsSubType<UtilityCall<T>>
 		+ IsSubType<MultisigCall<T>>

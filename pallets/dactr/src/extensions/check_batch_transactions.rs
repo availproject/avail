@@ -134,6 +134,12 @@ where
 				call,
 				real: _,
 				force_proxy_type: _,
+			})
+			| Some(ProxyCall::<T>::proxy_announced {
+				call,
+				real: _,
+				delegate: _,
+				force_proxy_type: _,
 			}) => Some(call),
 			_ => None,
 		}
@@ -159,11 +165,13 @@ where
 		+ Send
 		+ Sync,
 	<T as MultisigConfig>::RuntimeCall: IsSubType<VectorCall<T>>
+		+ IsSubType<DACall<T>>
 		+ IsSubType<ProxyCall<T>>
 		+ IsSubType<UtilityCall<T>>
 		+ IsSubType<MultisigCall<T>>
 		+ IsSubType<SchedulerCall<T>>,
 	<T as SchedulerConfig>::RuntimeCall: IsSubType<VectorCall<T>>
+		+ IsSubType<DACall<T>>
 		+ IsSubType<ProxyCall<T>>
 		+ IsSubType<UtilityCall<T>>
 		+ IsSubType<MultisigCall<T>>
@@ -190,22 +198,22 @@ where
 		let call = WrappedCall::<T>(call);
 
 		if let Some(call) = call.get_proxy_call() {
-			Self::recursive_proxy_call(call, iterations, false)?;
+			Self::recursive_proxy_call(call, iterations, false, false)?;
 			return Ok(ValidTransaction::default());
 		}
 
 		if let Some(call) = call.get_as_multi_call() {
-			Self::recursive_multisig_call(call, iterations, false)?;
+			Self::recursive_multisig_call(call, iterations, false, false)?;
 			return Ok(ValidTransaction::default());
 		}
 
 		if let Some(calls) = call.get_batch_call() {
-			Self::recursive_batch_call(calls, iterations, false)?;
+			Self::recursive_batch_call(calls, iterations, false, false)?;
 			return Ok(ValidTransaction::default());
 		}
 
 		if let Some(call) = call.get_scheduler_call() {
-			Self::recursive_scheduler_call(call, iterations, false)?;
+			Self::recursive_scheduler_call(call, iterations, false, false)?;
 			return Ok(ValidTransaction::default());
 		}
 
@@ -217,6 +225,7 @@ where
 		calls: &Vec<<T as UtilityConfig>::RuntimeCall>,
 		iteration: usize,
 		inside_batch: bool,
+		inside_scheduler: bool,
 	) -> TransactionValidity {
 		use InvalidTransactionCustomId::*;
 
@@ -238,22 +247,22 @@ where
 			);
 
 			if let Some(call) = call.get_proxy_call() {
-				Self::recursive_proxy_call(call, iteration + 1, true)?;
+				Self::recursive_proxy_call(call, iteration + 1, true, inside_scheduler)?;
 			};
 
 			if let Some(call) = call.get_as_multi_call() {
-				Self::recursive_multisig_call(call, iteration + 1, true)?;
+				Self::recursive_multisig_call(call, iteration + 1, true, inside_scheduler)?;
 			};
 
 			if let Some(calls) = call.get_batch_call() {
 				if inside_batch {
 					return Err(InvalidTransaction::Custom(MaxRecursionExceeded as u8).into());
 				}
-				Self::recursive_batch_call(calls, iteration + 1, true)?;
+				Self::recursive_batch_call(calls, iteration + 1, true, inside_scheduler)?;
 			};
 
 			if let Some(call) = call.get_scheduler_call() {
-				Self::recursive_scheduler_call(call, iteration + 1, true)?;
+				Self::recursive_scheduler_call(call, iteration + 1, true, inside_scheduler)?;
 			};
 		}
 
@@ -265,6 +274,7 @@ where
 		call: &<T as ProxyConfig>::RuntimeCall,
 		iteration: usize,
 		inside_batch: bool,
+		inside_scheduler: bool,
 	) -> TransactionValidity {
 		use InvalidTransactionCustomId::*;
 		if iteration >= MAX_ITERATIONS {
@@ -274,27 +284,49 @@ where
 		let call: &<T as SystemConfig>::RuntimeCall = call.into_ref();
 		let call = WrappedCall::<T>(call);
 
-		if iteration > 1 || inside_batch {
+		if iteration > 1 || inside_batch || inside_scheduler {
 			ensure!(
 				!call.is_send_message_call(),
 				InvalidTransaction::Custom(UnexpectedSendMessageCall as u8)
 			);
 		}
 
+		if inside_batch {
+			ensure!(
+				!call.is_submit_data_call(),
+				InvalidTransaction::Custom(UnexpectedSendMessageCall as u8)
+			);
+		}
+
 		if let Some(call) = call.get_proxy_call() {
-			return Self::recursive_proxy_call(call, iteration + 1, inside_batch);
+			return Self::recursive_proxy_call(call, iteration + 1, inside_batch, inside_scheduler);
 		}
 
 		if let Some(call) = call.get_as_multi_call() {
-			return Self::recursive_multisig_call(call, iteration + 1, inside_batch);
+			return Self::recursive_multisig_call(
+				call,
+				iteration + 1,
+				inside_batch,
+				inside_scheduler,
+			);
 		}
 
 		if let Some(calls) = call.get_batch_call() {
-			return Self::recursive_batch_call(calls, iteration + 1, inside_batch);
+			return Self::recursive_batch_call(
+				calls,
+				iteration + 1,
+				inside_batch,
+				inside_scheduler,
+			);
 		}
 
 		if let Some(call) = call.get_scheduler_call() {
-			return Self::recursive_scheduler_call(call, iteration + 1, inside_batch);
+			return Self::recursive_scheduler_call(
+				call,
+				iteration + 1,
+				inside_batch,
+				inside_scheduler,
+			);
 		};
 
 		// Everything else is OK
@@ -306,15 +338,25 @@ where
 		call: &<T as MultisigConfig>::RuntimeCall,
 		iteration: usize,
 		inside_batch: bool,
+		inside_scheduler: bool,
 	) -> TransactionValidity {
 		use InvalidTransactionCustomId::*;
 		if iteration >= MAX_ITERATIONS {
 			return Err(InvalidTransaction::Custom(MaxRecursionExceeded as u8).into());
 		}
 
-		if iteration > 1 || inside_batch {
+		if iteration > 1 || inside_batch || inside_scheduler {
 			match call.is_sub_type() {
 				Some(VectorCall::<T>::send_message { .. }) => {
+					return Err(InvalidTransaction::Custom(UnexpectedSendMessageCall as u8).into())
+				},
+				_ => (),
+			}
+		}
+
+		if inside_batch {
+			match call.is_sub_type() {
+				Some(DACall::<T>::submit_data { .. }) => {
 					return Err(InvalidTransaction::Custom(UnexpectedSendMessageCall as u8).into())
 				},
 				_ => (),
@@ -326,7 +368,20 @@ where
 				call,
 				real: _,
 				force_proxy_type: _,
-			}) => return Self::recursive_proxy_call(call, iteration + 1, inside_batch),
+			})
+			| Some(ProxyCall::<T>::proxy_announced {
+				call,
+				real: _,
+				delegate: _,
+				force_proxy_type: _,
+			}) => {
+				return Self::recursive_proxy_call(
+					call,
+					iteration + 1,
+					inside_batch,
+					inside_scheduler,
+				)
+			},
 			_ => (),
 		}
 
@@ -334,7 +389,12 @@ where
 			Some(UtilityCall::<T>::batch { calls })
 			| Some(UtilityCall::<T>::batch_all { calls })
 			| Some(UtilityCall::<T>::force_batch { calls }) => {
-				return Self::recursive_batch_call(calls, iteration + 1, inside_batch);
+				return Self::recursive_batch_call(
+					calls,
+					iteration + 1,
+					inside_batch,
+					inside_scheduler,
+				);
 			},
 			_ => (),
 		}
@@ -351,7 +411,12 @@ where
 				other_signatories: _,
 				call,
 			}) => {
-				return Self::recursive_multisig_call(call, iteration + 1, inside_batch);
+				return Self::recursive_multisig_call(
+					call,
+					iteration + 1,
+					inside_batch,
+					inside_scheduler,
+				);
 			},
 			_ => (),
 		}
@@ -383,7 +448,12 @@ where
 				priority: _,
 				call,
 			}) => {
-				return Self::recursive_scheduler_call(call, iteration + 1, inside_batch);
+				return Self::recursive_scheduler_call(
+					call,
+					iteration + 1,
+					inside_batch,
+					inside_scheduler,
+				);
 			},
 			_ => (),
 		}
@@ -397,6 +467,7 @@ where
 		call: &<T as SchedulerConfig>::RuntimeCall,
 		iteration: usize,
 		inside_batch: bool,
+		_inside_scheduler: bool,
 	) -> TransactionValidity {
 		use InvalidTransactionCustomId::*;
 		if iteration >= MAX_ITERATIONS {
@@ -410,12 +481,27 @@ where
 			_ => (),
 		}
 
+		if inside_batch {
+			match call.is_sub_type() {
+				Some(DACall::<T>::submit_data { .. }) => {
+					return Err(InvalidTransaction::Custom(UnexpectedSendMessageCall as u8).into())
+				},
+				_ => (),
+			}
+		}
+
 		match call.is_sub_type() {
 			Some(ProxyCall::<T>::proxy {
 				call,
 				real: _,
 				force_proxy_type: _,
-			}) => return Self::recursive_proxy_call(call, iteration + 1, inside_batch),
+			})
+			| Some(ProxyCall::<T>::proxy_announced {
+				call,
+				real: _,
+				delegate: _,
+				force_proxy_type: _,
+			}) => return Self::recursive_proxy_call(call, iteration + 1, inside_batch, true),
 			_ => (),
 		}
 
@@ -423,7 +509,7 @@ where
 			Some(UtilityCall::<T>::batch { calls })
 			| Some(UtilityCall::<T>::batch_all { calls })
 			| Some(UtilityCall::<T>::force_batch { calls }) => {
-				return Self::recursive_batch_call(calls, iteration + 1, inside_batch);
+				return Self::recursive_batch_call(calls, iteration + 1, inside_batch, true);
 			},
 			_ => (),
 		}
@@ -440,7 +526,7 @@ where
 				other_signatories: _,
 				call,
 			}) => {
-				return Self::recursive_multisig_call(call, iteration + 1, inside_batch);
+				return Self::recursive_multisig_call(call, iteration + 1, inside_batch, true);
 			},
 			_ => (),
 		}
@@ -472,7 +558,7 @@ where
 				priority: _,
 				call,
 			}) => {
-				return Self::recursive_scheduler_call(call, iteration + 1, inside_batch);
+				return Self::recursive_scheduler_call(call, iteration + 1, inside_batch, true);
 			},
 			_ => (),
 		}
