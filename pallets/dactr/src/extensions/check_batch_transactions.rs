@@ -156,7 +156,7 @@ mod tests {
 	fn submit_data_call() -> RuntimeCall {
 		// pre-generated data & its commitment
 		let data = hex!("74657374").to_vec();
-		let commitments = hex!("a0c09cf53aabf7105cdbde5746cd3d8051d204e60daabe068dd286b99f3ba0d034d6baae339492bcbde7f963528312e8").to_vec();
+		let commitments = hex!("89302a70b4f39979a96177af5537973f6928596dd2f54454efe5011b57a882609077241d1155676c6b8962923e6da154").to_vec();
 		RuntimeCall::DataAvailability(DACall::submit_data_with_commitments {
 			data: data.try_into().unwrap(),
 			commitments: commitments.try_into().unwrap(),

@@ -8,7 +8,6 @@ use kate::{
 use std::{sync::OnceLock, vec::Vec};
 use thiserror_no_std::Error;
 
-pub const MIN_WIDTH: usize = 4;
 pub type DaCommitments = Vec<u8>;
 
 static PMP: OnceLock<M1NoPrecomp> = OnceLock::new();

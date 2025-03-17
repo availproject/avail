@@ -1,4 +1,4 @@
-use super::{alice_nonce, local_connection, no_concurrency};
+use super::{local_connection, no_concurrency};
 
 use avail_core::AppId;
 use avail_subxt::{api, tx, BoundedVec};
@@ -8,18 +8,13 @@ use subxt_signer::sr25519::dev;
 use super::build_da_commitments::build_da_commitments;
 
 use futures::stream::{FuturesOrdered, TryStreamExt as _};
-use std::sync::atomic::Ordering::Relaxed;
 use test_log::test;
 use tracing::trace;
+use codec::{Compact, CompactLen as _};
 
-/// This example attempts to submit data to fill the entire block. Note that this doesn't guarantee
-/// that the block will be filled, but if you submit more than a full block, then it will spill over
-/// to the next block. The limit for the transaction is currently set to 512 kB, and limit for the block
-/// is 2 MB, so this means 128 data transactions are needed to fill the block. Depending on the network,
-/// it may not be possible to transfer so many in 20 s (the default block time)
-const BLOCK_SIZE: usize = 384 * 1024 * 1024;
-const TX_MAX_SIZE: usize = 31 * 1024 * 1024;
-const NUM_CHUNKS: u64 = (BLOCK_SIZE / TX_MAX_SIZE) as u64;
+const BLOCK_SIZE: u32 = 48 * 1024 * 1024;
+const TX_MAX_SIZE: u32 = 31 * 1024 * 512;
+const NUM_CHUNKS: u32 = BLOCK_SIZE / TX_MAX_SIZE;
 
 #[test(tokio::test)]
 async fn max_block_submit() -> anyhow::Result<()> {
@@ -29,8 +24,10 @@ async fn max_block_submit() -> anyhow::Result<()> {
 	let sender = dev::alice();
 	let nonce = avail_subxt::tx::nonce(&client, &sender).await.unwrap();
 
+	let encoding_overhead = compact_len(&TX_MAX_SIZE).unwrap();
+	let tx_size = TX_MAX_SIZE.saturating_sub(encoding_overhead) as usize;
 	let start = std::time::Instant::now();
-	let data = vec![200; TX_MAX_SIZE];
+	let data = vec![200; tx_size];
 	let da_commitments = build_da_commitments(data.clone(), 1024, 1024, Seed::default()).unwrap();
 
 	let calls = (0..NUM_CHUNKS)
@@ -68,4 +65,9 @@ async fn max_block_submit() -> anyhow::Result<()> {
 	trace!("Finalized in {end:?}");
 
 	Ok(())
+}
+
+fn compact_len(value: &u32) -> Option<u32> {
+	let len = Compact::<u32>::compact_len(value);
+	len.try_into().ok()
 }
