@@ -42,7 +42,6 @@ pub trait HostedKate {
 			.collect::<Result<_, _>>()?;
 		// Create a universal grid by merging individual tx grids
 		let uni_grid = EGrid::merge_with_padding(grids)?
-		// Do we need to extend the columns here? get the confirmation from its consumers 
 			.extend_columns(NonZeroU16::new(2).expect("2 > 0"))
 			.map_err(|_| Error::ColumnExtension)?;
 		let rows = selected_rows

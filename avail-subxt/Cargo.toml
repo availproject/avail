@@ -16,7 +16,7 @@ path = "src/e2e.rs"
 
 [dependencies]
 avail-base = { path = "../base" }
-avail-core = { git = "https://github.com/availproject/avail-core", rev = "f137faa28e3e63275865c216e36dc71167cb7826", features = ["serde"] }
+avail-core = { git = "https://github.com/availproject/avail-core", rev = "d62ce4875148a69a62d77f224ed6dbe060cc92f5", features = ["serde"] }
 # avail-core = { path = "../../avail-core/core", features = ["serde"] }
 
 # Other
@@ -52,7 +52,7 @@ scale-info = { version = "2.5.0", features = ["bit-vec"] }
 bounded-collections = { version = "0.2.0", features = ["serde"] }
 
 [dev-dependencies]
-avail-core = {  git = "https://github.com/availproject/avail-core", rev = "f137faa28e3e63275865c216e36dc71167cb7826", features = ["serde", "runtime"] }
+avail-core = {  git = "https://github.com/availproject/avail-core", rev = "d62ce4875148a69a62d77f224ed6dbe060cc92f5", features = ["serde", "runtime"] }
 # avail-core = { path = "../../avail-core/core", features = ["serde"] }
 
 async-std = { version = "1.12.0", features = ["attributes", "tokio1"] }
@@ -65,7 +65,7 @@ derive_more = "0.99.17"
 indicatif = "0.17"
 rand = "0.8.5"
 
-# Substrate 
+# Substrate
 sp-keyring = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "5237e012d7d973b7210fc1929b2f1ff8726333b5" }
 binary-merkle-tree = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "5237e012d7d973b7210fc1929b2f1ff8726333b5", default-features = false }
 subxt-signer = "0.34"

@@ -23,9 +23,9 @@ homepage = "https://www.availproject.org/"
 
 
 [workspace.dependencies]
-avail-core = { git = "https://github.com/availproject/avail-core", rev = "f137faa28e3e63275865c216e36dc71167cb7826", default-features = false, features = [ "runtime"] }
-kate = { git = "https://github.com/availproject/avail-core", rev = "f137faa28e3e63275865c216e36dc71167cb7826", default-features = false }
-kate-recovery = { git = "https://github.com/availproject/avail-core", rev = "f137faa28e3e63275865c216e36dc71167cb7826", default-features = false  }
+avail-core = { git = "https://github.com/availproject/avail-core", rev = "d62ce4875148a69a62d77f224ed6dbe060cc92f5", default-features = false, features = [ "runtime"] }
+kate = { git = "https://github.com/availproject/avail-core", rev = "d62ce4875148a69a62d77f224ed6dbe060cc92f5", default-features = false }
+kate-recovery = { git = "https://github.com/availproject/avail-core", rev = "d62ce4875148a69a62d77f224ed6dbe060cc92f5", default-features = false  }
 # avail-core = { path = "../avail-core/core", default-features = false, features = [ "runtime"] }
 # kate = { path = "../avail-core/kate/", default-features = false }
 # kate-recovery = { path = "../avail-core/kate/recovery/", default-features = false}
@@ -49,12 +49,12 @@ frame-system-benchmarking = { path = "pallets/system/benchmarking", default-feat
 # benchmarking
 criterion = { version = "0.4", default-features = false }
 iai = "0.1.1"
-iai-callgrind = "0.7.3" 
+iai-callgrind = "0.7.3"
 divan = "0.1.11"
 
 # codspeed-criterion-compat = "2.2.0"
 
-# Logging and testing 
+# Logging and testing
 log = "0.4.20"
 test-case = "1.2.3"
 hex = "0.4"
@@ -117,7 +117,7 @@ clap = { version = "4.4.17", features = ["derive"] }
 clap-num = "1.1.1"
 clap_complete = "4.0.2"
 
-# Polkadot 
+# Polkadot
 frame-executive = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "5237e012d7d973b7210fc1929b2f1ff8726333b5", default-features = false }
 sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "5237e012d7d973b7210fc1929b2f1ff8726333b5", default-features = false }
 frame-support = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "5237e012d7d973b7210fc1929b2f1ff8726333b5", default-features = false }
@@ -151,7 +151,7 @@ sp-runtime-interface = { git = "https://github.com/availproject/polkadot-sdk.git
 binary-merkle-tree = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "5237e012d7d973b7210fc1929b2f1ff8726333b5", default-features = false }
 sp-staking = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "5237e012d7d973b7210fc1929b2f1ff8726333b5", default-features = false }
 pallet-staking = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "5237e012d7d973b7210fc1929b2f1ff8726333b5", default-features = false }
-pallet-staking-runtime-api = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "5237e012d7d973b7210fc1929b2f1ff8726333b5", default-features = false } 
+pallet-staking-runtime-api = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "5237e012d7d973b7210fc1929b2f1ff8726333b5", default-features = false }
 sp-consensus-grandpa = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "5237e012d7d973b7210fc1929b2f1ff8726333b5", default-features = false }
 sp-authority-discovery = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "5237e012d7d973b7210fc1929b2f1ff8726333b5", default-features = false }
 sp-consensus-babe = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "5237e012d7d973b7210fc1929b2f1ff8726333b5", default-features = false }

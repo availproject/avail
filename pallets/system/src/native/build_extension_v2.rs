@@ -9,8 +9,8 @@ use crate::limits::BlockLength;
 use avail_base::header_extension::SubmittedData;
 use avail_core::{
 	app_extrinsic::AppExtrinsic,
-	constants::kate::DATA_CHUNK_SIZE,
 	header::{extension as he, HeaderExtension},
+	kate::COMMITMENT_SIZE,
 	kate_commitment as kc, AppId, DataLookup, HeaderVersion,
 };
 use kate::{
@@ -127,24 +127,15 @@ pub fn build_extension(
 		.sum();
 	let mut commitment = Vec::with_capacity(total_commitments);
 
-	let mut app_rows: Vec<(AppId, usize)> = Vec::new();
+	let mut app_rows: Vec<(AppId, usize)> = Vec::with_capacity(submitted.len());
 
 	for da_call in submitted.iter() {
 		commitment.extend(da_call.commitments.clone());
-		let app_id = da_call.id;
-		// No longer need additional bytes on encoding
-		let data_len = da_call.data.len();
-		let rows_taken = match (data_len + (max_columns * DATA_CHUNK_SIZE)).checked_sub(1) {
-			Some(value) => value / (max_columns * DATA_CHUNK_SIZE),
-			None => return HeaderExtension::get_empty_header(data_root, version),
-		};
+		// As we have already correctness of commitments against data, we can safely assume that the commitments are correct
+		let rows_taken = da_call.commitments.len() / COMMITMENT_SIZE;
 
 		// Update app_rows
-		if let Some((_, existing_rows)) = app_rows.iter_mut().find(|(id, _)| *id == app_id) {
-			*existing_rows += rows_taken;
-		} else {
-			app_rows.push((app_id, rows_taken));
-		}
+		app_rows.push((da_call.id, rows_taken));
 	}
 
 	let app_lookup = match DataLookup::from_id_and_len_iter(app_rows.into_iter()) {
