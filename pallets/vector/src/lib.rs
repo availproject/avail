@@ -139,6 +139,8 @@ pub mod pallet {
 		SyncCommitteeHashAlreadySet,
 		/// Emit when start sync committee does not match.
 		SyncCommitteeStartMismatch,
+		/// Mock is not enabled.
+		MockIsNotEnabled,
 	}
 
 	#[pallet::event]
@@ -194,6 +196,8 @@ pub mod pallet {
 		NewSP1VerificationKey { old: H256, new: H256 },
 		/// Emit when new sync committee is updated.
 		SyncCommitteeHashUpdated { period: u64, hash: H256 },
+		/// Emit when mocks are enabled or disabled
+		MockEnabled { value: bool },
 	}
 
 	/// Storage for a head updates.
@@ -294,6 +298,11 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn sp1_verification_key)]
 	pub type SP1VerificationKey<T: Config> = StorageValue<_, H256, ValueQuery>;
+
+	/// Enable mock functions
+	#[pallet::storage]
+	#[pallet::getter(fn verification_disabled)]
+	pub type MockEnabled<T: Config> = StorageValue<_, bool, ValueQuery>;
 
 	/// Default implementations of [`DefaultConfig`], which can be used to implement [`Config`].
 	pub mod config_preludes {
@@ -857,9 +866,6 @@ pub mod pallet {
 			);
 
 			let sp1_vk = SP1VerificationKey::<T>::get();
-
-			// Can throw panic in the sp1 v3.4.0 library if the proof is not valid in some cases
-			// and, it will be fixed in sp1 version v4.0.0
 			let is_valid = Groth16Verifier::verify(
 				&proof,
 				&public_values,
@@ -957,6 +963,115 @@ pub mod pallet {
 			Self::deposit_event(Event::SyncCommitteeHashUpdated { period, hash });
 
 			Ok(())
+		}
+
+		#[pallet::call_index(16)]
+		#[pallet::weight(T::WeightInfo::enable_mock())]
+		pub fn enable_mock(origin: OriginFor<T>, value: bool) -> DispatchResult {
+			ensure_root(origin)?;
+
+			MockEnabled::<T>::set(value);
+			Self::deposit_event(Event::MockEnabled { value });
+
+			Ok(())
+		}
+
+		/// The entrypoint for mock_fulfill call.
+		/// public_values Input public values.
+		#[pallet::call_index(17)]
+		#[pallet::weight(T::WeightInfo::fulfill())]
+		pub fn mock_fulfill(
+			origin: OriginFor<T>,
+			public_values: PublicValuesInput,
+		) -> DispatchResultWithPostInfo {
+			ensure!(
+				MockEnabled::<T>::get() == true,
+				Error::<T>::MockIsNotEnabled
+			);
+
+			let sender: [u8; 32] = ensure_signed(origin)?.into();
+			let updater = Updater::<T>::get();
+			// ensure sender is preconfigured
+			ensure!(H256(sender) == updater, Error::<T>::UpdaterMisMatch);
+
+			let proof_outputs: ProofOutputs = SolValue::abi_decode(&public_values, true)
+				.map_err(|_| Error::<T>::CannotDecodePublicValue)?;
+
+			let head = Head::<T>::get();
+			let new_head: u64 = proof_outputs.newHead.to();
+			ensure!(new_head > head, Error::<T>::SlotBehindHead);
+			let config = ConfigurationStorage::<T>::get();
+
+			let current_period = head
+				.checked_div(config.slots_per_period)
+				.ok_or(Error::<T>::ConfigurationNotSet)?;
+
+			let current_sync_committee_hash = SyncCommitteeHashes::<T>::get(current_period);
+			// The "start" sync committee hash is the hash of the sync committee that should sign the next update.
+			ensure!(
+				current_sync_committee_hash == H256::from(proof_outputs.startSyncCommitteeHash.0),
+				Error::<T>::SyncCommitteeStartMismatch
+			);
+
+			Head::<T>::set(new_head);
+			let header = Headers::<T>::get(new_head);
+			ensure!(header == H256::zero(), Error::<T>::HeaderRootAlreadySet);
+
+			let new_header = H256::from(proof_outputs.newHeader.0);
+
+			let execution_state_root = ExecutionStateRoots::<T>::get(new_head);
+			ensure!(
+				execution_state_root == H256::zero(),
+				Error::<T>::StateRootAlreadySet
+			);
+			let new_execution_state_root = H256::from(proof_outputs.executionStateRoot.0);
+
+			Headers::<T>::insert(new_head, new_header);
+			ExecutionStateRoots::<T>::insert(new_head, new_execution_state_root);
+
+			Self::deposit_event(Event::HeadUpdated {
+				slot: new_head,
+				finalization_root: new_header,
+				execution_state_root: new_execution_state_root,
+			});
+
+			let period = new_head
+				.checked_div(config.slots_per_period)
+				.ok_or(Error::<T>::ConfigurationNotSet)?;
+
+			// If the sync committee for the period is not set, set it.
+			// This can happen if the light client was very behind and had a lot of updates
+			// and only the last sync committee is stored, not the intermediate ones for every period and may have gaps in periods.
+			if SyncCommitteeHashes::<T>::get(period) == H256::zero() {
+				let sync_committee_hash = H256::from(proof_outputs.syncCommitteeHash.0);
+				SyncCommitteeHashes::<T>::set(period, sync_committee_hash);
+				Self::deposit_event(Event::SyncCommitteeHashUpdated {
+					period,
+					hash: sync_committee_hash,
+				});
+			}
+
+			// Update next sync committee hash only if it is not set
+			let next_sync_committee_hash = H256::from(proof_outputs.nextSyncCommitteeHash.0);
+			if next_sync_committee_hash != H256::zero() {
+				let next_period = period + 1;
+
+				let sync_committee_hash = SyncCommitteeHashes::<T>::get(next_period);
+				if sync_committee_hash != next_sync_committee_hash {
+					ensure!(
+						sync_committee_hash == H256::zero(),
+						Error::<T>::SyncCommitteeHashAlreadySet
+					);
+					SyncCommitteeHashes::<T>::set(next_period, next_sync_committee_hash);
+					Self::deposit_event(Event::SyncCommitteeHashUpdated {
+						period: next_period,
+						hash: next_sync_committee_hash,
+					});
+				}
+			}
+			Timestamps::<T>::insert(new_head, T::TimeProvider::now().as_secs());
+
+			Ok(().into())
 		}
 	}
 

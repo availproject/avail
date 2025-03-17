@@ -31,9 +31,6 @@ jobs:
       - name: Check E2E code formatting
         run: cargo fmt --manifest-path e2e/Cargo.toml --check
 
-      - name: Check Avail-SubXt code formatting
-        run: cargo fmt --manifest-path avail-subxt/Cargo.toml --check
-
       - name: Install zepter
         run: cargo install zepter --locked --version 0.11.0 -q -f --no-default-features && zepter --version
 
@@ -42,9 +39,6 @@ jobs:
 
       - name: Check e2e toml formatting
         run: zepter format features --manifest-path e2e/Cargo.toml
-
-      - name: Check Avail-SubXt toml formatting
-        run: zepter format features --manifest-path avail-subxt/Cargo.toml
 
   build:
     runs-on: ubuntu-latest

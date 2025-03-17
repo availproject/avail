@@ -10,6 +10,29 @@
 
 ![demo](./.github/img/terminal.jpg)
 
+## Interact with the chain
+The following software development kits (SDKs) are available:
+- [avail-js](https://github.com/availproject/avail-js)
+- [avail-rust](https://github.com/availproject/avail-rust)
+- [avail-go](https://github.com/availproject/avail-go-sdk)
+
+## Verifying Avail Node Binary Signatures
+Our release binaries are GPG signed for security. To verify a download:
+
+1. Import our public key. Make sure you change the version to the correct version:
+`curl -s https://github.com/availproject/avail/releases/download/vX.Y.Z/gpg-public-key.asc | gpg --import`
+2. Verify the binary's signature:
+`gpg --verify DOWNLOADED_BINARY.tar.gz.sig DOWNLOADED_BINARY.tar.gz`
+3. Verify the checksum file:
+`gpg --verify YOUR_DOWNLOADED_FILE.tar.gz.sha256.sig YOUR_DOWNLOADED_FILE.tar.gz.sha256`
+4. Verify the checksum:
+`sha256sum -c YOUR_DOWNLOADED_FILE.tar.gz.sha256`
+
+A successful verification will display:
+"Good signature from 'Your Project Release Key `key's email address`'"
+
+You have now verified that the binary is signed by Avail and that its checksum is correct.
+
 ## Running Avail Node
 ### Manually
 
@@ -26,37 +49,45 @@ cargo run --locked --release -- --chain mainnet -d ./output
 This command compiles and runs the Avail Node connected to the Mainnet Network.
 
 ```
-2024-03-05 12:31:25 Avail Node    
-2024-03-05 12:31:25 ✌️  version 2.0.0-7d6ed7f7141    
-2024-03-05 12:31:25 ❤️  by Avail Team, 2017-2024    
-2024-03-05 12:31:25 📋 Chain specification: Avail Development Network    
-2024-03-05 12:31:25 🏷  Node name: Alice    
-2024-03-05 12:31:25 👤 Role: AUTHORITY    
-2024-03-05 12:31:25 💾 Database: ParityDb at /tmp/substrateecX1Gm/chains/avail_development_network/paritydb/full    
-2024-03-05 12:31:27 🔨 Initializing Genesis block/state (state: 0x7d28…a6c8, header-hash: 0x1074…234a)    
-2024-03-05 12:31:27 👴 Loading GRANDPA authority set from genesis on what appears to be first startup.    
-2024-03-05 12:31:28 👶 Creating empty BABE epoch changes on what appears to be first startup.    
-2024-03-05 12:31:28 🏷  Local node identity is: 12D3KooWQDpM9w2zcvUaJS89KVAEdXsDFcBrTtc8awHGusRwSCEr    
-2024-03-05 12:31:28 Prometheus metrics extended with avail metrics    
-2024-03-05 12:31:28 💻 Operating system: linux    
-2024-03-05 12:31:28 💻 CPU architecture: x86_64    
-2024-03-05 12:31:28 💻 Target environment: gnu    
-2024-03-05 12:31:28 💻 CPU: 13th Gen Intel(R) Core(TM) i7-13700K    
-2024-03-05 12:31:28 💻 CPU cores: 16    
-2024-03-05 12:31:28 💻 Memory: 31873MB    
-2024-03-05 12:31:28 💻 Kernel: 6.7.6-200.fc39.x86_64    
-2024-03-05 12:31:28 💻 Linux distribution: Fedora Linux 39 (Workstation Edition)    
-2024-03-05 12:31:28 💻 Virtual machine: no    
-2024-03-05 12:31:28 📦 Highest known block at #0    
-2024-03-05 12:31:28 〽️ Prometheus exporter started at 127.0.0.1:9615    
-2024-03-05 12:31:28 Running JSON-RPC server: addr=127.0.0.1:9944, allowed origins=["http://localhost:*", "http://127.0.0.1:*", "https://localhost:*", "https://127.0.0.1:*", "https://polkadot.js.org"]    
-2024-03-05 12:31:28 🏁 CPU score: 1.65 GiBs    
-2024-03-05 12:31:28 🏁 Memory score: 22.52 GiBs    
-2024-03-05 12:31:28 🏁 Disk score (seq. writes): 7.00 GiBs    
-2024-03-05 12:31:28 🏁 Disk score (rand. writes): 2.77 GiBs    
-2024-03-05 12:31:28 👶 Starting BABE Authorship worker    
-2024-03-05 12:31:33 💤 Idle (0 peers), best: #0 (0x1074…234), finalized #0 (0x1074…234a), ⬇ 0 ⬆ 0    
-2024-03-05 12:31:38 💤 Idle (0 peers), best: #0 (0x1074…234a), finalized #0 (0x1074…234a), ⬇ 0 ⬆ 0   
+2025-03-05 11:39:57 Avail Node    
+2025-03-05 11:39:57 ✌️  version 2.3.0-6c6b8912fd3    
+2025-03-05 11:39:57 ❤️  by Avail Project <info@availproject.org>, 2017-2025    
+2025-03-05 11:39:57 📋 Chain specification: Avail Development Network    
+2025-03-05 11:39:57 🏷  Node name: spotty-ducks-6306    
+2025-03-05 11:39:57 👤 Role: AUTHORITY    
+2025-03-05 11:39:57 💾 Database: ParityDb at /tmp/substratebYqXut/chains/avail_development_network/paritydb/full    
+2025-03-05 11:39:58 [0] 💸 generated 1 npos voters, 1 from validators and 0 nominators    
+2025-03-05 11:39:58 [0] 💸 generated 1 npos targets    
+2025-03-05 11:39:59 🔨 Initializing Genesis block/state (state: 0x9da9…1c2f, header-hash: 0x61c9…7794)    
+2025-03-05 11:39:59 👴 Loading GRANDPA authority set from genesis on what appears to be first startup.    
+2025-03-05 11:39:59 👶 Creating empty BABE epoch changes on what appears to be first startup.    
+2025-03-05 11:39:59 🏷  Local node identity is: 12D3KooWDCNjiaVbFL4BGYkbkxHwqJjhDNAxvBuxNdCAB4HDuYjA    
+2025-03-05 11:39:59 Prometheus metrics extended with avail metrics    
+2025-03-05 11:39:59 💻 Operating system: linux    
+2025-03-05 11:39:59 💻 CPU architecture: x86_64    
+2025-03-05 11:39:59 💻 Target environment: gnu    
+2025-03-05 11:39:59 💻 CPU: 13th Gen Intel(R) Core(TM) i7-13700K    
+2025-03-05 11:39:59 💻 CPU cores: 16    
+2025-03-05 11:39:59 💻 Memory: 31865MB    
+2025-03-05 11:39:59 💻 Kernel: 6.12.11-200.fc41.x86_64    
+2025-03-05 11:39:59 💻 Linux distribution: Fedora Linux 41 (Workstation Edition)    
+2025-03-05 11:39:59 💻 Virtual machine: no    
+2025-03-05 11:39:59 📦 Highest known block at #0    
+2025-03-05 11:39:59 〽️ Prometheus exporter started at 127.0.0.1:9615    
+2025-03-05 11:39:59 Running JSON-RPC server: addr=127.0.0.1:9944, allowed origins=["*"]    
+2025-03-05 11:39:59 🏁 CPU score: 1.36 GiBs    
+2025-03-05 11:39:59 🏁 Memory score: 22.37 GiBs    
+2025-03-05 11:39:59 🏁 Disk score (seq. writes): 6.14 GiBs    
+2025-03-05 11:39:59 🏁 Disk score (rand. writes): 2.85 GiBs    
+2025-03-05 11:39:59 👶 Starting BABE Authorship worker    
+2025-03-05 11:39:59 👾 Transaction State RPC is disabled.    
+2025-03-05 11:40:00 🙌 Starting consensus session on top of parent 0x61c9895168e742c62022ead30858a478820596c5be64c127bd8ea1bc97787794    
+2025-03-05 11:40:00 🎁 Prepared block for proposing at 1 (2 ms) [hash: 0x9dc9d52f64711be9e75b382877daf7ea6dbd5cb86e0db0819de49c58fafe0470; parent_hash: 0x61c9…7794; extrinsics (2): [0x1adc…1873, 0x92cd…f218]    
+2025-03-05 11:40:00 🔖 Pre-sealed block for proposal at 1. Hash now 0x34eab3565337a7370d4320aac02f7e3a3c14a440585bf029f871845f116a8810, previously 0x9dc9d52f64711be9e75b382877daf7ea6dbd5cb86e0db0819de49c58fafe0470.    
+2025-03-05 11:40:00 👶 New epoch 0 launching at block 0x34ea…8810 (block slot 87058560 >= start slot 87058560).    
+2025-03-05 11:40:00 👶 Next epoch starts at slot 87059280    
+2025-03-05 11:40:00 ✨ Imported #1 (0x34ea…8810)    
+2025-03-05 11:40:04 💤 Idle (0 peers), best: #1 (0x34ea…8810), finalized #0 (0x61c9…7794), ⬇ 0 ⬆ 0   
 ```
 
 ### Supported Chains
@@ -76,8 +107,8 @@ cargo run --locked --release -- --chain turing
 cargo run --locked --release -- --chain mainnet
 ```
 
-### Docker
-To run the Avail Node using Docker, follow these steps:
+### Docker/Podman
+To run the Avail Node using Docker (Podman works as well), follow these steps:
 
 ```bash
 # Build the Docker image for the Avail Node:
@@ -93,7 +124,7 @@ docker run --rm -p 30333:30333 -p 9944:9944 -v ./output:/output:z availnode
 ```
 
 #### Running Dev Chain
-There are instructions for running a development chain using Docker. A development chain is typically used for testing and development purposes.
+The following instructions describe how to run a development chain using Docker (Podman works as well). A development chain is typically used for testing and development purposes.
 
 ```bash
 # Build the Docker image for the Avail Node:
@@ -108,39 +139,9 @@ docker run --rm -p 30333:30333 -p 9944:9944 -v ./output:/output availnode --dev 
 docker run --rm -p 30333:30333 -p 9944:9944 -v ./output:/output:z availnode --dev --rpc-methods=unsafe --unsafe-rpc-external --rpc-cors=all
 ```
 
-### Podman
-To run the Avail Node using Docker, follow these steps:
+## RPCs and Custom Flags
 
-```bash
-# Build the Docker image for the Avail Node:
-podman build -t availnode -f ./dockerfiles/avail-node.Dockerfile .
-
-# Create an output directory. Here the node's data will be stored.
-mkdir output
-
-# Run the Avail Node container:
-podman run --rm -p 30333:30333 -p 9944:9944 -v ./output:/output availnode
-# For SELinux
-podman run --rm -p 30333:30333 -p 9944:9944 -v ./output:/output:z availnode
-```
-
-#### Running Dev Chain
-There are instructions for running a development chain using Podman. A development chain is typically used for testing and development purposes.
-
-```bash
-# Build the Docker image for the Avail Node:
-podman build -t availnode -f ./dockerfiles/avail-node.Dockerfile .
-
-# Create an output directory. Here the node's data will be stored.
-mkdir output
-
-# Run the Avail Node container:
-podman run --rm -p 30333:30333 -p 9944:9944 -v ./output:/output availnode --dev --rpc-methods=unsafe --unsafe-rpc-external --rpc-cors=all
-# For SELinux
-podman run --rm -p 30333:30333 -p 9944:9944 -v ./output:/output:z availnode --dev --rpc-methods=unsafe --unsafe-rpc-external --rpc-cors=all
-```
-
-## Kate RPC
+### Kate RPC
 To enable Kate RPC you need to pass `--enable-kate-rpc` flag when executing the binary.
 `--dev` implies `--enable-kate-rpc`.
 
@@ -148,8 +149,15 @@ To enable Kate RPC you need to pass `--enable-kate-rpc` flag when executing the 
 ./avail-node --enable-kate-rpc
 ```
 
-## All Custom Flags
+### Tranasction State RPC
+To enable Transaction State RPC you need to pass `--enable-tx-state-rpc` flag when executing the binary.
+
 ```bash
+./avail-node --enable-tx-state-rpc
+```
+
+### All Custom Flags
+```txt
 --enable-kate-rpc
     Enable Kate RPC
 
@@ -157,8 +165,27 @@ To enable Kate RPC you need to pass `--enable-kate-rpc` flag when executing the 
     The maximum number of cells that can be requested in one go.
     
     Max size cannot exceed 10_000
-    
     [default: 64]
+
+--enable-tx-state-rpc
+    Enable Transaction State RPC. This allows querying the transaction state (success or failure) using only a transaction hash
+
+--tx-state-rpc-max-search-results <TX_STATE_RPC_MAX_SEARCH_RESULTS>
+    The maximum number of results the transaction state RPC will return for a transaction hash. If a transaction hash appears in multiple blocks, the RPC will return only the top `X` transaction states.
+    In most cases, the transaction hash is unique, so this parameter is usually irrelevant
+    [default: 10]
+
+--tx-state-rpc-max-stored-block-count <TX_STATE_RPC_MAX_STORED_BLOCK_COUNT>
+    The maximum number of blocks preserved and stored in the transaction state RPC database.
+    
+    The default is 31 days' worth of blocks.
+    [default: 133920]
+
+--tx-state-logging-interval <TX_STATE_LOGGING_INTERVAL>
+    Logging interval for transaction state, in milliseconds. A lower value results in more frequent log updates.
+    
+    The default is 300_000 milliseconds (300 seconds).
+    [default: 300000]
 ```
 
 ## Run Benchmarks
@@ -187,13 +214,3 @@ There you can learn how to:
 - Build Avail Node for different Linux flavours
 - Find out what node synchronization options are available
 - Running Avail Benchmarks
-
-
-## Interact with the chain
-You can find on this repository many example on how to interact with any avail chain.
-- In the [avail-js](./avail-js/) folder, you will find our wrapper for polkadot-js including multiple helpers.
-    - The [example](./avail-js/examples/) folder inside avail-js contains some examples using node-js and an example web app to setup the extension.
-- In the [avail-subxt](./avail-subxt/) folder, you will find our fork of subxt with some example that are moved to [e2e folder](./e2e/src/tests/).
-- In the [examples](./examples/) folders you will find examples for:
-  - Deno examples
-  - Go examples

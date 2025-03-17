@@ -12,6 +12,7 @@ members = [
 	"runtime",
 	"runtime/fuzz",
 	"node",
+	"rpc/transaction-rpc"
 ]
 
 [workspace.package]
@@ -23,11 +24,9 @@ homepage = "https://www.availproject.org/"
 
 
 [workspace.dependencies]
-avail-core = { git = "https://github.com/availproject/avail-core", branch = "fusion-mvp", default-features = false, features = [
-	"runtime",
-] }
+avail-core = { git = "https://github.com/availproject/avail-core", branch = "fusion-mvp", default-features = false, features = [ "runtime"] }
 kate = { git = "https://github.com/availproject/avail-core", branch = "fusion-mvp", default-features = false }
-kate-recovery = { git = "https://github.com/availproject/avail-core", branch = "fusion-mvp", default-features = false }
+kate-recovery = { git = "https://github.com/availproject/avail-core", branch = "fusion-mvp", default-features = false  }
 # avail-core = { path = "../avail-core/core", default-features = false, features = [ "runtime"] }
 # kate = { path = "../avail-core/kate/", default-features = false }
 # kate-recovery = { path = "../avail-core/kate/recovery/", default-features = false}
@@ -40,6 +39,7 @@ pallet-vector = { path = "pallets/vector", default-features = false }
 da-runtime = { path = "runtime", default-features = false }
 kate-rpc = { path = "rpc/kate-rpc" }
 testing-rpc = { path = "rpc/testing-rpc" }
+transaction-rpc = { path = "rpc/transaction-rpc", default-features = false }
 patricia-merkle-trie = { path = "patricia-merkle-trie", default-features = false }
 
 sc-basic-authorship = { path = "client/basic-authorship", default-features = false }
@@ -167,6 +167,8 @@ sp-externalities = { git = "https://github.com/availproject/polkadot-sdk.git", b
 sp-runtime-interface = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "fusion-mvp", default-features = false }
 binary-merkle-tree = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "fusion-mvp", default-features = false }
 sp-staking = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "fusion-mvp", default-features = false }
+pallet-staking = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "fusion-mvp", default-features = false }
+pallet-staking-runtime-api = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "fusion-mvp", default-features = false } 
 sp-consensus-grandpa = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "fusion-mvp", default-features = false }
 sp-authority-discovery = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "fusion-mvp", default-features = false }
 sp-consensus-babe = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "fusion-mvp", default-features = false }
@@ -179,6 +181,7 @@ sp-npos-elections = { git = "https://github.com/availproject/polkadot-sdk.git", 
 pallet-session = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "fusion-mvp", default-features = false }
 pallet-im-online = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "fusion-mvp", default-features = false }
 pallet-grandpa = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "fusion-mvp", default-features = false }
+pallet-staking-reward-curve = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "fusion-mvp", default-features = false }
 pallet-scheduler = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "fusion-mvp", default-features = false }
 pallet-indices = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "fusion-mvp", default-features = false }
 pallet-offences = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "fusion-mvp", default-features = false }
@@ -198,14 +201,11 @@ pallet-nomination-pools = { git = "https://github.com/availproject/polkadot-sdk.
 pallet-nomination-pools-runtime-api = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "fusion-mvp", default-features = false }
 pallet-identity = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "fusion-mvp", default-features = false }
 pallet-proxy = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "fusion-mvp", default-features = false }
-pallet-staking = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "fusion-mvp", default-features = false }
-pallet-staking-runtime-api = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "fusion-mvp", default-features = false }
-pallet-staking-reward-curve = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "fusion-mvp", default-features = false }
-pallet-staking-reward-fn = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "fusion-mvp", default-features = false }
 pallet-tx-pause = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "fusion-mvp", default-features = false }
 pallet-transaction-payment = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "fusion-mvp", default-features = false }
 pallet-transaction-payment-rpc = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "fusion-mvp", default-features = false }
 pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "fusion-mvp", default-features = false }
+pallet-staking-reward-fn = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "fusion-mvp", default-features = false }
 substrate-wasm-builder = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "fusion-mvp", default-features = false }
 sc-cli = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "fusion-mvp", default-features = false }
 sp-statement-store = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "fusion-mvp", default-features = false }
@@ -246,13 +246,13 @@ try-runtime-cli = { git = "https://github.com/availproject/polkadot-sdk.git", br
 substrate-build-script-utils = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "fusion-mvp", default-features = false }
 sp-trie = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "fusion-mvp", default-features = false }
 sp-state-machine = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "fusion-mvp", default-features = false }
-sp-application-crypto = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "fusion-mvp", default-features = false }
+
 
 sc-block-builder = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "fusion-mvp" }
 sc-proposer-metrics = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "fusion-mvp" }
 substrate-prometheus-endpoint = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "fusion-mvp" }
-substrate-test-runtime-client = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "fusion-mvp" }
-substrate-test-utils = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "fusion-mvp", default-features = false }
+# substrate-test-runtime-client = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "fusion-mvp" }
+
 
 # Patch from forked pallets
 [patch."https://github.com/availproject/polkadot-sdk.git"]
