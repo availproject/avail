@@ -19,7 +19,7 @@
 //! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 #![allow(dead_code)]
 
-use crate::transaction_state;
+use crate::transaction_state::{self, Database, VecDatabase};
 use crate::{cli::Cli, rpc as node_rpc};
 use avail_core::AppId;
 use da_runtime::{apis::RuntimeApi, NodeBlock as Block, Runtime};
@@ -298,8 +298,12 @@ pub fn new_partial(
 	let mut transaction_rpc_deps = None;
 	let mut tx_state_deps = None;
 	if tx_state_cli_deps.enabled {
-		let (search_send, search_recv) = channel::<transaction_rpc::TxStateChannel>(10_000);
-		let (block_send, block_recv) = channel::<transaction_state::BlockDetails>(50_000);
+		let (search_send, search_recv) = channel::<transaction_rpc::TxStateChannel>(
+			transaction_state::constants::RPC_CHANNEL_LIMIT,
+		);
+		let (block_send, block_recv) = channel::<transaction_state::BlockDetails>(
+			transaction_state::constants::BLOCK_CHANNEL_LIMIT,
+		);
 
 		let deps = transaction_state::Deps {
 			block_receiver: block_recv,
@@ -671,7 +675,7 @@ pub fn new_full_base(
 			rpc_handlers: rpc_handlers.clone(),
 			client: client.clone(),
 			sender: deps.block_sender.clone(),
-			logger: transaction_state::WorkerLogging::new(
+			logger: transaction_state::WorkerLogger::new(
 				"Inclusion Worker".into(),
 				deps.cli.logging_interval,
 			),
@@ -682,13 +686,13 @@ pub fn new_full_base(
 			client: client.clone(),
 			sender: deps.block_sender.clone(),
 			max_stored_block_count: deps.cli.max_stored_block_count,
-			logger: transaction_state::WorkerLogging::new(
+			logger: transaction_state::WorkerLogger::new(
 				"Finalization Worker".into(),
 				deps.cli.logging_interval,
 			),
 		};
 
-		let db = transaction_state::Database::new(
+		let db = Database::<VecDatabase>::new(
 			deps.block_receiver,
 			deps.search_receiver,
 			deps.cli.max_search_results,
