@@ -19,7 +19,7 @@
 //! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 #![allow(dead_code)]
 
-use crate::transaction_state::{self, Database, MapDatabase};
+use crate::transaction_state::{self, Database, MapDatabase, VecDatabase};
 use crate::{cli::Cli, rpc as node_rpc};
 use avail_core::AppId;
 use da_runtime::{apis::RuntimeApi, NodeBlock as Block, Runtime};
@@ -692,24 +692,36 @@ pub fn new_full_base(
 				deps.cli.logging_interval,
 			),
 		};
-
-		let db = Database::<MapDatabase>::new(
-			deps.block_receiver,
-			deps.search_receiver,
-			deps.cli.max_search_results,
-			deps.cli.max_stored_block_count,
-			deps.cli.logging_interval,
-		);
-
 		task_manager
 			.spawn_handle()
 			.spawn("tx-state-worker-i", None, worker_1.run());
 		task_manager
 			.spawn_handle()
 			.spawn("tx-state-worker-f", None, worker_2.run());
-		task_manager
-			.spawn_handle()
-			.spawn("tx-state-db", None, db.run());
+
+		if !deps.cli.use_vector {
+			let db = Database::<MapDatabase>::new(
+				deps.block_receiver,
+				deps.search_receiver,
+				deps.cli.max_search_results,
+				deps.cli.max_stored_block_count,
+				deps.cli.logging_interval,
+			);
+			task_manager
+				.spawn_handle()
+				.spawn("tx-state-db", None, db.run());
+		} else {
+			let db = Database::<VecDatabase>::new(
+				deps.block_receiver,
+				deps.search_receiver,
+				deps.cli.max_search_results,
+				deps.cli.max_stored_block_count,
+				deps.cli.logging_interval,
+			);
+			task_manager
+				.spawn_handle()
+				.spawn("tx-state-db", None, db.run());
+		};
 	} else {
 		log::info!("👾 Transaction State RPC is disabled.");
 	}
@@ -735,6 +747,7 @@ pub fn new_full(config: Configuration, cli: Cli) -> Result<TaskManager, ServiceE
 	let tx_state_cli_deps = transaction_state::CliDeps {
 		max_search_results: cli.tx_state_rpc_max_search_results,
 		max_stored_block_count: cli.tx_state_rpc_max_stored_block_count,
+		use_vector: cli.tx_state_rpc_use_vector,
 		enabled: cli.tx_state_rpc_enabled,
 		logging_interval: cli.tx_state_logging_interval,
 	};

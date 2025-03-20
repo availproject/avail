@@ -62,8 +62,4 @@ impl DatabaseLogging {
 	pub fn log_resize(&self, duration: Duration) {
 		log::info!("👾 Database: Resize duration {:.02?}", duration);
 	}
-
-	pub fn log(&self, message: String) {
-		log::info!("👾 Database: {}", message);
-	}
 }

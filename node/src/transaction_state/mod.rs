@@ -29,6 +29,7 @@ pub struct CliDeps {
 	pub max_search_results: usize,
 	pub max_stored_block_count: usize,
 	pub logging_interval: u64,
+	pub use_vector: bool,
 	pub enabled: bool,
 }
 

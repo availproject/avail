@@ -186,6 +186,9 @@ To enable Transaction State RPC you need to pass `--enable-tx-state-rpc` flag wh
     
     The default is 300_000 milliseconds (300 seconds).
     [default: 300000]
+
+--tx-state-rpc-use-vector
+    Uses Vector instead of a Map for Transaction State RPC Database. This will decrease the memory footprint at the cost of lookup performance
 ```
 
 ## Run Benchmarks

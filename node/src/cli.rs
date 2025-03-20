@@ -88,6 +88,11 @@ pub struct Cli {
 	/// The default is 300_000 milliseconds (300 seconds).
 	#[clap(long, default_value_t = 300_000)]
 	pub tx_state_logging_interval: u64,
+
+	/// If enabled, will use Vector instead of a HashMap for Transaction State RPC Database.
+	/// This will decrease the memory footprint at the cost of lookup performance.
+	#[clap(long, default_value_t = false)]
+	pub tx_state_rpc_use_vector: bool,
 }
 
 fn kate_max_cells_size_upper_bound(s: &str) -> Result<usize, String> {
