@@ -178,8 +178,8 @@ To enable Transaction State RPC you need to pass `--enable-tx-state-rpc` flag wh
 --tx-state-rpc-max-stored-block-count <TX_STATE_RPC_MAX_STORED_BLOCK_COUNT>
     The maximum number of blocks preserved and stored in the transaction state RPC database.
     
-    The default is 31 days' worth of blocks.
-    [default: 133920]
+	The default is 7 days' worth of blocks.
+    [default: 30240]
 
 --tx-state-logging-interval <TX_STATE_LOGGING_INTERVAL>
     Logging interval for transaction state, in milliseconds. A lower value results in more frequent log updates.

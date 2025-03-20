@@ -78,8 +78,8 @@ pub struct Cli {
 
 	/// The maximum number of blocks preserved and stored in the transaction state RPC database.
 	///
-	/// The default is 31 days' worth of blocks.
-	#[clap(long, default_value_t = 133920)]
+	/// The default is 7 days' worth of blocks.
+	#[clap(long, default_value_t = 30240)]
 	pub tx_state_rpc_max_stored_block_count: usize,
 
 	/// Logging interval for transaction state, in milliseconds.
