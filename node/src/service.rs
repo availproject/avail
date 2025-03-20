@@ -19,7 +19,7 @@
 //! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 #![allow(dead_code)]
 
-use crate::transaction_state::{self, Database, VecDatabase};
+use crate::transaction_state::{self, Database, MapDatabase};
 use crate::{cli::Cli, rpc as node_rpc};
 use avail_core::AppId;
 use da_runtime::{apis::RuntimeApi, NodeBlock as Block, Runtime};
@@ -675,6 +675,7 @@ pub fn new_full_base(
 			rpc_handlers: rpc_handlers.clone(),
 			client: client.clone(),
 			sender: deps.block_sender.clone(),
+			max_stored_block_count: deps.cli.max_stored_block_count,
 			logger: transaction_state::WorkerLogger::new(
 				"Inclusion Worker".into(),
 				deps.cli.logging_interval,
@@ -692,7 +693,7 @@ pub fn new_full_base(
 			),
 		};
 
-		let db = Database::<VecDatabase>::new(
+		let db = Database::<MapDatabase>::new(
 			deps.block_receiver,
 			deps.search_receiver,
 			deps.cli.max_search_results,

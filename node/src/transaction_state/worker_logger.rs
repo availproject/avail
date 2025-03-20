@@ -23,7 +23,7 @@ impl Logger {
 		self.block_fetch.push(duration);
 	}
 
-	pub fn log(&mut self) {
+	pub fn log_stats(&mut self) {
 		if self.timer.elapsed() < self.timer_interval {
 			return;
 		}
@@ -46,22 +46,22 @@ impl Logger {
 	}
 
 	pub fn log_sync_time(&self, duration: Duration) {
-		log::info!(
-			"👾 {}: Sync time duration: {} seconds",
-			self.name,
-			duration.as_secs()
-		);
+		log::info!("👾 {}: Sync time duration: {:.02?}", self.name, duration);
 	}
 
 	pub fn log_index_old_blocks_time(&self, duration: Duration) {
 		log::info!(
-			"👾 {}: Index old block time duration: {} ms",
+			"👾 {}: Index old blocks duration: {:.02?}",
 			self.name,
-			duration.as_millis()
+			duration
 		);
 	}
 
 	pub fn log_error(&self, message: String) {
 		log::warn!("👾 {}: {}", self.name, message);
+	}
+
+	pub fn log(&self, message: String) {
+		log::info!("👾 {}: {}", self.name, message);
 	}
 }

@@ -10,8 +10,8 @@ mod worker_included;
 mod worker_logger;
 
 pub use database::Database;
-pub use database_map::Database as VecDatabase;
-pub use database_vec::Database as MapDatabase;
+pub use database_map::Database as MapDatabase;
+pub use database_vec::Database as VecDatabase;
 pub use worker_finalized::FinalizedWorker;
 pub use worker_included::IncludedWorker;
 pub use worker_logger::Logger as WorkerLogger;

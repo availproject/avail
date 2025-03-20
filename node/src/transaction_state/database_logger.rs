@@ -28,7 +28,7 @@ impl DatabaseLogging {
 		self.rpc_calls.push(duration);
 	}
 
-	pub fn log(&mut self) -> bool {
+	pub fn log_stats(&mut self) -> bool {
 		if self.timer.elapsed() < self.timer_interval {
 			return false;
 		}
@@ -46,7 +46,7 @@ impl DatabaseLogging {
 		}
 
 		if !message.is_empty() {
-			log::info!("👾 {}", message,);
+			log::info!("👾 Database: {}", message,);
 		}
 
 		self.rpc_calls.clear();
@@ -57,5 +57,13 @@ impl DatabaseLogging {
 		self.timer = Instant::now();
 
 		true
+	}
+
+	pub fn log_resize(&self, duration: Duration) {
+		log::info!("👾 Database: Resize duration {:.02?}", duration);
+	}
+
+	pub fn log(&self, message: String) {
+		log::info!("👾 Database: {}", message);
 	}
 }

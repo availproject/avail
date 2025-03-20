@@ -7,6 +7,8 @@ use sp_core::H256;
 use transaction_rpc::TxStateReceiver as SearchReceiver;
 use transaction_rpc::{OneShotTxStateSender, TransactionState as RPCTransactionState};
 
+use crate::transaction_state::macros::profile;
+
 use super::database_logger::DatabaseLogging;
 use super::BlockDetails;
 pub struct Config {
@@ -41,7 +43,7 @@ impl<T: DatabaseLike> Database<T> {
 			logger: DatabaseLogging::new(logging_interval),
 			inner: T::new(config),
 			timer: Instant::now(),
-			timer_interval: Duration::from_secs(10),
+			timer_interval: Duration::from_secs(300),
 		}
 	}
 
@@ -67,12 +69,14 @@ impl<T: DatabaseLike> Database<T> {
 				}
 			}
 
-			if self.logger.log() {
+			if self.logger.log_stats() {
 				self.inner.log();
 			}
 
 			if self.timer.elapsed() >= self.timer_interval {
-				self.inner.resize();
+				let (duration, _) = profile!(self.inner.resize());
+				self.logger.log_resize(duration);
+
 				self.timer = Instant::now();
 			}
 

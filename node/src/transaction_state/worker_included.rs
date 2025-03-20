@@ -19,11 +19,19 @@ pub struct IncludedWorker {
 	pub rpc_handlers: RpcHandlers,
 	pub client: Arc<FullClient>,
 	pub sender: Sender<BlockDetails>,
+	pub max_stored_block_count: usize,
 	pub logger: Logger,
 }
 
 impl IncludedWorker {
 	pub async fn run(mut self) {
+		// Do nothing if we are not allowed to store any blocks.
+		if self.max_stored_block_count == 0 {
+			self.logger
+				.log("Max Stored Block Count is equal to 0. Worker won't run.".into());
+			return;
+		}
+
 		let (duration, _) = profile!(worker::wait_for_sync(&self.rpc_handlers).await);
 		self.logger.log_sync_time(duration);
 
@@ -37,7 +45,7 @@ impl IncludedWorker {
 				return;
 			}
 
-			self.logger.log();
+			self.logger.log_stats();
 		}
 	}
 

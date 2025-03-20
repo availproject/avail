@@ -171,6 +171,6 @@ impl DatabaseLike for Database {
 	}
 
 	fn log(&self) {
-		log::info!("👾 Inclusion Vec Len: {}, Inclusion Vec Cap: {}, Finalized Vec Len: {}, Finalized Vec Cap: {}", self.included_blocks.len(), self.included_blocks.capacity(), self.finalized_blocks.len(), self.finalized_blocks.capacity());
+		log::info!("👾 Database: Inclusion Vec Len: {}, Inclusion Vec Cap: {}, Finalized Vec Len: {}, Finalized Vec Cap: {}", self.included_blocks.len(), self.included_blocks.capacity(), self.finalized_blocks.len(), self.finalized_blocks.capacity());
 	}
 }

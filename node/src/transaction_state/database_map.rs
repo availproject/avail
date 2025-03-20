@@ -40,19 +40,35 @@ impl Database {
 		}
 	}
 
-	fn add_transaction(&mut self, state: TransactionState, block_index: u32, is_finalized: bool) {
+	fn add_transaction(
+		&mut self,
+		state: TransactionState,
+		block_index: u32,
+		is_finalized: bool,
+		block_height: u32,
+	) {
 		if is_finalized {
-			self.finalized_tx
-				.add_transaction(state, block_index, self.config.max_search_results);
+			self.finalized_tx.add_transaction(
+				state,
+				block_index,
+				self.config.max_search_results,
+				block_height,
+				&self.block_map,
+			);
 		} else {
-			self.included_tx
-				.add_transaction(state, block_index, self.config.max_search_results);
+			self.included_tx.add_transaction(
+				state,
+				block_index,
+				self.config.max_search_results,
+				block_height,
+				&self.block_map,
+			);
 		};
 	}
 
 	fn get_block_index(&self, block_hash: &H256, block_height: u32) -> Option<u32> {
 		for (key, value) in self.block_map.iter() {
-			if value.block_hash == *block_hash || value.block_height == block_height {
+			if value.block_hash == *block_hash && value.block_height == block_height {
 				return Some(*key);
 			}
 		}
@@ -85,12 +101,17 @@ impl DatabaseLike for Database {
 
 		// Clean up Included Tx
 		if new_block.finalized {
-			self.included_tx.remove_block_index(block_index);
+			self.included_tx.filter_up_to(block_index, &self.block_map);
 		}
 
 		// Add new transaction
 		for new_tx in new_block.transactions {
-			self.add_transaction(new_tx, block_index, new_block.finalized);
+			self.add_transaction(
+				new_tx,
+				block_index,
+				new_block.finalized,
+				new_block.block_height,
+			);
 		}
 	}
 
@@ -122,6 +143,10 @@ impl DatabaseLike for Database {
 	}
 
 	fn resize(&mut self) {
+		if self.config.max_stored_block_count >= self.block_map.len() {
+			return;
+		}
+
 		let old_len_inc = self.included_tx.len();
 		let old_len_fin = self.finalized_tx.len();
 		let old_cap_inc = self.included_tx.capacity();
@@ -184,7 +209,7 @@ impl DatabaseLike for Database {
 	}
 
 	fn log(&self) {
-		log::info!("👾 Block Map Counter: {}, Inclusion Map Len: {}, Inclusion Map Cap: {}, Finalized Map Len: {}, Finalized Map Cap: {}", self.block_map_counter, self.included_tx.len(), self.included_tx.capacity(), self.finalized_tx.len(), self.finalized_tx.capacity());
+		log::info!("👾 Database: Block Map Counter: {}, Block Map Size: {}/{}, Inclusion Map Size: {}/{}, Finalized Map Size: {}/{}", self.block_map_counter, self.block_map.len(), self.block_map.capacity(), self.included_tx.len(), self.included_tx.capacity(), self.finalized_tx.len(), self.finalized_tx.capacity());
 	}
 }
 
@@ -246,7 +271,14 @@ impl Map {
 		}
 	}
 
-	fn add_transaction(&mut self, state: TransactionState, block_index: u32, max_length: usize) {
+	fn add_transaction(
+		&mut self,
+		state: TransactionState,
+		block_index: u32,
+		max_length: usize,
+		block_height: u32,
+		block_map: &HashMap<u32, BlockData>,
+	) {
 		let v = TransactionData {
 			tx_index: state.tx_index,
 			tx_success: state.tx_success,
@@ -256,16 +288,72 @@ impl Map {
 		};
 
 		if let Some(entry) = self.multi.get_mut(&state.tx_hash) {
-			if entry.len() >= max_length {
+			if entry.len() < max_length {
+				entry.insert(0, v);
+				entry.sort_by(|x, y| {
+					let xh = block_map
+						.get(&x.block_index)
+						.map(|x| x.block_height)
+						.unwrap_or_default();
+					let yh = block_map
+						.get(&y.block_index)
+						.map(|x| x.block_height)
+						.unwrap_or_default();
+					yh.cmp(&xh)
+				});
+				return;
+			}
+
+			let highest_height = entry
+				.first()
+				.map(|x| block_map.get(&x.block_index).map(|y| y.block_height))
+				.flatten()
+				.unwrap_or_default();
+			if block_height > highest_height {
+				entry.insert(0, v);
 				entry.pop();
+				return;
+			}
+
+			let lowest_height = entry
+				.last()
+				.map(|x| block_map.get(&x.block_index).map(|y| y.block_height))
+				.flatten()
+				.unwrap_or_default();
+			if block_height < lowest_height {
+				return;
 			}
 
 			entry.insert(0, v);
+			entry.sort_by(|x, y| {
+				let xh = block_map
+					.get(&x.block_index)
+					.map(|x| x.block_height)
+					.unwrap_or_default();
+				let yh = block_map
+					.get(&y.block_index)
+					.map(|x| x.block_height)
+					.unwrap_or_default();
+				yh.cmp(&xh)
+			});
+			entry.pop();
 			return;
 		}
 
 		if let Some(entry) = self.single.remove(&state.tx_hash) {
-			self.multi.insert(state.tx_hash.clone(), vec![entry, v]);
+			let mut value = vec![entry, v];
+			value.sort_by(|x, y| {
+				let xh = block_map
+					.get(&x.block_index)
+					.map(|x| x.block_height)
+					.unwrap_or_default();
+				let yh = block_map
+					.get(&y.block_index)
+					.map(|x| x.block_height)
+					.unwrap_or_default();
+				yh.cmp(&xh)
+			});
+			self.multi.insert(state.tx_hash.clone(), value);
 			return;
 		}
 
@@ -280,6 +368,42 @@ impl Map {
 			value.retain(|v| v.block_index != block_index);
 
 			!value.is_empty()
+		});
+	}
+
+	// Removes all blocks up to and including `block_index` height.
+	fn filter_up_to(&mut self, block_index: u32, block_map: &HashMap<u32, BlockData>) {
+		let Some(block_data) = block_map.get(&block_index) else {
+			return;
+		};
+
+		let target_height = block_data.block_height;
+		self.single.retain(|_x, tx_data| {
+			let Some(tx_block_data) = block_map.get(&tx_data.block_index) else {
+				return false;
+			};
+
+			if target_height >= tx_block_data.block_height {
+				return false;
+			}
+
+			true
+		});
+
+		self.multi.retain(|_x, entries| {
+			entries.retain_mut(|tx_data| {
+				let Some(tx_block_data) = block_map.get(&tx_data.block_index) else {
+					return false;
+				};
+
+				if target_height >= tx_block_data.block_height {
+					return false;
+				}
+
+				true
+			});
+
+			!entries.is_empty()
 		});
 	}
 
