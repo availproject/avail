@@ -73,7 +73,7 @@ pub struct Cli {
 	/// The maximum number of results the transaction state RPC will return for a transaction hash.
 	/// If a transaction hash appears in multiple blocks, the RPC will return only the top `X` transaction states.  
 	/// In most cases, the transaction hash is unique, so this parameter is usually irrelevant.
-	#[clap(long, default_value_t = 10)]
+	#[clap(long, default_value_t = 5)]
 	pub tx_state_rpc_max_search_results: usize,
 
 	/// The maximum number of blocks preserved and stored in the transaction state RPC database.
@@ -86,8 +86,8 @@ pub struct Cli {
 	/// Logging interval for transaction state, in milliseconds.
 	/// A lower value results in more frequent log updates.
 	///
-	/// The default is 300_000 milliseconds (300 seconds).
-	#[clap(long, default_value_t = 300_000)]
+	/// The default is 900_000 milliseconds (900 seconds).
+	#[clap(long, default_value_t = 900_000)]
 	pub tx_state_rpc_logging_interval: u64,
 
 	/// If enabled, will use Vector instead of a HashMap for Transaction State RPC Database.

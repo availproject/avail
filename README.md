@@ -181,7 +181,7 @@ To enable Transaction State RPC you need to pass `--enable-tx-state-rpc` flag wh
 --tx-state-rpc-max-search-results <TX_STATE_RPC_MAX_SEARCH_RESULTS>
     The maximum number of results the transaction state RPC will return for a transaction hash. If a transaction hash appears in multiple blocks, the RPC will return only the top `X` transaction states.
     In most cases, the transaction hash is unique, so this parameter is usually irrelevant
-    [default: 10]
+    [default: 5]
 
 --tx-state-rpc-max-stored-block-count <TX_STATE_RPC_MAX_STORED_BLOCK_COUNT>
     The maximum number of blocks preserved and stored in the transaction state RPC database.
@@ -192,8 +192,8 @@ To enable Transaction State RPC you need to pass `--enable-tx-state-rpc` flag wh
 --tx-state-rpc-logging-interval <TX_STATE_RPC_LOGGING_INTERVAL>
     Logging interval for transaction state, in milliseconds. A lower value results in more frequent log updates.
     
-    The default is 300_000 milliseconds (300 seconds).
-    [default: 300000]
+    The default is 900_000 milliseconds (900 seconds).
+    [default: 900000]
 
 --tx-state-rpc-use-vector
     Uses Vector instead of a Map for Transaction State RPC Database. This will decrease the memory footprint at the cost of lookup performance
