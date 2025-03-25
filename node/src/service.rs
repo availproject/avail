@@ -749,7 +749,7 @@ pub fn new_full(config: Configuration, cli: Cli) -> Result<TaskManager, ServiceE
 		max_stored_block_count: cli.tx_state_rpc_max_stored_block_count,
 		use_vector: cli.tx_state_rpc_use_vector,
 		enabled: cli.tx_state_rpc_enabled,
-		logging_interval: cli.tx_state_logging_interval,
+		logging_interval: cli.tx_state_rpc_logging_interval,
 	};
 	let task_manager = new_full_base(
 		config,

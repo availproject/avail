@@ -79,6 +79,7 @@ pub struct Cli {
 	/// The maximum number of blocks preserved and stored in the transaction state RPC database.
 	///
 	/// The default is 7 days' worth of blocks.
+	/// Cannot be less than 10
 	#[clap(long, default_value_t = 30240, value_parser=more_or_euqal_than_10)]
 	pub tx_state_rpc_max_stored_block_count: usize,
 
@@ -87,7 +88,7 @@ pub struct Cli {
 	///
 	/// The default is 300_000 milliseconds (300 seconds).
 	#[clap(long, default_value_t = 300_000)]
-	pub tx_state_logging_interval: u64,
+	pub tx_state_rpc_logging_interval: u64,
 
 	/// If enabled, will use Vector instead of a HashMap for Transaction State RPC Database.
 	/// This will decrease the memory footprint at the cost of lookup performance.

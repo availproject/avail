@@ -8,7 +8,7 @@ use jsonrpsee::tokio;
 use sc_service::RpcHandlers;
 use sp_core::{bytes::from_hex, Blake2Hasher, Hasher, H256};
 
-use super::{BlockDetails, TransactionState};
+use super::{constants::NODE_SYNC_SLEEP_INTERNVAL, BlockDetails, TransactionState};
 
 pub(crate) async fn wait_for_sync(handler: &RpcHandlers) {
 	loop {
@@ -18,7 +18,7 @@ pub(crate) async fn wait_for_sync(handler: &RpcHandlers) {
 			None => (),
 		}
 
-		tokio::time::sleep(Duration::from_secs(10)).await;
+		tokio::time::sleep(Duration::from_secs(NODE_SYNC_SLEEP_INTERNVAL)).await;
 	}
 }
 

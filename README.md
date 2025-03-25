@@ -161,11 +161,19 @@ To enable Transaction State RPC you need to pass `--enable-tx-state-rpc` flag wh
 --enable-kate-rpc
     Enable Kate RPC
 
+--enable-kate-rpc-metrics
+    Enable Kate RPC Metrics
+
 --kate-max-cells-size <KATE_MAX_CELLS_SIZE>
     The maximum number of cells that can be requested in one go.
     
     Max size cannot exceed 10_000
     [default: 64]
+    
+--network-name <NETWORK_NAME>
+    The name of the network.
+    
+    This parameter can be used to update the network name and id of the `dev` and `dev_tri` chains.
 
 --enable-tx-state-rpc
     Enable Transaction State RPC. This allows querying the transaction state (success or failure) using only a transaction hash
@@ -178,10 +186,10 @@ To enable Transaction State RPC you need to pass `--enable-tx-state-rpc` flag wh
 --tx-state-rpc-max-stored-block-count <TX_STATE_RPC_MAX_STORED_BLOCK_COUNT>
     The maximum number of blocks preserved and stored in the transaction state RPC database.
     
-	The default is 7 days' worth of blocks.
+	The default is 7 days' worth of blocks. Cannot be less than 10
     [default: 30240]
 
---tx-state-logging-interval <TX_STATE_LOGGING_INTERVAL>
+--tx-state-rpc-logging-interval <TX_STATE_RPC_LOGGING_INTERVAL>
     Logging interval for transaction state, in milliseconds. A lower value results in more frequent log updates.
     
     The default is 300_000 milliseconds (300 seconds).

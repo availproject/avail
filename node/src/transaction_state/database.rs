@@ -1,5 +1,6 @@
 use std::time::{Duration, Instant};
 
+use super::constants::DATABASE_RESIZE_INTERVAL;
 use jsonrpsee::tokio;
 use jsonrpsee::tokio::sync::mpsc::Receiver;
 use sc_telemetry::log;
@@ -43,7 +44,7 @@ impl<T: DatabaseLike> Database<T> {
 			logger: DatabaseLogging::new(logging_interval),
 			inner: T::new(config),
 			timer: Instant::now(),
-			timer_interval: Duration::from_secs(300),
+			timer_interval: Duration::from_secs(DATABASE_RESIZE_INTERVAL),
 		}
 	}
 
