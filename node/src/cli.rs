@@ -79,7 +79,7 @@ pub struct Cli {
 	/// The maximum number of blocks preserved and stored in the transaction state RPC database.
 	///
 	/// The default is 7 days' worth of blocks.
-	#[clap(long, default_value_t = 30240)]
+	#[clap(long, default_value_t = 30240, value_parser=more_or_euqal_than_10)]
 	pub tx_state_rpc_max_stored_block_count: usize,
 
 	/// Logging interval for transaction state, in milliseconds.
@@ -93,6 +93,18 @@ pub struct Cli {
 	/// This will decrease the memory footprint at the cost of lookup performance.
 	#[clap(long, default_value_t = false)]
 	pub tx_state_rpc_use_vector: bool,
+}
+
+fn more_or_euqal_than_10(s: &str) -> Result<usize, String> {
+	let Ok(value) = s.parse::<usize>() else {
+		return Err(String::from("is not a valid number"));
+	};
+
+	if value < 10 {
+		return Err(String::from("cannot be less than 10"));
+	}
+
+	Ok(value)
 }
 
 fn kate_max_cells_size_upper_bound(s: &str) -> Result<usize, String> {
