@@ -86,8 +86,8 @@ pub struct Cli {
 	/// Logging interval for transaction state, in milliseconds.
 	/// A lower value results in more frequent log updates.
 	///
-	/// The default is 900_000 milliseconds (900 seconds).
-	#[clap(long, default_value_t = 900_000)]
+	/// The default is 1800 seconds.
+	#[clap(long, default_value_t = 1800)]
 	pub tx_state_rpc_logging_interval: u64,
 
 	/// If enabled, will use Vector instead of a HashMap for Transaction State RPC Database.

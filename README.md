@@ -192,8 +192,8 @@ To enable Transaction State RPC you need to pass `--enable-tx-state-rpc` flag wh
 --tx-state-rpc-logging-interval <TX_STATE_RPC_LOGGING_INTERVAL>
     Logging interval for transaction state, in milliseconds. A lower value results in more frequent log updates.
     
-    The default is 900_000 milliseconds (900 seconds).
-    [default: 900000]
+    The default is 1800 seconds.
+    [default: 1800]
 
 --tx-state-rpc-use-vector
     Uses Vector instead of a Map for Transaction State RPC Database. This will decrease the memory footprint at the cost of lookup performance

@@ -147,11 +147,6 @@ impl DatabaseLike for Database {
 			return;
 		}
 
-		let old_len_inc = self.included_tx.len();
-		let old_len_fin = self.finalized_tx.len();
-		let old_cap_inc = self.included_tx.capacity();
-		let old_cap_fin = self.finalized_tx.capacity();
-
 		while self.block_map.len() > self.config.max_stored_block_count {
 			let entry = self
 				.block_map
@@ -178,22 +173,6 @@ impl DatabaseLike for Database {
 		let new_len_fin = self.finalized_tx.len();
 		let new_cap_inc = self.included_tx.capacity();
 		let new_cap_fin = self.finalized_tx.capacity();
-
-		log::info!(
-			"👾 I Old Cap: {}, I New Cap: {}, I Old Len: {}, I New Len: {}",
-			old_cap_inc,
-			new_cap_inc,
-			old_len_inc,
-			new_len_inc,
-		);
-
-		log::info!(
-			"👾 F Old Cap: {}, F New Cap: {}, F Old Len: {}, F New Len: {}",
-			old_cap_fin,
-			new_cap_fin,
-			old_len_fin,
-			new_len_fin,
-		);
 	}
 
 	fn config(&self) -> &Config {

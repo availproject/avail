@@ -14,7 +14,7 @@ impl Logger {
 		Self {
 			block_fetch: Default::default(),
 			timer: Instant::now(),
-			timer_interval: Duration::from_millis(logging_interval),
+			timer_interval: Duration::from_secs(logging_interval),
 			name,
 		}
 	}
