@@ -726,6 +726,8 @@ pub fn new_full(config: Configuration, cli: Cli) -> Result<TaskManager, ServiceE
 		max_cells_size: cli.kate_max_cells_size,
 		rpc_enabled: cli.kate_rpc_enabled,
 		rpc_metrics_enabled: cli.kate_rpc_metrics_enabled,
+		eval_grid_size: cli.kate_eval_grid_size,
+		poly_grid_size: cli.kate_poly_grid_size,
 	};
 	let tx_state_cli_deps = transaction_state::CliDeps {
 		max_search_results: cli.tx_state_rpc_max_search_results,

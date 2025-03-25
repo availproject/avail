@@ -233,6 +233,8 @@ where
 		io.merge(KateApiMetricsServer::into_rpc(Kate::<C, Block>::new(
 			client.clone(),
 			kate_rpc_deps.max_cells_size,
+			kate_rpc_deps.eval_grid_size,
+			kate_rpc_deps.poly_grid_size,
 		)))?;
 	}
 
@@ -240,6 +242,8 @@ where
 		io.merge(KateApiServer::into_rpc(Kate::<C, Block>::new(
 			client,
 			kate_rpc_deps.max_cells_size,
+			kate_rpc_deps.eval_grid_size,
+			kate_rpc_deps.poly_grid_size,
 		)))?;
 	}
 
