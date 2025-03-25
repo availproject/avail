@@ -161,8 +161,6 @@ macro_rules! internal_err {
 	}}
 }
 
-// ApiRef<'_, dyn ApiExt<Block>>,
-
 type Opaques<B> = Vec<<B as BlockT>::Extrinsic>;
 type Api<'a, C, B> = ApiRef<'a, <C as ProvideRuntimeApi<B>>::Api>;
 
@@ -345,7 +343,6 @@ where
 		}
 
 		let _metric_observer = MetricObserver::new(ObserveKind::KateQueryProof);
-		let start = std::time::Instant::now();
 		let grid = self.get_eval_grid(at).await?;
 		let poly = self.get_poly_grid(at).await?;
 		let srs = SRS.get_or_init(multiproof_params);
@@ -383,7 +380,6 @@ where
 				))
 			})
 			.collect();
-		println!("Proofs generation time: {:?}", start.elapsed());
 		proofs.map_err(|e| internal_err!("Failed to generate proof: {:?}", e))
 	}
 
