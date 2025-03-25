@@ -60,12 +60,10 @@ pub struct Cli {
 	pub kate_max_cells_size: usize,
 
 	/// The maximum size of the evaluation grid cache in MiB.
-	///
 	#[arg(long, default_value_t = 64)]
 	pub kate_eval_grid_size: u64,
 
 	/// The maximum size of the polynomial grid cache in MiB.
-	///
 	#[arg(long, default_value_t = 64)]
 	pub kate_poly_grid_size: u64,
 
