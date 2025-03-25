@@ -59,6 +59,16 @@ pub struct Cli {
 	#[arg(long, default_value_t = 64, value_parser=kate_max_cells_size_upper_bound)]
 	pub kate_max_cells_size: usize,
 
+	/// The maximum size of the evaluation grid cache in MiB.
+	///
+	#[arg(long, default_value_t = 64)]
+	pub kate_eval_grid_size: u64,
+
+	/// The maximum size of the polynomial grid cache in MiB.
+	///
+	#[arg(long, default_value_t = 64)]
+	pub kate_poly_grid_size: u64,
+
 	/// The name of the network.
 	///
 	/// This parameter can be used to update the network name and id of the `dev` and `dev_tri` chains.
@@ -71,7 +81,7 @@ pub struct Cli {
 	pub tx_state_rpc_enabled: bool,
 
 	/// The maximum number of results the transaction state RPC will return for a transaction hash.
-	/// If a transaction hash appears in multiple blocks, the RPC will return only the top `X` transaction states.  
+	/// If a transaction hash appears in multiple blocks, the RPC will return only the top `X` transaction states.
 	/// In most cases, the transaction hash is unique, so this parameter is usually irrelevant.
 	#[clap(long, default_value_t = 10)]
 	pub tx_state_rpc_max_search_results: usize,

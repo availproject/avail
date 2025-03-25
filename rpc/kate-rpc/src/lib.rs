@@ -1,10 +1,23 @@
 use avail_base::metrics::avail::{MetricObserver, ObserveKind};
+use avail_base::HeaderExtensionBuilderData;
 use avail_core::{
 	data_proof::ProofResponse, header::HeaderExtension, traits::ExtendedHeader, OpaqueExtrinsic,
 };
-use da_runtime::apis::{DataAvailApi, KateApi as RTKateApi};
-use da_runtime::kate::{GDataProof, GRow};
-use kate::com::Cell;
+use da_runtime::{
+	apis::{DataAvailApi, KateApi as RTKateApi},
+	kate::{GDataProof, GProof, GRawScalar, GRow},
+	Runtime,
+};
+use frame_system::native::hosted_header_builder::MIN_WIDTH;
+use kate::{
+	com::Cell,
+	couscous::multiproof_params,
+	gridgen::{AsBytes, EvaluationGrid, PolynomialGrid},
+	pmp::m1_blst::M1NoPrecomp,
+	Seed,
+};
+use kate_recovery::matrix::Dimensions;
+use moka::future::Cache;
 
 use frame_support::BoundedVec;
 use frame_system::limits::BlockLength;
@@ -13,6 +26,7 @@ use jsonrpsee::{
 	proc_macros::rpc,
 	types::error::{ErrorCode, ErrorObject},
 };
+use rayon::prelude::*;
 use sc_client_api::BlockBackend;
 use sp_api::{ApiRef, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
@@ -20,6 +34,7 @@ use sp_runtime::{
 	generic::SignedBlock,
 	traits::{Block as BlockT, ConstU32, Header},
 };
+use std::num::NonZeroU16;
 use std::{marker::PhantomData, marker::Sync, sync::Arc};
 
 pub type HashOf<Block> = <Block as BlockT>::Hash;
@@ -27,6 +42,9 @@ pub type MaxRows = ConstU32<64>;
 pub type Rows = BoundedVec<u32, MaxRows>;
 pub type MaxCells = ConstU32<10_000>;
 pub type Cells = BoundedVec<Cell, MaxCells>;
+type RTExtractor = <Runtime as frame_system::Config>::HeaderExtensionDataFilter;
+
+static SRS: std::sync::OnceLock<M1NoPrecomp> = std::sync::OnceLock::new();
 
 pub mod metrics;
 
@@ -40,6 +58,10 @@ pub struct Deps {
 	///
 	/// Should not be used unless unless you know what you're doing.
 	pub rpc_metrics_enabled: bool,
+	/// Max size of evaluation grid cache in MiB.
+	pub eval_grid_size: u64,
+	/// Max size of polynomial grid cache in MiB.
+	pub poly_grid_size: u64,
 }
 
 /// # TODO
@@ -73,14 +95,42 @@ where
 #[allow(clippy::type_complexity)]
 pub struct Kate<Client, Block: BlockT> {
 	client: Arc<Client>,
+	eval_grid_cache: Cache<Block::Hash, Arc<EvaluationGrid>>,
+	poly_grid_cache: Cache<Block::Hash, Arc<(Dimensions, PolynomialGrid)>>,
 	max_cells_size: usize,
 	_block: PhantomData<Block>,
 }
 
 impl<Client, Block: BlockT> Kate<Client, Block> {
-	pub fn new(client: Arc<Client>, max_cells_size: usize) -> Self {
+	pub fn new(
+		client: Arc<Client>,
+		max_cells_size: usize,
+		eval_grid_cache_size: u64,
+		poly_grid_cach_size: u64,
+	) -> Self {
+		// cache sizes are in MiB
+		let eval_grid_cache_size = eval_grid_cache_size * 1024 * 1024;
+		let poly_grid_cach_size = poly_grid_cach_size * 1024 * 1024;
+
 		Self {
 			client,
+			eval_grid_cache: Cache::<_, Arc<EvaluationGrid>>::builder()
+				.weigher(|_, v| {
+					let n_cells: u32 = v.dims().size();
+					n_cells * 32 + 8
+				})
+				.max_capacity(eval_grid_cache_size)
+				.build(),
+			poly_grid_cache: Cache::<_, Arc<(Dimensions, PolynomialGrid)>>::builder()
+				.weigher(|_, v| {
+					let n_cells: u32 = v.0.size();
+					// currently we support only 2^10 points, and can never have more than 2^32 points
+					let n_points: u32 =
+						v.0.width().try_into().expect("Never more than 2^32 points");
+					n_cells * 32 + n_points * 32
+				})
+				.max_capacity(poly_grid_cach_size)
+				.build(),
 			max_cells_size,
 			_block: PhantomData,
 		}
@@ -118,12 +168,11 @@ type Api<'a, C, B> = ApiRef<'a, <C as ProvideRuntimeApi<B>>::Api>;
 
 impl<Client, Block> Kate<Client, Block>
 where
-	Block: BlockT,
+	Block: BlockT<Extrinsic = OpaqueExtrinsic>,
 	<Block as BlockT>::Header: ExtendedHeader<Extension = HeaderExtension>,
 	Client: Send + Sync + 'static,
 	Client: HeaderBackend<Block> + ProvideRuntimeApi<Block> + BlockBackend<Block>,
 	Client::Api: DataAvailApi<Block>,
-	// Extrinsic: TryFrom<<Block as BlockT>::Extrinsic>,
 {
 	#[allow(clippy::type_complexity)]
 	fn scope(
@@ -182,6 +231,65 @@ where
 		self.ensure_block_finalized(&signed_block)?;
 		Ok(signed_block)
 	}
+
+	/// Get the evaluation grid for the given block from cache if available, otherwise construct it.
+	async fn get_eval_grid(&self, at: Option<Block::Hash>) -> RpcResult<Arc<EvaluationGrid>> {
+		let (_api, at, block_number, block_len, extrinsics, header) = self.scope(at)?;
+		self.eval_grid_cache
+			.try_get_with(at, async move {
+				match header.extension() {
+					HeaderExtension::V3(ext) => {
+						if ext.commitment.commitment.is_empty() {
+							return Err(internal_err!(
+								"Requested block {at} has empty commitments"
+							));
+						}
+					},
+				};
+
+				let app_extrinsics = HeaderExtensionBuilderData::from_opaque_extrinsics::<
+					RTExtractor,
+				>(block_number, &extrinsics)
+				.to_app_extrinsics();
+
+				let grid = EvaluationGrid::from_extrinsics(
+					app_extrinsics,
+					MIN_WIDTH,
+					block_len.cols.0 as usize,
+					block_len.rows.0 as usize,
+					Seed::default(),
+				)
+				.map_err(|e| internal_err!("Building evals grid failed: {:?}", e))?
+				.extend_columns(NonZeroU16::new(2).expect("2>0"))
+				.map_err(|_| {
+					internal_err!("Failed to extend the columns of the evaluation grid")
+				})?;
+				Ok(Arc::new(grid))
+			})
+			.await
+			.map_err(|e| internal_err!("Failed to get evaluation grid: {e:?}"))
+	}
+
+	/// Get the polynomial grid for the given block from cache if available, otherwise construct it.
+	async fn get_poly_grid(
+		&self,
+		at: Option<Block::Hash>,
+	) -> RpcResult<Arc<(Dimensions, PolynomialGrid)>> {
+		let block_hash = self.at_or_best(at);
+		self.poly_grid_cache
+			.try_get_with(block_hash, async move {
+				let evals = self.get_eval_grid(Some(block_hash)).await?;
+				let polys = evals
+					.make_polynomial_grid()
+					.map_err(|e| internal_err!("Error getting polynomial grid {:?}", e))?;
+				Ok::<Arc<(Dimensions, PolynomialGrid)>, ErrorObject<'static>>(Arc::new((
+					evals.dims(),
+					polys,
+				)))
+			})
+			.await
+			.map_err(|e| internal_err!("Failed to construct polynomial grid: {e:?}"))
+	}
 }
 
 #[async_trait]
@@ -196,22 +304,31 @@ where
 	async fn query_rows(&self, rows: Rows, at: Option<HashOf<Block>>) -> RpcResult<Vec<GRow>> {
 		let _metric_observer = MetricObserver::new(ObserveKind::KateQueryRows);
 
-		let (api, at, number, block_len, extrinsics, header) = self.scope(at)?;
+		let grid = self.get_eval_grid(at).await?;
 
-		match header.extension() {
-			HeaderExtension::V3(ext) => {
-				if ext.commitment.commitment.is_empty() {
-					return Err(internal_err!("Requested block {at} has empty commitments"));
-				}
-			},
-		};
+		let selected_rows = rows
+			.iter()
+			.map(|&row| usize::try_from(row))
+			.collect::<Result<Vec<_>, _>>()
+			.map_err(|_| internal_err!("Failed to convert row indexes"))?;
 
-		let grid_rows = api
-			.rows(at, number, extrinsics, block_len, rows.into())
-			.map_err(|kate_err| internal_err!("Failed Kate rows: {kate_err:?}"))?
-			.map_err(|api_err| internal_err!("Failed API: {api_err:?}"))?;
+		let rows_data = selected_rows
+			.into_par_iter()
+			.map(|row_idx| {
+				grid.row(row_idx)
+					.ok_or_else(|| internal_err!("Row does not exist: {row_idx}"))
+					.and_then(|row| {
+						row.iter()
+							.map(|scalar| scalar.to_bytes().map(GRawScalar::from))
+							.collect::<Result<Vec<_>, _>>()
+							.map_err(|_| {
+								internal_err!("Failed to convert scalar for row {row_idx}")
+							})
+					})
+			})
+			.collect::<Result<Vec<_>, _>>()?;
 
-		Ok(grid_rows)
+		Ok(rows_data)
 	}
 
 	async fn query_proof(
@@ -220,36 +337,54 @@ where
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<Vec<GDataProof>> {
 		if cells.len() > self.max_cells_size {
-			return Err(
-				internal_err!(
-					"Cannot query ({}) more than {} amount of cells per request. Either increase the max cells size (--kate-max-cells-size) or query less amount of cells per request.",
-					cells.len(),
-					self.max_cells_size
-				)
-			);
+			return Err(internal_err!(
+				"Cannot query ({}) more than {} cells per request. Either increase the max cells size (--kate-max-cells-size) or query fewer cells.",
+				cells.len(),
+				self.max_cells_size
+			));
 		}
 
 		let _metric_observer = MetricObserver::new(ObserveKind::KateQueryProof);
+		let start = std::time::Instant::now();
+		let grid = self.get_eval_grid(at).await?;
+		let poly = self.get_poly_grid(at).await?;
+		let srs = SRS.get_or_init(multiproof_params);
 
-		let (api, at, number, block_len, extrinsics, header) = self.scope(at)?;
-		match header.extension() {
-			HeaderExtension::V3(ext) => {
-				if ext.commitment.commitment.is_empty() {
-					return Err(internal_err!("Requested block {at} has empty commitments"));
-				}
-			},
-		};
+		let proofs: Result<Vec<GDataProof>, ErrorObject> = cells
+			.par_iter()
+			.map(|cell| {
+				let (row, col) = (cell.row.0 as usize, cell.col.0 as usize);
 
-		let cells = cells
-			.into_iter()
-			.map(|cell| (cell.row.0, cell.col.0))
-			.collect::<Vec<_>>();
-		let proof = api
-			.proof(at, number, extrinsics, block_len, cells)
-			.map_err(|kate_err| internal_err!("KateApi::proof failed: {kate_err:?}"))?
-			.map_err(|api_err| internal_err!("Failed API: {api_err:?}"))?;
+				let data = grid.get(row, col).ok_or_else(|| {
+					internal_err!(
+						"Invalid cell {:?} for grid dimensions {:?}",
+						cell,
+						grid.dims()
+					)
+				})?;
 
-		Ok(proof)
+				let proof = poly
+					.1
+					.proof(srs, cell)
+					.map_err(|e| internal_err!("Unable to generate proof: {:?}", e))?;
+
+				Ok((
+					GRawScalar::from(
+						data.to_bytes()
+							.map_err(|_| internal_err!("Failed to serialize data"))?,
+					),
+					GProof::try_from(
+						proof
+							.to_bytes()
+							.map_err(|_| internal_err!("Failed to serialize proof"))?
+							.to_vec(),
+					)
+					.map_err(|_| internal_err!("Failed to convert proof"))?,
+				))
+			})
+			.collect();
+		println!("Proofs generation time: {:?}", start.elapsed());
+		proofs.map_err(|e| internal_err!("Failed to generate proof: {:?}", e))
 	}
 
 	async fn query_block_length(&self, at: Option<HashOf<Block>>) -> RpcResult<BlockLength> {
