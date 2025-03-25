@@ -90,6 +90,7 @@ pub struct Cli {
 	#[clap(long, default_value_t = 1800)]
 	pub tx_state_rpc_logging_interval: u64,
 
+	/// Experimental
 	/// If enabled, will use Vector instead of a HashMap for Transaction State RPC Database.
 	/// This will decrease the memory footprint at the cost of lookup performance.
 	#[clap(long, default_value_t = false)]

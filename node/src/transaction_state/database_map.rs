@@ -168,11 +168,6 @@ impl DatabaseLike for Database {
 
 		self.included_tx.shrink_to_fit();
 		self.finalized_tx.shrink_to_fit();
-
-		let new_len_inc = self.included_tx.len();
-		let new_len_fin = self.finalized_tx.len();
-		let new_cap_inc = self.included_tx.capacity();
-		let new_cap_fin = self.finalized_tx.capacity();
 	}
 
 	fn config(&self) -> &Config {

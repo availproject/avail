@@ -196,7 +196,7 @@ To enable Transaction State RPC you need to pass `--enable-tx-state-rpc` flag wh
     [default: 1800]
 
 --tx-state-rpc-use-vector
-    Uses Vector instead of a Map for Transaction State RPC Database. This will decrease the memory footprint at the cost of lookup performance
+    Experimental. Uses Vector instead of a Map for Transaction State RPC Database. This will decrease the memory footprint at the cost of lookup performance
 ```
 
 ## Run Benchmarks
