@@ -51,7 +51,7 @@ impl<T: DatabaseLike> Database<T> {
 	pub async fn run(mut self) {
 		let config = self.inner.config();
 		let variant = self.inner.variant();
-		log::info!("👾 Transaction State Running with following parameters: Max Search Result: {}, Max Stored Block Count: {}, Variant: {}", config.max_search_results, config.max_stored_block_count, variant);
+		log::info!("👾 Transaction State Running with following parameters: Max Search Result: {}, Max Stored Block Count: {}, Variant: {}, Resize Interval: {}s, Logging Interval: {}s", config.max_search_results, config.max_stored_block_count, variant, DATABASE_RESIZE_INTERVAL, self.logger.timer_interval.as_secs());
 
 		loop {
 			if !self.block_receiver.is_empty() {

@@ -8,7 +8,7 @@ pub struct DatabaseLogging {
 	pub rpc_calls: Vec<Duration>,
 	pub new_blocks: Vec<Duration>,
 	pub timer: Instant,
-	timer_interval: Duration,
+	pub timer_interval: Duration,
 }
 
 impl DatabaseLogging {
@@ -17,7 +17,7 @@ impl DatabaseLogging {
 			timer: Instant::now(),
 			rpc_calls: Default::default(),
 			new_blocks: Default::default(),
-			timer_interval: Duration::from_millis(logging_interval),
+			timer_interval: Duration::from_secs(logging_interval),
 		}
 	}
 	pub fn add_block(&mut self, duration: Duration) {
