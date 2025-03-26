@@ -38,6 +38,7 @@ sp_api::decl_runtime_apis! {
 	#[api_version(1)]
 	pub trait SystemEventsApi {
 		fn fetch_transaction_success_status() -> Vec<TransactionSuccessStatus>;
+		fn fetch_events(tx_index: Option<u32>) -> Vec<Vec<u8>>;
 	}
 }
 

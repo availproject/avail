@@ -105,7 +105,7 @@ pub struct FullDeps<C, P, SC, B> {
 	///
 	/// Available configs:
 	/// - TxStateSender,
-	pub transaction_rpc_deps: Option<transaction_rpc::Deps>,
+	pub transaction_rpc_deps: transaction_rpc::Deps,
 }
 
 /// Instantiate all Full RPC extensions.
@@ -243,9 +243,11 @@ where
 		)))?;
 	}
 
-	if let Some(deps) = transaction_rpc_deps {
+	if transaction_rpc_deps.tx_state_sender.is_some()
+		|| transaction_rpc_deps.tx_data_sender.is_some()
+	{
 		io.merge(transaction_rpc::TransactionStateServer::into_rpc(
-			transaction_rpc::System::new(deps),
+			transaction_rpc::System::new(transaction_rpc_deps),
 		))?;
 	}
 

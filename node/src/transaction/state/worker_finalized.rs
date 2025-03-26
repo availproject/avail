@@ -1,8 +1,8 @@
-use super::macros::profile;
 use super::worker;
 use super::worker_logger::Logger;
 use super::BlockDetails;
 use crate::service::FullClient;
+use crate::transaction::macros::profile;
 use avail_core::OpaqueExtrinsic;
 use frame_system_rpc_runtime_api::TransactionSuccessStatus;
 use jsonrpsee::tokio;

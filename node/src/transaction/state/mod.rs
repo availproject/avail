@@ -3,7 +3,6 @@ mod database;
 mod database_logger;
 mod database_map;
 mod database_vec;
-mod macros;
 mod worker;
 mod worker_finalized;
 mod worker_included;

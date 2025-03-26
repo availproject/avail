@@ -8,7 +8,7 @@ use sp_core::H256;
 use transaction_rpc::TxStateReceiver as SearchReceiver;
 use transaction_rpc::{OneShotTxStateSender, TransactionState as RPCTransactionState};
 
-use crate::transaction_state::macros::profile;
+use crate::transaction::macros::profile;
 
 use super::database_logger::DatabaseLogging;
 use super::BlockDetails;

@@ -7,6 +7,6 @@ pub mod cli;
 pub mod rpc;
 pub mod service;
 
-mod transaction_state;
+mod transaction;
 
 pub const NODE_VERSION: &str = "2.3.0";

@@ -266,6 +266,28 @@ impl_runtime_apis! {
 
 			results
 		}
+
+		fn fetch_events(tx_index: Option<u32>) -> Vec<Vec<u8>> {
+			use codec::Encode;
+			let mut result = Vec::new();
+
+			let event_records = System::read_events_no_consensus();
+			for event_record in event_records {
+				if let Some(tx_index) = tx_index {
+					let frame_system::Phase::ApplyExtrinsic(id) = &event_record.phase else {
+						continue;
+					};
+
+					if tx_index != *id {
+						continue
+					};
+				}
+
+				result.push(event_record.event.encode());
+			}
+
+			result
+		}
 	}
 
 
