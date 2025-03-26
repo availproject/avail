@@ -48,8 +48,8 @@ pub struct TransactionDataFilter {
 	pub nonce: Option<u32>,
 }
 
-pub type EncodedCall = Vec<u8>;
-pub type EncodedEvents = Vec<Vec<u8>>;
+pub type EncodedCall = String;
+pub type EncodedEvents = Vec<String>;
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct TransactionDatas {

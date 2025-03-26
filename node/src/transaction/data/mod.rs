@@ -179,7 +179,8 @@ impl Worker {
 			tx.tx_hash = Blake2Hasher::hash(&unchecked_ext.encode());
 
 			if params.fetch_call.unwrap_or(false) {
-				tx.call = Some(unchecked_ext.function.encode())
+				let encoded = hex::encode(unchecked_ext.function.encode());
+				tx.call = Some(std::format!("0x{}", encoded))
 			}
 
 			extrinsics.push(tx);
@@ -204,7 +205,7 @@ async fn fetch_events(
 	handlers: &RpcHandlers,
 	block_hash: &H256,
 	tx_index: u32,
-) -> Option<Vec<Vec<u8>>> {
+) -> Option<Vec<String>> {
 	let query = format!(
 		r#"{{
 		"jsonrpc": "2.0",
@@ -221,7 +222,11 @@ async fn fetch_events(
 
 	let result_json = json["result"].as_str()?;
 	let result = from_hex(result_json).ok()?;
-	let res = decode_from_bytes::<Vec<Vec<u8>>>(result.into()).ok()?;
+	let res: Vec<Vec<u8>> = decode_from_bytes::<Vec<Vec<u8>>>(result.into()).ok()?;
+	let res: Vec<String> = res
+		.into_iter()
+		.map(|x| std::format!("0x{}", hex::encode(x.encode())))
+		.collect();
 
 	Some(res)
 }
