@@ -32,18 +32,35 @@ pub enum HashIndex {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionDataRPCParams {
 	pub block_id: HashIndex,
-	pub tx_id: HashIndex,
 	pub fetch_call: Option<bool>,
 	pub fetch_events: Option<bool>,
 	pub fetch_state: Option<bool>,
+	pub filter: Option<TransactionDataFilter>,
+}
+
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+pub struct TransactionDataFilter {
+	pub tx_id: Option<HashIndex>,
+	pub pallet_id: Option<u8>,
+	pub call_id: Option<u8>,
+	pub ss58_address: Option<String>,
+	pub app_id: Option<u32>,
+	pub nonce: Option<u32>,
 }
 
 pub type EncodedCall = Vec<u8>;
 pub type EncodedEvents = Vec<Vec<u8>>;
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
-pub struct TransactionData {
+pub struct TransactionDatas {
 	pub block_hash: H256,
+	pub block_height: u32,
+	pub transactions: Vec<TransactionData>,
+}
+
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+pub struct TransactionData {
+	pub tx_hash: H256,
 	pub tx_index: u32,
 	pub pallet_id: u8,
 	pub call_id: u8,
@@ -78,7 +95,7 @@ pub type TxStateReceiver = Receiver<(H256, bool, OneShotTxStateSender)>;
 pub type TxStateSender = Sender<(H256, bool, OneShotTxStateSender)>;
 pub type TxStateChannel = (H256, bool, OneShotTxStateSender);
 
-pub type OneShotTxDataSender = oneshot::Sender<Result<TransactionData, String>>;
+pub type OneShotTxDataSender = oneshot::Sender<Result<TransactionDatas, String>>;
 pub type TxDataReceiver = Receiver<(TransactionDataRPCParams, OneShotTxDataSender)>;
 pub type TxDataSender = Sender<(TransactionDataRPCParams, OneShotTxDataSender)>;
 pub type TxDataChannel = (TransactionDataRPCParams, OneShotTxDataSender);
@@ -96,7 +113,7 @@ pub trait TransactionState {
 	async fn transaction_data(
 		&self,
 		params: TransactionDataRPCParams,
-	) -> RpcResult<TransactionData>;
+	) -> RpcResult<TransactionDatas>;
 
 	#[method(name = "transaction_enabled_services")]
 	async fn transaction_enabled_services(&self) -> RpcResult<EnabledServices>;
@@ -146,7 +163,7 @@ impl TransactionStateServer for System {
 	async fn transaction_data(
 		&self,
 		params: TransactionDataRPCParams,
-	) -> RpcResult<TransactionData> {
+	) -> RpcResult<TransactionDatas> {
 		let Some(sender) = self.tx_data_sender.as_ref() else {
 			return Err(internal_error(String::from(
 				"Transaction Data RPC service disabled",

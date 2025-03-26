@@ -15,8 +15,8 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use transaction_rpc::{
-	HashIndex, TransactionData, TransactionDataRPCParams, TransactionDataSigned, TransactionState,
-	TxDataReceiver,
+	HashIndex, TransactionData, TransactionDataRPCParams, TransactionDataSigned, TransactionDatas,
+	TransactionState, TxDataReceiver,
 };
 
 #[derive(Clone, Default)]
@@ -51,9 +51,18 @@ impl Worker {
 		}
 	}
 
-	async fn task(&self, params: TransactionDataRPCParams) -> Result<TransactionData, String> {
-		let block_hash = match params.block_id {
-			HashIndex::Hash(v) => v,
+	async fn task(&self, params: TransactionDataRPCParams) -> Result<TransactionDatas, String> {
+		let (block_hash, block_height) = match params.block_id {
+			HashIndex::Hash(block_hash) => {
+				let block_height = self.client.to_number(&BlockId::Hash(block_hash.clone()));
+				let Some(block_height) = block_height.ok().flatten() else {
+					return Err(std::format!(
+						"No block height found for block hash: {:?}",
+						block_hash
+					));
+				};
+				(block_hash, block_height)
+			},
 			HashIndex::Index(block_height) => {
 				let block_hash = self.client.to_hash(&BlockId::Number(block_height));
 				let Some(block_hash) = block_hash.ok().flatten() else {
@@ -62,89 +71,121 @@ impl Worker {
 						block_height
 					));
 				};
-				block_hash
+				(block_hash, block_height)
 			},
 		};
 
-		let Some((unchecked_ext, tx_hash, tx_index)) = self.get_extrinsic(block_hash, params.tx_id)
-		else {
-			return Err(String::from(
-				"Failed to get block body or failed to find transaction",
-			));
+		let mut transactions = self.extrinsics(block_hash, &params)?;
+		for ext in transactions.iter_mut() {
+			if params.fetch_events.unwrap_or(false) {
+				ext.events = fetch_events(&self.rpc_handlers, &block_hash, ext.tx_index).await;
+			}
+
+			if params.fetch_state.unwrap_or(false) {
+				ext.states = fetch_state(&self.rpc_handlers, ext.tx_hash).await
+			}
+		}
+
+		let result = TransactionDatas {
+			block_hash,
+			block_height,
+			transactions,
 		};
-
-		let Some((pallet_id, call_id)) = read_pallet_call_index(&unchecked_ext) else {
-			return Err(String::from("Failed to read pallet and call id"));
-		};
-
-		let mut result = TransactionData::default();
-		result.block_hash = block_hash;
-		result.tx_index = tx_index;
-		result.pallet_id = pallet_id;
-		result.call_id = call_id;
-
-		if let Some(sig) = &unchecked_ext.signature {
-			let mut signed = TransactionDataSigned::default();
-			if let MultiAddress::Id(id) = &sig.0 {
-				signed.ss58_address = Some(std::format!("{}", id))
-			};
-
-			signed.nonce = sig.2 .5 .0;
-			signed.app_id = sig.2 .8 .0 .0;
-			match sig.2 .4 .0 {
-				sp_runtime::generic::Era::Immortal => signed.mortality = None,
-				sp_runtime::generic::Era::Mortal(x, y) => signed.mortality = Some((x, y)),
-			};
-
-			result.signed = Some(signed);
-		}
-
-		if params.fetch_call.unwrap_or(false) {
-			result.call = Some(unchecked_ext.function.encode())
-		}
-
-		if params.fetch_events.unwrap_or(false) {
-			result.events = fetch_events(&self.rpc_handlers, &block_hash, tx_index).await;
-		}
-
-		if params.fetch_state.unwrap_or(false) {
-			result.states = fetch_state(&self.rpc_handlers, tx_hash).await
-		}
 
 		Ok(result)
 	}
 
-	fn get_extrinsic(
+	fn extrinsics(
 		&self,
 		block_hash: H256,
-		tx_id: HashIndex,
-	) -> Option<(UncheckedExtrinsic, H256, u32)> {
-		let block_body = self.client.body(block_hash).ok()??;
+		params: &TransactionDataRPCParams,
+	) -> Result<Vec<TransactionData>, String> {
+		let filter = params.filter.clone().unwrap_or_default();
 
-		match tx_id {
-			HashIndex::Hash(target_hash) => {
-				for (i, ext) in block_body.iter().enumerate() {
-					let Ok(unchecked_ext) =
-						UncheckedExtrinsic::decode_no_vec_prefix(&mut ext.0.as_slice())
-					else {
-						continue;
-					};
+		let Some(block_body) = self.client.body(block_hash).ok().flatten() else {
+			return Err(std::format!(
+				"Failed to fetch block with block hash: {:?}",
+				block_hash
+			));
+		};
 
-					let tx_hash = Blake2Hasher::hash(&unchecked_ext.encode());
-					if tx_hash == target_hash {
-						return Some((unchecked_ext, target_hash, i as u32));
-					}
+		let mut extrinsics = Vec::new();
+		for (i, ext) in block_body.iter().enumerate() {
+			let unchecked_ext = UncheckedExtrinsic::decode_no_vec_prefix(&mut ext.0.as_slice());
+			let Ok(unchecked_ext) = unchecked_ext else {
+				return Err(std::format!(
+					"Failed to fetch transaction. tx index: {}, block hash: {:?}",
+					i,
+					block_hash
+				));
+			};
+
+			let Some((pallet_id, call_id)) = read_pallet_call_index(&unchecked_ext) else {
+				return Err(std::format!(
+					"Failed to read pallet and call id. Tx index: {}, block hash: {:?}",
+					i,
+					block_hash
+				));
+			};
+
+			if filter.pallet_id.is_some_and(|x| x != pallet_id) {
+				continue;
+			};
+
+			if filter.call_id.is_some_and(|x| x != call_id) {
+				continue;
+			};
+
+			let requires_signed =
+				filter.app_id.is_some() || filter.nonce.is_some() || filter.ss58_address.is_some();
+
+			if unchecked_ext.signature.is_none() && requires_signed {
+				continue;
+			}
+
+			let mut tx = TransactionData::default();
+			tx.tx_index = i as u32;
+			tx.pallet_id = pallet_id;
+			tx.call_id = call_id;
+
+			let mut signed = TransactionDataSigned::default();
+			if let Some(sig) = &unchecked_ext.signature {
+				if let MultiAddress::Id(id) = &sig.0 {
+					signed.ss58_address = Some(std::format!("{}", id))
+				};
+
+				signed.nonce = sig.2 .5 .0;
+				signed.app_id = sig.2 .8 .0 .0;
+				match sig.2 .4 .0 {
+					sp_runtime::generic::Era::Immortal => signed.mortality = None,
+					sp_runtime::generic::Era::Mortal(x, y) => signed.mortality = Some((x, y)),
+				};
+
+				if filter.app_id.is_some_and(|x| x != signed.app_id) {
+					continue;
 				}
-				None
-			},
-			HashIndex::Index(index) => {
-				let tx = block_body.get(index as usize)?;
-				let unchecked_ext =
-					UncheckedExtrinsic::decode_no_vec_prefix(&mut tx.0.as_slice()).ok()?;
-				let tx_hash = Blake2Hasher::hash(&unchecked_ext.encode());
-				Some((unchecked_ext, tx_hash, index))
-			},
+
+				if filter.nonce.is_some_and(|x| x != signed.nonce) {
+					continue;
+				}
+
+				if filter.ss58_address.is_some() && filter.ss58_address != signed.ss58_address {
+					continue;
+				}
+
+				tx.signed = Some(signed);
+			}
+
+			tx.tx_hash = Blake2Hasher::hash(&unchecked_ext.encode());
+
+			if params.fetch_call.unwrap_or(false) {
+				tx.call = Some(unchecked_ext.function.encode())
+			}
+
+			extrinsics.push(tx);
 		}
+
+		Ok(extrinsics)
 	}
 }
 
@@ -198,7 +239,11 @@ async fn fetch_state(handlers: &RpcHandlers, tx_hash: H256) -> Option<Vec<Transa
 
 	let (res, _) = handlers.rpc_query(&query).await.ok()?;
 	let mut json = serde_json::from_str::<serde_json::Value>(&res).ok()?;
-	let res = serde_json::from_value(json["result"].take()).ok()?;
+	let mut res: Vec<TransactionState> = serde_json::from_value(json["result"].take()).ok()?;
+
+	while res.len() > 3 {
+		res.pop();
+	}
 
 	Some(res)
 }
