@@ -1015,6 +1015,7 @@ dependencies = [
  "frame-system",
  "frame-system-rpc-runtime-api",
  "futures",
+ "hex",
  "jsonrpsee",
  "kate",
  "kate-rpc",

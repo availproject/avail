@@ -168,10 +168,10 @@ async fn fetch_events(
 		r#"{{
 		"jsonrpc": "2.0",
 		"method": "state_call",
-		"params": ["SystemEventsApi_fetch_events", {}, "{}"],
+		"params": ["SystemEventsApi_fetch_events", "0x{}", "{}"],
 		"id": 0
 	}}"#,
-		tx_index,
+		hex::encode(Some(tx_index).encode()),
 		std::format!("{:?}", block_hash)
 	);
 
@@ -180,9 +180,7 @@ async fn fetch_events(
 
 	let result_json = json["result"].as_str()?;
 	let result = from_hex(result_json).ok()?;
-	let res = decode_from_bytes::<Vec<Vec<u8>>>(result.into())
-		.ok()
-		.unwrap();
+	let res = decode_from_bytes::<Vec<Vec<u8>>>(result.into()).ok()?;
 
 	Some(res)
 }
@@ -195,14 +193,12 @@ async fn fetch_state(handlers: &RpcHandlers, tx_hash: H256) -> Option<Vec<Transa
 		"params": ["{}"],
 		"id": 0
 	}}"#,
-		tx_hash,
+		std::format!("{:?}", tx_hash),
 	);
 
 	let (res, _) = handlers.rpc_query(&query).await.ok()?;
-	let json = serde_json::from_str::<serde_json::Value>(&res).ok()?;
-
-	let result_json = json["result"].as_str()?;
-	let res = serde_json::from_str(result_json).ok().unwrap();
+	let mut json = serde_json::from_str::<serde_json::Value>(&res).ok()?;
+	let res = serde_json::from_value(json["result"].take()).ok()?;
 
 	Some(res)
 }
