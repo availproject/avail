@@ -111,6 +111,12 @@ impl Worker {
 
 		let mut extrinsics = Vec::new();
 		for (i, ext) in block_body.iter().enumerate() {
+			if let Some(HashIndex::Index(target_index)) = &filter.tx_id {
+				if *target_index != i as u32 {
+					continue;
+				}
+			};
+
 			let unchecked_ext = UncheckedExtrinsic::decode_no_vec_prefix(&mut ext.0.as_slice());
 			let Ok(unchecked_ext) = unchecked_ext else {
 				return Err(std::format!(
@@ -177,6 +183,11 @@ impl Worker {
 			}
 
 			tx.tx_hash = Blake2Hasher::hash(&unchecked_ext.encode());
+			if let Some(HashIndex::Hash(target_hash)) = &filter.tx_id {
+				if tx.tx_hash != *target_hash {
+					continue;
+				}
+			};
 
 			if params.fetch_call.unwrap_or(false) {
 				let encoded = hex::encode(unchecked_ext.function.encode());
