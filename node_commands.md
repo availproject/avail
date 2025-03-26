@@ -1,0 +1,631 @@
+Avail Node
+
+Usage: avail-node [OPTIONS]
+       avail-node <COMMAND>
+
+Commands:
+  benchmark      Sub-commands concerned with benchmarking. The pallet benchmarking moved to the `pallet` sub-command
+  try-runtime    Try some command against runtime state. Note: `try-runtime` feature must be enabled
+  key            Key management cli utilities
+  verify         Verify a signature for a message, provided on STDIN, with a given (public or secret) key
+  vanity         Generate a seed that provides a vanity address
+  sign           Sign a message, with a given (secret) key
+  build-spec     Build a chain specification
+  check-block    Validate blocks
+  export-blocks  Export blocks
+  export-state   Export the state of a given block into a chain spec
+  import-blocks  Import blocks
+  purge-chain    Remove the whole chain
+  revert         Revert the chain to a previous state
+  chain-info     Db meta columns information
+  help           Print this message or the help of the given subcommand(s)
+
+Options:
+    --validator
+        Enable validator mode.
+        
+        The node will be started with the authority role and actively participate in any consensus task that it can (e.g. depending on availability of local keys).
+
+    --no-grandpa
+        Disable GRANDPA.
+        
+        Disables voter when running in validator mode, otherwise disable the GRANDPA observer.
+
+    --rpc-external
+        Listen to all RPC interfaces (default: local).
+        
+        Not all RPC methods are safe to be exposed publicly.
+        
+        Use an RPC proxy server to filter out dangerous methods. More details: <https://docs.substrate.io/main-docs/build/custom-rpc/#public-rpcs>.
+        
+        Use `--unsafe-rpc-external` to suppress the warning if you understand the risks.
+
+    --unsafe-rpc-external
+        Listen to all RPC interfaces.
+        
+        Same as `--rpc-external`.
+
+    --rpc-methods <METHOD SET>
+        RPC methods to expose.
+        
+        [default: auto]
+
+        Possible values:
+        - auto:   Expose every RPC method only when RPC is listening on `localhost`, otherwise serve only safe RPC methods
+        - safe:   Allow only a safe subset of RPC methods
+        - unsafe: Expose every RPC method (even potentially unsafe ones)
+
+    --rpc-rate-limit <RPC_RATE_LIMIT>
+        RPC rate limiting (calls/minute) for each connection.
+        
+        This is disabled by default.
+        
+        For example `--rpc-rate-limit 10` will maximum allow 10 calls per minute per connection.
+
+    --rpc-max-request-size <RPC_MAX_REQUEST_SIZE>
+        Set the maximum RPC request payload size for both HTTP and WS in megabytes
+        
+        [default: 15]
+
+    --rpc-max-response-size <RPC_MAX_RESPONSE_SIZE>
+        Set the maximum RPC response payload size for both HTTP and WS in megabytes
+        
+        [default: 15]
+
+    --rpc-max-subscriptions-per-connection <RPC_MAX_SUBSCRIPTIONS_PER_CONNECTION>
+        Set the maximum concurrent subscriptions per connection
+        
+        [default: 1024]
+
+    --rpc-port <PORT>
+        Specify JSON-RPC server TCP port
+
+    --rpc-max-connections <COUNT>
+        Maximum number of RPC server connections
+        
+        [default: 100]
+
+    --rpc-message-buffer-capacity-per-connection <RPC_MESSAGE_BUFFER_CAPACITY_PER_CONNECTION>
+        The number of messages the RPC server is allowed to keep in memory.
+        
+        If the buffer becomes full then the server will not process new messages until the connected client start reading the underlying messages.
+        
+        This applies per connection which includes both JSON-RPC methods calls and subscriptions.
+        
+        [default: 64]
+
+    --rpc-cors <ORIGINS>
+        Specify browser *origins* allowed to access the HTTP & WS RPC servers.
+        
+        A comma-separated list of origins (protocol://domain or special `null` value). Value of `all` will disable origin validation. Default is to allow localhost and <https://polkadot.js.org> origins. When running in `--dev` mode the default is to allow all origins.
+
+    --name <NAME>
+        The human-readable name for this node.
+        
+        It's used as network node name.
+
+    --no-telemetry
+        Disable connecting to the Substrate telemetry server.
+        
+        Telemetry is on by default on global chains.
+
+    --telemetry-url <URL VERBOSITY>
+        The URL of the telemetry server to connect to.
+        
+        This flag can be passed multiple times as a means to specify multiple telemetry endpoints. Verbosity levels range from 0-9, with 0 denoting the least verbosity.
+        
+        Expected format is 'URL VERBOSITY', e.g. `--telemetry-url 'wss://foo/bar 0'`.
+
+    --prometheus-port <PORT>
+        Specify Prometheus exporter TCP Port
+
+    --prometheus-external
+        Expose Prometheus exporter on all interfaces.
+        
+        Default is local.
+
+    --no-prometheus
+        Do not expose a Prometheus exporter endpoint.
+        
+        Prometheus metric endpoint is enabled by default.
+
+    --max-runtime-instances <MAX_RUNTIME_INSTANCES>
+        The size of the instances cache for each runtime [max: 32].
+        
+        Values higher than 32 are illegal.
+        
+        [default: 8]
+
+    --runtime-cache-size <RUNTIME_CACHE_SIZE>
+        Maximum number of different runtimes that can be cached
+        
+        [default: 2]
+
+    --offchain-worker <ENABLED>
+        Execute offchain workers on every block
+        
+        [default: when-authority]
+
+        Possible values:
+        - always:         Always have offchain worker enabled
+        - never:          Never enable the offchain worker
+        - when-authority: Only enable the offchain worker when running as a validator (or collator, if this is a parachain node)
+
+    --enable-offchain-indexing <ENABLE_OFFCHAIN_INDEXING>
+        Enable offchain indexing API.
+        
+        Allows the runtime to write directly to offchain workers DB during block import.
+        
+        [default: false]
+        [possible values: true, false]
+
+    --chain <CHAIN_SPEC>
+        Specify the chain specification.
+        
+        It can be one of the predefined ones (dev, local, or staging) or it can be a path to a file with the chainspec (such as one exported by the `build-spec` subcommand).
+
+    --dev
+        Specify the development chain.
+        
+        This flag sets `--chain=dev`, `--force-authoring`, `--rpc-cors=all`, `--alice`, and `--tmp` flags, unless explicitly overridden. It also disables local peer discovery (see --no-mdns and --discover-local)
+
+-d, --base-path <PATH>
+        Specify custom base path
+
+-l, --log <LOG_PATTERN>...
+        Sets a custom logging filter (syntax: `<target>=<level>`).
+        
+        Log levels (least to most verbose) are `error`, `warn`, `info`, `debug`, and `trace`.
+        
+        By default, all targets log `info`. The global log level can be set with `-l<level>`.
+        
+        Multiple `<target>=<level>` entries can be specified and separated by a comma.
+        
+        *Example*: `--log error,sync=debug,grandpa=warn`. Sets Global log level to `error`, sets `sync` target to debug and grandpa target to `warn`.
+
+    --detailed-log-output
+        Enable detailed log output.
+        
+        Includes displaying the log target, log level and thread name.
+        
+        This is automatically enabled when something is logged with any higher level than `info`.
+
+    --disable-log-color
+        Disable log color output
+
+    --enable-log-reloading
+        Enable feature to dynamically update and reload the log filter.
+        
+        Be aware that enabling this feature can lead to a performance decrease up to factor six or more. Depending on the global logging level the performance decrease changes.
+        
+        The `system_addLogFilter` and `system_resetLogFilter` RPCs will have no effect with this option not being set.
+
+    --tracing-targets <TARGETS>
+        Sets a custom profiling filter.
+        
+        Syntax is the same as for logging (`--log`).
+
+    --tracing-receiver <RECEIVER>
+        Receiver to process tracing messages
+        
+        [default: log]
+
+        Possible values:
+        - log: Output the tracing records using the log
+
+    --state-pruning <PRUNING_MODE>
+        Specify the state pruning mode.
+        
+        This mode specifies when the block's state (ie, storage) should be pruned (ie, removed) from the database. This setting can only be set on the first creation of the database. Every subsequent run will load the pruning mode from the database and will error if the stored mode
+        doesn't match this CLI value. It is fine to drop this CLI flag for subsequent runs. Possible values: - archive: Keep the state of all blocks. - 'archive-canonical' Keep only the state of finalized blocks. - number Keep the state of the last number of finalized blocks.
+        [default: 256]
+
+    --blocks-pruning <PRUNING_MODE>
+        Specify the blocks pruning mode.
+        
+        This mode specifies when the block's body (including justifications) should be pruned (ie, removed) from the database. Possible values: - 'archive' Keep all blocks. - 'archive-canonical' Keep only finalized blocks. - number Keep the last `number` of finalized blocks.
+        
+        [default: archive-canonical]
+
+    --database <DB>
+        Select database backend to use
+
+        Possible values:
+        - paritydb:              ParityDb. <https://github.com/paritytech/parity-db/>
+        - auto:                  Detect whether there is an existing database. Use it, if there is, if not, create new instance of ParityDb
+        - paritydb-experimental: ParityDb. <https://github.com/paritytech/parity-db/>
+
+    --db-cache <MiB>
+        Limit the memory the database cache can use
+
+    --wasm-execution <METHOD>
+        Method for executing Wasm runtime code
+        
+        [default: compiled]
+
+        Possible values:
+        - interpreted-i-know-what-i-do: Uses an interpreter which now is deprecated
+        - compiled:                     Uses a compiled runtime
+
+    --wasmtime-instantiation-strategy <STRATEGY>
+        The WASM instantiation method to use.
+        
+        Only has an effect when `wasm-execution` is set to `compiled`. The copy-on-write strategies are only supported on Linux. If the copy-on-write variant of a strategy is unsupported the executor will fall back to the non-CoW equivalent. The fastest (and the default) strategy
+        available is `pooling-copy-on-write`. The `legacy-instance-reuse` strategy is deprecated and will be removed in the future. It should only be used in case of issues with the default instantiation strategy.
+        
+        [default: pooling-copy-on-write]
+
+        Possible values:
+        - pooling-copy-on-write:           Pool the instances to avoid initializing everything from scratch on each instantiation. Use copy-on-write memory when possible
+        - recreate-instance-copy-on-write: Recreate the instance from scratch on every instantiation. Use copy-on-write memory when possible
+        - pooling:                         Pool the instances to avoid initializing everything from scratch on each instantiation
+        - recreate-instance:               Recreate the instance from scratch on every instantiation. Very slow
+
+    --wasm-runtime-overrides <PATH>
+        Specify the path where local WASM runtimes are stored.
+        
+        These runtimes will override on-chain runtimes when the version matches.
+
+    --execution-syncing <STRATEGY>
+        Runtime execution strategy for importing blocks during initial sync
+
+        Possible values:
+        - native:           Execute with native build (if available, WebAssembly otherwise)
+        - wasm:             Only execute with the WebAssembly build
+        - both:             Execute with both native (where available) and WebAssembly builds
+        - native-else-wasm: Execute with the native build if possible; if it fails, then execute with WebAssembly
+
+    --execution-import-block <STRATEGY>
+        Runtime execution strategy for general block import (including locally authored blocks)
+
+        Possible values:
+        - native:           Execute with native build (if available, WebAssembly otherwise)
+        - wasm:             Only execute with the WebAssembly build
+        - both:             Execute with both native (where available) and WebAssembly builds
+        - native-else-wasm: Execute with the native build if possible; if it fails, then execute with WebAssembly
+
+    --execution-block-construction <STRATEGY>
+        Runtime execution strategy for constructing blocks
+
+        Possible values:
+        - native:           Execute with native build (if available, WebAssembly otherwise)
+        - wasm:             Only execute with the WebAssembly build
+        - both:             Execute with both native (where available) and WebAssembly builds
+        - native-else-wasm: Execute with the native build if possible; if it fails, then execute with WebAssembly
+
+    --execution-offchain-worker <STRATEGY>
+        Runtime execution strategy for offchain workers
+
+        Possible values:
+        - native:           Execute with native build (if available, WebAssembly otherwise)
+        - wasm:             Only execute with the WebAssembly build
+        - both:             Execute with both native (where available) and WebAssembly builds
+        - native-else-wasm: Execute with the native build if possible; if it fails, then execute with WebAssembly
+
+    --execution-other <STRATEGY>
+        Runtime execution strategy when not syncing, importing or constructing blocks
+
+        Possible values:
+        - native:           Execute with native build (if available, WebAssembly otherwise)
+        - wasm:             Only execute with the WebAssembly build
+        - both:             Execute with both native (where available) and WebAssembly builds
+        - native-else-wasm: Execute with the native build if possible; if it fails, then execute with WebAssembly
+
+    --execution <STRATEGY>
+        The execution strategy that should be used by all execution contexts
+
+        Possible values:
+        - native:           Execute with native build (if available, WebAssembly otherwise)
+        - wasm:             Only execute with the WebAssembly build
+        - both:             Execute with both native (where available) and WebAssembly builds
+        - native-else-wasm: Execute with the native build if possible; if it fails, then execute with WebAssembly
+
+    --trie-cache-size <Bytes>
+        Specify the state cache size.
+        
+        Providing `0` will disable the cache.
+        
+        [default: 67108864]
+
+    --state-cache-size <STATE_CACHE_SIZE>
+        DEPRECATED: switch to `--trie-cache-size`
+
+    --bootnodes <ADDR>...
+        Specify a list of bootnodes
+
+    --reserved-nodes <ADDR>...
+        Specify a list of reserved node addresses
+
+    --reserved-only
+        Whether to only synchronize the chain with reserved nodes.
+        
+        Also disables automatic peer discovery. TCP connections might still be established with non-reserved nodes. In particular, if you are a validator your node might still connect to other validator nodes and collator nodes regardless of whether they are defined as reserved
+        nodes.
+
+    --public-addr <PUBLIC_ADDR>...
+        Public address that other nodes will use to connect to this node.
+        
+        This can be used if there's a proxy in front of this node.
+
+    --listen-addr <LISTEN_ADDR>...
+        Listen on this multiaddress.
+        
+        By default: If `--validator` is passed: `/ip4/0.0.0.0/tcp/<port>` and `/ip6/[::]/tcp/<port>`. Otherwise: `/ip4/0.0.0.0/tcp/<port>/ws` and `/ip6/[::]/tcp/<port>/ws`.
+
+    --port <PORT>
+        Specify p2p protocol TCP port
+
+    --no-private-ip
+        Always forbid connecting to private IPv4/IPv6 addresses.
+        
+        The option doesn't apply to addresses passed with `--reserved-nodes` or `--bootnodes`. Enabled by default for chains marked as "live" in their chain specifications.
+        
+        Address allocation for private networks is specified by [RFC1918](https://tools.ietf.org/html/rfc1918)).
+
+    --allow-private-ip
+        Always accept connecting to private IPv4/IPv6 addresses.
+        
+        Enabled by default for chains marked as "local" in their chain specifications, or when `--dev` is passed.
+        
+        Address allocation for private networks is specified by [RFC1918](https://tools.ietf.org/html/rfc1918)).
+
+    --out-peers <COUNT>
+        Number of outgoing connections we're trying to maintain
+        
+        [default: 8]
+
+    --in-peers <COUNT>
+        Maximum number of inbound full nodes peers
+        
+        [default: 32]
+
+    --in-peers-light <COUNT>
+        Maximum number of inbound light nodes peers
+        
+        [default: 100]
+
+    --no-mdns
+        Disable mDNS discovery (default: true).
+        
+        By default, the network will use mDNS to discover other nodes on the local network. This disables it. Automatically implied when using --dev.
+
+    --max-parallel-downloads <COUNT>
+        Maximum number of peers from which to ask for the same blocks in parallel.
+        
+        This allows downloading announced blocks from multiple peers. Decrease to save traffic and risk increased latency.
+        
+        [default: 5]
+
+    --node-key <KEY>
+        Secret key to use for p2p networking.
+        
+        The value is a string that is parsed according to the choice of `--node-key-type` as follows:
+        
+        - `ed25519`: the value is parsed as a hex-encoded Ed25519 32 byte secret key (64 hex chars)
+        
+        The value of this option takes precedence over `--node-key-file`.
+        
+        WARNING: Secrets provided as command-line arguments are easily exposed. Use of this option should be limited to development and testing. To use an externally managed secret key, use `--node-key-file` instead.
+
+    --node-key-type <TYPE>
+        Crypto primitive to use for p2p networking.
+        
+        The secret key of the node is obtained as follows:
+        
+        - If the `--node-key` option is given, the value is parsed as a secret key according to the type. See the documentation for `--node-key`.
+        
+        - If the `--node-key-file` option is given, the secret key is read from the specified file. See the documentation for `--node-key-file`.
+        
+        - Otherwise, the secret key is read from a file with a predetermined, type-specific name from the chain-specific network config directory inside the base directory specified by `--base-dir`. If this file does not exist, it is created with a newly generated secret key of the
+        chosen type.
+        
+        The node's secret key determines the corresponding public key and hence the node's peer ID in the context of libp2p.
+        
+        [default: ed25519]
+
+        Possible values:
+        - ed25519: Use ed25519
+
+    --node-key-file <FILE>
+        File from which to read the node's secret key to use for p2p networking.
+        
+        The contents of the file are parsed according to the choice of `--node-key-type` as follows:
+        
+        - `ed25519`: the file must contain an unencoded 32 byte or hex encoded Ed25519 secret key.
+        
+        If the file does not exist, it is created with a newly generated secret key of the chosen type.
+
+    --discover-local
+        Enable peer discovery on local networks.
+        
+        By default this option is `true` for `--dev` or when the chain type is `Local`/`Development` and false otherwise.
+
+    --kademlia-disjoint-query-paths
+        Require iterative Kademlia DHT queries to use disjoint paths.
+        
+        Disjoint paths increase resiliency in the presence of potentially adversarial nodes.
+        
+        See the S/Kademlia paper for more information on the high level design as well as its security improvements.
+
+    --kademlia-replication-factor <KADEMLIA_REPLICATION_FACTOR>
+        Kademlia replication factor.
+        
+        Determines to how many closest peers a record is replicated to.
+        
+        Discovery mechanism requires successful replication to all `kademlia_replication_factor` peers to consider record successfully put.
+        
+        [default: 20]
+
+    --ipfs-server
+        Join the IPFS network and serve transactions over bitswap protocol
+
+    --sync <SYNC_MODE>
+        Blockchain syncing mode.
+        
+        [default: full]
+
+        Possible values:
+        - full:        Full sync. Download and verify all blocks
+        - fast:        Download blocks without executing them. Download latest state with proofs
+        - fast-unsafe: Download blocks without executing them. Download latest state without proofs
+        - warp:        Prove finality and download the latest state
+
+    --max-blocks-per-request <COUNT>
+        Maximum number of blocks per request.
+        
+        Try reducing this number from the default value if you have a slow network connection and observe block requests timing out.
+        
+        [default: 64]
+
+    --pool-limit <COUNT>
+        Maximum number of transactions in the transaction pool
+        
+        [default: 8192]
+
+    --pool-kbytes <COUNT>
+        Maximum number of kilobytes of all transactions stored in the pool
+        
+        [default: 20480]
+
+    --tx-ban-seconds <SECONDS>
+        How long a transaction is banned for.
+        
+        If it is considered invalid. Defaults to 1800s.
+
+    --keystore-path <PATH>
+        Specify custom keystore path
+
+    --password-interactive
+        Use interactive shell for entering the password used by the keystore
+
+    --password <PASSWORD>
+        Password used by the keystore.
+        
+        This allows appending an extra user-defined secret to the seed.
+
+    --password-filename <PATH>
+        File that contains the password used by the keystore
+
+    --alice
+        Shortcut for `--name Alice --validator`.
+        
+        Session keys for `Alice` are added to keystore.
+
+    --bob
+        Shortcut for `--name Bob --validator`.
+        
+        Session keys for `Bob` are added to keystore.
+
+    --charlie
+        Shortcut for `--name Charlie --validator`.
+        
+        Session keys for `Charlie` are added to keystore.
+
+    --dave
+        Shortcut for `--name Dave --validator`.
+        
+        Session keys for `Dave` are added to keystore.
+
+    --eve
+        Shortcut for `--name Eve --validator`.
+        
+        Session keys for `Eve` are added to keystore.
+
+    --ferdie
+        Shortcut for `--name Ferdie --validator`.
+        
+        Session keys for `Ferdie` are added to keystore.
+
+    --one
+        Shortcut for `--name One --validator`.
+        
+        Session keys for `One` are added to keystore.
+
+    --two
+        Shortcut for `--name Two --validator`.
+        
+        Session keys for `Two` are added to keystore.
+
+    --force-authoring
+        Enable authoring even when offline
+
+    --tmp
+        Run a temporary node.
+        
+        A temporary directory will be created to store the configuration and will be deleted at the end of the process.
+        
+        Note: the directory is random per process execution. This directory is used as base path which includes: database, node key and keystore.
+        
+        When `--dev` is given and no explicit `--base-path`, this option is implied.
+
+    --no-hardware-benchmarks
+        Disable automatic hardware benchmarks.
+        
+        By default these benchmarks are automatically ran at startup and measure the CPU speed, the memory bandwidth and the disk speed.
+        
+        The results are then printed out in the logs, and also sent as part of telemetry, if telemetry is enabled.
+
+    --unsafe-da-sync
+        Disable checking commitment on imported block during sync
+
+    --db-storage-threshold <MiB>
+        Required available space on database storage.
+        
+        If available space for DB storage drops below the given threshold, node will be gracefully terminated.
+        
+        If `0` is given monitoring will be disabled.
+        
+        [default: 1024]
+
+    --db-storage-polling-period <SECONDS>
+        How often available space is polled
+        
+        [default: 5]
+
+    --enable-kate-rpc
+        Enable Kate RPC
+
+    --enable-kate-rpc-metrics
+        Enable Kate RPC Metrics
+
+    --kate-max-cells-size <KATE_MAX_CELLS_SIZE>
+        The maximum number of cells that can be requested in one go.
+        
+        Max size cannot exceed 10_000
+        
+        [default: 64]
+
+    --network-name <NETWORK_NAME>
+        The name of the network.
+        
+        This parameter can be used to update the network name and id of the `dev` and `dev_tri` chains.
+
+    --enable-tx-state-rpc
+        Enable Transaction State RPC. This allows querying the transaction state (success or failure) using only a transaction hash
+
+    --tx-state-rpc-max-search-results <TX_STATE_RPC_MAX_SEARCH_RESULTS>
+        The maximum number of results the transaction state RPC will return for a transaction hash. If a transaction hash appears in multiple blocks, the RPC will return only the top `X` transaction states. In most cases, the transaction hash is unique, so this parameter is usually
+        irrelevant
+        
+        [default: 10]
+
+    --tx-state-rpc-max-stored-block-count <TX_STATE_RPC_MAX_STORED_BLOCK_COUNT>
+        The maximum number of blocks preserved and stored in the transaction state RPC database.
+        
+        The default is 31 days' worth of blocks.
+        
+        [default: 133920]
+
+    --tx-state-logging-interval <TX_STATE_LOGGING_INTERVAL>
+        Logging interval for transaction state, in milliseconds. A lower value results in more frequent log updates.
+        
+        The default is 300_000 milliseconds (300 seconds).
+        
+        [default: 300000]
+
+-h, --help
+        Print help (see a summary with '-h')
+
+-V, --version
+        Print version
+
