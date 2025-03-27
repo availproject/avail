@@ -17,8 +17,8 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use transaction_rpc::{
-	DataSubmittedEvent, DecodedEvents, HashIndex, TransactionData, TransactionDataRPCParams,
-	TransactionDataSigned, TransactionDatas, TransactionState, TxDataReceiver,
+	state_types::TransactionState, DataSubmittedEvent, DecodedEvents, HashIndex, TransactionData,
+	TransactionDataRPCParams, TransactionDataSigned, TransactionDatas, TxDataReceiver,
 };
 
 #[derive(Clone, Default)]

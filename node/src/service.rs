@@ -299,7 +299,7 @@ pub fn new_partial(
 	let mut tx_state_deps = transaction::Deps::default();
 
 	if tx_cli_deps.state.enabled {
-		let (search_send, search_recv) = channel::<transaction_rpc::TxStateChannel>(
+		let (search_send, search_recv) = channel::<transaction_rpc::state_types::TxStateChannel>(
 			transaction::state::constants::RPC_CHANNEL_LIMIT,
 		);
 		let (block_send, block_recv) = channel::<transaction::state::BlockDetails>(

@@ -1,3 +1,5 @@
+pub mod state_types;
+
 use async_trait::async_trait;
 use jsonrpsee::{
 	core::RpcResult,
@@ -10,18 +12,7 @@ use jsonrpsee::{
 };
 use serde::{Deserialize, Serialize};
 use sp_core::H256;
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TransactionState {
-	pub block_hash: H256,
-	pub block_height: u32,
-	pub tx_hash: H256,
-	pub tx_index: u32,
-	pub tx_success: bool,
-	pub pallet_index: u8,
-	pub call_index: u8,
-	pub is_finalized: bool,
-}
+use state_types::TxStateSender;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum HashIndex {
@@ -69,7 +60,7 @@ pub struct TransactionData {
 	pub call: Option<EncodedCall>,
 	pub encoded_events: Option<EncodedEvents>,
 	pub decoded_events: Option<DecodedEvents>,
-	pub states: Option<Vec<TransactionState>>,
+	pub states: Option<Vec<state_types::TransactionState>>,
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
@@ -108,24 +99,19 @@ pub struct Deps {
 	pub tx_data_sender: Option<TxDataSender>,
 }
 
-pub type OneShotTxStateSender = oneshot::Sender<Vec<TransactionState>>;
-pub type TxStateReceiver = Receiver<(H256, bool, OneShotTxStateSender)>;
-pub type TxStateSender = Sender<(H256, bool, OneShotTxStateSender)>;
-pub type TxStateChannel = (H256, bool, OneShotTxStateSender);
-
 pub type OneShotTxDataSender = oneshot::Sender<Result<TransactionDatas, String>>;
 pub type TxDataReceiver = Receiver<(TransactionDataRPCParams, OneShotTxDataSender)>;
 pub type TxDataSender = Sender<(TransactionDataRPCParams, OneShotTxDataSender)>;
 pub type TxDataChannel = (TransactionDataRPCParams, OneShotTxDataSender);
 
 #[rpc(client, server)]
-pub trait TransactionState {
+pub trait TransactionApi {
 	#[method(name = "transaction_state")]
 	async fn transaction_state(
 		&self,
 		tx_hash: H256,
 		is_finalized: Option<bool>,
-	) -> RpcResult<Vec<TransactionState>>;
+	) -> RpcResult<Vec<state_types::TransactionState>>;
 
 	#[method(name = "transaction_data")]
 	async fn transaction_data(
@@ -152,12 +138,12 @@ impl System {
 }
 
 #[async_trait]
-impl TransactionStateServer for System {
+impl TransactionApiServer for System {
 	async fn transaction_state(
 		&self,
 		tx_hash: H256,
 		finalized: Option<bool>,
-	) -> RpcResult<Vec<TransactionState>> {
+	) -> RpcResult<Vec<state_types::TransactionState>> {
 		let Some(sender) = self.tx_state_sender.as_ref() else {
 			return Err(internal_error(String::from(
 				"Transaction State RPC service disabled",

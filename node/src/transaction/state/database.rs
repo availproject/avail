@@ -5,8 +5,8 @@ use jsonrpsee::tokio;
 use jsonrpsee::tokio::sync::mpsc::Receiver;
 use sc_telemetry::log;
 use sp_core::H256;
-use transaction_rpc::TxStateReceiver as SearchReceiver;
-use transaction_rpc::{OneShotTxStateSender, TransactionState as RPCTransactionState};
+use transaction_rpc::state_types::TxStateReceiver as SearchReceiver;
+use transaction_rpc::state_types::{OneShotTxStateSender, TransactionState as RPCTransactionState};
 
 use crate::transaction::macros::profile;
 

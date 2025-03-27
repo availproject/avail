@@ -1,7 +1,7 @@
 use sc_telemetry::log;
 use sp_core::H256;
 use std::collections::VecDeque;
-use transaction_rpc::TransactionState as RPCTransactionState;
+use transaction_rpc::state_types::TransactionState as RPCTransactionState;
 
 use super::database::{Config, DatabaseLike};
 use super::BlockDetails;

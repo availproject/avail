@@ -21,7 +21,7 @@ use std::time::Duration;
 use jsonrpsee::tokio::sync::mpsc::{Receiver, Sender};
 use serde::{Deserialize, Serialize};
 use sp_core::H256;
-use transaction_rpc::TxStateReceiver as SearchReceiver;
+use transaction_rpc::state_types::TxStateReceiver as SearchReceiver;
 
 #[derive(Clone, Default)]
 pub struct CliDeps {
