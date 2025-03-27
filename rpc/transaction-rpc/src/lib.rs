@@ -35,6 +35,7 @@ pub struct TransactionDataRPCParams {
 	pub fetch_call: Option<bool>,
 	pub fetch_events: Option<bool>,
 	pub fetch_state: Option<bool>,
+	pub decode_events: Option<bool>,
 	pub filter: Option<TransactionDataFilter>,
 }
 
@@ -66,8 +67,25 @@ pub struct TransactionData {
 	pub call_id: u8,
 	pub signed: Option<TransactionDataSigned>,
 	pub call: Option<EncodedCall>,
-	pub events: Option<EncodedEvents>,
+	pub encoded_events: Option<EncodedEvents>,
+	pub decoded_events: Option<DecodedEvents>,
 	pub states: Option<Vec<TransactionState>>,
+}
+
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+pub struct DecodedEvents {
+	pub system_extrinsic: Option<bool>,
+	pub sudo_sudid: Vec<bool>,
+	pub sudo_sudo_as_done: Vec<bool>,
+	pub multisig_executed: Vec<bool>,
+	pub proxy_executed: Vec<bool>,
+	pub data_availability_data_submitted: Vec<DataSubmittedEvent>,
+}
+
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+pub struct DataSubmittedEvent {
+	pub who: String,
+	pub data_hash: String,
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]

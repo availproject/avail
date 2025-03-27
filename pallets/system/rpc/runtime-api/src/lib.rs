@@ -38,7 +38,7 @@ sp_api::decl_runtime_apis! {
 	#[api_version(1)]
 	pub trait SystemEventsApi {
 		fn fetch_transaction_success_status() -> Vec<TransactionSuccessStatus>;
-		fn fetch_events(tx_index: Option<u32>) -> Vec<Vec<u8>>;
+		fn fetch_events(tx_index: Vec<u32>, enable_decoding: bool) -> SystemFetchEventsResult;
 	}
 }
 
@@ -46,4 +46,73 @@ sp_api::decl_runtime_apis! {
 pub struct TransactionSuccessStatus {
 	pub tx_index: u32,
 	pub tx_success: bool,
+}
+
+// If any change is done here, `version`` needs to be bumped! This is a breaking change!!
+#[derive(Debug, Clone, scale_info::TypeInfo, codec::Decode, codec::Encode)]
+pub struct SystemFetchEventsResult {
+	pub version: u8,
+	pub error: u8,
+	pub last_tx_index: u32,
+	pub encoded: Vec<events::EncodedTransactionEvents>,
+	pub decoded_version: u8,
+	pub decoded: Vec<events::DecodedTransactionEvents>,
+}
+
+pub mod events {
+	// If any change is done here, `version`` needs to be bumped! This is a breaking change!!
+	#[derive(Debug, Clone, scale_info::TypeInfo, codec::Decode, codec::Encode)]
+	pub struct EncodedTransactionEvents {
+		pub tx_index: u32,
+		pub value: Vec<Vec<u8>>,
+	}
+
+	impl EncodedTransactionEvents {
+		pub fn new(tx_index: u32) -> Self {
+			Self {
+				tx_index,
+				value: Vec::new(),
+			}
+		}
+	}
+
+	// If any change is done here, `decoded_version` needs to be bumped! This is a breaking change!!
+	#[derive(Debug, Clone, scale_info::TypeInfo, codec::Decode, codec::Encode)]
+	pub struct DecodedTransactionEvents {
+		pub tx_index: u32,
+		pub value: DecodedEvents,
+	}
+
+	impl DecodedTransactionEvents {
+		pub fn new(tx_index: u32) -> Self {
+			Self {
+				tx_index,
+				value: DecodedEvents::default(),
+			}
+		}
+	}
+
+	// If any change is done here, `decoded_version` needs to be bumped! This is a breaking change!!
+	#[derive(Debug, Clone, scale_info::TypeInfo, codec::Decode, codec::Encode)]
+	pub struct DataSubmittedEvent {
+		pub who: Vec<u8>,
+		pub data_hash: Vec<u8>,
+	}
+
+	impl DataSubmittedEvent {
+		pub fn new(who: Vec<u8>, data_hash: Vec<u8>) -> Self {
+			Self { who, data_hash }
+		}
+	}
+
+	// If any change is done here, `decoded_version` needs to be bumped! This is a breaking change!!
+	#[derive(Debug, Clone, Default, scale_info::TypeInfo, codec::Decode, codec::Encode)]
+	pub struct DecodedEvents {
+		pub system_extrinsic: Option<bool>,
+		pub sudo_sudid: Vec<bool>,
+		pub sudo_sudo_as_done: Vec<bool>,
+		pub multisig_executed: Vec<bool>,
+		pub proxy_executed: Vec<bool>,
+		pub data_availability_data_submitted: Vec<DataSubmittedEvent>,
+	}
 }

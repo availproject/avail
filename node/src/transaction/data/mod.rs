@@ -3,6 +3,7 @@ pub mod constants;
 use crate::service::FullClient;
 use codec::{decode_from_bytes, Encode};
 use da_runtime::UncheckedExtrinsic;
+use frame_system_rpc_runtime_api::SystemFetchEventsResult;
 use jsonrpsee::tokio;
 use sc_service::RpcHandlers;
 use sc_telemetry::log;
@@ -10,13 +11,14 @@ use sp_core::{bytes::from_hex, H256};
 use sp_core::{Blake2Hasher, Hasher};
 use sp_runtime::generic::BlockId;
 use sp_runtime::traits::BlockIdTo;
-use sp_runtime::MultiAddress;
+use sp_runtime::{AccountId32, MultiAddress};
+use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 
 use transaction_rpc::{
-	HashIndex, TransactionData, TransactionDataRPCParams, TransactionDataSigned, TransactionDatas,
-	TransactionState, TxDataReceiver,
+	DataSubmittedEvent, DecodedEvents, HashIndex, TransactionData, TransactionDataRPCParams,
+	TransactionDataSigned, TransactionDatas, TransactionState, TxDataReceiver,
 };
 
 #[derive(Clone, Default)]
@@ -24,14 +26,43 @@ pub struct CliDeps {
 	pub enabled: bool,
 }
 
+pub struct Deps {
+	pub receiver: TxDataReceiver,
+}
+
+type CachedEventValue = (
+	Option<transaction_rpc::EncodedEvents>,
+	Option<transaction_rpc::DecodedEvents>,
+);
+type CachedEventKey = (H256, u32, bool);
+
+#[derive(Default)]
+pub struct EventCache {
+	map: HashMap<CachedEventKey, CachedEventValue>,
+}
+impl EventCache {
+	pub fn get(&self, key: &CachedEventKey) -> Option<&CachedEventValue> {
+		self.map.get(key)
+	}
+
+	pub fn insert(&mut self, key: CachedEventKey, value: CachedEventValue) {
+		self.map.insert(key, value);
+	}
+
+	pub fn resize(&mut self) {
+		if self.map.len() <= 1_000 {
+			return;
+		}
+
+		self.map.clear();
+	}
+}
+
 pub struct Worker {
 	pub client: Arc<FullClient>,
 	pub rpc_handlers: RpcHandlers,
 	pub receiver: TxDataReceiver,
-}
-
-pub struct Deps {
-	pub receiver: TxDataReceiver,
+	pub event_cache: EventCache,
 }
 
 impl Worker {
@@ -51,7 +82,7 @@ impl Worker {
 		}
 	}
 
-	async fn task(&self, params: TransactionDataRPCParams) -> Result<TransactionDatas, String> {
+	async fn task(&mut self, params: TransactionDataRPCParams) -> Result<TransactionDatas, String> {
 		let (block_hash, block_height) = match params.block_id {
 			HashIndex::Hash(block_hash) => {
 				let block_height = self.client.to_number(&BlockId::Hash(block_hash.clone()));
@@ -78,7 +109,9 @@ impl Worker {
 		let mut transactions = self.extrinsics(block_hash, &params)?;
 		for ext in transactions.iter_mut() {
 			if params.fetch_events.unwrap_or(false) {
-				ext.events = fetch_events(&self.rpc_handlers, &block_hash, ext.tx_index).await;
+				let enable_decoding = params.decode_events.unwrap_or(false);
+				self.fetch_events(&block_hash, enable_decoding, ext).await;
+				self.event_cache.resize();
 			}
 
 			if params.fetch_state.unwrap_or(false) {
@@ -93,6 +126,89 @@ impl Worker {
 		};
 
 		Ok(result)
+	}
+
+	async fn fetch_events(
+		&mut self,
+		block_hash: &H256,
+		enable_decoding: bool,
+		ext: &mut TransactionData,
+	) {
+		use codec::Decode;
+		let cache = self
+			.event_cache
+			.get(&(*block_hash, ext.tx_index, enable_decoding));
+		if let Some(cache) = cache {
+			ext.encoded_events = cache.0.clone();
+			ext.decoded_events = cache.1.clone();
+			return;
+		}
+
+		let rpc_events = fetch_rpc_events(
+			&self.rpc_handlers,
+			&block_hash,
+			ext.tx_index,
+			enable_decoding,
+		)
+		.await;
+		let Some(rpc_events) = rpc_events else { return };
+		if rpc_events.error != 0 {
+			return;
+		}
+
+		let encoded_events = rpc_events
+			.encoded
+			.into_iter()
+			.find(|x| x.tx_index == ext.tx_index);
+		let decoded_events = rpc_events
+			.decoded
+			.into_iter()
+			.find(|x| x.tx_index == ext.tx_index);
+
+		let encoded_events: Option<Vec<String>> = encoded_events.map(|x| {
+			{
+				x.value
+					.iter()
+					.map(|x| std::format!("0x{}", hex::encode(x.encode())))
+			}
+			.collect()
+		});
+
+		let decoded_events: Option<DecodedEvents> = decoded_events.map(|x| {
+			let mut data_submitted = Vec::new();
+			for ds in x.value.data_availability_data_submitted {
+				let Ok(who) = AccountId32::decode(&mut ds.who.as_slice()) else {
+					continue;
+				};
+				let Ok(data_hash) = H256::decode(&mut ds.data_hash.as_slice()) else {
+					continue;
+				};
+				data_submitted.push(DataSubmittedEvent {
+					who: std::format!("{}", who),
+					data_hash: std::format!("{:?}", data_hash),
+				});
+			}
+
+			DecodedEvents {
+				system_extrinsic: x.value.system_extrinsic,
+				sudo_sudid: x.value.sudo_sudid,
+				sudo_sudo_as_done: x.value.sudo_sudo_as_done,
+				multisig_executed: x.value.multisig_executed,
+				proxy_executed: x.value.proxy_executed,
+				data_availability_data_submitted: data_submitted,
+			}
+		});
+
+		if encoded_events.is_none() && decoded_events.is_none() {
+			return;
+		}
+
+		ext.encoded_events = encoded_events.clone();
+		ext.decoded_events = decoded_events.clone();
+		self.event_cache.insert(
+			(*block_hash, ext.tx_index, enable_decoding),
+			(encoded_events, decoded_events),
+		);
 	}
 
 	fn extrinsics(
@@ -212,19 +328,21 @@ fn read_pallet_call_index(ext: &UncheckedExtrinsic) -> Option<(u8, u8)> {
 	Some((pallet_index, call_index))
 }
 
-async fn fetch_events(
+async fn fetch_rpc_events(
 	handlers: &RpcHandlers,
 	block_hash: &H256,
 	tx_index: u32,
-) -> Option<Vec<String>> {
+	enable_decoding: bool,
+) -> Option<SystemFetchEventsResult> {
 	let query = format!(
 		r#"{{
 		"jsonrpc": "2.0",
 		"method": "state_call",
-		"params": ["SystemEventsApi_fetch_events", "0x{}", "{}"],
+		"params": ["SystemEventsApi_fetch_events", "0x{}{}", "{}"],
 		"id": 0
 	}}"#,
-		hex::encode(Some(tx_index).encode()),
+		hex::encode(vec![tx_index].encode()),
+		if enable_decoding { "01" } else { "00" },
 		std::format!("{:?}", block_hash)
 	);
 
@@ -233,11 +351,8 @@ async fn fetch_events(
 
 	let result_json = json["result"].as_str()?;
 	let result = from_hex(result_json).ok()?;
-	let res: Vec<Vec<u8>> = decode_from_bytes::<Vec<Vec<u8>>>(result.into()).ok()?;
-	let res: Vec<String> = res
-		.into_iter()
-		.map(|x| std::format!("0x{}", hex::encode(x.encode())))
-		.collect();
+	let res: SystemFetchEventsResult =
+		decode_from_bytes::<SystemFetchEventsResult>(result.into()).ok()?;
 
 	Some(res)
 }

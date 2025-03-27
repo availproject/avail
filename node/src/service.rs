@@ -687,6 +687,7 @@ pub fn new_full_base(
 			rpc_handlers: rpc_handlers.clone(),
 			client: client.clone(),
 			receiver: deps.receiver,
+			event_cache: Default::default(),
 		};
 
 		task_manager

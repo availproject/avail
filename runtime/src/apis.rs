@@ -267,23 +267,109 @@ impl_runtime_apis! {
 			results
 		}
 
-		fn fetch_events(tx_index: Option<u32>) -> Vec<Vec<u8>> {
+		// Up to 10 transaction events can be fetched
+		fn fetch_events(tx_indices: Vec<u32>, enable_decoding: bool) -> frame_system_rpc_runtime_api::SystemFetchEventsResult {
 			use codec::Encode;
-			let mut result = Vec::new();
+			use frame_system_rpc_runtime_api::*;
+			const VERSION: u8 = 0;
+			const DECODED_VERSION: u8 = 0;
 
-			let event_records = System::read_events_no_consensus();
-			for event_record in event_records {
-				if let Some(tx_index) = tx_index {
-					let frame_system::Phase::ApplyExtrinsic(id) = &event_record.phase else {
-						continue;
-					};
+			let mut result = SystemFetchEventsResult {
+				version: VERSION,
+				error: 0,
+				last_tx_index: 0,
+				encoded: Vec::new(),
+				decoded_version: DECODED_VERSION,
+				decoded:  Vec::new(),
+			};
 
-					if tx_index != *id {
-						continue
-					};
+			if tx_indices.len() > 10  {
+				result.error = 1;
+				return result;
+			}
+
+			if tx_indices.is_empty()  {
+				result.error = 2;
+				return result;
+			}
+
+			let all_events = System::read_events_no_consensus();
+			for event in all_events {
+				let tx_index =  match &event.phase {
+					frame_system::Phase::ApplyExtrinsic(x) => *x,
+					_ => continue
+				};
+				result.last_tx_index = tx_index;
+
+				if !tx_indices.contains(&tx_index) {
+					continue
 				}
 
-				result.push(event_record.event.encode());
+				// Encoded
+				let entry = if let Some(entry) = result.encoded.iter_mut().find(|x| x.tx_index == tx_index) {
+					entry
+				} else {
+					result.encoded.push(events::EncodedTransactionEvents::new(tx_index));
+					result.encoded.last_mut().expect("An element should be present.")
+				};
+				entry.value.push(event.event.encode());
+
+				if !enable_decoding {
+					continue
+				}
+
+				// Decoded
+				let entry = if let Some(entry) = result.decoded.iter_mut().find(|x| x.tx_index == tx_index) {
+					entry
+				} else {
+					result.decoded.push(events::DecodedTransactionEvents::new(tx_index));
+					result.decoded.last_mut().expect("An element should be present.")
+				};
+
+				use crate::RuntimeEvent;
+				match &event.event {
+					RuntimeEvent::System(e) => {
+						use frame_system::Event;
+						match e {
+							Event::<Runtime>::ExtrinsicSuccess{..} => entry.value.system_extrinsic = Some(true),
+							Event::<Runtime>::ExtrinsicFailed{..} => entry.value.system_extrinsic = Some(false),
+							_ => (),
+						}
+					}
+					RuntimeEvent::Sudo(e) => {
+						use pallet_sudo::Event;
+						match e {
+							Event::<Runtime>::Sudid{sudo_result: x} => entry.value.sudo_sudid.push(x.is_ok()),
+							Event::<Runtime>::SudoAsDone{sudo_result: x} => entry.value.sudo_sudo_as_done.push(x.is_ok()),
+							_ => (),
+						}
+					}
+					RuntimeEvent::Multisig(e) => {
+						use pallet_multisig::Event;
+						match e {
+							Event::<Runtime>::MultisigExecuted{result: x, ..} => entry.value.multisig_executed.push(x.is_ok()),
+							_ => (),
+						}
+					}
+					RuntimeEvent::Proxy(e) => {
+						use pallet_proxy::Event;
+						match e {
+							Event::<Runtime>::ProxyExecuted{result: x, ..} => entry.value.proxy_executed.push(x.is_ok()),
+							_ => (),
+						}
+					}
+					RuntimeEvent::DataAvailability(e) => {
+						use da_control::Event;
+						match e {
+							Event::<Runtime>::DataSubmitted{who, data_hash} => {
+								let value = events::DataSubmittedEvent::new(who.encode(), data_hash.encode());
+								entry.value.data_availability_data_submitted.push(value);
+							},
+							_ => (),
+						}
+					}
+					_ => (),
+				};
 			}
 
 			result
