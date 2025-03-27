@@ -1,91 +1,12 @@
+pub mod data_types;
 pub mod state_types;
 
 use async_trait::async_trait;
-use jsonrpsee::{
-	core::RpcResult,
-	proc_macros::rpc,
-	tokio::sync::{
-		mpsc::{Receiver, Sender},
-		oneshot,
-	},
-	types::ErrorObject,
-};
+use data_types::{TransactionDataRPCParams, TransactionDatas, TxDataSender};
+use jsonrpsee::{core::RpcResult, proc_macros::rpc, tokio::sync::oneshot, types::ErrorObject};
 use serde::{Deserialize, Serialize};
 use sp_core::H256;
 use state_types::TxStateSender;
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum HashIndex {
-	Hash(H256),
-	Index(u32),
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TransactionDataRPCParams {
-	pub block_id: HashIndex,
-	pub fetch_call: Option<bool>,
-	pub fetch_events: Option<bool>,
-	pub fetch_state: Option<bool>,
-	pub decode_events: Option<bool>,
-	pub filter: Option<TransactionDataFilter>,
-}
-
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
-pub struct TransactionDataFilter {
-	pub tx_id: Option<HashIndex>,
-	pub pallet_id: Option<u8>,
-	pub call_id: Option<u8>,
-	pub ss58_address: Option<String>,
-	pub app_id: Option<u32>,
-	pub nonce: Option<u32>,
-}
-
-pub type EncodedCall = String;
-pub type EncodedEvents = Vec<String>;
-
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
-pub struct TransactionDatas {
-	pub block_hash: H256,
-	pub block_height: u32,
-	pub transactions: Vec<TransactionData>,
-}
-
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
-pub struct TransactionData {
-	pub tx_hash: H256,
-	pub tx_index: u32,
-	pub pallet_id: u8,
-	pub call_id: u8,
-	pub signed: Option<TransactionDataSigned>,
-	pub call: Option<EncodedCall>,
-	pub encoded_events: Option<EncodedEvents>,
-	pub decoded_events: Option<DecodedEvents>,
-	pub states: Option<Vec<state_types::TransactionState>>,
-}
-
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
-pub struct DecodedEvents {
-	pub system_extrinsic: Option<bool>,
-	pub sudo_sudid: Vec<bool>,
-	pub sudo_sudo_as_done: Vec<bool>,
-	pub multisig_executed: Vec<bool>,
-	pub proxy_executed: Vec<bool>,
-	pub data_availability_data_submitted: Vec<DataSubmittedEvent>,
-}
-
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
-pub struct DataSubmittedEvent {
-	pub who: String,
-	pub data_hash: String,
-}
-
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
-pub struct TransactionDataSigned {
-	pub ss58_address: Option<String>,
-	pub nonce: u32,
-	pub app_id: u32,
-	pub mortality: Option<(u64, u64)>, // None means the tx is Immortal
-}
 
 #[derive(Clone, Copy, Default, Serialize, Deserialize)]
 pub struct EnabledServices {
@@ -98,11 +19,6 @@ pub struct Deps {
 	pub tx_state_sender: Option<TxStateSender>,
 	pub tx_data_sender: Option<TxDataSender>,
 }
-
-pub type OneShotTxDataSender = oneshot::Sender<Result<TransactionDatas, String>>;
-pub type TxDataReceiver = Receiver<(TransactionDataRPCParams, OneShotTxDataSender)>;
-pub type TxDataSender = Sender<(TransactionDataRPCParams, OneShotTxDataSender)>;
-pub type TxDataChannel = (TransactionDataRPCParams, OneShotTxDataSender);
 
 #[rpc(client, server)]
 pub trait TransactionApi {

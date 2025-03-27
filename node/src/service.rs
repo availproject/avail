@@ -318,7 +318,7 @@ pub fn new_partial(
 	}
 
 	if tx_cli_deps.data.enabled {
-		let (search_send, search_recv) = channel::<transaction_rpc::TxDataChannel>(
+		let (search_send, search_recv) = channel::<transaction_rpc::data_types::TxDataChannel>(
 			transaction::data::constants::RPC_CHANNEL_LIMIT,
 		);
 

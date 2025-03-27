@@ -15,11 +15,11 @@ use sp_runtime::{AccountId32, MultiAddress};
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
-
-use transaction_rpc::{
-	state_types::TransactionState, DataSubmittedEvent, DecodedEvents, HashIndex, TransactionData,
+use transaction_rpc::data_types::{
+	DataSubmittedEvent, DecodedEvents, EncodedEvents, HashIndex, TransactionData,
 	TransactionDataRPCParams, TransactionDataSigned, TransactionDatas, TxDataReceiver,
 };
+use transaction_rpc::state_types::TransactionState;
 
 #[derive(Clone, Default)]
 pub struct CliDeps {
@@ -30,10 +30,7 @@ pub struct Deps {
 	pub receiver: TxDataReceiver,
 }
 
-type CachedEventValue = (
-	Option<transaction_rpc::EncodedEvents>,
-	Option<transaction_rpc::DecodedEvents>,
-);
+type CachedEventValue = (Option<EncodedEvents>, Option<DecodedEvents>);
 type CachedEventKey = (H256, u32, bool);
 
 #[derive(Default)]
