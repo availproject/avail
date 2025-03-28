@@ -8,6 +8,8 @@ use jsonrpsee::tokio;
 use sc_service::RpcHandlers;
 use sp_core::{bytes::from_hex, Blake2Hasher, Hasher, H256};
 
+use crate::transaction::read_pallet_call_index;
+
 use super::{constants::NODE_SYNC_SLEEP_INTERNVAL, BlockDetails, TransactionState};
 
 pub(crate) async fn wait_for_sync(handler: &RpcHandlers) {
@@ -104,15 +106,4 @@ pub(crate) async fn prepare_block(
 	};
 
 	block
-}
-
-pub(crate) fn read_pallet_call_index(ext: &UncheckedExtrinsic) -> Option<(u8, u8)> {
-	let ext = ext.function.encode();
-	if ext.len() < 2 {
-		return None;
-	}
-	let pallet_index = ext[0];
-	let call_index = ext[1];
-
-	Some((pallet_index, call_index))
 }

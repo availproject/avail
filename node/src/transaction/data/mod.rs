@@ -1,8 +1,10 @@
 pub mod constants;
 
 use crate::service::FullClient;
-use codec::{decode_from_bytes, Encode};
+use codec::{decode_from_bytes, DecodeAll, Encode};
+use constants::*;
 use da_runtime::UncheckedExtrinsic;
+use frame_system_rpc_runtime_api::events::SemiDecodedEvent;
 use frame_system_rpc_runtime_api::SystemFetchEventsResult;
 use jsonrpsee::tokio;
 use sc_service::RpcHandlers;
@@ -16,10 +18,12 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 use transaction_rpc::data_types::{
-	DataSubmittedEvent, DecodedEvents, EncodedEvents, HashIndex, TransactionData,
-	TransactionDataRPCParams, TransactionDataSigned, TransactionDatas, TxDataReceiver,
+	self, DecodedEvents, EncodedEvents, HashIndex, RPCParams, TransactionData,
+	TransactionDataSigned, TxDataReceiver,
 };
-use transaction_rpc::state_types::TransactionState;
+use transaction_rpc::state_types;
+
+use super::read_pallet_call_index;
 
 #[derive(Clone, Default)]
 pub struct CliDeps {
@@ -47,7 +51,7 @@ impl EventCache {
 	}
 
 	pub fn resize(&mut self) {
-		if self.map.len() <= 1_000 {
+		if self.map.len() <= EVENT_CACHE_SIZE {
 			return;
 		}
 
@@ -75,11 +79,11 @@ impl Worker {
 					log::info!("🐖 Send Something :)");
 				}
 			}
-			tokio::time::sleep(Duration::from_millis(constants::DATABASE_POOL_INTERVAL)).await;
+			tokio::time::sleep(Duration::from_millis(DATABASE_POOL_INTERVAL)).await;
 		}
 	}
 
-	async fn task(&mut self, params: TransactionDataRPCParams) -> Result<TransactionDatas, String> {
+	async fn task(&mut self, params: RPCParams) -> Result<data_types::RPCResult, String> {
 		let (block_hash, block_height) = match params.block_id {
 			HashIndex::Hash(block_hash) => {
 				let block_height = self.client.to_number(&BlockId::Hash(block_hash.clone()));
@@ -103,20 +107,21 @@ impl Worker {
 			},
 		};
 
-		let mut transactions = self.extrinsics(block_hash, &params)?;
+		let extension = params.extension.unwrap_or_default();
+		let mut transactions = self.extrinsics(block_hash, &params, extension)?;
 		for ext in transactions.iter_mut() {
-			if params.fetch_events.unwrap_or(false) {
-				let enable_decoding = params.decode_events.unwrap_or(false);
+			if extension.fetch_events.unwrap_or(false) {
+				let enable_decoding = extension.decode_events.unwrap_or(false);
 				self.fetch_events(&block_hash, enable_decoding, ext).await;
 				self.event_cache.resize();
 			}
 
-			if params.fetch_state.unwrap_or(false) {
-				ext.states = fetch_state(&self.rpc_handlers, ext.tx_hash).await
+			if extension.fetch_state.unwrap_or(false) {
+				ext.extension.states = fetch_state(&self.rpc_handlers, ext.tx_hash).await
 			}
 		}
 
-		let result = TransactionDatas {
+		let result = data_types::RPCResult {
 			block_hash,
 			block_height,
 			transactions,
@@ -131,13 +136,12 @@ impl Worker {
 		enable_decoding: bool,
 		ext: &mut TransactionData,
 	) {
-		use codec::Decode;
 		let cache = self
 			.event_cache
 			.get(&(*block_hash, ext.tx_index, enable_decoding));
 		if let Some(cache) = cache {
-			ext.encoded_events = cache.0.clone();
-			ext.decoded_events = cache.1.clone();
+			ext.extension.encoded_events = cache.0.clone();
+			ext.extension.decoded_events = cache.1.clone();
 			return;
 		}
 
@@ -172,46 +176,92 @@ impl Worker {
 		});
 
 		let decoded_events: Option<DecodedEvents> = decoded_events.map(|x| {
-			let mut data_submitted = Vec::new();
-			for ds in x.value.data_availability_data_submitted {
-				let Ok(who) = AccountId32::decode(&mut ds.who.as_slice()) else {
+			let mut events = Vec::new();
+			for semi in x.events {
+				let Some(decoded) = self.parse_decoded_event(semi) else {
 					continue;
 				};
-				let Ok(data_hash) = H256::decode(&mut ds.data_hash.as_slice()) else {
-					continue;
-				};
-				data_submitted.push(DataSubmittedEvent {
-					who: std::format!("{}", who),
-					data_hash: std::format!("{:?}", data_hash),
-				});
+				events.push(decoded);
 			}
 
-			DecodedEvents {
-				system_extrinsic: x.value.system_extrinsic,
-				sudo_sudid: x.value.sudo_sudid,
-				sudo_sudo_as_done: x.value.sudo_sudo_as_done,
-				multisig_executed: x.value.multisig_executed,
-				proxy_executed: x.value.proxy_executed,
-				data_availability_data_submitted: data_submitted,
-			}
+			events
 		});
 
 		if encoded_events.is_none() && decoded_events.is_none() {
 			return;
 		}
 
-		ext.encoded_events = encoded_events.clone();
-		ext.decoded_events = decoded_events.clone();
+		ext.extension.encoded_events = encoded_events.clone();
+		ext.extension.decoded_events = decoded_events.clone();
 		self.event_cache.insert(
 			(*block_hash, ext.tx_index, enable_decoding),
 			(encoded_events, decoded_events),
 		);
 	}
 
+	fn parse_decoded_event(&self, semi: SemiDecodedEvent) -> Option<data_types::DecodedEvent> {
+		use data_types::{DecodedEvent, DecodedEventData};
+		use frame_system_rpc_runtime_api::events::event_id;
+
+		let mut ev = DecodedEvent::new(
+			semi.index,
+			semi.pallet_id,
+			semi.event_id,
+			DecodedEventData::Unknown,
+		);
+
+		match semi.pallet_id {
+			event_id::system::PALLET_ID => {
+				if semi.event_id == event_id::system::EXTRINSIC_SUCCESS {
+					ev.data = DecodedEventData::SystemExtrinsicSuccess;
+				} else if semi.event_id == event_id::system::EXTRINSIC_FAILED {
+					ev.data = DecodedEventData::SystemExtrinsicFailed;
+				}
+			},
+			event_id::sudo::PALLET_ID => {
+				if semi.event_id == event_id::sudo::SUDID {
+					let data = decode_from_bytes::<bool>(semi.event_data.into()).ok()?;
+					ev.data = DecodedEventData::SudoSudid(data);
+				} else if semi.event_id == event_id::sudo::SUDO_AS_DONE {
+					let data = decode_from_bytes::<bool>(semi.event_data.into()).ok()?;
+					ev.data = DecodedEventData::SudoSudoAsDone(data);
+				}
+			},
+			event_id::data_availability::PALLET_ID => {
+				if semi.event_id == event_id::data_availability::DATA_SUBMITTED {
+					let encoded = semi.event_data;
+					let value = DataSubmittedEvent::decode_all(&mut encoded.as_slice()).ok()?;
+					let data = data_types::DataSubmittedEvent {
+						who: std::format!("{}", value.who),
+						data_hash: std::format!("{:?}", value.data_hash),
+					};
+
+					ev.data = DecodedEventData::DataAvailabilityDataSubmitted(data);
+				}
+			},
+			event_id::multisig::PALLET_ID => {
+				if semi.event_id == event_id::multisig::MULTISIG_EXECUTED {
+					let data = decode_from_bytes::<bool>(semi.event_data.into()).ok()?;
+					ev.data = DecodedEventData::SudoSudoAsDone(data);
+				}
+			},
+			event_id::proxy::PALLET_ID => {
+				if semi.event_id == event_id::proxy::PROXY_EXECUTED {
+					let data = decode_from_bytes::<bool>(semi.event_data.into()).ok()?;
+					ev.data = DecodedEventData::SudoSudoAsDone(data);
+				}
+			},
+			_ => (),
+		}
+
+		Some(ev)
+	}
+
 	fn extrinsics(
 		&self,
 		block_hash: H256,
-		params: &TransactionDataRPCParams,
+		params: &RPCParams,
+		extension: data_types::RPCParamsExtension,
 	) -> Result<Vec<TransactionData>, String> {
 		let filter = params.filter.clone().unwrap_or_default();
 
@@ -302,9 +352,9 @@ impl Worker {
 				}
 			};
 
-			if params.fetch_call.unwrap_or(false) {
+			if extension.fetch_call.unwrap_or(false) {
 				let encoded = hex::encode(unchecked_ext.function.encode());
-				tx.call = Some(std::format!("0x{}", encoded))
+				tx.extension.call = Some(std::format!("0x{}", encoded))
 			}
 
 			extrinsics.push(tx);
@@ -312,17 +362,6 @@ impl Worker {
 
 		Ok(extrinsics)
 	}
-}
-
-fn read_pallet_call_index(ext: &UncheckedExtrinsic) -> Option<(u8, u8)> {
-	let ext = ext.function.encode();
-	if ext.len() < 2 {
-		return None;
-	}
-	let pallet_index = ext[0];
-	let call_index = ext[1];
-
-	Some((pallet_index, call_index))
 }
 
 async fn fetch_rpc_events(
@@ -354,7 +393,7 @@ async fn fetch_rpc_events(
 	Some(res)
 }
 
-async fn fetch_state(handlers: &RpcHandlers, tx_hash: H256) -> Option<Vec<TransactionState>> {
+async fn fetch_state(handlers: &RpcHandlers, tx_hash: H256) -> Option<Vec<state_types::RPCResult>> {
 	let query = format!(
 		r#"{{
 		"jsonrpc": "2.0",
@@ -367,11 +406,18 @@ async fn fetch_state(handlers: &RpcHandlers, tx_hash: H256) -> Option<Vec<Transa
 
 	let (res, _) = handlers.rpc_query(&query).await.ok()?;
 	let mut json = serde_json::from_str::<serde_json::Value>(&res).ok()?;
-	let mut res: Vec<TransactionState> = serde_json::from_value(json["result"].take()).ok()?;
+	let mut res: Vec<state_types::RPCResult> =
+		serde_json::from_value(json["result"].take()).ok()?;
 
-	while res.len() > 3 {
+	while res.len() > STATE_SIZE {
 		res.pop();
 	}
 
 	Some(res)
+}
+
+#[derive(codec::Decode)]
+struct DataSubmittedEvent {
+	pub who: AccountId32,
+	pub data_hash: H256,
 }

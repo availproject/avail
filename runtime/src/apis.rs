@@ -271,15 +271,14 @@ impl_runtime_apis! {
 		fn fetch_events(tx_indices: Vec<u32>, enable_decoding: bool) -> frame_system_rpc_runtime_api::SystemFetchEventsResult {
 			use codec::Encode;
 			use frame_system_rpc_runtime_api::*;
+			use events::SemiDecodedEvent;
 			const VERSION: u8 = 0;
-			const DECODED_VERSION: u8 = 0;
 
 			let mut result = SystemFetchEventsResult {
 				version: VERSION,
 				error: 0,
 				last_tx_index: 0,
 				encoded: Vec::new(),
-				decoded_version: DECODED_VERSION,
 				decoded:  Vec::new(),
 			};
 
@@ -312,11 +311,13 @@ impl_runtime_apis! {
 					result.encoded.push(events::EncodedTransactionEvents::new(tx_index));
 					result.encoded.last_mut().expect("An element should be present.")
 				};
-				entry.value.push(event.event.encode());
+				entry.value.push(event.encode());
+
 
 				if !enable_decoding {
 					continue
 				}
+				let event_position = entry.value.len().saturating_sub(1);
 
 				// Decoded
 				let entry = if let Some(entry) = result.decoded.iter_mut().find(|x| x.tx_index == tx_index) {
@@ -326,44 +327,71 @@ impl_runtime_apis! {
 					result.decoded.last_mut().expect("An element should be present.")
 				};
 
+				let index = event_position as u32;
 				use crate::RuntimeEvent;
 				match &event.event {
 					RuntimeEvent::System(e) => {
 						use frame_system::Event;
+						use events::event_id::system::*;
 						match e {
-							Event::<Runtime>::ExtrinsicSuccess{..} => entry.value.system_extrinsic = Some(true),
-							Event::<Runtime>::ExtrinsicFailed{..} => entry.value.system_extrinsic = Some(false),
+							Event::<Runtime>::ExtrinsicSuccess{..} => {
+								let ev = SemiDecodedEvent::new(index, PALLET_ID, EXTRINSIC_SUCCESS, Vec::new());
+								entry.events.push(ev);
+							}
+							Event::<Runtime>::ExtrinsicFailed{..} => {
+								let ev = SemiDecodedEvent::new(index, PALLET_ID, EXTRINSIC_FAILED, Vec::new());
+								entry.events.push(ev);
+							}
 							_ => (),
 						}
 					}
 					RuntimeEvent::Sudo(e) => {
 						use pallet_sudo::Event;
+						use events::event_id::sudo::*;
 						match e {
-							Event::<Runtime>::Sudid{sudo_result: x} => entry.value.sudo_sudid.push(x.is_ok()),
-							Event::<Runtime>::SudoAsDone{sudo_result: x} => entry.value.sudo_sudo_as_done.push(x.is_ok()),
+							Event::<Runtime>::Sudid{sudo_result: x} => {
+								let ev = SemiDecodedEvent::new(index, PALLET_ID, SUDID, x.is_ok().encode());
+								entry.events.push(ev);
+							}
+							Event::<Runtime>::SudoAsDone{sudo_result: x} => {
+								let ev = SemiDecodedEvent::new(index, PALLET_ID, SUDO_AS_DONE, x.is_ok().encode());
+								entry.events.push(ev);
+							}
 							_ => (),
 						}
 					}
 					RuntimeEvent::Multisig(e) => {
 						use pallet_multisig::Event;
+						use events::event_id::multisig::*;
 						match e {
-							Event::<Runtime>::MultisigExecuted{result: x, ..} => entry.value.multisig_executed.push(x.is_ok()),
+							Event::<Runtime>::MultisigExecuted{result: x, ..} => {
+								let ev = SemiDecodedEvent::new(index, PALLET_ID, MULTISIG_EXECUTED, x.is_ok().encode());
+								entry.events.push(ev);
+							}
 							_ => (),
 						}
 					}
 					RuntimeEvent::Proxy(e) => {
 						use pallet_proxy::Event;
+						use events::event_id::proxy::*;
 						match e {
-							Event::<Runtime>::ProxyExecuted{result: x, ..} => entry.value.proxy_executed.push(x.is_ok()),
+							Event::<Runtime>::ProxyExecuted{result: x, ..} => {
+								let ev = SemiDecodedEvent::new(index, PALLET_ID, PROXY_EXECUTED, x.is_ok().encode());
+								entry.events.push(ev);
+							}
 							_ => (),
 						}
 					}
 					RuntimeEvent::DataAvailability(e) => {
 						use da_control::Event;
+						use events::event_id::data_availability::*;
 						match e {
 							Event::<Runtime>::DataSubmitted{who, data_hash} => {
-								let value = events::DataSubmittedEvent::new(who.encode(), data_hash.encode());
-								entry.value.data_availability_data_submitted.push(value);
+								let mut value = Vec::<u8>::new();
+								who.encode_to(&mut value);
+								data_hash.encode_to(&mut value);
+								let ev = SemiDecodedEvent::new(index, PALLET_ID, DATA_SUBMITTED, value);
+								entry.events.push(ev);
 							},
 							_ => (),
 						}

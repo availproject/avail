@@ -5,13 +5,13 @@ use jsonrpsee::tokio::sync::{
 use serde::{Deserialize, Serialize};
 use sp_core::H256;
 
-pub type TxStateChannelResponse = oneshot::Sender<Vec<TransactionState>>;
+pub type TxStateChannelResponse = oneshot::Sender<Vec<RPCResult>>;
 pub type TxStateChannel = (H256, bool, TxStateChannelResponse);
 pub type TxStateReceiver = Receiver<TxStateChannel>;
 pub type TxStateSender = Sender<TxStateChannel>;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TransactionState {
+pub struct RPCResult {
 	pub block_hash: H256,
 	pub block_height: u32,
 	pub tx_hash: H256,

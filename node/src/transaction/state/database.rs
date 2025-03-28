@@ -6,7 +6,7 @@ use jsonrpsee::tokio::sync::mpsc::Receiver;
 use sc_telemetry::log;
 use sp_core::H256;
 use transaction_rpc::state_types::TxStateReceiver as SearchReceiver;
-use transaction_rpc::state_types::{TransactionState as RPCTransactionState, TxStateChannel};
+use transaction_rpc::state_types::{self, TxStateChannel};
 
 use crate::transaction::macros::profile;
 
@@ -91,7 +91,7 @@ impl<T: DatabaseLike> Database<T> {
 	fn send_transaction_state(&self, details: TxStateChannel) {
 		let (tx_hash, is_finalized, oneshot) = details;
 
-		let mut result: Vec<RPCTransactionState> =
+		let mut result: Vec<state_types::RPCResult> =
 			self.inner.find_transaction_state(&tx_hash, is_finalized);
 		result.sort_by(|x, y| y.block_height.cmp(&x.block_height));
 
@@ -106,7 +106,7 @@ pub trait DatabaseLike {
 		&self,
 		tx_hash: &H256,
 		is_finalized: bool,
-	) -> Vec<RPCTransactionState>;
+	) -> Vec<state_types::RPCResult>;
 	fn resize(&mut self);
 	fn config(&self) -> &Config;
 	fn variant(&self) -> &str;

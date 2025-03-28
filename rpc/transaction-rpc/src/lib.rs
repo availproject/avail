@@ -2,7 +2,7 @@ pub mod data_types;
 pub mod state_types;
 
 use async_trait::async_trait;
-use data_types::{TransactionDataRPCParams, TransactionDatas, TxDataSender};
+use data_types::TxDataSender;
 use jsonrpsee::{core::RpcResult, proc_macros::rpc, tokio::sync::oneshot, types::ErrorObject};
 use serde::{Deserialize, Serialize};
 use sp_core::H256;
@@ -27,13 +27,13 @@ pub trait TransactionApi {
 		&self,
 		tx_hash: H256,
 		is_finalized: Option<bool>,
-	) -> RpcResult<Vec<state_types::TransactionState>>;
+	) -> RpcResult<Vec<state_types::RPCResult>>;
 
 	#[method(name = "transaction_data")]
 	async fn transaction_data(
 		&self,
-		params: TransactionDataRPCParams,
-	) -> RpcResult<TransactionDatas>;
+		params: data_types::RPCParams,
+	) -> RpcResult<data_types::RPCResult>;
 
 	#[method(name = "transaction_enabled_services")]
 	async fn transaction_enabled_services(&self) -> RpcResult<EnabledServices>;
@@ -59,7 +59,7 @@ impl TransactionApiServer for System {
 		&self,
 		tx_hash: H256,
 		finalized: Option<bool>,
-	) -> RpcResult<Vec<state_types::TransactionState>> {
+	) -> RpcResult<Vec<state_types::RPCResult>> {
 		let Some(sender) = self.tx_state_sender.as_ref() else {
 			return Err(internal_error(String::from(
 				"Transaction State RPC service disabled",
@@ -82,8 +82,8 @@ impl TransactionApiServer for System {
 
 	async fn transaction_data(
 		&self,
-		params: TransactionDataRPCParams,
-	) -> RpcResult<TransactionDatas> {
+		params: data_types::RPCParams,
+	) -> RpcResult<data_types::RPCResult> {
 		let Some(sender) = self.tx_data_sender.as_ref() else {
 			return Err(internal_error(String::from(
 				"Transaction Data RPC service disabled",
