@@ -1,15 +1,15 @@
 pub mod constants;
 
+use super::runtime_api;
 use crate::service::FullClient;
 use codec::{decode_from_bytes, DecodeAll, Encode};
 use constants::*;
 use da_runtime::UncheckedExtrinsic;
 use frame_system_rpc_runtime_api::events::SemiDecodedEvent;
-use frame_system_rpc_runtime_api::SystemFetchEventsResult;
 use jsonrpsee::tokio;
 use sc_service::RpcHandlers;
 use sc_telemetry::log;
-use sp_core::{bytes::from_hex, H256};
+use sp_core::H256;
 use sp_core::{Blake2Hasher, Hasher};
 use sp_runtime::generic::BlockId;
 use sp_runtime::traits::BlockIdTo;
@@ -145,11 +145,11 @@ impl Worker {
 			return;
 		}
 
-		let rpc_events = fetch_rpc_events(
+		let rpc_events = runtime_api::system_fetch_events(
 			&self.rpc_handlers,
-			&block_hash,
 			ext.tx_index,
 			enable_decoding,
+			&block_hash,
 		)
 		.await;
 		let Some(rpc_events) = rpc_events else { return };
@@ -362,35 +362,6 @@ impl Worker {
 
 		Ok(extrinsics)
 	}
-}
-
-async fn fetch_rpc_events(
-	handlers: &RpcHandlers,
-	block_hash: &H256,
-	tx_index: u32,
-	enable_decoding: bool,
-) -> Option<SystemFetchEventsResult> {
-	let query = format!(
-		r#"{{
-		"jsonrpc": "2.0",
-		"method": "state_call",
-		"params": ["SystemEventsApi_fetch_events", "0x{}{}", "{}"],
-		"id": 0
-	}}"#,
-		hex::encode(vec![tx_index].encode()),
-		if enable_decoding { "01" } else { "00" },
-		std::format!("{:?}", block_hash)
-	);
-
-	let (res, _) = handlers.rpc_query(&query).await.ok()?;
-	let json = serde_json::from_str::<serde_json::Value>(&res).ok()?;
-
-	let result_json = json["result"].as_str()?;
-	let result = from_hex(result_json).ok()?;
-	let res: SystemFetchEventsResult =
-		decode_from_bytes::<SystemFetchEventsResult>(result.into()).ok()?;
-
-	Some(res)
 }
 
 async fn fetch_state(handlers: &RpcHandlers, tx_hash: H256) -> Option<Vec<state_types::RPCResult>> {

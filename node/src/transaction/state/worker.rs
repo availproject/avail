@@ -1,12 +1,12 @@
 use std::time::Duration;
 
 use avail_core::OpaqueExtrinsic;
-use codec::{decode_from_bytes, Encode};
+use codec::Encode;
 use da_runtime::UncheckedExtrinsic;
 use frame_system_rpc_runtime_api::TransactionSuccessStatus;
 use jsonrpsee::tokio;
 use sc_service::RpcHandlers;
-use sp_core::{bytes::from_hex, Blake2Hasher, Hasher, H256};
+use sp_core::{Blake2Hasher, Hasher, H256};
 
 use crate::transaction::read_pallet_call_index;
 
@@ -37,30 +37,6 @@ pub(crate) async fn fetch_sync_status(handler: &RpcHandlers) -> Option<bool> {
 	let result_json = json["result"].as_object()?;
 
 	result_json["isSyncing"].as_bool()
-}
-
-pub(crate) async fn fetch_extrinsic_success_status(
-	handlers: &RpcHandlers,
-	block_hash: &H256,
-) -> Option<Vec<TransactionSuccessStatus>> {
-	let query = format!(
-		r#"{{
-		"jsonrpc": "2.0",
-		"method": "state_call",
-		"params": ["SystemEventsApi_fetch_transaction_success_status", "0x", "{}"],
-		"id": 0
-	}}"#,
-		std::format!("{:?}", block_hash)
-	);
-
-	let (res, _) = handlers.rpc_query(&query).await.ok()?;
-	let json = serde_json::from_str::<serde_json::Value>(&res).ok()?;
-
-	let result_json = json["result"].as_str()?;
-	let result = from_hex(result_json).ok()?;
-	let res = decode_from_bytes::<Vec<TransactionSuccessStatus>>(result.into()).ok()?;
-
-	Some(res)
 }
 
 pub(crate) async fn prepare_block(

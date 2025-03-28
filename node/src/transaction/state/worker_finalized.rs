@@ -1,3 +1,4 @@
+use super::super::runtime_api;
 use super::worker;
 use super::worker_logger::Logger;
 use super::BlockDetails;
@@ -117,7 +118,8 @@ impl FinalizedWorker {
 		//
 		// This most likely means that our new Runtime API is not available so there isn't much that we can do.
 		let Some(states) =
-			worker::fetch_extrinsic_success_status(&self.rpc_handlers, &block_hash).await
+			runtime_api::system_fetch_transaction_success_status(&self.rpc_handlers, &block_hash)
+				.await
 		else {
 			return None;
 		};
@@ -162,8 +164,11 @@ impl FinalizedWorker {
 				continue;
 			};
 
-			let Some(states) =
-				worker::fetch_extrinsic_success_status(&self.rpc_handlers, &block_hash).await
+			let Some(states) = runtime_api::system_fetch_transaction_success_status(
+				&self.rpc_handlers,
+				&block_hash,
+			)
+			.await
 			else {
 				tokio::time::sleep(Duration::from_millis(SLEEP_ON_ERROR)).await;
 				height = height + 1;

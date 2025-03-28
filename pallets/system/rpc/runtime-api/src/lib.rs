@@ -58,6 +58,12 @@ pub struct SystemFetchEventsResult {
 	pub decoded: Vec<events::DecodedTransactionEvents>,
 }
 
+#[derive(Debug, Clone, scale_info::TypeInfo, codec::Decode, codec::Encode)]
+pub struct SystemFetchEventsParams {
+	pub tx_indices: Option<Vec<u32>>,
+	pub enable_decoding: Option<bool>,
+}
+
 pub mod events {
 	// If any change is done here, `version`` needs to be bumped! This is a breaking change!!
 	#[derive(Debug, Clone, scale_info::TypeInfo, codec::Decode, codec::Encode)]

@@ -1,3 +1,4 @@
+use super::super::runtime_api;
 use super::worker;
 use super::worker_logger::Logger;
 use super::BlockDetails;
@@ -68,8 +69,11 @@ impl IncludedWorker {
 			}
 
 			let now = Instant::now();
-			let Some(states) =
-				worker::fetch_extrinsic_success_status(&self.rpc_handlers, &block_hash).await
+			let Some(states) = runtime_api::system_fetch_transaction_success_status(
+				&self.rpc_handlers,
+				&block_hash,
+			)
+			.await
 			else {
 				tokio::time::sleep(Duration::from_millis(SLEEP_ON_ERROR)).await;
 				continue;
