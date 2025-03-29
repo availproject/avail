@@ -3,7 +3,7 @@ use std::time::Duration;
 use avail_core::OpaqueExtrinsic;
 use codec::Encode;
 use da_runtime::UncheckedExtrinsic;
-use frame_system_rpc_runtime_api::TransactionSuccessStatus;
+use frame_system_rpc_runtime_api::SystemFetchEventsResult;
 use jsonrpsee::tokio;
 use sc_service::RpcHandlers;
 use sp_core::{Blake2Hasher, Hasher, H256};
@@ -43,11 +43,11 @@ pub(crate) async fn prepare_block(
 	extrinsics: Vec<OpaqueExtrinsic>,
 	block_hash: H256,
 	block_height: u32,
-	execution_status: Vec<TransactionSuccessStatus>,
+	events: SystemFetchEventsResult,
 	finalized: bool,
 ) -> BlockDetails {
 	let mut txs: Vec<TransactionState> = Vec::with_capacity(extrinsics.len());
-	for (i, ext) in extrinsics.iter().enumerate() {
+	for (tx_index, ext) in extrinsics.iter().enumerate() {
 		let unchecked_ext = match UncheckedExtrinsic::decode_no_vec_prefix(&mut ext.0.as_slice()) {
 			Ok(x) => x,
 			Err(err) => {
@@ -62,12 +62,14 @@ pub(crate) async fn prepare_block(
 
 		let tx_hash = Blake2Hasher::hash(&unchecked_ext.encode());
 
-		let status = execution_status.iter().find(|x| x.tx_index == i as u32);
-		let Some(status) = status else { continue };
+		let tx_success = events.is_transaction_successful(tx_index as u32);
+		let Some(tx_success) = tx_success else {
+			continue;
+		};
 		let info = TransactionState {
 			tx_hash,
-			tx_index: status.tx_index,
-			tx_success: status.tx_success,
+			tx_index: tx_index as u32,
+			tx_success,
 			pallet_index,
 			call_index,
 		};

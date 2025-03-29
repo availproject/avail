@@ -6,6 +6,7 @@ use codec::{decode_from_bytes, DecodeAll, Encode};
 use constants::*;
 use da_runtime::UncheckedExtrinsic;
 use frame_system_rpc_runtime_api::events::SemiDecodedEvent;
+use frame_system_rpc_runtime_api::SystemFetchEventsParams;
 use jsonrpsee::tokio;
 use sc_service::RpcHandlers;
 use sc_telemetry::log;
@@ -145,13 +146,13 @@ impl Worker {
 			return;
 		}
 
-		let rpc_events = runtime_api::system_fetch_events(
-			&self.rpc_handlers,
-			ext.tx_index,
-			enable_decoding,
-			&block_hash,
-		)
-		.await;
+		let params = SystemFetchEventsParams {
+			filter_tx_indices: Some(vec![ext.tx_index]),
+			enable_decoding: Some(enable_decoding),
+			..Default::default()
+		};
+		let rpc_events =
+			runtime_api::system_fetch_events(&self.rpc_handlers, params, &block_hash).await;
 		let Some(rpc_events) = rpc_events else { return };
 		if rpc_events.error != 0 {
 			return;
@@ -166,19 +167,25 @@ impl Worker {
 			.into_iter()
 			.find(|x| x.tx_index == ext.tx_index);
 
-		let encoded_events: Option<Vec<String>> = encoded_events.map(|x| {
-			{
-				x.value
-					.iter()
-					.map(|x| std::format!("0x{}", hex::encode(x.encode())))
+		let encoded_events: Option<EncodedEvents> = encoded_events.map(|x| {
+			let mut events = Vec::new();
+			for x in x.events {
+				let encoded = transaction_rpc::data_types::EncodedEvent {
+					index: x.index,
+					pallet_id: x.pallet_id,
+					event_id: x.event_id,
+					data: std::format!("0x{}", hex::encode(x.data.encode())),
+				};
+				events.push(encoded);
 			}
-			.collect()
+
+			events
 		});
 
 		let decoded_events: Option<DecodedEvents> = decoded_events.map(|x| {
 			let mut events = Vec::new();
-			for semi in x.events {
-				let Some(decoded) = self.parse_decoded_event(semi) else {
+			for x in x.events {
+				let Some(decoded) = self.parse_decoded_event(x) else {
 					continue;
 				};
 				events.push(decoded);
@@ -201,7 +208,7 @@ impl Worker {
 
 	fn parse_decoded_event(&self, semi: SemiDecodedEvent) -> Option<data_types::DecodedEvent> {
 		use data_types::{DecodedEvent, DecodedEventData};
-		use frame_system_rpc_runtime_api::events::event_id;
+		use frame_system_rpc_runtime_api::events::event_id::*;
 
 		let mut ev = DecodedEvent::new(
 			semi.index,
@@ -211,25 +218,25 @@ impl Worker {
 		);
 
 		match semi.pallet_id {
-			event_id::system::PALLET_ID => {
-				if semi.event_id == event_id::system::EXTRINSIC_SUCCESS {
+			system::PALLET_ID => {
+				if semi.event_id == system::EXTRINSIC_SUCCESS {
 					ev.data = DecodedEventData::SystemExtrinsicSuccess;
-				} else if semi.event_id == event_id::system::EXTRINSIC_FAILED {
+				} else if semi.event_id == system::EXTRINSIC_FAILED {
 					ev.data = DecodedEventData::SystemExtrinsicFailed;
 				}
 			},
-			event_id::sudo::PALLET_ID => {
-				if semi.event_id == event_id::sudo::SUDID {
-					let data = decode_from_bytes::<bool>(semi.event_data.into()).ok()?;
+			sudo::PALLET_ID => {
+				if semi.event_id == sudo::SUDID {
+					let data = decode_from_bytes::<bool>(semi.data.into()).ok()?;
 					ev.data = DecodedEventData::SudoSudid(data);
-				} else if semi.event_id == event_id::sudo::SUDO_AS_DONE {
-					let data = decode_from_bytes::<bool>(semi.event_data.into()).ok()?;
+				} else if semi.event_id == sudo::SUDO_AS_DONE {
+					let data = decode_from_bytes::<bool>(semi.data.into()).ok()?;
 					ev.data = DecodedEventData::SudoSudoAsDone(data);
 				}
 			},
-			event_id::data_availability::PALLET_ID => {
-				if semi.event_id == event_id::data_availability::DATA_SUBMITTED {
-					let encoded = semi.event_data;
+			data_availability::PALLET_ID => {
+				if semi.event_id == data_availability::DATA_SUBMITTED {
+					let encoded = semi.data;
 					let value = DataSubmittedEvent::decode_all(&mut encoded.as_slice()).ok()?;
 					let data = data_types::DataSubmittedEvent {
 						who: std::format!("{}", value.who),
@@ -239,15 +246,15 @@ impl Worker {
 					ev.data = DecodedEventData::DataAvailabilityDataSubmitted(data);
 				}
 			},
-			event_id::multisig::PALLET_ID => {
-				if semi.event_id == event_id::multisig::MULTISIG_EXECUTED {
-					let data = decode_from_bytes::<bool>(semi.event_data.into()).ok()?;
+			multisig::PALLET_ID => {
+				if semi.event_id == multisig::MULTISIG_EXECUTED {
+					let data = decode_from_bytes::<bool>(semi.data.into()).ok()?;
 					ev.data = DecodedEventData::SudoSudoAsDone(data);
 				}
 			},
-			event_id::proxy::PALLET_ID => {
-				if semi.event_id == event_id::proxy::PROXY_EXECUTED {
-					let data = decode_from_bytes::<bool>(semi.event_data.into()).ok()?;
+			proxy::PALLET_ID => {
+				if semi.event_id == proxy::PROXY_EXECUTED {
+					let data = decode_from_bytes::<bool>(semi.data.into()).ok()?;
 					ev.data = DecodedEventData::SudoSudoAsDone(data);
 				}
 			},

@@ -1,10 +1,10 @@
 #!/bin/bash
 
 block_hash="{ \"Hash\": \"0xe43c64674ae191da404a9c780333019cb9f62018778037186ec78bb4fc4e7e04\" }"
-block_height="{ \"Index\": 8 }"
+block_height="{ \"Index\": 14 }"
 # transaction_hash="0xa28a580ea7dfa03193247659120840039992fb772f59fb318ba391c1794f0a33"
 filter="{\"pallet_id\": null, \"call_id\": null, \"nonce\": null, \"app_id\": null, \"ss58_address\": null, \"tx_id\": null}"
-extension="{ \"fetch_events\": true, \"fetch_state\": false, \"fetch_call\": false, \"decode_events\": true }"
+extension="{ \"fetch_events\": true, \"fetch_state\": true, \"fetch_call\": true, \"decode_events\": true }"
 params="{\"block_id\": $block_height, \"extension\": $extension, \"filter\": $filter}"
 
 curl -H "Content-Type: application/json" -d "{

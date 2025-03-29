@@ -5,7 +5,9 @@ use super::BlockDetails;
 use crate::service::FullClient;
 use crate::transaction::macros::profile;
 use avail_core::OpaqueExtrinsic;
-use frame_system_rpc_runtime_api::TransactionSuccessStatus;
+use frame_system_rpc_runtime_api::{
+	events::event_id::system, SystemFetchEventsParams, SystemFetchEventsResult,
+};
 use jsonrpsee::tokio;
 use jsonrpsee::tokio::sync::mpsc::Sender;
 use sc_service::RpcHandlers;
@@ -99,7 +101,7 @@ impl FinalizedWorker {
 	async fn fetch_block(
 		&self,
 		block_height: u32,
-	) -> Option<(Vec<OpaqueExtrinsic>, H256, Vec<TransactionSuccessStatus>)> {
+	) -> Option<(Vec<OpaqueExtrinsic>, H256, SystemFetchEventsResult)> {
 		let block_hash = self.client.to_hash(&BlockId::Number(block_height));
 
 		// If Err then bail out.
@@ -114,28 +116,25 @@ impl FinalizedWorker {
 			return None;
 		};
 
-		// If we cannot fetch the transaction execution statutes (success or failure) then we bail out.
-		//
-		// This most likely means that our new Runtime API is not available so there isn't much that we can do.
-		let Some(states) =
-			runtime_api::system_fetch_transaction_success_status(&self.rpc_handlers, &block_hash)
-				.await
+		// TODO
+		let params = SystemFetchEventsParams::default();
+		let Some(events) =
+			runtime_api::system_fetch_events(&self.rpc_handlers, params, &block_hash).await
 		else {
 			return None;
 		};
 
-		return Some((extrinsics, block_hash, states));
+		if events.error != 0 {
+			return None;
+		}
+
+		return Some((extrinsics, block_hash, events));
 	}
 
 	async fn fetch_next_block(
 		&mut self,
 		mut height: u32,
-	) -> (
-		Vec<OpaqueExtrinsic>,
-		H256,
-		u32,
-		Vec<TransactionSuccessStatus>,
-	) {
+	) -> (Vec<OpaqueExtrinsic>, H256, u32, SystemFetchEventsResult) {
 		loop {
 			let chain_info = self.client.chain_info();
 			if height > chain_info.finalized_number {
@@ -164,20 +163,28 @@ impl FinalizedWorker {
 				continue;
 			};
 
-			let Some(states) = runtime_api::system_fetch_transaction_success_status(
-				&self.rpc_handlers,
-				&block_hash,
-			)
-			.await
+			let mut params = SystemFetchEventsParams::default();
+			params.filter_events = Some(vec![
+				(system::PALLET_ID, system::EXTRINSIC_SUCCESS),
+				(system::PALLET_ID, system::EXTRINSIC_FAILED),
+			]);
+			let Some(events) =
+				runtime_api::system_fetch_events(&self.rpc_handlers, params, &block_hash).await
 			else {
 				tokio::time::sleep(Duration::from_millis(SLEEP_ON_ERROR)).await;
 				height = height + 1;
 				continue;
 			};
 
+			if events.error != 0 {
+				tokio::time::sleep(Duration::from_millis(SLEEP_ON_ERROR)).await;
+				height = height + 1;
+				continue;
+			}
+
 			self.logger.add_block_fetch(now.elapsed());
 
-			return (extrinsics, block_hash, height, states);
+			return (extrinsics, block_hash, height, events);
 		}
 	}
 }

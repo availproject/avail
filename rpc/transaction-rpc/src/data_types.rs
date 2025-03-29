@@ -27,9 +27,11 @@ pub struct RPCParams {
 #[derive(Debug, Default, Clone, Copy, Serialize, Deserialize)]
 pub struct RPCParamsExtension {
 	pub fetch_call: Option<bool>,
+	pub enable_call_encoding: Option<bool>,
+	pub enable_call_decoding: Option<bool>,
 	pub fetch_events: Option<bool>,
-	pub fetch_state: Option<bool>,
-	pub decode_events: Option<bool>,
+	pub enable_event_encoding: Option<bool>,
+	pub enable_event_decoding: Option<bool>,
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
@@ -43,8 +45,7 @@ pub struct Filter {
 }
 
 pub type EncodedCall = String;
-// First N bytes of every encoded event is CompactU32 (number of bytes).
-pub type EncodedEvents = Vec<String>;
+pub type EncodedEvents = Vec<EncodedEvent>;
 pub type DecodedEvents = Vec<DecodedEvent>;
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
@@ -79,6 +80,15 @@ pub struct TransactionDataSigned {
 	pub nonce: u32,
 	pub app_id: u32,
 	pub mortality: Option<(u64, u64)>, // None means the tx is Immortal
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EncodedEvent {
+	pub index: u32,
+	pub pallet_id: u8,
+	pub event_id: u8,
+	// First N bytes of every encoded event is CompactU32.
+	pub data: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

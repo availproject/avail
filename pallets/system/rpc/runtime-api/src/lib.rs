@@ -37,15 +37,8 @@ sp_api::decl_runtime_apis! {
 
 	#[api_version(1)]
 	pub trait SystemEventsApi {
-		fn fetch_transaction_success_status() -> Vec<TransactionSuccessStatus>;
-		fn fetch_events(tx_index: Vec<u32>, enable_decoding: bool) -> SystemFetchEventsResult;
+		fn fetch_events(params: SystemFetchEventsParams) -> SystemFetchEventsResult;
 	}
-}
-
-#[derive(Debug, Clone, Copy, scale_info::TypeInfo, codec::Decode, codec::Encode)]
-pub struct TransactionSuccessStatus {
-	pub tx_index: u32,
-	pub tx_success: bool,
 }
 
 // If any change is done here, `version`` needs to be bumped! This is a breaking change!!
@@ -53,30 +46,94 @@ pub struct TransactionSuccessStatus {
 pub struct SystemFetchEventsResult {
 	pub version: u8,
 	pub error: u8,
-	pub last_tx_index: u32,
 	pub encoded: Vec<events::EncodedTransactionEvents>,
 	pub decoded: Vec<events::DecodedTransactionEvents>,
 }
 
-#[derive(Debug, Clone, scale_info::TypeInfo, codec::Decode, codec::Encode)]
+impl SystemFetchEventsResult {
+	pub fn is_transaction_successful(&self, tx_index: u32) -> Option<bool> {
+		use events::event_id::system;
+		if self.error != 0 {
+			return None;
+		}
+
+		if let Some(enc) = self.encoded.iter().find(|x| x.tx_index == tx_index) {
+			for evt in &enc.events {
+				if evt.pallet_id != system::PALLET_ID {
+					continue;
+				}
+
+				match evt.event_id {
+					system::EXTRINSIC_SUCCESS => return Some(true),
+					system::EXTRINSIC_FAILED => return Some(false),
+					_ => (),
+				};
+			}
+		}
+
+		if let Some(dec) = self.decoded.iter().find(|x| x.tx_index == tx_index) {
+			for evt in &dec.events {
+				if evt.pallet_id != system::PALLET_ID {
+					continue;
+				}
+
+				match evt.event_id {
+					system::EXTRINSIC_SUCCESS => return Some(true),
+					system::EXTRINSIC_FAILED => return Some(false),
+					_ => (),
+				};
+			}
+		}
+
+		None
+	}
+}
+
+pub type PalletId = u8;
+pub type EventId = u8;
+#[derive(Debug, Clone, Default, scale_info::TypeInfo, codec::Decode, codec::Encode)]
 pub struct SystemFetchEventsParams {
-	pub tx_indices: Option<Vec<u32>>,
+	pub filter_tx_indices: Option<Vec<u32>>,
+	pub filter_events: Option<Vec<(PalletId, EventId)>>,
+	pub enable_encoding: Option<bool>,
 	pub enable_decoding: Option<bool>,
 }
 
 pub mod events {
+	pub mod error_code {}
+
 	// If any change is done here, `version`` needs to be bumped! This is a breaking change!!
 	#[derive(Debug, Clone, scale_info::TypeInfo, codec::Decode, codec::Encode)]
 	pub struct EncodedTransactionEvents {
 		pub tx_index: u32,
-		pub value: Vec<Vec<u8>>,
+		pub events: Vec<EncodedEvent>,
 	}
 
 	impl EncodedTransactionEvents {
 		pub fn new(tx_index: u32) -> Self {
 			Self {
 				tx_index,
-				value: Vec::new(),
+				events: Vec::new(),
+			}
+		}
+	}
+
+	// If any change is done here, `decoded_version` needs to be bumped! This is a breaking change!!
+	#[derive(Debug, Clone, scale_info::TypeInfo, codec::Decode, codec::Encode)]
+	pub struct EncodedEvent {
+		pub index: u32,
+		pub pallet_id: u8,
+		pub event_id: u8,
+		pub data: Vec<u8>,
+	}
+
+	impl EncodedEvent {
+		pub fn new(index: u32, pallet_id: u8, event_id: u8, data: Vec<u8>) -> Self {
+			Self {
+				index,
+				pallet_id,
+				event_id,
+				data,
 			}
 		}
 	}
@@ -116,16 +173,16 @@ pub mod events {
 		pub index: u32,
 		pub pallet_id: u8,
 		pub event_id: u8,
-		pub event_data: Vec<u8>,
+		pub data: Vec<u8>,
 	}
 
 	impl SemiDecodedEvent {
-		pub fn new(index: u32, pallet_id: u8, event_id: u8, event_data: Vec<u8>) -> Self {
+		pub fn new(index: u32, pallet_id: u8, event_id: u8, data: Vec<u8>) -> Self {
 			Self {
 				index,
 				pallet_id,
 				event_id,
-				event_data,
+				data,
 			}
 		}
 	}
@@ -135,6 +192,23 @@ pub mod events {
 			pub const PALLET_ID: u8 = 0;
 			pub const EXTRINSIC_SUCCESS: u8 = 0;
 			pub const EXTRINSIC_FAILED: u8 = 1;
+			pub const NEW_ACCOUNT: u8 = 3;
+			pub const KILLED_ACCOUNT: u8 = 4;
+			pub const REMARKED: u8 = 5;
+		}
+
+		pub mod balances {
+			pub const PALLET_ID: u8 = 6;
+			pub const ENDOWED: u8 = 0;
+			pub const DUST_LOST: u8 = 1;
+			pub const TRANSFER: u8 = 2;
+			pub const RESERVED: u8 = 4;
+			pub const UNRESERVED: u8 = 5;
+			pub const DEPOSIT: u8 = 7;
+			pub const WITHDRAW: u8 = 8;
+			pub const LOCKED: u8 = 17;
+			pub const UNLOCKED: u8 = 18;
+			pub const FROZEN: u8 = 19;
 		}
 
 		pub mod sudo {
@@ -145,6 +219,7 @@ pub mod events {
 
 		pub mod data_availability {
 			pub const PALLET_ID: u8 = 29;
+			pub const APPLICATION_KEY_CREATED: u8 = 0;
 			pub const DATA_SUBMITTED: u8 = 1;
 		}
 

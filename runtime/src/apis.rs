@@ -22,6 +22,7 @@ use frame_support::{
 	traits::KeyOwnerProofSystem,
 	weights::Weight,
 };
+use frame_system_rpc_runtime_api::SystemFetchEventsParams;
 use pallet_transaction_payment::{FeeDetails, RuntimeDispatchInfo};
 use sp_api::{decl_runtime_apis, impl_runtime_apis};
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
@@ -240,164 +241,75 @@ impl_runtime_apis! {
 
 
 	impl frame_system_rpc_runtime_api::SystemEventsApi<Block> for Runtime {
-		fn fetch_transaction_success_status() -> Vec<frame_system_rpc_runtime_api::TransactionSuccessStatus> {
-			use frame_system_rpc_runtime_api::TransactionSuccessStatus;
-			use frame_system::Event;
-
-			let mut results: Vec<TransactionSuccessStatus> = Vec::new();
-			let event_records = System::read_events_no_consensus();
-			for event_record in event_records {
-				let id = match &event_record.phase {
-					frame_system::Phase::ApplyExtrinsic(x) => *x,
-					_ => continue
-				};
-
-				let system_event = match &event_record.event {
-					crate::RuntimeEvent::System(x) => x,
-					_ => continue,
-				};
-
-				match system_event {
-					Event::<Runtime>::ExtrinsicSuccess{dispatch_info: _} => results.push(TransactionSuccessStatus {tx_index: id, tx_success: true}),
-					Event::<Runtime>::ExtrinsicFailed{dispatch_error: _, dispatch_info: _} => results.push(TransactionSuccessStatus {tx_index: id, tx_success: false}),
-					_ => continue,
-				}
-			}
-
-			results
-		}
-
-		// Up to 10 transaction events can be fetched
-		fn fetch_events(tx_indices: Vec<u32>, enable_decoding: bool) -> frame_system_rpc_runtime_api::SystemFetchEventsResult {
-			use codec::Encode;
-			use frame_system_rpc_runtime_api::*;
-			use events::SemiDecodedEvent;
+		fn fetch_events(params: frame_system_rpc_runtime_api::SystemFetchEventsParams) -> frame_system_rpc_runtime_api::SystemFetchEventsResult {
+			use frame_system_rpc_runtime_api::{*, events::EncodedEvent};
 			const VERSION: u8 = 0;
 
 			let mut result = SystemFetchEventsResult {
 				version: VERSION,
 				error: 0,
-				last_tx_index: 0,
 				encoded: Vec::new(),
 				decoded:  Vec::new(),
 			};
 
-			if tx_indices.len() > 10  {
+			let enable_encoding = params.enable_encoding.unwrap_or(true);
+			let enable_decoding = params.enable_decoding.unwrap_or(false);
+
+			if params.filter_tx_indices.as_ref().is_some_and(|x| x.len() > 25) {
 				result.error = 1;
 				return result;
 			}
 
-			if tx_indices.is_empty()  {
+			if params.filter_events.as_ref().is_some_and(|x| x.len() > 25) {
 				result.error = 2;
 				return result;
 			}
 
 			let all_events = System::read_events_no_consensus();
+			let mut event_position = 0u32;
 			for event in all_events {
 				let tx_index =  match &event.phase {
 					frame_system::Phase::ApplyExtrinsic(x) => *x,
 					_ => continue
 				};
-				result.last_tx_index = tx_index;
 
-				if !tx_indices.contains(&tx_index) {
-					continue
+				// Filter TX Indices
+				if let Some(filter) = &params.filter_tx_indices {
+					if !filter.contains(&tx_index) {
+						continue
+					}
 				}
+
+				// TODO. Read function documentation.
+				let Some((id, encoded)) = filter_event_by_id_and_encode(&event.event, &params) else {
+					continue;
+				};
 
 				// Encoded
-				let entry = if let Some(entry) = result.encoded.iter_mut().find(|x| x.tx_index == tx_index) {
-					entry
-				} else {
-					result.encoded.push(events::EncodedTransactionEvents::new(tx_index));
-					result.encoded.last_mut().expect("An element should be present.")
-				};
-				entry.value.push(event.encode());
-
-
-				if !enable_decoding {
-					continue
+				if enable_encoding {
+					let encoded = EncodedEvent::new(event_position, id.0, id.1, encoded);
+					if let Some(entry) = result.encoded.iter_mut().find(|x| x.tx_index == tx_index) {
+						entry.events.push(encoded);
+					} else {
+						let v = events::EncodedTransactionEvents {tx_index, events: vec![encoded]};
+						result.encoded.push(v);
+					};
 				}
-				let event_position = entry.value.len().saturating_sub(1);
+
 
 				// Decoded
-				let entry = if let Some(entry) = result.decoded.iter_mut().find(|x| x.tx_index == tx_index) {
-					entry
-				} else {
-					result.decoded.push(events::DecodedTransactionEvents::new(tx_index));
-					result.decoded.last_mut().expect("An element should be present.")
-				};
+				if enable_decoding {
+					if let Some(decoded) = decode_runtime_event(&event.event, event_position) {
+						if let Some(entry) = result.decoded.iter_mut().find(|x| x.tx_index == tx_index) {
+							entry.events.push(decoded);
+						} else {
+							let v = events::DecodedTransactionEvents {tx_index, events: vec![decoded]};
+							result.decoded.push(v);
+						};
+					}
+				}
 
-				let index = event_position as u32;
-				use crate::RuntimeEvent;
-				match &event.event {
-					RuntimeEvent::System(e) => {
-						use frame_system::Event;
-						use events::event_id::system::*;
-						match e {
-							Event::<Runtime>::ExtrinsicSuccess{..} => {
-								let ev = SemiDecodedEvent::new(index, PALLET_ID, EXTRINSIC_SUCCESS, Vec::new());
-								entry.events.push(ev);
-							}
-							Event::<Runtime>::ExtrinsicFailed{..} => {
-								let ev = SemiDecodedEvent::new(index, PALLET_ID, EXTRINSIC_FAILED, Vec::new());
-								entry.events.push(ev);
-							}
-							_ => (),
-						}
-					}
-					RuntimeEvent::Sudo(e) => {
-						use pallet_sudo::Event;
-						use events::event_id::sudo::*;
-						match e {
-							Event::<Runtime>::Sudid{sudo_result: x} => {
-								let ev = SemiDecodedEvent::new(index, PALLET_ID, SUDID, x.is_ok().encode());
-								entry.events.push(ev);
-							}
-							Event::<Runtime>::SudoAsDone{sudo_result: x} => {
-								let ev = SemiDecodedEvent::new(index, PALLET_ID, SUDO_AS_DONE, x.is_ok().encode());
-								entry.events.push(ev);
-							}
-							_ => (),
-						}
-					}
-					RuntimeEvent::Multisig(e) => {
-						use pallet_multisig::Event;
-						use events::event_id::multisig::*;
-						match e {
-							Event::<Runtime>::MultisigExecuted{result: x, ..} => {
-								let ev = SemiDecodedEvent::new(index, PALLET_ID, MULTISIG_EXECUTED, x.is_ok().encode());
-								entry.events.push(ev);
-							}
-							_ => (),
-						}
-					}
-					RuntimeEvent::Proxy(e) => {
-						use pallet_proxy::Event;
-						use events::event_id::proxy::*;
-						match e {
-							Event::<Runtime>::ProxyExecuted{result: x, ..} => {
-								let ev = SemiDecodedEvent::new(index, PALLET_ID, PROXY_EXECUTED, x.is_ok().encode());
-								entry.events.push(ev);
-							}
-							_ => (),
-						}
-					}
-					RuntimeEvent::DataAvailability(e) => {
-						use da_control::Event;
-						use events::event_id::data_availability::*;
-						match e {
-							Event::<Runtime>::DataSubmitted{who, data_hash} => {
-								let mut value = Vec::<u8>::new();
-								who.encode_to(&mut value);
-								data_hash.encode_to(&mut value);
-								let ev = SemiDecodedEvent::new(index, PALLET_ID, DATA_SUBMITTED, value);
-								entry.events.push(ev);
-							},
-							_ => (),
-						}
-					}
-					_ => (),
-				};
+				event_position += 1;
 			}
 
 			result
@@ -738,4 +650,222 @@ impl_runtime_apis! {
 			build_config::<RuntimeGenesisConfig>(config)
 		}
 	}
+}
+
+// TODO This is horrible. What we try to do here is see if we can discard a
+// event before we "encode" it. `The manual_read_pallet*` tries to guess the event id
+// but it doesn't have all the pallet/event combination so when it fails we
+// fallback to encode + `read_pallet_*`.
+fn filter_event_by_id_and_encode(
+	event: &super::RuntimeEvent,
+	params: &SystemFetchEventsParams,
+) -> Option<((u8, u8), Vec<u8>)> {
+	use codec::Encode;
+
+	// If there is no filter then encode the event and return the event id.
+	let Some(filter) = &params.filter_events else {
+		let encoded = event.encode();
+		let Some(id) = read_pallet_event_id(&encoded) else {
+			return None;
+		};
+
+		return Some((id, encoded));
+	};
+
+	if let Some(id) = manual_read_pallet_event_id(event) {
+		if !filter.contains(&id) {
+			return None;
+		}
+		let encoded = event.encode();
+		return Some((id, encoded));
+	}
+
+	let encoded = event.encode();
+	let Some(id) = read_pallet_event_id(&encoded) else {
+		return None;
+	};
+
+	if !filter.contains(&id) {
+		return None;
+	}
+
+	return Some((id, encoded));
+}
+
+fn read_pallet_event_id(encoded_event: &Vec<u8>) -> Option<(u8, u8)> {
+	if encoded_event.len() < 2 {
+		return None;
+	}
+
+	Some((encoded_event[0], encoded_event[1]))
+}
+
+fn manual_read_pallet_event_id(event: &super::RuntimeEvent) -> Option<(u8, u8)> {
+	use super::*;
+	use data_availability as da;
+	use frame_system_rpc_runtime_api::events::event_id::*;
+
+	match event {
+		RuntimeEvent::System(e) => match e {
+			frame_system::Event::<Runtime>::ExtrinsicSuccess { .. } => {
+				return Some((system::PALLET_ID, system::EXTRINSIC_SUCCESS));
+			},
+			frame_system::Event::<Runtime>::ExtrinsicFailed { .. } => {
+				return Some((system::PALLET_ID, system::EXTRINSIC_FAILED));
+			},
+			frame_system::Event::<Runtime>::NewAccount { .. } => {
+				return Some((system::PALLET_ID, system::NEW_ACCOUNT));
+			},
+			frame_system::Event::<Runtime>::KilledAccount { .. } => {
+				return Some((system::PALLET_ID, system::KILLED_ACCOUNT));
+			},
+			frame_system::Event::<Runtime>::Remarked { .. } => {
+				return Some((system::PALLET_ID, system::REMARKED));
+			},
+			_ => (),
+		},
+		RuntimeEvent::Balances(e) => match e {
+			pallet_balances::Event::<Runtime>::Endowed { .. } => {
+				return Some((balances::PALLET_ID, balances::ENDOWED));
+			},
+			pallet_balances::Event::<Runtime>::DustLost { .. } => {
+				return Some((balances::PALLET_ID, balances::DUST_LOST));
+			},
+			pallet_balances::Event::<Runtime>::Transfer { .. } => {
+				return Some((balances::PALLET_ID, balances::TRANSFER));
+			},
+			pallet_balances::Event::<Runtime>::Reserved { .. } => {
+				return Some((balances::PALLET_ID, balances::RESERVED));
+			},
+			pallet_balances::Event::<Runtime>::Unreserved { .. } => {
+				return Some((balances::PALLET_ID, balances::UNRESERVED));
+			},
+			pallet_balances::Event::<Runtime>::Deposit { .. } => {
+				return Some((balances::PALLET_ID, balances::DEPOSIT));
+			},
+			pallet_balances::Event::<Runtime>::Withdraw { .. } => {
+				return Some((balances::PALLET_ID, balances::WITHDRAW));
+			},
+			pallet_balances::Event::<Runtime>::Locked { .. } => {
+				return Some((balances::PALLET_ID, balances::LOCKED));
+			},
+			pallet_balances::Event::<Runtime>::Unlocked { .. } => {
+				return Some((balances::PALLET_ID, balances::UNLOCKED));
+			},
+			pallet_balances::Event::<Runtime>::Frozen { .. } => {
+				return Some((balances::PALLET_ID, balances::FROZEN));
+			},
+			_ => (),
+		},
+		RuntimeEvent::Sudo(e) => match e {
+			pallet_sudo::Event::<Runtime>::Sudid { .. } => {
+				return Some((sudo::PALLET_ID, sudo::SUDID));
+			},
+			pallet_sudo::Event::<Runtime>::SudoAsDone { .. } => {
+				return Some((sudo::PALLET_ID, sudo::SUDO_AS_DONE));
+			},
+			_ => (),
+		},
+		RuntimeEvent::Multisig(e) => match e {
+			pallet_multisig::Event::<Runtime>::MultisigExecuted { .. } => {
+				return Some((multisig::PALLET_ID, multisig::MULTISIG_EXECUTED));
+			},
+			_ => (),
+		},
+		RuntimeEvent::Proxy(e) => match e {
+			pallet_proxy::Event::<Runtime>::ProxyExecuted { .. } => {
+				return Some((proxy::PALLET_ID, proxy::PROXY_EXECUTED));
+			},
+			_ => (),
+		},
+		RuntimeEvent::DataAvailability(e) => match e {
+			da_control::Event::<Runtime>::ApplicationKeyCreated { .. } => {
+				return Some((da::PALLET_ID, da::APPLICATION_KEY_CREATED));
+			},
+			da_control::Event::<Runtime>::DataSubmitted { .. } => {
+				return Some((da::PALLET_ID, da::DATA_SUBMITTED));
+			},
+			_ => (),
+		},
+		_ => (),
+	};
+
+	None
+}
+
+// If any change is done here things might break. This is a breaking change!!!!!!!
+fn decode_runtime_event(
+	event: &super::RuntimeEvent,
+	position: u32,
+) -> Option<frame_system_rpc_runtime_api::events::SemiDecodedEvent> {
+	use super::*;
+	use codec::Encode;
+	use frame_system_rpc_runtime_api::events::{event_id::*, SemiDecodedEvent};
+
+	let mut res = SemiDecodedEvent::new(position, 0, 0, Vec::new());
+
+	match event {
+		RuntimeEvent::System(e) => match e {
+			frame_system::Event::<Runtime>::ExtrinsicSuccess { .. } => {
+				res.pallet_id = system::PALLET_ID;
+				res.event_id = system::EXTRINSIC_SUCCESS;
+				return Some(res);
+			},
+			frame_system::Event::<Runtime>::ExtrinsicFailed { .. } => {
+				res.pallet_id = system::PALLET_ID;
+				res.event_id = system::EXTRINSIC_FAILED;
+				return Some(res);
+			},
+			_ => (),
+		},
+		RuntimeEvent::Sudo(e) => match e {
+			pallet_sudo::Event::<Runtime>::Sudid { sudo_result: x } => {
+				res.pallet_id = sudo::PALLET_ID;
+				res.event_id = sudo::SUDID;
+				res.data = x.is_ok().encode();
+				return Some(res);
+			},
+			pallet_sudo::Event::<Runtime>::SudoAsDone { sudo_result: x } => {
+				res.pallet_id = sudo::PALLET_ID;
+				res.event_id = sudo::SUDO_AS_DONE;
+				res.data = x.is_ok().encode();
+				return Some(res);
+			},
+			_ => (),
+		},
+		RuntimeEvent::Multisig(e) => match e {
+			pallet_multisig::Event::<Runtime>::MultisigExecuted { result: x, .. } => {
+				res.pallet_id = multisig::PALLET_ID;
+				res.event_id = multisig::MULTISIG_EXECUTED;
+				res.data = x.is_ok().encode();
+				return Some(res);
+			},
+			_ => (),
+		},
+		RuntimeEvent::Proxy(e) => match e {
+			pallet_proxy::Event::<Runtime>::ProxyExecuted { result: x, .. } => {
+				res.pallet_id = proxy::PALLET_ID;
+				res.event_id = proxy::PROXY_EXECUTED;
+				res.data = x.is_ok().encode();
+				return Some(res);
+			},
+			_ => (),
+		},
+		RuntimeEvent::DataAvailability(e) => match e {
+			da_control::Event::<Runtime>::DataSubmitted { who, data_hash } => {
+				let mut event_data = Vec::<u8>::new();
+				who.encode_to(&mut event_data);
+				data_hash.encode_to(&mut event_data);
+
+				res.pallet_id = data_availability::PALLET_ID;
+				res.event_id = data_availability::DATA_SUBMITTED;
+				res.data = event_data;
+				return Some(res);
+			},
+			_ => (),
+		},
+		_ => (),
+	};
+
+	None
 }
