@@ -22,7 +22,6 @@ use transaction_rpc::data_types::{
 	self, DecodedEvents, EncodedEvents, HashIndex, RPCParams, TransactionData,
 	TransactionDataSigned, TxDataReceiver,
 };
-use transaction_rpc::state_types;
 
 use super::read_pallet_call_index;
 
@@ -73,12 +72,14 @@ impl Worker {
 
 		loop {
 			if !self.receiver.is_empty() {
+				let now = std::time::Instant::now();
+				let mut c = 0u32;
 				while let Ok((params, oneshot)) = self.receiver.try_recv() {
-					log::info!("🐖 Found something :)");
 					let result = self.task(params).await;
 					_ = oneshot.send(result);
-					log::info!("🐖 Send Something :)");
+					c += 1;
 				}
+				log::info!("🐖 Total Duration: {:.02?}. Count: {}", now.elapsed(), c);
 			}
 			tokio::time::sleep(Duration::from_millis(DATABASE_POOL_INTERVAL)).await;
 		}
@@ -112,13 +113,11 @@ impl Worker {
 		let mut transactions = self.extrinsics(block_hash, &params, extension)?;
 		for ext in transactions.iter_mut() {
 			if extension.fetch_events.unwrap_or(false) {
-				let enable_decoding = extension.decode_events.unwrap_or(false);
-				self.fetch_events(&block_hash, enable_decoding, ext).await;
+				let enable_encoding = extension.enable_event_encoding.unwrap_or(true);
+				let enable_decoding = extension.enable_event_decoding.unwrap_or(false);
+				self.fetch_events(&block_hash, enable_encoding, enable_decoding, ext)
+					.await;
 				self.event_cache.resize();
-			}
-
-			if extension.fetch_state.unwrap_or(false) {
-				ext.extension.states = fetch_state(&self.rpc_handlers, ext.tx_hash).await
 			}
 		}
 
@@ -134,6 +133,7 @@ impl Worker {
 	async fn fetch_events(
 		&mut self,
 		block_hash: &H256,
+		enable_encoding: bool,
 		enable_decoding: bool,
 		ext: &mut TransactionData,
 	) {
@@ -149,6 +149,7 @@ impl Worker {
 		let params = SystemFetchEventsParams {
 			filter_tx_indices: Some(vec![ext.tx_index]),
 			enable_decoding: Some(enable_decoding),
+			enable_encoding: Some(enable_encoding),
 			..Default::default()
 		};
 		let rpc_events =
@@ -361,7 +362,7 @@ impl Worker {
 
 			if extension.fetch_call.unwrap_or(false) {
 				let encoded = hex::encode(unchecked_ext.function.encode());
-				tx.extension.call = Some(std::format!("0x{}", encoded))
+				tx.extension.encoded_call = Some(std::format!("0x{}", encoded))
 			}
 
 			extrinsics.push(tx);
@@ -369,29 +370,6 @@ impl Worker {
 
 		Ok(extrinsics)
 	}
-}
-
-async fn fetch_state(handlers: &RpcHandlers, tx_hash: H256) -> Option<Vec<state_types::RPCResult>> {
-	let query = format!(
-		r#"{{
-		"jsonrpc": "2.0",
-		"method": "transaction_state",
-		"params": ["{}"],
-		"id": 0
-	}}"#,
-		std::format!("{:?}", tx_hash),
-	);
-
-	let (res, _) = handlers.rpc_query(&query).await.ok()?;
-	let mut json = serde_json::from_str::<serde_json::Value>(&res).ok()?;
-	let mut res: Vec<state_types::RPCResult> =
-		serde_json::from_value(json["result"].take()).ok()?;
-
-	while res.len() > STATE_SIZE {
-		res.pop();
-	}
-
-	Some(res)
 }
 
 #[derive(codec::Decode)]

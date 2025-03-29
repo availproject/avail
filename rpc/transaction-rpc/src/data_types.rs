@@ -45,6 +45,7 @@ pub struct Filter {
 }
 
 pub type EncodedCall = String;
+pub type DecodedCall = String;
 pub type EncodedEvents = Vec<EncodedEvent>;
 pub type DecodedEvents = Vec<DecodedEvent>;
 
@@ -67,11 +68,11 @@ pub struct TransactionData {
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct TransactionDataExtension {
-	pub call: Option<EncodedCall>,
+	pub encoded_call: Option<EncodedCall>,
+	pub decoded_call: Option<DecodedCall>,
 	// First N bytes of every encoded event is CompactU32 (number of bytes).
 	pub encoded_events: Option<EncodedEvents>,
 	pub decoded_events: Option<DecodedEvents>,
-	pub states: Option<Vec<state_types::RPCResult>>,
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]

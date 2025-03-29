@@ -254,6 +254,7 @@ impl_runtime_apis! {
 
 			let enable_encoding = params.enable_encoding.unwrap_or(true);
 			let enable_decoding = params.enable_decoding.unwrap_or(false);
+			let do_not_encode = !enable_encoding && !enable_decoding;
 
 			if params.filter_tx_indices.as_ref().is_some_and(|x| x.len() > 25) {
 				result.error = 1;
@@ -281,12 +282,16 @@ impl_runtime_apis! {
 				}
 
 				// TODO. Read function documentation.
-				let Some((id, encoded)) = filter_event_by_id_and_encode(&event.event, &params) else {
+				let Some((id, mut encoded)) = filter_event_by_id_and_encode(&event.event, &params, do_not_encode) else {
 					continue;
 				};
 
+				if do_not_encode {
+					encoded = Vec::new();
+				}
+
 				// Encoded
-				if enable_encoding {
+				if enable_encoding || do_not_encode {
 					let encoded = EncodedEvent::new(event_position, id.0, id.1, encoded);
 					if let Some(entry) = result.encoded.iter_mut().find(|x| x.tx_index == tx_index) {
 						entry.events.push(encoded);
@@ -295,7 +300,6 @@ impl_runtime_apis! {
 						result.encoded.push(v);
 					};
 				}
-
 
 				// Decoded
 				if enable_decoding {
@@ -659,6 +663,7 @@ impl_runtime_apis! {
 fn filter_event_by_id_and_encode(
 	event: &super::RuntimeEvent,
 	params: &SystemFetchEventsParams,
+	do_not_encode: bool,
 ) -> Option<((u8, u8), Vec<u8>)> {
 	use codec::Encode;
 
@@ -676,6 +681,11 @@ fn filter_event_by_id_and_encode(
 		if !filter.contains(&id) {
 			return None;
 		}
+
+		if do_not_encode {
+			return Some((id, Vec::new()));
+		}
+
 		let encoded = event.encode();
 		return Some((id, encoded));
 	}
