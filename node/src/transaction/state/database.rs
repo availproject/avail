@@ -61,17 +61,15 @@ impl<T: DatabaseLike> Database<T> {
 		loop {
 			if !self.block_receiver.is_empty() {
 				while let Ok(block) = self.block_receiver.try_recv() {
-					let now = Instant::now();
-					self.inner.add_block(block);
-					self.logger.add_block(now.elapsed());
+					let (duration, _) = profile!(self.inner.add_block(block));
+					self.logger.add_block(duration);
 				}
 			}
 
 			if !self.search_receiver.is_empty() {
 				while let Ok(details) = self.search_receiver.try_recv() {
-					let now = Instant::now();
-					self.send_transaction_state(details);
-					self.logger.add_rpc_call(now.elapsed());
+					let (duration, _) = profile!(self.send_transaction_state(details));
+					self.logger.add_rpc_call(duration);
 				}
 			}
 
