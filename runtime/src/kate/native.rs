@@ -109,7 +109,7 @@ pub trait HostedKate {
 			.into_par_iter()
 			.map(|(row, col)| -> Result<(GMultiProof, GCellBlock), Error> {
 				let cell = Cell::new(BlockLengthRows(row), BlockLengthColumns(col));
-				let target_dims = Dimensions::new(1, 8).expect("16,64>0");
+				let target_dims = Dimensions::new(16, 64).expect("16,64>0");
 				// TODO: This isn't correct, need to put in the correct mp grid dim
 				// TODO: safety
 				if cell.row.0 >= grid.dims().height() as u32
