@@ -7,7 +7,7 @@ use constants::*;
 use da_runtime::UncheckedExtrinsic;
 use frame_system_rpc_runtime_api::events::SemiDecodedEvent;
 use frame_system_rpc_runtime_api::SystemFetchEventsParams;
-use jsonrpsee::tokio;
+use jsonrpsee::tokio::sync::Notify;
 use sc_service::RpcHandlers;
 use sc_telemetry::log;
 use sp_core::H256;
@@ -17,7 +17,6 @@ use sp_runtime::traits::BlockIdTo;
 use sp_runtime::{AccountId32, MultiAddress};
 use std::collections::HashMap;
 use std::sync::Arc;
-use std::time::Duration;
 use transaction_rpc::data_types::{
 	self, DecodedEvents, EncodedEvents, HashIndex, RPCParams, TransactionData,
 	TransactionDataSigned, TxDataReceiver,
@@ -32,6 +31,7 @@ pub struct CliDeps {
 
 pub struct Deps {
 	pub receiver: TxDataReceiver,
+	pub notifier: Arc<Notify>,
 }
 
 type CachedEventValue = (Option<EncodedEvents>, Option<DecodedEvents>);
@@ -64,6 +64,7 @@ pub struct Worker {
 	pub rpc_handlers: RpcHandlers,
 	pub receiver: TxDataReceiver,
 	pub event_cache: EventCache,
+	pub notifier: Arc<Notify>,
 }
 
 impl Worker {
@@ -81,7 +82,8 @@ impl Worker {
 				}
 				log::info!("🐖 Total Duration: {:.02?}. Count: {}", now.elapsed(), c);
 			}
-			tokio::time::sleep(Duration::from_millis(DATABASE_POOL_INTERVAL)).await;
+
+			self.notifier.notified().await;
 		}
 	}
 

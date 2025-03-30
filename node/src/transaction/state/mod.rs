@@ -15,10 +15,13 @@ pub use worker_finalized::FinalizedWorker;
 pub use worker_included::IncludedWorker;
 pub use worker_logger::Logger as WorkerLogger;
 
-use std::ops::Add;
 use std::time::Duration;
+use std::{ops::Add, sync::Arc};
 
-use jsonrpsee::tokio::sync::mpsc::{Receiver, Sender};
+use jsonrpsee::tokio::sync::{
+	mpsc::{Receiver, Sender},
+	Notify,
+};
 use serde::{Deserialize, Serialize};
 use sp_core::H256;
 use transaction_rpc::state_types::TxStateReceiver as SearchReceiver;
@@ -36,6 +39,7 @@ pub struct Deps {
 	pub block_receiver: Receiver<BlockDetails>,
 	pub block_sender: Sender<BlockDetails>,
 	pub search_receiver: SearchReceiver,
+	pub notifier: Arc<Notify>,
 	pub cli: CliDeps,
 }
 

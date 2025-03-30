@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use super::constants::DATABASE_RESIZE_INTERVAL;
@@ -5,6 +6,7 @@ use jsonrpsee::tokio;
 use jsonrpsee::tokio::sync::mpsc::Receiver;
 use sc_telemetry::log;
 use sp_core::H256;
+use tokio::sync::Notify;
 use transaction_rpc::state_types::TxStateReceiver as SearchReceiver;
 use transaction_rpc::state_types::{self, TxStateChannel};
 
@@ -16,6 +18,7 @@ pub struct Config {
 	pub max_search_results: usize,
 	pub max_stored_block_count: usize,
 }
+
 pub struct Database<T: DatabaseLike> {
 	block_receiver: Receiver<BlockDetails>,
 	search_receiver: SearchReceiver,
@@ -23,8 +26,8 @@ pub struct Database<T: DatabaseLike> {
 	inner: T,
 	timer: Instant,
 	timer_interval: Duration,
+	notifier: Arc<Notify>,
 }
-
 impl<T: DatabaseLike> Database<T> {
 	pub fn new(
 		block_receiver: Receiver<BlockDetails>,
@@ -32,6 +35,7 @@ impl<T: DatabaseLike> Database<T> {
 		max_search_results: usize,
 		max_stored_block_count: usize,
 		logging_interval: u64,
+		notifier: Arc<Notify>,
 	) -> Self {
 		let config = Config {
 			max_search_results,
@@ -45,6 +49,7 @@ impl<T: DatabaseLike> Database<T> {
 			inner: T::new(config),
 			timer: Instant::now(),
 			timer_interval: Duration::from_secs(DATABASE_RESIZE_INTERVAL),
+			notifier,
 		}
 	}
 
@@ -81,10 +86,7 @@ impl<T: DatabaseLike> Database<T> {
 				self.timer = Instant::now();
 			}
 
-			tokio::time::sleep(Duration::from_millis(
-				super::constants::DATABASE_POOL_INTERVAL,
-			))
-			.await;
+			self.notifier.notified().await;
 		}
 	}
 

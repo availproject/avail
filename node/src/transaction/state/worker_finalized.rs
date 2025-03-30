@@ -16,6 +16,7 @@ use sp_runtime::generic::BlockId;
 use sp_runtime::traits::BlockIdTo;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
+use tokio::sync::Notify;
 
 const SLEEP_ON_FETCH: u64 = 1000; // ms
 const SLEEP_ON_ERROR: u64 = 2500; // ms
@@ -26,6 +27,7 @@ pub struct FinalizedWorker {
 	pub sender: Sender<BlockDetails>,
 	pub max_stored_block_count: usize,
 	pub logger: Logger,
+	pub notifier: Arc<Notify>,
 }
 
 impl FinalizedWorker {
@@ -53,6 +55,8 @@ impl FinalizedWorker {
 				self.logger.log_error(e.to_string());
 				return;
 			}
+
+			self.notifier.notify_one();
 
 			self.logger.log_stats();
 			next_block_height = block_height + 1;

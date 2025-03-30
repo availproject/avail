@@ -28,6 +28,7 @@ use codec::Encode;
 use frame_system_rpc_runtime_api::AccountNonceApi;
 use futures::prelude::*;
 use jsonrpsee::tokio::sync::mpsc::channel;
+use jsonrpsee::tokio::sync::Notify;
 use pallet_transaction_payment::ChargeTransactionPayment;
 use sc_client_api::{Backend, BlockBackend};
 use sc_consensus_babe::{self, SlotProportion};
@@ -306,14 +307,17 @@ pub fn new_partial(
 			transaction::state::constants::BLOCK_CHANNEL_LIMIT,
 		);
 
+		let notifier = Arc::new(Notify::new());
 		let deps = transaction::state::Deps {
 			block_receiver: block_recv,
 			block_sender: block_send,
 			search_receiver: search_recv,
 			cli: tx_cli_deps.state.clone(),
+			notifier: notifier.clone(),
 		};
 
 		transaction_rpc_deps.tx_state_sender = Some(search_send);
+		transaction_rpc_deps.tx_state_notifier = Some(notifier);
 		tx_state_deps.state = Some(deps)
 	}
 
@@ -322,11 +326,14 @@ pub fn new_partial(
 			transaction::data::constants::RPC_CHANNEL_LIMIT,
 		);
 
+		let notifier = Arc::new(Notify::new());
 		let deps = transaction::data::Deps {
 			receiver: search_recv,
+			notifier: notifier.clone(),
 		};
 
 		transaction_rpc_deps.tx_data_sender = Some(search_send);
+		transaction_rpc_deps.tx_data_notifier = Some(notifier);
 		tx_state_deps.data = Some(deps)
 	}
 
@@ -688,6 +695,7 @@ pub fn new_full_base(
 			client: client.clone(),
 			receiver: deps.receiver,
 			event_cache: Default::default(),
+			notifier: deps.notifier.clone(),
 		};
 
 		task_manager
@@ -708,6 +716,7 @@ pub fn new_full_base(
 				"Inclusion Worker".into(),
 				deps.cli.logging_interval,
 			),
+			notifier: deps.notifier.clone(),
 		};
 
 		let worker_2 = transaction::state::FinalizedWorker {
@@ -719,6 +728,7 @@ pub fn new_full_base(
 				"Finalization Worker".into(),
 				deps.cli.logging_interval,
 			),
+			notifier: deps.notifier.clone(),
 		};
 
 		task_manager
@@ -735,6 +745,7 @@ pub fn new_full_base(
 				deps.cli.max_search_results,
 				deps.cli.max_stored_block_count,
 				deps.cli.logging_interval,
+				deps.notifier.clone(),
 			);
 			task_manager
 				.spawn_handle()
@@ -746,6 +757,7 @@ pub fn new_full_base(
 				deps.cli.max_search_results,
 				deps.cli.max_stored_block_count,
 				deps.cli.logging_interval,
+				deps.notifier.clone(),
 			);
 			task_manager
 				.spawn_handle()

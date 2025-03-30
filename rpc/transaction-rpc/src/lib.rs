@@ -1,9 +1,16 @@
 pub mod data_types;
 pub mod state_types;
 
+use std::sync::Arc;
+
 use async_trait::async_trait;
 use data_types::TxDataSender;
-use jsonrpsee::{core::RpcResult, proc_macros::rpc, tokio::sync::oneshot, types::ErrorObject};
+use jsonrpsee::{
+	core::RpcResult,
+	proc_macros::rpc,
+	tokio::sync::{oneshot, Notify},
+	types::ErrorObject,
+};
 use serde::{Deserialize, Serialize};
 use sp_core::H256;
 use state_types::TxStateSender;
@@ -17,7 +24,9 @@ pub struct EnabledServices {
 #[derive(Clone, Default)]
 pub struct Deps {
 	pub tx_state_sender: Option<TxStateSender>,
+	pub tx_state_notifier: Option<Arc<Notify>>,
 	pub tx_data_sender: Option<TxDataSender>,
+	pub tx_data_notifier: Option<Arc<Notify>>,
 }
 
 #[rpc(client, server)]
@@ -41,14 +50,18 @@ pub trait TransactionApi {
 
 pub struct System {
 	tx_state_sender: Option<TxStateSender>,
+	tx_state_notifier: Option<Arc<Notify>>,
 	tx_data_sender: Option<TxDataSender>,
+	tx_data_notifier: Option<Arc<Notify>>,
 }
 
 impl System {
 	pub fn new(deps: Deps) -> Self {
 		Self {
 			tx_state_sender: deps.tx_state_sender,
+			tx_state_notifier: deps.tx_state_notifier,
 			tx_data_sender: deps.tx_data_sender,
+			tx_data_notifier: deps.tx_data_notifier,
 		}
 	}
 }
@@ -66,6 +79,12 @@ impl TransactionApiServer for System {
 			)));
 		};
 
+		let Some(notifier) = self.tx_state_notifier.as_ref() else {
+			return Err(internal_error(String::from(
+				"Transaction State RPC service disabled",
+			)));
+		};
+
 		let (response_tx, response_rx) = oneshot::channel();
 
 		let finalized = finalized.unwrap_or(false);
@@ -73,6 +92,8 @@ impl TransactionApiServer for System {
 		if let Err(e) = res {
 			return Err(internal_error(e.to_string()));
 		}
+
+		notifier.notify_one();
 
 		match response_rx.await {
 			Ok(x) => Ok(x),
@@ -90,12 +111,20 @@ impl TransactionApiServer for System {
 			)));
 		};
 
+		let Some(notifier) = self.tx_data_notifier.as_ref() else {
+			return Err(internal_error(String::from(
+				"Transaction Data RPC service disabled",
+			)));
+		};
+
 		let (response_tx, response_rx) = oneshot::channel();
 
 		let res = sender.send((params, response_tx)).await;
 		if let Err(e) = res {
 			return Err(internal_error(e.to_string()));
 		}
+
+		notifier.notify_one();
 
 		let res = match response_rx.await {
 			Ok(x) => x,

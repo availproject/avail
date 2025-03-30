@@ -1,4 +1,3 @@
-use super::state_types;
 use jsonrpsee::tokio::sync::{
 	mpsc::{Receiver, Sender},
 	oneshot,

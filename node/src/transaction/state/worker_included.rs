@@ -10,6 +10,7 @@ use frame_system_rpc_runtime_api::{
 };
 use jsonrpsee::tokio;
 use jsonrpsee::tokio::sync::mpsc::Sender;
+use jsonrpsee::tokio::sync::Notify;
 use sc_service::RpcHandlers;
 use sp_core::H256;
 use std::sync::Arc;
@@ -24,6 +25,7 @@ pub struct IncludedWorker {
 	pub sender: Sender<BlockDetails>,
 	pub max_stored_block_count: usize,
 	pub logger: Logger,
+	pub notifier: Arc<Notify>,
 }
 
 impl IncludedWorker {
@@ -47,6 +49,8 @@ impl IncludedWorker {
 				self.logger.log_error(e.to_string());
 				return;
 			}
+
+			self.notifier.notify_one();
 
 			self.logger.log_stats();
 		}
