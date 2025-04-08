@@ -4,6 +4,7 @@ pub mod logger;
 use super::runtime_api;
 use crate::service::FullClient;
 use crate::transaction::macros::profile;
+use avail_core::OpaqueExtrinsic;
 use codec::{decode_from_bytes, DecodeAll, Encode};
 use da_runtime::UncheckedExtrinsic;
 use frame_system_rpc_runtime_api::events::SemiDecodedEvent;
@@ -19,8 +20,8 @@ use sp_runtime::{AccountId32, MultiAddress};
 use std::collections::HashMap;
 use std::sync::Arc;
 use transaction_rpc::data_types::{
-	self, DecodedEvents, EncodedEvents, HashIndex, RPCParams, TransactionData,
-	TransactionDataSigned, TxDataReceiver,
+	self, DecodedEvents, EncodedEvents, Filter, HashIndex, RPCParams, TransactionData,
+	TransactionDataExtension, TransactionDataSigned, TxDataReceiver,
 };
 
 use super::read_pallet_call_index;
@@ -38,7 +39,7 @@ pub struct Deps {
 type CachedTxHashKey = (H256, u32);
 type CachedTxHashValue = H256;
 type CachedEncodedCallKey = (H256, u32);
-type CachedEncodedCallValue = String;
+type CachedEncodedCallValue = Vec<u8>;
 type CachedEventKey = H256;
 type CachedEventValue = Vec<RPCEvent>;
 
@@ -233,116 +234,174 @@ impl Worker {
 		};
 
 		let mut extrinsics = Vec::new();
-		for (i, ext) in block_body.iter().enumerate() {
-			if let Some(HashIndex::Index(target_index)) = &filter.tx_id {
-				if *target_index != i as u32 {
-					continue;
-				}
-			};
-
-			let unchecked_ext = UncheckedExtrinsic::decode_no_vec_prefix(&mut ext.0.as_slice());
-			let Ok(unchecked_ext) = unchecked_ext else {
-				return Err(std::format!(
-					"Failed to fetch transaction. tx index: {}, block hash: {:?}",
-					i,
-					block_hash
-				));
-			};
-
-			let Some((pallet_id, call_id)) = read_pallet_call_index(&unchecked_ext) else {
-				return Err(std::format!(
-					"Failed to read pallet and call id. Tx index: {}, block hash: {:?}",
-					i,
-					block_hash
-				));
-			};
-
-			if filter.pallet_id.is_some_and(|x| x != pallet_id) {
-				continue;
-			};
-
-			if filter.call_id.is_some_and(|x| x != call_id) {
-				continue;
-			};
-
-			let requires_signed =
-				filter.app_id.is_some() || filter.nonce.is_some() || filter.ss58_address.is_some();
-
-			if unchecked_ext.signature.is_none() && requires_signed {
-				continue;
+		for (i, opaq) in block_body.iter().enumerate() {
+			let (ext, stop) = self
+				.filter_extrinsic(block_hash, i as u32, opaq, &filter, &extension)
+				.await?;
+			if let Some(ext) = ext {
+				extrinsics.push(ext);
 			}
-
-			let mut tx = TransactionData::default();
-			tx.tx_index = i as u32;
-			tx.pallet_id = pallet_id;
-			tx.call_id = call_id;
-
-			let mut signed = TransactionDataSigned::default();
-			if let Some(sig) = &unchecked_ext.signature {
-				if let MultiAddress::Id(id) = &sig.0 {
-					signed.ss58_address = Some(std::format!("{}", id))
-				};
-
-				signed.nonce = sig.2 .5 .0;
-				signed.app_id = sig.2 .8 .0 .0;
-				match sig.2 .4 .0 {
-					sp_runtime::generic::Era::Immortal => signed.mortality = None,
-					sp_runtime::generic::Era::Mortal(x, y) => signed.mortality = Some((x, y)),
-				};
-
-				if filter.app_id.is_some_and(|x| x != signed.app_id) {
-					continue;
-				}
-
-				if filter.nonce.is_some_and(|x| x != signed.nonce) {
-					continue;
-				}
-
-				if filter.ss58_address.is_some() && filter.ss58_address != signed.ss58_address {
-					continue;
-				}
-
-				tx.signed = Some(signed);
-			}
-
-			let (duration, value) =
-				profile!(self.cached_tx_hash(block_hash, i as u32, &unchecked_ext));
-			tx.tx_hash = value;
-			self.logger.new_tx_hash(duration);
-
-			if let Some(HashIndex::Hash(target_hash)) = &filter.tx_id {
-				if tx.tx_hash != *target_hash {
-					continue;
-				}
-			};
-
-			if extension.fetch_call.unwrap_or(false) {
-				let (duration, value) =
-					profile!(self.cached_encoded_call(block_hash, i as u32, &unchecked_ext));
-				self.logger.new_encoded_call(duration);
-				tx.extension.encoded_call = Some(value);
-			}
-
-			if extension.fetch_events.unwrap_or(false) {
-				let enable_encoding = extension.enable_event_encoding.unwrap_or(true);
-				let enable_decoding = extension.enable_event_decoding.unwrap_or(false);
-				let (duration, (enc, dec)) = profile!(
-					self.cached_events(block_hash, i as u32, enable_encoding, enable_decoding)
-						.await
-				);
-				self.logger.new_events(duration);
-				tx.extension.encoded_events = enc;
-				tx.extension.decoded_events = dec;
-			}
-
-			extrinsics.push(tx);
-
-			if filter.tx_id.is_some() {
+			if stop {
 				break;
 			}
 		}
 
 		Ok(extrinsics)
+	}
+
+	async fn filter_extrinsic(
+		&mut self,
+		block_hash: H256,
+		tx_index: u32,
+		opaq: &OpaqueExtrinsic,
+		filter: &Filter,
+		rpc_extension: &data_types::RPCParamsExtension,
+	) -> Result<(Option<TransactionData>, bool), String> {
+		if let Some(HashIndex::Index(target_index)) = &filter.tx_id {
+			if *target_index != tx_index as u32 {
+				return Ok((None, false));
+			}
+		};
+
+		if let Some(HashIndex::Hash(target_hash)) = &filter.tx_id {
+			if let Some(cached) = self.cache.get_tx_hash(&(block_hash, tx_index)) {
+				if target_hash != cached {
+					return Ok((None, false));
+				}
+			}
+		};
+
+		let ext = UncheckedExtrinsic::decode_no_vec_prefix(&mut opaq.0.as_slice());
+		let Ok(ext) = ext else {
+			return Err(std::format!(
+				"Failed to fetch transaction. tx index: {}, block hash: {:?}",
+				tx_index,
+				block_hash
+			));
+		};
+
+		let (id, filtered_out) = self.filter_pallet_call_id(&ext, &filter);
+		if filtered_out {
+			return Ok((None, false));
+		}
+
+		let Some((pallet_id, call_id)) = id else {
+			let err = std::format!(
+				"Failed to read pallet and call id. Tx index: {}, block hash: {:?}",
+				tx_index,
+				block_hash
+			);
+			return Err(err);
+		};
+
+		let (signed, filtered_out) = self.filter_signature(&ext, &filter);
+		if filtered_out {
+			return Ok((None, false));
+		}
+
+		let (duration, tx_hash) = profile!(self.cached_tx_hash(block_hash, tx_index, &ext));
+		self.logger.new_tx_hash(duration);
+
+		if let Some(HashIndex::Hash(target_hash)) = &filter.tx_id {
+			if tx_hash != *target_hash {
+				return Ok((None, false));
+			}
+		};
+
+		let mut tx_extension = TransactionDataExtension::default();
+		if rpc_extension.fetch_call.unwrap_or(false) {
+			let (duration, value) = profile!(self.cached_encoded_call(block_hash, tx_index, &ext));
+			self.logger.new_encoded_call(duration);
+			tx_extension.encoded_call = Some(value);
+		}
+
+		if rpc_extension.fetch_events.unwrap_or(false) {
+			let enable_encoding = rpc_extension.enable_event_encoding.unwrap_or(true);
+			let enable_decoding = rpc_extension.enable_event_decoding.unwrap_or(false);
+			let (duration, (enc, dec)) = profile!(
+				self.cached_events(block_hash, tx_index, enable_encoding, enable_decoding)
+					.await
+			);
+			self.logger.new_events(duration);
+			tx_extension.encoded_events = enc;
+			tx_extension.decoded_events = dec;
+		}
+
+		let tx = TransactionData {
+			tx_hash,
+			tx_index,
+			pallet_id,
+			call_id,
+			signed,
+			extension: tx_extension,
+		};
+
+		if filter.tx_id.is_some() {
+			return Ok((Some(tx), true));
+		}
+
+		Ok((Some(tx), false))
+	}
+
+	fn filter_pallet_call_id(
+		&self,
+		ext: &UncheckedExtrinsic,
+		filter: &Filter,
+	) -> (Option<(u8, u8)>, bool) {
+		let Some((pallet_id, call_id)) = read_pallet_call_index(&ext) else {
+			let should_filter = filter.pallet_id.is_some() || filter.call_id.is_some();
+			return (None, should_filter);
+		};
+
+		if filter.pallet_id.is_some_and(|x| x != pallet_id) {
+			return (None, true);
+		};
+
+		if filter.call_id.is_some_and(|x| x != call_id) {
+			return (None, true);
+		};
+
+		(Some((pallet_id, call_id)), false)
+	}
+
+	fn filter_signature(
+		&self,
+		ext: &UncheckedExtrinsic,
+		filter: &Filter,
+	) -> (Option<TransactionDataSigned>, bool) {
+		let requires_signed =
+			filter.app_id.is_some() || filter.nonce.is_some() || filter.ss58_address.is_some();
+
+		let Some(sig) = &ext.signature else {
+			return (None, requires_signed);
+		};
+
+		let mut signed = TransactionDataSigned::default();
+
+		if let MultiAddress::Id(id) = &sig.0 {
+			signed.ss58_address = Some(std::format!("{}", id))
+		};
+
+		signed.nonce = sig.2 .5 .0;
+		signed.app_id = sig.2 .8 .0 .0;
+		match sig.2 .4 .0 {
+			sp_runtime::generic::Era::Immortal => signed.mortality = None,
+			sp_runtime::generic::Era::Mortal(x, y) => signed.mortality = Some((x, y)),
+		};
+
+		if filter.app_id.is_some_and(|x| x != signed.app_id) {
+			return (None, true);
+		}
+
+		if filter.nonce.is_some_and(|x| x != signed.nonce) {
+			return (None, true);
+		}
+
+		if filter.ss58_address.is_some() && filter.ss58_address != signed.ss58_address {
+			return (None, true);
+		}
+
+		(Some(signed), false)
 	}
 
 	fn cached_tx_hash(
@@ -367,18 +426,16 @@ impl Worker {
 		ext: &UncheckedExtrinsic,
 	) -> String {
 		if let Some(cached) = self.cache.get_encoded_call(&(block_hash, tx_index)) {
-			return cached.clone();
+			println!("Cache Hit");
+			return std::format!("0x{}", hex::encode(cached));
 		}
+		println!("Cache Miss");
+		let encoded = ext.function.encode();
 
-		let encoded = hex::encode(ext.function.encode());
-		let encoded = std::format!("0x{}", encoded);
+		self.cache
+			.insert_encoded_call((block_hash, tx_index), encoded.clone());
 
-		if encoded.len() <= 10_000 {
-			self.cache
-				.insert_encoded_call((block_hash, tx_index), encoded.clone());
-		}
-
-		encoded
+		std::format!("0x{}", hex::encode(encoded))
 	}
 
 	async fn cached_events(

@@ -36,13 +36,13 @@ pub trait TransactionApi {
 		&self,
 		tx_hash: H256,
 		is_finalized: Option<bool>,
-	) -> RpcResult<Vec<state_types::RPCResult>>;
+	) -> RpcResult<state_types::RPCResultDebug>;
 
 	#[method(name = "transaction_data")]
 	async fn transaction_data(
 		&self,
 		params: data_types::RPCParams,
-	) -> RpcResult<data_types::RPCResult>;
+	) -> RpcResult<data_types::RPCResultDebug>;
 
 	#[method(name = "transaction_enabled_services")]
 	async fn transaction_enabled_services(&self) -> RpcResult<EnabledServices>;
@@ -72,7 +72,8 @@ impl TransactionApiServer for System {
 		&self,
 		tx_hash: H256,
 		finalized: Option<bool>,
-	) -> RpcResult<Vec<state_types::RPCResult>> {
+	) -> RpcResult<state_types::RPCResultDebug> {
+		let now = std::time::Instant::now();
 		let Some(sender) = self.tx_state_sender.as_ref() else {
 			return Err(internal_error(String::from(
 				"Transaction State RPC service disabled",
@@ -95,8 +96,18 @@ impl TransactionApiServer for System {
 
 		notifier.notify_one();
 
-		match response_rx.await {
-			Ok(x) => Ok(x),
+		let response = response_rx.await;
+		let elapsed = now.elapsed();
+
+		match response {
+			Ok(x) => {
+				let r = state_types::RPCResultDebug {
+					value: x,
+					debug_execution_time: elapsed.as_millis() as u64,
+				};
+
+				Ok(r)
+			},
 			Err(e) => Err(internal_error(e.to_string())),
 		}
 	}
@@ -104,7 +115,8 @@ impl TransactionApiServer for System {
 	async fn transaction_data(
 		&self,
 		params: data_types::RPCParams,
-	) -> RpcResult<data_types::RPCResult> {
+	) -> RpcResult<data_types::RPCResultDebug> {
+		let now = std::time::Instant::now();
 		let Some(sender) = self.tx_data_sender.as_ref() else {
 			return Err(internal_error(String::from(
 				"Transaction Data RPC service disabled",
@@ -131,8 +143,16 @@ impl TransactionApiServer for System {
 			Err(e) => return Err(internal_error(e.to_string())),
 		};
 
+		let elapsed = now.elapsed();
+
 		match res {
-			Ok(x) => Ok(x),
+			Ok(x) => {
+				let r = data_types::RPCResultDebug {
+					value: x,
+					debug_execution_time: elapsed.as_millis() as u64,
+				};
+				Ok(r)
+			},
 			Err(e) => return Err(internal_error(e)),
 		}
 	}

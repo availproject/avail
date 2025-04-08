@@ -100,6 +100,8 @@ pub struct SystemFetchEventsParams {
 }
 
 pub mod events {
+	use super::*;
+
 	pub mod error_code {}
 
 	// If any change is done here, `version`` needs to be bumped! This is a breaking change!!

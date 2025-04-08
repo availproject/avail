@@ -56,6 +56,12 @@ pub struct RPCResult {
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
+pub struct RPCResultDebug {
+	pub value: RPCResult,
+	pub debug_execution_time: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionData {
 	pub tx_hash: H256,
 	pub tx_index: u32,

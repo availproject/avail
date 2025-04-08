@@ -242,6 +242,7 @@ impl_runtime_apis! {
 
 	impl frame_system_rpc_runtime_api::SystemEventsApi<Block> for Runtime {
 		fn fetch_events(params: frame_system_rpc_runtime_api::SystemFetchEventsParams) -> frame_system_rpc_runtime_api::SystemFetchEventsResult {
+			use sp_std::vec;
 			use frame_system_rpc_runtime_api::{*, events::EncodedEvent};
 			const VERSION: u8 = 0;
 

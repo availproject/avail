@@ -21,3 +21,9 @@ pub struct RPCResult {
 	pub call_index: u8,
 	pub is_finalized: bool,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RPCResultDebug {
+	pub value: Vec<RPCResult>,
+	pub debug_execution_time: u64,
+}

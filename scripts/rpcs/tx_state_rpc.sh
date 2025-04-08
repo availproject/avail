@@ -11,7 +11,7 @@ transaction_hash="$1"
 curl -H "Content-Type: application/json" -d "{
   \"jsonrpc\": \"2.0\",
   \"method\": \"transaction_state\",
-  \"params\": [\"$transaction_hash\", true],
+  \"params\": [\"$transaction_hash\", false],
   \"id\": 0
 }" http://127.0.0.1:9944
 echo ""
