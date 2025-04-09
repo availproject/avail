@@ -690,14 +690,12 @@ pub fn new_full_base(
 
 	if let Some(deps) = tx_deps.data {
 		log::info!("🐖 Transaction Data RPC is enabled.");
-		let worker = transaction::data::Worker {
-			rpc_handlers: rpc_handlers.clone(),
-			client: client.clone(),
-			receiver: deps.receiver,
-			cache: Default::default(),
-			notifier: deps.notifier.clone(),
-			logger: transaction::data::logger::Logger::default(),
-		};
+		let worker = transaction::data::Worker::new(
+			client.clone(),
+			rpc_handlers.clone(),
+			deps.receiver,
+			deps.notifier.clone(),
+		);
 
 		task_manager
 			.spawn_handle()

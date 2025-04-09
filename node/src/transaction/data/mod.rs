@@ -1,15 +1,23 @@
-pub mod constants;
-pub mod logger;
+mod cache;
+mod deps;
+mod logger;
 
+pub mod constants;
+
+pub use deps::*;
+
+use super::read_pallet_call_index;
 use super::runtime_api;
 use crate::service::FullClient;
 use crate::transaction::macros::profile;
 use avail_core::OpaqueExtrinsic;
+use cache::Cache;
 use codec::{decode_from_bytes, DecodeAll, Encode};
 use da_runtime::UncheckedExtrinsic;
 use frame_system_rpc_runtime_api::events::SemiDecodedEvent;
 use frame_system_rpc_runtime_api::SystemFetchEventsParams;
 use jsonrpsee::tokio::sync::Notify;
+use logger::Logger;
 use sc_service::RpcHandlers;
 use sc_telemetry::log;
 use sp_core::H256;
@@ -17,92 +25,43 @@ use sp_core::{Blake2Hasher, Hasher};
 use sp_runtime::generic::BlockId;
 use sp_runtime::traits::BlockIdTo;
 use sp_runtime::{AccountId32, MultiAddress};
-use std::collections::HashMap;
 use std::sync::Arc;
 use transaction_rpc::data_types::{
 	self, DecodedEvents, EncodedEvents, Filter, HashIndex, RPCParams, TransactionData,
 	TransactionDataExtension, TransactionDataSigned, TxDataReceiver,
 };
 
-use super::read_pallet_call_index;
-
-#[derive(Clone, Default)]
-pub struct CliDeps {
-	pub enabled: bool,
-}
-
-pub struct Deps {
-	pub receiver: TxDataReceiver,
-	pub notifier: Arc<Notify>,
-}
-
-type CachedTxHashKey = (H256, u32);
-type CachedTxHashValue = H256;
-type CachedEncodedCallKey = (H256, u32);
-type CachedEncodedCallValue = Vec<u8>;
-type CachedEventKey = H256;
-type CachedEventValue = Vec<RPCEvent>;
-
-#[derive(Default)]
-pub struct Cache {
-	tx_hash_cache: HashMap<CachedTxHashKey, CachedTxHashValue>,
-	encoded_call_cache: HashMap<CachedEncodedCallKey, CachedEncodedCallValue>,
-	events_cache: HashMap<CachedEventKey, CachedEventValue>,
-}
-impl Cache {
-	pub fn get_encoded_call(&self, key: &CachedEncodedCallKey) -> Option<&CachedEncodedCallValue> {
-		self.encoded_call_cache.get(key)
-	}
-
-	pub fn insert_encoded_call(
-		&mut self,
-		key: CachedEncodedCallKey,
-		value: CachedEncodedCallValue,
-	) {
-		self.encoded_call_cache.insert(key, value);
-	}
-
-	pub fn get_tx_hash(&self, key: &CachedTxHashKey) -> Option<&CachedTxHashValue> {
-		self.tx_hash_cache.get(key)
-	}
-
-	pub fn insert_tx_hash(&mut self, key: CachedTxHashKey, value: CachedTxHashValue) {
-		self.tx_hash_cache.insert(key, value);
-	}
-
-	pub fn get_events(&self, key: &CachedEventKey) -> Option<&CachedEventValue> {
-		self.events_cache.get(key)
-	}
-
-	pub fn insert_events(&mut self, key: CachedEventKey, value: CachedEventValue) {
-		self.events_cache.insert(key, value);
-	}
-
-	pub fn resize(&mut self) {
-		if self.tx_hash_cache.len() > 50_000 {
-			self.tx_hash_cache.clear();
-		}
-
-		if self.encoded_call_cache.len() > 10_000 {
-			self.encoded_call_cache.clear();
-		}
-
-		if self.events_cache.len() > 100 {
-			self.events_cache.clear();
-		}
-	}
-}
-
 pub struct Worker {
-	pub client: Arc<FullClient>,
-	pub rpc_handlers: RpcHandlers,
-	pub receiver: TxDataReceiver,
-	pub cache: Cache,
-	pub notifier: Arc<Notify>,
-	pub logger: logger::Logger,
+	client: Arc<FullClient>,
+	rpc_handlers: RpcHandlers,
+	receiver: TxDataReceiver,
+	notifier: Arc<Notify>,
+	logger: Logger,
+	//
+	// cache
+	cache: Cache,
 }
 
 impl Worker {
+	pub fn new(
+		client: Arc<FullClient>,
+		rpc_handlers: RpcHandlers,
+		receiver: TxDataReceiver,
+		notifier: Arc<Notify>,
+	) -> Self {
+		let logger = Logger::default();
+		let cache = Cache::new();
+
+		Self {
+			client,
+			rpc_handlers,
+			receiver,
+			notifier,
+			logger,
+			cache,
+		}
+	}
+
 	pub async fn run(mut self) {
 		log::info!("🐖 Transaction Data Running");
 
@@ -118,7 +77,6 @@ impl Worker {
 			}
 
 			self.logger.log();
-			self.cache.resize();
 
 			self.notifier.notified().await;
 		}
@@ -264,7 +222,7 @@ impl Worker {
 		};
 
 		if let Some(HashIndex::Hash(target_hash)) = &filter.tx_id {
-			if let Some(cached) = self.cache.get_tx_hash(&(block_hash, tx_index)) {
+			if let Some(cached) = self.cache.tx_hash.get(&(block_hash, tx_index)) {
 				if target_hash != cached {
 					return Ok((None, false));
 				}
@@ -310,7 +268,10 @@ impl Worker {
 
 		let mut tx_extension = TransactionDataExtension::default();
 		if rpc_extension.fetch_call.unwrap_or(false) {
-			let (duration, value) = profile!(self.cached_encoded_call(block_hash, tx_index, &ext));
+			let enable_encoding = rpc_extension.enable_call_encoding.unwrap_or(false);
+
+			let (duration, value) =
+				profile!(self.cached_encoded_call(block_hash, tx_index, enable_encoding, &ext));
 			self.logger.new_encoded_call(duration);
 			tx_extension.encoded_call = Some(value);
 		}
@@ -410,12 +371,12 @@ impl Worker {
 		tx_index: u32,
 		ext: &UncheckedExtrinsic,
 	) -> H256 {
-		if let Some(cached) = self.cache.get_tx_hash(&(block_hash, tx_index)) {
+		if let Some(cached) = self.cache.tx_hash.get(&(block_hash, tx_index)) {
 			return *cached;
 		}
 
 		let tx_hash = Blake2Hasher::hash(&ext.encode());
-		self.cache.insert_tx_hash((block_hash, tx_index), tx_hash);
+		self.cache.tx_hash.insert((block_hash, tx_index), tx_hash);
 		tx_hash
 	}
 
@@ -423,17 +384,21 @@ impl Worker {
 		&mut self,
 		block_hash: H256,
 		tx_index: u32,
+		enable_encoding: bool,
 		ext: &UncheckedExtrinsic,
 	) -> String {
-		if let Some(cached) = self.cache.get_encoded_call(&(block_hash, tx_index)) {
-			println!("Cache Hit");
+		if !enable_encoding {
+			return String::new();
+		}
+
+		if let Some(cached) = self.cache.encoded_call.get(&(block_hash, tx_index)) {
 			return std::format!("0x{}", hex::encode(cached));
 		}
-		println!("Cache Miss");
 		let encoded = ext.function.encode();
 
 		self.cache
-			.insert_encoded_call((block_hash, tx_index), encoded.clone());
+			.encoded_call
+			.insert((block_hash, tx_index), encoded.clone());
 
 		std::format!("0x{}", hex::encode(encoded))
 	}
@@ -445,7 +410,7 @@ impl Worker {
 		enable_encoding: bool,
 		enable_decoding: bool,
 	) -> (Option<EncodedEvents>, Option<DecodedEvents>) {
-		if let Some(cached) = self.cache.get_events(&(block_hash)) {
+		if let Some(cached) = self.cache.events.get(&(block_hash)) {
 			let (encoded, decoded) =
 				filter_events(tx_index, enable_encoding, enable_decoding, cached);
 			return (encoded, decoded);
@@ -519,7 +484,7 @@ impl Worker {
 		let (encoded_events, decoded_events) =
 			filter_events(tx_index, enable_encoding, enable_decoding, &rpc_events);
 
-		self.cache.insert_events(block_hash, rpc_events);
+		self.cache.events.insert(block_hash, rpc_events);
 
 		return (encoded_events, decoded_events);
 	}
@@ -566,3 +531,21 @@ pub struct RPCEvent {
 	pub encoded: EncodedEvents,
 	pub decoded: DecodedEvents,
 }
+
+impl RPCEvent {
+	pub fn weight(&self) -> u64 {
+		use transaction_rpc::data_types::{DecodedEvent, EncodedEvent};
+
+		let mut weight: usize = size_of::<RPCEvent>();
+		weight += self.encoded.len() * size_of::<EncodedEvent>();
+		weight += self.decoded.len() * size_of::<DecodedEvent>();
+
+		for e in &self.encoded {
+			weight += e.data.len();
+		}
+
+		weight as u64
+	}
+}
+
+pub type RPCEvents = Vec<RPCEvent>;

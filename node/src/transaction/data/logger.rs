@@ -3,7 +3,7 @@ use std::{ops::AddAssign, time::Duration};
 use sc_telemetry::log;
 
 #[derive(Default)]
-pub struct Logger {
+pub(crate) struct Logger {
 	tx_hash: Duration,
 	encoded_call: Duration,
 	events: Duration,
