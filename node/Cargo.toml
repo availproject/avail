@@ -42,6 +42,7 @@ serde.workspace = true
 serde_json = { workspace = true, features = ["arbitrary_precision"] }
 async-trait.workspace = true
 hex.workspace = true
+rayon.workspace = true
 
 # Substrate
 ## Primitives

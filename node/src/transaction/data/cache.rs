@@ -1,4 +1,4 @@
-use super::RPCEvents;
+use super::worker::RPCEvents;
 use sp_core::H256;
 use std::{collections::HashMap, hash::Hash};
 
@@ -32,7 +32,7 @@ impl<K: Hash + Eq, V> CachedValue<K, V> {
 			return;
 		}
 
-		if self.max_allowed_weight_per_item > weight {
+		if weight > self.max_allowed_weight_per_item {
 			return;
 		}
 
@@ -41,6 +41,7 @@ impl<K: Hash + Eq, V> CachedValue<K, V> {
 			self.current_weight = 0;
 		}
 
+		self.current_weight += weight;
 		self.value.insert(key, value);
 	}
 

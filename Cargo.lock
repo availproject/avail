@@ -1025,6 +1025,7 @@ dependencies = [
  "pallet-transaction-payment-rpc",
  "pallet-vector",
  "parity-scale-codec",
+ "rayon",
  "sc-authority-discovery",
  "sc-basic-authorship",
  "sc-chain-spec",
