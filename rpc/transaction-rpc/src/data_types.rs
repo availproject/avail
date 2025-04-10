@@ -19,18 +19,25 @@ pub enum HashIndex {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RPCParams {
 	pub block_id: HashIndex,
-	pub extension: Option<RPCParamsExtension>,
+	#[serde(default)]
+	pub extension: RPCParamsExtension,
 	pub filter: Option<Filter>,
 }
 
 #[derive(Debug, Default, Clone, Copy, Serialize, Deserialize)]
 pub struct RPCParamsExtension {
-	pub fetch_call: Option<bool>,
-	pub enable_call_encoding: Option<bool>,
-	pub enable_call_decoding: Option<bool>,
-	pub fetch_events: Option<bool>,
-	pub enable_event_encoding: Option<bool>,
-	pub enable_event_decoding: Option<bool>,
+	#[serde(default)]
+	pub fetch_call: bool,
+	#[serde(default)]
+	pub enable_call_encoding: bool,
+	#[serde(default)]
+	pub enable_call_decoding: bool,
+	#[serde(default)]
+	pub fetch_events: bool,
+	#[serde(default)]
+	pub enable_event_encoding: bool,
+	#[serde(default)]
+	pub enable_event_decoding: bool,
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]

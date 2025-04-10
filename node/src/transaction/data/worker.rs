@@ -72,7 +72,7 @@ impl Worker {
 	}
 
 	async fn task(&mut self, params: RPCParams) -> Result<RPCResult, String> {
-		let extension = params.extension.unwrap_or_default();
+		let extension = params.extension;
 		let filter = params.filter.clone().unwrap_or_default();
 
 		let (block_hash, block_height) = self.block_metadata(&params).await?;
@@ -93,7 +93,7 @@ impl Worker {
 			})
 			.collect();
 
-		if extension.fetch_events.unwrap_or(false) && !transactions.is_empty() {
+		if extension.fetch_events && !transactions.is_empty() {
 			let (duration, _) = profile!(
 				cached_fetch_events(
 					&self.rpc_handlers,
@@ -248,8 +248,8 @@ async fn cached_fetch_events(
 	cache: &SharedCache,
 	txs: &mut Vec<TransactionData>,
 ) -> Result<(), String> {
-	let enable_encoding = extension.enable_event_encoding.unwrap_or(false);
-	let enable_decoding = extension.enable_event_decoding.unwrap_or(false);
+	let enable_encoding = extension.enable_event_encoding;
+	let enable_decoding = extension.enable_event_decoding;
 	{
 		let Ok(lock) = cache.read() else {
 			return Err("Failed to lock cache. Internal Error".into());

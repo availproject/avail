@@ -11,13 +11,13 @@ pub(crate) struct Logger {
 }
 
 impl Logger {
-	pub fn new_tx_hash(&mut self, value: Duration) {
+	/* 	pub fn new_tx_hash(&mut self, value: Duration) {
 		self.tx_hash.add_assign(value);
 	}
 
 	pub fn new_encoded_call(&mut self, value: Duration) {
 		self.encoded_call.add_assign(value);
-	}
+	} */
 
 	pub fn new_events(&mut self, value: Duration) {
 		self.events.add_assign(value);

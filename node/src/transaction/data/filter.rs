@@ -149,9 +149,8 @@ pub(crate) fn filter_extrinsic(
 	};
 
 	let mut tx_extension = TransactionDataExtension::default();
-	if extension.fetch_call.unwrap_or(false) {
-		let enable_encoding = extension.enable_call_encoding.unwrap_or(false);
-		if enable_encoding {
+	if extension.fetch_call {
+		if extension.enable_call_encoding {
 			let Ok(lock) = cache.read() else {
 				return None;
 			};
