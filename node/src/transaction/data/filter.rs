@@ -1,3 +1,6 @@
+use std::sync::Arc;
+
+use super::cache::{CachedEvents, SharedCache};
 use crate::transaction::read_pallet_call_index;
 use avail_core::OpaqueExtrinsic;
 use codec::Encode;
@@ -7,11 +10,8 @@ use sp_core::H256;
 use sp_core::{Blake2Hasher, Hasher};
 use sp_runtime::MultiAddress;
 use transaction_rpc::data_types::{
-	self, DecodedEvents, EncodedEvents, Filter, HashIndex, TransactionData,
-	TransactionDataExtension, TransactionDataSigned,
+	self, Filter, HashIndex, TransactionData, TransactionDataSigned,
 };
-
-use super::worker::{RPCEvent, SharedCache};
 
 pub(crate) fn filter_pallet_call_id(ext: &UncheckedExtrinsic, filter: &Filter) -> Option<(u8, u8)> {
 	let Some((pallet_id, call_id)) = read_pallet_call_index(&ext) else {
@@ -78,6 +78,7 @@ pub(crate) fn filter_extrinsic(
 	filter: &Filter,
 	extension: &data_types::RPCParamsExtension,
 	cache: SharedCache,
+	events: Arc<CachedEvents>,
 ) -> Option<TransactionData> {
 	if let Some(HashIndex::Index(target_index)) = &filter.tx_id {
 		if *target_index != tx_index as u32 {
@@ -148,67 +149,55 @@ pub(crate) fn filter_extrinsic(
 		}
 	};
 
-	let mut tx_extension = TransactionDataExtension::default();
-	if extension.fetch_call {
-		if extension.enable_call_encoding {
-			let Ok(lock) = cache.read() else {
+	/* 	{
+		let Ok(lock) = cache.read() else {
+			return None;
+		};
+
+		if let Some(value) = lock.calls.get(&(block_hash, tx_index)) {
+			tx_extension.encoded_call = Some(std::format!("0x{}", hex::encode(value)));
+		} else {
+			drop(lock);
+
+			let Ok(mut lock) = cache.write() else {
 				return None;
 			};
-
-			if let Some(value) = lock.encoded_call.get(&(block_hash, tx_index)) {
-				tx_extension.encoded_call = Some(std::format!("0x{}", hex::encode(value)));
-			} else {
-				drop(lock);
-
-				let Ok(mut lock) = cache.write() else {
-					return None;
-				};
-				let encoded = ext.function.encode();
-				lock.encoded_call
-					.insert((block_hash, tx_index), encoded.clone());
-				tx_extension.encoded_call = Some(std::format!("0x{}", hex::encode(encoded)));
-			}
+			let encoded = std::format!("0x{}", hex::encode(ext.function.encode()));
+			lock.calls.insert((block_hash, tx_index), encoded);
 		}
+	} */
+
+	let mut tx_events = None;
+	if extension.fetch_events {
+		let phase = frame_system::Phase::ApplyExtrinsic(tx_index);
+		if let Some(cached_event) = events.0.iter().find(|x| x.phase == phase) {
+			use data_types::Event;
+			let mut rpc_events: Vec<Event> = Vec::with_capacity(cached_event.events.len());
+
+			for ev in &cached_event.events {
+				let event = Event {
+					index: ev.index,
+					pallet_id: ev.pallet_id,
+					event_id: ev.event_id,
+					decoded: ev.decoded.clone(),
+				};
+				rpc_events.push(event);
+			}
+
+			tx_events = Some(rpc_events);
+		};
 	}
 
+	let decoded = None;
 	let tx = TransactionData {
 		tx_hash,
 		tx_index,
 		pallet_id,
 		call_id,
 		signed,
-		extension: tx_extension,
+		decoded,
+		events: tx_events,
 	};
 
 	Some(tx)
-}
-
-pub(crate) fn filter_events(
-	tx_index: u32,
-	enable_encoding: bool,
-	enable_decoding: bool,
-	events: &Vec<RPCEvent>,
-) -> (Option<EncodedEvents>, Option<DecodedEvents>) {
-	let Some(events) = events.iter().find(|x| x.tx_index == tx_index) else {
-		return (None, None);
-	};
-
-	let mut encoded_result = None;
-	let mut decoded_result = None;
-
-	if enable_encoding {
-		encoded_result = Some(events.encoded.clone())
-	}
-
-	if enable_decoding {
-		decoded_result = Some(events.decoded.clone())
-	}
-
-	if !enable_encoding && !enable_encoding {
-		let mut encoded = events.encoded.clone();
-		encoded.iter_mut().for_each(|x| x.data = "".into());
-		encoded_result = Some(encoded);
-	}
-
-	(encoded_result, decoded_result)
 }

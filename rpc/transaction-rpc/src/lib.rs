@@ -1,6 +1,6 @@
+pub mod data_2_types;
 pub mod data_types;
 pub mod state_types;
-
 use std::sync::Arc;
 
 use async_trait::async_trait;
@@ -43,6 +43,9 @@ pub trait TransactionApi {
 		&self,
 		params: data_types::RPCParams,
 	) -> RpcResult<data_types::RPCResultDebug>;
+
+	#[method(name = "block_data")]
+	async fn block_data(&self, params: data_types::RPCParams) -> RpcResult<()>;
 
 	#[method(name = "transaction_enabled_services")]
 	async fn transaction_enabled_services(&self) -> RpcResult<EnabledServices>;
@@ -155,6 +158,10 @@ impl TransactionApiServer for System {
 			},
 			Err(e) => return Err(internal_error(e)),
 		}
+	}
+
+	async fn block_data(&self, params: data_types::RPCParams) -> RpcResult<()> {
+		Ok(())
 	}
 
 	async fn transaction_enabled_services(&self) -> RpcResult<EnabledServices> {

@@ -271,18 +271,21 @@ impl_runtime_apis! {
 			let mut event_position = 0u32;
 			for event in all_events {
 				let tx_index =  match &event.phase {
-					frame_system::Phase::ApplyExtrinsic(x) => *x,
-					_ => continue
+					frame_system::Phase::ApplyExtrinsic(x) => Some(*x),
+					_ => None
 				};
 
 				// Filter TX Indices
 				if let Some(filter) = &params.filter_tx_indices {
-					if !filter.contains(&tx_index) {
-						continue
+					if let Some(tx_index) = tx_index {
+						if !filter.contains(&tx_index) {
+							continue;
+						}
+					} else {
+						continue;
 					}
 				}
 
-				// TODO. Read function documentation.
 				let Some((id, mut encoded)) = filter_event_by_id_and_encode(&event.event, &params, do_not_encode) else {
 					continue;
 				};
@@ -294,10 +297,10 @@ impl_runtime_apis! {
 				// Encoded
 				if enable_encoding || do_not_encode {
 					let encoded = EncodedEvent::new(event_position, id.0, id.1, encoded);
-					if let Some(entry) = result.encoded.iter_mut().find(|x| x.tx_index == tx_index) {
+					if let Some(entry) = result.encoded.iter_mut().find(|x| x.phase == event.phase) {
 						entry.events.push(encoded);
 					} else {
-						let v = events::EncodedTransactionEvents {tx_index, events: vec![encoded]};
+						let v = events::EncodedTransactionEvents {phase: event.phase.clone(), events: vec![encoded]};
 						result.encoded.push(v);
 					};
 				}
@@ -305,10 +308,10 @@ impl_runtime_apis! {
 				// Decoded
 				if enable_decoding {
 					if let Some(decoded) = decode_runtime_event(&event.event, event_position) {
-						if let Some(entry) = result.decoded.iter_mut().find(|x| x.tx_index == tx_index) {
+						if let Some(entry) = result.decoded.iter_mut().find(|x| x.phase == event.phase) {
 							entry.events.push(decoded);
 						} else {
-							let v = events::DecodedTransactionEvents {tx_index, events: vec![decoded]};
+							let v = events::DecodedTransactionEvents {phase: event.phase.clone(), events: vec![decoded]};
 							result.decoded.push(v);
 						};
 					}

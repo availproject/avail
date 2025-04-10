@@ -57,7 +57,11 @@ impl SystemFetchEventsResult {
 			return None;
 		}
 
-		if let Some(enc) = self.encoded.iter().find(|x| x.tx_index == tx_index) {
+		if let Some(enc) = self
+			.encoded
+			.iter()
+			.find(|x| x.phase == frame_system::Phase::ApplyExtrinsic(tx_index))
+		{
 			for evt in &enc.events {
 				if evt.pallet_id != system::PALLET_ID {
 					continue;
@@ -71,7 +75,11 @@ impl SystemFetchEventsResult {
 			}
 		}
 
-		if let Some(dec) = self.decoded.iter().find(|x| x.tx_index == tx_index) {
+		if let Some(dec) = self
+			.decoded
+			.iter()
+			.find(|x| x.phase == frame_system::Phase::ApplyExtrinsic(tx_index))
+		{
 			for evt in &dec.events {
 				if evt.pallet_id != system::PALLET_ID {
 					continue;
@@ -107,14 +115,14 @@ pub mod events {
 	// If any change is done here, `version`` needs to be bumped! This is a breaking change!!
 	#[derive(Debug, Clone, scale_info::TypeInfo, codec::Decode, codec::Encode)]
 	pub struct EncodedTransactionEvents {
-		pub tx_index: u32,
+		pub phase: frame_system::Phase,
 		pub events: Vec<EncodedEvent>,
 	}
 
 	impl EncodedTransactionEvents {
-		pub fn new(tx_index: u32) -> Self {
+		pub fn new(phase: frame_system::Phase) -> Self {
 			Self {
-				tx_index,
+				phase,
 				events: Vec::new(),
 			}
 		}
@@ -143,14 +151,14 @@ pub mod events {
 	// If any change is done here, `decoded_version` needs to be bumped! This is a breaking change!!
 	#[derive(Debug, Clone, scale_info::TypeInfo, codec::Decode, codec::Encode)]
 	pub struct DecodedTransactionEvents {
-		pub tx_index: u32,
+		pub phase: frame_system::Phase,
 		pub events: Vec<SemiDecodedEvent>,
 	}
 
 	impl DecodedTransactionEvents {
-		pub fn new(tx_index: u32) -> Self {
+		pub fn new(phase: frame_system::Phase) -> Self {
 			Self {
-				tx_index,
+				phase,
 				events: Vec::default(),
 			}
 		}

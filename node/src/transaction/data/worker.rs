@@ -1,7 +1,8 @@
+use super::cache::{CachedEvent, CachedEventData, CachedEvents, SharedCache};
 use super::{super::runtime_api, cache::Cache, filter::*, logger::Logger};
 use crate::{service::FullClient, transaction::macros::profile};
 use avail_core::OpaqueExtrinsic;
-use codec::{decode_from_bytes, DecodeAll, Encode};
+use codec::{decode_from_bytes, DecodeAll};
 use frame_system_rpc_runtime_api::{events::SemiDecodedEvent, SystemFetchEventsParams};
 use jsonrpsee::tokio::sync::Notify;
 use rayon::prelude::*;
@@ -14,11 +15,8 @@ use sp_runtime::AccountId32;
 use std::sync::Arc;
 use std::sync::RwLock;
 use transaction_rpc::data_types::{
-	self, DecodedEvents, EncodedEvents, HashIndex, RPCParams, RPCParamsExtension, RPCResult,
-	TransactionData, TxDataReceiver,
+	self, DecodedEventData, HashIndex, RPCParams, RPCResult, TransactionData, TxDataReceiver,
 };
-
-pub(crate) type SharedCache = Arc<RwLock<Cache>>;
 
 pub struct Worker {
 	client: Arc<FullClient>,
@@ -77,8 +75,10 @@ impl Worker {
 
 		let (block_hash, block_height) = self.block_metadata(&params).await?;
 		let block_body = self.block_body(block_hash)?;
+		let events = self.block_events(block_hash).await?;
+		let consensus_events = consensus_events(&params, &events);
 
-		let mut transactions: Vec<TransactionData> = block_body
+		let transactions: Vec<TransactionData> = block_body
 			.par_iter()
 			.enumerate()
 			.filter_map(|(i, opaq)| {
@@ -89,28 +89,16 @@ impl Worker {
 					&filter,
 					&extension,
 					self.cache.clone(),
+					events.clone(),
 				)
 			})
 			.collect();
-
-		if extension.fetch_events && !transactions.is_empty() {
-			let (duration, _) = profile!(
-				cached_fetch_events(
-					&self.rpc_handlers,
-					block_hash,
-					&extension,
-					&self.cache,
-					&mut transactions
-				)
-				.await?
-			);
-			self.logger.new_events(duration);
-		}
 
 		let result = RPCResult {
 			block_hash,
 			block_height,
 			transactions,
+			consensus_events,
 		};
 
 		Ok(result)
@@ -151,6 +139,34 @@ impl Worker {
 
 		Ok(Arc::new(block_body))
 	}
+
+	async fn block_events(&mut self, block_hash: H256) -> Result<Arc<CachedEvents>, String> {
+		{
+			let Ok(lock) = self.cache.read() else {
+				return Err("Failed to lock cache. Internal Error".into());
+			};
+			if let Some(events) = lock.events.get(&block_hash) {
+				return Ok(events.clone());
+			}
+		}
+
+		let events = fetch_events(&self.rpc_handlers, block_hash).await;
+		let Some(events) = events else {
+			return Ok(Arc::new(CachedEvents(Vec::new())));
+		};
+
+		let events = Arc::new(events);
+
+		{
+			let Ok(mut lock) = self.cache.write() else {
+				return Err("Failed to lock cache. Internal Error".into());
+			};
+
+			lock.events.insert(block_hash, events.clone());
+		}
+
+		Ok(events)
+	}
 }
 
 #[derive(codec::Decode)]
@@ -159,134 +175,56 @@ struct DataSubmittedEvent {
 	pub data_hash: H256,
 }
 
-pub struct RPCEvent {
-	pub tx_index: u32,
-	pub encoded: EncodedEvents,
-	pub decoded: DecodedEvents,
-}
-
-impl RPCEvent {
-	pub fn weight(&self) -> u64 {
-		use transaction_rpc::data_types::{DecodedEvent, EncodedEvent};
-
-		let mut weight: usize = size_of::<RPCEvent>();
-		weight += self.encoded.len() * size_of::<EncodedEvent>();
-		weight += self.decoded.len() * size_of::<DecodedEvent>();
-
-		for e in &self.encoded {
-			weight += e.data.len();
-		}
-
-		weight as u64
-	}
-}
-
-pub type RPCEvents = Vec<RPCEvent>;
-
-fn parse_decoded_event(semi: SemiDecodedEvent) -> Option<data_types::DecodedEvent> {
-	use data_types::{DecodedEvent, DecodedEventData};
+fn parse_decoded_event(semi: &SemiDecodedEvent) -> Option<DecodedEventData> {
 	use frame_system_rpc_runtime_api::events::event_id::*;
-
-	let mut ev = DecodedEvent::new(
-		semi.index,
-		semi.pallet_id,
-		semi.event_id,
-		DecodedEventData::Unknown,
-	);
 
 	match semi.pallet_id {
 		system::PALLET_ID => {
 			if semi.event_id == system::EXTRINSIC_SUCCESS {
-				ev.data = DecodedEventData::SystemExtrinsicSuccess;
+				return Some(DecodedEventData::SystemExtrinsicSuccess);
 			} else if semi.event_id == system::EXTRINSIC_FAILED {
-				ev.data = DecodedEventData::SystemExtrinsicFailed;
+				return Some(DecodedEventData::SystemExtrinsicFailed);
 			}
 		},
 		sudo::PALLET_ID => {
 			if semi.event_id == sudo::SUDID {
-				let data = decode_from_bytes::<bool>(semi.data.into()).ok()?;
-				ev.data = DecodedEventData::SudoSudid(data);
+				let data = decode_from_bytes::<bool>(semi.data.clone().into()).ok()?;
+				return Some(DecodedEventData::SudoSudid(data));
 			} else if semi.event_id == sudo::SUDO_AS_DONE {
-				let data = decode_from_bytes::<bool>(semi.data.into()).ok()?;
-				ev.data = DecodedEventData::SudoSudoAsDone(data);
+				let data = decode_from_bytes::<bool>(semi.data.clone().into()).ok()?;
+				return Some(DecodedEventData::SudoSudoAsDone(data));
 			}
 		},
 		data_availability::PALLET_ID => {
 			if semi.event_id == data_availability::DATA_SUBMITTED {
-				let encoded = semi.data;
-				let value = DataSubmittedEvent::decode_all(&mut encoded.as_slice()).ok()?;
+				let value = DataSubmittedEvent::decode_all(&mut semi.data.as_slice()).ok()?;
 				let data = data_types::DataSubmittedEvent {
 					who: std::format!("{}", value.who),
 					data_hash: std::format!("{:?}", value.data_hash),
 				};
 
-				ev.data = DecodedEventData::DataAvailabilityDataSubmitted(data);
+				return Some(DecodedEventData::DataAvailabilityDataSubmitted(data));
 			}
 		},
 		multisig::PALLET_ID => {
 			if semi.event_id == multisig::MULTISIG_EXECUTED {
-				let data = decode_from_bytes::<bool>(semi.data.into()).ok()?;
-				ev.data = DecodedEventData::SudoSudoAsDone(data);
+				let data = decode_from_bytes::<bool>(semi.data.clone().into()).ok()?;
+				return Some(DecodedEventData::SudoSudoAsDone(data));
 			}
 		},
 		proxy::PALLET_ID => {
 			if semi.event_id == proxy::PROXY_EXECUTED {
-				let data = decode_from_bytes::<bool>(semi.data.into()).ok()?;
-				ev.data = DecodedEventData::SudoSudoAsDone(data);
+				let data = decode_from_bytes::<bool>(semi.data.clone().into()).ok()?;
+				return Some(DecodedEventData::SudoSudoAsDone(data));
 			}
 		},
 		_ => (),
 	}
 
-	Some(ev)
+	None
 }
 
-async fn cached_fetch_events(
-	handlers: &RpcHandlers,
-	block_hash: H256,
-	extension: &RPCParamsExtension,
-	cache: &SharedCache,
-	txs: &mut Vec<TransactionData>,
-) -> Result<(), String> {
-	let enable_encoding = extension.enable_event_encoding;
-	let enable_decoding = extension.enable_event_decoding;
-	{
-		let Ok(lock) = cache.read() else {
-			return Err("Failed to lock cache. Internal Error".into());
-		};
-		let events = lock.events.get(&block_hash);
-		if let Some(events) = events {
-			for tx in txs {
-				let (encoded, decoded) =
-					filter_events(tx.tx_index, enable_encoding, enable_decoding, &events);
-				tx.extension.encoded_events = encoded;
-				tx.extension.decoded_events = decoded;
-			}
-			return Ok(());
-		}
-	}
-	let events = fetch_events(handlers, block_hash).await;
-	let Some(events) = events else {
-		return Ok(());
-	};
-
-	for tx in txs {
-		let (encoded, decoded) =
-			filter_events(tx.tx_index, enable_encoding, enable_decoding, &events);
-		tx.extension.encoded_events = encoded;
-		tx.extension.decoded_events = decoded;
-	}
-
-	let Ok(mut lock) = cache.write() else {
-		return Err("Failed to lock cache. Internal Error".into());
-	};
-
-	lock.events.insert(block_hash, events);
-
-	Ok(())
-}
-
-async fn fetch_events(handlers: &RpcHandlers, block_hash: H256) -> Option<RPCEvents> {
+async fn fetch_events(handlers: &RpcHandlers, block_hash: H256) -> Option<CachedEvents> {
 	let params = SystemFetchEventsParams {
 		filter_tx_indices: None,
 		enable_decoding: Some(true),
@@ -299,7 +237,6 @@ async fn fetch_events(handlers: &RpcHandlers, block_hash: H256) -> Option<RPCEve
 	let Some(rpc_events) = rpc_events else {
 		return None;
 	};
-
 	if rpc_events.error != 0 {
 		return None;
 	}
@@ -307,49 +244,68 @@ async fn fetch_events(handlers: &RpcHandlers, block_hash: H256) -> Option<RPCEve
 	let encoded_events = rpc_events.encoded;
 	let decoded_events = rpc_events.decoded;
 
-	let mut rpc_events = Vec::<RPCEvent>::new();
+	let mut cached_events = Vec::<CachedEvent>::new();
 	for enc in &encoded_events {
-		let mut events = Vec::new();
-		for x in &enc.events {
-			let encoded = transaction_rpc::data_types::EncodedEvent {
-				index: x.index,
-				pallet_id: x.pallet_id,
-				event_id: x.event_id,
-				data: std::format!("0x{}", hex::encode(x.data.encode())),
+		let mut cached_event = CachedEvent {
+			phase: enc.phase.clone(),
+			events: Vec::new(),
+		};
+
+		let decoded = decoded_events
+			.iter()
+			.find(|x| x.phase == enc.phase)
+			.map(|x| &x.events);
+
+		for ev in &enc.events {
+			let index = ev.index;
+
+			let mut data = CachedEventData {
+				index,
+				pallet_id: ev.pallet_id,
+				event_id: ev.pallet_id,
+				encoded: std::format!("0x{}", hex::encode(&ev.data)),
+				decoded: None,
 			};
-			events.push(encoded);
+
+			if let Some(decoded) = &decoded {
+				if let Some(ev) = decoded.iter().find(|x| x.index == index) {
+					data.decoded = parse_decoded_event(ev);
+				}
+			}
+
+			cached_event.events.push(data);
 		}
 
-		if let Some(pos) = rpc_events.iter().position(|x| x.tx_index == enc.tx_index) {
-			rpc_events[pos].encoded = events;
-		} else {
-			rpc_events.push(RPCEvent {
-				tx_index: enc.tx_index,
-				encoded: events,
-				decoded: Vec::new(),
-			});
-		};
+		cached_events.push(cached_event);
 	}
 
-	for dec in decoded_events {
-		let mut events = Vec::new();
-		for x in dec.events {
-			let Some(decoded) = parse_decoded_event(x) else {
-				continue;
-			};
-			events.push(decoded);
+	Some(CachedEvents(cached_events))
+}
+
+fn consensus_events(params: &RPCParams, events: &Arc<CachedEvents>) -> Option<data_types::Events> {
+	if !params.extension.fetch_events {
+		return None;
+	}
+
+	let Some(cached_event) = events.consensus_events() else {
+		return None;
+	};
+
+	let mut consensus_events = Vec::with_capacity(cached_event.events.len());
+	for data in &cached_event.events {
+		let mut event = data_types::Event {
+			index: data.index,
+			pallet_id: data.pallet_id,
+			event_id: data.event_id,
+			decoded: None,
+		};
+
+		if params.extension.enable_event_decoding {
+			event.decoded = data.decoded.clone()
 		}
 
-		if let Some(pos) = rpc_events.iter().position(|x| x.tx_index == dec.tx_index) {
-			rpc_events[pos].decoded = events;
-		} else {
-			rpc_events.push(RPCEvent {
-				tx_index: dec.tx_index,
-				encoded: Vec::new(),
-				decoded: events,
-			});
-		};
+		consensus_events.push(event);
 	}
 
-	Some(rpc_events)
+	Some(consensus_events)
 }

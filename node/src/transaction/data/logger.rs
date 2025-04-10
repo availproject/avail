@@ -19,9 +19,9 @@ impl Logger {
 		self.encoded_call.add_assign(value);
 	} */
 
-	pub fn new_events(&mut self, value: Duration) {
+	/* 	pub fn new_events(&mut self, value: Duration) {
 		self.events.add_assign(value);
-	}
+	} */
 
 	pub fn new_total(&mut self, value: Duration) {
 		self.total.add_assign(value);

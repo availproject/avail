@@ -17,6 +17,7 @@ sp-api = { workspace = true, default-features = false }
 codec = { package = "parity-scale-codec", version = "3", default-features = false }
 sp-std = { workspace = true, default-features = false }
 scale-info = { workspace = true, default-features = false }
+frame-system = { workspace = true, default-features = false }
 
 [features]
 default = [ "std" ]

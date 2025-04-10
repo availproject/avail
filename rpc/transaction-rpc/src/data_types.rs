@@ -27,15 +27,9 @@ pub struct RPCParams {
 #[derive(Debug, Default, Clone, Copy, Serialize, Deserialize)]
 pub struct RPCParamsExtension {
 	#[serde(default)]
-	pub fetch_call: bool,
-	#[serde(default)]
-	pub enable_call_encoding: bool,
-	#[serde(default)]
 	pub enable_call_decoding: bool,
 	#[serde(default)]
 	pub fetch_events: bool,
-	#[serde(default)]
-	pub enable_event_encoding: bool,
 	#[serde(default)]
 	pub enable_event_decoding: bool,
 }
@@ -50,16 +44,14 @@ pub struct Filter {
 	pub nonce: Option<u32>,
 }
 
-pub type EncodedCall = String;
-pub type DecodedCall = String;
-pub type EncodedEvents = Vec<EncodedEvent>;
-pub type DecodedEvents = Vec<DecodedEvent>;
+pub type Events = Vec<Event>;
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct RPCResult {
 	pub block_hash: H256,
 	pub block_height: u32,
 	pub transactions: Vec<TransactionData>,
+	pub consensus_events: Option<Events>,
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
@@ -75,16 +67,8 @@ pub struct TransactionData {
 	pub pallet_id: u8,
 	pub call_id: u8,
 	pub signed: Option<TransactionDataSigned>,
-	pub extension: TransactionDataExtension,
-}
-
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
-pub struct TransactionDataExtension {
-	pub encoded_call: Option<EncodedCall>,
-	pub decoded_call: Option<DecodedCall>,
-	// First N bytes of every encoded event is CompactU32 (number of bytes).
-	pub encoded_events: Option<EncodedEvents>,
-	pub decoded_events: Option<DecodedEvents>,
+	pub decoded: Option<u8>,
+	pub events: Option<Events>,
 }
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
@@ -93,6 +77,14 @@ pub struct TransactionDataSigned {
 	pub nonce: u32,
 	pub app_id: u32,
 	pub mortality: Option<(u64, u64)>, // None means the tx is Immortal
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Event {
+	pub index: u32,
+	pub pallet_id: u8,
+	pub event_id: u8,
+	pub decoded: Option<DecodedEventData>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -135,7 +127,7 @@ pub enum DecodedEventData {
 	DataAvailabilityDataSubmitted(DataSubmittedEvent),
 }
 
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DataSubmittedEvent {
 	pub who: String,
 	pub data_hash: String,
