@@ -322,9 +322,9 @@ pub fn new_partial(
 	}
 
 	if tx_cli_deps.data.enabled {
-		let (search_send, search_recv) = channel::<transaction_rpc::data_types::TxDataChannel>(
-			transaction::data::constants::RPC_CHANNEL_LIMIT,
-		);
+		let (search_send, search_recv) = channel::<
+			transaction_rpc::block_overview_types::TxDataChannel,
+		>(transaction::data::constants::RPC_CHANNEL_LIMIT);
 
 		let notifier = Arc::new(Notify::new());
 		let deps = transaction::data::Deps {
@@ -332,8 +332,8 @@ pub fn new_partial(
 			notifier: notifier.clone(),
 		};
 
-		transaction_rpc_deps.tx_data_sender = Some(search_send);
-		transaction_rpc_deps.tx_data_notifier = Some(notifier);
+		transaction_rpc_deps.block_overview_sender = Some(search_send);
+		transaction_rpc_deps.block_notifier = Some(notifier);
 		tx_state_deps.data = Some(deps)
 	}
 

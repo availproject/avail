@@ -14,9 +14,10 @@ use sp_runtime::traits::BlockIdTo;
 use sp_runtime::AccountId32;
 use std::sync::Arc;
 use std::sync::RwLock;
-use transaction_rpc::data_types::{
-	self, DecodedEventData, HashIndex, RPCParams, RPCResult, TransactionData, TxDataReceiver,
+use transaction_rpc::block_overview_types::{
+	self, DecodedEventData, RPCParams, RPCResult, TransactionData, TxDataReceiver,
 };
+use transaction_rpc::{BlockState, HashIndex};
 
 pub struct Worker {
 	client: Arc<FullClient>,
@@ -76,6 +77,7 @@ impl Worker {
 		let (block_hash, block_height) = self.block_metadata(&params).await?;
 		let block_body = self.block_body(block_hash)?;
 		let events = self.block_events(block_hash).await?;
+		let block_state = self.block_state(block_hash, block_height)?;
 		let consensus_events = consensus_events(&params, &events);
 
 		let transactions: Vec<TransactionData> = block_body
@@ -99,6 +101,7 @@ impl Worker {
 			block_height,
 			transactions,
 			consensus_events,
+			block_state,
 		};
 
 		Ok(result)
@@ -167,6 +170,29 @@ impl Worker {
 
 		Ok(events)
 	}
+
+	fn block_state(&self, hash: H256, height: u32) -> Result<BlockState, String> {
+		let chain_info = self.client.chain_info();
+		let is_finalized = chain_info.finalized_number >= height;
+		if !is_finalized {
+			return Ok(BlockState::Included);
+		}
+
+		let finalized_hash = self
+			.client
+			.to_hash(&BlockId::Number(height))
+			.map_err(|e| e.to_string())?;
+
+		let Some(finalized_hash) = finalized_hash else {
+			return Err("Failed to convert block height to block hash".into());
+		};
+
+		if finalized_hash == hash {
+			return Ok(BlockState::Finalized);
+		}
+
+		Ok(BlockState::Discarded)
+	}
 }
 
 #[derive(codec::Decode)]
@@ -198,7 +224,7 @@ fn parse_decoded_event(semi: &SemiDecodedEvent) -> Option<DecodedEventData> {
 		data_availability::PALLET_ID => {
 			if semi.event_id == data_availability::DATA_SUBMITTED {
 				let value = DataSubmittedEvent::decode_all(&mut semi.data.as_slice()).ok()?;
-				let data = data_types::DataSubmittedEvent {
+				let data = block_overview_types::DataSubmittedEvent {
 					who: std::format!("{}", value.who),
 					data_hash: std::format!("{:?}", value.data_hash),
 				};
@@ -282,7 +308,10 @@ async fn fetch_events(handlers: &RpcHandlers, block_hash: H256) -> Option<Cached
 	Some(CachedEvents(cached_events))
 }
 
-fn consensus_events(params: &RPCParams, events: &Arc<CachedEvents>) -> Option<data_types::Events> {
+fn consensus_events(
+	params: &RPCParams,
+	events: &Arc<CachedEvents>,
+) -> Option<block_overview_types::Events> {
 	if !params.extension.fetch_events {
 		return None;
 	}
@@ -293,7 +322,7 @@ fn consensus_events(params: &RPCParams, events: &Arc<CachedEvents>) -> Option<da
 
 	let mut consensus_events = Vec::with_capacity(cached_event.events.len());
 	for data in &cached_event.events {
-		let mut event = data_types::Event {
+		let mut event = block_overview_types::Event {
 			index: data.index,
 			pallet_id: data.pallet_id,
 			event_id: data.event_id,

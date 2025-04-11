@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use jsonrpsee::tokio::sync::Notify;
-use transaction_rpc::data_types::TxDataReceiver;
+use transaction_rpc::block_overview_types::TxDataReceiver;
 
 #[derive(Clone, Default)]
 pub struct CliDeps {

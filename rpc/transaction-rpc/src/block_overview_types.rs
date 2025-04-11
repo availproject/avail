@@ -5,16 +5,11 @@ use jsonrpsee::tokio::sync::{
 use serde::{Deserialize, Serialize};
 use sp_core::H256;
 
+use crate::{BlockState, HashIndex};
 pub type TxDataChannelResponse = oneshot::Sender<Result<RPCResult, String>>;
 pub type TxDataChannel = (RPCParams, TxDataChannelResponse);
 pub type TxDataReceiver = Receiver<TxDataChannel>;
 pub type TxDataSender = Sender<TxDataChannel>;
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum HashIndex {
-	Hash(H256),
-	Index(u32),
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RPCParams {
@@ -46,15 +41,16 @@ pub struct Filter {
 
 pub type Events = Vec<Event>;
 
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RPCResult {
 	pub block_hash: H256,
 	pub block_height: u32,
+	pub block_state: BlockState,
 	pub transactions: Vec<TransactionData>,
 	pub consensus_events: Option<Events>,
 }
 
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RPCResultDebug {
 	pub value: RPCResult,
 	pub debug_execution_time: u64,

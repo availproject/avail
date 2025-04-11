@@ -4,7 +4,7 @@ use std::{
 	hash::Hash,
 	sync::{Arc, RwLock},
 };
-use transaction_rpc::data_types::DecodedEventData;
+use transaction_rpc::block_overview_types::DecodedEventData;
 
 pub(crate) type SharedCache = Arc<RwLock<Cache>>;
 

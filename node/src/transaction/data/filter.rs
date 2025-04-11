@@ -9,9 +9,8 @@ use sc_telemetry::log;
 use sp_core::H256;
 use sp_core::{Blake2Hasher, Hasher};
 use sp_runtime::MultiAddress;
-use transaction_rpc::data_types::{
-	self, Filter, HashIndex, TransactionData, TransactionDataSigned,
-};
+use transaction_rpc::block_overview_types::{self, Filter, TransactionData, TransactionDataSigned};
+use transaction_rpc::HashIndex;
 
 pub(crate) fn filter_pallet_call_id(ext: &UncheckedExtrinsic, filter: &Filter) -> Option<(u8, u8)> {
 	let Some((pallet_id, call_id)) = read_pallet_call_index(&ext) else {
@@ -76,7 +75,7 @@ pub(crate) fn filter_extrinsic(
 	tx_index: u32,
 	opaq: &OpaqueExtrinsic,
 	filter: &Filter,
-	extension: &data_types::RPCParamsExtension,
+	extension: &block_overview_types::RPCParamsExtension,
 	cache: SharedCache,
 	events: Arc<CachedEvents>,
 ) -> Option<TransactionData> {
@@ -171,7 +170,7 @@ pub(crate) fn filter_extrinsic(
 	if extension.fetch_events {
 		let phase = frame_system::Phase::ApplyExtrinsic(tx_index);
 		if let Some(cached_event) = events.0.iter().find(|x| x.phase == phase) {
-			use data_types::Event;
+			use block_overview_types::Event;
 			let mut rpc_events: Vec<Event> = Vec::with_capacity(cached_event.events.len());
 
 			for ev in &cached_event.events {

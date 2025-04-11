@@ -1,10 +1,10 @@
-pub mod data_2_types;
-pub mod data_types;
+pub mod block_data_types;
+pub mod block_overview_types;
 pub mod state_types;
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use data_types::TxDataSender;
+use block_overview_types::TxDataSender;
 use jsonrpsee::{
 	core::RpcResult,
 	proc_macros::rpc,
@@ -15,18 +15,20 @@ use serde::{Deserialize, Serialize};
 use sp_core::H256;
 use state_types::TxStateSender;
 
-#[derive(Clone, Copy, Default, Serialize, Deserialize)]
+#[derive(Clone, Copy, Serialize, Deserialize)]
 pub struct EnabledServices {
 	pub tx_state: bool,
-	pub tx_data: bool,
+	pub block_overview: bool,
+	pub block_data: bool,
 }
 
 #[derive(Clone, Default)]
 pub struct Deps {
 	pub tx_state_sender: Option<TxStateSender>,
 	pub tx_state_notifier: Option<Arc<Notify>>,
-	pub tx_data_sender: Option<TxDataSender>,
-	pub tx_data_notifier: Option<Arc<Notify>>,
+	pub block_overview_sender: Option<TxDataSender>,
+	pub block_data_sender: Option<()>,
+	pub block_notifier: Option<Arc<Notify>>,
 }
 
 #[rpc(client, server)]
@@ -38,14 +40,14 @@ pub trait TransactionApi {
 		is_finalized: Option<bool>,
 	) -> RpcResult<state_types::RPCResultDebug>;
 
-	#[method(name = "transaction_data")]
-	async fn transaction_data(
+	#[method(name = "block_overview")]
+	async fn block_overview(
 		&self,
-		params: data_types::RPCParams,
-	) -> RpcResult<data_types::RPCResultDebug>;
+		params: block_overview_types::RPCParams,
+	) -> RpcResult<block_overview_types::RPCResultDebug>;
 
 	#[method(name = "block_data")]
-	async fn block_data(&self, params: data_types::RPCParams) -> RpcResult<()>;
+	async fn block_data(&self, params: block_overview_types::RPCParams) -> RpcResult<()>;
 
 	#[method(name = "transaction_enabled_services")]
 	async fn transaction_enabled_services(&self) -> RpcResult<EnabledServices>;
@@ -54,8 +56,9 @@ pub trait TransactionApi {
 pub struct System {
 	tx_state_sender: Option<TxStateSender>,
 	tx_state_notifier: Option<Arc<Notify>>,
-	tx_data_sender: Option<TxDataSender>,
-	tx_data_notifier: Option<Arc<Notify>>,
+	block_overview_sender: Option<TxDataSender>,
+	block_data_sender: Option<()>,
+	block_notifier: Option<Arc<Notify>>,
 }
 
 impl System {
@@ -63,8 +66,9 @@ impl System {
 		Self {
 			tx_state_sender: deps.tx_state_sender,
 			tx_state_notifier: deps.tx_state_notifier,
-			tx_data_sender: deps.tx_data_sender,
-			tx_data_notifier: deps.tx_data_notifier,
+			block_overview_sender: deps.block_overview_sender,
+			block_data_sender: deps.block_data_sender,
+			block_notifier: deps.block_notifier,
 		}
 	}
 }
@@ -115,20 +119,20 @@ impl TransactionApiServer for System {
 		}
 	}
 
-	async fn transaction_data(
+	async fn block_overview(
 		&self,
-		params: data_types::RPCParams,
-	) -> RpcResult<data_types::RPCResultDebug> {
+		params: block_overview_types::RPCParams,
+	) -> RpcResult<block_overview_types::RPCResultDebug> {
 		let now = std::time::Instant::now();
-		let Some(sender) = self.tx_data_sender.as_ref() else {
+		let Some(sender) = self.block_overview_sender.as_ref() else {
 			return Err(internal_error(String::from(
-				"Transaction Data RPC service disabled",
+				"Block Overview RPC service disabled",
 			)));
 		};
 
-		let Some(notifier) = self.tx_data_notifier.as_ref() else {
+		let Some(notifier) = self.block_notifier.as_ref() else {
 			return Err(internal_error(String::from(
-				"Transaction Data RPC service disabled",
+				"Block Overview RPC service disabled",
 			)));
 		};
 
@@ -150,7 +154,7 @@ impl TransactionApiServer for System {
 
 		match res {
 			Ok(x) => {
-				let r = data_types::RPCResultDebug {
+				let r = block_overview_types::RPCResultDebug {
 					value: x,
 					debug_execution_time: elapsed.as_millis() as u64,
 				};
@@ -160,18 +164,32 @@ impl TransactionApiServer for System {
 		}
 	}
 
-	async fn block_data(&self, params: data_types::RPCParams) -> RpcResult<()> {
+	async fn block_data(&self, params: block_overview_types::RPCParams) -> RpcResult<()> {
 		Ok(())
 	}
 
 	async fn transaction_enabled_services(&self) -> RpcResult<EnabledServices> {
 		Ok(EnabledServices {
 			tx_state: self.tx_state_sender.is_some(),
-			tx_data: self.tx_data_sender.is_some(),
+			block_overview: self.block_overview_sender.is_some(),
+			block_data: self.block_data_sender.is_some(),
 		})
 	}
 }
 
 fn internal_error<'a>(msg: String) -> ErrorObject<'a> {
 	ErrorObject::owned(0, msg, None::<()>)
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum HashIndex {
+	Hash(H256),
+	Index(u32),
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub enum BlockState {
+	Included,
+	Finalized,
+	Discarded,
 }

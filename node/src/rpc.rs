@@ -244,7 +244,7 @@ where
 	}
 
 	if transaction_rpc_deps.tx_state_sender.is_some()
-		|| transaction_rpc_deps.tx_data_sender.is_some()
+		|| transaction_rpc_deps.block_overview_sender.is_some()
 	{
 		io.merge(transaction_rpc::TransactionApiServer::into_rpc(
 			transaction_rpc::System::new(transaction_rpc_deps),

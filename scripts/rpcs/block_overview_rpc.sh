@@ -10,7 +10,7 @@ params="{\"block_id\": $block_height, \"extension\": $extension, \"filter\": $fi
 
 curl -H "Content-Type: application/json" -d "{
   \"jsonrpc\": \"2.0\",
-  \"method\": \"transaction_data\",
+  \"method\": \"block_overview\",
   \"params\": [$params],
   \"id\": 0
 }" http://127.0.0.1:9944
