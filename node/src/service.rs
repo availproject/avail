@@ -300,10 +300,10 @@ pub fn new_partial(
 	let mut transaction_rpc_worker_deps = transaction_rpc_worker::Deps::default();
 
 	if transaction_rpc_worker_cli_deps.state.enabled {
-		let (search_send, search_recv) = channel::<transaction_rpc::state::TxStateChannel>(
+		let (search_send, search_recv) = channel::<transaction_rpc::state::Channel>(
 			transaction_rpc_worker::state::constants::RPC_CHANNEL_LIMIT,
 		);
-		let (block_send, block_recv) = channel::<transaction_rpc_worker::state::BlockDetails>(
+		let (block_send, block_recv) = channel::<transaction_rpc_worker::state::Channel>(
 			transaction_rpc_worker::state::constants::BLOCK_CHANNEL_LIMIT,
 		);
 
@@ -711,14 +711,13 @@ pub fn new_full_base(
 	}
 
 	if let Some(deps) = transaction_rpc_worker_deps.state {
-		use transaction_rpc_worker::state::{Database, MapDatabase, VecDatabase};
+		use transaction_rpc_worker::state::{Database, MapDatabase};
 
 		log::info!("👾 Transaction State RPC is enabled.");
 		let worker_1 = transaction_rpc_worker::state::IncludedWorker {
 			rpc_handlers: rpc_handlers.clone(),
 			client: client.clone(),
 			sender: deps.block_sender.clone(),
-			max_stored_block_count: deps.cli.max_stored_block_count,
 			logger: transaction_rpc_worker::state::WorkerLogger::new(
 				"Inclusion Worker".into(),
 				deps.cli.logging_interval,
@@ -745,31 +744,17 @@ pub fn new_full_base(
 			.spawn_handle()
 			.spawn("tx-state-worker-f", None, worker_2.run());
 
-		if !deps.cli.use_vector {
-			let db = Database::<MapDatabase>::new(
-				deps.block_receiver,
-				deps.search_receiver,
-				deps.cli.max_search_results,
-				deps.cli.max_stored_block_count,
-				deps.cli.logging_interval,
-				deps.notifier.clone(),
-			);
-			task_manager
-				.spawn_handle()
-				.spawn("tx-state-db", None, db.run());
-		} else {
-			let db = Database::<VecDatabase>::new(
-				deps.block_receiver,
-				deps.search_receiver,
-				deps.cli.max_search_results,
-				deps.cli.max_stored_block_count,
-				deps.cli.logging_interval,
-				deps.notifier.clone(),
-			);
-			task_manager
-				.spawn_handle()
-				.spawn("tx-state-db", None, db.run());
-		};
+		let db = Database::<MapDatabase>::new(
+			deps.block_receiver,
+			deps.search_receiver,
+			deps.cli.max_search_results,
+			deps.cli.max_stored_block_count,
+			deps.cli.logging_interval,
+			deps.notifier.clone(),
+		);
+		task_manager
+			.spawn_handle()
+			.spawn("tx-state-db", None, db.run());
 	} else {
 		log::info!("👾 Transaction State RPC is disabled.");
 	}
@@ -796,7 +781,6 @@ pub fn new_full(config: Configuration, cli: Cli) -> Result<TaskManager, ServiceE
 	let tx_state_cli_deps = transaction_rpc_worker::state::CliDeps {
 		max_search_results: cli.tx_state_rpc_max_search_results,
 		max_stored_block_count: cli.tx_state_rpc_max_stored_block_count,
-		use_vector: cli.tx_state_rpc_use_vector,
 		enabled: cli.tx_state_rpc_enabled,
 		logging_interval: cli.tx_state_rpc_logging_interval,
 	};

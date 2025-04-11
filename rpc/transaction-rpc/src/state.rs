@@ -1,14 +1,11 @@
-use jsonrpsee::tokio::sync::{
-	mpsc::{Receiver, Sender},
-	oneshot,
-};
+use jsonrpsee::tokio::sync::{mpsc, oneshot};
 use serde::{Deserialize, Serialize};
 use sp_core::H256;
 
-pub type TxStateChannelResponse = oneshot::Sender<Vec<RPCResult>>;
-pub type TxStateChannel = (H256, bool, TxStateChannelResponse);
-pub type TxStateReceiver = Receiver<TxStateChannel>;
-pub type TxStateSender = Sender<TxStateChannel>;
+pub type ChannelResponse = oneshot::Sender<Vec<RPCResult>>;
+pub type Channel = (H256, bool, ChannelResponse);
+pub type Receiver = mpsc::Receiver<Channel>;
+pub type Sender = mpsc::Sender<Channel>;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RPCResult {

@@ -12,7 +12,6 @@ use jsonrpsee::{
 };
 use serde::{Deserialize, Serialize};
 use sp_core::H256;
-use state::TxStateSender;
 
 #[derive(Clone, Copy, Serialize, Deserialize)]
 pub struct EnabledServices {
@@ -23,7 +22,7 @@ pub struct EnabledServices {
 
 #[derive(Clone, Default)]
 pub struct Deps {
-	pub tx_overview_sender: Option<TxStateSender>,
+	pub tx_overview_sender: Option<state::Sender>,
 	pub tx_overview_notifier: Option<Arc<Notify>>,
 	pub block_overview_sender: Option<block_overview::Sender>,
 	pub block_data_sender: Option<block_data::Sender>,
@@ -53,7 +52,7 @@ pub trait TransactionApi {
 }
 
 pub struct System {
-	tx_overview_sender: Option<TxStateSender>,
+	tx_overview_sender: Option<state::Sender>,
 	tx_overview_notifier: Option<Arc<Notify>>,
 	block_overview_sender: Option<block_overview::Sender>,
 	block_data_sender: Option<block_data::Sender>,

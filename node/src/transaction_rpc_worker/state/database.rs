@@ -7,8 +7,7 @@ use jsonrpsee::tokio::sync::mpsc::Receiver;
 use sc_telemetry::log;
 use sp_core::H256;
 use tokio::sync::Notify;
-use transaction_rpc::state::TxStateReceiver as SearchReceiver;
-use transaction_rpc::state::{self, TxStateChannel};
+use transaction_rpc::state;
 
 use crate::transaction_rpc_worker::macros::profile;
 
@@ -21,7 +20,7 @@ pub struct Config {
 
 pub struct Database<T: DatabaseLike> {
 	block_receiver: Receiver<BlockDetails>,
-	search_receiver: SearchReceiver,
+	search_receiver: state::Receiver,
 	logger: DatabaseLogging,
 	inner: T,
 	timer: Instant,
@@ -31,7 +30,7 @@ pub struct Database<T: DatabaseLike> {
 impl<T: DatabaseLike> Database<T> {
 	pub fn new(
 		block_receiver: Receiver<BlockDetails>,
-		search_receiver: SearchReceiver,
+		search_receiver: state::Receiver,
 		max_search_results: usize,
 		max_stored_block_count: usize,
 		logging_interval: u64,
@@ -88,7 +87,7 @@ impl<T: DatabaseLike> Database<T> {
 		}
 	}
 
-	fn send_transaction_state(&self, details: TxStateChannel) {
+	fn send_transaction_state(&self, details: state::Channel) {
 		let (tx_hash, is_finalized, oneshot) = details;
 
 		let mut result: Vec<state::RPCResult> =

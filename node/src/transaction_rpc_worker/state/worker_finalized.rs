@@ -1,22 +1,19 @@
 use super::super::runtime_api;
-use super::worker;
 use super::worker_logger::Logger;
-use super::BlockDetails;
+use super::{worker, Sender};
 use crate::service::FullClient;
 use crate::transaction_rpc_worker::macros::profile;
 use avail_core::OpaqueExtrinsic;
 use frame_system_rpc_runtime_api::{
 	events::event_id::system, SystemFetchEventsParams, SystemFetchEventsResult,
 };
-use jsonrpsee::tokio;
-use jsonrpsee::tokio::sync::mpsc::Sender;
+use jsonrpsee::tokio::{sync::Notify, time::sleep};
 use sc_service::RpcHandlers;
 use sp_core::H256;
 use sp_runtime::generic::BlockId;
 use sp_runtime::traits::BlockIdTo;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-use tokio::sync::Notify;
 
 const SLEEP_ON_FETCH: u64 = 1000; // ms
 const SLEEP_ON_ERROR: u64 = 2500; // ms
@@ -24,7 +21,7 @@ const SLEEP_ON_ERROR: u64 = 2500; // ms
 pub struct FinalizedWorker {
 	pub rpc_handlers: RpcHandlers,
 	pub client: Arc<FullClient>,
-	pub sender: Sender<BlockDetails>,
+	pub sender: Sender,
 	pub max_stored_block_count: usize,
 	pub logger: Logger,
 	pub notifier: Arc<Notify>,
@@ -32,13 +29,6 @@ pub struct FinalizedWorker {
 
 impl FinalizedWorker {
 	pub async fn run(mut self) {
-		// Do nothing if we are not allowed to store any blocks.
-		if self.max_stored_block_count == 0 {
-			self.logger
-				.log("Max Stored Block Count is equal to 0. Worker won't run.".into());
-			return;
-		}
-
 		let (duration, _) = profile!(worker::wait_for_sync(&self.rpc_handlers).await);
 		self.logger.log_sync_time(duration);
 
@@ -142,7 +132,7 @@ impl FinalizedWorker {
 		loop {
 			let chain_info = self.client.chain_info();
 			if height > chain_info.finalized_number {
-				tokio::time::sleep(Duration::from_millis(SLEEP_ON_FETCH)).await;
+				sleep(Duration::from_millis(SLEEP_ON_FETCH)).await;
 				continue;
 			}
 
@@ -154,7 +144,7 @@ impl FinalizedWorker {
 					"Failed to get block hash for block number: {}",
 					height
 				));
-				tokio::time::sleep(Duration::from_millis(SLEEP_ON_ERROR)).await;
+				sleep(Duration::from_millis(SLEEP_ON_ERROR)).await;
 				continue;
 			};
 
@@ -163,7 +153,7 @@ impl FinalizedWorker {
 					"Failed to get the body for block hash: {:?}",
 					block_hash
 				));
-				tokio::time::sleep(Duration::from_millis(SLEEP_ON_ERROR)).await;
+				sleep(Duration::from_millis(SLEEP_ON_ERROR)).await;
 				continue;
 			};
 
@@ -175,13 +165,13 @@ impl FinalizedWorker {
 			let Some(events) =
 				runtime_api::system_fetch_events(&self.rpc_handlers, params, &block_hash).await
 			else {
-				tokio::time::sleep(Duration::from_millis(SLEEP_ON_ERROR)).await;
+				sleep(Duration::from_millis(SLEEP_ON_ERROR)).await;
 				height = height + 1;
 				continue;
 			};
 
 			if events.error != 0 {
-				tokio::time::sleep(Duration::from_millis(SLEEP_ON_ERROR)).await;
+				sleep(Duration::from_millis(SLEEP_ON_ERROR)).await;
 				height = height + 1;
 				continue;
 			}

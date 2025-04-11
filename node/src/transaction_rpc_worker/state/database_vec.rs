@@ -1,4 +1,4 @@
-use sc_telemetry::log;
+/* use sc_telemetry::log;
 use sp_core::H256;
 use std::collections::VecDeque;
 use transaction_rpc::state;
@@ -170,3 +170,4 @@ impl DatabaseLike for Database {
 		log::info!("👾 Database: Inclusion Vec Len: {}, Inclusion Vec Cap: {}, Finalized Vec Len: {}, Finalized Vec Cap: {}", self.included_blocks.len(), self.included_blocks.capacity(), self.finalized_blocks.len(), self.finalized_blocks.capacity());
 	}
 }
+ */

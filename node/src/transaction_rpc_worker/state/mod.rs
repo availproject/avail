@@ -10,7 +10,7 @@ mod worker_logger;
 
 pub use database::Database;
 pub use database_map::Database as MapDatabase;
-pub use database_vec::Database as VecDatabase;
+// pub use database_vec::Database as VecDatabase;
 pub use worker_finalized::FinalizedWorker;
 pub use worker_included::IncludedWorker;
 pub use worker_logger::Logger as WorkerLogger;
@@ -18,27 +18,27 @@ pub use worker_logger::Logger as WorkerLogger;
 use std::time::Duration;
 use std::{ops::Add, sync::Arc};
 
-use jsonrpsee::tokio::sync::{
-	mpsc::{Receiver, Sender},
-	Notify,
-};
+use jsonrpsee::tokio::sync::{mpsc, Notify};
 use serde::{Deserialize, Serialize};
 use sp_core::H256;
-use transaction_rpc::state::TxStateReceiver as SearchReceiver;
+use transaction_rpc::state;
+
+pub type Channel = BlockDetails;
+pub type Receiver = mpsc::Receiver<BlockDetails>;
+pub type Sender = mpsc::Sender<BlockDetails>;
 
 #[derive(Clone, Default)]
 pub struct CliDeps {
 	pub max_search_results: usize,
 	pub max_stored_block_count: usize,
 	pub logging_interval: u64,
-	pub use_vector: bool,
 	pub enabled: bool,
 }
 
 pub struct Deps {
-	pub block_receiver: Receiver<BlockDetails>,
-	pub block_sender: Sender<BlockDetails>,
-	pub search_receiver: SearchReceiver,
+	pub block_receiver: Receiver,
+	pub block_sender: Sender,
+	pub search_receiver: state::Receiver,
 	pub notifier: Arc<Notify>,
 	pub cli: CliDeps,
 }

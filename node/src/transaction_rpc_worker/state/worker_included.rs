@@ -1,16 +1,13 @@
 use super::super::runtime_api;
-use super::worker;
 use super::worker_logger::Logger;
-use super::BlockDetails;
+use super::{worker, Sender};
 use crate::service::FullClient;
 use crate::transaction_rpc_worker::macros::profile;
 use avail_core::OpaqueExtrinsic;
 use frame_system_rpc_runtime_api::{
 	events::event_id::system, SystemFetchEventsParams, SystemFetchEventsResult,
 };
-use jsonrpsee::tokio;
-use jsonrpsee::tokio::sync::mpsc::Sender;
-use jsonrpsee::tokio::sync::Notify;
+use jsonrpsee::tokio::{sync::Notify, time::sleep};
 use sc_service::RpcHandlers;
 use sp_core::H256;
 use std::sync::Arc;
@@ -22,21 +19,13 @@ const SLEEP_ON_FETCH: u64 = 1000; // ms
 pub struct IncludedWorker {
 	pub rpc_handlers: RpcHandlers,
 	pub client: Arc<FullClient>,
-	pub sender: Sender<BlockDetails>,
-	pub max_stored_block_count: usize,
+	pub sender: Sender,
 	pub logger: Logger,
 	pub notifier: Arc<Notify>,
 }
 
 impl IncludedWorker {
 	pub async fn run(mut self) {
-		// Do nothing if we are not allowed to store any blocks.
-		if self.max_stored_block_count == 0 {
-			self.logger
-				.log("Max Stored Block Count is equal to 0. Worker won't run.".into());
-			return;
-		}
-
 		let (duration, _) = profile!(worker::wait_for_sync(&self.rpc_handlers).await);
 		self.logger.log_sync_time(duration);
 
@@ -65,7 +54,7 @@ impl IncludedWorker {
 			let (block_hash, block_height) = (chain_info.best_hash, chain_info.best_number);
 
 			if (*current_block_hash).eq(&block_hash) {
-				tokio::time::sleep(Duration::from_millis(SLEEP_ON_FETCH)).await;
+				sleep(Duration::from_millis(SLEEP_ON_FETCH)).await;
 				continue;
 			}
 
@@ -78,17 +67,17 @@ impl IncludedWorker {
 			let Some(events) =
 				runtime_api::system_fetch_events(&self.rpc_handlers, params, &block_hash).await
 			else {
-				tokio::time::sleep(Duration::from_millis(SLEEP_ON_ERROR)).await;
+				sleep(Duration::from_millis(SLEEP_ON_ERROR)).await;
 				continue;
 			};
 
 			if events.error != 0 {
-				tokio::time::sleep(Duration::from_millis(SLEEP_ON_ERROR)).await;
+				sleep(Duration::from_millis(SLEEP_ON_ERROR)).await;
 				continue;
 			}
 
 			let Ok(Some(extrinsics)) = self.client.body(block_hash) else {
-				tokio::time::sleep(Duration::from_millis(SLEEP_ON_ERROR)).await;
+				sleep(Duration::from_millis(SLEEP_ON_ERROR)).await;
 				continue;
 			};
 
