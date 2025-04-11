@@ -243,7 +243,7 @@ where
 		)))?;
 	}
 
-	if transaction_rpc_deps.tx_overview_sender.is_some()
+	if transaction_rpc_deps.transaction_overview_sender.is_some()
 		|| transaction_rpc_deps.block_overview_sender.is_some()
 		|| transaction_rpc_deps.block_data_sender.is_some()
 	{

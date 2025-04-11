@@ -61,15 +61,30 @@ pub struct RPCResult {
 	pub block_hash: H256,
 	pub block_height: u32,
 	pub block_state: BlockState,
-	pub calls: Option<Vec<Data>>,
-	pub events: Option<Vec<Data>>,
+	pub calls: Option<Vec<CallData>>,
+	pub events: Option<Vec<EventData>>,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
-pub struct Data {
-	// (pallet id, call/event id)
+pub struct RPCResultDebug {
+	pub value: RPCResult,
+	pub debug_execution_time: u64,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct CallData {
+	// (pallet id, call id)
 	pub id: (u8, u8),
 	pub tx_id: u32,
+	pub tx_hash: H256,
+	pub data: String,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct EventData {
+	// (pallet id, event id)
+	pub id: (u8, u8),
+	pub phase: Phase,
 	pub data: String,
 }
 
@@ -105,4 +120,14 @@ impl Default for EventIdFilterKind {
 	fn default() -> Self {
 		Self::All
 	}
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub enum Phase {
+	/// Applying an extrinsic.
+	ApplyExtrinsic(u32),
+	/// Finalizing the block.
+	Finalization,
+	/// Initializing the block.
+	Initialization,
 }

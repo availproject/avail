@@ -6,6 +6,8 @@ use std::{
 };
 use transaction_rpc::block_overview;
 
+use super::filter::UniqueTxId;
+
 pub(crate) type SharedCache = Arc<RwLock<Cache>>;
 
 pub(crate) struct CachedValue<K: Hash + Eq, V> {
@@ -58,9 +60,9 @@ impl<K: Hash + Eq, V> CachedValue<K, V> {
 
 pub(crate) struct Cache {
 	pub events: CachedValue<H256, Arc<CachedEvents>>,
-	pub tx_hash: CachedValue<(H256, u32), H256>,
+	pub tx_hash: CachedValue<UniqueTxId, H256>,
 	// hex and scale encoded call
-	pub calls: CachedValue<(H256, u32), String>,
+	pub calls: CachedValue<UniqueTxId, String>,
 }
 
 impl Cache {
@@ -72,16 +74,81 @@ impl Cache {
 			CachedValue::<H256, Arc<CachedEvents>>::new(TEMP_WEIGHT, weight_calc, TEMP_WEIGHT);
 
 		let weight_calc = Box::new(|_x: &H256| size_of::<H256>() as u64);
-		let tx_hash = CachedValue::<(H256, u32), H256>::new(TEMP_WEIGHT, weight_calc, TEMP_WEIGHT);
+		let tx_hash = CachedValue::<UniqueTxId, H256>::new(TEMP_WEIGHT, weight_calc, TEMP_WEIGHT);
 
 		let weight_calc = Box::new(|x: &String| (x.len() + size_of::<String>()) as u64);
-		let calls = CachedValue::<(H256, u32), String>::new(TEMP_WEIGHT, weight_calc, TEMP_WEIGHT);
+		let calls = CachedValue::<UniqueTxId, String>::new(TEMP_WEIGHT, weight_calc, TEMP_WEIGHT);
 
 		Self {
 			events,
 			tx_hash,
 			calls,
 		}
+	}
+}
+
+pub trait Cacheable {
+	fn read_cached_tx_hash(&self, key: &UniqueTxId) -> Option<H256>;
+	fn write_cached_tx_hash(&self, key: UniqueTxId, value: H256) -> Option<()>;
+	fn read_cached_calls(&self, key: &UniqueTxId) -> Option<String>;
+	fn write_cached_calls(&self, key: UniqueTxId, value: String) -> Option<()>;
+	fn read_cached_events(&self, key: &H256) -> Option<Arc<CachedEvents>>;
+	fn write_cached_events(&self, key: H256, value: Arc<CachedEvents>) -> Option<()>;
+}
+
+impl Cacheable for SharedCache {
+	fn read_cached_tx_hash(&self, key: &UniqueTxId) -> Option<H256> {
+		let Ok(lock) = self.read() else {
+			return None;
+		};
+
+		lock.tx_hash.get(key).map(|x| x.clone())
+	}
+
+	fn write_cached_tx_hash(&self, key: UniqueTxId, value: H256) -> Option<()> {
+		let Ok(mut lock) = self.write() else {
+			return None;
+		};
+
+		lock.tx_hash.insert(key, value);
+
+		Some(())
+	}
+
+	fn read_cached_calls(&self, key: &UniqueTxId) -> Option<String> {
+		let Ok(lock) = self.read() else {
+			return None;
+		};
+
+		lock.calls.get(key).map(|x| x.clone())
+	}
+
+	fn write_cached_calls(&self, key: UniqueTxId, value: String) -> Option<()> {
+		let Ok(mut lock) = self.write() else {
+			return None;
+		};
+
+		lock.calls.insert(key, value);
+
+		Some(())
+	}
+
+	fn read_cached_events(&self, key: &H256) -> Option<Arc<CachedEvents>> {
+		let Ok(lock) = self.read() else {
+			return None;
+		};
+
+		lock.events.get(key).map(|x| x.clone())
+	}
+
+	fn write_cached_events(&self, key: H256, value: Arc<CachedEvents>) -> Option<()> {
+		let Ok(mut lock) = self.write() else {
+			return None;
+		};
+
+		lock.events.insert(key, value);
+
+		Some(())
 	}
 }
 

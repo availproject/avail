@@ -1,14 +1,16 @@
-use super::cache::{CachedEvent, CachedEventData, CachedEvents, SharedCache};
+use super::cache::{Cacheable, CachedEvent, CachedEventData, CachedEvents, SharedCache};
 use super::{super::runtime_api, cache::Cache, filter::*, logger::Logger};
+use crate::transaction_rpc_worker::read_pallet_call_index;
 use crate::{service::FullClient, transaction_rpc_worker::macros::profile};
 use avail_core::OpaqueExtrinsic;
-use codec::{decode_from_bytes, DecodeAll};
+use codec::{decode_from_bytes, DecodeAll, Encode};
+use da_runtime::UncheckedExtrinsic;
 use frame_system_rpc_runtime_api::{events::SemiDecodedEvent, SystemFetchEventsParams};
 use jsonrpsee::tokio::sync::Notify;
 use rayon::prelude::*;
 use sc_service::RpcHandlers;
 use sc_telemetry::log;
-use sp_core::H256;
+use sp_core::{Blake2Hasher, Hasher, H256};
 use sp_runtime::generic::BlockId;
 use sp_runtime::traits::BlockIdTo;
 use sp_runtime::AccountId32;
@@ -53,30 +55,117 @@ impl Worker {
 		log::info!("🐖 Transaction Data Running");
 
 		loop {
-			if !self.overview_receiver.is_empty() {
+			if !self.data_receiver.is_empty() {
 				let (duration, _) = profile!({
-					while let Ok((params, oneshot)) = self.overview_receiver.try_recv() {
-						let result = self.task(params).await;
+					while let Ok((params, oneshot)) = self.data_receiver.try_recv() {
+						let result = self.data_task(params).await;
 						_ = oneshot.send(result);
 					}
 				});
-				self.logger.new_total(duration);
+				log::info!("🐖 Data Duration: {:.02?}", duration,);
 			}
 
-			self.logger.log();
+			if !self.overview_receiver.is_empty() {
+				let (duration, _) = profile!({
+					while let Ok((params, oneshot)) = self.overview_receiver.try_recv() {
+						let result = self.overview_task(params).await;
+						_ = oneshot.send(result);
+					}
+				});
+				log::info!("🐖 Overview Duration: {:.02?}", duration,);
+			}
 
 			self.notifier.notified().await;
 		}
 	}
 
-	async fn task(
+	/* 	{
+		let Ok(lock) = cache.read() else {
+			return None;
+		};
+
+
+	} */
+
+	async fn data_task(
+		&mut self,
+		params: block_data::RPCParams,
+	) -> Result<block_data::RPCResult, String> {
+		use block_data::{CallData, EventData};
+
+		let (block_hash, block_height) = self.block_metadata(params.block_id).await?;
+		let block_body = self.block_body(block_hash)?;
+		let events = self.block_events(block_hash).await?;
+		let block_state = self.block_state(block_hash, block_height)?;
+
+		let mut calls: Vec<CallData> = Vec::new();
+		for (i, opaq) in block_body.iter().enumerate() {
+			let unique_id = (block_hash, i as u32);
+			let ext = UncheckedExtrinsic::decode_no_vec_prefix(&mut opaq.0.as_slice());
+			let ext = ext.unwrap();
+			let (pallet_id, call_id) = read_pallet_call_index(&ext).unwrap();
+
+			let tx_hash = if let Some(tx_hash) = self.cache.read_cached_tx_hash(&unique_id) {
+				tx_hash
+			} else {
+				let tx_hash = Blake2Hasher::hash(&ext.encode());
+				self.cache.write_cached_tx_hash(unique_id, tx_hash).unwrap();
+				tx_hash
+			};
+
+			let data = if let Some(call) = self.cache.read_cached_calls(&unique_id) {
+				call
+			} else {
+				let call = std::format!("0x{}", hex::encode(ext.function.encode()));
+				self.cache.write_cached_calls(unique_id, call.clone());
+				call
+			};
+
+			let call = CallData {
+				id: (pallet_id, call_id),
+				tx_id: unique_id.1,
+				tx_hash,
+				data,
+			};
+			calls.push(call);
+		}
+
+		let mut block_events = Vec::new();
+		for cached_event in &events.0 {
+			let phase = match cached_event.phase {
+				frame_system::Phase::ApplyExtrinsic(x) => block_data::Phase::ApplyExtrinsic(x),
+				frame_system::Phase::Finalization => block_data::Phase::Finalization,
+				frame_system::Phase::Initialization => block_data::Phase::Initialization,
+			};
+			for ev in &cached_event.events {
+				let data = EventData {
+					id: (ev.pallet_id, ev.event_id),
+					phase,
+					data: ev.encoded.clone(),
+				};
+				block_events.push(data);
+			}
+		}
+
+		let result = block_data::RPCResult {
+			block_hash,
+			block_height,
+			block_state,
+			calls: Some(calls),
+			events: Some(block_events),
+		};
+
+		Ok(result)
+	}
+
+	async fn overview_task(
 		&mut self,
 		params: block_overview::RPCParams,
 	) -> Result<block_overview::RPCResult, String> {
 		let extension = params.extension;
 		let filter = params.filter.clone().unwrap_or_default();
 
-		let (block_hash, block_height) = self.block_metadata(&params).await?;
+		let (block_hash, block_height) = self.block_metadata(params.block_id).await?;
 		let block_body = self.block_body(block_hash)?;
 		let events = self.block_events(block_hash).await?;
 		let block_state = self.block_state(block_hash, block_height)?;
@@ -87,8 +176,7 @@ impl Worker {
 			.enumerate()
 			.filter_map(|(i, opaq)| {
 				filter_extrinsic(
-					block_hash,
-					i as u32,
+					(block_hash, i as u32),
 					opaq,
 					&filter,
 					&extension,
@@ -101,19 +189,16 @@ impl Worker {
 		let result = block_overview::RPCResult {
 			block_hash,
 			block_height,
+			block_state,
 			transactions,
 			consensus_events,
-			block_state,
 		};
 
 		Ok(result)
 	}
 
-	async fn block_metadata(
-		&self,
-		params: &block_overview::RPCParams,
-	) -> Result<(H256, u32), String> {
-		match params.block_id {
+	async fn block_metadata(&self, block_id: HashIndex) -> Result<(H256, u32), String> {
+		match block_id {
 			HashIndex::Hash(hash) => {
 				let height = self.client.to_number(&BlockId::Hash(hash.clone()));
 				let Some(height) = height.ok().flatten() else {
@@ -149,13 +234,8 @@ impl Worker {
 	}
 
 	async fn block_events(&mut self, block_hash: H256) -> Result<Arc<CachedEvents>, String> {
-		{
-			let Ok(lock) = self.cache.read() else {
-				return Err("Failed to lock cache. Internal Error".into());
-			};
-			if let Some(events) = lock.events.get(&block_hash) {
-				return Ok(events.clone());
-			}
+		if let Some(cached) = self.cache.read_cached_events(&block_hash) {
+			return Ok(cached);
 		}
 
 		let events = fetch_events(&self.rpc_handlers, block_hash).await;
@@ -164,14 +244,7 @@ impl Worker {
 		};
 
 		let events = Arc::new(events);
-
-		{
-			let Ok(mut lock) = self.cache.write() else {
-				return Err("Failed to lock cache. Internal Error".into());
-			};
-
-			lock.events.insert(block_hash, events.clone());
-		}
+		self.cache.write_cached_events(block_hash, events.clone());
 
 		Ok(events)
 	}

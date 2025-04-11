@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use super::cache::{CachedEvents, SharedCache};
+use super::cache::{Cacheable, CachedEvents, SharedCache};
 use crate::transaction_rpc_worker::read_pallet_call_index;
 use avail_core::OpaqueExtrinsic;
 use codec::Encode;
@@ -10,6 +10,8 @@ use sp_core::H256;
 use sp_core::{Blake2Hasher, Hasher};
 use sp_runtime::MultiAddress;
 use transaction_rpc::{block_overview, HashIndex};
+
+pub type UniqueTxId = (H256, u32);
 
 pub(crate) fn filter_pallet_call_id(
 	ext: &UncheckedExtrinsic,
@@ -73,8 +75,7 @@ pub(crate) fn filter_signature(
 }
 
 pub(crate) fn filter_extrinsic(
-	block_hash: H256,
-	tx_index: u32,
+	unique_id: UniqueTxId,
 	opaq: &OpaqueExtrinsic,
 	filter: &block_overview::Filter,
 	extension: &block_overview::RPCParamsExtension,
@@ -82,22 +83,12 @@ pub(crate) fn filter_extrinsic(
 	events: Arc<CachedEvents>,
 ) -> Option<block_overview::TransactionData> {
 	if let Some(HashIndex::Index(target_index)) = &filter.tx_id {
-		if *target_index != tx_index as u32 {
+		if *target_index != unique_id.1 as u32 {
 			return None;
 		}
 	};
 
-	let cached_tx_hash = {
-		let Ok(lock) = cache.read() else {
-			return None;
-		};
-
-		if let Some(cached) = lock.tx_hash.get(&(block_hash, tx_index)) {
-			Some(cached.clone())
-		} else {
-			None
-		}
-	};
+	let cached_tx_hash = cache.read_cached_tx_hash(&unique_id);
 
 	if let Some(HashIndex::Hash(target_hash)) = &filter.tx_id {
 		if let Some(cached) = &cached_tx_hash {
@@ -111,8 +102,8 @@ pub(crate) fn filter_extrinsic(
 	let Ok(ext) = ext else {
 		let msg = std::format!(
 			"Failed to fetch transaction. tx index: {}, block hash: {:?}",
-			tx_index,
-			block_hash
+			unique_id.0,
+			unique_id.1
 		);
 		log::warn!("{}", msg);
 		return None;
@@ -121,8 +112,8 @@ pub(crate) fn filter_extrinsic(
 	let Some((pallet_id, call_id)) = filter_pallet_call_id(&ext, &filter) else {
 		let msg = std::format!(
 			"Failed to read pallet and call id. Tx index: {}, block hash: {:?}",
-			tx_index,
-			block_hash
+			unique_id.0,
+			unique_id.1
 		);
 		log::warn!("{}", msg);
 		return None;
@@ -136,11 +127,7 @@ pub(crate) fn filter_extrinsic(
 		tx_hash
 	} else {
 		let tx_hash = Blake2Hasher::hash(&ext.encode());
-
-		let Ok(mut lock) = cache.write() else {
-			return None;
-		};
-		lock.tx_hash.insert((block_hash, tx_index), tx_hash);
+		cache.write_cached_tx_hash(unique_id, tx_hash)?;
 		tx_hash
 	};
 
@@ -150,27 +137,9 @@ pub(crate) fn filter_extrinsic(
 		}
 	};
 
-	/* 	{
-		let Ok(lock) = cache.read() else {
-			return None;
-		};
-
-		if let Some(value) = lock.calls.get(&(block_hash, tx_index)) {
-			tx_extension.encoded_call = Some(std::format!("0x{}", hex::encode(value)));
-		} else {
-			drop(lock);
-
-			let Ok(mut lock) = cache.write() else {
-				return None;
-			};
-			let encoded = std::format!("0x{}", hex::encode(ext.function.encode()));
-			lock.calls.insert((block_hash, tx_index), encoded);
-		}
-	} */
-
 	let mut tx_events = None;
 	if extension.fetch_events {
-		let phase = frame_system::Phase::ApplyExtrinsic(tx_index);
+		let phase = frame_system::Phase::ApplyExtrinsic(unique_id.1);
 		if let Some(cached_event) = events.0.iter().find(|x| x.phase == phase) {
 			use block_overview::Event;
 			let mut rpc_events: Vec<Event> = Vec::with_capacity(cached_event.events.len());
@@ -192,7 +161,7 @@ pub(crate) fn filter_extrinsic(
 	let decoded = None;
 	let tx = block_overview::TransactionData {
 		tx_hash,
-		tx_index,
+		tx_index: unique_id.1,
 		pallet_id,
 		call_id,
 		signed,
