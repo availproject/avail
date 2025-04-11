@@ -316,8 +316,8 @@ pub fn new_partial(
 			notifier: notifier.clone(),
 		};
 
-		transaction_rpc_deps.tx_state_sender = Some(search_send);
-		transaction_rpc_deps.tx_state_notifier = Some(notifier);
+		transaction_rpc_deps.tx_overview_sender = Some(search_send);
+		transaction_rpc_deps.tx_overview_notifier = Some(notifier);
 		tx_state_deps.state = Some(deps)
 	}
 

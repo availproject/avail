@@ -17,15 +17,15 @@ use state_types::TxStateSender;
 
 #[derive(Clone, Copy, Serialize, Deserialize)]
 pub struct EnabledServices {
-	pub tx_state: bool,
+	pub tx_overview: bool,
 	pub block_overview: bool,
 	pub block_data: bool,
 }
 
 #[derive(Clone, Default)]
 pub struct Deps {
-	pub tx_state_sender: Option<TxStateSender>,
-	pub tx_state_notifier: Option<Arc<Notify>>,
+	pub tx_overview_sender: Option<TxStateSender>,
+	pub tx_overview_notifier: Option<Arc<Notify>>,
 	pub block_overview_sender: Option<TxDataSender>,
 	pub block_data_sender: Option<()>,
 	pub block_notifier: Option<Arc<Notify>>,
@@ -33,8 +33,8 @@ pub struct Deps {
 
 #[rpc(client, server)]
 pub trait TransactionApi {
-	#[method(name = "transaction_state")]
-	async fn transaction_state(
+	#[method(name = "transaction_overview")]
+	async fn transaction_overview(
 		&self,
 		tx_hash: H256,
 		is_finalized: Option<bool>,
@@ -54,8 +54,8 @@ pub trait TransactionApi {
 }
 
 pub struct System {
-	tx_state_sender: Option<TxStateSender>,
-	tx_state_notifier: Option<Arc<Notify>>,
+	tx_overview_sender: Option<TxStateSender>,
+	tx_overview_notifier: Option<Arc<Notify>>,
 	block_overview_sender: Option<TxDataSender>,
 	block_data_sender: Option<()>,
 	block_notifier: Option<Arc<Notify>>,
@@ -64,8 +64,8 @@ pub struct System {
 impl System {
 	pub fn new(deps: Deps) -> Self {
 		Self {
-			tx_state_sender: deps.tx_state_sender,
-			tx_state_notifier: deps.tx_state_notifier,
+			tx_overview_sender: deps.tx_overview_sender,
+			tx_overview_notifier: deps.tx_overview_notifier,
 			block_overview_sender: deps.block_overview_sender,
 			block_data_sender: deps.block_data_sender,
 			block_notifier: deps.block_notifier,
@@ -75,21 +75,21 @@ impl System {
 
 #[async_trait]
 impl TransactionApiServer for System {
-	async fn transaction_state(
+	async fn transaction_overview(
 		&self,
 		tx_hash: H256,
 		finalized: Option<bool>,
 	) -> RpcResult<state_types::RPCResultDebug> {
 		let now = std::time::Instant::now();
-		let Some(sender) = self.tx_state_sender.as_ref() else {
+		let Some(sender) = self.tx_overview_sender.as_ref() else {
 			return Err(internal_error(String::from(
-				"Transaction State RPC service disabled",
+				"Transaction Overview RPC service disabled",
 			)));
 		};
 
-		let Some(notifier) = self.tx_state_notifier.as_ref() else {
+		let Some(notifier) = self.tx_overview_notifier.as_ref() else {
 			return Err(internal_error(String::from(
-				"Transaction State RPC service disabled",
+				"Transaction Overview RPC service disabled",
 			)));
 		};
 
@@ -170,7 +170,7 @@ impl TransactionApiServer for System {
 
 	async fn transaction_enabled_services(&self) -> RpcResult<EnabledServices> {
 		Ok(EnabledServices {
-			tx_state: self.tx_state_sender.is_some(),
+			tx_overview: self.tx_overview_sender.is_some(),
 			block_overview: self.block_overview_sender.is_some(),
 			block_data: self.block_data_sender.is_some(),
 		})
