@@ -8,7 +8,7 @@ use jsonrpsee::tokio;
 use sc_service::RpcHandlers;
 use sp_core::{Blake2Hasher, Hasher, H256};
 
-use crate::transaction::read_pallet_call_index;
+use crate::transaction_rpc_worker::read_pallet_call_index;
 
 use super::{constants::NODE_SYNC_SLEEP_INTERNVAL, BlockDetails, TransactionState};
 

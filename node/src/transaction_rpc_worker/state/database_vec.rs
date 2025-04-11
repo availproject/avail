@@ -1,7 +1,7 @@
 use sc_telemetry::log;
 use sp_core::H256;
 use std::collections::VecDeque;
-use transaction_rpc::state_types;
+use transaction_rpc::state;
 
 use super::database::{Config, DatabaseLike};
 use super::BlockDetails;
@@ -25,7 +25,7 @@ impl Database {
 		&self,
 		tx_hash: &H256,
 		array: &VecDeque<BlockDetails>,
-		out: &mut Vec<state_types::RPCResult>,
+		out: &mut Vec<state::RPCResult>,
 	) {
 		for block in array.iter().rev() {
 			for status in &block.transactions {
@@ -33,7 +33,7 @@ impl Database {
 					continue;
 				}
 
-				out.push(state_types::RPCResult {
+				out.push(state::RPCResult {
 					block_hash: block.block_hash,
 					block_height: block.block_height,
 					tx_hash: status.tx_hash,
@@ -107,12 +107,8 @@ impl DatabaseLike for Database {
 		}
 	}
 
-	fn find_transaction_state(
-		&self,
-		tx_hash: &H256,
-		is_finalized: bool,
-	) -> Vec<state_types::RPCResult> {
-		let mut result: Vec<state_types::RPCResult> = Vec::new();
+	fn find_transaction_state(&self, tx_hash: &H256, is_finalized: bool) -> Vec<state::RPCResult> {
+		let mut result: Vec<state::RPCResult> = Vec::new();
 		if !is_finalized {
 			self.search_transaction_state(tx_hash, &self.included_blocks, &mut result);
 		}

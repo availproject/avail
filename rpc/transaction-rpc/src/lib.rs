@@ -1,10 +1,9 @@
-pub mod block_data_types;
-pub mod block_overview_types;
-pub mod state_types;
+pub mod block_data;
+pub mod block_overview;
+pub mod state;
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use block_overview_types::TxDataSender;
 use jsonrpsee::{
 	core::RpcResult,
 	proc_macros::rpc,
@@ -13,7 +12,7 @@ use jsonrpsee::{
 };
 use serde::{Deserialize, Serialize};
 use sp_core::H256;
-use state_types::TxStateSender;
+use state::TxStateSender;
 
 #[derive(Clone, Copy, Serialize, Deserialize)]
 pub struct EnabledServices {
@@ -26,8 +25,8 @@ pub struct EnabledServices {
 pub struct Deps {
 	pub tx_overview_sender: Option<TxStateSender>,
 	pub tx_overview_notifier: Option<Arc<Notify>>,
-	pub block_overview_sender: Option<TxDataSender>,
-	pub block_data_sender: Option<()>,
+	pub block_overview_sender: Option<block_overview::Sender>,
+	pub block_data_sender: Option<block_data::Sender>,
 	pub block_notifier: Option<Arc<Notify>>,
 }
 
@@ -38,16 +37,16 @@ pub trait TransactionApi {
 		&self,
 		tx_hash: H256,
 		is_finalized: Option<bool>,
-	) -> RpcResult<state_types::RPCResultDebug>;
+	) -> RpcResult<state::RPCResultDebug>;
 
 	#[method(name = "block_overview")]
 	async fn block_overview(
 		&self,
-		params: block_overview_types::RPCParams,
-	) -> RpcResult<block_overview_types::RPCResultDebug>;
+		params: block_overview::RPCParams,
+	) -> RpcResult<block_overview::RPCResultDebug>;
 
 	#[method(name = "block_data")]
-	async fn block_data(&self, params: block_overview_types::RPCParams) -> RpcResult<()>;
+	async fn block_data(&self, params: block_overview::RPCParams) -> RpcResult<()>;
 
 	#[method(name = "transaction_enabled_services")]
 	async fn transaction_enabled_services(&self) -> RpcResult<EnabledServices>;
@@ -56,8 +55,8 @@ pub trait TransactionApi {
 pub struct System {
 	tx_overview_sender: Option<TxStateSender>,
 	tx_overview_notifier: Option<Arc<Notify>>,
-	block_overview_sender: Option<TxDataSender>,
-	block_data_sender: Option<()>,
+	block_overview_sender: Option<block_overview::Sender>,
+	block_data_sender: Option<block_data::Sender>,
 	block_notifier: Option<Arc<Notify>>,
 }
 
@@ -79,7 +78,7 @@ impl TransactionApiServer for System {
 		&self,
 		tx_hash: H256,
 		finalized: Option<bool>,
-	) -> RpcResult<state_types::RPCResultDebug> {
+	) -> RpcResult<state::RPCResultDebug> {
 		let now = std::time::Instant::now();
 		let Some(sender) = self.tx_overview_sender.as_ref() else {
 			return Err(internal_error(String::from(
@@ -108,7 +107,7 @@ impl TransactionApiServer for System {
 
 		match response {
 			Ok(x) => {
-				let r = state_types::RPCResultDebug {
+				let r = state::RPCResultDebug {
 					value: x,
 					debug_execution_time: elapsed.as_millis() as u64,
 				};
@@ -121,8 +120,8 @@ impl TransactionApiServer for System {
 
 	async fn block_overview(
 		&self,
-		params: block_overview_types::RPCParams,
-	) -> RpcResult<block_overview_types::RPCResultDebug> {
+		params: block_overview::RPCParams,
+	) -> RpcResult<block_overview::RPCResultDebug> {
 		let now = std::time::Instant::now();
 		let Some(sender) = self.block_overview_sender.as_ref() else {
 			return Err(internal_error(String::from(
@@ -154,7 +153,7 @@ impl TransactionApiServer for System {
 
 		match res {
 			Ok(x) => {
-				let r = block_overview_types::RPCResultDebug {
+				let r = block_overview::RPCResultDebug {
 					value: x,
 					debug_execution_time: elapsed.as_millis() as u64,
 				};
@@ -164,7 +163,7 @@ impl TransactionApiServer for System {
 		}
 	}
 
-	async fn block_data(&self, params: block_overview_types::RPCParams) -> RpcResult<()> {
+	async fn block_data(&self, params: block_overview::RPCParams) -> RpcResult<()> {
 		Ok(())
 	}
 

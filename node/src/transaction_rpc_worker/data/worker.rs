@@ -1,6 +1,6 @@
 use super::cache::{CachedEvent, CachedEventData, CachedEvents, SharedCache};
 use super::{super::runtime_api, cache::Cache, filter::*, logger::Logger};
-use crate::{service::FullClient, transaction::macros::profile};
+use crate::{service::FullClient, transaction_rpc_worker::macros::profile};
 use avail_core::OpaqueExtrinsic;
 use codec::{decode_from_bytes, DecodeAll};
 use frame_system_rpc_runtime_api::{events::SemiDecodedEvent, SystemFetchEventsParams};
@@ -12,17 +12,14 @@ use sp_core::H256;
 use sp_runtime::generic::BlockId;
 use sp_runtime::traits::BlockIdTo;
 use sp_runtime::AccountId32;
-use std::sync::Arc;
-use std::sync::RwLock;
-use transaction_rpc::block_overview_types::{
-	self, DecodedEventData, RPCParams, RPCResult, TransactionData, TxDataReceiver,
-};
-use transaction_rpc::{BlockState, HashIndex};
+use std::sync::{Arc, RwLock};
+use transaction_rpc::{block_data, block_overview, BlockState, HashIndex};
 
 pub struct Worker {
 	client: Arc<FullClient>,
 	rpc_handlers: RpcHandlers,
-	receiver: TxDataReceiver,
+	overview_receiver: block_overview::Receiver,
+	data_receiver: block_data::Receiver,
 	notifier: Arc<Notify>,
 	logger: Logger,
 	//
@@ -34,7 +31,8 @@ impl Worker {
 	pub fn new(
 		client: Arc<FullClient>,
 		rpc_handlers: RpcHandlers,
-		receiver: TxDataReceiver,
+		overview_receiver: block_overview::Receiver,
+		data_receiver: block_data::Receiver,
 		notifier: Arc<Notify>,
 	) -> Self {
 		let logger = Logger::default();
@@ -43,7 +41,8 @@ impl Worker {
 		Self {
 			client,
 			rpc_handlers,
-			receiver,
+			overview_receiver,
+			data_receiver,
 			notifier,
 			logger,
 			cache,
@@ -54,9 +53,9 @@ impl Worker {
 		log::info!("🐖 Transaction Data Running");
 
 		loop {
-			if !self.receiver.is_empty() {
+			if !self.overview_receiver.is_empty() {
 				let (duration, _) = profile!({
-					while let Ok((params, oneshot)) = self.receiver.try_recv() {
+					while let Ok((params, oneshot)) = self.overview_receiver.try_recv() {
 						let result = self.task(params).await;
 						_ = oneshot.send(result);
 					}
@@ -70,7 +69,10 @@ impl Worker {
 		}
 	}
 
-	async fn task(&mut self, params: RPCParams) -> Result<RPCResult, String> {
+	async fn task(
+		&mut self,
+		params: block_overview::RPCParams,
+	) -> Result<block_overview::RPCResult, String> {
 		let extension = params.extension;
 		let filter = params.filter.clone().unwrap_or_default();
 
@@ -80,7 +82,7 @@ impl Worker {
 		let block_state = self.block_state(block_hash, block_height)?;
 		let consensus_events = consensus_events(&params, &events);
 
-		let transactions: Vec<TransactionData> = block_body
+		let transactions: Vec<block_overview::TransactionData> = block_body
 			.par_iter()
 			.enumerate()
 			.filter_map(|(i, opaq)| {
@@ -96,7 +98,7 @@ impl Worker {
 			})
 			.collect();
 
-		let result = RPCResult {
+		let result = block_overview::RPCResult {
 			block_hash,
 			block_height,
 			transactions,
@@ -107,7 +109,10 @@ impl Worker {
 		Ok(result)
 	}
 
-	async fn block_metadata(&self, params: &RPCParams) -> Result<(H256, u32), String> {
+	async fn block_metadata(
+		&self,
+		params: &block_overview::RPCParams,
+	) -> Result<(H256, u32), String> {
 		match params.block_id {
 			HashIndex::Hash(hash) => {
 				let height = self.client.to_number(&BlockId::Hash(hash.clone()));
@@ -201,7 +206,8 @@ struct DataSubmittedEvent {
 	pub data_hash: H256,
 }
 
-fn parse_decoded_event(semi: &SemiDecodedEvent) -> Option<DecodedEventData> {
+fn parse_decoded_event(semi: &SemiDecodedEvent) -> Option<block_overview::DecodedEventData> {
+	use block_overview::DecodedEventData;
 	use frame_system_rpc_runtime_api::events::event_id::*;
 
 	match semi.pallet_id {
@@ -224,7 +230,7 @@ fn parse_decoded_event(semi: &SemiDecodedEvent) -> Option<DecodedEventData> {
 		data_availability::PALLET_ID => {
 			if semi.event_id == data_availability::DATA_SUBMITTED {
 				let value = DataSubmittedEvent::decode_all(&mut semi.data.as_slice()).ok()?;
-				let data = block_overview_types::DataSubmittedEvent {
+				let data = block_overview::DataSubmittedEvent {
 					who: std::format!("{}", value.who),
 					data_hash: std::format!("{:?}", value.data_hash),
 				};
@@ -309,9 +315,9 @@ async fn fetch_events(handlers: &RpcHandlers, block_hash: H256) -> Option<Cached
 }
 
 fn consensus_events(
-	params: &RPCParams,
+	params: &block_overview::RPCParams,
 	events: &Arc<CachedEvents>,
-) -> Option<block_overview_types::Events> {
+) -> Option<block_overview::Events> {
 	if !params.extension.fetch_events {
 		return None;
 	}
@@ -322,7 +328,7 @@ fn consensus_events(
 
 	let mut consensus_events = Vec::with_capacity(cached_event.events.len());
 	for data in &cached_event.events {
-		let mut event = block_overview_types::Event {
+		let mut event = block_overview::Event {
 			index: data.index,
 			pallet_id: data.pallet_id,
 			event_id: data.event_id,

@@ -4,7 +4,7 @@ use std::{
 	hash::Hash,
 	sync::{Arc, RwLock},
 };
-use transaction_rpc::block_overview_types::DecodedEventData;
+use transaction_rpc::block_overview;
 
 pub(crate) type SharedCache = Arc<RwLock<Cache>>;
 
@@ -138,7 +138,7 @@ pub struct CachedEventData {
 	pub pallet_id: u8,
 	pub event_id: u8,
 	pub encoded: String,
-	pub decoded: Option<DecodedEventData>,
+	pub decoded: Option<block_overview::DecodedEventData>,
 }
 
 impl CachedEventData {

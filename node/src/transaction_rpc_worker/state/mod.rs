@@ -24,7 +24,7 @@ use jsonrpsee::tokio::sync::{
 };
 use serde::{Deserialize, Serialize};
 use sp_core::H256;
-use transaction_rpc::state_types::TxStateReceiver as SearchReceiver;
+use transaction_rpc::state::TxStateReceiver as SearchReceiver;
 
 #[derive(Clone, Default)]
 pub struct CliDeps {

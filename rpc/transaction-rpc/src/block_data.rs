@@ -1,6 +1,12 @@
 use crate::{BlockState, HashIndex};
+use jsonrpsee::tokio::sync::{mpsc, oneshot};
 use serde::{Deserialize, Serialize};
 use sp_core::H256;
+
+pub type ChannelResponse = oneshot::Sender<Result<RPCResult, String>>;
+pub type Channel = (RPCParams, ChannelResponse);
+pub type Receiver = mpsc::Receiver<Channel>;
+pub type Sender = mpsc::Sender<Channel>;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RPCParams {

@@ -3,7 +3,7 @@ use super::worker;
 use super::worker_logger::Logger;
 use super::BlockDetails;
 use crate::service::FullClient;
-use crate::transaction::macros::profile;
+use crate::transaction_rpc_worker::macros::profile;
 use avail_core::OpaqueExtrinsic;
 use frame_system_rpc_runtime_api::{
 	events::event_id::system, SystemFetchEventsParams, SystemFetchEventsResult,

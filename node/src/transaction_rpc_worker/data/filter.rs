@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use super::cache::{CachedEvents, SharedCache};
-use crate::transaction::read_pallet_call_index;
+use crate::transaction_rpc_worker::read_pallet_call_index;
 use avail_core::OpaqueExtrinsic;
 use codec::Encode;
 use da_runtime::UncheckedExtrinsic;
@@ -9,10 +9,12 @@ use sc_telemetry::log;
 use sp_core::H256;
 use sp_core::{Blake2Hasher, Hasher};
 use sp_runtime::MultiAddress;
-use transaction_rpc::block_overview_types::{self, Filter, TransactionData, TransactionDataSigned};
-use transaction_rpc::HashIndex;
+use transaction_rpc::{block_overview, HashIndex};
 
-pub(crate) fn filter_pallet_call_id(ext: &UncheckedExtrinsic, filter: &Filter) -> Option<(u8, u8)> {
+pub(crate) fn filter_pallet_call_id(
+	ext: &UncheckedExtrinsic,
+	filter: &block_overview::Filter,
+) -> Option<(u8, u8)> {
 	let Some((pallet_id, call_id)) = read_pallet_call_index(&ext) else {
 		return None;
 	};
@@ -30,8 +32,8 @@ pub(crate) fn filter_pallet_call_id(ext: &UncheckedExtrinsic, filter: &Filter) -
 
 pub(crate) fn filter_signature(
 	ext: &UncheckedExtrinsic,
-	filter: &Filter,
-) -> Option<Option<TransactionDataSigned>> {
+	filter: &block_overview::Filter,
+) -> Option<Option<block_overview::TransactionDataSigned>> {
 	let requires_signed =
 		filter.app_id.is_some() || filter.nonce.is_some() || filter.ss58_address.is_some();
 
@@ -42,7 +44,7 @@ pub(crate) fn filter_signature(
 		return Some(None);
 	};
 
-	let mut signed = TransactionDataSigned::default();
+	let mut signed = block_overview::TransactionDataSigned::default();
 
 	if let MultiAddress::Id(id) = &sig.0 {
 		signed.ss58_address = Some(std::format!("{}", id))
@@ -74,11 +76,11 @@ pub(crate) fn filter_extrinsic(
 	block_hash: H256,
 	tx_index: u32,
 	opaq: &OpaqueExtrinsic,
-	filter: &Filter,
-	extension: &block_overview_types::RPCParamsExtension,
+	filter: &block_overview::Filter,
+	extension: &block_overview::RPCParamsExtension,
 	cache: SharedCache,
 	events: Arc<CachedEvents>,
-) -> Option<TransactionData> {
+) -> Option<block_overview::TransactionData> {
 	if let Some(HashIndex::Index(target_index)) = &filter.tx_id {
 		if *target_index != tx_index as u32 {
 			return None;
@@ -170,7 +172,7 @@ pub(crate) fn filter_extrinsic(
 	if extension.fetch_events {
 		let phase = frame_system::Phase::ApplyExtrinsic(tx_index);
 		if let Some(cached_event) = events.0.iter().find(|x| x.phase == phase) {
-			use block_overview_types::Event;
+			use block_overview::Event;
 			let mut rpc_events: Vec<Event> = Vec::with_capacity(cached_event.events.len());
 
 			for ev in &cached_event.events {
@@ -188,7 +190,7 @@ pub(crate) fn filter_extrinsic(
 	}
 
 	let decoded = None;
-	let tx = TransactionData {
+	let tx = block_overview::TransactionData {
 		tx_hash,
 		tx_index,
 		pallet_id,

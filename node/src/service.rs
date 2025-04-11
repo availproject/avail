@@ -19,7 +19,7 @@
 //! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 #![allow(dead_code)]
 
-use crate::transaction;
+use crate::transaction_rpc_worker;
 use crate::{cli::Cli, rpc as node_rpc};
 use avail_core::AppId;
 use da_runtime::{apis::RuntimeApi, NodeBlock as Block, Runtime};
@@ -175,7 +175,7 @@ pub fn new_partial(
 	config: &Configuration,
 	unsafe_da_sync: bool,
 	kate_rpc_deps: kate_rpc::Deps,
-	tx_cli_deps: transaction::CliDeps,
+	transaction_rpc_worker_cli_deps: transaction_rpc_worker::CliDeps,
 ) -> Result<
 	sc_service::PartialComponents<
 		FullClient,
@@ -195,7 +195,7 @@ pub fn new_partial(
 			),
 			sc_consensus_grandpa::SharedVoterState,
 			Option<Telemetry>,
-			transaction::Deps,
+			transaction_rpc_worker::Deps,
 		),
 	>,
 	ServiceError,
@@ -297,44 +297,51 @@ pub fn new_partial(
 	let import_setup = (da_block_import, grandpa_link, babe_link);
 
 	let mut transaction_rpc_deps = transaction_rpc::Deps::default();
-	let mut tx_state_deps = transaction::Deps::default();
+	let mut transaction_rpc_worker_deps = transaction_rpc_worker::Deps::default();
 
-	if tx_cli_deps.state.enabled {
-		let (search_send, search_recv) = channel::<transaction_rpc::state_types::TxStateChannel>(
-			transaction::state::constants::RPC_CHANNEL_LIMIT,
+	if transaction_rpc_worker_cli_deps.state.enabled {
+		let (search_send, search_recv) = channel::<transaction_rpc::state::TxStateChannel>(
+			transaction_rpc_worker::state::constants::RPC_CHANNEL_LIMIT,
 		);
-		let (block_send, block_recv) = channel::<transaction::state::BlockDetails>(
-			transaction::state::constants::BLOCK_CHANNEL_LIMIT,
+		let (block_send, block_recv) = channel::<transaction_rpc_worker::state::BlockDetails>(
+			transaction_rpc_worker::state::constants::BLOCK_CHANNEL_LIMIT,
 		);
 
 		let notifier = Arc::new(Notify::new());
-		let deps = transaction::state::Deps {
+		let deps = transaction_rpc_worker::state::Deps {
 			block_receiver: block_recv,
 			block_sender: block_send,
 			search_receiver: search_recv,
-			cli: tx_cli_deps.state.clone(),
+			cli: transaction_rpc_worker_cli_deps.state.clone(),
 			notifier: notifier.clone(),
 		};
 
 		transaction_rpc_deps.tx_overview_sender = Some(search_send);
 		transaction_rpc_deps.tx_overview_notifier = Some(notifier);
-		tx_state_deps.state = Some(deps)
+		transaction_rpc_worker_deps.state = Some(deps)
 	}
 
-	if tx_cli_deps.data.enabled {
-		let (search_send, search_recv) = channel::<
-			transaction_rpc::block_overview_types::TxDataChannel,
-		>(transaction::data::constants::RPC_CHANNEL_LIMIT);
+	if transaction_rpc_worker_cli_deps.data.enabled {
+		let (overview_search_send, overview_search_recv) =
+			channel::<transaction_rpc::block_overview::Channel>(
+				transaction_rpc_worker::data::constants::RPC_CHANNEL_LIMIT,
+			);
+
+		let (data_search_send, data_search_recv) = channel::<transaction_rpc::block_data::Channel>(
+			transaction_rpc_worker::data::constants::RPC_CHANNEL_LIMIT,
+		);
 
 		let notifier = Arc::new(Notify::new());
-		let deps = transaction::data::Deps {
-			receiver: search_recv,
+		let deps = transaction_rpc_worker::data::Deps {
+			overview_receiver: overview_search_recv,
+			data_receiver: data_search_recv,
 			notifier: notifier.clone(),
 		};
 
-		transaction_rpc_deps.block_overview_sender = Some(search_send);
+		transaction_rpc_deps.block_overview_sender = Some(overview_search_send);
+		transaction_rpc_deps.block_data_sender = Some(data_search_send);
 		transaction_rpc_deps.block_notifier = Some(notifier);
-		tx_state_deps.data = Some(deps)
+		transaction_rpc_worker_deps.data = Some(deps)
 	}
 
 	let (rpc_extensions_builder, rpc_setup) = {
@@ -398,7 +405,7 @@ pub fn new_partial(
 			import_setup,
 			rpc_setup,
 			telemetry,
-			tx_state_deps,
+			transaction_rpc_worker_deps,
 		),
 	})
 }
@@ -427,7 +434,7 @@ pub fn new_full_base(
 	with_startup_data: impl FnOnce(&BlockImport, &sc_consensus_babe::BabeLink<Block>),
 	unsafe_da_sync: bool,
 	kate_rpc_deps: kate_rpc::Deps,
-	tx_cli_deps: transaction::CliDeps,
+	tx_cli_deps: transaction_rpc_worker::CliDeps,
 ) -> Result<NewFullBase, ServiceError> {
 	let hwbench = if !disable_hardware_benchmarks {
 		config.database.path().map(|database_path| {
@@ -446,7 +453,7 @@ pub fn new_full_base(
 		keystore_container,
 		select_chain,
 		transaction_pool,
-		other: (rpc_builder, import_setup, rpc_setup, mut telemetry, tx_deps),
+		other: (rpc_builder, import_setup, rpc_setup, mut telemetry, transaction_rpc_worker_deps),
 	} = new_partial(&config, unsafe_da_sync, kate_rpc_deps, tx_cli_deps)?;
 
 	let shared_voter_state = rpc_setup;
@@ -688,12 +695,13 @@ pub fn new_full_base(
 
 	// Spawning Transaction Info Workers
 
-	if let Some(deps) = tx_deps.data {
+	if let Some(deps) = transaction_rpc_worker_deps.data {
 		log::info!("🐖 Transaction Data RPC is enabled.");
-		let worker = transaction::data::Worker::new(
+		let worker = transaction_rpc_worker::data::Worker::new(
 			client.clone(),
 			rpc_handlers.clone(),
-			deps.receiver,
+			deps.overview_receiver,
+			deps.data_receiver,
 			deps.notifier.clone(),
 		);
 
@@ -702,28 +710,28 @@ pub fn new_full_base(
 			.spawn("tx-data-worker", None, worker.run());
 	}
 
-	if let Some(deps) = tx_deps.state {
-		use transaction::state::{Database, MapDatabase, VecDatabase};
+	if let Some(deps) = transaction_rpc_worker_deps.state {
+		use transaction_rpc_worker::state::{Database, MapDatabase, VecDatabase};
 
 		log::info!("👾 Transaction State RPC is enabled.");
-		let worker_1 = transaction::state::IncludedWorker {
+		let worker_1 = transaction_rpc_worker::state::IncludedWorker {
 			rpc_handlers: rpc_handlers.clone(),
 			client: client.clone(),
 			sender: deps.block_sender.clone(),
 			max_stored_block_count: deps.cli.max_stored_block_count,
-			logger: transaction::state::WorkerLogger::new(
+			logger: transaction_rpc_worker::state::WorkerLogger::new(
 				"Inclusion Worker".into(),
 				deps.cli.logging_interval,
 			),
 			notifier: deps.notifier.clone(),
 		};
 
-		let worker_2 = transaction::state::FinalizedWorker {
+		let worker_2 = transaction_rpc_worker::state::FinalizedWorker {
 			rpc_handlers: rpc_handlers.clone(),
 			client: client.clone(),
 			sender: deps.block_sender.clone(),
 			max_stored_block_count: deps.cli.max_stored_block_count,
-			logger: transaction::state::WorkerLogger::new(
+			logger: transaction_rpc_worker::state::WorkerLogger::new(
 				"Finalization Worker".into(),
 				deps.cli.logging_interval,
 			),
@@ -785,16 +793,16 @@ pub fn new_full(config: Configuration, cli: Cli) -> Result<TaskManager, ServiceE
 		rpc_metrics_enabled: cli.kate_rpc_metrics_enabled,
 	};
 
-	let tx_state_cli_deps = transaction::state::CliDeps {
+	let tx_state_cli_deps = transaction_rpc_worker::state::CliDeps {
 		max_search_results: cli.tx_state_rpc_max_search_results,
 		max_stored_block_count: cli.tx_state_rpc_max_stored_block_count,
 		use_vector: cli.tx_state_rpc_use_vector,
 		enabled: cli.tx_state_rpc_enabled,
 		logging_interval: cli.tx_state_rpc_logging_interval,
 	};
-	let tx_data_cli_deps = transaction::data::CliDeps { enabled: true };
+	let tx_data_cli_deps = transaction_rpc_worker::data::CliDeps { enabled: true };
 
-	let tx_cli_deps = transaction::CliDeps {
+	let tx_cli_deps = transaction_rpc_worker::CliDeps {
 		data: tx_data_cli_deps,
 		state: tx_state_cli_deps,
 	};
