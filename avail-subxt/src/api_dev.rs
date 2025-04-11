@@ -15105,6 +15105,7 @@ pub mod api {
 				pub struct SubmitDataWithCommitments {
 					pub data: submit_data_with_commitments::Data,
 					pub commitments: submit_data_with_commitments::Commitments,
+                    pub proof: submit_data_with_commitments::Proof,
 				}
 				pub mod submit_data_with_commitments {
 					use super::runtime_types;
@@ -15115,6 +15116,7 @@ pub mod api {
 						runtime_types::bounded_collections::bounded_vec::BoundedVec<
 							::core::primitive::u8,
 						>;
+                    pub type Proof = [::core::primitive::u8; 48usize];
 				}
 				impl ::subxt::blocks::StaticExtrinsic for SubmitDataWithCommitments {
 					const PALLET: &'static str = "DataAvailability";
@@ -15213,15 +15215,16 @@ pub mod api {
 					&self,
 					data: types::submit_data_with_commitments::Data,
 					commitments: types::submit_data_with_commitments::Commitments,
+                    proof: types::submit_data_with_commitments::Proof,
 				) -> ::subxt::tx::Payload<types::SubmitDataWithCommitments> {
 					::subxt::tx::Payload::new_static(
 						"DataAvailability",
 						"submit_data_with_commitments",
-						types::SubmitDataWithCommitments { data, commitments },
+						types::SubmitDataWithCommitments { data, commitments, proof },
 						[
-							55u8, 100u8, 227u8, 59u8, 251u8, 19u8, 49u8, 215u8, 132u8, 251u8, 49u8,
-							128u8, 230u8, 196u8, 209u8, 6u8, 115u8, 179u8, 107u8, 65u8, 40u8,
-							106u8, 19u8, 25u8, 162u8, 61u8, 10u8, 142u8, 5u8, 146u8, 241u8, 249u8,
+							183u8, 50u8, 203u8, 253u8, 180u8, 220u8, 87u8, 17u8, 236u8, 37u8, 114u8, 244u8, 24u8,
+							254u8, 156u8, 200u8, 115u8, 234u8, 211u8, 215u8, 169u8, 149u8, 119u8, 151u8, 0u8, 95u8,
+							76u8, 205u8, 89u8, 174u8, 246u8, 244u8,
 						],
 					)
 				}
@@ -26072,6 +26075,7 @@ pub mod api {
 						commitments: runtime_types::bounded_collections::bounded_vec::BoundedVec<
 							::core::primitive::u8,
 						>,
+                        proof: [::core::primitive::u8; 48usize]
 					},
 				}
 				#[derive(

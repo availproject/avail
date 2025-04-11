@@ -2,7 +2,7 @@ use super::MAX_ITERATIONS;
 use crate::{Call as DACall, CheckBatchTransactions, Config as DAConfig, Pallet, LOG_TARGET};
 use avail_core::{traits::GetAppId, AppId, InvalidTransactionCustomId};
 
-use crate::extensions::native::hosted_commitment_builder::build_da_commitments;
+use crate::extensions::native::hosted_commitment_builder::verify_multiproof;
 use codec::{Decode, Encode};
 use frame_support::{
 	ensure,
@@ -72,11 +72,14 @@ where
 		// }
 
 		CheckBatchTransactions::<T>::new().do_validate(call, len)?;
-		if let Some(DACall::<T>::submit_data_with_commitments { data, commitments }) =
-			call.is_sub_type()
+		if let Some(DACall::<T>::submit_data_with_commitments {
+			data,
+			commitments,
+			proof,
+		}) = call.is_sub_type()
 		{
 			ensure!(
-				!commitments.to_vec().is_empty(),
+				!commitments.to_vec().is_empty() && !proof.is_empty(),
 				InvalidTransaction::Custom(0)
 			);
 
@@ -84,10 +87,17 @@ where
 			let block_length = frame_system::Pallet::<T>::block_length();
 			let seed = [0u8; 32];
 
-			let generated_commitments =
-				build_da_commitments(data.to_vec().clone(), block_length, seed);
+			// let generated_commitments =
+			// 	build_da_commitments(data.to_vec().clone(), block_length, seed);
 			ensure!(
-				generated_commitments == commitments.to_vec(),
+				// generated_commitments == commitments.to_vec(),
+				verify_multiproof(
+					data.to_vec(),
+					block_length,
+					seed,
+					commitments.to_vec(),
+					proof
+				),
 				InvalidTransaction::Custom(1)
 			);
 		}

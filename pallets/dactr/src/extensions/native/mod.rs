@@ -12,4 +12,14 @@ pub trait HostedCommitmentBuilder {
 	fn build_da_commitments(data: Vec<u8>, block_length: BlockLength, seed: Seed) -> DaCommitments {
 		build_da_commitments::build_da_commitments(data, block_length, seed)
 	}
+
+	fn verify_multiproof(
+		data: Vec<u8>,
+		block_length: BlockLength,
+		seed: Seed,
+		commitments: Vec<u8>,
+		proof: &[u8; 48],
+	) -> bool {
+		build_da_commitments::verify_multiproof(data, block_length, seed, commitments, proof)
+	}
 }

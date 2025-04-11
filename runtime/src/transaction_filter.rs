@@ -64,7 +64,10 @@ fn filter_da_call(
 	app_id: AppId,
 	tx_index: usize,
 ) -> Option<ExtractedTxData> {
-	let DACall::submit_data_with_commitments { data, commitments } = call else {
+	let DACall::submit_data_with_commitments {
+		data, commitments, ..
+	} = call
+	else {
 		return None;
 	};
 

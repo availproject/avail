@@ -301,6 +301,7 @@ pub mod pallet {
 			data: AppDataFor<T>,
 			// TODO: Update the bounds to appropriate one
 			_commitments: AppDataFor<T>,
+			_proof: [u8; 48],
 		) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
 			ensure!(!data.is_empty(), Error::<T>::DataCannotBeEmpty);
