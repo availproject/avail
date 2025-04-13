@@ -21,14 +21,14 @@ pub(crate) fn filter_pallet_call_id(
 		return None;
 	};
 
-	if filter.pallet_id.is_some_and(|x| x != pallet_id) {
-		return None;
-	};
+	/* 	if filter.pallet_id.is_some_and(|x| x != pallet_id) {
+		   return None;
+	   };
 
-	if filter.call_id.is_some_and(|x| x != call_id) {
-		return None;
-	};
-
+	   if filter.call_id.is_some_and(|x| x != call_id) {
+		   return None;
+	   };
+	*/
 	Some((pallet_id, call_id))
 }
 
@@ -36,8 +36,10 @@ pub(crate) fn filter_signature(
 	ext: &UncheckedExtrinsic,
 	filter: &block_overview::Filter,
 ) -> Option<Option<block_overview::TransactionDataSigned>> {
-	let requires_signed =
-		filter.app_id.is_some() || filter.nonce.is_some() || filter.ss58_address.is_some();
+	let expected_signature = &filter.signature;
+	let requires_signed = expected_signature.app_id.is_some()
+		|| expected_signature.nonce.is_some()
+		|| expected_signature.ss58_address.is_some();
 
 	let Some(sig) = &ext.signature else {
 		if requires_signed {
@@ -59,15 +61,20 @@ pub(crate) fn filter_signature(
 		sp_runtime::generic::Era::Mortal(x, y) => signed.mortality = Some((x, y)),
 	};
 
-	if filter.app_id.is_some_and(|x| x != signed.app_id) {
+	if expected_signature
+		.app_id
+		.is_some_and(|x| x != signed.app_id)
+	{
 		return None;
 	}
 
-	if filter.nonce.is_some_and(|x| x != signed.nonce) {
+	if expected_signature.nonce.is_some_and(|x| x != signed.nonce) {
 		return None;
 	}
 
-	if filter.ss58_address.is_some() && filter.ss58_address != signed.ss58_address {
+	if expected_signature.ss58_address.is_some()
+		&& expected_signature.ss58_address != signed.ss58_address
+	{
 		return None;
 	}
 
@@ -82,7 +89,7 @@ pub(crate) fn filter_extrinsic(
 	cache: SharedCache,
 	events: Arc<CachedEvents>,
 ) -> Option<block_overview::TransactionData> {
-	if let Some(HashIndex::Index(target_index)) = &filter.tx_id {
+	/* 	if let Some(HashIndex::Index(target_index)) = &filter.tx_id {
 		if *target_index != unique_id.1 as u32 {
 			return None;
 		}
@@ -96,7 +103,7 @@ pub(crate) fn filter_extrinsic(
 				return None;
 			}
 		}
-	};
+	}; */
 
 	let ext = UncheckedExtrinsic::decode_no_vec_prefix(&mut opaq.0.as_slice());
 	let Ok(ext) = ext else {
@@ -123,7 +130,7 @@ pub(crate) fn filter_extrinsic(
 		return None;
 	};
 
-	let tx_hash = if let Some(tx_hash) = cached_tx_hash {
+	/* 	let tx_hash = if let Some(tx_hash) = cached_tx_hash {
 		tx_hash
 	} else {
 		let tx_hash = Blake2Hasher::hash(&ext.encode());
@@ -135,7 +142,9 @@ pub(crate) fn filter_extrinsic(
 		if tx_hash != *target_hash {
 			return None;
 		}
-	};
+	}; */
+
+	let tx_hash = Blake2Hasher::hash(&ext.encode());
 
 	let mut tx_events = None;
 	if extension.fetch_events {

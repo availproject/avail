@@ -23,37 +23,31 @@ pub struct RPCParams {
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct CallFilter {
 	#[serde(default)]
-	pub tx: CallTransactionFilterKind,
+	pub tx: CallFilterTxKind,
 	#[serde(default)]
-	pub id: CallIdFilterKind,
+	pub signature: CallFilterSignature,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum CallFilterTxKind {
+	All,
+	Some(Vec<HashIndex>),
+	Pallet(Vec<u8>),
+	PalletCall(Vec<(u8, u8)>),
+	HasEvent(Vec<(u8, u8)>),
+}
+
+impl Default for CallFilterTxKind {
+	fn default() -> Self {
+		Self::All
+	}
+}
+
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+pub struct CallFilterSignature {
 	pub ss58_address: Option<String>,
 	pub app_id: Option<u32>,
 	pub nonce: Option<u32>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum CallTransactionFilterKind {
-	All,
-	Some(Vec<HashIndex>),
-}
-
-impl Default for CallTransactionFilterKind {
-	fn default() -> Self {
-		Self::All
-	}
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum CallIdFilterKind {
-	All,
-	Pallet(u8),
-	Combination(Vec<(u8, u8)>),
-}
-
-impl Default for CallIdFilterKind {
-	fn default() -> Self {
-		Self::All
-	}
 }
 
 #[derive(Clone, Serialize, Deserialize)]

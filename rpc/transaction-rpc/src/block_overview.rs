@@ -28,9 +28,29 @@ pub struct RPCParamsExtension {
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct Filter {
-	pub tx_id: Option<HashIndex>,
-	pub pallet_id: Option<u8>,
-	pub call_id: Option<u8>,
+	#[serde(default)]
+	pub tx: CallFilterExtKind,
+	#[serde(default)]
+	pub signature: CallFilterSignature,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum CallFilterExtKind {
+	All,
+	Some(Vec<HashIndex>),
+	Pallet(Vec<u8>),
+	PalletCall(Vec<(u8, u8)>),
+	HasEvent(Vec<(u8, u8)>),
+}
+
+impl Default for CallFilterExtKind {
+	fn default() -> Self {
+		Self::All
+	}
+}
+
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+pub struct CallFilterSignature {
 	pub ss58_address: Option<String>,
 	pub app_id: Option<u32>,
 	pub nonce: Option<u32>,
