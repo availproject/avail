@@ -1,7 +1,5 @@
-use super::cache::{Cacheable, CachedEvent, CachedEventData, CachedEvents, SharedCache};
-use super::{super::runtime_api, cache::Cache, filter::*, logger::Logger};
-use crate::transaction_rpc_worker::read_pallet_call_index;
-use crate::{service::FullClient, transaction_rpc_worker::macros::profile};
+use std::sync::{Arc, RwLock};
+
 use avail_core::OpaqueExtrinsic;
 use codec::{decode_from_bytes, DecodeAll, Encode};
 use da_runtime::UncheckedExtrinsic;
@@ -11,11 +9,19 @@ use rayon::prelude::*;
 use sc_service::RpcHandlers;
 use sc_telemetry::log;
 use sp_core::{Blake2Hasher, Hasher, H256};
-use sp_runtime::generic::BlockId;
-use sp_runtime::traits::BlockIdTo;
-use sp_runtime::AccountId32;
-use std::sync::{Arc, RwLock};
+use sp_runtime::{generic::BlockId, traits::BlockIdTo, AccountId32};
 use transaction_rpc::{block_data, block_overview, BlockState, HashIndex};
+
+use super::{
+	super::runtime_api,
+	cache::{Cache, Cacheable, CachedEvent, CachedEventData, CachedEvents, SharedCache},
+	filter::*,
+	logger::Logger,
+};
+use crate::{
+	service::FullClient,
+	transaction_rpc_worker::{macros::profile, read_pallet_call_index},
+};
 
 pub struct Worker {
 	client: Arc<FullClient>,

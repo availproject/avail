@@ -1,6 +1,4 @@
-use super::{get_account_id_from_seed, AuthorityKeys};
 use avail_core::{BLOCK_CHUNK_SIZE, DA_DISPATCH_RATIO};
-
 use da_runtime::{
 	constants, AccountId, Balance, DataAvailabilityConfig, SessionKeys, StakerStatus,
 };
@@ -12,8 +10,9 @@ use pallet_vector::constants::{
 };
 use sc_telemetry::TelemetryEndpoints;
 use serde_json::{json, Value};
-use sp_core::crypto::AccountId32;
-use sp_core::sr25519::Public;
+use sp_core::{crypto::AccountId32, sr25519::Public};
+
+use super::{get_account_id_from_seed, AuthorityKeys};
 
 pub const PROTOCOL_ID: &str = "Avail";
 pub const TESTNET_TELEMETRY_URL: &str = "ws://telemetry.avail.tools:8001/submit";

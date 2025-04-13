@@ -1,3 +1,5 @@
+use std::{marker::PhantomData, sync::Arc};
+
 /// # Data Avail Protocol
 ///
 /// This `BlockImport` ensures that any block follows the Data Availability Protocol before send it
@@ -14,7 +16,6 @@ use da_runtime::{
 	Header as DaHeader,
 };
 use frame_system::limits::BlockLength;
-
 use sc_consensus::{
 	block_import::{BlockCheckParams, BlockImport as BlockImportT, BlockImportParams},
 	ImportResult,
@@ -24,7 +25,6 @@ use sp_blockchain::HeaderBackend;
 use sp_consensus::{BlockOrigin, Error as ConsensusError};
 use sp_core::H256;
 use sp_runtime::traits::Block as BlockT;
-use std::{marker::PhantomData, sync::Arc};
 
 pub struct BlockImport<B, C, I> {
 	client: Arc<C>,

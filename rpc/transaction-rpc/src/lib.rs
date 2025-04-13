@@ -1,6 +1,6 @@
 pub mod block_data;
 pub mod block_overview;
-pub mod state;
+pub mod transaction_overview;
 use std::sync::Arc;
 
 use async_trait::async_trait;
@@ -22,7 +22,7 @@ pub struct EnabledServices {
 
 #[derive(Clone, Default)]
 pub struct Deps {
-	pub transaction_overview_sender: Option<state::Sender>,
+	pub transaction_overview_sender: Option<transaction_overview::Sender>,
 	pub transaction_overview_notifier: Option<Arc<Notify>>,
 	pub block_overview_sender: Option<block_overview::Sender>,
 	pub block_data_sender: Option<block_data::Sender>,
@@ -30,13 +30,13 @@ pub struct Deps {
 }
 
 #[rpc(client, server)]
-pub trait TransactionApi {
+pub trait Api {
 	#[method(name = "transaction_overview")]
 	async fn transaction_overview(
 		&self,
 		tx_hash: H256,
 		is_finalized: Option<bool>,
-	) -> RpcResult<state::RPCResultDebug>;
+	) -> RpcResult<transaction_overview::RPCResultDebug>;
 
 	#[method(name = "block_overview")]
 	async fn block_overview(
@@ -50,19 +50,19 @@ pub trait TransactionApi {
 		params: block_data::RPCParams,
 	) -> RpcResult<block_data::RPCResultDebug>;
 
-	#[method(name = "transaction_enabled_services")]
-	async fn transaction_enabled_services(&self) -> RpcResult<EnabledServices>;
+	#[method(name = "block_service_enabled")]
+	async fn block_service_enabled(&self) -> RpcResult<EnabledServices>;
 }
 
-pub struct System {
-	transaction_overview_sender: Option<state::Sender>,
+pub struct RPC {
+	transaction_overview_sender: Option<transaction_overview::Sender>,
 	transaction_overview_notifier: Option<Arc<Notify>>,
 	block_overview_sender: Option<block_overview::Sender>,
 	block_data_sender: Option<block_data::Sender>,
 	block_notifier: Option<Arc<Notify>>,
 }
 
-impl System {
+impl RPC {
 	pub fn new(deps: Deps) -> Self {
 		Self {
 			transaction_overview_sender: deps.transaction_overview_sender,
@@ -75,12 +75,12 @@ impl System {
 }
 
 #[async_trait]
-impl TransactionApiServer for System {
+impl ApiServer for RPC {
 	async fn transaction_overview(
 		&self,
 		tx_hash: H256,
 		finalized: Option<bool>,
-	) -> RpcResult<state::RPCResultDebug> {
+	) -> RpcResult<transaction_overview::RPCResultDebug> {
 		let now = std::time::Instant::now();
 		let Some(sender) = self.transaction_overview_sender.as_ref() else {
 			return Err(internal_error(String::from(
@@ -109,7 +109,7 @@ impl TransactionApiServer for System {
 
 		match response {
 			Ok(x) => {
-				let r = state::RPCResultDebug {
+				let r = transaction_overview::RPCResultDebug {
 					value: x,
 					debug_execution_time: elapsed.as_millis() as u64,
 				};
@@ -210,7 +210,7 @@ impl TransactionApiServer for System {
 		}
 	}
 
-	async fn transaction_enabled_services(&self) -> RpcResult<EnabledServices> {
+	async fn block_service_enabled(&self) -> RpcResult<EnabledServices> {
 		Ok(EnabledServices {
 			transaction_overview: self.transaction_overview_sender.is_some(),
 			block_overview: self.block_overview_sender.is_some(),

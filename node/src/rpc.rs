@@ -133,8 +133,7 @@ where
 	B: sc_client_api::Backend<Block> + Send + Sync + 'static,
 	B::State: sc_client_api::backend::StateBackend<sp_runtime::traits::HashingFor<Block>>,
 {
-	use kate_rpc::metrics::KateApiMetricsServer;
-	use kate_rpc::{Kate, KateApiServer};
+	use kate_rpc::{metrics::KateApiMetricsServer, Kate, KateApiServer};
 	use mmr_rpc::{Mmr, MmrApiServer};
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
 	use sc_consensus_babe_rpc::{Babe, BabeApiServer};
@@ -143,7 +142,6 @@ where
 	use sc_sync_state_rpc::{SyncState, SyncStateApiServer};
 	use substrate_frame_rpc_system::{System, SystemApiServer};
 	use substrate_state_trie_migration_rpc::{StateMigration, StateMigrationApiServer};
-
 	#[cfg(feature = "testing-environment")]
 	use testing_rpc::{TestingApiServer, TestingEnv};
 
@@ -247,8 +245,8 @@ where
 		|| transaction_rpc_deps.block_overview_sender.is_some()
 		|| transaction_rpc_deps.block_data_sender.is_some()
 	{
-		io.merge(transaction_rpc::TransactionApiServer::into_rpc(
-			transaction_rpc::System::new(transaction_rpc_deps),
+		io.merge(transaction_rpc::ApiServer::into_rpc(
+			transaction_rpc::RPC::new(transaction_rpc_deps),
 		))?;
 	}
 

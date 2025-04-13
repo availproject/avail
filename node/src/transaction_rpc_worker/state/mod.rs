@@ -8,20 +8,18 @@ mod worker_finalized;
 mod worker_included;
 mod worker_logger;
 
+use std::{ops::Add, sync::Arc, time::Duration};
+
 pub use database::Database;
 pub use database_map::Database as MapDatabase;
+use jsonrpsee::tokio::sync::{mpsc, Notify};
+use serde::{Deserialize, Serialize};
+use sp_core::H256;
+use transaction_rpc::transaction_overview;
 // pub use database_vec::Database as VecDatabase;
 pub use worker_finalized::FinalizedWorker;
 pub use worker_included::IncludedWorker;
 pub use worker_logger::Logger as WorkerLogger;
-
-use std::time::Duration;
-use std::{ops::Add, sync::Arc};
-
-use jsonrpsee::tokio::sync::{mpsc, Notify};
-use serde::{Deserialize, Serialize};
-use sp_core::H256;
-use transaction_rpc::state;
 
 pub type Channel = BlockDetails;
 pub type Receiver = mpsc::Receiver<BlockDetails>;
@@ -38,7 +36,7 @@ pub struct CliDeps {
 pub struct Deps {
 	pub block_receiver: Receiver,
 	pub block_sender: Sender,
-	pub search_receiver: state::Receiver,
+	pub search_receiver: transaction_overview::Receiver,
 	pub notifier: Arc<Notify>,
 	pub cli: CliDeps,
 }

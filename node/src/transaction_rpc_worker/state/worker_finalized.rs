@@ -1,8 +1,8 @@
-use super::super::runtime_api;
-use super::worker_logger::Logger;
-use super::{worker, Sender};
-use crate::service::FullClient;
-use crate::transaction_rpc_worker::macros::profile;
+use std::{
+	sync::Arc,
+	time::{Duration, Instant},
+};
+
 use avail_core::OpaqueExtrinsic;
 use frame_system_rpc_runtime_api::{
 	events::event_id::system, SystemFetchEventsParams, SystemFetchEventsResult,
@@ -10,10 +10,10 @@ use frame_system_rpc_runtime_api::{
 use jsonrpsee::tokio::{sync::Notify, time::sleep};
 use sc_service::RpcHandlers;
 use sp_core::H256;
-use sp_runtime::generic::BlockId;
-use sp_runtime::traits::BlockIdTo;
-use std::sync::Arc;
-use std::time::{Duration, Instant};
+use sp_runtime::{generic::BlockId, traits::BlockIdTo};
+
+use super::{super::runtime_api, worker, worker_logger::Logger, Sender};
+use crate::{service::FullClient, transaction_rpc_worker::macros::profile};
 
 const SLEEP_ON_FETCH: u64 = 1000; // ms
 const SLEEP_ON_ERROR: u64 = 2500; // ms

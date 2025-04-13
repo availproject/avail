@@ -1,5 +1,6 @@
-use sc_telemetry::log;
 use std::time::{Duration, Instant};
+
+use sc_telemetry::log;
 
 use super::generate_duration_stats;
 pub struct Logger {

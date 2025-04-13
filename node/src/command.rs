@@ -18,7 +18,7 @@
 
 use std::sync::Arc;
 
-use avail_node::chains;
+use avail_node::{chains, NODE_VERSION};
 use da_runtime::Block;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use sc_cli::{Result, SubstrateCli};
@@ -34,8 +34,6 @@ use crate::{
 	service::{self, new_partial, FullClient},
 	transaction_rpc_worker,
 };
-
-use avail_node::NODE_VERSION;
 
 impl SubstrateCli for Cli {
 	fn impl_name() -> String {

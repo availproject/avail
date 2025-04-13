@@ -1,9 +1,10 @@
-use sp_core::H256;
 use std::{
 	collections::HashMap,
 	hash::Hash,
 	sync::{Arc, RwLock},
 };
+
+use sp_core::H256;
 use transaction_rpc::block_overview;
 
 use super::filter::UniqueTxId;

@@ -3,15 +3,15 @@ mod definitions;
 
 use common::*;
 pub use definitions::*;
-
 use serde_json::Value;
 #[cfg(test)]
 use sp_runtime::BuildStorage;
 
 pub mod dev {
-	use super::*;
 	use da_runtime::wasm_binary_unwrap;
 	use sc_chain_spec::ChainType;
+
+	use super::*;
 
 	pub fn chain_spec(network_name: Option<String>) -> ChainSpec {
 		let mut builder = ChainSpec::builder(wasm_binary_unwrap(), Default::default())
@@ -45,9 +45,10 @@ pub mod dev {
 }
 
 pub mod dev_tri {
-	use super::*;
 	use da_runtime::wasm_binary_unwrap;
 	use sc_chain_spec::ChainType;
+
+	use super::*;
 
 	pub fn chain_spec(network_name: Option<String>) -> ChainSpec {
 		let mut builder = ChainSpec::builder(wasm_binary_unwrap(), Default::default())

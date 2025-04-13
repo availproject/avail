@@ -20,6 +20,7 @@ impl DatabaseLogging {
 			timer_interval: Duration::from_secs(logging_interval),
 		}
 	}
+
 	pub fn add_block(&mut self, duration: Duration) {
 		self.new_blocks.push(duration);
 	}

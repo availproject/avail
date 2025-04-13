@@ -1,18 +1,16 @@
-use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::{
+	sync::Arc,
+	time::{Duration, Instant},
+};
 
-use super::constants::DATABASE_RESIZE_INTERVAL;
-use jsonrpsee::tokio;
-use jsonrpsee::tokio::sync::mpsc::Receiver;
+use jsonrpsee::{tokio, tokio::sync::mpsc::Receiver};
 use sc_telemetry::log;
 use sp_core::H256;
 use tokio::sync::Notify;
-use transaction_rpc::state;
+use transaction_rpc::transaction_overview;
 
+use super::{constants::DATABASE_RESIZE_INTERVAL, database_logger::DatabaseLogging, BlockDetails};
 use crate::transaction_rpc_worker::macros::profile;
-
-use super::database_logger::DatabaseLogging;
-use super::BlockDetails;
 pub struct Config {
 	pub max_search_results: usize,
 	pub max_stored_block_count: usize,
@@ -20,7 +18,7 @@ pub struct Config {
 
 pub struct Database<T: DatabaseLike> {
 	block_receiver: Receiver<BlockDetails>,
-	search_receiver: state::Receiver,
+	search_receiver: transaction_overview::Receiver,
 	logger: DatabaseLogging,
 	inner: T,
 	timer: Instant,
@@ -30,7 +28,7 @@ pub struct Database<T: DatabaseLike> {
 impl<T: DatabaseLike> Database<T> {
 	pub fn new(
 		block_receiver: Receiver<BlockDetails>,
-		search_receiver: state::Receiver,
+		search_receiver: transaction_overview::Receiver,
 		max_search_results: usize,
 		max_stored_block_count: usize,
 		logging_interval: u64,
@@ -87,10 +85,10 @@ impl<T: DatabaseLike> Database<T> {
 		}
 	}
 
-	fn send_transaction_state(&self, details: state::Channel) {
+	fn send_transaction_state(&self, details: transaction_overview::Channel) {
 		let (tx_hash, is_finalized, oneshot) = details;
 
-		let mut result: Vec<state::RPCResult> =
+		let mut result: Vec<transaction_overview::RPCResult> =
 			self.inner.find_transaction_state(&tx_hash, is_finalized);
 		result.sort_by(|x, y| y.block_height.cmp(&x.block_height));
 
@@ -101,7 +99,11 @@ impl<T: DatabaseLike> Database<T> {
 pub trait DatabaseLike {
 	fn new(config: Config) -> Self;
 	fn add_block(&mut self, block: BlockDetails);
-	fn find_transaction_state(&self, tx_hash: &H256, is_finalized: bool) -> Vec<state::RPCResult>;
+	fn find_transaction_state(
+		&self,
+		tx_hash: &H256,
+		is_finalized: bool,
+	) -> Vec<transaction_overview::RPCResult>;
 	fn resize(&mut self);
 	fn config(&self) -> &Config;
 	fn variant(&self) -> &str;

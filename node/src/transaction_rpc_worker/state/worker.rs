@@ -1,7 +1,5 @@
 use std::time::Duration;
 
-use super::{constants::NODE_SYNC_SLEEP_INTERNVAL, BlockDetails, TransactionState};
-use crate::transaction_rpc_worker::read_pallet_call_index;
 use avail_core::OpaqueExtrinsic;
 use codec::Encode;
 use da_runtime::UncheckedExtrinsic;
@@ -9,6 +7,9 @@ use frame_system_rpc_runtime_api::SystemFetchEventsResult;
 use jsonrpsee::tokio;
 use sc_service::RpcHandlers;
 use sp_core::{Blake2Hasher, Hasher, H256};
+
+use super::{constants::NODE_SYNC_SLEEP_INTERNVAL, BlockDetails, TransactionState};
+use crate::transaction_rpc_worker::read_pallet_call_index;
 
 pub(crate) async fn wait_for_sync(handler: &RpcHandlers) {
 	loop {

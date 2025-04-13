@@ -19,16 +19,14 @@
 //! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 #![allow(dead_code)]
 
-use crate::transaction_rpc_worker;
-use crate::{cli::Cli, rpc as node_rpc};
-use avail_core::AppId;
-use da_runtime::{apis::RuntimeApi, NodeBlock as Block, Runtime};
+use std::{path::Path, sync::Arc};
 
+use avail_core::AppId;
 use codec::Encode;
+use da_runtime::{apis::RuntimeApi, NodeBlock as Block, Runtime};
 use frame_system_rpc_runtime_api::AccountNonceApi;
 use futures::prelude::*;
-use jsonrpsee::tokio::sync::mpsc::channel;
-use jsonrpsee::tokio::sync::Notify;
+use jsonrpsee::tokio::sync::{mpsc::channel, Notify};
 use pallet_transaction_payment::ChargeTransactionPayment;
 use sc_client_api::{Backend, BlockBackend};
 use sc_consensus_babe::{self, SlotProportion};
@@ -38,15 +36,17 @@ use sc_network_sync::SyncingService;
 use sc_service::{
 	error::Error as ServiceError, Configuration, RpcHandlers, TaskManager, WarpSyncParams,
 };
-use sc_telemetry::custom_telemetry::external::BlockIntervalFromNode;
-use sc_telemetry::log;
-use sc_telemetry::{custom_telemetry::CustomTelemetryWorker, Telemetry, TelemetryWorker};
+use sc_telemetry::{
+	custom_telemetry::{external::BlockIntervalFromNode, CustomTelemetryWorker},
+	log, Telemetry, TelemetryWorker,
+};
 use sc_transaction_pool_api::OffchainTransactionPoolFactory;
 use sp_api::ProvideRuntimeApi;
 use sp_core::crypto::Pair;
 use sp_runtime::{generic::Era, traits::Block as BlockT, SaturatedConversion};
-use std::{path::Path, sync::Arc};
 use substrate_prometheus_endpoint::{PrometheusError, Registry};
+
+use crate::{cli::Cli, rpc as node_rpc, transaction_rpc_worker};
 
 pub const LOG_TARGET: &str = "avail::node::service";
 
@@ -300,7 +300,7 @@ pub fn new_partial(
 	let mut transaction_rpc_worker_deps = transaction_rpc_worker::Deps::default();
 
 	if transaction_rpc_worker_cli_deps.state.enabled {
-		let (search_send, search_recv) = channel::<transaction_rpc::state::Channel>(
+		let (search_send, search_recv) = channel::<transaction_rpc::transaction_overview::Channel>(
 			transaction_rpc_worker::state::constants::RPC_CHANNEL_LIMIT,
 		);
 		let (block_send, block_recv) = channel::<transaction_rpc_worker::state::Channel>(

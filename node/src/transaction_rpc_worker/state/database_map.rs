@@ -1,10 +1,13 @@
+use std::collections::HashMap;
+
 use sc_telemetry::log;
 use sp_core::H256;
-use std::collections::HashMap;
-use transaction_rpc::state;
+use transaction_rpc::transaction_overview;
 
-use super::database::{Config, DatabaseLike};
-use super::{BlockDetails, TransactionState};
+use super::{
+	database::{Config, DatabaseLike},
+	BlockDetails, TransactionState,
+};
 
 #[derive(Debug, Clone)]
 struct BlockData {
@@ -115,8 +118,12 @@ impl DatabaseLike for Database {
 		}
 	}
 
-	fn find_transaction_state(&self, tx_hash: &H256, is_finalized: bool) -> Vec<state::RPCResult> {
-		let mut result: Vec<state::RPCResult> = Vec::new();
+	fn find_transaction_state(
+		&self,
+		tx_hash: &H256,
+		is_finalized: bool,
+	) -> Vec<transaction_overview::RPCResult> {
+		let mut result: Vec<transaction_overview::RPCResult> = Vec::new();
 		if !is_finalized {
 			self.included_tx.search_transaction_state(
 				tx_hash,
@@ -196,7 +203,7 @@ impl Map {
 		block_map: &HashMap<u32, BlockData>,
 		max_count: usize,
 		finalized: bool,
-		out: &mut Vec<state::RPCResult>,
+		out: &mut Vec<transaction_overview::RPCResult>,
 	) {
 		if out.len() >= max_count {
 			return;
@@ -204,7 +211,7 @@ impl Map {
 
 		if let Some(data) = self.single.get(tx_hash) {
 			if let Some(block) = block_map.get(&data.block_index) {
-				out.push(state::RPCResult {
+				out.push(transaction_overview::RPCResult {
 					block_hash: block.block_hash,
 					block_height: block.block_height,
 					tx_hash: tx_hash.clone(),
@@ -227,7 +234,7 @@ impl Map {
 					continue;
 				};
 
-				out.push(state::RPCResult {
+				out.push(transaction_overview::RPCResult {
 					block_hash: block.block_hash,
 					block_height: block.block_height,
 					tx_hash: tx_hash.clone(),
