@@ -91,7 +91,7 @@ impl Worker {
 	async fn data_task(
 		&mut self,
 		params: block_data::RPCParams,
-	) -> Result<block_data::RPCResult, String> {
+	) -> Result<block_data::Response, String> {
 		use block_data::{CallData, EventData};
 
 		let (block_hash, block_height) = self.block_metadata(params.block_id).await?;
@@ -148,7 +148,7 @@ impl Worker {
 			}
 		}
 
-		let result = block_data::RPCResult {
+		let result = block_data::Response {
 			block_hash,
 			block_height,
 			block_state,
@@ -162,7 +162,7 @@ impl Worker {
 	async fn overview_task(
 		&mut self,
 		params: block_overview::RPCParams,
-	) -> Result<block_overview::RPCResult, String> {
+	) -> Result<block_overview::Response, String> {
 		let extension = params.extension;
 		let filter = params.filter.clone().unwrap_or_default();
 
@@ -187,7 +187,7 @@ impl Worker {
 			})
 			.collect();
 
-		let result = block_overview::RPCResult {
+		let result = block_overview::Response {
 			block_hash,
 			block_height,
 			block_state,

@@ -3,7 +3,7 @@ use jsonrpsee::tokio::sync::{mpsc, oneshot};
 use serde::{Deserialize, Serialize};
 use sp_core::H256;
 
-pub type ChannelResponse = oneshot::Sender<Result<RPCResult, String>>;
+pub type ChannelResponse = oneshot::Sender<Result<Response, String>>;
 pub type Channel = (RPCParams, ChannelResponse);
 pub type Receiver = mpsc::Receiver<Channel>;
 pub type Sender = mpsc::Sender<Channel>;
@@ -51,7 +51,7 @@ pub struct CallFilterSignature {
 }
 
 #[derive(Clone, Serialize, Deserialize)]
-pub struct RPCResult {
+pub struct Response {
 	pub block_hash: H256,
 	pub block_height: u32,
 	pub block_state: BlockState,
@@ -60,8 +60,8 @@ pub struct RPCResult {
 }
 
 #[derive(Clone, Serialize, Deserialize)]
-pub struct RPCResultDebug {
-	pub value: RPCResult,
+pub struct ResponseDebug {
+	pub value: Response,
 	pub debug_execution_time: u64,
 }
 

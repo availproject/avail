@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use sp_core::H256;
 
 use crate::{BlockState, HashIndex};
-pub type ChannelResponse = oneshot::Sender<Result<RPCResult, String>>;
+pub type ChannelResponse = oneshot::Sender<Result<Response, String>>;
 pub type Channel = (RPCParams, ChannelResponse);
 pub type Receiver = mpsc::Receiver<Channel>;
 pub type Sender = mpsc::Sender<Channel>;
@@ -59,7 +59,7 @@ pub struct CallFilterSignature {
 pub type Events = Vec<Event>;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RPCResult {
+pub struct Response {
 	pub block_hash: H256,
 	pub block_height: u32,
 	pub block_state: BlockState,
@@ -68,8 +68,8 @@ pub struct RPCResult {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RPCResultDebug {
-	pub value: RPCResult,
+pub struct ResponseDebug {
+	pub value: Response,
 	pub debug_execution_time: u64,
 }
 

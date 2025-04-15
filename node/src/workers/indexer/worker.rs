@@ -342,7 +342,7 @@ impl Logger {
 			self.total_duration.as_millis(),
 			self.count
 		);
-		log::info!("👾 {}: {}", self.name, message);
+		self.log(message);
 
 		self.count = 0;
 		self.total_duration = Duration::default();

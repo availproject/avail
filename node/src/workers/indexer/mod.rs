@@ -1,6 +1,5 @@
 pub mod constants;
 mod database;
-mod database_logger;
 mod database_map;
 mod worker;
 

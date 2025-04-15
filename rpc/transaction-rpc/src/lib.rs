@@ -42,13 +42,13 @@ pub trait Api {
 	async fn block_overview(
 		&self,
 		params: block_overview::RPCParams,
-	) -> RpcResult<block_overview::RPCResultDebug>;
+	) -> RpcResult<block_overview::ResponseDebug>;
 
 	#[method(name = "block_data")]
 	async fn block_data(
 		&self,
 		params: block_data::RPCParams,
-	) -> RpcResult<block_data::RPCResultDebug>;
+	) -> RpcResult<block_data::ResponseDebug>;
 
 	#[method(name = "block_service_enabled")]
 	async fn block_service_enabled(&self) -> RpcResult<EnabledServices>;
@@ -123,7 +123,7 @@ impl ApiServer for RPC {
 	async fn block_overview(
 		&self,
 		params: block_overview::RPCParams,
-	) -> RpcResult<block_overview::RPCResultDebug> {
+	) -> RpcResult<block_overview::ResponseDebug> {
 		let now = std::time::Instant::now();
 		let Some(sender) = self.block_overview_sender.as_ref() else {
 			return Err(internal_error(String::from(
@@ -155,7 +155,7 @@ impl ApiServer for RPC {
 
 		match res {
 			Ok(x) => {
-				let r = block_overview::RPCResultDebug {
+				let r = block_overview::ResponseDebug {
 					value: x,
 					debug_execution_time: elapsed.as_millis() as u64,
 				};
@@ -168,7 +168,7 @@ impl ApiServer for RPC {
 	async fn block_data(
 		&self,
 		params: block_data::RPCParams,
-	) -> RpcResult<block_data::RPCResultDebug> {
+	) -> RpcResult<block_data::ResponseDebug> {
 		let now = std::time::Instant::now();
 		let Some(sender) = self.block_data_sender.as_ref() else {
 			return Err(internal_error(String::from(
@@ -200,7 +200,7 @@ impl ApiServer for RPC {
 
 		match res {
 			Ok(x) => {
-				let r = block_data::RPCResultDebug {
+				let r = block_data::ResponseDebug {
 					value: x,
 					debug_execution_time: elapsed.as_millis() as u64,
 				};

@@ -2,7 +2,7 @@ use sp_core::H256;
 use std::collections::HashMap;
 use transaction_rpc::transaction_overview;
 
-use super::{database::Config, BlockDetails, TransactionState};
+use super::{BlockDetails, CliDeps, TransactionState};
 
 #[derive(Debug, Clone)]
 struct BlockData {
@@ -24,17 +24,17 @@ pub struct Database {
 	block_map_counter: u32,
 	included_tx: Map,
 	finalized_tx: Map,
-	config: Config,
+	cli: CliDeps,
 }
 
 impl Database {
-	pub fn new(config: Config) -> Self {
+	pub fn new(cli: CliDeps) -> Self {
 		Self {
 			block_map: HashMap::new(),
 			block_map_counter: 0,
 			included_tx: Map::default(),
 			finalized_tx: Map::default(),
-			config,
+			cli,
 		}
 	}
 
@@ -49,7 +49,7 @@ impl Database {
 			self.finalized_tx.add_transaction(
 				state,
 				block_index,
-				self.config.max_search_results,
+				self.cli.max_search_results,
 				block_height,
 				&self.block_map,
 			);
@@ -57,7 +57,7 @@ impl Database {
 			self.included_tx.add_transaction(
 				state,
 				block_index,
-				self.config.max_search_results,
+				self.cli.max_search_results,
 				block_height,
 				&self.block_map,
 			);
@@ -121,7 +121,7 @@ impl Database {
 			self.included_tx.search_overview(
 				tx_hash,
 				&self.block_map,
-				self.config.max_search_results,
+				self.cli.max_search_results,
 				false,
 				&mut result,
 			);
@@ -130,7 +130,7 @@ impl Database {
 		self.finalized_tx.search_overview(
 			tx_hash,
 			&self.block_map,
-			self.config.max_search_results,
+			self.cli.max_search_results,
 			true,
 			&mut result,
 		);
@@ -139,11 +139,11 @@ impl Database {
 	}
 
 	pub fn resize(&mut self) {
-		if self.config.max_stored_block_count >= self.block_map.len() {
+		if self.cli.max_stored_block_count >= self.block_map.len() {
 			return;
 		}
 
-		while self.block_map.len() > self.config.max_stored_block_count {
+		while self.block_map.len() > self.cli.max_stored_block_count {
 			let entry = self
 				.block_map
 				.iter()
@@ -164,14 +164,6 @@ impl Database {
 
 		self.included_tx.shrink_to_fit();
 		self.finalized_tx.shrink_to_fit();
-	}
-
-	pub fn config(&self) -> &Config {
-		&self.config
-	}
-
-	pub fn variant(&self) -> &str {
-		"Map Database"
 	}
 
 	pub fn current_state(&self) -> String {
