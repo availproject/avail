@@ -9,7 +9,7 @@ use sp_runtime::MultiAddress;
 use transaction_rpc::{block_overview, HashIndex};
 
 use super::cache::{Cacheable, CachedEvents, SharedCache};
-use crate::transaction_rpc_worker::read_pallet_call_index;
+use crate::workers::read_pallet_call_index;
 
 pub type UniqueTxId = (H256, u32);
 

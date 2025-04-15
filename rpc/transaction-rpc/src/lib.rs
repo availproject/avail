@@ -36,7 +36,7 @@ pub trait Api {
 		&self,
 		tx_hash: H256,
 		is_finalized: Option<bool>,
-	) -> RpcResult<transaction_overview::RPCResultDebug>;
+	) -> RpcResult<transaction_overview::ResponseDebug>;
 
 	#[method(name = "block_overview")]
 	async fn block_overview(
@@ -80,7 +80,7 @@ impl ApiServer for RPC {
 		&self,
 		tx_hash: H256,
 		finalized: Option<bool>,
-	) -> RpcResult<transaction_overview::RPCResultDebug> {
+	) -> RpcResult<transaction_overview::ResponseDebug> {
 		let now = std::time::Instant::now();
 		let Some(sender) = self.transaction_overview_sender.as_ref() else {
 			return Err(internal_error(String::from(
@@ -109,7 +109,7 @@ impl ApiServer for RPC {
 
 		match response {
 			Ok(x) => {
-				let r = transaction_overview::RPCResultDebug {
+				let r = transaction_overview::ResponseDebug {
 					value: x,
 					debug_execution_time: elapsed.as_millis() as u64,
 				};

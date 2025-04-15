@@ -253,7 +253,7 @@ impl_runtime_apis! {
 				decoded:  Vec::new(),
 			};
 
-			let enable_encoding = params.enable_encoding.unwrap_or(true);
+			let enable_encoding = params.enable_encoding.unwrap_or(false);
 			let enable_decoding = params.enable_decoding.unwrap_or(false);
 			let do_not_encode = !enable_encoding && !enable_decoding;
 

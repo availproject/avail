@@ -13,14 +13,15 @@ use sp_runtime::{generic::BlockId, traits::BlockIdTo, AccountId32};
 use transaction_rpc::{block_data, block_overview, BlockState, HashIndex};
 
 use super::{
-	super::runtime_api,
+	super::chain_api,
 	cache::{Cache, Cacheable, CachedEvent, CachedEventData, CachedEvents, SharedCache},
 	filter::*,
 	logger::Logger,
+	Deps,
 };
 use crate::{
 	service::FullClient,
-	transaction_rpc_worker::{macros::profile, read_pallet_call_index},
+	workers::{macros::profile, read_pallet_call_index},
 };
 
 pub struct Worker {
@@ -36,22 +37,16 @@ pub struct Worker {
 }
 
 impl Worker {
-	pub fn new(
-		client: Arc<FullClient>,
-		rpc_handlers: RpcHandlers,
-		overview_receiver: block_overview::Receiver,
-		data_receiver: block_data::Receiver,
-		notifier: Arc<Notify>,
-	) -> Self {
+	pub fn new(client: Arc<FullClient>, rpc_handlers: RpcHandlers, deps: Deps) -> Self {
 		let logger = Logger::default();
 		let cache = Arc::new(RwLock::new(Cache::new()));
 
 		Self {
 			client,
 			rpc_handlers,
-			overview_receiver,
-			data_receiver,
-			notifier,
+			overview_receiver: deps.overview_receiver,
+			data_receiver: deps.data_receiver,
+			notifier: deps.notifier,
 			logger,
 			cache,
 		}
@@ -343,7 +338,7 @@ async fn fetch_events(handlers: &RpcHandlers, block_hash: H256) -> Option<Cached
 		..Default::default()
 	};
 
-	let rpc_events = runtime_api::system_fetch_events(handlers, params, &block_hash).await;
+	let rpc_events = chain_api::system_fetch_events(handlers, params, &block_hash).await;
 
 	let Some(rpc_events) = rpc_events else {
 		return None;

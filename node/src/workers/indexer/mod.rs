@@ -2,24 +2,16 @@ pub mod constants;
 mod database;
 mod database_logger;
 mod database_map;
-mod database_vec;
 mod worker;
-mod worker_finalized;
-mod worker_included;
-mod worker_logger;
-
-use std::{ops::Add, sync::Arc, time::Duration};
 
 pub use database::Database;
-pub use database_map::Database as MapDatabase;
 use jsonrpsee::tokio::sync::{mpsc, Notify};
 use serde::{Deserialize, Serialize};
 use sp_core::H256;
+use std::sync::Arc;
 use transaction_rpc::transaction_overview;
 // pub use database_vec::Database as VecDatabase;
-pub use worker_finalized::FinalizedWorker;
-pub use worker_included::IncludedWorker;
-pub use worker_logger::Logger as WorkerLogger;
+pub use worker::Worker;
 
 pub type Channel = BlockDetails;
 pub type Receiver = mpsc::Receiver<BlockDetails>;
@@ -36,7 +28,7 @@ pub struct CliDeps {
 pub struct Deps {
 	pub block_receiver: Receiver,
 	pub block_sender: Sender,
-	pub search_receiver: transaction_overview::Receiver,
+	pub transaction_receiver: transaction_overview::Receiver,
 	pub notifier: Arc<Notify>,
 	pub cli: CliDeps,
 }
@@ -56,34 +48,4 @@ pub struct TransactionState {
 	pub tx_success: bool,
 	pub pallet_index: u8,
 	pub call_index: u8,
-}
-
-fn generate_duration_stats(
-	array: &mut Vec<Duration>,
-) -> (usize, Duration, Duration, Duration, Duration) {
-	array.sort_unstable();
-
-	let min = array
-		.first()
-		.cloned()
-		.unwrap_or_else(|| Duration::default());
-
-	let max = array.last().cloned().unwrap_or_else(|| Duration::default());
-
-	let count = array.len();
-	let total_duration = array.iter().fold(Duration::default(), |acc, x| acc.add(*x));
-	let median = if count % 2 != 0 {
-		array
-			.get(count / 2)
-			.cloned()
-			.unwrap_or_else(|| Duration::default())
-	} else {
-		if let (Some(left), Some(right)) = (array.get(count / 2), array.get(count / 2 - 1)) {
-			(left.add(*right)).div_f64(2.0)
-		} else {
-			Duration::default()
-		}
-	};
-
-	(count, total_duration, min, median, max)
 }

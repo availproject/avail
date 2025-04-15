@@ -29,3 +29,18 @@ pub(crate) async fn system_fetch_events(
 
 	Some(res)
 }
+
+pub(crate) async fn system_fetch_sync_status(handler: &RpcHandlers) -> Option<bool> {
+	let query = r#"{
+					"jsonrpc": "2.0",
+					"method": "system_health",
+					"params": [],
+					"id": 0
+				}"#;
+
+	let res = handler.rpc_query(&query).await.ok()?;
+	let json = serde_json::from_str::<serde_json::Value>(&res.0).ok()?;
+	let result_json = json["result"].as_object()?;
+
+	result_json["isSyncing"].as_bool()
+}

@@ -1,13 +1,8 @@
-use std::collections::HashMap;
-
-use sc_telemetry::log;
 use sp_core::H256;
+use std::collections::HashMap;
 use transaction_rpc::transaction_overview;
 
-use super::{
-	database::{Config, DatabaseLike},
-	BlockDetails, TransactionState,
-};
+use super::{database::Config, BlockDetails, TransactionState};
 
 #[derive(Debug, Clone)]
 struct BlockData {
@@ -95,10 +90,8 @@ impl Database {
 
 		key
 	}
-}
 
-impl DatabaseLike for Database {
-	fn add_block(&mut self, new_block: BlockDetails) {
+	pub fn add_block(&mut self, new_block: BlockDetails) {
 		let block_index: u32 =
 			self.get_or_create_block_index(&new_block.block_hash, new_block.block_height);
 
@@ -118,14 +111,14 @@ impl DatabaseLike for Database {
 		}
 	}
 
-	fn find_transaction_state(
+	pub fn find_overview(
 		&self,
 		tx_hash: &H256,
 		is_finalized: bool,
-	) -> Vec<transaction_overview::RPCResult> {
-		let mut result: Vec<transaction_overview::RPCResult> = Vec::new();
+	) -> Vec<transaction_overview::Response> {
+		let mut result: Vec<transaction_overview::Response> = Vec::new();
 		if !is_finalized {
-			self.included_tx.search_transaction_state(
+			self.included_tx.search_overview(
 				tx_hash,
 				&self.block_map,
 				self.config.max_search_results,
@@ -134,7 +127,7 @@ impl DatabaseLike for Database {
 			);
 		}
 
-		self.finalized_tx.search_transaction_state(
+		self.finalized_tx.search_overview(
 			tx_hash,
 			&self.block_map,
 			self.config.max_search_results,
@@ -145,7 +138,7 @@ impl DatabaseLike for Database {
 		result
 	}
 
-	fn resize(&mut self) {
+	pub fn resize(&mut self) {
 		if self.config.max_stored_block_count >= self.block_map.len() {
 			return;
 		}
@@ -173,20 +166,16 @@ impl DatabaseLike for Database {
 		self.finalized_tx.shrink_to_fit();
 	}
 
-	fn config(&self) -> &Config {
+	pub fn config(&self) -> &Config {
 		&self.config
 	}
 
-	fn variant(&self) -> &str {
+	pub fn variant(&self) -> &str {
 		"Map Database"
 	}
 
-	fn new(config: Config) -> Self {
-		Self::new(config)
-	}
-
-	fn log(&self) {
-		log::info!("👾 Database: Block Map Counter: {}, Block Map Size: {}/{}, Inclusion Map Size: {}/{}, Finalized Map Size: {}/{}", self.block_map_counter, self.block_map.len(), self.block_map.capacity(), self.included_tx.len(), self.included_tx.capacity(), self.finalized_tx.len(), self.finalized_tx.capacity());
+	pub fn current_state(&self) -> String {
+		std::format!("👾 Database: Block Map Counter: {}, Block Map Size: {}/{}, Inclusion Map Size: {}/{}, Finalized Map Size: {}/{}", self.block_map_counter, self.block_map.len(), self.block_map.capacity(), self.included_tx.len(), self.included_tx.capacity(), self.finalized_tx.len(), self.finalized_tx.capacity())
 	}
 }
 
@@ -197,13 +186,13 @@ struct Map {
 }
 
 impl Map {
-	fn search_transaction_state(
+	fn search_overview(
 		&self,
 		tx_hash: &H256,
 		block_map: &HashMap<u32, BlockData>,
 		max_count: usize,
 		finalized: bool,
-		out: &mut Vec<transaction_overview::RPCResult>,
+		out: &mut Vec<transaction_overview::Response>,
 	) {
 		if out.len() >= max_count {
 			return;
@@ -211,7 +200,8 @@ impl Map {
 
 		if let Some(data) = self.single.get(tx_hash) {
 			if let Some(block) = block_map.get(&data.block_index) {
-				out.push(transaction_overview::RPCResult {
+				out.push(transaction_overview::Response {
+					block_finalized: finalized,
 					block_hash: block.block_hash,
 					block_height: block.block_height,
 					tx_hash: tx_hash.clone(),
@@ -219,7 +209,6 @@ impl Map {
 					tx_success: data.tx_success,
 					pallet_index: data.pallet_index,
 					call_index: data.call_index,
-					is_finalized: finalized,
 				});
 			};
 		}
@@ -234,7 +223,8 @@ impl Map {
 					continue;
 				};
 
-				out.push(transaction_overview::RPCResult {
+				out.push(transaction_overview::Response {
+					block_finalized: finalized,
 					block_hash: block.block_hash,
 					block_height: block.block_height,
 					tx_hash: tx_hash.clone(),
@@ -242,7 +232,6 @@ impl Map {
 					tx_success: data.tx_success,
 					pallet_index: data.pallet_index,
 					call_index: data.call_index,
-					is_finalized: finalized,
 				});
 			}
 		}
