@@ -149,13 +149,6 @@ To enable Kate RPC you need to pass `--enable-kate-rpc` flag when executing the 
 ./avail-node --enable-kate-rpc
 ```
 
-### Tranasction State RPC
-To enable Transaction State RPC you need to pass `--enable-tx-state-rpc` flag when executing the binary.
-
-```bash
-./avail-node --enable-tx-state-rpc
-```
-
 ### All Custom Flags
 ```txt
 --enable-kate-rpc
@@ -165,8 +158,8 @@ To enable Transaction State RPC you need to pass `--enable-tx-state-rpc` flag wh
     The maximum number of cells that can be requested in one go.
     
     Max size cannot exceed 10_000
+    
     [default: 64]
-
 ```
 
 ## Run Benchmarks

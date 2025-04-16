@@ -3865,9 +3865,7 @@ name = "frame-system-rpc-runtime-api"
 version = "4.0.0-dev"
 dependencies = [
  "parity-scale-codec",
- "scale-info",
  "sp-api",
- "sp-std",
 ]
 
 [[package]]
