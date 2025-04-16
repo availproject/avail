@@ -37,7 +37,7 @@ impl Database {
 			self.logger.increment_total_time(duration);
 
 			self.resize();
-			self.logger.log_stats();
+			self.logger.log_stats(&self.inner);
 
 			self.notifier.notified().await;
 		}
@@ -80,7 +80,7 @@ impl Database {
 	}
 }
 
-pub struct Logger {
+struct Logger {
 	blocks_count: u32,
 	rpc_calls_count: u32,
 	resize_count: u32,
@@ -118,7 +118,7 @@ impl Logger {
 		self.resize_count += 1;
 	}
 
-	pub fn log_stats(&mut self) {
+	pub fn log_stats(&mut self, db: &database_map::Database) {
 		if !self.timer.expired() {
 			return;
 		}
@@ -133,6 +133,7 @@ impl Logger {
 		);
 
 		self.log(message);
+		self.log(db.current_state());
 
 		self.blocks_count = 0;
 		self.rpc_calls_count = 0;

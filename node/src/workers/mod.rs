@@ -1,7 +1,7 @@
 mod chain_api;
 mod macros;
 
-pub(crate) mod data;
+pub(crate) mod block_explorer;
 pub(crate) mod deps;
 pub(crate) mod indexer;
 

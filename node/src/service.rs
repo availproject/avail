@@ -299,7 +299,7 @@ pub fn new_partial(
 	let mut transaction_rpc_deps = transaction_rpc::Deps::default();
 	let mut transaction_rpc_worker_deps = workers::Deps::default();
 
-	if workers_cli_deps.state.enabled {
+	if workers_cli_deps.indexer.enabled {
 		let (tx_send, tx_recv) = channel::<transaction_rpc::transaction_overview::Channel>(
 			workers::indexer::constants::RPC_CHANNEL_LIMIT,
 		);
@@ -311,27 +311,27 @@ pub fn new_partial(
 			block_receiver: block_recv,
 			block_sender: block_send,
 			transaction_receiver: tx_recv,
-			cli: workers_cli_deps.state.clone(),
+			cli: workers_cli_deps.indexer.clone(),
 			notifier: notifier.clone(),
 		};
 
 		transaction_rpc_deps.transaction_overview_sender = Some(tx_send);
 		transaction_rpc_deps.transaction_overview_notifier = Some(notifier);
-		transaction_rpc_worker_deps.state = Some(deps)
+		transaction_rpc_worker_deps.indexer = Some(deps)
 	}
 
-	if workers_cli_deps.data.enabled {
+	if workers_cli_deps.block_explorer.enabled {
 		let (overview_search_send, overview_search_recv) =
 			channel::<transaction_rpc::block_overview::Channel>(
-				workers::data::constants::RPC_CHANNEL_LIMIT,
+				workers::block_explorer::constants::RPC_CHANNEL_LIMIT,
 			);
 
 		let (data_search_send, data_search_recv) = channel::<transaction_rpc::block_data::Channel>(
-			workers::data::constants::RPC_CHANNEL_LIMIT,
+			workers::block_explorer::constants::RPC_CHANNEL_LIMIT,
 		);
 
 		let notifier = Arc::new(Notify::new());
-		let deps = workers::data::Deps {
+		let deps = workers::block_explorer::Deps {
 			overview_receiver: overview_search_recv,
 			data_receiver: data_search_recv,
 			notifier: notifier.clone(),
@@ -340,7 +340,7 @@ pub fn new_partial(
 		transaction_rpc_deps.block_overview_sender = Some(overview_search_send);
 		transaction_rpc_deps.block_data_sender = Some(data_search_send);
 		transaction_rpc_deps.block_notifier = Some(notifier);
-		transaction_rpc_worker_deps.data = Some(deps)
+		transaction_rpc_worker_deps.block_explorer = Some(deps)
 	}
 
 	let (rpc_extensions_builder, rpc_setup) = {
@@ -694,18 +694,18 @@ pub fn new_full_base(
 
 	// Spawning Transaction Info Workers
 
-	if let Some(deps) = transaction_rpc_worker_deps.data {
-		use workers::data;
+	if let Some(deps) = transaction_rpc_worker_deps.block_explorer {
+		use workers::block_explorer;
 
 		log::info!("🐖 Block RPC is enabled.");
-		let worker = data::Worker::new(client.clone(), rpc_handlers.clone(), deps);
+		let worker = block_explorer::Worker::new(client.clone(), rpc_handlers.clone(), deps);
 
 		task_manager
 			.spawn_handle()
 			.spawn("tx-data-worker", None, worker.run());
 	}
 
-	if let Some(deps) = transaction_rpc_worker_deps.state {
+	if let Some(deps) = transaction_rpc_worker_deps.indexer {
 		use workers::indexer;
 
 		log::info!("👾 Transaction Overview RPC is enabled.");
@@ -753,11 +753,11 @@ pub fn new_full(config: Configuration, cli: Cli) -> Result<TaskManager, ServiceE
 		enabled: cli.tx_state_rpc_enabled,
 		logging_interval: cli.tx_state_rpc_logging_interval,
 	};
-	let tx_data_cli_deps = workers::data::CliDeps { enabled: true };
+	let tx_data_cli_deps = workers::block_explorer::CliDeps { enabled: true };
 
 	let tx_cli_deps = workers::CliDeps {
-		data: tx_data_cli_deps,
-		state: tx_state_cli_deps,
+		block_explorer: tx_data_cli_deps,
+		indexer: tx_state_cli_deps,
 	};
 
 	let task_manager = new_full_base(

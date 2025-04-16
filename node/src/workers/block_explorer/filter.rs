@@ -81,6 +81,18 @@ pub(crate) fn filter_signature(
 	Some(Some(signed))
 }
 
+pub(crate) fn filter_out_by_tx_id(id: u32, tx_indexes: &Vec<u32>) -> bool {
+	true
+}
+
+pub(crate) fn filter_out_by_tx_hash(
+	unique_id: &UniqueTxId,
+	tx_hash: &Vec<H256>,
+	cache: &SharedCache,
+) -> bool {
+	true
+}
+
 pub(crate) fn filter_extrinsic(
 	unique_id: UniqueTxId,
 	opaq: &OpaqueExtrinsic,

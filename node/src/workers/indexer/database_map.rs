@@ -167,7 +167,7 @@ impl Database {
 	}
 
 	pub fn current_state(&self) -> String {
-		std::format!("👾 Database: Block Map Counter: {}, Block Map Size: {}/{}, Inclusion Map Size: {}/{}, Finalized Map Size: {}/{}", self.block_map_counter, self.block_map.len(), self.block_map.capacity(), self.included_tx.len(), self.included_tx.capacity(), self.finalized_tx.len(), self.finalized_tx.capacity())
+		std::format!("Block Map Counter: {}, Block Map Size: {}/{}, Inclusion Map Size: {}/{}, Finalized Map Size: {}/{}", self.block_map_counter, self.block_map.len(), self.block_map.capacity(), self.included_tx.len(), self.included_tx.capacity(), self.finalized_tx.len(), self.finalized_tx.capacity())
 	}
 }
 

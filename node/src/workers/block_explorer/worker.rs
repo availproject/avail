@@ -10,7 +10,10 @@ use sc_service::RpcHandlers;
 use sc_telemetry::log;
 use sp_core::{Blake2Hasher, Hasher, H256};
 use sp_runtime::{generic::BlockId, traits::BlockIdTo, AccountId32};
-use transaction_rpc::{block_data, block_overview, BlockState, HashIndex};
+use transaction_rpc::{
+	block_data::{self, TransactionFilterOptions},
+	block_overview, BlockState, HashIndex,
+};
 
 use super::{
 	super::chain_api,
@@ -80,13 +83,22 @@ impl Worker {
 		}
 	}
 
-	/* 	{
-		let Ok(lock) = cache.read() else {
-			return None;
-		};
+	fn iter_data_opaque(
+		&self,
+		tx_index: u32,
+		opaque: &OpaqueExtrinsic,
+		filter: &block_data::CallFilter,
+	) -> Option<block_data::Response> {
+		if let TransactionFilterOptions::TxIndex(tx_indexes) = &filter.transaction {
+			if !tx_indexes.contains(&tx_index) {
+				return None;
+			}
+		}
 
+		let mut tx_hash = None;
 
-	} */
+		return None;
+	}
 
 	async fn data_task(
 		&mut self,
@@ -164,7 +176,6 @@ impl Worker {
 		params: block_overview::RPCParams,
 	) -> Result<block_overview::Response, String> {
 		let extension = params.extension;
-		let filter = params.filter.clone().unwrap_or_default();
 
 		let (block_hash, block_height) = self.block_metadata(params.block_id).await?;
 		let block_body = self.block_body(block_hash)?;
@@ -179,7 +190,7 @@ impl Worker {
 				filter_extrinsic(
 					(block_hash, i as u32),
 					opaq,
-					&filter,
+					&params.filter,
 					&extension,
 					self.cache.clone(),
 					events.clone(),

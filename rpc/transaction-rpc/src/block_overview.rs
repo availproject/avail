@@ -8,12 +8,15 @@ pub type Channel = (RPCParams, ChannelResponse);
 pub type Receiver = mpsc::Receiver<Channel>;
 pub type Sender = mpsc::Sender<Channel>;
 
+pub use filter::*;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RPCParams {
 	pub block_id: HashIndex,
 	#[serde(default)]
 	pub extension: RPCParamsExtension,
-	pub filter: Option<Filter>,
+	#[serde(default)]
+	pub filter: Filter,
 }
 
 #[derive(Debug, Default, Clone, Copy, Serialize, Deserialize)]
@@ -24,36 +27,6 @@ pub struct RPCParamsExtension {
 	pub fetch_events: bool,
 	#[serde(default)]
 	pub enable_event_decoding: bool,
-}
-
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
-pub struct Filter {
-	#[serde(default)]
-	pub tx: CallFilterExtKind,
-	#[serde(default)]
-	pub signature: CallFilterSignature,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum CallFilterExtKind {
-	All,
-	Some(Vec<HashIndex>),
-	Pallet(Vec<u8>),
-	PalletCall(Vec<(u8, u8)>),
-	HasEvent(Vec<(u8, u8)>),
-}
-
-impl Default for CallFilterExtKind {
-	fn default() -> Self {
-		Self::All
-	}
-}
-
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
-pub struct CallFilterSignature {
-	pub ss58_address: Option<String>,
-	pub app_id: Option<u32>,
-	pub nonce: Option<u32>,
 }
 
 pub type Events = Vec<Event>;
@@ -144,4 +117,39 @@ pub enum DecodedEventData {
 pub struct DataSubmittedEvent {
 	pub who: String,
 	pub data_hash: String,
+}
+
+pub mod filter {
+	pub use super::*;
+
+	#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+	pub struct Filter {
+		#[serde(default)]
+		pub transaction: TransactionFilterOptions,
+		#[serde(default)]
+		pub signature: SignatureFilterOptions,
+	}
+
+	#[derive(Debug, Clone, Serialize, Deserialize)]
+	pub enum TransactionFilterOptions {
+		All,
+		TxHash(Vec<H256>),
+		TxIndex(Vec<u32>),
+		Pallet(Vec<u8>),
+		PalletCall(Vec<(u8, u8)>),
+		HasEvent(Vec<(u8, u8)>),
+	}
+
+	impl Default for TransactionFilterOptions {
+		fn default() -> Self {
+			Self::All
+		}
+	}
+
+	#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+	pub struct SignatureFilterOptions {
+		pub ss58_address: Option<String>,
+		pub app_id: Option<u32>,
+		pub nonce: Option<u32>,
+	}
 }

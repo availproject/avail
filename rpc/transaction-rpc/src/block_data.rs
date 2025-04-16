@@ -8,6 +8,8 @@ pub type Channel = (RPCParams, ChannelResponse);
 pub type Receiver = mpsc::Receiver<Channel>;
 pub type Sender = mpsc::Sender<Channel>;
 
+pub use filter::*;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RPCParams {
 	pub block_id: HashIndex,
@@ -15,39 +17,10 @@ pub struct RPCParams {
 	pub fetch_calls: bool,
 	#[serde(default)]
 	pub fetch_events: bool,
-	pub call_filter: Option<CallFilter>,
+	#[serde(default)]
+	pub call_filter: CallFilter,
 	#[serde(default)]
 	pub event_filter: EventFilter,
-}
-
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
-pub struct CallFilter {
-	#[serde(default)]
-	pub tx: CallFilterTxKind,
-	#[serde(default)]
-	pub signature: CallFilterSignature,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum CallFilterTxKind {
-	All,
-	Some(Vec<HashIndex>),
-	Pallet(Vec<u8>),
-	PalletCall(Vec<(u8, u8)>),
-	HasEvent(Vec<(u8, u8)>),
-}
-
-impl Default for CallFilterTxKind {
-	fn default() -> Self {
-		Self::All
-	}
-}
-
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
-pub struct CallFilterSignature {
-	pub ss58_address: Option<String>,
-	pub app_id: Option<u32>,
-	pub nonce: Option<u32>,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -82,40 +55,6 @@ pub struct EventData {
 	pub data: String,
 }
 
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
-pub struct EventFilter {
-	#[serde(default)]
-	pub by_transaction: EventTransactionFilterKind,
-	#[serde(default)]
-	pub by_id: EventIdFilterKind,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum EventTransactionFilterKind {
-	All,
-	Some(Vec<HashIndex>),
-	OnlyConsensus,
-}
-
-impl Default for EventTransactionFilterKind {
-	fn default() -> Self {
-		Self::All
-	}
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum EventIdFilterKind {
-	All,
-	Pallet(u8),
-	Combination(Vec<(u8, u8)>),
-}
-
-impl Default for EventIdFilterKind {
-	fn default() -> Self {
-		Self::All
-	}
-}
-
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum Phase {
 	/// Applying an extrinsic.
@@ -124,4 +63,72 @@ pub enum Phase {
 	Finalization,
 	/// Initializing the block.
 	Initialization,
+}
+
+pub mod filter {
+	pub use super::*;
+
+	#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+	pub struct CallFilter {
+		#[serde(default)]
+		pub transaction: TransactionFilterOptions,
+		#[serde(default)]
+		pub signature: SignatureFilterOptions,
+	}
+
+	#[derive(Debug, Clone, Serialize, Deserialize)]
+	pub enum TransactionFilterOptions {
+		All,
+		TxHash(Vec<H256>),
+		TxIndex(Vec<u32>),
+		Pallet(Vec<u8>),
+		PalletCall(Vec<(u8, u8)>),
+	}
+
+	impl Default for TransactionFilterOptions {
+		fn default() -> Self {
+			Self::All
+		}
+	}
+
+	#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+	pub struct SignatureFilterOptions {
+		pub ss58_address: Option<String>,
+		pub app_id: Option<u32>,
+		pub nonce: Option<u32>,
+	}
+
+	#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+	pub struct EventFilter {
+		#[serde(default)]
+		pub phase: PhaseFilterOptions,
+		#[serde(default)]
+		pub pallet: PalletFilterOptions,
+	}
+
+	#[derive(Debug, Clone, Serialize, Deserialize)]
+	pub enum PhaseFilterOptions {
+		All,
+		TxIndex(Vec<u32>),
+		OnlyConsensus,
+	}
+
+	impl Default for PhaseFilterOptions {
+		fn default() -> Self {
+			Self::All
+		}
+	}
+
+	#[derive(Debug, Clone, Serialize, Deserialize)]
+	pub enum PalletFilterOptions {
+		All,
+		Pallet(u8),
+		Combination(Vec<(u8, u8)>),
+	}
+
+	impl Default for PalletFilterOptions {
+		fn default() -> Self {
+			Self::All
+		}
+	}
 }
