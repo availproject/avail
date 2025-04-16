@@ -96,6 +96,7 @@ impl Worker {
 		}
 
 		let mut tx_hash = None;
+		if let Some(cached_tx_hash) = self.cache.read_cached_tx_hash(key)
 
 		return None;
 	}
