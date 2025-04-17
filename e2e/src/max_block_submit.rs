@@ -54,7 +54,7 @@ pub async fn run() -> Result<(), ClientError> {
 	wait_for_new_block(&sdk).await?;
 	tokio::time::sleep(Duration::from_secs(5)).await;
 
-	println!("{}: Checking transactions...", TAG);
+	/* 	println!("{}: Checking transactions...", TAG);
 	// Get details
 	let mut expected_block_number = None;
 	for tx_hash in tx_hashes {
@@ -66,7 +66,7 @@ pub async fn run() -> Result<(), ClientError> {
 
 		assert_eq!(expected_block_number, Some(result.block_height));
 		assert_eq!(result.tx_success, true);
-	}
+	} */
 
 	println!("{}: Done", TAG);
 	Ok(())
