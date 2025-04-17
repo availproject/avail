@@ -64,30 +64,6 @@ pub struct Cli {
 	/// This parameter can be used to update the network name and id of the `dev` and `dev_tri` chains.
 	#[arg(long)]
 	pub network_name: Option<String>,
-
-	/// Enable Transaction State RPC. This allows querying the transaction state (success or failure)
-	/// using only a transaction hash.
-	#[clap(long = "enable-tx-state-rpc", default_value_t = false)]
-	pub tx_state_rpc_enabled: bool,
-
-	/// The maximum number of results the transaction state RPC will return for a transaction hash.
-	/// If a transaction hash appears in multiple blocks, the RPC will return only the top `X` transaction states.  
-	/// In most cases, the transaction hash is unique, so this parameter is usually irrelevant.
-	#[clap(long, default_value_t = 10)]
-	pub tx_state_rpc_max_search_results: usize,
-
-	/// The maximum number of blocks preserved and stored in the transaction state RPC database.
-	///
-	/// The default is 31 days' worth of blocks.
-	#[clap(long, default_value_t = 133920)]
-	pub tx_state_rpc_max_stored_block_count: usize,
-
-	/// Logging interval for transaction state, in milliseconds.
-	/// A lower value results in more frequent log updates.
-	///
-	/// The default is 300_000 milliseconds (300 seconds).
-	#[clap(long, default_value_t = 300_000)]
-	pub tx_state_logging_interval: u64,
 }
 
 fn kate_max_cells_size_upper_bound(s: &str) -> Result<usize, String> {
