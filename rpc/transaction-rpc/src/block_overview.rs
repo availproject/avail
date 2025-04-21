@@ -8,6 +8,7 @@ pub type Channel = (RPCParams, ChannelResponse);
 pub type Receiver = mpsc::Receiver<Channel>;
 pub type Sender = mpsc::Sender<Channel>;
 
+pub use events::*;
 pub use filter::*;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -27,9 +28,9 @@ pub struct RPCParamsExtension {
 	pub fetch_events: bool,
 	#[serde(default)]
 	pub enable_event_decoding: bool,
+	#[serde(default)]
+	pub enable_consensus_event: bool,
 }
-
-pub type Events = Vec<Event>;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Response {
@@ -37,7 +38,7 @@ pub struct Response {
 	pub block_height: u32,
 	pub block_state: BlockState,
 	pub transactions: Vec<TransactionData>,
-	pub consensus_events: Option<Events>,
+	pub consensus_events: Option<ConsensusEvents>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -57,58 +58,81 @@ pub struct TransactionData {
 	pub events: Option<Events>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Event {
-	pub index: u32,
-	pub pallet_id: u8,
-	pub event_id: u8,
-	pub decoded: Option<DecodedEventData>,
-}
+pub mod events {
+	pub use super::*;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct EncodedEvent {
-	pub index: u32,
-	pub pallet_id: u8,
-	pub event_id: u8,
-	// First N bytes of every encoded event is CompactU32.
-	pub data: String,
-}
+	pub type Events = Vec<Event>;
+	pub type ConsensusEvents = Vec<ConsensusEvent>;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct DecodedEvent {
-	pub index: u32,
-	pub pallet_id: u8,
-	pub event_id: u8,
-	pub data: DecodedEventData,
-}
+	#[derive(Debug, Clone, Serialize, Deserialize)]
+	pub struct ConsensusEvent {
+		pub phase: ConsensusEventPhase,
+		pub pallet_id: u8,
+		pub event_id: u8,
+		pub decoded: Option<DecodedEventData>,
+	}
 
-impl DecodedEvent {
-	pub fn new(index: u32, pallet_id: u8, event_id: u8, data: DecodedEventData) -> Self {
-		Self {
-			index,
-			pallet_id,
-			event_id,
-			data,
+	#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+	pub enum ConsensusEventPhase {
+		// Finalizing the block.
+		Finalization,
+		/// Initializing the block.
+		Initialization,
+	}
+
+	#[derive(Debug, Clone, Serialize, Deserialize)]
+	pub struct Event {
+		pub index: u32,
+		pub pallet_id: u8,
+		pub event_id: u8,
+		pub decoded: Option<DecodedEventData>,
+	}
+
+	#[derive(Debug, Clone, Serialize, Deserialize)]
+	pub struct EncodedEvent {
+		pub index: u32,
+		pub pallet_id: u8,
+		pub event_id: u8,
+		// First N bytes of every encoded event is CompactU32.
+		pub data: String,
+	}
+
+	#[derive(Debug, Clone, Serialize, Deserialize)]
+	pub struct DecodedEvent {
+		pub index: u32,
+		pub pallet_id: u8,
+		pub event_id: u8,
+		pub data: DecodedEventData,
+	}
+
+	impl DecodedEvent {
+		pub fn new(index: u32, pallet_id: u8, event_id: u8, data: DecodedEventData) -> Self {
+			Self {
+				index,
+				pallet_id,
+				event_id,
+				data,
+			}
 		}
 	}
-}
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum DecodedEventData {
-	Unknown,
-	SystemExtrinsicSuccess,
-	SystemExtrinsicFailed,
-	SudoSudid(bool),
-	SudoSudoAsDone(bool),
-	MultisigMultisigExecuted(bool),
-	ProxyProxyExecuted(bool),
-	DataAvailabilityDataSubmitted(DataSubmittedEvent),
-}
+	#[derive(Debug, Clone, Serialize, Deserialize)]
+	pub enum DecodedEventData {
+		Unknown,
+		SystemExtrinsicSuccess,
+		SystemExtrinsicFailed,
+		SudoSudid(bool),
+		SudoSudoAsDone(bool),
+		MultisigMultisigExecuted(bool),
+		ProxyProxyExecuted(bool),
+		DataAvailabilityDataSubmitted(DataSubmittedEvent),
+	}
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct DataSubmittedEvent {
-	pub who: String,
-	pub data_hash: String,
+	#[derive(Debug, Clone, Serialize, Deserialize)]
+	pub struct DataSubmittedEvent {
+		pub who: String,
+		pub data_hash: String,
+	}
 }
 
 pub mod filter {

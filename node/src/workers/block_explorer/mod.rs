@@ -1,6 +1,5 @@
 mod cache;
 mod deps;
-mod filter;
 mod logger;
 mod worker;
 

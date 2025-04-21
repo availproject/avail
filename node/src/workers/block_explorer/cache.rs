@@ -1,13 +1,11 @@
+use super::worker::UniqueTxId;
+use sp_core::H256;
 use std::{
 	collections::HashMap,
 	hash::Hash,
 	sync::{Arc, RwLock},
 };
-
-use sp_core::H256;
 use transaction_rpc::block_overview;
-
-use super::filter::UniqueTxId;
 
 pub(crate) type SharedCache = Arc<RwLock<Cache>>;
 
@@ -166,20 +164,27 @@ impl CachedEvents {
 		weight
 	}
 
-	pub fn consensus_events(&self) -> Option<&CachedEvent> {
+	pub fn consensus_events(&self) -> Vec<CachedEvent> {
 		use frame_system::Phase;
 
-		for cached_event in self.0.iter() {
-			match &cached_event.phase {
-				Phase::Finalization => (),
-				Phase::Initialization => (),
-				_ => continue,
-			};
+		let events: Vec<CachedEvent> = self
+			.0
+			.iter()
+			.filter_map(|x| match &x.phase {
+				Phase::Finalization | Phase::Initialization => Some(x.clone()),
+				_ => return None,
+			})
+			.collect();
 
-			return Some(cached_event);
-		}
+		events
+	}
 
-		None
+	pub fn tx_events(&self, tx_index: u32) -> Option<&CachedEvent> {
+		use frame_system::Phase;
+
+		self.0
+			.iter()
+			.find(|x| x.phase == Phase::ApplyExtrinsic(tx_index))
 	}
 }
 
