@@ -1,4 +1,7 @@
-use std::sync::{Arc, RwLock};
+use std::{
+	hash::Hash,
+	sync::{Arc, RwLock},
+};
 
 use avail_core::OpaqueExtrinsic;
 use codec::{decode_from_bytes, DecodeAll, Encode};
@@ -8,8 +11,9 @@ use jsonrpsee::tokio::sync::Notify;
 use rayon::prelude::*;
 use sc_service::RpcHandlers;
 use sc_telemetry::log;
+use serde::Serialize;
 use sp_core::{Blake2Hasher, Hasher, H256};
-use sp_runtime::{generic::BlockId, traits::BlockIdTo, AccountId32};
+use sp_runtime::{generic::BlockId, traits::BlockIdTo, AccountId32, MultiAddress};
 use transaction_rpc::{
 	block_data::{self, TransactionFilterOptions},
 	block_overview, BlockState, HashIndex,
@@ -83,24 +87,6 @@ impl Worker {
 		}
 	}
 
-	fn iter_data_opaque(
-		&self,
-		tx_index: u32,
-		opaque: &OpaqueExtrinsic,
-		filter: &block_data::CallFilter,
-	) -> Option<block_data::Response> {
-		if let TransactionFilterOptions::TxIndex(tx_indexes) = &filter.transaction {
-			if !tx_indexes.contains(&tx_index) {
-				return None;
-			}
-		}
-
-		let mut tx_hash = None;
-		if let Some(cached_tx_hash) = self.cache.read_cached_tx_hash(key)
-
-		return None;
-	}
-
 	async fn data_task(
 		&mut self,
 		params: block_data::RPCParams,
@@ -109,64 +95,50 @@ impl Worker {
 
 		let (block_hash, block_height) = self.block_metadata(params.block_id).await?;
 		let block_body = self.block_body(block_hash)?;
-		let events = self.block_events(block_hash).await?;
 		let block_state = self.block_state(block_hash, block_height)?;
 
-		let mut calls: Vec<CallData> = Vec::new();
-		for (i, opaq) in block_body.iter().enumerate() {
-			let unique_id = (block_hash, i as u32);
-			let ext = UncheckedExtrinsic::decode_no_vec_prefix(&mut opaq.0.as_slice());
-			let ext = ext.unwrap();
-			let (pallet_id, call_id) = read_pallet_call_index(&ext).unwrap();
-
-			let tx_hash = if let Some(tx_hash) = self.cache.read_cached_tx_hash(&unique_id) {
-				tx_hash
-			} else {
-				let tx_hash = Blake2Hasher::hash(&ext.encode());
-				self.cache.write_cached_tx_hash(unique_id, tx_hash).unwrap();
-				tx_hash
-			};
-
-			let data = if let Some(call) = self.cache.read_cached_calls(&unique_id) {
-				call
-			} else {
-				let call = std::format!("0x{}", hex::encode(ext.function.encode()));
-				self.cache.write_cached_calls(unique_id, call.clone());
-				call
-			};
-
-			let call = CallData {
-				id: (pallet_id, call_id),
-				tx_id: unique_id.1,
-				tx_hash,
-				data,
-			};
-			calls.push(call);
+		let mut maybe_calls: Option<Vec<CallData>> = None;
+		if params.fetch_calls {
+			let calls: Vec<block_data::CallData> = block_body
+				.par_iter()
+				.enumerate()
+				.filter_map(|(i, opaq)| {
+					let unique_id = UniqueTxId::from((block_hash, i as u32));
+					iter_data_opaque(unique_id, opaq, self.cache.clone(), &params.call_filter)
+				})
+				.collect();
+			maybe_calls = Some(calls);
 		}
 
-		let mut block_events = Vec::new();
-		for cached_event in &events.0 {
-			let phase = match cached_event.phase {
-				frame_system::Phase::ApplyExtrinsic(x) => block_data::Phase::ApplyExtrinsic(x),
-				frame_system::Phase::Finalization => block_data::Phase::Finalization,
-				frame_system::Phase::Initialization => block_data::Phase::Initialization,
-			};
-			for ev in &cached_event.events {
-				let data = EventData {
-					id: (ev.pallet_id, ev.event_id),
-					phase,
-					data: ev.encoded.clone(),
+		let mut maybe_events: Option<Vec<block_data::EventData>> = None;
+		if params.fetch_events {
+			let block_events = self.block_events(block_hash).await?;
+
+			let mut events = Vec::new();
+			for cached_event in &block_events.0 {
+				let phase = match cached_event.phase {
+					frame_system::Phase::ApplyExtrinsic(x) => block_data::Phase::ApplyExtrinsic(x),
+					frame_system::Phase::Finalization => block_data::Phase::Finalization,
+					frame_system::Phase::Initialization => block_data::Phase::Initialization,
 				};
-				block_events.push(data);
+				for ev in &cached_event.events {
+					let data = EventData {
+						id: (ev.pallet_id, ev.event_id),
+						phase,
+						data: ev.encoded.clone(),
+					};
+					events.push(data);
+				}
 			}
+			maybe_events = Some(events)
 		}
 
 		let result = block_data::Response {
 			block_hash,
 			block_height,
 			block_state,
-			calls: Some(calls),
-			events: Some(block_events),
+			calls: maybe_calls,
+			events: maybe_events,
 		};
 
 		Ok(result)
@@ -189,7 +161,7 @@ impl Worker {
 			.enumerate()
 			.filter_map(|(i, opaq)| {
 				filter_extrinsic(
-					(block_hash, i as u32),
+					UniqueTxId::from((block_hash, i as u32)),
 					opaq,
 					&params.filter,
 					&extension,
@@ -429,4 +401,144 @@ fn consensus_events(
 	}
 
 	Some(consensus_events)
+}
+
+fn read_signature(ext: &UncheckedExtrinsic) -> Option<block_overview::TransactionSignature> {
+	let Some(sig) = &ext.signature else {
+		return None;
+	};
+
+	let ss58_address = if let MultiAddress::Id(id) = &sig.0 {
+		Some(std::format!("{}", id))
+	} else {
+		None
+	};
+	let nonce = sig.2 .5 .0;
+	let app_id = sig.2 .8 .0 .0;
+	let mortality = match sig.2 .4 .0 {
+		sp_runtime::generic::Era::Immortal => None,
+		sp_runtime::generic::Era::Mortal(x, y) => Some((x, y)),
+	};
+
+	let value = block_overview::TransactionSignature {
+		ss58_address,
+		nonce,
+		app_id,
+		mortality,
+	};
+	Some(value)
+}
+
+fn iter_data_opaque(
+	unique_id: UniqueTxId,
+	opaq: &OpaqueExtrinsic,
+	cache: SharedCache,
+	filter: &block_data::CallFilter,
+) -> Option<block_data::CallData> {
+	if let TransactionFilterOptions::TxIndex(tx_indexes) = &filter.transaction {
+		if !tx_indexes.contains(&unique_id.tx_index) {
+			return None;
+		}
+	}
+
+	let tx_hash = cache.read_cached_tx_hash(&unique_id);
+	if let TransactionFilterOptions::TxHash(tx_hashes) = &filter.transaction {
+		if let Some(tx_hash) = &tx_hash {
+			if !tx_hashes.contains(tx_hash) {
+				return None;
+			}
+		}
+	}
+
+	let Ok(ext) = UncheckedExtrinsic::decode_no_vec_prefix(&mut opaq.0.as_slice()) else {
+		return None;
+	};
+
+	let Some((pallet_id, call_id)) = read_pallet_call_index(&ext) else {
+		return None;
+	};
+
+	if let TransactionFilterOptions::Pallet(pallets) = &filter.transaction {
+		if !pallets.contains(&pallet_id) {
+			return None;
+		}
+	}
+
+	if let TransactionFilterOptions::PalletCall(calls) = &filter.transaction {
+		if !calls.contains(&(pallet_id, call_id)) {
+			return None;
+		}
+	}
+
+	let tx_hash = if let Some(tx_hash) = tx_hash {
+		tx_hash
+	} else {
+		let tx_hash = Blake2Hasher::hash(&ext.encode());
+		if cache.write_cached_tx_hash(unique_id, tx_hash).is_none() {
+			return None;
+		}
+		tx_hash
+	};
+
+	if let TransactionFilterOptions::TxHash(tx_hashes) = &filter.transaction {
+		if !tx_hashes.contains(&tx_hash) {
+			return None;
+		}
+	}
+
+	let signature = read_signature(&ext);
+	if let Some(expected_app_id) = &filter.signature.app_id {
+		if let Some(signature) = &signature {
+			if *expected_app_id != signature.app_id {
+				return None;
+			}
+		} else {
+			return None;
+		}
+	}
+
+	if let Some(expected_none) = &filter.signature.nonce {
+		if let Some(signature) = &signature {
+			if *expected_none != signature.nonce {
+				return None;
+			}
+		} else {
+			return None;
+		}
+	}
+
+	if filter.signature.ss58_address.is_some() {
+		if let Some(signature) = &signature {
+			if filter.signature.ss58_address != signature.ss58_address {
+				return None;
+			}
+		} else {
+			return None;
+		}
+	}
+
+	let data = if let Some(data) = cache.read_cached_calls(&unique_id) {
+		data
+	} else {
+		let Ok(mut data) = serde_json::to_string(opaq) else {
+			return None;
+		};
+
+		if data.len() > 2 {
+			data.pop();
+			data.remove(0);
+		}
+
+		cache.write_cached_calls(unique_id, data.clone());
+		data
+	};
+
+	let value = block_data::CallData {
+		id: (pallet_id, call_id),
+		tx_index: unique_id.tx_index,
+		tx_hash,
+		data,
+	};
+
+	return Some(value);
 }

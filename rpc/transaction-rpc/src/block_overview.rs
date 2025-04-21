@@ -52,17 +52,9 @@ pub struct TransactionData {
 	pub tx_index: u32,
 	pub pallet_id: u8,
 	pub call_id: u8,
-	pub signed: Option<TransactionDataSigned>,
+	pub signed: Option<TransactionSignature>,
 	pub decoded: Option<u8>,
 	pub events: Option<Events>,
-}
-
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
-pub struct TransactionDataSigned {
-	pub ss58_address: Option<String>,
-	pub nonce: u32,
-	pub app_id: u32,
-	pub mortality: Option<(u64, u64)>, // None means the tx is Immortal
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -152,4 +144,12 @@ pub mod filter {
 		pub app_id: Option<u32>,
 		pub nonce: Option<u32>,
 	}
+}
+
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+pub struct TransactionSignature {
+	pub ss58_address: Option<String>,
+	pub nonce: u32,
+	pub app_id: u32,
+	pub mortality: Option<(u64, u64)>, // None means the tx is Immortal
 }

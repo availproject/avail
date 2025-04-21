@@ -11,7 +11,20 @@ use transaction_rpc::{block_overview, HashIndex};
 use super::cache::{Cacheable, CachedEvents, SharedCache};
 use crate::workers::read_pallet_call_index;
 
-pub type UniqueTxId = (H256, u32);
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+pub struct UniqueTxId {
+	pub block_hash: H256,
+	pub tx_index: u32,
+}
+
+impl From<(H256, u32)> for UniqueTxId {
+	fn from(value: (H256, u32)) -> Self {
+		Self {
+			block_hash: value.0,
+			tx_index: value.1,
+		}
+	}
+}
 
 pub(crate) fn filter_pallet_call_id(
 	ext: &UncheckedExtrinsic,
@@ -35,7 +48,7 @@ pub(crate) fn filter_pallet_call_id(
 pub(crate) fn filter_signature(
 	ext: &UncheckedExtrinsic,
 	filter: &block_overview::Filter,
-) -> Option<Option<block_overview::TransactionDataSigned>> {
+) -> Option<Option<block_overview::TransactionSignature>> {
 	let expected_signature = &filter.signature;
 	let requires_signed = expected_signature.app_id.is_some()
 		|| expected_signature.nonce.is_some()
@@ -48,7 +61,7 @@ pub(crate) fn filter_signature(
 		return Some(None);
 	};
 
-	let mut signed = block_overview::TransactionDataSigned::default();
+	let mut signed = block_overview::TransactionSignature::default();
 
 	if let MultiAddress::Id(id) = &sig.0 {
 		signed.ss58_address = Some(std::format!("{}", id))
@@ -120,9 +133,9 @@ pub(crate) fn filter_extrinsic(
 	let ext = UncheckedExtrinsic::decode_no_vec_prefix(&mut opaq.0.as_slice());
 	let Ok(ext) = ext else {
 		let msg = std::format!(
-			"Failed to fetch transaction. tx index: {}, block hash: {:?}",
-			unique_id.0,
-			unique_id.1
+			"Failed to fetch transaction. Block hash: {:?},  tx index: {},",
+			unique_id.block_hash,
+			unique_id.tx_index
 		);
 		log::warn!("{}", msg);
 		return None;
@@ -130,9 +143,9 @@ pub(crate) fn filter_extrinsic(
 
 	let Some((pallet_id, call_id)) = filter_pallet_call_id(&ext, &filter) else {
 		let msg = std::format!(
-			"Failed to read pallet and call id. Tx index: {}, block hash: {:?}",
-			unique_id.0,
-			unique_id.1
+			"Failed to read pallet and call id. Block hash: {:?},  Tx index: {},",
+			unique_id.block_hash,
+			unique_id.tx_index
 		);
 		log::warn!("{}", msg);
 		return None;
@@ -160,7 +173,7 @@ pub(crate) fn filter_extrinsic(
 
 	let mut tx_events = None;
 	if extension.fetch_events {
-		let phase = frame_system::Phase::ApplyExtrinsic(unique_id.1);
+		let phase = frame_system::Phase::ApplyExtrinsic(unique_id.tx_index);
 		if let Some(cached_event) = events.0.iter().find(|x| x.phase == phase) {
 			use block_overview::Event;
 			let mut rpc_events: Vec<Event> = Vec::with_capacity(cached_event.events.len());
@@ -182,7 +195,7 @@ pub(crate) fn filter_extrinsic(
 	let decoded = None;
 	let tx = block_overview::TransactionData {
 		tx_hash,
-		tx_index: unique_id.1,
+		tx_index: unique_id.tx_index,
 		pallet_id,
 		call_id,
 		signed,

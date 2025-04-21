@@ -42,7 +42,7 @@ pub struct ResponseDebug {
 pub struct CallData {
 	// (pallet id, call id)
 	pub id: (u8, u8),
-	pub tx_id: u32,
+	pub tx_index: u32,
 	pub tx_hash: H256,
 	pub data: String,
 }
@@ -90,6 +90,15 @@ pub mod filter {
 			Self::All
 		}
 	}
+	/*
+	impl TransactionFilterOptions {
+		pub fn filter_out_pallet(&self, value: u8) -> bool {
+			match self {
+				TransactionFilterOptions::Pallet(items) => !items.contains(&value),
+				_ => false,
+			}
+		}
+	} */
 
 	#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 	pub struct SignatureFilterOptions {

@@ -1,8 +1,10 @@
 #!/bin/bash
 
 block_hash="{ \"Hash\": \"0xe43c64674ae191da404a9c780333019cb9f62018778037186ec78bb4fc4e7e04\" }"
-block_height="{ \"Index\": 24 }"
-params="{ \"block_id\": $block_height }"
+block_height="{ \"Index\": 28 }"
+transaction="{ \"TxIndex\": [ 0 ] }"
+call_filter="{\"transaction\": $transaction }"
+params="{ \"block_id\": $block_height, \"fetch_calls\": true, \"fetch_events\": false, \"call_filter\": $call_filter }"
 
 curl -H "Content-Type: application/json" -d "{
   \"jsonrpc\": \"2.0\",
