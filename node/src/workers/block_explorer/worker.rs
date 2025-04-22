@@ -1,45 +1,33 @@
 use std::sync::{Arc, RwLock};
 
-use avail_core::OpaqueExtrinsic;
-use codec::{decode_from_bytes, DecodeAll, Encode};
-use da_runtime::UncheckedExtrinsic;
-use frame_system_rpc_runtime_api::{events::SemiDecodedEvent, SystemFetchEventsParams};
-use jsonrpsee::tokio::sync::Notify;
-use rayon::prelude::*;
-use sc_service::RpcHandlers;
-use sc_telemetry::log;
-use sp_core::{Blake2Hasher, Hasher, H256};
-use sp_runtime::{generic::BlockId, traits::BlockIdTo, AccountId32, MultiAddress};
-use transaction_rpc::{
-	block_data::{self},
-	block_overview, BlockState, HashIndex,
-};
-
 use super::{
-	super::chain_api,
-	cache::{Cache, Cacheable, CachedEvent, CachedEventData, CachedEvents, SharedCache},
+	cache::{Cache, Cacheable, SharedCache},
 	logger::Logger,
 	Deps,
 };
 use crate::{
 	service::FullClient,
-	workers::{macros::profile, read_pallet_call_index},
+	workers::{
+		cache::CachedEvents,
+		common::{self, UniqueTxId},
+		macros::profile,
+	},
 };
-
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
-pub struct UniqueTxId {
-	pub block_hash: H256,
-	pub tx_index: u32,
-}
-
-impl From<(H256, u32)> for UniqueTxId {
-	fn from(value: (H256, u32)) -> Self {
-		Self {
-			block_hash: value.0,
-			tx_index: value.1,
-		}
-	}
-}
+use avail_core::OpaqueExtrinsic;
+use codec::Encode;
+use da_runtime::UncheckedExtrinsic;
+use frame_system_rpc_runtime_api::SystemFetchEventsParams;
+use jsonrpsee::tokio::sync::Notify;
+use rayon::prelude::*;
+use sc_service::RpcHandlers;
+use sc_telemetry::log;
+use sp_core::{Blake2Hasher, Hasher, H256};
+use sp_runtime::{generic::BlockId, traits::BlockIdTo, MultiAddress};
+use transaction_rpc::{
+	block_data::{self},
+	block_overview,
+	common::{BlockState, Event, HashIndex},
+};
 
 pub struct Worker {
 	client: Arc<FullClient>,
@@ -48,8 +36,6 @@ pub struct Worker {
 	data_receiver: block_data::Receiver,
 	notifier: Arc<Notify>,
 	logger: Logger,
-	//
-	// cache
 	cache: SharedCache,
 }
 
@@ -243,7 +229,13 @@ impl Worker {
 			return Ok(cached);
 		}
 
-		let events = fetch_events(&self.rpc_handlers, block_hash).await;
+		let params = SystemFetchEventsParams {
+			enable_decoding: Some(true),
+			enable_encoding: Some(true),
+			..Default::default()
+		};
+
+		let events = common::fetch_events(&self.rpc_handlers, block_hash, params).await;
 		let Some(events) = events else {
 			return Ok(Arc::new(CachedEvents(Vec::new())));
 		};
@@ -276,120 +268,6 @@ impl Worker {
 
 		Ok(BlockState::Discarded)
 	}
-}
-
-#[derive(codec::Decode)]
-struct DataSubmittedEvent {
-	pub who: AccountId32,
-	pub data_hash: H256,
-}
-
-fn parse_decoded_event(semi: &SemiDecodedEvent) -> Option<block_overview::DecodedEventData> {
-	use block_overview::DecodedEventData;
-	use frame_system_rpc_runtime_api::events::event_id::*;
-
-	match semi.pallet_id {
-		system::PALLET_ID => {
-			if semi.event_id == system::EXTRINSIC_SUCCESS {
-				return Some(DecodedEventData::SystemExtrinsicSuccess);
-			} else if semi.event_id == system::EXTRINSIC_FAILED {
-				return Some(DecodedEventData::SystemExtrinsicFailed);
-			}
-		},
-		sudo::PALLET_ID => {
-			if semi.event_id == sudo::SUDID {
-				let data = decode_from_bytes::<bool>(semi.data.clone().into()).ok()?;
-				return Some(DecodedEventData::SudoSudid(data));
-			} else if semi.event_id == sudo::SUDO_AS_DONE {
-				let data = decode_from_bytes::<bool>(semi.data.clone().into()).ok()?;
-				return Some(DecodedEventData::SudoSudoAsDone(data));
-			}
-		},
-		data_availability::PALLET_ID => {
-			if semi.event_id == data_availability::DATA_SUBMITTED {
-				let value = DataSubmittedEvent::decode_all(&mut semi.data.as_slice()).ok()?;
-				let data = block_overview::DataSubmittedEvent {
-					who: std::format!("{}", value.who),
-					data_hash: std::format!("{:?}", value.data_hash),
-				};
-
-				return Some(DecodedEventData::DataAvailabilityDataSubmitted(data));
-			}
-		},
-		multisig::PALLET_ID => {
-			if semi.event_id == multisig::MULTISIG_EXECUTED {
-				let data = decode_from_bytes::<bool>(semi.data.clone().into()).ok()?;
-				return Some(DecodedEventData::SudoSudoAsDone(data));
-			}
-		},
-		proxy::PALLET_ID => {
-			if semi.event_id == proxy::PROXY_EXECUTED {
-				let data = decode_from_bytes::<bool>(semi.data.clone().into()).ok()?;
-				return Some(DecodedEventData::SudoSudoAsDone(data));
-			}
-		},
-		_ => (),
-	}
-
-	None
-}
-
-async fn fetch_events(handlers: &RpcHandlers, block_hash: H256) -> Option<CachedEvents> {
-	let params = SystemFetchEventsParams {
-		filter_tx_indices: None,
-		enable_decoding: Some(true),
-		enable_encoding: Some(true),
-		..Default::default()
-	};
-
-	let rpc_events = chain_api::system_fetch_events(handlers, params, &block_hash).await;
-
-	let Some(rpc_events) = rpc_events else {
-		return None;
-	};
-	if rpc_events.error != 0 {
-		return None;
-	}
-
-	let encoded_events = rpc_events.encoded;
-	let decoded_events = rpc_events.decoded;
-
-	let mut cached_events = Vec::<CachedEvent>::new();
-	for enc in &encoded_events {
-		let mut cached_event = CachedEvent {
-			phase: enc.phase.clone(),
-			events: Vec::new(),
-		};
-
-		let decoded = decoded_events
-			.iter()
-			.find(|x| x.phase == enc.phase)
-			.map(|x| &x.events);
-
-		for ev in &enc.events {
-			let index = ev.index;
-
-			let mut data = CachedEventData {
-				index,
-				pallet_id: ev.pallet_id,
-				event_id: ev.pallet_id,
-				encoded: std::format!("0x{}", hex::encode(&ev.data)),
-				decoded: None,
-			};
-
-			if let Some(decoded) = &decoded {
-				if let Some(ev) = decoded.iter().find(|x| x.index == index) {
-					data.decoded = parse_decoded_event(ev);
-				}
-			}
-
-			cached_event.events.push(data);
-		}
-
-		cached_events.push(cached_event);
-	}
-
-	Some(CachedEvents(cached_events))
 }
 
 fn read_consensus_events(
@@ -461,7 +339,7 @@ fn iter_overview_opaque(
 	enable_event_decoding: bool,
 	events: Option<Arc<CachedEvents>>,
 ) -> Option<block_overview::TransactionData> {
-	use block_overview::{Event, TransactionFilterOptions};
+	use block_overview::TransactionFilterOptions;
 
 	if let TransactionFilterOptions::TxIndex(tx_indexes) = &filter.transaction {
 		if !tx_indexes.contains(&unique_id.tx_index) {
@@ -482,7 +360,7 @@ fn iter_overview_opaque(
 		return None;
 	};
 
-	let Some((pallet_id, call_id)) = read_pallet_call_index(&ext) else {
+	let Some((pallet_id, call_id)) = common::read_pallet_call_index(&ext) else {
 		return None;
 	};
 
@@ -631,7 +509,7 @@ fn iter_data_opaque(
 		return None;
 	};
 
-	let Some((pallet_id, call_id)) = read_pallet_call_index(&ext) else {
+	let Some((pallet_id, call_id)) = common::read_pallet_call_index(&ext) else {
 		return None;
 	};
 
@@ -705,8 +583,6 @@ fn iter_data_opaque(
 			data.pop();
 			data.remove(0);
 		}
-
-		dbg!(&data);
 
 		cache.write_cached_calls(unique_id, data.clone());
 		data

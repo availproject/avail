@@ -1,15 +1,15 @@
+use super::common::{self, BlockState, HashIndex};
 use jsonrpsee::tokio::sync::{mpsc, oneshot};
 use serde::{Deserialize, Serialize};
 use sp_core::H256;
 
-use crate::{BlockState, HashIndex};
+pub use events::*;
+pub use filter::*;
+
 pub type ChannelResponse = oneshot::Sender<Result<Response, String>>;
 pub type Channel = (RPCParams, ChannelResponse);
 pub type Receiver = mpsc::Receiver<Channel>;
 pub type Sender = mpsc::Sender<Channel>;
-
-pub use events::*;
-pub use filter::*;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RPCParams {
@@ -55,13 +55,12 @@ pub struct TransactionData {
 	pub call_id: u8,
 	pub signed: Option<TransactionSignature>,
 	pub decoded: Option<u8>,
-	pub events: Option<Events>,
+	pub events: Option<common::Events>,
 }
 
 pub mod events {
 	pub use super::*;
 
-	pub type Events = Vec<Event>;
 	pub type ConsensusEvents = Vec<ConsensusEvent>;
 
 	#[derive(Debug, Clone, Serialize, Deserialize)]
@@ -69,7 +68,7 @@ pub mod events {
 		pub phase: ConsensusEventPhase,
 		pub pallet_id: u8,
 		pub event_id: u8,
-		pub decoded: Option<DecodedEventData>,
+		pub decoded: Option<common::DecodedEventData>,
 	}
 
 	#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -78,60 +77,6 @@ pub mod events {
 		Finalization,
 		/// Initializing the block.
 		Initialization,
-	}
-
-	#[derive(Debug, Clone, Serialize, Deserialize)]
-	pub struct Event {
-		pub index: u32,
-		pub pallet_id: u8,
-		pub event_id: u8,
-		pub decoded: Option<DecodedEventData>,
-	}
-
-	#[derive(Debug, Clone, Serialize, Deserialize)]
-	pub struct EncodedEvent {
-		pub index: u32,
-		pub pallet_id: u8,
-		pub event_id: u8,
-		// First N bytes of every encoded event is CompactU32.
-		pub data: String,
-	}
-
-	#[derive(Debug, Clone, Serialize, Deserialize)]
-	pub struct DecodedEvent {
-		pub index: u32,
-		pub pallet_id: u8,
-		pub event_id: u8,
-		pub data: DecodedEventData,
-	}
-
-	impl DecodedEvent {
-		pub fn new(index: u32, pallet_id: u8, event_id: u8, data: DecodedEventData) -> Self {
-			Self {
-				index,
-				pallet_id,
-				event_id,
-				data,
-			}
-		}
-	}
-
-	#[derive(Debug, Clone, Serialize, Deserialize)]
-	pub enum DecodedEventData {
-		Unknown,
-		SystemExtrinsicSuccess,
-		SystemExtrinsicFailed,
-		SudoSudid(bool),
-		SudoSudoAsDone(bool),
-		MultisigMultisigExecuted(bool),
-		ProxyProxyExecuted(bool),
-		DataAvailabilityDataSubmitted(DataSubmittedEvent),
-	}
-
-	#[derive(Debug, Clone, Serialize, Deserialize)]
-	pub struct DataSubmittedEvent {
-		pub who: String,
-		pub data_hash: String,
 	}
 }
 

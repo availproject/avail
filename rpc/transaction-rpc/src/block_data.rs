@@ -1,14 +1,14 @@
-use crate::{BlockState, HashIndex};
+use super::common::{BlockState, HashIndex};
 use jsonrpsee::tokio::sync::{mpsc, oneshot};
 use serde::{Deserialize, Serialize};
 use sp_core::H256;
+
+pub use filter::*;
 
 pub type ChannelResponse = oneshot::Sender<Result<Response, String>>;
 pub type Channel = (RPCParams, ChannelResponse);
 pub type Receiver = mpsc::Receiver<Channel>;
 pub type Sender = mpsc::Sender<Channel>;
-
-pub use filter::*;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RPCParams {
@@ -90,15 +90,6 @@ pub mod filter {
 			Self::All
 		}
 	}
-	/*
-	impl TransactionFilterOptions {
-		pub fn filter_out_pallet(&self, value: u8) -> bool {
-			match self {
-				TransactionFilterOptions::Pallet(items) => !items.contains(&value),
-				_ => false,
-			}
-		}
-	} */
 
 	#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 	pub struct SignatureFilterOptions {

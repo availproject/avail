@@ -1,7 +1,9 @@
-pub mod constants;
+mod cache;
 mod database;
 mod database_map;
 mod worker;
+
+pub mod constants;
 
 pub use database::Database;
 use jsonrpsee::tokio::sync::{mpsc, Notify};
@@ -44,7 +46,6 @@ pub struct BlockDetails {
 pub struct TransactionState {
 	pub tx_hash: H256,
 	pub tx_index: u32,
-	pub tx_success: bool,
 	pub pallet_index: u8,
 	pub call_index: u8,
 }

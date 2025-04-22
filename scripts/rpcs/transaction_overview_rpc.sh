@@ -6,12 +6,12 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
-transaction_hash="$1"
+params="{ \"tx_hash\": \"$1\", \"fetch_events\": true, \"enable_event_decoding\": false }"
 
 curl -H "Content-Type: application/json" -d "{
   \"jsonrpc\": \"2.0\",
   \"method\": \"transaction_overview\",
-  \"params\": [\"$transaction_hash\", false],
+  \"params\": [$params],
   \"id\": 0
 }" http://127.0.0.1:9944
 echo ""

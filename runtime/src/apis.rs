@@ -243,27 +243,22 @@ impl_runtime_apis! {
 	impl frame_system_rpc_runtime_api::SystemEventsApi<Block> for Runtime {
 		fn fetch_events(params: frame_system_rpc_runtime_api::SystemFetchEventsParams) -> frame_system_rpc_runtime_api::SystemFetchEventsResult {
 			use sp_std::vec;
-			use frame_system_rpc_runtime_api::{*, events::EncodedEvent};
+			use frame_system_rpc_runtime_api::{*, events::RuntimeEvent};
+			use codec::Encode;
+
 			const VERSION: u8 = 0;
 
 			let mut result = SystemFetchEventsResult {
 				version: VERSION,
 				error: 0,
-				encoded: Vec::new(),
-				decoded:  Vec::new(),
+				entries: Vec::new(),
 			};
 
 			let enable_encoding = params.enable_encoding.unwrap_or(false);
 			let enable_decoding = params.enable_decoding.unwrap_or(false);
-			let do_not_encode = !enable_encoding && !enable_decoding;
 
 			if params.filter_tx_indices.as_ref().is_some_and(|x| x.len() > 25) {
 				result.error = 1;
-				return result;
-			}
-
-			if params.filter_events.as_ref().is_some_and(|x| x.len() > 25) {
-				result.error = 2;
 				return result;
 			}
 
@@ -286,36 +281,35 @@ impl_runtime_apis! {
 					}
 				}
 
-				let Some((id, mut encoded)) = filter_event_by_id_and_encode(&event.event, &params, do_not_encode) else {
-					continue;
+				let id = if let Some(id) = manual_read_pallet_event_id(&event.event) {
+					id
+				} else {
+					let Some(id) = read_pallet_event_id(&event.event.encode()) else {
+						continue
+					};
+
+					id
 				};
 
-				if do_not_encode {
-					encoded = Vec::new();
-				}
+				let encoded = if enable_encoding  {
+					Some(event.encode())
+				} else {
+					None
+				};
 
-				// Encoded
-				if enable_encoding || do_not_encode {
-					let encoded = EncodedEvent::new(event_position, id.0, id.1, encoded);
-					if let Some(entry) = result.encoded.iter_mut().find(|x| x.phase == event.phase) {
-						entry.events.push(encoded);
-					} else {
-						let v = events::EncodedTransactionEvents {phase: event.phase.clone(), events: vec![encoded]};
-						result.encoded.push(v);
-					};
-				}
+				let decoded = if enable_decoding {
+					decode_runtime_event(&event.event)
+				} else {
+					None
+				};
 
-				// Decoded
-				if enable_decoding {
-					if let Some(decoded) = decode_runtime_event(&event.event, event_position) {
-						if let Some(entry) = result.decoded.iter_mut().find(|x| x.phase == event.phase) {
-							entry.events.push(decoded);
-						} else {
-							let v = events::DecodedTransactionEvents {phase: event.phase.clone(), events: vec![decoded]};
-							result.decoded.push(v);
-						};
-					}
-				}
+				let ev = RuntimeEvent::new(event_position, id.0, id.1, encoded, decoded);
+				if let Some(entry) = result.entries.iter_mut().find(|x| x.phase == event.phase) {
+					entry.events.push(ev);
+				} else {
+					let v = events::RuntimeEntryEvents {phase: event.phase.clone(), events: vec![ev]};
+					result.entries.push(v);
+				};
 
 				event_position += 1;
 			}
@@ -660,52 +654,6 @@ impl_runtime_apis! {
 	}
 }
 
-// TODO This is horrible. What we try to do here is see if we can discard a
-// event before we "encode" it. `The manual_read_pallet*` tries to guess the event id
-// but it doesn't have all the pallet/event combination so when it fails we
-// fallback to encode + `read_pallet_*`.
-fn filter_event_by_id_and_encode(
-	event: &super::RuntimeEvent,
-	params: &SystemFetchEventsParams,
-	do_not_encode: bool,
-) -> Option<((u8, u8), Vec<u8>)> {
-	use codec::Encode;
-
-	// If there is no filter then encode the event and return the event id.
-	let Some(filter) = &params.filter_events else {
-		let encoded = event.encode();
-		let Some(id) = read_pallet_event_id(&encoded) else {
-			return None;
-		};
-
-		return Some((id, encoded));
-	};
-
-	if let Some(id) = manual_read_pallet_event_id(event) {
-		if !filter.contains(&id) {
-			return None;
-		}
-
-		if do_not_encode {
-			return Some((id, Vec::new()));
-		}
-
-		let encoded = event.encode();
-		return Some((id, encoded));
-	}
-
-	let encoded = event.encode();
-	let Some(id) = read_pallet_event_id(&encoded) else {
-		return None;
-	};
-
-	if !filter.contains(&id) {
-		return None;
-	}
-
-	return Some((id, encoded));
-}
-
 fn read_pallet_event_id(encoded_event: &Vec<u8>) -> Option<(u8, u8)> {
 	if encoded_event.len() < 2 {
 		return None;
@@ -792,6 +740,12 @@ fn manual_read_pallet_event_id(event: &super::RuntimeEvent) -> Option<(u8, u8)> 
 			},
 			_ => (),
 		},
+		RuntimeEvent::Scheduler(e) => match e {
+			pallet_scheduler::Event::<Runtime>::Dispatched { .. } => {
+				return Some((scheduler::PALLET_ID, scheduler::DISPATCHED));
+			},
+			_ => (),
+		},
 		RuntimeEvent::DataAvailability(e) => match e {
 			da_control::Event::<Runtime>::ApplicationKeyCreated { .. } => {
 				return Some((da::PALLET_ID, da::APPLICATION_KEY_CREATED));
@@ -807,61 +761,63 @@ fn manual_read_pallet_event_id(event: &super::RuntimeEvent) -> Option<(u8, u8)> 
 	None
 }
 
-// If any change is done here things might break. This is a breaking change!!!!!!!
-fn decode_runtime_event(
-	event: &super::RuntimeEvent,
-	position: u32,
-) -> Option<frame_system_rpc_runtime_api::events::SemiDecodedEvent> {
+// If any change is done here things might break.
+fn decode_runtime_event(event: &super::RuntimeEvent) -> Option<Vec<u8>> {
 	use super::*;
 	use codec::Encode;
-	use frame_system_rpc_runtime_api::events::{event_id::*, SemiDecodedEvent};
-
-	let mut res = SemiDecodedEvent::new(position, 0, 0, Vec::new());
 
 	match event {
 		RuntimeEvent::System(e) => match e {
 			frame_system::Event::<Runtime>::ExtrinsicSuccess { .. } => {
-				res.pallet_id = system::PALLET_ID;
-				res.event_id = system::EXTRINSIC_SUCCESS;
-				return Some(res);
+				return Some(Vec::new());
 			},
 			frame_system::Event::<Runtime>::ExtrinsicFailed { .. } => {
-				res.pallet_id = system::PALLET_ID;
-				res.event_id = system::EXTRINSIC_FAILED;
-				return Some(res);
+				return Some(Vec::new());
 			},
 			_ => (),
 		},
 		RuntimeEvent::Sudo(e) => match e {
-			pallet_sudo::Event::<Runtime>::Sudid { sudo_result: x } => {
-				res.pallet_id = sudo::PALLET_ID;
-				res.event_id = sudo::SUDID;
-				res.data = x.is_ok().encode();
-				return Some(res);
+			pallet_sudo::Event::<Runtime>::Sudid { sudo_result } => {
+				let mut event_data = Vec::<u8>::new();
+				sudo_result.is_ok().encode_to(&mut event_data);
+				return Some(event_data);
 			},
-			pallet_sudo::Event::<Runtime>::SudoAsDone { sudo_result: x } => {
-				res.pallet_id = sudo::PALLET_ID;
-				res.event_id = sudo::SUDO_AS_DONE;
-				res.data = x.is_ok().encode();
-				return Some(res);
+			pallet_sudo::Event::<Runtime>::SudoAsDone { sudo_result } => {
+				let mut event_data = Vec::<u8>::new();
+				sudo_result.is_ok().encode_to(&mut event_data);
+				return Some(event_data);
 			},
 			_ => (),
 		},
 		RuntimeEvent::Multisig(e) => match e {
-			pallet_multisig::Event::<Runtime>::MultisigExecuted { result: x, .. } => {
-				res.pallet_id = multisig::PALLET_ID;
-				res.event_id = multisig::MULTISIG_EXECUTED;
-				res.data = x.is_ok().encode();
-				return Some(res);
+			pallet_multisig::Event::<Runtime>::MultisigExecuted {
+				multisig,
+				call_hash,
+				result: x,
+				..
+			} => {
+				let mut event_data = Vec::<u8>::new();
+				multisig.encode_to(&mut event_data);
+				call_hash.encode_to(&mut event_data);
+				x.is_ok().encode_to(&mut event_data);
+				return Some(event_data);
 			},
 			_ => (),
 		},
 		RuntimeEvent::Proxy(e) => match e {
-			pallet_proxy::Event::<Runtime>::ProxyExecuted { result: x, .. } => {
-				res.pallet_id = proxy::PALLET_ID;
-				res.event_id = proxy::PROXY_EXECUTED;
-				res.data = x.is_ok().encode();
-				return Some(res);
+			pallet_proxy::Event::<Runtime>::ProxyExecuted { result, .. } => {
+				let mut event_data = Vec::<u8>::new();
+				result.is_ok().encode_to(&mut event_data);
+
+				return Some(event_data);
+			},
+			_ => (),
+		},
+		RuntimeEvent::Scheduler(e) => match e {
+			pallet_scheduler::Event::<Runtime>::Dispatched { result, .. } => {
+				let mut event_data = Vec::<u8>::new();
+				result.is_ok().encode_to(&mut event_data);
+				return Some(event_data);
 			},
 			_ => (),
 		},
@@ -870,11 +826,7 @@ fn decode_runtime_event(
 				let mut event_data = Vec::<u8>::new();
 				who.encode_to(&mut event_data);
 				data_hash.encode_to(&mut event_data);
-
-				res.pallet_id = data_availability::PALLET_ID;
-				res.event_id = data_availability::DATA_SUBMITTED;
-				res.data = event_data;
-				return Some(res);
+				return Some(event_data);
 			},
 			_ => (),
 		},

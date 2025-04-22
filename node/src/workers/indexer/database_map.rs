@@ -13,7 +13,6 @@ struct BlockData {
 #[derive(Debug, Clone)]
 struct TransactionData {
 	pub tx_index: u32,
-	pub tx_success: bool,
 	pub pallet_index: u8,
 	pub call_index: u8,
 	pub block_index: u32,
@@ -117,6 +116,7 @@ impl Database {
 		is_finalized: bool,
 	) -> Vec<transaction_overview::Response> {
 		let mut result: Vec<transaction_overview::Response> = Vec::new();
+
 		if !is_finalized {
 			self.included_tx.search_overview(
 				tx_hash,
@@ -198,9 +198,9 @@ impl Map {
 					block_height: block.block_height,
 					tx_hash: tx_hash.clone(),
 					tx_index: data.tx_index,
-					tx_success: data.tx_success,
 					pallet_index: data.pallet_index,
 					call_index: data.call_index,
+					events: None,
 				});
 			};
 		}
@@ -221,9 +221,9 @@ impl Map {
 					block_height: block.block_height,
 					tx_hash: tx_hash.clone(),
 					tx_index: data.tx_index,
-					tx_success: data.tx_success,
 					pallet_index: data.pallet_index,
 					call_index: data.call_index,
+					events: None,
 				});
 			}
 		}
@@ -239,7 +239,6 @@ impl Map {
 	) {
 		let v = TransactionData {
 			tx_index: state.tx_index,
-			tx_success: state.tx_success,
 			pallet_index: state.pallet_index,
 			call_index: state.call_index,
 			block_index,

@@ -1,30 +1,49 @@
-use super::{constants::DATABASE_RESIZE_INTERVAL, database_map, CliDeps, Deps, Receiver};
-use crate::workers::{macros::profile, Timer};
+use super::{
+	cache::{Cache, Cacheable, SharedCache},
+	constants::DATABASE_RESIZE_INTERVAL,
+	database_map, CliDeps, Deps,
+};
+use crate::workers::{
+	cache::CachedEvents,
+	common::{self, Timer, UniqueTxId},
+	macros::profile,
+};
+use frame_system_rpc_runtime_api::SystemFetchEventsParams;
 use jsonrpsee::tokio;
+use sc_service::RpcHandlers;
 use sc_telemetry::log;
-use std::{sync::Arc, time::Duration};
+use std::{
+	sync::{Arc, RwLock},
+	time::Duration,
+};
 use tokio::sync::Notify;
 use transaction_rpc::transaction_overview;
 
 pub struct Database {
-	block_receiver: Receiver,
+	block_receiver: super::Receiver,
 	rpc_receiver: transaction_overview::Receiver,
+	handlers: RpcHandlers,
 	logger: Logger,
 	inner: database_map::Database,
 	timer: Timer,
 	notifier: Arc<Notify>,
 	cli: CliDeps,
+	cache: SharedCache,
 }
 impl Database {
-	pub fn new(deps: Deps) -> Self {
+	pub fn new(deps: Deps, handlers: RpcHandlers) -> Self {
+		let cache = Arc::new(RwLock::new(Cache::new()));
+
 		Self {
 			block_receiver: deps.block_receiver,
 			rpc_receiver: deps.transaction_receiver,
+			handlers,
 			logger: Logger::new(deps.cli.logging_interval),
 			inner: database_map::Database::new(deps.cli.clone()),
 			timer: Timer::new(DATABASE_RESIZE_INTERVAL),
 			notifier: deps.notifier,
 			cli: deps.cli,
+			cache,
 		}
 	}
 
@@ -33,7 +52,7 @@ impl Database {
 		self.logger.log(message);
 
 		loop {
-			let (duration, _) = profile!(self.handle_queues());
+			let (duration, _) = profile!(self.handle_queues().await);
 			self.logger.increment_total_time(duration);
 
 			self.resize();
@@ -53,7 +72,7 @@ impl Database {
 		self.timer.restart();
 	}
 
-	fn handle_queues(&mut self) {
+	async fn handle_queues(&mut self) {
 		if !self.block_receiver.is_empty() {
 			while let Ok(block) = self.block_receiver.try_recv() {
 				self.inner.add_block(block);
@@ -63,20 +82,78 @@ impl Database {
 
 		if !self.rpc_receiver.is_empty() {
 			while let Ok(details) = self.rpc_receiver.try_recv() {
-				self.transaction_overview_response(details);
+				self.transaction_overview_response(details).await;
 				self.logger.increment_rpc_call();
 			}
 		}
 	}
 
-	fn transaction_overview_response(&self, details: transaction_overview::Channel) {
-		let (tx_hash, is_finalized, oneshot) = details;
+	async fn transaction_overview_response(&mut self, details: transaction_overview::Channel) {
+		let (params, oneshot) = details;
 
-		let mut result: Vec<transaction_overview::Response> =
-			self.inner.find_overview(&tx_hash, is_finalized);
-		result.sort_by(|x, y| y.block_height.cmp(&x.block_height));
+		let mut response: Vec<transaction_overview::Response> =
+			self.inner.find_overview(&params.tx_hash, params.finalized);
 
-		_ = oneshot.send(result);
+		response.sort_by(|x, y| y.block_height.cmp(&x.block_height));
+
+		if params.fetch_events {
+			for res in &mut response {
+				let Ok(events) = self
+					.tx_events(UniqueTxId::from((res.block_hash, res.tx_index)))
+					.await
+				else {
+					break;
+				};
+
+				let Some(events) = events.tx_events(res.tx_index) else {
+					break;
+				};
+
+				let events = events
+					.events
+					.iter()
+					.map(|ev| {
+						let decoded = if params.enable_event_decoding {
+							ev.decoded.clone()
+						} else {
+							None
+						};
+						let ev = transaction_rpc::common::events::Event {
+							index: ev.index,
+							pallet_id: ev.pallet_id,
+							event_id: ev.event_id,
+							decoded,
+						};
+						ev
+					})
+					.collect();
+
+				res.events = Some(events);
+			}
+		}
+
+		_ = oneshot.send(response);
+	}
+
+	async fn tx_events(&mut self, id: UniqueTxId) -> Result<Arc<CachedEvents>, String> {
+		if let Some(cached) = self.cache.read_cached_events(&id) {
+			return Ok(cached);
+		}
+
+		let params = SystemFetchEventsParams {
+			enable_decoding: Some(true),
+			filter_tx_indices: Some(vec![id.tx_index]),
+			..Default::default()
+		};
+
+		let Some(events) = common::fetch_events(&self.handlers, id.block_hash, params).await else {
+			return Err(String::new());
+		};
+
+		let events = Arc::new(events);
+		self.cache.write_cached_events(id, events.clone());
+
+		Ok(events)
 	}
 }
 

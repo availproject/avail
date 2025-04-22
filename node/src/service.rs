@@ -720,7 +720,7 @@ pub fn new_full_base(
 			.spawn_handle()
 			.spawn("tx-state-worker-f", None, worker_2.run(true));
 
-		let db = indexer::Database::new(deps);
+		let db = indexer::Database::new(deps, rpc_handlers.clone());
 		task_manager
 			.spawn_handle()
 			.spawn("tx-state-db", None, db.run());
