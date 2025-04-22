@@ -32,7 +32,6 @@ use {
 use crate::{
 	cli::{Cli, Subcommand},
 	service::{self, new_partial, FullClient},
-	transaction_state,
 };
 
 use avail_node::NODE_VERSION;
@@ -206,12 +205,7 @@ pub fn run() -> Result<()> {
 					task_manager,
 					import_queue,
 					..
-				} = new_partial(
-					&config,
-					cli.unsafe_da_sync,
-					kate_rpc::Deps::default(),
-					transaction_state::CliDeps::default(),
-				)?;
+				} = new_partial(&config, cli.unsafe_da_sync, kate_rpc::Deps::default())?;
 				Ok((cmd.run(client, import_queue), task_manager))
 			})
 		},
@@ -222,12 +216,7 @@ pub fn run() -> Result<()> {
 					client,
 					task_manager,
 					..
-				} = new_partial(
-					&config,
-					cli.unsafe_da_sync,
-					kate_rpc::Deps::default(),
-					transaction_state::CliDeps::default(),
-				)?;
+				} = new_partial(&config, cli.unsafe_da_sync, kate_rpc::Deps::default())?;
 				Ok((cmd.run(client, config.database), task_manager))
 			})
 		},
@@ -238,12 +227,7 @@ pub fn run() -> Result<()> {
 					client,
 					task_manager,
 					..
-				} = new_partial(
-					&config,
-					cli.unsafe_da_sync,
-					kate_rpc::Deps::default(),
-					transaction_state::CliDeps::default(),
-				)?;
+				} = new_partial(&config, cli.unsafe_da_sync, kate_rpc::Deps::default())?;
 				Ok((cmd.run(client, config.chain_spec), task_manager))
 			})
 		},
@@ -255,12 +239,7 @@ pub fn run() -> Result<()> {
 					task_manager,
 					import_queue,
 					..
-				} = new_partial(
-					&config,
-					cli.unsafe_da_sync,
-					kate_rpc::Deps::default(),
-					transaction_state::CliDeps::default(),
-				)?;
+				} = new_partial(&config, cli.unsafe_da_sync, kate_rpc::Deps::default())?;
 				Ok((cmd.run(client, import_queue), task_manager))
 			})
 		},
@@ -276,12 +255,7 @@ pub fn run() -> Result<()> {
 					task_manager,
 					backend,
 					..
-				} = new_partial(
-					&config,
-					cli.unsafe_da_sync,
-					kate_rpc::Deps::default(),
-					transaction_state::CliDeps::default(),
-				)?;
+				} = new_partial(&config, cli.unsafe_da_sync, kate_rpc::Deps::default())?;
 				let aux_revert = Box::new(|client: Arc<FullClient>, backend, blocks| {
 					sc_consensus_babe::revert(client.clone(), backend, blocks)?;
 					sc_consensus_grandpa::revert(client, blocks)?;
