@@ -11,7 +11,6 @@ use crate::{
 	StepVerificationKey, SyncCommitteeHashes, SyncCommitteePoseidons, Updater, ValidProof,
 	WhitelistedDomains,
 };
-use alloy_sol_types::private::primitives::hex::ToHex;
 use alloy_sol_types::SolValue;
 use avail_core::data_proof::Message::FungibleToken;
 use avail_core::data_proof::{tx_uid, AddressedMessage, Message};
@@ -1424,7 +1423,7 @@ fn test_fulfill_successfully() {
 		let public_inputs = sp1_proof_with_public_values.public_values.to_vec();
 
 		SP1VerificationKey::<Test>::set(H256(SP1_VERIFICATION_KEY));
-		let proof_outputs: ProofOutputs = SolValue::abi_decode(&public_inputs, true).unwrap();
+		let _proof_outputs: ProofOutputs = SolValue::abi_decode(&public_inputs, true).unwrap();
 		let slots_per_period = 8192;
 		let finality_threshold = 342u16;
 		let last_slot = 6867616u64;
