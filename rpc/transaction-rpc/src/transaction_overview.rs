@@ -15,8 +15,8 @@ pub struct Response {
 	pub block_height: u32,
 	pub tx_hash: H256,
 	pub tx_index: u32,
-	pub pallet_index: u8,
-	pub call_index: u8,
+	// (Pallet id, Call id)
+	pub dispatch_index: (u8, u8),
 	pub events: Option<common::events::Events>,
 }
 

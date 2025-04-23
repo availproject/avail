@@ -140,4 +140,14 @@ impl CachedEvent {
 			decoded,
 		}
 	}
+
+	pub fn to_tx_rpc_event(&self, enable_decoding: bool) -> transaction_rpc::common::events::Event {
+		use transaction_rpc::common::events::Event;
+		let decoded = enable_decoding.then(|| self.decoded.clone()).flatten();
+		Event {
+			index: self.index,
+			emitted_index: self.emitted_index,
+			decoded,
+		}
+	}
 }

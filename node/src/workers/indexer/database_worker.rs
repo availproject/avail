@@ -54,7 +54,7 @@ impl DatabaseWorker {
 
 		loop {
 			let (duration, _) = profile!(self.handle_queues().await);
-			self.logger.increment_total_time(duration);
+			self.logger.increment_handle_queues_time(duration);
 
 			self.resize();
 			self.logger.log_stats(&self.inner);
@@ -74,61 +74,52 @@ impl DatabaseWorker {
 	}
 
 	async fn handle_queues(&mut self) {
-		if !self.block_receiver.is_empty() {
-			while let Ok(block) = self.block_receiver.try_recv() {
-				self.inner.add_block(block);
-				self.logger.increment_block();
-			}
+		while let Ok(block) = self.block_receiver.try_recv() {
+			self.inner.add_block(block);
+			self.logger.increment_block();
 		}
 
-		if !self.rpc_receiver.is_empty() {
-			while let Ok(details) = self.rpc_receiver.try_recv() {
-				self.transaction_overview_response(details).await;
-				self.logger.increment_rpc_call();
-			}
+		while let Ok(details) = self.rpc_receiver.try_recv() {
+			self.transaction_overview_response(details).await;
+			self.logger.increment_rpc_call();
 		}
 	}
 
 	async fn transaction_overview_response(&mut self, details: transaction_overview::Channel) {
 		let (params, oneshot) = details;
 
-		let mut response: Vec<transaction_overview::Response> =
-			self.inner.find_overview(params.tx_hash, params.finalized);
-
+		let mut response = self.inner.find_overview(params.tx_hash, params.finalized);
 		response.sort_by(|x, y| y.block_height.cmp(&x.block_height));
 
 		if params.fetch_events {
-			use transaction_rpc::common::events::Event;
-
 			let enable_decoding = params.enable_event_decoding;
 			for res in &mut response {
 				let id = UniqueTxId::from((res.block_hash, res.tx_index));
-				let Ok(events) = self.tx_events(id).await else {
-					break;
-				};
-
-				let events = events
-					.events
-					.iter()
-					.map(|ev| {
-						let decoded = enable_decoding
-							.then(|| ev.decoded.clone())
-							.or(None)
-							.flatten();
-						Event::new(ev.index, ev.emitted_index, decoded)
-					})
-					.collect();
-
-				res.events = Some(events);
+				res.events = self.get_and_transform_events(id, enable_decoding).await
 			}
 		}
 
 		_ = oneshot.send(response);
 	}
 
-	async fn tx_events(&mut self, id: UniqueTxId) -> Result<CachedEntryEvents, ()> {
+	async fn get_and_transform_events(
+		&mut self,
+		id: UniqueTxId,
+		enable_decoding: bool,
+	) -> Option<transaction_rpc::common::events::Events> {
+		let event_entry = self.tx_events(id).await?;
+
+		let mut tx_events = Vec::with_capacity(event_entry.events.len());
+		for event in event_entry.events {
+			tx_events.push(event.to_tx_rpc_event(enable_decoding));
+		}
+
+		Some(tx_events)
+	}
+
+	async fn tx_events(&mut self, id: UniqueTxId) -> Option<CachedEntryEvents> {
 		if let Some(cached) = self.cache.read_cached_events(&id) {
-			return Ok(cached);
+			return Some(cached);
 		}
 
 		let params = SystemFetchEventsParams {
@@ -137,17 +128,11 @@ impl DatabaseWorker {
 			..Default::default()
 		};
 
-		let Some(events) = common::fetch_events(&self.handlers, id.block_hash, params).await else {
-			return Err(());
-		};
-
-		let Some(events) = events.tx_events(id.tx_index).cloned() else {
-			return Err(());
-		};
-
+		let events = common::fetch_events(&self.handlers, id.block_hash, params).await?;
+		let events = events.tx_events(id.tx_index).cloned()?;
 		self.cache.write_cached_events(id, events.clone());
 
-		Ok(events)
+		Some(events)
 	}
 }
 
@@ -155,7 +140,7 @@ struct Logger {
 	blocks_count: u32,
 	rpc_calls_count: u32,
 	resize_count: u32,
-	total_time: Duration,
+	handle_queues_time: Duration,
 	resize_time: Duration,
 	pub timer: Timer,
 }
@@ -166,7 +151,7 @@ impl Logger {
 			blocks_count: 0,
 			rpc_calls_count: 0,
 			resize_count: 0,
-			total_time: Duration::default(),
+			handle_queues_time: Duration::default(),
 			resize_time: Duration::default(),
 			timer: Timer::new(logging_interval),
 		}
@@ -180,8 +165,8 @@ impl Logger {
 		self.rpc_calls_count += 1;
 	}
 
-	pub fn increment_total_time(&mut self, value: Duration) {
-		self.total_time += value;
+	pub fn increment_handle_queues_time(&mut self, value: Duration) {
+		self.handle_queues_time += value;
 	}
 
 	pub fn increment_resize_time(&mut self, value: Duration) {
@@ -196,7 +181,7 @@ impl Logger {
 
 		let message = std::format!(
 			"Total Duration: {} ms, Blocks Received Count: {}, RPC Calls Count: {}, Resize Total Duration: {} ms, Resize Count: {}",
-			self.total_time.as_millis(),
+			self.handle_queues_time.as_millis(),
 			self.blocks_count,
 			self.rpc_calls_count,
 			self.resize_time.as_millis(),
@@ -206,16 +191,19 @@ impl Logger {
 		self.log(message);
 		self.log(db.current_state());
 
-		self.blocks_count = 0;
-		self.rpc_calls_count = 0;
-		self.resize_count = 0;
-		self.resize_time = Duration::default();
-		self.total_time = Duration::default();
-
-		self.timer.restart();
+		self.reset();
 	}
 
 	pub fn log(&self, message: String) {
 		log::info!("👾 Database: {}", message);
+	}
+
+	fn reset(&mut self) {
+		self.blocks_count = 0;
+		self.rpc_calls_count = 0;
+		self.resize_count = 0;
+		self.resize_time = Duration::default();
+		self.handle_queues_time = Duration::default();
+		self.timer.restart();
 	}
 }

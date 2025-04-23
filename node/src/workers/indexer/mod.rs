@@ -55,24 +55,19 @@ impl BlockDetails {
 		finalized: bool,
 	) -> Self {
 		let mut transactions: Vec<TransactionDetails> = Vec::with_capacity(opaques.len());
-		for (tx_index, ext) in opaques.iter().enumerate() {
+		for (index, ext) in opaques.iter().enumerate() {
 			let unchecked_ext =
 				match UncheckedExtrinsic::decode_no_vec_prefix(&mut ext.0.as_slice()) {
 					Ok(x) => x,
 					Err(_) => continue,
 				};
+
 			let Some(dispatch_index) = read_pallet_call_index(&unchecked_ext) else {
 				continue;
 			};
 
-			let tx_hash = Blake2Hasher::hash(&unchecked_ext.encode());
-
-			let info = TransactionDetails {
-				tx_hash,
-				tx_index: tx_index as u32,
-				pallet_index: dispatch_index.0,
-				call_index: dispatch_index.1,
-			};
+			let hash = Blake2Hasher::hash(&unchecked_ext.encode());
+			let info = TransactionDetails::new(hash, index as u32, dispatch_index);
 			transactions.push(info);
 		}
 
@@ -87,8 +82,18 @@ impl BlockDetails {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionDetails {
-	pub tx_hash: H256,
-	pub tx_index: u32,
-	pub pallet_index: u8,
-	pub call_index: u8,
+	pub hash: H256,
+	pub index: u32,
+	// (Pallet id, Call id)
+	pub dispatch_index: (u8, u8),
+}
+
+impl TransactionDetails {
+	pub fn new(hash: H256, index: u32, dispatch_index: (u8, u8)) -> Self {
+		Self {
+			hash,
+			index,
+			dispatch_index,
+		}
+	}
 }

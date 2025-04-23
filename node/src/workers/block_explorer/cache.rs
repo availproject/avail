@@ -46,52 +46,34 @@ pub(super) trait Cacheable {
 
 impl Cacheable for SharedCache {
 	fn read_cached_tx_hash(&self, key: &UniqueTxId) -> Option<H256> {
-		let Ok(lock) = self.read() else {
-			return None;
-		};
-
+		let lock = self.read().ok()?;
 		lock.tx_hash.get(key).cloned()
 	}
 
 	fn write_cached_tx_hash(&self, key: UniqueTxId, value: H256) -> Option<()> {
-		let Ok(mut lock) = self.write() else {
-			return None;
-		};
-
+		let mut lock = self.write().ok()?;
 		lock.tx_hash.insert(key, value);
 		Some(())
 	}
 
 	fn read_cached_calls(&self, key: &UniqueTxId) -> Option<String> {
-		let Ok(lock) = self.read() else {
-			return None;
-		};
-
+		let lock = self.read().ok()?;
 		lock.calls.get(key).cloned()
 	}
 
 	fn write_cached_calls(&self, key: UniqueTxId, value: String) -> Option<()> {
-		let Ok(mut lock) = self.write() else {
-			return None;
-		};
-
+		let mut lock = self.write().ok()?;
 		lock.calls.insert(key, value);
 		Some(())
 	}
 
 	fn read_cached_events(&self, key: &H256) -> Option<Arc<CachedEvents>> {
-		let Ok(lock) = self.read() else {
-			return None;
-		};
-
+		let lock = self.read().ok()?;
 		lock.events.get(key).cloned()
 	}
 
 	fn write_cached_events(&self, key: H256, value: Arc<CachedEvents>) -> Option<()> {
-		let Ok(mut lock) = self.write() else {
-			return None;
-		};
-
+		let mut lock = self.write().ok()?;
 		lock.events.insert(key, value);
 		Some(())
 	}

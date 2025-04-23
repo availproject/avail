@@ -35,6 +35,7 @@ impl BlockWorker {
 
 	pub async fn run(self, index_finalized_blocks: bool) {
 		if self.wait_for_sync().await.is_err() {
+			self.log("Failed to wait for sync");
 			return;
 		}
 
@@ -57,7 +58,7 @@ impl BlockWorker {
 			let block = BlockDetails::from_opaques(opaques, block_hash, block_height, false);
 
 			if let Err(e) = self.sender.send(block).await {
-				self.log(e.to_string());
+				self.log(&e.to_string());
 				return;
 			}
 
@@ -73,7 +74,7 @@ impl BlockWorker {
 			duration.as_millis(),
 			count
 		);
-		self.log(message);
+		self.log(&message);
 
 		loop {
 			self.wait_for_new_finalized_block(block_height).await;
@@ -84,7 +85,7 @@ impl BlockWorker {
 
 			let block = BlockDetails::from_opaques(opaques, block_hash, block_height, true);
 			if let Err(e) = self.sender.send(block).await {
-				self.log(e.to_string());
+				self.log(&e.to_string());
 				return;
 			}
 
@@ -186,7 +187,7 @@ impl BlockWorker {
 		Ok((opaques, block_hash))
 	}
 
-	fn log(&self, message: String) {
+	fn log(&self, message: &str) {
 		log::info!("👾 {}: {}", self.name, message);
 	}
 }

@@ -31,18 +31,12 @@ pub(super) trait Cacheable {
 
 impl Cacheable for SharedCache {
 	fn read_cached_events(&self, key: &UniqueTxId) -> Option<CachedEntryEvents> {
-		let Ok(lock) = self.read() else {
-			return None;
-		};
-
+		let lock = self.read().ok()?;
 		lock.events.get(key).cloned()
 	}
 
 	fn write_cached_events(&self, key: UniqueTxId, value: CachedEntryEvents) -> Option<()> {
-		let Ok(mut lock) = self.write() else {
-			return None;
-		};
-
+		let mut lock = self.write().ok()?;
 		lock.events.insert(key, value);
 		Some(())
 	}

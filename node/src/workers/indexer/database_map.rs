@@ -12,10 +12,19 @@ struct BlockData {
 
 #[derive(Debug, Clone)]
 struct TransactionData {
-	pub tx_index: u32,
-	pub pallet_index: u8,
-	pub call_index: u8,
+	pub index: u32,
+	pub dispatch_index: (u8, u8),
 	pub block_index: u32,
+}
+
+impl TransactionData {
+	pub fn from_details(details: &TransactionDetails, block_index: u32) -> Self {
+		Self {
+			index: details.index,
+			dispatch_index: details.dispatch_index,
+			block_index,
+		}
+	}
 }
 
 pub struct Database {
@@ -197,9 +206,8 @@ impl Map {
 					block_hash: block.block_hash,
 					block_height: block.block_height,
 					tx_hash,
-					tx_index: data.tx_index,
-					pallet_index: data.pallet_index,
-					call_index: data.call_index,
+					tx_index: data.index,
+					dispatch_index: data.dispatch_index,
 					events: None,
 				});
 			};
@@ -220,9 +228,8 @@ impl Map {
 					block_hash: block.block_hash,
 					block_height: block.block_height,
 					tx_hash,
-					tx_index: data.tx_index,
-					pallet_index: data.pallet_index,
-					call_index: data.call_index,
+					tx_index: data.index,
+					dispatch_index: data.dispatch_index,
 					events: None,
 				});
 			}
@@ -237,14 +244,9 @@ impl Map {
 		block_height: u32,
 		block_map: &HashMap<u32, BlockData>,
 	) {
-		let v = TransactionData {
-			tx_index: details.tx_index,
-			pallet_index: details.pallet_index,
-			call_index: details.call_index,
-			block_index,
-		};
+		let v = TransactionData::from_details(&details, block_index);
 
-		if let Some(entry) = self.multi.get_mut(&details.tx_hash) {
+		if let Some(entry) = self.multi.get_mut(&details.hash) {
 			if entry.len() < max_length {
 				entry.insert(0, v);
 				entry.sort_by(|x, y| {
@@ -295,7 +297,7 @@ impl Map {
 			return;
 		}
 
-		if let Some(entry) = self.single.remove(&details.tx_hash) {
+		if let Some(entry) = self.single.remove(&details.hash) {
 			let mut value = vec![entry, v];
 			value.sort_by(|x, y| {
 				let xh = block_map
@@ -308,11 +310,11 @@ impl Map {
 					.unwrap_or_default();
 				yh.cmp(&xh)
 			});
-			self.multi.insert(details.tx_hash, value);
+			self.multi.insert(details.hash, value);
 			return;
 		}
 
-		self.single.insert(details.tx_hash, v);
+		self.single.insert(details.hash, v);
 	}
 
 	fn remove_block_index(&mut self, block_index: u32) {
