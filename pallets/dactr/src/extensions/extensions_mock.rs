@@ -133,7 +133,7 @@ impl Default for ProxyType {
 	}
 }
 impl InstanceFilter<RuntimeCall> for ProxyType {
-	fn filter(&self, c: &RuntimeCall) -> bool {
+	fn filter(&self, _c: &RuntimeCall) -> bool {
 		match self {
 			_ => true,
 		}
