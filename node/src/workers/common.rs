@@ -12,12 +12,12 @@ use std::time::{Duration, Instant};
 use transaction_rpc::common::events::DecodedEventData;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
-pub struct UniqueTxId {
+pub(crate) struct TxIdentifier {
 	pub block_hash: H256,
 	pub tx_index: u32,
 }
 
-impl From<(H256, u32)> for UniqueTxId {
+impl From<(H256, u32)> for TxIdentifier {
 	fn from(value: (H256, u32)) -> Self {
 		Self {
 			block_hash: value.0,

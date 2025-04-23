@@ -12,6 +12,8 @@ use jsonrpsee::{
 };
 use std::sync::Arc;
 
+pub use common::{BlockIdentifier, BlockState, HashIndex};
+
 #[derive(Clone, Default)]
 pub struct Deps {
 	pub transaction_overview_sender: Option<transaction_overview::Sender>,

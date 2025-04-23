@@ -9,7 +9,7 @@ use crate::{
 	service::FullClient,
 	workers::{
 		cache::CachedEvents,
-		common::{self, UniqueTxId},
+		common::{self, TxIdentifier},
 		macros::profile,
 	},
 };
@@ -27,6 +27,7 @@ use transaction_rpc::{
 	block_data::{self},
 	block_overview,
 	common::{BlockState, Event, HashIndex},
+	BlockIdentifier,
 };
 
 pub struct Worker {
@@ -86,9 +87,9 @@ impl Worker {
 	) -> Result<block_data::Response, String> {
 		use block_data::{CallData, EventData};
 
-		let (block_hash, block_height) = self.block_metadata(params.block_id).await?;
-		let block_body = self.block_body(block_hash)?;
-		let block_state = self.block_state(block_hash, block_height)?;
+		let block_id = self.block_identifier(params.block_id).await?;
+		let block_body = self.block_body(block_id.hash)?;
+		let block_state = self.block_state(block_id)?;
 
 		let mut maybe_calls: Option<Vec<CallData>> = None;
 		if params.fetch_calls {
@@ -96,7 +97,7 @@ impl Worker {
 				.par_iter()
 				.enumerate()
 				.filter_map(|(i, opaq)| {
-					let unique_id = UniqueTxId::from((block_hash, i as u32));
+					let unique_id = TxIdentifier::from((block_id.hash, i as u32));
 					iter_data_opaque(unique_id, opaq, self.cache.clone(), &params.call_filter)
 				})
 				.collect();
@@ -105,7 +106,7 @@ impl Worker {
 
 		let mut maybe_events: Option<Vec<block_data::EventData>> = None;
 		if params.fetch_events {
-			let block_events = self.block_events(block_hash).await?;
+			let block_events = self.block_events(block_id.hash).await?;
 
 			let mut events = Vec::new();
 			for cached_event in &block_events.0 {
@@ -127,8 +128,7 @@ impl Worker {
 		}
 
 		let result = block_data::Response {
-			block_hash,
-			block_height,
+			block_id,
 			block_state,
 			calls: maybe_calls,
 			events: maybe_events,
@@ -141,13 +141,13 @@ impl Worker {
 		&mut self,
 		params: block_overview::Params,
 	) -> Result<block_overview::Response, String> {
-		let (block_hash, block_height) = self.block_metadata(params.block_id).await?;
-		let block_body = self.block_body(block_hash)?;
-		let block_state = self.block_state(block_hash, block_height)?;
+		let block_id = self.block_identifier(params.block_id).await?;
+		let block_body = self.block_body(block_id.hash)?;
+		let block_state = self.block_state(block_id)?;
 		let enable_event_decoding = params.extension.enable_event_decoding;
 
 		let events = if params.extension.fetch_events {
-			Some(self.block_events(block_hash).await?)
+			Some(self.block_events(block_id.hash).await?)
 		} else {
 			None
 		};
@@ -157,7 +157,7 @@ impl Worker {
 			.enumerate()
 			.filter_map(|(i, opaq)| {
 				iter_overview_opaque(
-					UniqueTxId::from((block_hash, i as u32)),
+					TxIdentifier::from((block_id.hash, i as u32)),
 					opaq,
 					self.cache.clone(),
 					&params.filter,
@@ -175,8 +175,7 @@ impl Worker {
 		}
 
 		let result = block_overview::Response {
-			block_hash,
-			block_height,
+			block_id,
 			block_state,
 			transactions,
 			consensus_events,
@@ -185,7 +184,7 @@ impl Worker {
 		Ok(result)
 	}
 
-	async fn block_metadata(&self, block_id: HashIndex) -> Result<(H256, u32), String> {
+	async fn block_identifier(&self, block_id: HashIndex) -> Result<BlockIdentifier, String> {
 		match block_id {
 			HashIndex::Hash(hash) => {
 				let height = self.client.to_number(&BlockId::Hash(hash));
@@ -195,7 +194,7 @@ impl Worker {
 						hash
 					));
 				};
-				Ok((hash, height))
+				Ok(BlockIdentifier::from((hash, height)))
 			},
 			HashIndex::Index(height) => {
 				let hash = self.client.to_hash(&BlockId::Number(height));
@@ -205,7 +204,7 @@ impl Worker {
 						height
 					));
 				};
-				Ok((hash, height))
+				Ok(BlockIdentifier::from((hash, height)))
 			},
 		}
 	}
@@ -243,23 +242,23 @@ impl Worker {
 		Ok(events)
 	}
 
-	fn block_state(&self, hash: H256, height: u32) -> Result<BlockState, String> {
+	fn block_state(&self, block_id: BlockIdentifier) -> Result<BlockState, String> {
 		let chain_info = self.client.chain_info();
-		let is_finalized = chain_info.finalized_number >= height;
+		let is_finalized = chain_info.finalized_number >= block_id.height;
 		if !is_finalized {
 			return Ok(BlockState::Included);
 		}
 
 		let finalized_hash = self
 			.client
-			.to_hash(&BlockId::Number(height))
+			.to_hash(&BlockId::Number(block_id.height))
 			.map_err(|e| e.to_string())?;
 
 		let Some(finalized_hash) = finalized_hash else {
 			return Err("Failed to convert block height to block hash".into());
 		};
 
-		if finalized_hash == hash {
+		if finalized_hash == block_id.hash {
 			return Ok(BlockState::Finalized);
 		}
 
@@ -328,7 +327,7 @@ fn read_signature(ext: &UncheckedExtrinsic) -> Option<block_overview::Transactio
 }
 
 fn iter_overview_opaque(
-	unique_id: UniqueTxId,
+	unique_id: TxIdentifier,
 	opaq: &OpaqueExtrinsic,
 	cache: SharedCache,
 	filter: &block_overview::Filter,
@@ -454,8 +453,8 @@ fn iter_overview_opaque(
 	}
 
 	let value = block_overview::TransactionData {
-		tx_hash,
-		tx_index: unique_id.tx_index,
+		hash: tx_hash,
+		index: unique_id.tx_index,
 		dispatch_index,
 		signed: signature,
 		decoded: None,
@@ -466,7 +465,7 @@ fn iter_overview_opaque(
 }
 
 fn iter_data_opaque(
-	unique_id: UniqueTxId,
+	unique_id: TxIdentifier,
 	opaq: &OpaqueExtrinsic,
 	cache: SharedCache,
 	filter: &block_data::CallFilter,

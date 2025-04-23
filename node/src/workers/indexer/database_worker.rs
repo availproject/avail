@@ -5,7 +5,7 @@ use super::{
 };
 use crate::workers::{
 	cache::CachedEntryEvents,
-	common::{self, Timer, UniqueTxId},
+	common::{self, Timer, TxIdentifier},
 	macros::profile,
 };
 use frame_system_rpc_runtime_api::SystemFetchEventsParams;
@@ -89,12 +89,12 @@ impl DatabaseWorker {
 		let (params, oneshot) = details;
 
 		let mut response = self.inner.find_overview(params.tx_hash, params.finalized);
-		response.sort_by(|x, y| y.block_height.cmp(&x.block_height));
+		response.sort_by(|x, y| y.block_id.height.cmp(&x.block_id.height));
 
 		if params.fetch_events {
 			let enable_decoding = params.enable_event_decoding;
 			for res in &mut response {
-				let id = UniqueTxId::from((res.block_hash, res.tx_index));
+				let id = TxIdentifier::from((res.block_id.hash, res.tx_index));
 				res.events = self.get_and_transform_events(id, enable_decoding).await
 			}
 		}
@@ -104,7 +104,7 @@ impl DatabaseWorker {
 
 	async fn get_and_transform_events(
 		&mut self,
-		id: UniqueTxId,
+		id: TxIdentifier,
 		enable_decoding: bool,
 	) -> Option<transaction_rpc::common::events::Events> {
 		let event_entry = self.tx_events(id).await?;
@@ -117,7 +117,7 @@ impl DatabaseWorker {
 		Some(tx_events)
 	}
 
-	async fn tx_events(&mut self, id: UniqueTxId) -> Option<CachedEntryEvents> {
+	async fn tx_events(&mut self, id: TxIdentifier) -> Option<CachedEntryEvents> {
 		if let Some(cached) = self.cache.read_cached_events(&id) {
 			return Some(cached);
 		}

@@ -51,7 +51,7 @@ impl BlockWorker {
 			let (block_height, best_block_hash) =
 				self.wait_for_new_best_block(current_block_hash).await;
 
-			let Ok((opaques, block_hash)) = self.fetch_block_body(block_height) else {
+			let Some((opaques, block_hash)) = self.fetch_block_body(block_height) else {
 				current_block_hash = best_block_hash;
 				continue;
 			};
@@ -78,12 +78,12 @@ impl BlockWorker {
 
 		loop {
 			self.wait_for_new_finalized_block(block_height).await;
-			let Ok((opaques, block_hash)) = self.fetch_block_body(block_height) else {
+			let Some((opaques, block_hash)) = self.fetch_block_body(block_height) else {
 				block_height += 1;
 				continue;
 			};
-
 			let block = BlockDetails::from_opaques(opaques, block_hash, block_height, true);
+
 			if let Err(e) = self.sender.send(block).await {
 				self.log(&e.to_string());
 				return;
@@ -110,10 +110,9 @@ impl BlockWorker {
 			//
 			// This most likely means that the pruning strategy removed the header and/or block body
 			// or the new runtime API is not there so there isn't much that we can do.
-			let Ok((opaques, block_hash)) = self.fetch_block_body(height) else {
+			let Some((opaques, block_hash)) = self.fetch_block_body(height) else {
 				break;
 			};
-
 			let block = BlockDetails::from_opaques(opaques, block_hash, height, true);
 
 			// Failure would mean that the other end of the channel is closed which means that we should bail out.
@@ -171,20 +170,16 @@ impl BlockWorker {
 		}
 	}
 
-	fn fetch_block_body(&self, block_height: u32) -> Result<(Vec<OpaqueExtrinsic>, H256), ()> {
+	fn fetch_block_body(&self, block_height: u32) -> Option<(Vec<OpaqueExtrinsic>, H256)> {
 		let block_hash = self.client.to_hash(&BlockId::Number(block_height));
 
 		// If Err or None then bail out as there is no header available.
-		let Ok(Some(block_hash)) = block_hash else {
-			return Err(());
-		};
+		let block_hash = block_hash.ok().flatten()?;
 
 		// If Err or None then bail out as there is no block to be found.
-		let Ok(Some(opaques)) = self.client.body(block_hash) else {
-			return Err(());
-		};
+		let opaques = self.client.body(block_hash).ok().flatten()?;
 
-		Ok((opaques, block_hash))
+		Some((opaques, block_hash))
 	}
 
 	fn log(&self, message: &str) {

@@ -1,6 +1,6 @@
 use crate::workers::{
 	cache::{CachedEvents, CachedValue},
-	common::UniqueTxId,
+	common::TxIdentifier,
 };
 use sp_core::H256;
 use std::sync::{Arc, RwLock};
@@ -8,9 +8,9 @@ use std::sync::{Arc, RwLock};
 pub(super) type SharedCache = Arc<RwLock<Cache>>;
 pub(super) struct Cache {
 	pub events: CachedValue<H256, Arc<CachedEvents>>,
-	pub tx_hash: CachedValue<UniqueTxId, H256>,
+	pub tx_hash: CachedValue<TxIdentifier, H256>,
 	// hex and scale encoded call
-	pub calls: CachedValue<UniqueTxId, String>,
+	pub calls: CachedValue<TxIdentifier, String>,
 }
 
 impl Cache {
@@ -22,10 +22,10 @@ impl Cache {
 			CachedValue::<H256, Arc<CachedEvents>>::new(TEMP_WEIGHT, weight_calc, TEMP_WEIGHT);
 
 		let weight_calc = Box::new(|_x: &H256| size_of::<H256>() as u64);
-		let tx_hash = CachedValue::<UniqueTxId, H256>::new(TEMP_WEIGHT, weight_calc, TEMP_WEIGHT);
+		let tx_hash = CachedValue::<TxIdentifier, H256>::new(TEMP_WEIGHT, weight_calc, TEMP_WEIGHT);
 
 		let weight_calc = Box::new(|x: &String| (x.len() + size_of::<String>()) as u64);
-		let calls = CachedValue::<UniqueTxId, String>::new(TEMP_WEIGHT, weight_calc, TEMP_WEIGHT);
+		let calls = CachedValue::<TxIdentifier, String>::new(TEMP_WEIGHT, weight_calc, TEMP_WEIGHT);
 
 		Self {
 			events,
@@ -36,32 +36,32 @@ impl Cache {
 }
 
 pub(super) trait Cacheable {
-	fn read_cached_tx_hash(&self, key: &UniqueTxId) -> Option<H256>;
-	fn write_cached_tx_hash(&self, key: UniqueTxId, value: H256) -> Option<()>;
-	fn read_cached_calls(&self, key: &UniqueTxId) -> Option<String>;
-	fn write_cached_calls(&self, key: UniqueTxId, value: String) -> Option<()>;
+	fn read_cached_tx_hash(&self, key: &TxIdentifier) -> Option<H256>;
+	fn write_cached_tx_hash(&self, key: TxIdentifier, value: H256) -> Option<()>;
+	fn read_cached_calls(&self, key: &TxIdentifier) -> Option<String>;
+	fn write_cached_calls(&self, key: TxIdentifier, value: String) -> Option<()>;
 	fn read_cached_events(&self, key: &H256) -> Option<Arc<CachedEvents>>;
 	fn write_cached_events(&self, key: H256, value: Arc<CachedEvents>) -> Option<()>;
 }
 
 impl Cacheable for SharedCache {
-	fn read_cached_tx_hash(&self, key: &UniqueTxId) -> Option<H256> {
+	fn read_cached_tx_hash(&self, key: &TxIdentifier) -> Option<H256> {
 		let lock = self.read().ok()?;
 		lock.tx_hash.get(key).cloned()
 	}
 
-	fn write_cached_tx_hash(&self, key: UniqueTxId, value: H256) -> Option<()> {
+	fn write_cached_tx_hash(&self, key: TxIdentifier, value: H256) -> Option<()> {
 		let mut lock = self.write().ok()?;
 		lock.tx_hash.insert(key, value);
 		Some(())
 	}
 
-	fn read_cached_calls(&self, key: &UniqueTxId) -> Option<String> {
+	fn read_cached_calls(&self, key: &TxIdentifier) -> Option<String> {
 		let lock = self.read().ok()?;
 		lock.calls.get(key).cloned()
 	}
 
-	fn write_cached_calls(&self, key: UniqueTxId, value: String) -> Option<()> {
+	fn write_cached_calls(&self, key: TxIdentifier, value: String) -> Option<()> {
 		let mut lock = self.write().ok()?;
 		lock.calls.insert(key, value);
 		Some(())

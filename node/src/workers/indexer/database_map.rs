@@ -1,14 +1,8 @@
 use sp_core::H256;
 use std::collections::HashMap;
-use transaction_rpc::transaction_overview;
+use transaction_rpc::{transaction_overview, BlockIdentifier};
 
 use super::{BlockDetails, CliDeps, TransactionDetails};
-
-#[derive(Debug, Clone)]
-struct BlockData {
-	pub block_hash: H256,
-	pub block_height: u32,
-}
 
 #[derive(Debug, Clone)]
 struct TransactionData {
@@ -28,7 +22,7 @@ impl TransactionData {
 }
 
 pub struct Database {
-	block_map: HashMap<u32, BlockData>,
+	block_map: HashMap<u32, BlockIdentifier>,
 	block_map_counter: u32,
 	included_tx: Map,
 	finalized_tx: Map,
@@ -74,7 +68,7 @@ impl Database {
 
 	fn get_block_index(&self, block_hash: &H256, block_height: u32) -> Option<u32> {
 		for (key, value) in self.block_map.iter() {
-			if value.block_hash == *block_hash && value.block_height == block_height {
+			if value.hash == *block_hash && value.height == block_height {
 				return Some(*key);
 			}
 		}
@@ -88,9 +82,9 @@ impl Database {
 		}
 
 		let key = self.block_map_counter;
-		let value = BlockData {
-			block_hash: *block_hash,
-			block_height,
+		let value = BlockIdentifier {
+			hash: *block_hash,
+			height: block_height,
 		};
 
 		self.block_map.insert(key, value);
@@ -156,7 +150,7 @@ impl Database {
 			let entry = self
 				.block_map
 				.iter()
-				.min_by(|x, y| x.1.block_height.cmp(&y.1.block_height));
+				.min_by(|x, y| x.1.height.cmp(&y.1.height));
 			let Some(entry) = entry else {
 				return;
 			};
@@ -190,7 +184,7 @@ impl Map {
 	fn search_overview(
 		&self,
 		tx_hash: H256,
-		block_map: &HashMap<u32, BlockData>,
+		block_map: &HashMap<u32, BlockIdentifier>,
 		max_count: usize,
 		finalized: bool,
 		out: &mut Vec<transaction_overview::Response>,
@@ -200,11 +194,10 @@ impl Map {
 		}
 
 		if let Some(data) = self.single.get(&tx_hash) {
-			if let Some(block) = block_map.get(&data.block_index) {
+			if let Some(block_id) = block_map.get(&data.block_index) {
 				out.push(transaction_overview::Response {
+					block_id: *block_id,
 					block_finalized: finalized,
-					block_hash: block.block_hash,
-					block_height: block.block_height,
 					tx_hash,
 					tx_index: data.index,
 					dispatch_index: data.dispatch_index,
@@ -219,14 +212,13 @@ impl Map {
 					break;
 				}
 
-				let Some(block) = block_map.get(&data.block_index) else {
+				let Some(block_id) = block_map.get(&data.block_index) else {
 					continue;
 				};
 
 				out.push(transaction_overview::Response {
+					block_id: *block_id,
 					block_finalized: finalized,
-					block_hash: block.block_hash,
-					block_height: block.block_height,
 					tx_hash,
 					tx_index: data.index,
 					dispatch_index: data.dispatch_index,
@@ -242,7 +234,7 @@ impl Map {
 		block_index: u32,
 		max_length: usize,
 		block_height: u32,
-		block_map: &HashMap<u32, BlockData>,
+		block_map: &HashMap<u32, BlockIdentifier>,
 	) {
 		let v = TransactionData::from_details(&details, block_index);
 
@@ -252,11 +244,11 @@ impl Map {
 				entry.sort_by(|x, y| {
 					let xh = block_map
 						.get(&x.block_index)
-						.map(|x| x.block_height)
+						.map(|x| x.height)
 						.unwrap_or_default();
 					let yh = block_map
 						.get(&y.block_index)
-						.map(|x| x.block_height)
+						.map(|x| x.height)
 						.unwrap_or_default();
 					yh.cmp(&xh)
 				});
@@ -265,7 +257,7 @@ impl Map {
 
 			let highest_height = entry
 				.first()
-				.and_then(|x| block_map.get(&x.block_index).map(|y| y.block_height))
+				.and_then(|x| block_map.get(&x.block_index).map(|y| y.height))
 				.unwrap_or_default();
 			if block_height > highest_height {
 				entry.insert(0, v);
@@ -275,7 +267,7 @@ impl Map {
 
 			let lowest_height = entry
 				.last()
-				.and_then(|x| block_map.get(&x.block_index).map(|y| y.block_height))
+				.and_then(|x| block_map.get(&x.block_index).map(|y| y.height))
 				.unwrap_or_default();
 			if block_height < lowest_height {
 				return;
@@ -285,11 +277,11 @@ impl Map {
 			entry.sort_by(|x, y| {
 				let xh = block_map
 					.get(&x.block_index)
-					.map(|x| x.block_height)
+					.map(|x| x.height)
 					.unwrap_or_default();
 				let yh = block_map
 					.get(&y.block_index)
-					.map(|x| x.block_height)
+					.map(|x| x.height)
 					.unwrap_or_default();
 				yh.cmp(&xh)
 			});
@@ -302,11 +294,11 @@ impl Map {
 			value.sort_by(|x, y| {
 				let xh = block_map
 					.get(&x.block_index)
-					.map(|x| x.block_height)
+					.map(|x| x.height)
 					.unwrap_or_default();
 				let yh = block_map
 					.get(&y.block_index)
-					.map(|x| x.block_height)
+					.map(|x| x.height)
 					.unwrap_or_default();
 				yh.cmp(&xh)
 			});
@@ -329,18 +321,18 @@ impl Map {
 	}
 
 	// Removes all blocks up to and including `block_index` height.
-	fn filter_up_to(&mut self, block_index: u32, block_map: &HashMap<u32, BlockData>) {
+	fn filter_up_to(&mut self, block_index: u32, block_map: &HashMap<u32, BlockIdentifier>) {
 		let Some(block_data) = block_map.get(&block_index) else {
 			return;
 		};
 
-		let target_height = block_data.block_height;
+		let target_height = block_data.height;
 		self.single.retain(|_x, tx_data| {
 			let Some(tx_block_data) = block_map.get(&tx_data.block_index) else {
 				return false;
 			};
 
-			if target_height >= tx_block_data.block_height {
+			if target_height >= tx_block_data.height {
 				return false;
 			}
 
@@ -353,7 +345,7 @@ impl Map {
 					return false;
 				};
 
-				if target_height >= tx_block_data.block_height {
+				if target_height >= tx_block_data.height {
 					return false;
 				}
 

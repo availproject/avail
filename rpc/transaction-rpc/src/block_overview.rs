@@ -1,4 +1,4 @@
-use super::common::{self, BlockState, HashIndex};
+use super::{common, BlockIdentifier, BlockState, HashIndex};
 use jsonrpsee::tokio::sync::{mpsc, oneshot};
 use serde::{Deserialize, Serialize};
 use sp_core::H256;
@@ -34,8 +34,7 @@ pub struct ParamsExtension {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Response {
-	pub block_hash: H256,
-	pub block_height: u32,
+	pub block_id: BlockIdentifier,
 	pub block_state: BlockState,
 	pub transactions: Vec<TransactionData>,
 	pub consensus_events: Option<ConsensusEvents>,
@@ -49,8 +48,8 @@ pub struct ResponseDebug {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionData {
-	pub tx_hash: H256,
-	pub tx_index: u32,
+	pub hash: H256,
+	pub index: u32,
 	// (Pallet id, Call Id)
 	pub dispatch_index: (u8, u8),
 	pub signed: Option<TransactionSignature>,
@@ -60,7 +59,6 @@ pub struct TransactionData {
 
 pub mod events {
 	pub use super::*;
-
 	pub type ConsensusEvents = Vec<ConsensusEvent>;
 
 	#[derive(Debug, Clone, Serialize, Deserialize)]

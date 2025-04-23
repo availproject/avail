@@ -16,6 +16,21 @@ pub enum HashIndex {
 	Index(u32),
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct BlockIdentifier {
+	pub hash: H256,
+	pub height: u32,
+}
+
+impl From<(H256, u32)> for BlockIdentifier {
+	fn from(value: (H256, u32)) -> Self {
+		Self {
+			hash: value.0,
+			height: value.1,
+		}
+	}
+}
+
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum BlockState {
 	Included,

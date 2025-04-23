@@ -1,4 +1,4 @@
-use super::common::{BlockState, HashIndex};
+use super::{BlockIdentifier, BlockState, HashIndex};
 use jsonrpsee::tokio::sync::{mpsc, oneshot};
 use serde::{Deserialize, Serialize};
 use sp_core::H256;
@@ -25,8 +25,7 @@ pub struct RPCParams {
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Response {
-	pub block_hash: H256,
-	pub block_height: u32,
+	pub block_id: BlockIdentifier,
 	pub block_state: BlockState,
 	pub calls: Option<Vec<CallData>>,
 	pub events: Option<Vec<EventData>>,
