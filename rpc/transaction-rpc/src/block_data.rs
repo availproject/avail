@@ -10,7 +10,7 @@ pub type Channel = (RPCParams, ChannelResponse);
 pub type Receiver = mpsc::Receiver<Channel>;
 pub type Sender = mpsc::Sender<Channel>;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct RPCParams {
 	pub block_id: HashIndex,
 	#[serde(default)]
@@ -41,7 +41,7 @@ pub struct ResponseDebug {
 #[derive(Clone, Serialize, Deserialize)]
 pub struct CallData {
 	// (pallet id, call id)
-	pub id: (u8, u8),
+	pub dispatch_index: (u8, u8),
 	pub tx_index: u32,
 	pub tx_hash: H256,
 	pub data: String,
@@ -50,7 +50,7 @@ pub struct CallData {
 #[derive(Clone, Serialize, Deserialize)]
 pub struct EventData {
 	// (pallet id, event id)
-	pub id: (u8, u8),
+	pub emitted_index: (u8, u8),
 	pub phase: Phase,
 	pub data: String,
 }
@@ -68,7 +68,7 @@ pub enum Phase {
 pub mod filter {
 	pub use super::*;
 
-	#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+	#[derive(Default, Clone, Serialize, Deserialize)]
 	pub struct CallFilter {
 		#[serde(default)]
 		pub transaction: TransactionFilterOptions,
@@ -76,7 +76,7 @@ pub mod filter {
 		pub signature: SignatureFilterOptions,
 	}
 
-	#[derive(Debug, Clone, Serialize, Deserialize)]
+	#[derive(Clone, Serialize, Deserialize)]
 	pub enum TransactionFilterOptions {
 		All,
 		TxHash(Vec<H256>),
@@ -91,14 +91,14 @@ pub mod filter {
 		}
 	}
 
-	#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+	#[derive(Default, Clone, Serialize, Deserialize)]
 	pub struct SignatureFilterOptions {
 		pub ss58_address: Option<String>,
 		pub app_id: Option<u32>,
 		pub nonce: Option<u32>,
 	}
 
-	#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+	#[derive(Default, Clone, Serialize, Deserialize)]
 	pub struct EventFilter {
 		#[serde(default)]
 		pub phase: PhaseFilterOptions,

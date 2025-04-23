@@ -1,51 +1,49 @@
 use crate::workers::{
-	cache::{CachedEvents, CachedValue},
+	cache::{CachedEntryEvents, CachedValue},
 	common::UniqueTxId,
 };
 use std::sync::{Arc, RwLock};
 
-pub(crate) type SharedCache = Arc<RwLock<Cache>>;
-pub(crate) struct Cache {
-	pub events: CachedValue<UniqueTxId, Arc<CachedEvents>>,
+pub(super) type SharedCache = Arc<RwLock<Cache>>;
+pub(super) struct Cache {
+	pub events: CachedValue<UniqueTxId, CachedEntryEvents>,
 }
 
 impl Cache {
-	pub fn new() -> Self {
-		// 10 MB
-		const TEMP_WEIGHT: u64 = 10_000_000;
+	pub fn new(event_cache_size: u64) -> Self {
+		let event_cache_size = event_cache_size * 1000;
 
-		let weight_calc = Box::new(|x: &Arc<CachedEvents>| x.weight());
-		let events = CachedValue::<UniqueTxId, Arc<CachedEvents>>::new(
-			TEMP_WEIGHT,
+		let weight_calc = Box::new(|x: &CachedEntryEvents| x.weight());
+		let events = CachedValue::<UniqueTxId, CachedEntryEvents>::new(
+			event_cache_size,
 			weight_calc,
-			TEMP_WEIGHT,
+			event_cache_size,
 		);
 
 		Self { events }
 	}
 }
 
-pub trait Cacheable {
-	fn read_cached_events(&self, key: &UniqueTxId) -> Option<Arc<CachedEvents>>;
-	fn write_cached_events(&self, key: UniqueTxId, value: Arc<CachedEvents>) -> Option<()>;
+pub(super) trait Cacheable {
+	fn read_cached_events(&self, key: &UniqueTxId) -> Option<CachedEntryEvents>;
+	fn write_cached_events(&self, key: UniqueTxId, value: CachedEntryEvents) -> Option<()>;
 }
 
 impl Cacheable for SharedCache {
-	fn read_cached_events(&self, key: &UniqueTxId) -> Option<Arc<CachedEvents>> {
+	fn read_cached_events(&self, key: &UniqueTxId) -> Option<CachedEntryEvents> {
 		let Ok(lock) = self.read() else {
 			return None;
 		};
 
-		lock.events.get(key).map(|x| x.clone())
+		lock.events.get(key).cloned()
 	}
 
-	fn write_cached_events(&self, key: UniqueTxId, value: Arc<CachedEvents>) -> Option<()> {
+	fn write_cached_events(&self, key: UniqueTxId, value: CachedEntryEvents) -> Option<()> {
 		let Ok(mut lock) = self.write() else {
 			return None;
 		};
 
 		lock.events.insert(key, value);
-
 		Some(())
 	}
 }

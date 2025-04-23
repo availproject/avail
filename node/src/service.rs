@@ -696,8 +696,8 @@ pub fn new_full_base(
 
 	if let Some(deps) = transaction_rpc_worker_deps.block_explorer {
 		use workers::block_explorer;
+		log::info!("🐖 Block Explorer RPC is enabled.");
 
-		log::info!("🐖 Block RPC is enabled.");
 		let worker = block_explorer::Worker::new(client.clone(), rpc_handlers.clone(), deps);
 
 		task_manager
@@ -707,25 +707,33 @@ pub fn new_full_base(
 
 	if let Some(deps) = transaction_rpc_worker_deps.indexer {
 		use workers::indexer;
-
 		log::info!("👾 Transaction Overview RPC is enabled.");
 
-		let worker_1 = indexer::Worker::new(client.clone(), rpc_handlers.clone(), &deps);
-		let worker_2 = indexer::Worker::new(client.clone(), rpc_handlers.clone(), &deps);
+		let worker_1 = indexer::BlockWorker::new(
+			client.clone(),
+			rpc_handlers.clone(),
+			&deps,
+			"rpc-tx-overview-worker-i".into(),
+		);
+
+		let worker_2 = indexer::BlockWorker::new(
+			client.clone(),
+			rpc_handlers.clone(),
+			&deps,
+			"rpc-tx-overview-worker-f".into(),
+		);
+
+		let worker_3 = indexer::DatabaseWorker::new(deps, rpc_handlers.clone());
 
 		task_manager
 			.spawn_handle()
-			.spawn("tx-state-worker-i", None, worker_1.run(false));
+			.spawn("rpc-tx-overview-worker-i", None, worker_1.run(false));
 		task_manager
 			.spawn_handle()
-			.spawn("tx-state-worker-f", None, worker_2.run(true));
-
-		let db = indexer::Database::new(deps, rpc_handlers.clone());
+			.spawn("rpc-tx-overview-worker-f", None, worker_2.run(true));
 		task_manager
 			.spawn_handle()
-			.spawn("tx-state-db", None, db.run());
-	} else {
-		log::info!("👾 Transaction State RPC is disabled.");
+			.spawn("rpc-tx-overview-worker-db", None, worker_3.run());
 	}
 
 	Ok(NewFullBase {
@@ -748,10 +756,11 @@ pub fn new_full(config: Configuration, cli: Cli) -> Result<TaskManager, ServiceE
 	};
 
 	let tx_state_cli_deps = workers::indexer::CliDeps {
-		max_search_results: cli.tx_state_rpc_max_search_results,
-		max_stored_block_count: cli.tx_state_rpc_max_stored_block_count,
-		enabled: cli.tx_state_rpc_enabled,
-		logging_interval: cli.tx_state_rpc_logging_interval,
+		enabled: cli.rpc_tx_overview_enabled,
+		result_length: cli.rpc_tx_overview_result_length,
+		block_pruning: cli.rpc_tx_overview_block_pruning,
+		logging_interval: cli.rpc_tx_overview_logging_interval,
+		event_cache_size: cli.rpc_tx_overview_event_cache_size,
 	};
 	let tx_data_cli_deps = workers::block_explorer::CliDeps { enabled: true };
 

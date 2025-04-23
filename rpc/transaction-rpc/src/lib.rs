@@ -32,7 +32,7 @@ pub trait Api {
 	#[method(name = "block_overview")]
 	async fn block_overview(
 		&self,
-		params: block_overview::RPCParams,
+		params: block_overview::Params,
 	) -> RpcResult<block_overview::ResponseDebug>;
 
 	#[method(name = "block_data")]
@@ -111,7 +111,7 @@ impl ApiServer for RPC {
 
 	async fn block_overview(
 		&self,
-		params: block_overview::RPCParams,
+		params: block_overview::Params,
 	) -> RpcResult<block_overview::ResponseDebug> {
 		let now = std::time::Instant::now();
 		let Some(sender) = self.block_overview_sender.as_ref() else {

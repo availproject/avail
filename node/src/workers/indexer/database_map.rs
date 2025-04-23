@@ -2,7 +2,7 @@ use sp_core::H256;
 use std::collections::HashMap;
 use transaction_rpc::transaction_overview;
 
-use super::{BlockDetails, CliDeps, TransactionState};
+use super::{BlockDetails, CliDeps, TransactionDetails};
 
 #[derive(Debug, Clone)]
 struct BlockData {
@@ -39,24 +39,24 @@ impl Database {
 
 	fn add_transaction(
 		&mut self,
-		state: TransactionState,
+		details: TransactionDetails,
 		block_index: u32,
 		is_finalized: bool,
 		block_height: u32,
 	) {
 		if is_finalized {
 			self.finalized_tx.add_transaction(
-				state,
+				details,
 				block_index,
-				self.cli.max_search_results,
+				self.cli.result_length,
 				block_height,
 				&self.block_map,
 			);
 		} else {
 			self.included_tx.add_transaction(
-				state,
+				details,
 				block_index,
-				self.cli.max_search_results,
+				self.cli.result_length,
 				block_height,
 				&self.block_map,
 			);
@@ -70,7 +70,7 @@ impl Database {
 			}
 		}
 
-		return None;
+		None
 	}
 
 	fn get_or_create_block_index(&mut self, block_hash: &H256, block_height: u32) -> u32 {
@@ -112,7 +112,7 @@ impl Database {
 
 	pub fn find_overview(
 		&self,
-		tx_hash: &H256,
+		tx_hash: H256,
 		is_finalized: bool,
 	) -> Vec<transaction_overview::Response> {
 		let mut result: Vec<transaction_overview::Response> = Vec::new();
@@ -121,7 +121,7 @@ impl Database {
 			self.included_tx.search_overview(
 				tx_hash,
 				&self.block_map,
-				self.cli.max_search_results,
+				self.cli.result_length,
 				false,
 				&mut result,
 			);
@@ -130,7 +130,7 @@ impl Database {
 		self.finalized_tx.search_overview(
 			tx_hash,
 			&self.block_map,
-			self.cli.max_search_results,
+			self.cli.result_length,
 			true,
 			&mut result,
 		);
@@ -139,11 +139,11 @@ impl Database {
 	}
 
 	pub fn resize(&mut self) {
-		if self.cli.max_stored_block_count >= self.block_map.len() {
+		if self.cli.block_pruning >= self.block_map.len() {
 			return;
 		}
 
-		while self.block_map.len() > self.cli.max_stored_block_count {
+		while self.block_map.len() > self.cli.block_pruning {
 			let entry = self
 				.block_map
 				.iter()
@@ -180,7 +180,7 @@ struct Map {
 impl Map {
 	fn search_overview(
 		&self,
-		tx_hash: &H256,
+		tx_hash: H256,
 		block_map: &HashMap<u32, BlockData>,
 		max_count: usize,
 		finalized: bool,
@@ -190,13 +190,13 @@ impl Map {
 			return;
 		}
 
-		if let Some(data) = self.single.get(tx_hash) {
+		if let Some(data) = self.single.get(&tx_hash) {
 			if let Some(block) = block_map.get(&data.block_index) {
 				out.push(transaction_overview::Response {
 					block_finalized: finalized,
 					block_hash: block.block_hash,
 					block_height: block.block_height,
-					tx_hash: tx_hash.clone(),
+					tx_hash,
 					tx_index: data.tx_index,
 					pallet_index: data.pallet_index,
 					call_index: data.call_index,
@@ -205,7 +205,7 @@ impl Map {
 			};
 		}
 
-		if let Some(entry) = self.multi.get(tx_hash) {
+		if let Some(entry) = self.multi.get(&tx_hash) {
 			for data in entry.iter() {
 				if out.len() >= max_count {
 					break;
@@ -219,7 +219,7 @@ impl Map {
 					block_finalized: finalized,
 					block_hash: block.block_hash,
 					block_height: block.block_height,
-					tx_hash: tx_hash.clone(),
+					tx_hash,
 					tx_index: data.tx_index,
 					pallet_index: data.pallet_index,
 					call_index: data.call_index,
@@ -231,20 +231,20 @@ impl Map {
 
 	fn add_transaction(
 		&mut self,
-		state: TransactionState,
+		details: TransactionDetails,
 		block_index: u32,
 		max_length: usize,
 		block_height: u32,
 		block_map: &HashMap<u32, BlockData>,
 	) {
 		let v = TransactionData {
-			tx_index: state.tx_index,
-			pallet_index: state.pallet_index,
-			call_index: state.call_index,
+			tx_index: details.tx_index,
+			pallet_index: details.pallet_index,
+			call_index: details.call_index,
 			block_index,
 		};
 
-		if let Some(entry) = self.multi.get_mut(&state.tx_hash) {
+		if let Some(entry) = self.multi.get_mut(&details.tx_hash) {
 			if entry.len() < max_length {
 				entry.insert(0, v);
 				entry.sort_by(|x, y| {
@@ -263,8 +263,7 @@ impl Map {
 
 			let highest_height = entry
 				.first()
-				.map(|x| block_map.get(&x.block_index).map(|y| y.block_height))
-				.flatten()
+				.and_then(|x| block_map.get(&x.block_index).map(|y| y.block_height))
 				.unwrap_or_default();
 			if block_height > highest_height {
 				entry.insert(0, v);
@@ -274,8 +273,7 @@ impl Map {
 
 			let lowest_height = entry
 				.last()
-				.map(|x| block_map.get(&x.block_index).map(|y| y.block_height))
-				.flatten()
+				.and_then(|x| block_map.get(&x.block_index).map(|y| y.block_height))
 				.unwrap_or_default();
 			if block_height < lowest_height {
 				return;
@@ -297,7 +295,7 @@ impl Map {
 			return;
 		}
 
-		if let Some(entry) = self.single.remove(&state.tx_hash) {
+		if let Some(entry) = self.single.remove(&details.tx_hash) {
 			let mut value = vec![entry, v];
 			value.sort_by(|x, y| {
 				let xh = block_map
@@ -310,11 +308,11 @@ impl Map {
 					.unwrap_or_default();
 				yh.cmp(&xh)
 			});
-			self.multi.insert(state.tx_hash.clone(), value);
+			self.multi.insert(details.tx_hash, value);
 			return;
 		}
 
-		self.single.insert(state.tx_hash.clone(), v);
+		self.single.insert(details.tx_hash, v);
 	}
 
 	fn remove_block_index(&mut self, block_index: u32) {

@@ -83,8 +83,8 @@ pub mod events {
 	#[derive(Debug, Clone, scale_info::TypeInfo, codec::Decode, codec::Encode)]
 	pub struct RuntimeEvent {
 		pub index: u32,
-		pub pallet_id: u8,
-		pub event_id: u8,
+		// (Pallet Id, Event Id)
+		pub emitted_index: (u8, u8),
 		pub encoded: Option<Vec<u8>>,
 		pub decoded: Option<Vec<u8>>,
 	}
@@ -92,15 +92,13 @@ pub mod events {
 	impl RuntimeEvent {
 		pub fn new(
 			index: u32,
-			pallet_id: u8,
-			event_id: u8,
+			emitted_index: (u8, u8),
 			encoded: Option<Vec<u8>>,
 			decoded: Option<Vec<u8>>,
 		) -> Self {
 			Self {
 				index,
-				pallet_id,
-				event_id,
+				emitted_index,
 				encoded,
 				decoded,
 			}

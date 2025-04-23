@@ -67,34 +67,33 @@ pub struct Cli {
 
 	/// Enable Transaction State RPC. This allows querying the transaction state (success or failure)
 	/// using only a transaction hash.
-	#[clap(long = "enable-tx-state-rpc", default_value_t = false)]
-	pub tx_state_rpc_enabled: bool,
+	#[clap(long, default_value_t = false)]
+	pub rpc_tx_overview_enabled: bool,
 
 	/// The maximum number of results the transaction state RPC will return for a transaction hash.
 	/// If a transaction hash appears in multiple blocks, the RPC will return only the top `X` transaction states.  
 	/// In most cases, the transaction hash is unique, so this parameter is usually irrelevant.
-	#[clap(long, default_value_t = 5)]
-	pub tx_state_rpc_max_search_results: usize,
+	#[clap(long, default_value_t = 3)]
+	pub rpc_tx_overview_result_length: usize,
 
 	/// The maximum number of blocks preserved and stored in the transaction state RPC database.
 	///
 	/// The default is 7 days' worth of blocks.
 	/// Cannot be less than 10
 	#[clap(long, default_value_t = 30240, value_parser=more_or_euqal_than_10)]
-	pub tx_state_rpc_max_stored_block_count: usize,
+	pub rpc_tx_overview_block_pruning: usize,
 
 	/// Logging interval for transaction state, in milliseconds.
 	/// A lower value results in more frequent log updates.
 	///
 	/// The default is 3600 seconds.
 	#[clap(long, default_value_t = 3600)]
-	pub tx_state_rpc_logging_interval: u64,
+	pub rpc_tx_overview_logging_interval: u64,
 
-	/// Experimental
-	/// If enabled, will use Vector instead of a HashMap for Transaction State RPC Database.
-	/// This will decrease the memory footprint at the cost of lookup performance.
-	#[clap(long, default_value_t = false)]
-	pub tx_state_rpc_use_vector: bool,
+	/// TODO
+	/// in kB
+	#[clap(long, default_value_t = 1000)]
+	pub rpc_tx_overview_event_cache_size: u64,
 }
 
 fn more_or_euqal_than_10(s: &str) -> Result<usize, String> {

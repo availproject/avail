@@ -57,8 +57,17 @@ pub mod events {
 	#[derive(Debug, Clone, Serialize, Deserialize)]
 	pub struct Event {
 		pub index: u32,
-		pub pallet_id: u8,
-		pub event_id: u8,
+		pub emitted_index: (u8, u8),
 		pub decoded: Option<DecodedEventData>,
+	}
+
+	impl Event {
+		pub fn new(index: u32, emitted_index: (u8, u8), decoded: Option<DecodedEventData>) -> Self {
+			Self {
+				index,
+				emitted_index,
+				decoded,
+			}
+		}
 	}
 }

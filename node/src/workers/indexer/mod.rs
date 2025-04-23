@@ -1,18 +1,21 @@
+mod block_worker;
 mod cache;
-mod database;
 mod database_map;
-mod worker;
+mod database_worker;
 
 pub mod constants;
 
-pub use database::Database;
+use super::common::read_pallet_call_index;
+use avail_core::OpaqueExtrinsic;
+pub use block_worker::BlockWorker;
+use codec::Encode;
+use da_runtime::UncheckedExtrinsic;
+pub use database_worker::DatabaseWorker;
 use jsonrpsee::tokio::sync::{mpsc, Notify};
 use serde::{Deserialize, Serialize};
-use sp_core::H256;
+use sp_core::{Blake2Hasher, Hasher, H256};
 use std::sync::Arc;
 use transaction_rpc::transaction_overview;
-// pub use database_vec::Database as VecDatabase;
-pub use worker::Worker;
 
 pub type Channel = BlockDetails;
 pub type Receiver = mpsc::Receiver<BlockDetails>;
@@ -20,10 +23,12 @@ pub type Sender = mpsc::Sender<BlockDetails>;
 
 #[derive(Clone, Default)]
 pub struct CliDeps {
-	pub max_search_results: usize,
-	pub max_stored_block_count: usize,
-	pub logging_interval: u64,
 	pub enabled: bool,
+	pub logging_interval: u64,
+	pub block_pruning: usize,
+	pub result_length: usize,
+	// in kB
+	pub event_cache_size: u64,
 }
 
 pub struct Deps {
@@ -39,11 +44,49 @@ pub struct BlockDetails {
 	pub block_hash: H256,
 	pub block_height: u32,
 	pub finalized: bool,
-	pub transactions: Vec<TransactionState>,
+	pub transactions: Vec<TransactionDetails>,
+}
+
+impl BlockDetails {
+	pub fn from_opaques(
+		opaques: Vec<OpaqueExtrinsic>,
+		block_hash: H256,
+		block_height: u32,
+		finalized: bool,
+	) -> Self {
+		let mut transactions: Vec<TransactionDetails> = Vec::with_capacity(opaques.len());
+		for (tx_index, ext) in opaques.iter().enumerate() {
+			let unchecked_ext =
+				match UncheckedExtrinsic::decode_no_vec_prefix(&mut ext.0.as_slice()) {
+					Ok(x) => x,
+					Err(_) => continue,
+				};
+			let Some(dispatch_index) = read_pallet_call_index(&unchecked_ext) else {
+				continue;
+			};
+
+			let tx_hash = Blake2Hasher::hash(&unchecked_ext.encode());
+
+			let info = TransactionDetails {
+				tx_hash,
+				tx_index: tx_index as u32,
+				pallet_index: dispatch_index.0,
+				call_index: dispatch_index.1,
+			};
+			transactions.push(info);
+		}
+
+		BlockDetails {
+			block_hash,
+			block_height,
+			finalized,
+			transactions,
+		}
+	}
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TransactionState {
+pub struct TransactionDetails {
 	pub tx_hash: H256,
 	pub tx_index: u32,
 	pub pallet_index: u8,

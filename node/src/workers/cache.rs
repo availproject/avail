@@ -1,5 +1,5 @@
 use frame_system_rpc_runtime_api::events::RuntimeEvent;
-use std::{collections::HashMap, hash::Hash};
+use std::{collections::HashMap, hash::Hash, sync::Arc};
 use transaction_rpc::common::DecodedEventData;
 
 use super::common::decoding;
@@ -52,6 +52,8 @@ impl<K: Hash + Eq, V> CachedValue<K, V> {
 	}
 }
 
+pub type SharedCachedEvents = Arc<CachedEvents>;
+
 #[derive(Debug, Clone)]
 pub struct CachedEvents(pub Vec<CachedEntryEvents>);
 
@@ -73,7 +75,7 @@ impl CachedEvents {
 			.iter()
 			.filter_map(|x| match &x.phase {
 				Phase::Finalization | Phase::Initialization => Some(x.clone()),
-				_ => return None,
+				_ => None,
 			})
 			.collect();
 
@@ -109,8 +111,8 @@ impl CachedEntryEvents {
 #[derive(Debug, Clone)]
 pub struct CachedEvent {
 	pub index: u32,
-	pub pallet_id: u8,
-	pub event_id: u8,
+	// (Pallet Id, Event Id)
+	pub emitted_index: (u8, u8),
 	pub encoded: String,
 	pub decoded: Option<DecodedEventData>,
 }
@@ -133,8 +135,7 @@ impl CachedEvent {
 
 		CachedEvent {
 			index: ev.index,
-			pallet_id: ev.pallet_id,
-			event_id: ev.event_id,
+			emitted_index: ev.emitted_index,
 			encoded,
 			decoded,
 		}

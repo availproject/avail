@@ -12,11 +12,11 @@ pub(crate) async fn system_fetch_events(
 		r#"{{
 		"jsonrpc": "2.0",
 		"method": "state_call",
-		"params": ["SystemEventsApi_fetch_events", "0x{}", "{}"],
+		"params": ["SystemEventsApi_fetch_events", "0x{}", "{:?}"],
 		"id": 0
 	}}"#,
 		hex::encode(params.encode()),
-		std::format!("{:?}", block_hash)
+		block_hash
 	);
 
 	let (res, _) = handlers.rpc_query(&query).await.ok()?;
@@ -38,7 +38,7 @@ pub(crate) async fn system_fetch_sync_status(handler: &RpcHandlers) -> Option<bo
 					"id": 0
 				}"#;
 
-	let res = handler.rpc_query(&query).await.ok()?;
+	let res = handler.rpc_query(query).await.ok()?;
 	let json = serde_json::from_str::<serde_json::Value>(&res.0).ok()?;
 	let result_json = json["result"].as_object()?;
 

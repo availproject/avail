@@ -5,8 +5,8 @@ use crate::workers::{
 use sp_core::H256;
 use std::sync::{Arc, RwLock};
 
-pub(crate) type SharedCache = Arc<RwLock<Cache>>;
-pub(crate) struct Cache {
+pub(super) type SharedCache = Arc<RwLock<Cache>>;
+pub(super) struct Cache {
 	pub events: CachedValue<H256, Arc<CachedEvents>>,
 	pub tx_hash: CachedValue<UniqueTxId, H256>,
 	// hex and scale encoded call
@@ -35,7 +35,7 @@ impl Cache {
 	}
 }
 
-pub trait Cacheable {
+pub(super) trait Cacheable {
 	fn read_cached_tx_hash(&self, key: &UniqueTxId) -> Option<H256>;
 	fn write_cached_tx_hash(&self, key: UniqueTxId, value: H256) -> Option<()>;
 	fn read_cached_calls(&self, key: &UniqueTxId) -> Option<String>;
@@ -50,7 +50,7 @@ impl Cacheable for SharedCache {
 			return None;
 		};
 
-		lock.tx_hash.get(key).map(|x| x.clone())
+		lock.tx_hash.get(key).cloned()
 	}
 
 	fn write_cached_tx_hash(&self, key: UniqueTxId, value: H256) -> Option<()> {
@@ -59,7 +59,6 @@ impl Cacheable for SharedCache {
 		};
 
 		lock.tx_hash.insert(key, value);
-
 		Some(())
 	}
 
@@ -68,7 +67,7 @@ impl Cacheable for SharedCache {
 			return None;
 		};
 
-		lock.calls.get(key).map(|x| x.clone())
+		lock.calls.get(key).cloned()
 	}
 
 	fn write_cached_calls(&self, key: UniqueTxId, value: String) -> Option<()> {
@@ -77,7 +76,6 @@ impl Cacheable for SharedCache {
 		};
 
 		lock.calls.insert(key, value);
-
 		Some(())
 	}
 
@@ -86,7 +84,7 @@ impl Cacheable for SharedCache {
 			return None;
 		};
 
-		lock.events.get(key).map(|x| x.clone())
+		lock.events.get(key).cloned()
 	}
 
 	fn write_cached_events(&self, key: H256, value: Arc<CachedEvents>) -> Option<()> {
@@ -95,7 +93,6 @@ impl Cacheable for SharedCache {
 		};
 
 		lock.events.insert(key, value);
-
 		Some(())
 	}
 }

@@ -7,21 +7,21 @@ pub use events::*;
 pub use filter::*;
 
 pub type ChannelResponse = oneshot::Sender<Result<Response, String>>;
-pub type Channel = (RPCParams, ChannelResponse);
+pub type Channel = (Params, ChannelResponse);
 pub type Receiver = mpsc::Receiver<Channel>;
 pub type Sender = mpsc::Sender<Channel>;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RPCParams {
+pub struct Params {
 	pub block_id: HashIndex,
 	#[serde(default)]
-	pub extension: RPCParamsExtension,
+	pub extension: ParamsExtension,
 	#[serde(default)]
 	pub filter: Filter,
 }
 
 #[derive(Debug, Default, Clone, Copy, Serialize, Deserialize)]
-pub struct RPCParamsExtension {
+pub struct ParamsExtension {
 	#[serde(default)]
 	pub enable_call_decoding: bool,
 	#[serde(default)]
@@ -51,10 +51,10 @@ pub struct ResponseDebug {
 pub struct TransactionData {
 	pub tx_hash: H256,
 	pub tx_index: u32,
-	pub pallet_id: u8,
-	pub call_id: u8,
+	// (Pallet id, Call Id)
+	pub dispatch_index: (u8, u8),
 	pub signed: Option<TransactionSignature>,
-	pub decoded: Option<u8>,
+	pub decoded: Option<String>,
 	pub events: Option<common::Events>,
 }
 
@@ -66,8 +66,8 @@ pub mod events {
 	#[derive(Debug, Clone, Serialize, Deserialize)]
 	pub struct ConsensusEvent {
 		pub phase: ConsensusEventPhase,
-		pub pallet_id: u8,
-		pub event_id: u8,
+		// (Pallet id, Event Id)
+		pub emitted_index: (u8, u8),
 		pub decoded: Option<common::DecodedEventData>,
 	}
 

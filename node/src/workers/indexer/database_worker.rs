@@ -4,7 +4,7 @@ use super::{
 	database_map, CliDeps, Deps,
 };
 use crate::workers::{
-	cache::CachedEvents,
+	cache::CachedEntryEvents,
 	common::{self, Timer, UniqueTxId},
 	macros::profile,
 };
@@ -19,7 +19,7 @@ use std::{
 use tokio::sync::Notify;
 use transaction_rpc::transaction_overview;
 
-pub struct Database {
+pub struct DatabaseWorker {
 	block_receiver: super::Receiver,
 	rpc_receiver: transaction_overview::Receiver,
 	handlers: RpcHandlers,
@@ -30,9 +30,10 @@ pub struct Database {
 	cli: CliDeps,
 	cache: SharedCache,
 }
-impl Database {
+
+impl DatabaseWorker {
 	pub fn new(deps: Deps, handlers: RpcHandlers) -> Self {
-		let cache = Arc::new(RwLock::new(Cache::new()));
+		let cache = Arc::new(RwLock::new(Cache::new(deps.cli.event_cache_size)));
 
 		Self {
 			block_receiver: deps.block_receiver,
@@ -48,7 +49,7 @@ impl Database {
 	}
 
 	pub async fn run(mut self) {
-		let message = std::format!("Running with following parameters: Max Search Result: {}, Max Stored Block Count: {}, Resize Interval: {}s, Logging Interval: {}s", self.cli.max_search_results, self.cli.max_stored_block_count, DATABASE_RESIZE_INTERVAL, self.logger.timer.duration());
+		let message = std::format!("Running with following parameters: Max Search Result: {}, Max Stored Block Count: {}, Resize Interval: {}s, Logging Interval: {}s", self.cli.result_length, self.cli.block_pruning, DATABASE_RESIZE_INTERVAL, self.logger.timer.duration());
 		self.logger.log(message);
 
 		loop {
@@ -92,20 +93,17 @@ impl Database {
 		let (params, oneshot) = details;
 
 		let mut response: Vec<transaction_overview::Response> =
-			self.inner.find_overview(&params.tx_hash, params.finalized);
+			self.inner.find_overview(params.tx_hash, params.finalized);
 
 		response.sort_by(|x, y| y.block_height.cmp(&x.block_height));
 
 		if params.fetch_events {
-			for res in &mut response {
-				let Ok(events) = self
-					.tx_events(UniqueTxId::from((res.block_hash, res.tx_index)))
-					.await
-				else {
-					break;
-				};
+			use transaction_rpc::common::events::Event;
 
-				let Some(events) = events.tx_events(res.tx_index) else {
+			let enable_decoding = params.enable_event_decoding;
+			for res in &mut response {
+				let id = UniqueTxId::from((res.block_hash, res.tx_index));
+				let Ok(events) = self.tx_events(id).await else {
 					break;
 				};
 
@@ -113,18 +111,11 @@ impl Database {
 					.events
 					.iter()
 					.map(|ev| {
-						let decoded = if params.enable_event_decoding {
-							ev.decoded.clone()
-						} else {
-							None
-						};
-						let ev = transaction_rpc::common::events::Event {
-							index: ev.index,
-							pallet_id: ev.pallet_id,
-							event_id: ev.event_id,
-							decoded,
-						};
-						ev
+						let decoded = enable_decoding
+							.then(|| ev.decoded.clone())
+							.or(None)
+							.flatten();
+						Event::new(ev.index, ev.emitted_index, decoded)
 					})
 					.collect();
 
@@ -135,7 +126,7 @@ impl Database {
 		_ = oneshot.send(response);
 	}
 
-	async fn tx_events(&mut self, id: UniqueTxId) -> Result<Arc<CachedEvents>, String> {
+	async fn tx_events(&mut self, id: UniqueTxId) -> Result<CachedEntryEvents, ()> {
 		if let Some(cached) = self.cache.read_cached_events(&id) {
 			return Ok(cached);
 		}
@@ -147,10 +138,13 @@ impl Database {
 		};
 
 		let Some(events) = common::fetch_events(&self.handlers, id.block_hash, params).await else {
-			return Err(String::new());
+			return Err(());
 		};
 
-		let events = Arc::new(events);
+		let Some(events) = events.tx_events(id.tx_index).cloned() else {
+			return Err(());
+		};
+
 		self.cache.write_cached_events(id, events.clone());
 
 		Ok(events)

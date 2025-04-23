@@ -35,13 +35,11 @@ pub struct Worker {
 	overview_receiver: block_overview::Receiver,
 	data_receiver: block_data::Receiver,
 	notifier: Arc<Notify>,
-	logger: Logger,
 	cache: SharedCache,
 }
 
 impl Worker {
 	pub fn new(client: Arc<FullClient>, rpc_handlers: RpcHandlers, deps: Deps) -> Self {
-		let logger = Logger::default();
 		let cache = Arc::new(RwLock::new(Cache::new()));
 
 		Self {
@@ -50,7 +48,6 @@ impl Worker {
 			overview_receiver: deps.overview_receiver,
 			data_receiver: deps.data_receiver,
 			notifier: deps.notifier,
-			logger,
 			cache,
 		}
 	}
@@ -119,7 +116,7 @@ impl Worker {
 				};
 				for ev in &cached_event.events {
 					let data = EventData {
-						id: (ev.pallet_id, ev.event_id),
+						emitted_index: ev.emitted_index,
 						phase,
 						data: ev.encoded.clone(),
 					};
@@ -142,7 +139,7 @@ impl Worker {
 
 	async fn overview_task(
 		&mut self,
-		params: block_overview::RPCParams,
+		params: block_overview::Params,
 	) -> Result<block_overview::Response, String> {
 		let (block_hash, block_height) = self.block_metadata(params.block_id).await?;
 		let block_body = self.block_body(block_hash)?;
@@ -173,7 +170,7 @@ impl Worker {
 		let mut consensus_events = None;
 		if params.extension.enable_consensus_event {
 			if let Some(events) = &events {
-				consensus_events = Some(read_consensus_events(enable_event_decoding, &events));
+				consensus_events = Some(read_consensus_events(enable_event_decoding, events));
 			}
 		}
 
@@ -191,7 +188,7 @@ impl Worker {
 	async fn block_metadata(&self, block_id: HashIndex) -> Result<(H256, u32), String> {
 		match block_id {
 			HashIndex::Hash(hash) => {
-				let height = self.client.to_number(&BlockId::Hash(hash.clone()));
+				let height = self.client.to_number(&BlockId::Hash(hash));
 				let Some(height) = height.ok().flatten() else {
 					return Err(std::format!(
 						"No block height found for block hash: {:?}",
@@ -289,8 +286,7 @@ fn read_consensus_events(
 		for event in cache.events {
 			let mut ev = ConsensusEvent {
 				phase,
-				pallet_id: event.pallet_id,
-				event_id: event.pallet_id,
+				emitted_index: event.emitted_index,
 				decoded: None,
 			};
 
@@ -347,6 +343,10 @@ fn iter_overview_opaque(
 		}
 	}
 
+	if let TransactionFilterOptions::HasEvent(..) = &filter.transaction {
+		events.as_ref()?;
+	}
+
 	let tx_hash = cache.read_cached_tx_hash(&unique_id);
 	if let TransactionFilterOptions::TxHash(tx_hashes) = &filter.transaction {
 		if let Some(tx_hash) = &tx_hash {
@@ -356,22 +356,17 @@ fn iter_overview_opaque(
 		}
 	}
 
-	let Ok(ext) = UncheckedExtrinsic::decode_no_vec_prefix(&mut opaq.0.as_slice()) else {
-		return None;
-	};
-
-	let Some((pallet_id, call_id)) = common::read_pallet_call_index(&ext) else {
-		return None;
-	};
+	let ext = UncheckedExtrinsic::decode_no_vec_prefix(&mut opaq.0.as_slice()).ok()?;
+	let dispatch_index = common::read_pallet_call_index(&ext)?;
 
 	if let TransactionFilterOptions::Pallet(pallets) = &filter.transaction {
-		if !pallets.contains(&pallet_id) {
+		if !pallets.contains(&dispatch_index.0) {
 			return None;
 		}
 	}
 
 	if let TransactionFilterOptions::PalletCall(calls) = &filter.transaction {
-		if !calls.contains(&(pallet_id, call_id)) {
+		if !calls.contains(&dispatch_index) {
 			return None;
 		}
 	}
@@ -380,9 +375,7 @@ fn iter_overview_opaque(
 		tx_hash
 	} else {
 		let tx_hash = Blake2Hasher::hash(&ext.encode());
-		if cache.write_cached_tx_hash(unique_id, tx_hash).is_none() {
-			return None;
-		}
+		cache.write_cached_tx_hash(unique_id, tx_hash)?;
 		tx_hash
 	};
 
@@ -439,8 +432,7 @@ fn iter_overview_opaque(
 				.map(|x| {
 					let mut ev = Event {
 						index: x.index,
-						pallet_id: x.pallet_id,
-						event_id: x.event_id,
+						emitted_index: x.emitted_index,
 						decoded: None,
 					};
 					if enable_event_decoding {
@@ -452,34 +444,25 @@ fn iter_overview_opaque(
 
 			if let TransactionFilterOptions::HasEvent(expected_events) = &filter.transaction {
 				for exp_ev in expected_events {
-					if events
-						.iter()
-						.find(|x| x.pallet_id == exp_ev.0 && x.event_id == exp_ev.1)
-						.is_none()
-					{
+					if !events.iter().any(|x| x.emitted_index == *exp_ev) {
 						return None;
 					}
 				}
 			}
 			maybe_events = Some(events);
 		}
-	} else {
-		if let TransactionFilterOptions::HasEvent(..) = &filter.transaction {
-			return None;
-		}
 	}
 
 	let value = block_overview::TransactionData {
 		tx_hash,
 		tx_index: unique_id.tx_index,
-		pallet_id,
-		call_id,
+		dispatch_index,
 		signed: signature,
 		decoded: None,
 		events: maybe_events,
 	};
 
-	return Some(value);
+	Some(value)
 }
 
 fn iter_data_opaque(
@@ -505,22 +488,17 @@ fn iter_data_opaque(
 		}
 	}
 
-	let Ok(ext) = UncheckedExtrinsic::decode_no_vec_prefix(&mut opaq.0.as_slice()) else {
-		return None;
-	};
-
-	let Some((pallet_id, call_id)) = common::read_pallet_call_index(&ext) else {
-		return None;
-	};
+	let ext = UncheckedExtrinsic::decode_no_vec_prefix(&mut opaq.0.as_slice()).ok()?;
+	let dispatch_index = common::read_pallet_call_index(&ext)?;
 
 	if let TransactionFilterOptions::Pallet(pallets) = &filter.transaction {
-		if !pallets.contains(&pallet_id) {
+		if !pallets.contains(&dispatch_index.0) {
 			return None;
 		}
 	}
 
 	if let TransactionFilterOptions::PalletCall(calls) = &filter.transaction {
-		if !calls.contains(&(pallet_id, call_id)) {
+		if !calls.contains(&dispatch_index) {
 			return None;
 		}
 	}
@@ -529,9 +507,7 @@ fn iter_data_opaque(
 		tx_hash
 	} else {
 		let tx_hash = Blake2Hasher::hash(&ext.encode());
-		if cache.write_cached_tx_hash(unique_id, tx_hash).is_none() {
-			return None;
-		}
+		cache.write_cached_tx_hash(unique_id, tx_hash)?;
 		tx_hash
 	};
 
@@ -588,12 +564,10 @@ fn iter_data_opaque(
 		data
 	};
 
-	let value = block_data::CallData {
-		id: (pallet_id, call_id),
+	Some(block_data::CallData {
+		dispatch_index,
 		tx_index: unique_id.tx_index,
 		tx_hash,
 		data,
-	};
-
-	return Some(value);
+	})
 }

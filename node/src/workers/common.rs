@@ -52,7 +52,7 @@ impl Timer {
 
 	pub fn restart(&mut self) -> Instant {
 		self.now = Instant::now();
-		self.now.clone()
+		self.now
 	}
 
 	pub fn elapsed(&self) -> Duration {
@@ -73,11 +73,7 @@ pub(crate) async fn fetch_events(
 	block_hash: H256,
 	params: SystemFetchEventsParams,
 ) -> Option<CachedEvents> {
-	let rpc_events = chain_api::system_fetch_events(handlers, params, &block_hash).await;
-
-	let Some(rpc_events) = rpc_events else {
-		return None;
-	};
+	let rpc_events = chain_api::system_fetch_events(handlers, params, &block_hash).await?;
 
 	if rpc_events.error != 0 {
 		return None;
@@ -129,25 +125,27 @@ pub mod decoding {
 			return None;
 		};
 
-		match ev.pallet_id {
+		let (pallet_id, event_id) = ev.emitted_index;
+
+		match pallet_id {
 			system::PALLET_ID => {
-				if ev.event_id == system::EXTRINSIC_SUCCESS {
+				if event_id == system::EXTRINSIC_SUCCESS {
 					return Some(DecodedEventData::SystemExtrinsicSuccess);
-				} else if ev.event_id == system::EXTRINSIC_FAILED {
+				} else if event_id == system::EXTRINSIC_FAILED {
 					return Some(DecodedEventData::SystemExtrinsicFailed);
 				}
 			},
 			sudo::PALLET_ID => {
-				if ev.event_id == sudo::SUDID {
+				if event_id == sudo::SUDID {
 					let data = decode_from_bytes::<bool>(decoded.clone().into()).ok()?;
 					return Some(DecodedEventData::SudoSudid(data));
-				} else if ev.event_id == sudo::SUDO_AS_DONE {
+				} else if event_id == sudo::SUDO_AS_DONE {
 					let data = decode_from_bytes::<bool>(decoded.clone().into()).ok()?;
 					return Some(DecodedEventData::SudoSudoAsDone(data));
 				}
 			},
 			data_availability::PALLET_ID => {
-				if ev.event_id == data_availability::DATA_SUBMITTED {
+				if event_id == data_availability::DATA_SUBMITTED {
 					let value = DataSubmitted::decode_all(&mut decoded.as_slice()).ok()?;
 					let data = transaction_rpc::common::events::DataSubmitted {
 						who: std::format!("{}", value.who),
@@ -158,7 +156,7 @@ pub mod decoding {
 				}
 			},
 			multisig::PALLET_ID => {
-				if ev.event_id == multisig::MULTISIG_EXECUTED {
+				if event_id == multisig::MULTISIG_EXECUTED {
 					let data = MultisigExecuted::decode_all(&mut decoded.as_slice()).ok()?;
 					let data = transaction_rpc::common::events::MultisigExecuted {
 						multisig: std::format!("{}", data.multisig),
@@ -169,7 +167,7 @@ pub mod decoding {
 				}
 			},
 			proxy::PALLET_ID => {
-				if ev.event_id == proxy::PROXY_EXECUTED {
+				if event_id == proxy::PROXY_EXECUTED {
 					let data = decode_from_bytes::<bool>(decoded.clone().into()).ok()?;
 					return Some(DecodedEventData::ProxyProxyExecuted(data));
 				}

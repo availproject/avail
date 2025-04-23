@@ -281,7 +281,7 @@ impl_runtime_apis! {
 					}
 				}
 
-				let id = if let Some(id) = manual_read_pallet_event_id(&event.event) {
+				let emitted_index = if let Some(id) = manual_read_pallet_event_id(&event.event) {
 					id
 				} else {
 					let Some(id) = read_pallet_event_id(&event.event.encode()) else {
@@ -291,19 +291,10 @@ impl_runtime_apis! {
 					id
 				};
 
-				let encoded = if enable_encoding  {
-					Some(event.encode())
-				} else {
-					None
-				};
+				let encoded = enable_encoding.then(|| event.encode());
+				let decoded = enable_decoding.then(|| decode_runtime_event(&event.event)).flatten();
 
-				let decoded = if enable_decoding {
-					decode_runtime_event(&event.event)
-				} else {
-					None
-				};
-
-				let ev = RuntimeEvent::new(event_position, id.0, id.1, encoded, decoded);
+				let ev = RuntimeEvent::new(event_position, emitted_index, encoded, decoded);
 				if let Some(entry) = result.entries.iter_mut().find(|x| x.phase == event.phase) {
 					entry.events.push(ev);
 				} else {
