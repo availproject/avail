@@ -6,10 +6,10 @@ use crate::workers::{
 	cache::CachedEntryEvents,
 	common::{self, Timer, TxIdentifier},
 	macros::profile,
+	NodeContext,
 };
 use frame_system_rpc_runtime_api::SystemFetchEventsParams;
 use jsonrpsee::tokio;
-use sc_service::RpcHandlers;
 use sc_telemetry::log;
 use std::{
 	sync::{Arc, RwLock},
@@ -19,9 +19,9 @@ use tokio::sync::Notify;
 use transaction_rpc::transaction_overview;
 
 pub struct DatabaseWorker {
+	ctx: NodeContext,
 	block_receiver: super::Receiver,
 	rpc_receiver: transaction_overview::Receiver,
-	handlers: RpcHandlers,
 	logger: Logger,
 	inner: database_map::Database,
 	notifier: Arc<Notify>,
@@ -30,13 +30,13 @@ pub struct DatabaseWorker {
 }
 
 impl DatabaseWorker {
-	pub fn new(deps: Deps, handlers: RpcHandlers) -> Self {
+	pub fn new(ctx: NodeContext, deps: Deps) -> Self {
 		let cache = Arc::new(RwLock::new(Cache::new(deps.cli.event_cache_size)));
 
 		Self {
+			ctx,
 			block_receiver: deps.block_receiver,
 			rpc_receiver: deps.transaction_receiver,
-			handlers,
 			logger: Logger::new(deps.cli.logging_interval),
 			inner: database_map::Database::new(&deps.cli),
 			notifier: deps.notifier,
@@ -85,6 +85,7 @@ impl DatabaseWorker {
 		let (params, oneshot) = details;
 
 		let mut response = self.inner.find_overview(params.tx_hash, params.finalized);
+		response.truncate(self.cli.result_length);
 		response.sort_by(|x, y| y.block_id.height.cmp(&x.block_id.height));
 
 		if params.fetch_events {
@@ -124,7 +125,7 @@ impl DatabaseWorker {
 			..Default::default()
 		};
 
-		let events = common::fetch_events(&self.handlers, id.block_hash, params).await?;
+		let events = common::fetch_events(&self.ctx.handlers, id.block_hash, params).await?;
 		let events = events.tx_events(id.tx_index).cloned()?;
 		self.cache.write_cached_events(id, &events);
 

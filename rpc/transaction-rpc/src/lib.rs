@@ -28,7 +28,7 @@ pub trait Api {
 	#[method(name = "transaction_overview")]
 	async fn transaction_overview(
 		&self,
-		params: transaction_overview::RPCParams,
+		params: transaction_overview::Params,
 	) -> RpcResult<transaction_overview::ResponseDebug>;
 
 	#[method(name = "block_overview")]
@@ -38,10 +38,7 @@ pub trait Api {
 	) -> RpcResult<block_overview::ResponseDebug>;
 
 	#[method(name = "block_data")]
-	async fn block_data(
-		&self,
-		params: block_data::RPCParams,
-	) -> RpcResult<block_data::ResponseDebug>;
+	async fn block_data(&self, params: block_data::Params) -> RpcResult<block_data::ResponseDebug>;
 
 	#[method(name = "block_service_enabled")]
 	async fn block_service_enabled(&self) -> RpcResult<common::EnabledServices>;
@@ -71,7 +68,7 @@ impl RPC {
 impl ApiServer for RPC {
 	async fn transaction_overview(
 		&self,
-		params: transaction_overview::RPCParams,
+		params: transaction_overview::Params,
 	) -> RpcResult<transaction_overview::ResponseDebug> {
 		let now = std::time::Instant::now();
 		let Some(sender) = self.transaction_overview_sender.as_ref() else {
@@ -156,10 +153,7 @@ impl ApiServer for RPC {
 		}
 	}
 
-	async fn block_data(
-		&self,
-		params: block_data::RPCParams,
-	) -> RpcResult<block_data::ResponseDebug> {
+	async fn block_data(&self, params: block_data::Params) -> RpcResult<block_data::ResponseDebug> {
 		let now = std::time::Instant::now();
 		let Some(sender) = self.block_data_sender.as_ref() else {
 			return Err(internal_error(String::from(

@@ -7,3 +7,5 @@ pub(crate) mod deps;
 pub(crate) mod indexer;
 pub(crate) use deps::*;
 pub(crate) mod cache;
+
+pub(crate) use common::NodeContext;

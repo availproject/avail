@@ -2,14 +2,11 @@ use super::{
 	cache::{Cache, Cacheable, SharedCache},
 	Deps,
 };
-use crate::{
-	service::FullClient,
-	workers::{
-		self,
-		cache::CachedEvents,
-		common::{Timer, TxIdentifier},
-		macros::profile,
-	},
+use crate::workers::{
+	self,
+	cache::CachedEvents,
+	common::{NodeContext, Timer, TxIdentifier},
+	macros::profile,
 };
 use avail_core::OpaqueExtrinsic;
 use codec::Encode;
@@ -17,10 +14,9 @@ use da_runtime::UncheckedExtrinsic;
 use frame_system_rpc_runtime_api::SystemFetchEventsParams;
 use jsonrpsee::tokio::sync::Notify;
 use rayon::prelude::*;
-use sc_service::RpcHandlers;
 use sc_telemetry::log;
 use sp_core::{Blake2Hasher, Hasher, H256};
-use sp_runtime::{generic::BlockId, traits::BlockIdTo, MultiAddress};
+use sp_runtime::MultiAddress;
 use std::sync::{Arc, RwLock};
 use std::time::Duration;
 use transaction_rpc::{
@@ -30,53 +26,49 @@ use transaction_rpc::{
 };
 
 pub struct Worker {
-	client: Arc<FullClient>,
-	rpc_handlers: RpcHandlers,
+	ctx: NodeContext,
 	overview_receiver: block_overview::Receiver,
 	data_receiver: block_data::Receiver,
 	notifier: Arc<Notify>,
 	cache: SharedCache,
-	logger: Logger,
 }
 
 impl Worker {
-	pub fn new(client: Arc<FullClient>, rpc_handlers: RpcHandlers, deps: Deps) -> Self {
+	pub fn new(ctx: NodeContext, deps: Deps) -> Self {
 		let cache = Arc::new(RwLock::new(Cache::new()));
-		let logger = Logger::new(6);
 
 		Self {
-			client,
-			rpc_handlers,
+			ctx,
 			overview_receiver: deps.overview_receiver,
 			data_receiver: deps.data_receiver,
 			notifier: deps.notifier,
 			cache,
-			logger,
 		}
 	}
 
 	pub async fn run(mut self) {
+		let mut logger = Logger::new(6);
 		loop {
 			while let Ok((params, oneshot)) = self.data_receiver.try_recv() {
 				let (duration, response) = profile!(self.data_task(params).await);
-				self.logger.increment_data_task_time(duration);
+				logger.increment_data_task_time(duration);
 				_ = oneshot.send(response);
 			}
 
 			while let Ok((params, oneshot)) = self.overview_receiver.try_recv() {
 				let (duration, response) = profile!(self.overview_task(params).await);
-				self.logger.increment_data_overview_time(duration);
+				logger.increment_data_overview_time(duration);
 				_ = oneshot.send(response);
 			}
 
-			self.logger.log_stats();
+			logger.log_stats();
 			self.notifier.notified().await;
 		}
 	}
 
 	async fn data_task(
 		&mut self,
-		params: block_data::RPCParams,
+		params: block_data::Params,
 	) -> Result<block_data::Response, String> {
 		let block_id = self.block_identifier(params.block_id).await?;
 		let block_state = self.block_state(block_id)?;
@@ -91,12 +83,15 @@ impl Worker {
 	async fn data_task_calls(
 		&mut self,
 		block_id: BlockIdentifier,
-		params: &block_data::RPCParams,
+		params: &block_data::Params,
 	) -> Result<Option<Vec<block_data::CallData>>, String> {
 		if !params.fetch_calls {
 			return Ok(None);
 		}
-		let block_body = self.block_body(block_id.hash)?;
+		let Some(block_body) = self.ctx.block_body_hash(block_id.hash) else {
+			let message = std::format!("Failed to fetch block body for hash: {:?}", block_id.hash);
+			return Err(message);
+		};
 
 		let opaques = block_body.par_iter().enumerate();
 		let calls: Vec<block_data::CallData> = opaques
@@ -111,7 +106,7 @@ impl Worker {
 	async fn data_task_events(
 		&mut self,
 		block_id: BlockIdentifier,
-		params: &block_data::RPCParams,
+		params: &block_data::Params,
 	) -> Result<Option<Vec<block_data::EventData>>, String> {
 		use block_data::EventData;
 		if !params.fetch_events {
@@ -162,7 +157,10 @@ impl Worker {
 		events: &Option<Arc<CachedEvents>>,
 		params: &block_overview::Params,
 	) -> Result<Vec<block_overview::TransactionData>, String> {
-		let block_body = self.block_body(block_id.hash)?;
+		let Some(block_body) = self.ctx.block_body_hash(block_id.hash) else {
+			let message = std::format!("Failed to fetch block body for hash: {:?}", block_id.hash);
+			return Err(message);
+		};
 
 		let transactions: Vec<block_overview::TransactionData> = block_body
 			.par_iter()
@@ -196,7 +194,7 @@ impl Worker {
 	async fn block_identifier(&self, block_id: HashIndex) -> Result<BlockIdentifier, String> {
 		match block_id {
 			HashIndex::Hash(hash) => {
-				let height = self.client.to_number(&BlockId::Hash(hash));
+				let height = self.ctx.to_number(hash);
 				let Some(height) = height.ok().flatten() else {
 					return Err(std::format!(
 						"No block height found for block hash: {:?}",
@@ -206,7 +204,7 @@ impl Worker {
 				Ok(BlockIdentifier::from((hash, height)))
 			},
 			HashIndex::Index(height) => {
-				let hash = self.client.to_hash(&BlockId::Number(height));
+				let hash = self.ctx.to_hash(height);
 				let Some(hash) = hash.ok().flatten() else {
 					return Err(std::format!(
 						"No block hash found for block height: {}",
@@ -216,17 +214,6 @@ impl Worker {
 				Ok(BlockIdentifier::from((hash, height)))
 			},
 		}
-	}
-
-	fn block_body(&self, block_hash: H256) -> Result<Arc<Vec<OpaqueExtrinsic>>, String> {
-		let Some(block_body) = self.client.body(block_hash).ok().flatten() else {
-			return Err(std::format!(
-				"Failed to fetch block with block hash: {:?}",
-				block_hash
-			));
-		};
-
-		Ok(Arc::new(block_body))
 	}
 
 	async fn block_events(&mut self, block_hash: H256) -> Result<Arc<CachedEvents>, String> {
@@ -240,9 +227,9 @@ impl Worker {
 			..Default::default()
 		};
 
-		let events = workers::common::fetch_events(&self.rpc_handlers, block_hash, params).await;
+		let events = workers::common::fetch_events(&self.ctx.handlers, block_hash, params).await;
 		let Some(events) = events else {
-			return Ok(Arc::new(CachedEvents(Vec::new())));
+			return Err("Failed to fetch events.".into());
 		};
 
 		let events = Arc::new(events);
@@ -252,12 +239,12 @@ impl Worker {
 	}
 
 	fn block_state(&self, block_id: BlockIdentifier) -> Result<BlockState, String> {
-		let chain_info = self.client.chain_info();
+		let chain_info = self.ctx.client.chain_info();
 		if block_id.height > chain_info.finalized_number {
 			return Ok(BlockState::Included);
 		}
 
-		let finalized_hash = self.client.to_hash(&BlockId::Number(block_id.height));
+		let finalized_hash = self.ctx.to_hash(block_id.height);
 		let finalized_hash = finalized_hash
 			.map_err(|e| e.to_string())?
 			.ok_or(String::from("Failed to convert block height to block hash"))?;
@@ -423,7 +410,7 @@ fn iter_data_opaque(
 	tx_id: TxIdentifier,
 	opaq: &OpaqueExtrinsic,
 	cache: SharedCache,
-	params: &block_data::RPCParams,
+	params: &block_data::Params,
 ) -> Option<block_data::CallData> {
 	let filter = &params.call_filter;
 

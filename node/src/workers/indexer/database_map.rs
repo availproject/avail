@@ -51,15 +51,14 @@ impl Database {
 			true => &mut self.finalized_tx,
 			false => &mut self.included_tx,
 		};
-		for details in new_block.transactions {
-			map.add_transaction(
-				details,
-				block_index,
-				block_id.height,
-				self.result_length,
-				&self.block_map,
-			);
-		}
+
+		map.add_transactions(
+			new_block.transactions,
+			block_index,
+			block_id.height,
+			self.result_length,
+			&self.block_map,
+		);
 	}
 
 	pub fn find_overview(
@@ -67,19 +66,29 @@ impl Database {
 		tx_hash: H256,
 		is_finalized: bool,
 	) -> Vec<transaction_overview::Response> {
-		let mut response: Vec<transaction_overview::Response> = Vec::new();
-		let mut max_count = self.result_length;
+		use transaction_overview::Response;
+		let mut response: Vec<Response> = Vec::new();
+
+		let to_response =
+			|block_finalized: bool, x: (BlockIdentifier, TransactionData)| -> Response {
+				Response {
+					block_id: x.0,
+					block_finalized,
+					tx_hash,
+					tx_index: x.1.index,
+					dispatch_index: x.1.dispatch_index,
+					events: None,
+				}
+			};
 
 		if !is_finalized {
-			let result =
-				self.included_tx
-					.search_overview(tx_hash, &self.block_map, &mut max_count, false);
+			let result = self.included_tx.find_entries(tx_hash, &self.block_map);
+			let result: Vec<Response> = result.into_iter().map(|x| to_response(false, x)).collect();
 			response.extend(result);
 		}
 
-		let result =
-			self.finalized_tx
-				.search_overview(tx_hash, &self.block_map, &mut max_count, true);
+		let result = self.finalized_tx.find_entries(tx_hash, &self.block_map);
+		let result: Vec<Response> = result.into_iter().map(|x| to_response(true, x)).collect();
 		response.extend(result);
 
 		response
@@ -115,7 +124,16 @@ impl Database {
 	}
 
 	pub fn current_state(&self) -> String {
-		std::format!("Block Map Counter: {}, Block Map Size: {}/{}, Inclusion Map Size: {}/{}, Finalized Map Size: {}/{}", self.block_map_counter, self.block_map.len(), self.block_map.capacity(), self.included_tx.len(), self.included_tx.capacity(), self.finalized_tx.len(), self.finalized_tx.capacity())
+		std::format!(
+			"Block Map Size: {}/{}/{}, Inclusion Map Size: {}/{}, Finalized Map Size: {}/{}",
+			self.block_map_counter,
+			self.block_map.len(),
+			self.block_map.capacity(),
+			self.included_tx.len(),
+			self.included_tx.capacity(),
+			self.finalized_tx.len(),
+			self.finalized_tx.capacity()
+		)
 	}
 }
 
@@ -143,103 +161,76 @@ struct Map {
 }
 
 impl Map {
-	fn search_overview(
+	fn find_entries(
 		&self,
 		tx_hash: H256,
 		block_map: &BlockMap,
-		max_count: &mut usize,
-		block_finalized: bool,
-	) -> Vec<transaction_overview::Response> {
-		if *max_count == 0 {
-			return Vec::new();
-		}
-
+	) -> Vec<(BlockIdentifier, TransactionData)> {
 		let mut result = Vec::new();
 		if let Some(data) = self.single.get(&tx_hash) {
 			if let Some(block_id) = block_map.get(&data.block_index).copied() {
-				result.push(transaction_overview::Response {
-					block_id,
-					block_finalized,
-					tx_hash,
-					tx_index: data.index,
-					dispatch_index: data.dispatch_index,
-					events: None,
-				});
-				*max_count -= 1;
+				result.push((block_id, data.clone()));
 			};
 		}
 
 		if let Some(entry) = self.multi.get(&tx_hash) {
 			for data in entry.iter() {
-				if *max_count == 0 {
-					return Vec::new();
-				}
 				let Some(block_id) = block_map.get(&data.block_index).copied() else {
 					continue;
 				};
-
-				result.push(transaction_overview::Response {
-					block_id,
-					block_finalized,
-					tx_hash,
-					tx_index: data.index,
-					dispatch_index: data.dispatch_index,
-					events: None,
-				});
-				*max_count -= 1;
+				result.push((block_id, data.clone()));
 			}
 		}
 
 		result
 	}
 
-	fn add_transaction(
+	fn add_transactions(
 		&mut self,
-		details: TransactionDetails,
+		details: Vec<TransactionDetails>,
 		block_index: u32,
 		block_height: u32,
 		result_length: usize,
 		block_map: &BlockMap,
 	) {
-		let v = TransactionData::from_details(&details, block_index);
 		let sort = |x: &TransactionData, y: &TransactionData| -> Ordering {
-			let xh = block_map
-				.get(&x.block_index)
-				.map(|x| x.height)
-				.unwrap_or_default();
-			let yh = block_map
-				.get(&y.block_index)
-				.map(|x| x.height)
-				.unwrap_or_default();
+			let xh = block_map.get(&x.block_index).map(|x| x.height);
+			let xh = xh.unwrap_or_default();
+			let yh = block_map.get(&y.block_index).map(|x| x.height);
+			let yh = yh.unwrap_or_default();
 			yh.cmp(&xh)
 		};
 
-		if let Some(entry) = self.multi.get_mut(&details.hash) {
-			let lowest_height = entry
-				.last()
-				.and_then(|x| block_map.get(&x.block_index).map(|y| y.height))
-				.unwrap_or_default();
-			if block_height < lowest_height && entry.len() >= result_length {
-				return;
+		for details in details {
+			let v = TransactionData::from_details(&details, block_index);
+
+			if let Some(entry) = self.multi.get_mut(&details.hash) {
+				let lowest_height = entry
+					.last()
+					.and_then(|x| block_map.get(&x.block_index).map(|y| y.height))
+					.unwrap_or_default();
+				if block_height < lowest_height && entry.len() >= result_length {
+					continue;
+				}
+
+				entry.push(v);
+				entry.sort_by(sort);
+				while entry.len() >= result_length {
+					entry.pop();
+				}
+
+				continue;
 			}
 
-			entry.push(v);
-			entry.sort_by(sort);
-			while entry.len() >= result_length {
-				entry.pop();
+			if let Some(entry) = self.single.remove(&details.hash) {
+				let mut value = vec![entry, v];
+				value.sort_by(sort);
+				self.multi.insert(details.hash, value);
+				continue;
 			}
 
-			return;
+			self.single.insert(details.hash, v);
 		}
-
-		if let Some(entry) = self.single.remove(&details.hash) {
-			let mut value = vec![entry, v];
-			value.sort_by(sort);
-			self.multi.insert(details.hash, value);
-			return;
-		}
-
-		self.single.insert(details.hash, v);
 	}
 
 	fn remove_block_index(&mut self, block_index: u32) {

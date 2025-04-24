@@ -6,12 +6,12 @@ use sp_core::H256;
 pub use filter::*;
 
 pub type ChannelResponse = oneshot::Sender<Result<Response, String>>;
-pub type Channel = (RPCParams, ChannelResponse);
+pub type Channel = (Params, ChannelResponse);
 pub type Receiver = mpsc::Receiver<Channel>;
 pub type Sender = mpsc::Sender<Channel>;
 
 #[derive(Clone, Serialize, Deserialize)]
-pub struct RPCParams {
+pub struct Params {
 	pub block_id: HashIndex,
 	#[serde(default)]
 	pub fetch_calls: bool,
@@ -126,7 +126,6 @@ pub mod filter {
 			let TransactionFilterOptions::Pallet(list) = self else {
 				return Some(());
 			};
-
 			list.contains(&value).then_some(())
 		}
 
@@ -134,7 +133,6 @@ pub mod filter {
 			let TransactionFilterOptions::PalletCall(list) = self else {
 				return Some(());
 			};
-
 			list.contains(&value).then_some(())
 		}
 
@@ -142,7 +140,6 @@ pub mod filter {
 			let TransactionFilterOptions::TxHash(list) = self else {
 				return Some(());
 			};
-
 			list.contains(&value).then_some(())
 		}
 
@@ -150,7 +147,6 @@ pub mod filter {
 			let TransactionFilterOptions::TxIndex(list) = self else {
 				return Some(());
 			};
-
 			list.contains(&value).then_some(())
 		}
 	}
@@ -170,14 +166,23 @@ pub mod filter {
 
 	impl SignatureFilterOptions {
 		pub fn filter_in_ss58_address(&self, value: Option<String>) -> Option<()> {
+			if self.ss58_address.is_none() {
+				return Some(());
+			}
 			(self.ss58_address == value).then_some(())
 		}
 
 		pub fn filter_in_app_id(&self, value: Option<u32>) -> Option<()> {
+			if self.app_id.is_none() {
+				return Some(());
+			}
 			(self.app_id == value).then_some(())
 		}
 
 		pub fn filter_in_nonce(&self, value: Option<u32>) -> Option<()> {
+			if self.nonce.is_none() {
+				return Some(());
+			}
 			(self.nonce == value).then_some(())
 		}
 	}

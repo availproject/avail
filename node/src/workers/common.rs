@@ -2,13 +2,19 @@ use super::{
 	cache::{CachedEntryEvents, CachedEvent, CachedEvents},
 	chain_api,
 };
+use crate::service::FullClient;
+use avail_core::OpaqueExtrinsic;
 use codec::Encode;
 use da_runtime::UncheckedExtrinsic;
 use frame_system_rpc_runtime_api::SystemFetchEventsParams;
 use sc_service::RpcHandlers;
 use sp_core::H256;
 use sp_runtime::AccountId32;
-use std::time::{Duration, Instant};
+use sp_runtime::{generic::BlockId, traits::BlockIdTo};
+use std::{
+	sync::Arc,
+	time::{Duration, Instant},
+};
 use transaction_rpc::common::events::DecodedEventData;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
@@ -23,6 +29,33 @@ impl From<(H256, u32)> for TxIdentifier {
 			block_hash: value.0,
 			tx_index: value.1,
 		}
+	}
+}
+
+#[derive(Clone)]
+pub(crate) struct NodeContext {
+	pub client: Arc<FullClient>,
+	pub handlers: RpcHandlers,
+}
+
+impl NodeContext {
+	pub fn to_number(&self, value: H256) -> Result<Option<u32>, sp_blockchain::Error> {
+		self.client.to_number(&BlockId::Hash(value))
+	}
+
+	pub fn to_hash(&self, value: u32) -> Result<Option<H256>, sp_blockchain::Error> {
+		self.client.to_hash(&BlockId::Number(value))
+	}
+
+	pub fn block_body(&self, height: u32) -> Option<(Vec<OpaqueExtrinsic>, H256)> {
+		let block_hash = self.to_hash(height).ok().flatten()?;
+		let opaques = self.client.body(block_hash).ok().flatten()?;
+
+		Some((opaques, block_hash))
+	}
+
+	pub fn block_body_hash(&self, hash: H256) -> Option<Vec<OpaqueExtrinsic>> {
+		self.client.body(hash).ok().flatten()
 	}
 }
 

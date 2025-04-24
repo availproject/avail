@@ -694,11 +694,16 @@ pub fn new_full_base(
 
 	// Spawning Transaction Info Workers
 
+	let node_context = workers::NodeContext {
+		client: client.clone(),
+		handlers: rpc_handlers.clone(),
+	};
+
 	if let Some(deps) = workers_deps.block_explorer {
 		use workers::block_explorer::Worker;
 		log::info!("🐖 Block Explorer RPC is enabled.");
 
-		let worker = Worker::new(client.clone(), rpc_handlers.clone(), deps);
+		let worker = Worker::new(node_context.clone(), deps);
 		task_manager
 			.spawn_handle()
 			.spawn("tx-data-worker", None, worker.run());
@@ -709,18 +714,16 @@ pub fn new_full_base(
 		log::info!("👾 Transaction Overview RPC is enabled.");
 
 		let worker_1 = BlockWorker::new(
-			client.clone(),
-			rpc_handlers.clone(),
+			node_context.clone(),
 			&deps,
 			"rpc-tx-overview-worker-i".into(),
 		);
 		let worker_2 = BlockWorker::new(
-			client.clone(),
-			rpc_handlers.clone(),
+			node_context.clone(),
 			&deps,
 			"rpc-tx-overview-worker-f".into(),
 		);
-		let worker_3 = DatabaseWorker::new(deps, rpc_handlers.clone());
+		let worker_3 = DatabaseWorker::new(node_context.clone(), deps);
 
 		task_manager
 			.spawn_handle()

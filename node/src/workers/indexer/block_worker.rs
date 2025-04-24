@@ -1,20 +1,13 @@
 use super::*;
-use crate::{
-	service::FullClient,
-	workers::{chain_api, macros::profile},
-};
-use avail_core::OpaqueExtrinsic;
+use crate::workers::{chain_api, common::NodeContext, macros::profile};
 use jsonrpsee::tokio::{self, sync::Notify};
-use sc_service::RpcHandlers;
 use sc_telemetry::log;
 use sp_core::H256;
-use sp_runtime::{generic::BlockId, traits::BlockIdTo};
 use std::{sync::Arc, time::Duration};
 use tokio::time::sleep;
 
 pub struct BlockWorker {
-	client: Arc<FullClient>,
-	handlers: RpcHandlers,
+	ctx: NodeContext,
 	sender: Sender,
 	notifier: Arc<Notify>,
 	cli: CliDeps,
@@ -22,10 +15,9 @@ pub struct BlockWorker {
 }
 
 impl BlockWorker {
-	pub fn new(client: Arc<FullClient>, handlers: RpcHandlers, deps: &Deps, name: String) -> Self {
+	pub fn new(context: NodeContext, deps: &Deps, name: String) -> Self {
 		Self {
-			client,
-			handlers,
+			ctx: context,
 			sender: deps.block_sender.clone(),
 			notifier: deps.notifier.clone(),
 			cli: deps.cli.clone(),
@@ -51,7 +43,7 @@ impl BlockWorker {
 			let (block_height, best_block_hash) =
 				self.wait_for_new_best_block(current_block_hash).await;
 
-			let Some((opaques, block_hash)) = self.fetch_block_body(block_height) else {
+			let Some((opaques, block_hash)) = self.ctx.block_body(block_height) else {
 				current_block_hash = best_block_hash;
 				continue;
 			};
@@ -78,7 +70,7 @@ impl BlockWorker {
 
 		loop {
 			self.wait_for_new_finalized_block(block_height).await;
-			let Some((opaques, block_hash)) = self.fetch_block_body(block_height) else {
+			let Some((opaques, block_hash)) = self.ctx.block_body(block_height) else {
 				block_height += 1;
 				continue;
 			};
@@ -96,7 +88,7 @@ impl BlockWorker {
 
 	// Returns the next block height that needs to be fetched
 	async fn index_old_blocks(&self) -> (u32, usize) {
-		let finalized_height = self.client.chain_info().finalized_number;
+		let finalized_height = self.ctx.client.chain_info().finalized_number;
 		if finalized_height == 0 {
 			return (finalized_height, 0);
 		}
@@ -106,11 +98,8 @@ impl BlockWorker {
 		let mut height = finalized_height;
 
 		while limit != 0 {
-			// If we cannot fetch header, block details, or transaction states then we bail out.
-			//
-			// This most likely means that the pruning strategy removed the header and/or block body
-			// or the new runtime API is not there so there isn't much that we can do.
-			let Some((opaques, block_hash)) = self.fetch_block_body(height) else {
+			// If we cannot fetch block body then we bail out.
+			let Some((opaques, block_hash)) = self.ctx.block_body(height) else {
 				break;
 			};
 			let block = BlockDetails::from_opaques(opaques, block_hash, height, true);
@@ -134,7 +123,7 @@ impl BlockWorker {
 
 	async fn wait_for_sync(&self) -> Result<(), ()> {
 		loop {
-			let status = chain_api::system_fetch_sync_status(&self.handlers).await;
+			let status = chain_api::system_fetch_sync_status(&self.ctx.handlers).await;
 			match status {
 				Some(true) => (),
 				Some(false) => return Ok(()),
@@ -147,7 +136,7 @@ impl BlockWorker {
 
 	async fn wait_for_new_best_block(&self, current_block_hash: H256) -> (u32, H256) {
 		loop {
-			let chain_info = self.client.chain_info();
+			let chain_info = self.ctx.client.chain_info();
 			let (block_hash, block_height) = (chain_info.best_hash, chain_info.best_number);
 			if current_block_hash.eq(&block_hash) {
 				sleep(Duration::from_millis(WORKER_SLEEP_ON_FETCH)).await;
@@ -160,7 +149,7 @@ impl BlockWorker {
 
 	async fn wait_for_new_finalized_block(&self, height: u32) {
 		loop {
-			let chain_info = self.client.chain_info();
+			let chain_info = self.ctx.client.chain_info();
 			if height > chain_info.finalized_number {
 				sleep(Duration::from_millis(WORKER_SLEEP_ON_FETCH)).await;
 				continue;
@@ -168,18 +157,6 @@ impl BlockWorker {
 
 			break;
 		}
-	}
-
-	fn fetch_block_body(&self, block_height: u32) -> Option<(Vec<OpaqueExtrinsic>, H256)> {
-		let block_hash = self.client.to_hash(&BlockId::Number(block_height));
-
-		// If Err or None then bail out as there is no header available.
-		let block_hash = block_hash.ok().flatten()?;
-
-		// If Err or None then bail out as there is no block to be found.
-		let opaques = self.client.body(block_hash).ok().flatten()?;
-
-		Some((opaques, block_hash))
 	}
 
 	fn log(&self, message: &str) {

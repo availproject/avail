@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use sp_core::H256;
 
 pub type ChannelResponse = oneshot::Sender<Vec<Response>>;
-pub type Channel = (RPCParams, ChannelResponse);
+pub type Channel = (Params, ChannelResponse);
 pub type Receiver = mpsc::Receiver<Channel>;
 pub type Sender = mpsc::Sender<Channel>;
 
@@ -26,7 +26,7 @@ pub struct ResponseDebug {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RPCParams {
+pub struct Params {
 	pub tx_hash: H256,
 	#[serde(default)]
 	pub finalized: bool,
