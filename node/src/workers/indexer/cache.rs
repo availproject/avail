@@ -26,7 +26,7 @@ impl Cache {
 
 pub(super) trait Cacheable {
 	fn read_cached_events(&self, key: &TxIdentifier) -> Option<CachedEntryEvents>;
-	fn write_cached_events(&self, key: TxIdentifier, value: CachedEntryEvents) -> Option<()>;
+	fn write_cached_events(&self, key: TxIdentifier, value: &CachedEntryEvents) -> Option<()>;
 }
 
 impl Cacheable for SharedCache {
@@ -35,7 +35,7 @@ impl Cacheable for SharedCache {
 		lock.events.get(key).cloned()
 	}
 
-	fn write_cached_events(&self, key: TxIdentifier, value: CachedEntryEvents) -> Option<()> {
+	fn write_cached_events(&self, key: TxIdentifier, value: &CachedEntryEvents) -> Option<()> {
 		let mut lock = self.write().ok()?;
 		lock.events.insert(key, value);
 		Some(())

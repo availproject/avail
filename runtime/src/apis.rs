@@ -22,7 +22,6 @@ use frame_support::{
 	traits::KeyOwnerProofSystem,
 	weights::Weight,
 };
-use frame_system_rpc_runtime_api::SystemFetchEventsParams;
 use pallet_transaction_payment::{FeeDetails, RuntimeDispatchInfo};
 use sp_api::{decl_runtime_apis, impl_runtime_apis};
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;

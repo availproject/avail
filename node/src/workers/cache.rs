@@ -4,7 +4,7 @@ use transaction_rpc::common::DecodedEventData;
 
 use super::common::decoding;
 
-pub(crate) struct CachedValue<K: Hash + Eq, V> {
+pub(crate) struct CachedValue<K: Hash + Eq, V: Clone> {
 	value: HashMap<K, V>,
 	current_weight: u64,
 	max_weight: u64,
@@ -12,7 +12,7 @@ pub(crate) struct CachedValue<K: Hash + Eq, V> {
 	max_allowed_weight_per_item: u64,
 }
 
-impl<K: Hash + Eq, V> CachedValue<K, V> {
+impl<K: Hash + Eq, V: Clone> CachedValue<K, V> {
 	pub fn new(
 		max_weight: u64,
 		calculate_weight: Box<dyn Fn(&V) -> u64 + Send + Sync + 'static>,
@@ -27,8 +27,8 @@ impl<K: Hash + Eq, V> CachedValue<K, V> {
 		}
 	}
 
-	pub fn insert(&mut self, key: K, value: V) {
-		let weight = (self.calculate_weight)(&value);
+	pub fn insert(&mut self, key: K, value: &V) {
+		let weight = (self.calculate_weight)(value);
 
 		if weight > self.max_weight {
 			return;
@@ -44,15 +44,13 @@ impl<K: Hash + Eq, V> CachedValue<K, V> {
 		}
 
 		self.current_weight += weight;
-		self.value.insert(key, value);
+		self.value.insert(key, value.clone());
 	}
 
 	pub fn get(&self, key: &K) -> Option<&V> {
 		self.value.get(key)
 	}
 }
-
-pub type SharedCachedEvents = Arc<CachedEvents>;
 
 #[derive(Debug, Clone)]
 pub struct CachedEvents(pub Vec<CachedEntryEvents>);

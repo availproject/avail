@@ -37,11 +37,11 @@ impl Cache {
 
 pub(super) trait Cacheable {
 	fn read_cached_tx_hash(&self, key: &TxIdentifier) -> Option<H256>;
-	fn write_cached_tx_hash(&self, key: TxIdentifier, value: H256) -> Option<()>;
+	fn write_cached_tx_hash(&self, key: TxIdentifier, value: &H256) -> Option<()>;
 	fn read_cached_calls(&self, key: &TxIdentifier) -> Option<String>;
-	fn write_cached_calls(&self, key: TxIdentifier, value: String) -> Option<()>;
+	fn write_cached_calls(&self, key: TxIdentifier, value: &String) -> Option<()>;
 	fn read_cached_events(&self, key: &H256) -> Option<Arc<CachedEvents>>;
-	fn write_cached_events(&self, key: H256, value: Arc<CachedEvents>) -> Option<()>;
+	fn write_cached_events(&self, key: H256, value: &Arc<CachedEvents>) -> Option<()>;
 }
 
 impl Cacheable for SharedCache {
@@ -50,7 +50,7 @@ impl Cacheable for SharedCache {
 		lock.tx_hash.get(key).cloned()
 	}
 
-	fn write_cached_tx_hash(&self, key: TxIdentifier, value: H256) -> Option<()> {
+	fn write_cached_tx_hash(&self, key: TxIdentifier, value: &H256) -> Option<()> {
 		let mut lock = self.write().ok()?;
 		lock.tx_hash.insert(key, value);
 		Some(())
@@ -61,7 +61,7 @@ impl Cacheable for SharedCache {
 		lock.calls.get(key).cloned()
 	}
 
-	fn write_cached_calls(&self, key: TxIdentifier, value: String) -> Option<()> {
+	fn write_cached_calls(&self, key: TxIdentifier, value: &String) -> Option<()> {
 		let mut lock = self.write().ok()?;
 		lock.calls.insert(key, value);
 		Some(())
@@ -72,7 +72,7 @@ impl Cacheable for SharedCache {
 		lock.events.get(key).cloned()
 	}
 
-	fn write_cached_events(&self, key: H256, value: Arc<CachedEvents>) -> Option<()> {
+	fn write_cached_events(&self, key: H256, value: &Arc<CachedEvents>) -> Option<()> {
 		let mut lock = self.write().ok()?;
 		lock.events.insert(key, value);
 		Some(())

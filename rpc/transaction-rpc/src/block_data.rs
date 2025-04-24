@@ -31,6 +31,22 @@ pub struct Response {
 	pub events: Option<Vec<EventData>>,
 }
 
+impl Response {
+	pub fn new(
+		block_id: BlockIdentifier,
+		block_state: BlockState,
+		calls: Option<Vec<CallData>>,
+		events: Option<Vec<EventData>>,
+	) -> Self {
+		Self {
+			block_id,
+			block_state,
+			calls,
+			events,
+		}
+	}
+}
+
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ResponseDebug {
 	pub value: Response,
@@ -43,7 +59,18 @@ pub struct CallData {
 	pub dispatch_index: (u8, u8),
 	pub tx_index: u32,
 	pub tx_hash: H256,
-	pub data: String,
+	pub call: String,
+}
+
+impl CallData {
+	pub fn new(dispatch_index: (u8, u8), tx_index: u32, tx_hash: H256, call: String) -> Self {
+		Self {
+			dispatch_index,
+			tx_index,
+			tx_hash,
+			call,
+		}
+	}
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -51,7 +78,17 @@ pub struct EventData {
 	// (pallet id, event id)
 	pub emitted_index: (u8, u8),
 	pub phase: Phase,
-	pub data: String,
+	pub event: String,
+}
+
+impl EventData {
+	pub fn new(emitted_index: (u8, u8), phase: Phase, event: String) -> Self {
+		Self {
+			emitted_index,
+			phase,
+			event,
+		}
+	}
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -84,6 +121,40 @@ pub mod filter {
 		PalletCall(Vec<(u8, u8)>),
 	}
 
+	impl TransactionFilterOptions {
+		pub fn filter_in_pallet(&self, value: u8) -> Option<()> {
+			let TransactionFilterOptions::Pallet(list) = self else {
+				return Some(());
+			};
+
+			list.contains(&value).then_some(())
+		}
+
+		pub fn filter_in_pallet_call(&self, value: (u8, u8)) -> Option<()> {
+			let TransactionFilterOptions::PalletCall(list) = self else {
+				return Some(());
+			};
+
+			list.contains(&value).then_some(())
+		}
+
+		pub fn filter_in_tx_hash(&self, value: H256) -> Option<()> {
+			let TransactionFilterOptions::TxHash(list) = self else {
+				return Some(());
+			};
+
+			list.contains(&value).then_some(())
+		}
+
+		pub fn filter_in_tx_index(&self, value: u32) -> Option<()> {
+			let TransactionFilterOptions::TxIndex(list) = self else {
+				return Some(());
+			};
+
+			list.contains(&value).then_some(())
+		}
+	}
+
 	impl Default for TransactionFilterOptions {
 		fn default() -> Self {
 			Self::All
@@ -95,6 +166,20 @@ pub mod filter {
 		pub ss58_address: Option<String>,
 		pub app_id: Option<u32>,
 		pub nonce: Option<u32>,
+	}
+
+	impl SignatureFilterOptions {
+		pub fn filter_in_ss58_address(&self, value: Option<String>) -> Option<()> {
+			(self.ss58_address == value).then_some(())
+		}
+
+		pub fn filter_in_app_id(&self, value: Option<u32>) -> Option<()> {
+			(self.app_id == value).then_some(())
+		}
+
+		pub fn filter_in_nonce(&self, value: Option<u32>) -> Option<()> {
+			(self.nonce == value).then_some(())
+		}
 	}
 
 	#[derive(Default, Clone, Serialize, Deserialize)]

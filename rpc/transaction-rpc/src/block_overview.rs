@@ -40,6 +40,22 @@ pub struct Response {
 	pub consensus_events: Option<ConsensusEvents>,
 }
 
+impl Response {
+	pub fn new(
+		block_id: BlockIdentifier,
+		block_state: BlockState,
+		transactions: Vec<TransactionData>,
+		consensus_events: Option<ConsensusEvents>,
+	) -> Self {
+		Self {
+			block_id,
+			block_state,
+			transactions,
+			consensus_events,
+		}
+	}
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResponseDebug {
 	pub value: Response,
@@ -52,7 +68,7 @@ pub struct TransactionData {
 	pub index: u32,
 	// (Pallet id, Call Id)
 	pub dispatch_index: (u8, u8),
-	pub signed: Option<TransactionSignature>,
+	pub signature: Option<TransactionSignature>,
 	pub decoded: Option<String>,
 	pub events: Option<common::Events>,
 }
@@ -99,6 +115,47 @@ pub mod filter {
 		HasEvent(Vec<(u8, u8)>),
 	}
 
+	impl TransactionFilterOptions {
+		pub fn filter_in_pallet(&self, value: u8) -> Option<()> {
+			let TransactionFilterOptions::Pallet(list) = self else {
+				return Some(());
+			};
+
+			list.contains(&value).then_some(())
+		}
+
+		pub fn filter_in_pallet_call(&self, value: (u8, u8)) -> Option<()> {
+			let TransactionFilterOptions::PalletCall(list) = self else {
+				return Some(());
+			};
+
+			list.contains(&value).then_some(())
+		}
+
+		pub fn filter_in_tx_hash(&self, value: H256) -> Option<()> {
+			let TransactionFilterOptions::TxHash(list) = self else {
+				return Some(());
+			};
+
+			list.contains(&value).then_some(())
+		}
+
+		pub fn filter_in_tx_index(&self, value: u32) -> Option<()> {
+			let TransactionFilterOptions::TxIndex(list) = self else {
+				return Some(());
+			};
+
+			list.contains(&value).then_some(())
+		}
+
+		pub fn is_has_events(&self) -> bool {
+			let TransactionFilterOptions::HasEvent(..) = self else {
+				return true;
+			};
+			false
+		}
+	}
+
 	impl Default for TransactionFilterOptions {
 		fn default() -> Self {
 			Self::All
@@ -110,6 +167,20 @@ pub mod filter {
 		pub ss58_address: Option<String>,
 		pub app_id: Option<u32>,
 		pub nonce: Option<u32>,
+	}
+
+	impl SignatureFilterOptions {
+		pub fn filter_in_ss58_address(&self, value: Option<String>) -> Option<()> {
+			(self.ss58_address == value).then_some(())
+		}
+
+		pub fn filter_in_app_id(&self, value: Option<u32>) -> Option<()> {
+			(self.app_id == value).then_some(())
+		}
+
+		pub fn filter_in_nonce(&self, value: Option<u32>) -> Option<()> {
+			(self.nonce == value).then_some(())
+		}
 	}
 }
 

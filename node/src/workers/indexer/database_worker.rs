@@ -130,7 +130,7 @@ impl DatabaseWorker {
 
 		let events = common::fetch_events(&self.handlers, id.block_hash, params).await?;
 		let events = events.tx_events(id.tx_index).cloned()?;
-		self.cache.write_cached_events(id, events.clone());
+		self.cache.write_cached_events(id, &events);
 
 		Some(events)
 	}
