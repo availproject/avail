@@ -21,7 +21,7 @@ pub type Sender = mpsc::Sender<BlockDetails>;
 
 pub(crate) const BLOCK_CHANNEL_LIMIT: usize = 100;
 pub(crate) const RPC_CHANNEL_LIMIT: usize = 20_000;
-pub(crate) const DATABASE_RESIZE_INTERVAL: u64 = 3600; // in s
+pub(crate) const DATABASE_SIZE_BUFFER: usize = 180; // in blocks. cca every one hour
 pub(crate) const NODE_SYNC_SLEEP_INTERVAL: u64 = 30; // in s
 pub(crate) const WORKER_SLEEP_ON_FETCH: u64 = 1000; // in ms
 

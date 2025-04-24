@@ -1,6 +1,6 @@
 use super::{
 	cache::{Cache, Cacheable, SharedCache},
-	database_map, CliDeps, Deps, DATABASE_RESIZE_INTERVAL,
+	database_map, CliDeps, Deps, DATABASE_SIZE_BUFFER,
 };
 use crate::workers::{
 	cache::CachedEntryEvents,
@@ -24,7 +24,6 @@ pub struct DatabaseWorker {
 	handlers: RpcHandlers,
 	logger: Logger,
 	inner: database_map::Database,
-	timer: Timer,
 	notifier: Arc<Notify>,
 	cli: CliDeps,
 	cache: SharedCache,
@@ -39,8 +38,7 @@ impl DatabaseWorker {
 			rpc_receiver: deps.transaction_receiver,
 			handlers,
 			logger: Logger::new(deps.cli.logging_interval),
-			inner: database_map::Database::new(deps.cli.clone()),
-			timer: Timer::new(DATABASE_RESIZE_INTERVAL),
+			inner: database_map::Database::new(&deps.cli),
 			notifier: deps.notifier,
 			cli: deps.cli,
 			cache,
@@ -48,7 +46,7 @@ impl DatabaseWorker {
 	}
 
 	pub async fn run(mut self) {
-		let message = std::format!("Running with following parameters: Max Search Result: {}, Max Stored Block Count: {}, Resize Interval: {}s, Logging Interval: {}s", self.cli.result_length, self.cli.block_pruning, DATABASE_RESIZE_INTERVAL, self.logger.timer.duration());
+		let message = std::format!("Running with following parameters: Max Search Result: {}, Max Stored Block Count: {}, Logging Interval: {}s", self.cli.result_length, self.cli.block_pruning, self.logger.timer.duration());
 		self.logger.log(message);
 
 		loop {
@@ -63,13 +61,12 @@ impl DatabaseWorker {
 	}
 
 	fn resize(&mut self) {
-		if !self.timer.expired() {
+		if (self.cli.block_pruning + DATABASE_SIZE_BUFFER) > self.inner.block_count() {
 			return;
 		}
 
-		let (duration, _) = profile!(self.inner.resize());
+		let (duration, _) = profile!(self.inner.resize(self.cli.block_pruning));
 		self.logger.increment_resize_time(duration);
-		self.timer.restart();
 	}
 
 	async fn handle_queues(&mut self) {
