@@ -165,7 +165,7 @@ impl Map {
 					dispatch_index: data.dispatch_index,
 					events: None,
 				});
-				*max_count = *max_count - 1;
+				*max_count -= 1;
 			};
 		}
 
@@ -186,7 +186,7 @@ impl Map {
 					dispatch_index: data.dispatch_index,
 					events: None,
 				});
-				*max_count = *max_count - 1;
+				*max_count -= 1;
 			}
 		}
 
@@ -263,7 +263,7 @@ impl Map {
 
 		self.single.retain(|_x, tx_data| retain(tx_data));
 		self.multi.retain(|_x, entries| {
-			entries.retain_mut(|tx_data| retain(tx_data));
+			entries.retain_mut(retain);
 			!entries.is_empty()
 		});
 	}

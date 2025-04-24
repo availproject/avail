@@ -24,8 +24,7 @@ use sp_runtime::{generic::BlockId, traits::BlockIdTo, MultiAddress};
 use std::sync::{Arc, RwLock};
 use std::time::Duration;
 use transaction_rpc::{
-	block_data::{self},
-	block_overview,
+	block_data, block_overview,
 	common::{BlockState, Event, HashIndex},
 	BlockIdentifier,
 };
