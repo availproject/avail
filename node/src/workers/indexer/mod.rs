@@ -3,8 +3,6 @@ mod cache;
 mod database_map;
 mod database_worker;
 
-pub mod constants;
-
 use super::common::read_pallet_call_index;
 use avail_core::OpaqueExtrinsic;
 pub use block_worker::BlockWorker;
@@ -20,6 +18,12 @@ use transaction_rpc::transaction_overview;
 pub type Channel = BlockDetails;
 pub type Receiver = mpsc::Receiver<BlockDetails>;
 pub type Sender = mpsc::Sender<BlockDetails>;
+
+pub(crate) const BLOCK_CHANNEL_LIMIT: usize = 100;
+pub(crate) const RPC_CHANNEL_LIMIT: usize = 20_000;
+pub(crate) const DATABASE_RESIZE_INTERVAL: u64 = 3600; // in s
+pub(crate) const NODE_SYNC_SLEEP_INTERVAL: u64 = 30; // in s
+pub(crate) const WORKER_SLEEP_ON_FETCH: u64 = 1000; // in ms
 
 #[derive(Clone, Default)]
 pub struct CliDeps {

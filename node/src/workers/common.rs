@@ -39,6 +39,7 @@ pub(crate) fn read_pallet_call_index(ext: &UncheckedExtrinsic) -> Option<(u8, u8
 
 pub(crate) struct Timer {
 	now: Instant,
+	// In sec
 	duration: u64,
 }
 

@@ -1,7 +1,6 @@
 use super::{
 	cache::{Cache, Cacheable, SharedCache},
-	constants::DATABASE_RESIZE_INTERVAL,
-	database_map, CliDeps, Deps,
+	database_map, CliDeps, Deps, DATABASE_RESIZE_INTERVAL,
 };
 use crate::workers::{
 	cache::CachedEntryEvents,

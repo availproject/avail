@@ -297,14 +297,14 @@ pub fn new_partial(
 	let import_setup = (da_block_import, grandpa_link, babe_link);
 
 	let mut transaction_rpc_deps = transaction_rpc::Deps::default();
-	let mut transaction_rpc_worker_deps = workers::Deps::default();
+	let mut workers_deps = workers::Deps::default();
 
 	if workers_cli_deps.indexer.enabled {
 		let (tx_send, tx_recv) = channel::<transaction_rpc::transaction_overview::Channel>(
-			workers::indexer::constants::RPC_CHANNEL_LIMIT,
+			workers::indexer::RPC_CHANNEL_LIMIT,
 		);
 		let (block_send, block_recv) =
-			channel::<workers::indexer::Channel>(workers::indexer::constants::BLOCK_CHANNEL_LIMIT);
+			channel::<workers::indexer::Channel>(workers::indexer::BLOCK_CHANNEL_LIMIT);
 
 		let notifier = Arc::new(Notify::new());
 		let deps = workers::indexer::Deps {
@@ -317,17 +317,17 @@ pub fn new_partial(
 
 		transaction_rpc_deps.transaction_overview_sender = Some(tx_send);
 		transaction_rpc_deps.transaction_overview_notifier = Some(notifier);
-		transaction_rpc_worker_deps.indexer = Some(deps)
+		workers_deps.indexer = Some(deps)
 	}
 
 	if workers_cli_deps.block_explorer.enabled {
 		let (overview_search_send, overview_search_recv) =
 			channel::<transaction_rpc::block_overview::Channel>(
-				workers::block_explorer::constants::RPC_CHANNEL_LIMIT,
+				workers::block_explorer::RPC_CHANNEL_LIMIT,
 			);
 
 		let (data_search_send, data_search_recv) = channel::<transaction_rpc::block_data::Channel>(
-			workers::block_explorer::constants::RPC_CHANNEL_LIMIT,
+			workers::block_explorer::RPC_CHANNEL_LIMIT,
 		);
 
 		let notifier = Arc::new(Notify::new());
@@ -340,7 +340,7 @@ pub fn new_partial(
 		transaction_rpc_deps.block_overview_sender = Some(overview_search_send);
 		transaction_rpc_deps.block_data_sender = Some(data_search_send);
 		transaction_rpc_deps.block_notifier = Some(notifier);
-		transaction_rpc_worker_deps.block_explorer = Some(deps)
+		workers_deps.block_explorer = Some(deps)
 	}
 
 	let (rpc_extensions_builder, rpc_setup) = {
@@ -404,7 +404,7 @@ pub fn new_partial(
 			import_setup,
 			rpc_setup,
 			telemetry,
-			transaction_rpc_worker_deps,
+			workers_deps,
 		),
 	})
 }
@@ -452,7 +452,7 @@ pub fn new_full_base(
 		keystore_container,
 		select_chain,
 		transaction_pool,
-		other: (rpc_builder, import_setup, rpc_setup, mut telemetry, transaction_rpc_worker_deps),
+		other: (rpc_builder, import_setup, rpc_setup, mut telemetry, workers_deps),
 	} = new_partial(&config, unsafe_da_sync, kate_rpc_deps, workers_cli_deps)?;
 
 	let shared_voter_state = rpc_setup;
@@ -694,36 +694,33 @@ pub fn new_full_base(
 
 	// Spawning Transaction Info Workers
 
-	if let Some(deps) = transaction_rpc_worker_deps.block_explorer {
-		use workers::block_explorer;
+	if let Some(deps) = workers_deps.block_explorer {
+		use workers::block_explorer::Worker;
 		log::info!("🐖 Block Explorer RPC is enabled.");
 
-		let worker = block_explorer::Worker::new(client.clone(), rpc_handlers.clone(), deps);
-
+		let worker = Worker::new(client.clone(), rpc_handlers.clone(), deps);
 		task_manager
 			.spawn_handle()
 			.spawn("tx-data-worker", None, worker.run());
 	}
 
-	if let Some(deps) = transaction_rpc_worker_deps.indexer {
-		use workers::indexer;
+	if let Some(deps) = workers_deps.indexer {
+		use workers::indexer::{BlockWorker, DatabaseWorker};
 		log::info!("👾 Transaction Overview RPC is enabled.");
 
-		let worker_1 = indexer::BlockWorker::new(
+		let worker_1 = BlockWorker::new(
 			client.clone(),
 			rpc_handlers.clone(),
 			&deps,
 			"rpc-tx-overview-worker-i".into(),
 		);
-
-		let worker_2 = indexer::BlockWorker::new(
+		let worker_2 = BlockWorker::new(
 			client.clone(),
 			rpc_handlers.clone(),
 			&deps,
 			"rpc-tx-overview-worker-f".into(),
 		);
-
-		let worker_3 = indexer::DatabaseWorker::new(deps, rpc_handlers.clone());
+		let worker_3 = DatabaseWorker::new(deps, rpc_handlers.clone());
 
 		task_manager
 			.spawn_handle()

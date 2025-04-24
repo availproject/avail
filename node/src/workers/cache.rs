@@ -1,5 +1,5 @@
 use frame_system_rpc_runtime_api::events::RuntimeEvent;
-use std::{collections::HashMap, hash::Hash, sync::Arc};
+use std::{collections::HashMap, hash::Hash};
 use transaction_rpc::common::DecodedEventData;
 
 use super::common::decoding;

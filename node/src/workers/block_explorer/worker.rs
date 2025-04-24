@@ -1,5 +1,3 @@
-use std::sync::{Arc, RwLock};
-
 use super::{
 	cache::{Cache, Cacheable, SharedCache},
 	Deps,
@@ -7,8 +5,10 @@ use super::{
 use crate::{
 	service::FullClient,
 	workers::{
+		self,
 		cache::CachedEvents,
-		common::{self, TxIdentifier},
+		common::{Timer, TxIdentifier},
+		macros::profile,
 	},
 };
 use avail_core::OpaqueExtrinsic;
@@ -18,8 +18,11 @@ use frame_system_rpc_runtime_api::SystemFetchEventsParams;
 use jsonrpsee::tokio::sync::Notify;
 use rayon::prelude::*;
 use sc_service::RpcHandlers;
+use sc_telemetry::log;
 use sp_core::{Blake2Hasher, Hasher, H256};
 use sp_runtime::{generic::BlockId, traits::BlockIdTo, MultiAddress};
+use std::sync::{Arc, RwLock};
+use std::time::Duration;
 use transaction_rpc::{
 	block_data::{self},
 	block_overview,
@@ -34,11 +37,13 @@ pub struct Worker {
 	data_receiver: block_data::Receiver,
 	notifier: Arc<Notify>,
 	cache: SharedCache,
+	logger: Logger,
 }
 
 impl Worker {
 	pub fn new(client: Arc<FullClient>, rpc_handlers: RpcHandlers, deps: Deps) -> Self {
 		let cache = Arc::new(RwLock::new(Cache::new()));
+		let logger = Logger::new(6);
 
 		Self {
 			client,
@@ -47,21 +52,25 @@ impl Worker {
 			data_receiver: deps.data_receiver,
 			notifier: deps.notifier,
 			cache,
+			logger,
 		}
 	}
 
 	pub async fn run(mut self) {
 		loop {
 			while let Ok((params, oneshot)) = self.data_receiver.try_recv() {
-				let result = self.data_task(params).await;
-				_ = oneshot.send(result);
+				let (duration, response) = profile!(self.data_task(params).await);
+				self.logger.increment_data_task_time(duration);
+				_ = oneshot.send(response);
 			}
 
 			while let Ok((params, oneshot)) = self.overview_receiver.try_recv() {
-				let result = self.overview_task(params).await;
-				_ = oneshot.send(result);
+				let (duration, response) = profile!(self.overview_task(params).await);
+				self.logger.increment_data_overview_time(duration);
+				_ = oneshot.send(response);
 			}
 
+			self.logger.log_stats();
 			self.notifier.notified().await;
 		}
 	}
@@ -232,7 +241,7 @@ impl Worker {
 			..Default::default()
 		};
 
-		let events = common::fetch_events(&self.rpc_handlers, block_hash, params).await;
+		let events = workers::common::fetch_events(&self.rpc_handlers, block_hash, params).await;
 		let Some(events) = events else {
 			return Ok(Arc::new(CachedEvents(Vec::new())));
 		};
@@ -338,7 +347,7 @@ fn iter_overview_opaque(
 	}
 
 	let ext = UncheckedExtrinsic::decode_no_vec_prefix(&mut opaq.0.as_slice()).ok()?;
-	let dispatch_index = common::read_pallet_call_index(&ext)?;
+	let dispatch_index = workers::common::read_pallet_call_index(&ext)?;
 
 	filter.transaction.filter_in_pallet(dispatch_index.0)?;
 	filter.transaction.filter_in_pallet_call(dispatch_index)?;
@@ -427,7 +436,7 @@ fn iter_data_opaque(
 	}
 
 	let ext = UncheckedExtrinsic::decode_no_vec_prefix(&mut opaq.0.as_slice()).ok()?;
-	let dispatch_index = common::read_pallet_call_index(&ext)?;
+	let dispatch_index = workers::common::read_pallet_call_index(&ext)?;
 
 	filter.transaction.filter_in_pallet(dispatch_index.0)?;
 	filter.transaction.filter_in_pallet_call(dispatch_index)?;
@@ -470,4 +479,64 @@ fn opaque_to_json(value: &OpaqueExtrinsic) -> Option<String> {
 	}
 
 	Some(call)
+}
+
+struct Logger {
+	data_task_time: Duration,
+	data_task_count: u32,
+	data_overview_time: Duration,
+	data_overview_count: u32,
+	pub timer: Timer,
+}
+
+impl Logger {
+	pub fn new(logging_interval: u64) -> Self {
+		Self {
+			data_task_time: Duration::default(),
+			data_task_count: 0,
+			data_overview_time: Duration::default(),
+			data_overview_count: 0,
+			timer: Timer::new(logging_interval),
+		}
+	}
+
+	pub fn increment_data_task_time(&mut self, duration: Duration) {
+		self.data_task_time += duration;
+		self.data_task_count += 1;
+	}
+
+	pub fn increment_data_overview_time(&mut self, duration: Duration) {
+		self.data_overview_time += duration;
+		self.data_overview_count += 1;
+	}
+
+	pub fn log(&self, message: String) {
+		log::info!("👾 Database: {}", message);
+	}
+
+	pub fn log_stats(&mut self) {
+		if !self.timer.expired() {
+			return;
+		}
+
+		let message = std::format!(
+			"Data Task Time: {} ms, Data Task Count: {}, Data Overview Time: {} ms, Data Overview Count: {}",
+			self.data_task_time.as_millis(),
+			self.data_task_count,
+			self.data_overview_time.as_millis(),
+			self.data_overview_count,
+		);
+
+		self.log(message);
+
+		self.reset();
+	}
+
+	fn reset(&mut self) {
+		self.data_overview_count = 0;
+		self.data_task_count = 0;
+		self.data_task_time = Duration::default();
+		self.data_overview_time = Duration::default();
+		self.timer.restart();
+	}
 }

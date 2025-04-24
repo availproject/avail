@@ -1,4 +1,4 @@
-use super::{constants, BlockDetails, CliDeps, Deps, Sender};
+use super::*;
 use crate::{
 	service::FullClient,
 	workers::{chain_api, macros::profile},
@@ -141,7 +141,7 @@ impl BlockWorker {
 				None => return Err(()),
 			}
 
-			sleep(Duration::from_secs(constants::NODE_SYNC_SLEEP_INTERVAL)).await;
+			sleep(Duration::from_secs(NODE_SYNC_SLEEP_INTERVAL)).await;
 		}
 	}
 
@@ -150,7 +150,7 @@ impl BlockWorker {
 			let chain_info = self.client.chain_info();
 			let (block_hash, block_height) = (chain_info.best_hash, chain_info.best_number);
 			if current_block_hash.eq(&block_hash) {
-				sleep(Duration::from_millis(constants::WORKER_SLEEP_ON_FETCH)).await;
+				sleep(Duration::from_millis(WORKER_SLEEP_ON_FETCH)).await;
 				continue;
 			}
 
@@ -162,7 +162,7 @@ impl BlockWorker {
 		loop {
 			let chain_info = self.client.chain_info();
 			if height > chain_info.finalized_number {
-				sleep(Duration::from_millis(constants::WORKER_SLEEP_ON_FETCH)).await;
+				sleep(Duration::from_millis(WORKER_SLEEP_ON_FETCH)).await;
 				continue;
 			}
 
