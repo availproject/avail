@@ -40,14 +40,13 @@ impl BlockWorker {
 	async fn index_new_blocks(self) {
 		let mut current_block_hash = H256::default();
 		loop {
-			let (block_height, best_block_hash) =
-				self.wait_for_new_best_block(current_block_hash).await;
+			let block_id = self.wait_for_new_best_block(current_block_hash).await;
+			current_block_hash = block_id.hash;
 
-			let Some((opaques, block_hash)) = self.ctx.block_body(block_height) else {
-				current_block_hash = best_block_hash;
+			let Some(opaques) = self.ctx.block_body_hash(block_id.hash) else {
 				continue;
 			};
-			let block = BlockDetails::from_opaques(opaques, block_hash, block_height, false);
+			let block = BlockDetails::from_opaques(opaques, block_id, false);
 
 			if let Err(e) = self.sender.send(block).await {
 				self.log(&e.to_string());
@@ -55,7 +54,6 @@ impl BlockWorker {
 			}
 
 			self.notifier.notify_one();
-			current_block_hash = block_hash;
 		}
 	}
 
@@ -70,11 +68,11 @@ impl BlockWorker {
 
 		loop {
 			self.wait_for_new_finalized_block(block_height).await;
-			let Some((opaques, block_hash)) = self.ctx.block_body(block_height) else {
+			let Some((opaques, block_id)) = self.ctx.block_body(block_height) else {
 				block_height += 1;
 				continue;
 			};
-			let block = BlockDetails::from_opaques(opaques, block_hash, block_height, true);
+			let block = BlockDetails::from_opaques(opaques, block_id, true);
 
 			if let Err(e) = self.sender.send(block).await {
 				self.log(&e.to_string());
@@ -99,10 +97,10 @@ impl BlockWorker {
 
 		while limit != 0 {
 			// If we cannot fetch block body then we bail out.
-			let Some((opaques, block_hash)) = self.ctx.block_body(height) else {
+			let Some((opaques, block_id)) = self.ctx.block_body(height) else {
 				break;
 			};
-			let block = BlockDetails::from_opaques(opaques, block_hash, height, true);
+			let block = BlockDetails::from_opaques(opaques, block_id, true);
 
 			// Failure would mean that the other end of the channel is closed which means that we should bail out.
 			if self.sender.send(block).await.is_err() {
@@ -134,7 +132,7 @@ impl BlockWorker {
 		}
 	}
 
-	async fn wait_for_new_best_block(&self, current_block_hash: H256) -> (u32, H256) {
+	async fn wait_for_new_best_block(&self, current_block_hash: H256) -> BlockIdentifier {
 		loop {
 			let chain_info = self.ctx.client.chain_info();
 			let (block_hash, block_height) = (chain_info.best_hash, chain_info.best_number);
@@ -143,7 +141,7 @@ impl BlockWorker {
 				continue;
 			}
 
-			return (block_height, block_hash);
+			return BlockIdentifier::from((block_hash, block_height));
 		}
 	}
 

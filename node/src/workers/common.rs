@@ -1,7 +1,4 @@
-use super::{
-	cache::{CachedEntryEvents, CachedEvent, CachedEvents},
-	chain_api,
-};
+use super::chain_api;
 use crate::service::FullClient;
 use avail_core::OpaqueExtrinsic;
 use codec::Encode;
@@ -16,9 +13,12 @@ use std::{
 	time::{Duration, Instant},
 };
 use transaction_rpc::common::events::DecodedEventData;
+use transaction_rpc::BlockIdentifier;
+
+pub use events::*;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
-pub(crate) struct TxIdentifier {
+pub struct TxIdentifier {
 	pub block_hash: H256,
 	pub tx_index: u32,
 }
@@ -33,7 +33,7 @@ impl From<(H256, u32)> for TxIdentifier {
 }
 
 #[derive(Clone)]
-pub(crate) struct NodeContext {
+pub struct NodeContext {
 	pub client: Arc<FullClient>,
 	pub handlers: RpcHandlers,
 }
@@ -47,19 +47,37 @@ impl NodeContext {
 		self.client.to_hash(&BlockId::Number(value))
 	}
 
-	pub fn block_body(&self, height: u32) -> Option<(Vec<OpaqueExtrinsic>, H256)> {
+	pub fn block_body(&self, height: u32) -> Option<(Vec<OpaqueExtrinsic>, BlockIdentifier)> {
 		let block_hash = self.to_hash(height).ok().flatten()?;
 		let opaques = self.client.body(block_hash).ok().flatten()?;
 
-		Some((opaques, block_hash))
+		Some((opaques, BlockIdentifier::from((block_hash, height))))
 	}
 
 	pub fn block_body_hash(&self, hash: H256) -> Option<Vec<OpaqueExtrinsic>> {
 		self.client.body(hash).ok().flatten()
 	}
+
+	pub async fn fetch_events(
+		&self,
+		block_hash: H256,
+		params: SystemFetchEventsParams,
+	) -> Option<AllTransactionEvents> {
+		let rpc_events =
+			chain_api::system_fetch_events(&self.handlers, params, &block_hash).await?;
+
+		if rpc_events.error != 0 {
+			return None;
+		}
+
+		let runtime_events = rpc_events.entries.into_iter();
+		let cached_tx_events = runtime_events.map(TransactionEvents::from).collect();
+
+		Some(AllTransactionEvents(cached_tx_events))
+	}
 }
 
-pub(crate) fn read_pallet_call_index(ext: &UncheckedExtrinsic) -> Option<(u8, u8)> {
+pub fn read_pallet_call_index(ext: &UncheckedExtrinsic) -> Option<(u8, u8)> {
 	let ext = ext.function.encode();
 	if ext.len() < 2 {
 		return None;
@@ -70,7 +88,7 @@ pub(crate) fn read_pallet_call_index(ext: &UncheckedExtrinsic) -> Option<(u8, u8
 	Some((pallet_index, call_index))
 }
 
-pub(crate) struct Timer {
+pub struct Timer {
 	now: Instant,
 	// In sec
 	duration: u64,
@@ -100,37 +118,6 @@ impl Timer {
 	pub fn duration(&self) -> u64 {
 		self.duration
 	}
-}
-
-pub(crate) async fn fetch_events(
-	handlers: &RpcHandlers,
-	block_hash: H256,
-	params: SystemFetchEventsParams,
-) -> Option<CachedEvents> {
-	let rpc_events = chain_api::system_fetch_events(handlers, params, &block_hash).await?;
-
-	if rpc_events.error != 0 {
-		return None;
-	}
-
-	let entries = rpc_events.entries;
-
-	let mut cached_events = Vec::<CachedEntryEvents>::new();
-	for enc in &entries {
-		let mut cached_entry = CachedEntryEvents {
-			phase: enc.phase.clone(),
-			events: Vec::with_capacity(enc.events.len()),
-		};
-
-		for enc_event in &enc.events {
-			let data = CachedEvent::from_runtime_event(enc_event);
-			cached_entry.events.push(data);
-		}
-
-		cached_events.push(cached_entry);
-	}
-
-	Some(CachedEvents(cached_events))
 }
 
 pub mod decoding {
@@ -210,5 +197,168 @@ pub mod decoding {
 		}
 
 		None
+	}
+}
+
+pub mod events {
+	use frame_system_rpc_runtime_api::events::{RuntimeEntryEvents, RuntimeEvent};
+
+	use super::*;
+
+	#[derive(Debug, Clone)]
+	pub struct AllTransactionEvents(pub Vec<TransactionEvents>);
+
+	impl AllTransactionEvents {
+		pub fn weight(&self) -> u64 {
+			let mut weight = size_of::<Self>() as u64;
+			for e in &self.0 {
+				weight += e.weight();
+			}
+
+			weight
+		}
+
+		pub fn consensus_events(&self) -> Vec<TransactionEvents> {
+			use frame_system::Phase;
+
+			let events: Vec<TransactionEvents> = self
+				.0
+				.iter()
+				.filter_map(|x| match &x.phase {
+					Phase::Finalization | Phase::Initialization => Some(x.clone()),
+					_ => None,
+				})
+				.collect();
+
+			events
+		}
+
+		pub fn tx_events(&self, tx_index: u32) -> Option<&TransactionEvents> {
+			use frame_system::Phase;
+
+			self.0
+				.iter()
+				.find(|x| x.phase == Phase::ApplyExtrinsic(tx_index))
+		}
+	}
+
+	#[derive(Debug, Clone)]
+	pub struct TransactionEvents {
+		pub phase: frame_system::Phase,
+		pub events: Vec<Event>,
+	}
+
+	impl From<RuntimeEntryEvents> for TransactionEvents {
+		fn from(value: RuntimeEntryEvents) -> Self {
+			let events_iter = value.events.into_iter();
+			let events = events_iter.map(Event::from).collect();
+			TransactionEvents {
+				phase: value.phase.clone(),
+				events,
+			}
+		}
+	}
+
+	impl TransactionEvents {
+		pub fn weight(&self) -> u64 {
+			let mut weight: u64 = size_of::<Self>() as u64;
+			for e in &self.events {
+				weight += e.weight();
+			}
+
+			weight as u64
+		}
+	}
+
+	#[derive(Debug, Clone)]
+	pub struct Event {
+		pub index: u32,
+		// (Pallet Id, Event Id)
+		pub emitted_index: (u8, u8),
+		pub encoded: String,
+		pub decoded: Option<DecodedEventData>,
+	}
+
+	impl Event {
+		pub fn weight(&self) -> u64 {
+			let mut weight: usize = size_of::<Self>();
+			weight += self.encoded.len();
+
+			weight as u64
+		}
+
+		pub fn to_tx_rpc_event(
+			&self,
+			enable_decoding: bool,
+		) -> transaction_rpc::common::events::Event {
+			use transaction_rpc::common::events::Event;
+			let decoded = enable_decoding.then(|| self.decoded.clone()).flatten();
+			Event {
+				index: self.index,
+				emitted_index: self.emitted_index,
+				decoded,
+			}
+		}
+	}
+
+	impl From<RuntimeEvent> for Event {
+		fn from(value: RuntimeEvent) -> Self {
+			let decoded = decoding::parse_decoded_event(&value);
+			let encoded = if let Some(enc) = &value.encoded {
+				std::format!("0x{}", hex::encode(enc))
+			} else {
+				String::new()
+			};
+
+			Event {
+				index: value.index,
+				emitted_index: value.emitted_index,
+				encoded,
+				decoded,
+			}
+		}
+	}
+}
+
+use std::{collections::HashMap, hash::Hash};
+
+pub struct CachedValue<K: Hash + Eq, V: Clone> {
+	value: HashMap<K, V>,
+	current_weight: u64,
+	max_weight: u64,
+	calculate_weight: Box<dyn Fn(&V) -> u64 + Send + Sync + 'static>,
+}
+
+impl<K: Hash + Eq, V: Clone> CachedValue<K, V> {
+	pub fn new(
+		max_weight: u64,
+		calculate_weight: Box<dyn Fn(&V) -> u64 + Send + Sync + 'static>,
+	) -> Self {
+		Self {
+			value: HashMap::new(),
+			current_weight: 0,
+			max_weight,
+			calculate_weight,
+		}
+	}
+
+	pub fn insert(&mut self, key: K, value: &V) {
+		let weight = (self.calculate_weight)(value);
+
+		if weight > self.max_weight {
+			return;
+		}
+
+		if (weight + self.current_weight) > self.max_weight {
+			self.value.clear();
+			self.current_weight = 0;
+		}
+
+		self.current_weight += weight;
+		self.value.insert(key, value.clone());
+	}
+
+	pub fn get(&self, key: &K) -> Option<&V> {
+		self.value.get(key)
 	}
 }

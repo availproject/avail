@@ -320,7 +320,12 @@ pub fn new_partial(
 		workers_deps.indexer = Some(deps)
 	}
 
-	if workers_cli_deps.block_explorer.enabled {
+	if workers_cli_deps.block_explorer.data_enabled
+		|| workers_cli_deps.block_explorer.overview_enabled
+	{
+		let data_enabled = workers_cli_deps.block_explorer.data_enabled;
+		let overview_enabled = workers_cli_deps.block_explorer.overview_enabled;
+
 		let (overview_search_send, overview_search_recv) =
 			channel::<transaction_rpc::block_overview::Channel>(
 				workers::block_explorer::RPC_CHANNEL_LIMIT,
@@ -335,10 +340,12 @@ pub fn new_partial(
 			overview_receiver: overview_search_recv,
 			data_receiver: data_search_recv,
 			notifier: notifier.clone(),
+			cli: workers_cli_deps.block_explorer.clone(),
 		};
 
-		transaction_rpc_deps.block_overview_sender = Some(overview_search_send);
-		transaction_rpc_deps.block_data_sender = Some(data_search_send);
+		transaction_rpc_deps.block_overview_sender =
+			overview_enabled.then_some(overview_search_send);
+		transaction_rpc_deps.block_data_sender = data_enabled.then_some(data_search_send);
 		transaction_rpc_deps.block_notifier = Some(notifier);
 		workers_deps.block_explorer = Some(deps)
 	}
@@ -756,13 +763,19 @@ pub fn new_full(config: Configuration, cli: Cli) -> Result<TaskManager, ServiceE
 	};
 
 	let tx_state_cli_deps = workers::indexer::CliDeps {
-		enabled: cli.rpc_tx_overview_enabled,
+		enabled: cli.rpc_tx_overview,
 		result_length: cli.rpc_tx_overview_result_length,
 		block_pruning: cli.rpc_tx_overview_block_pruning,
 		logging_interval: cli.rpc_tx_overview_logging_interval,
 		event_cache_size: cli.rpc_tx_overview_event_cache_size,
 	};
-	let tx_data_cli_deps = workers::block_explorer::CliDeps { enabled: true };
+	let tx_data_cli_deps = workers::block_explorer::CliDeps {
+		data_enabled: cli.rpc_block_data,
+		overview_enabled: cli.rpc_block_overview,
+		event_cache_size: cli.rpc_block_explorer_event_cache_size,
+		tx_hash_cache_size: cli.rpc_block_explorer_event_cache_size,
+		call_cache_size: cli.rpc_block_explorer_event_cache_size,
+	};
 
 	let tx_cli_deps = workers::CliDeps {
 		block_explorer: tx_data_cli_deps,

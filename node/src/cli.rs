@@ -68,7 +68,7 @@ pub struct Cli {
 	/// Enable Transaction State RPC. This allows querying the transaction state (success or failure)
 	/// using only a transaction hash.
 	#[clap(long, default_value_t = false)]
-	pub rpc_tx_overview_enabled: bool,
+	pub rpc_tx_overview: bool,
 
 	/// The maximum number of results the transaction state RPC will return for a transaction hash.
 	/// If a transaction hash appears in multiple blocks, the RPC will return only the top `X` transaction states.  
@@ -92,8 +92,31 @@ pub struct Cli {
 
 	/// TODO
 	/// in kB
-	#[clap(long, default_value_t = 1000)]
+	#[clap(long, default_value_t = 10_000)]
 	pub rpc_tx_overview_event_cache_size: u64,
+
+	/// TODO
+	#[clap(long, default_value_t = false)]
+	pub rpc_block_overview: bool,
+
+	/// TODO
+	#[clap(long, default_value_t = false)]
+	pub rpc_block_data: bool,
+
+	/// TODO
+	/// in kB
+	#[clap(long, default_value_t = 1_000)]
+	pub rpc_block_explorer_tx_hash_cache_size: u64,
+
+	/// TODO
+	/// in kB
+	#[clap(long, default_value_t = 10_000)]
+	pub rpc_block_explorer_event_cache_size: u64,
+
+	/// TODO
+	/// in kB
+	#[clap(long, default_value_t = 100_000)]
+	pub rpc_block_explorer_call_cache_size: u64,
 }
 
 fn more_or_euqal_than_10(s: &str) -> Result<usize, String> {

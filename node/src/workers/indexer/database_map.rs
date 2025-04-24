@@ -37,7 +37,7 @@ impl Database {
 	}
 
 	pub fn add_block(&mut self, new_block: BlockDetails) {
-		let block_id = BlockIdentifier::from((new_block.block_hash, new_block.block_height));
+		let block_id = new_block.block_id;
 		let block_index: u32 = self.get_or_create_block_index(block_id);
 
 		// Clean up Included Tx

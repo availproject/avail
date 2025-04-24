@@ -5,7 +5,6 @@ mod database_worker;
 
 use super::common::read_pallet_call_index;
 use avail_core::OpaqueExtrinsic;
-pub use block_worker::BlockWorker;
 use codec::Encode;
 use da_runtime::UncheckedExtrinsic;
 pub use database_worker::DatabaseWorker;
@@ -13,17 +12,19 @@ use jsonrpsee::tokio::sync::{mpsc, Notify};
 use serde::{Deserialize, Serialize};
 use sp_core::{Blake2Hasher, Hasher, H256};
 use std::sync::Arc;
-use transaction_rpc::transaction_overview;
+use transaction_rpc::{transaction_overview, BlockIdentifier};
+
+pub use block_worker::BlockWorker;
 
 pub type Channel = BlockDetails;
 pub type Receiver = mpsc::Receiver<BlockDetails>;
 pub type Sender = mpsc::Sender<BlockDetails>;
 
-pub(crate) const BLOCK_CHANNEL_LIMIT: usize = 100;
-pub(crate) const RPC_CHANNEL_LIMIT: usize = 20_000;
-pub(crate) const DATABASE_SIZE_BUFFER: usize = 180; // in blocks. cca every one hour
-pub(crate) const NODE_SYNC_SLEEP_INTERVAL: u64 = 30; // in s
-pub(crate) const WORKER_SLEEP_ON_FETCH: u64 = 1000; // in ms
+pub const BLOCK_CHANNEL_LIMIT: usize = 100;
+pub const RPC_CHANNEL_LIMIT: usize = 20_000;
+pub const DATABASE_SIZE_BUFFER: usize = 180; // in blocks. cca every one hour
+pub const NODE_SYNC_SLEEP_INTERVAL: u64 = 30; // in s
+pub const WORKER_SLEEP_ON_FETCH: u64 = 1000; // in ms
 
 #[derive(Clone, Default)]
 pub struct CliDeps {
@@ -45,8 +46,7 @@ pub struct Deps {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BlockDetails {
-	pub block_hash: H256,
-	pub block_height: u32,
+	pub block_id: BlockIdentifier,
 	pub finalized: bool,
 	pub transactions: Vec<TransactionDetails>,
 }
@@ -54,8 +54,7 @@ pub struct BlockDetails {
 impl BlockDetails {
 	pub fn from_opaques(
 		opaques: Vec<OpaqueExtrinsic>,
-		block_hash: H256,
-		block_height: u32,
+		block_id: BlockIdentifier,
 		finalized: bool,
 	) -> Self {
 		let mut transactions: Vec<TransactionDetails> = Vec::with_capacity(opaques.len());
@@ -76,8 +75,7 @@ impl BlockDetails {
 		}
 
 		BlockDetails {
-			block_hash,
-			block_height,
+			block_id,
 			finalized,
 			transactions,
 		}

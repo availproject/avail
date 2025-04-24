@@ -2,12 +2,7 @@ use super::{
 	cache::{Cache, Cacheable, SharedCache},
 	database_map, CliDeps, Deps, DATABASE_SIZE_BUFFER,
 };
-use crate::workers::{
-	cache::CachedEntryEvents,
-	common::{self, Timer, TxIdentifier},
-	macros::profile,
-	NodeContext,
-};
+use crate::workers::{macros::profile, NodeContext, Timer, TransactionEvents, TxIdentifier};
 use frame_system_rpc_runtime_api::SystemFetchEventsParams;
 use jsonrpsee::tokio;
 use sc_telemetry::log;
@@ -114,7 +109,7 @@ impl DatabaseWorker {
 		Some(tx_events)
 	}
 
-	async fn tx_events(&mut self, id: TxIdentifier) -> Option<CachedEntryEvents> {
+	async fn tx_events(&mut self, id: TxIdentifier) -> Option<TransactionEvents> {
 		if let Some(cached) = self.cache.read_cached_events(&id) {
 			return Some(cached);
 		}
@@ -125,8 +120,8 @@ impl DatabaseWorker {
 			..Default::default()
 		};
 
-		let events = common::fetch_events(&self.ctx.handlers, id.block_hash, params).await?;
-		let events = events.tx_events(id.tx_index).cloned()?;
+		let all_tx_events = self.ctx.fetch_events(id.block_hash, params).await?;
+		let events = all_tx_events.tx_events(id.tx_index).cloned()?;
 		self.cache.write_cached_events(id, &events);
 
 		Some(events)

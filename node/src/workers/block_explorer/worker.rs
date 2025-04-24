@@ -3,10 +3,7 @@ use super::{
 	Deps,
 };
 use crate::workers::{
-	self,
-	cache::CachedEvents,
-	common::{NodeContext, Timer, TxIdentifier},
-	macros::profile,
+	self, macros::profile, AllTransactionEvents, NodeContext, Timer, TxIdentifier,
 };
 use avail_core::OpaqueExtrinsic;
 use codec::Encode;
@@ -35,7 +32,7 @@ pub struct Worker {
 
 impl Worker {
 	pub fn new(ctx: NodeContext, deps: Deps) -> Self {
-		let cache = Arc::new(RwLock::new(Cache::new()));
+		let cache = Arc::new(RwLock::new(Cache::new(&deps)));
 
 		Self {
 			ctx,
@@ -154,7 +151,7 @@ impl Worker {
 	async fn overview_task_transactions(
 		&mut self,
 		block_id: BlockIdentifier,
-		events: &Option<Arc<CachedEvents>>,
+		events: &Option<Arc<AllTransactionEvents>>,
 		params: &block_overview::Params,
 	) -> Result<Vec<block_overview::TransactionData>, String> {
 		let Some(block_body) = self.ctx.block_body_hash(block_id.hash) else {
@@ -176,7 +173,7 @@ impl Worker {
 
 	fn overview_task_consensus_events(
 		&mut self,
-		events: &Option<Arc<CachedEvents>>,
+		events: &Option<Arc<AllTransactionEvents>>,
 		params: &block_overview::Params,
 	) -> Option<block_overview::ConsensusEvents> {
 		if params.extension.enable_consensus_event {
@@ -216,7 +213,10 @@ impl Worker {
 		}
 	}
 
-	async fn block_events(&mut self, block_hash: H256) -> Result<Arc<CachedEvents>, String> {
+	async fn block_events(
+		&mut self,
+		block_hash: H256,
+	) -> Result<Arc<AllTransactionEvents>, String> {
 		if let Some(cached) = self.cache.read_cached_events(&block_hash) {
 			return Ok(cached);
 		}
@@ -227,8 +227,7 @@ impl Worker {
 			..Default::default()
 		};
 
-		let events = workers::common::fetch_events(&self.ctx.handlers, block_hash, params).await;
-		let Some(events) = events else {
+		let Some(events) = self.ctx.fetch_events(block_hash, params).await else {
 			return Err("Failed to fetch events.".into());
 		};
 
@@ -259,7 +258,7 @@ impl Worker {
 
 fn read_consensus_events(
 	enable_decoding: bool,
-	events: &Arc<CachedEvents>,
+	events: &Arc<AllTransactionEvents>,
 ) -> block_overview::ConsensusEvents {
 	use block_overview::{ConsensusEvent, ConsensusEventPhase};
 
@@ -322,7 +321,7 @@ fn iter_overview_opaque(
 	opaq: &OpaqueExtrinsic,
 	cache: SharedCache,
 	params: &block_overview::Params,
-	events: &Option<Arc<CachedEvents>>,
+	events: &Option<Arc<AllTransactionEvents>>,
 ) -> Option<block_overview::TransactionData> {
 	let filter = &params.filter;
 	filter.transaction.filter_in_tx_index(tx_id.tx_index)?;
@@ -373,7 +372,7 @@ fn iter_overview_opaque(
 fn iter_overview_opaque_events(
 	tx_id: TxIdentifier,
 	params: &block_overview::Params,
-	events: &Option<Arc<CachedEvents>>,
+	events: &Option<Arc<AllTransactionEvents>>,
 ) -> Option<Option<transaction_rpc::common::Events>> {
 	use block_overview::TransactionFilterOptions;
 	let enable_decoding = params.extension.enable_event_decoding;

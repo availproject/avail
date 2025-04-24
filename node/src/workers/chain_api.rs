@@ -3,7 +3,7 @@ use frame_system_rpc_runtime_api::{SystemFetchEventsParams, SystemFetchEventsRes
 use sc_service::RpcHandlers;
 use sp_core::{bytes::from_hex, H256};
 
-pub(crate) async fn system_fetch_events(
+pub async fn system_fetch_events(
 	handlers: &RpcHandlers,
 	params: SystemFetchEventsParams,
 	block_hash: &H256,
@@ -30,7 +30,7 @@ pub(crate) async fn system_fetch_events(
 	Some(res)
 }
 
-pub(crate) async fn system_fetch_sync_status(handler: &RpcHandlers) -> Option<bool> {
+pub async fn system_fetch_sync_status(handler: &RpcHandlers) -> Option<bool> {
 	let query = r#"{
 					"jsonrpc": "2.0",
 					"method": "system_health",
