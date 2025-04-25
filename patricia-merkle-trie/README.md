@@ -1,6 +1,6 @@
 # Merkle Patricia Trie
 
-This library allows users to verify ethereum style merkle patricia proofs as specified in this document: https://ethereum.github.io/execution-specs/autoapi/ethereum/frontier/trie/index.html
+This library allows users to verify ethereum style merkle patricia proofs as specified in this document: [https://ethereum.github.io/execution-specs/autoapi/ethereum/frontier/trie/index.html](https://web.archive.org/web/20231004194342/https://ethereum.github.io/execution-specs/autoapi/ethereum/frontier/trie/index.html)
 
 ```rust
 use patricia_merkle_trie::{
