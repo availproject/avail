@@ -6,6 +6,7 @@
 <br>
 
 [![Build status](https://github.com/availproject/avail/actions/workflows/default.yml/badge.svg)](https://github.com/availproject/avail/actions/workflows/default.yml)
+[![Code coverage](https://codecov.io/gh/availproject/avail/branch/main/graph/badge.svg?token=7O2EA7QMC2)](https://app.codecov.io/gh/availproject/avail)
 
 
 ![demo](./.github/img/terminal.jpg)
