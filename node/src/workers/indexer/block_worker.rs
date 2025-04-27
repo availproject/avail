@@ -1,10 +1,9 @@
 use super::*;
-use crate::workers::{chain_api, common::NodeContext, macros::profile};
-use jsonrpsee::tokio::{self, sync::Notify};
+use crate::workers::{common::NodeContext, macros::profile};
+use jsonrpsee::tokio::sync::Notify;
 use sc_telemetry::log;
 use sp_core::H256;
-use std::{sync::Arc, time::Duration};
-use tokio::time::sleep;
+use std::sync::Arc;
 
 pub struct BlockWorker {
 	ctx: NodeContext,
@@ -26,7 +25,7 @@ impl BlockWorker {
 	}
 
 	pub async fn run(self, index_finalized_blocks: bool) {
-		if self.wait_for_sync().await.is_err() {
+		if self.ctx.wait_for_sync().await.is_err() {
 			self.log("Failed to wait for sync");
 			return;
 		}
@@ -40,7 +39,7 @@ impl BlockWorker {
 	async fn index_new_blocks(self) {
 		let mut current_block_hash = H256::default();
 		loop {
-			let block_id = self.wait_for_new_best_block(current_block_hash).await;
+			let block_id = self.ctx.wait_for_new_best_block(current_block_hash).await;
 			current_block_hash = block_id.hash;
 
 			let Some(opaques) = self.ctx.block_body_hash(block_id.hash) else {
@@ -67,7 +66,7 @@ impl BlockWorker {
 		self.log(&message);
 
 		loop {
-			self.wait_for_new_finalized_block(block_height).await;
+			self.ctx.wait_for_new_finalized_block(block_height).await;
 			let Some((opaques, block_id)) = self.ctx.block_body(block_height) else {
 				block_height += 1;
 				continue;
@@ -117,44 +116,6 @@ impl BlockWorker {
 		}
 
 		(finalized_height + 1, self.cli.block_pruning - limit)
-	}
-
-	async fn wait_for_sync(&self) -> Result<(), ()> {
-		loop {
-			let status = chain_api::system_fetch_sync_status(&self.ctx.handlers).await;
-			match status {
-				Some(true) => (),
-				Some(false) => return Ok(()),
-				None => return Err(()),
-			}
-
-			sleep(Duration::from_secs(NODE_SYNC_SLEEP_INTERVAL)).await;
-		}
-	}
-
-	async fn wait_for_new_best_block(&self, current_block_hash: H256) -> BlockIdentifier {
-		loop {
-			let chain_info = self.ctx.client.chain_info();
-			let (block_hash, block_height) = (chain_info.best_hash, chain_info.best_number);
-			if current_block_hash.eq(&block_hash) {
-				sleep(Duration::from_millis(WORKER_SLEEP_ON_FETCH)).await;
-				continue;
-			}
-
-			return BlockIdentifier::from((block_hash, block_height));
-		}
-	}
-
-	async fn wait_for_new_finalized_block(&self, height: u32) {
-		loop {
-			let chain_info = self.ctx.client.chain_info();
-			if height > chain_info.finalized_number {
-				sleep(Duration::from_millis(WORKER_SLEEP_ON_FETCH)).await;
-				continue;
-			}
-
-			break;
-		}
 	}
 
 	fn log(&self, message: &str) {

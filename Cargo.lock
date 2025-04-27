@@ -1005,6 +1005,7 @@ dependencies = [
  "async-trait",
  "avail-base",
  "avail-core",
+ "block-rpc",
  "clap 4.5.26",
  "clap-num",
  "clap_complete",
@@ -1076,7 +1077,6 @@ dependencies = [
  "substrate-state-trie-migration-rpc",
  "tempfile",
  "testing-rpc",
- "transaction-rpc",
  "try-runtime-cli",
 ]
 
@@ -1412,6 +1412,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3078c7629b62d3f0439517fa394996acacc5cbc91c5a20d8c658e77abd503a71"
 dependencies = [
  "generic-array 0.14.7",
+]
+
+[[package]]
+name = "block-rpc"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "avail-base",
+ "jsonrpsee",
+ "serde",
+ "sp-core",
 ]
 
 [[package]]
@@ -13353,17 +13364,6 @@ dependencies = [
  "tracing",
  "tracing-core",
  "tracing-log 0.2.0",
-]
-
-[[package]]
-name = "transaction-rpc"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "avail-base",
- "jsonrpsee",
- "serde",
- "sp-core",
 ]
 
 [[package]]

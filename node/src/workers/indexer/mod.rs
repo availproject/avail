@@ -5,6 +5,7 @@ mod database_worker;
 
 use super::common::read_pallet_call_index;
 use avail_core::OpaqueExtrinsic;
+use block_rpc::{transaction_overview, BlockIdentifier};
 use codec::Encode;
 use da_runtime::UncheckedExtrinsic;
 pub use database_worker::DatabaseWorker;
@@ -12,7 +13,6 @@ use jsonrpsee::tokio::sync::{mpsc, Notify};
 use serde::{Deserialize, Serialize};
 use sp_core::{Blake2Hasher, Hasher, H256};
 use std::sync::Arc;
-use transaction_rpc::{transaction_overview, BlockIdentifier};
 
 pub use block_worker::BlockWorker;
 
@@ -23,8 +23,6 @@ pub type Sender = mpsc::Sender<BlockDetails>;
 pub const BLOCK_CHANNEL_LIMIT: usize = 100;
 pub const RPC_CHANNEL_LIMIT: usize = 20_000;
 pub const DATABASE_SIZE_BUFFER: usize = 180; // in blocks. cca every one hour
-pub const NODE_SYNC_SLEEP_INTERVAL: u64 = 30; // in s
-pub const WORKER_SLEEP_ON_FETCH: u64 = 1000; // in ms
 
 #[derive(Clone, Default)]
 pub struct CliDeps {

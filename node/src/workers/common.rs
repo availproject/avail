@@ -1,9 +1,12 @@
 use super::chain_api;
 use crate::service::FullClient;
 use avail_core::OpaqueExtrinsic;
+use block_rpc::common::events::DecodedEventData;
+use block_rpc::BlockIdentifier;
 use codec::Encode;
 use da_runtime::UncheckedExtrinsic;
 use frame_system_rpc_runtime_api::SystemFetchEventsParams;
+use jsonrpsee::tokio::time::sleep;
 use sc_service::RpcHandlers;
 use sp_core::H256;
 use sp_runtime::AccountId32;
@@ -12,10 +15,11 @@ use std::{
 	sync::Arc,
 	time::{Duration, Instant},
 };
-use transaction_rpc::common::events::DecodedEventData;
-use transaction_rpc::BlockIdentifier;
 
 pub use events::*;
+
+pub const SLEEP_ON_FETCH: Duration = Duration::from_secs(1);
+pub const SLEEP_ON_SYNC: Duration = Duration::from_secs(30);
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct TxIdentifier {
@@ -74,6 +78,48 @@ impl NodeContext {
 		let cached_tx_events = runtime_events.map(TransactionEvents::from).collect();
 
 		Some(AllTransactionEvents(cached_tx_events))
+	}
+
+	pub async fn fetch_sync_status(&self) -> Option<bool> {
+		chain_api::system_fetch_sync_status(&self.handlers).await
+	}
+
+	pub async fn wait_for_sync(&self) -> Result<(), ()> {
+		loop {
+			let status = self.fetch_sync_status().await;
+			match status {
+				Some(true) => (),
+				Some(false) => return Ok(()),
+				None => return Err(()),
+			}
+
+			sleep(SLEEP_ON_SYNC).await;
+		}
+	}
+
+	pub async fn wait_for_new_best_block(&self, current_block_hash: H256) -> BlockIdentifier {
+		loop {
+			let chain_info = self.client.chain_info();
+			let (block_hash, block_height) = (chain_info.best_hash, chain_info.best_number);
+			if current_block_hash.eq(&block_hash) {
+				sleep(SLEEP_ON_FETCH).await;
+				continue;
+			}
+
+			return BlockIdentifier::from((block_hash, block_height));
+		}
+	}
+
+	pub async fn wait_for_new_finalized_block(&self, expected_height: u32) {
+		loop {
+			let chain_info = self.client.chain_info();
+			if expected_height > chain_info.finalized_number {
+				sleep(SLEEP_ON_FETCH).await;
+				continue;
+			}
+
+			break;
+		}
 	}
 }
 
@@ -168,7 +214,7 @@ pub mod decoding {
 			data_availability::PALLET_ID => {
 				if event_id == data_availability::DATA_SUBMITTED {
 					let value = DataSubmitted::decode_all(&mut decoded.as_slice()).ok()?;
-					let data = transaction_rpc::common::events::DataSubmitted {
+					let data = block_rpc::common::events::DataSubmitted {
 						who: std::format!("{}", value.who),
 						data_hash: std::format!("{:?}", value.data_hash),
 					};
@@ -179,7 +225,7 @@ pub mod decoding {
 			multisig::PALLET_ID => {
 				if event_id == multisig::MULTISIG_EXECUTED {
 					let data = MultisigExecuted::decode_all(&mut decoded.as_slice()).ok()?;
-					let data = transaction_rpc::common::events::MultisigExecuted {
+					let data = block_rpc::common::events::MultisigExecuted {
 						multisig: std::format!("{}", data.multisig),
 						call_hash: std::format!("{:?}", data.call_hash),
 						result: data.result,
@@ -287,11 +333,8 @@ pub mod events {
 			weight as u64
 		}
 
-		pub fn to_tx_rpc_event(
-			&self,
-			enable_decoding: bool,
-		) -> transaction_rpc::common::events::Event {
-			use transaction_rpc::common::events::Event;
+		pub fn to_tx_rpc_event(&self, enable_decoding: bool) -> block_rpc::common::events::Event {
+			use block_rpc::common::events::Event;
 			let decoded = enable_decoding.then(|| self.decoded.clone()).flatten();
 			Event {
 				index: self.index,

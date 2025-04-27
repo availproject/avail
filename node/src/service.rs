@@ -296,11 +296,11 @@ pub fn new_partial(
 
 	let import_setup = (da_block_import, grandpa_link, babe_link);
 
-	let mut transaction_rpc_deps = transaction_rpc::Deps::default();
+	let mut transaction_rpc_deps = block_rpc::Deps::default();
 	let mut workers_deps = workers::Deps::default();
 
 	if workers_cli_deps.indexer.enabled {
-		let (tx_send, tx_recv) = channel::<transaction_rpc::transaction_overview::Channel>(
+		let (tx_send, tx_recv) = channel::<block_rpc::transaction_overview::Channel>(
 			workers::indexer::RPC_CHANNEL_LIMIT,
 		);
 		let (block_send, block_recv) =
@@ -327,13 +327,12 @@ pub fn new_partial(
 		let overview_enabled = workers_cli_deps.block_explorer.overview_enabled;
 
 		let (overview_search_send, overview_search_recv) =
-			channel::<transaction_rpc::block_overview::Channel>(
+			channel::<block_rpc::block_overview::Channel>(
 				workers::block_explorer::RPC_CHANNEL_LIMIT,
 			);
 
-		let (data_search_send, data_search_recv) = channel::<transaction_rpc::block_data::Channel>(
-			workers::block_explorer::RPC_CHANNEL_LIMIT,
-		);
+		let (data_search_send, data_search_recv) =
+			channel::<block_rpc::block_data::Channel>(workers::block_explorer::RPC_CHANNEL_LIMIT);
 
 		let notifier = Arc::new(Notify::new());
 		let deps = workers::block_explorer::Deps {
@@ -389,7 +388,7 @@ pub fn new_partial(
 					finality_provider: finality_proof_provider.clone(),
 				},
 				kate_rpc_deps: kate_rpc_deps.clone(),
-				transaction_rpc_deps: transaction_rpc_deps.clone(),
+				block_rpc_deps: transaction_rpc_deps.clone(),
 			};
 
 			node_rpc::create_full(deps, rpc_backend.clone()).map_err(Into::into)

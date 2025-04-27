@@ -40,8 +40,8 @@ pub trait Api {
 	#[method(name = "block_data")]
 	async fn block_data(&self, params: block_data::Params) -> RpcResult<block_data::ResponseDebug>;
 
-	#[method(name = "block_service_enabled")]
-	async fn block_service_enabled(&self) -> RpcResult<common::EnabledServices>;
+	#[method(name = "block_services")]
+	async fn services(&self) -> RpcResult<common::EnabledServices>;
 }
 
 pub struct RPC {
@@ -70,23 +70,18 @@ impl ApiServer for RPC {
 		&self,
 		params: transaction_overview::Params,
 	) -> RpcResult<transaction_overview::ResponseDebug> {
-		let now = std::time::Instant::now();
+		const DISABLED: &str = "Transaction Overview RPC service disabled";
+
 		let Some(sender) = self.transaction_overview_sender.as_ref() else {
-			return Err(internal_error(String::from(
-				"Transaction Overview RPC service disabled",
-			)));
+			return Err(internal_error(DISABLED.into()));
 		};
-
 		let Some(notifier) = self.transaction_overview_notifier.as_ref() else {
-			return Err(internal_error(String::from(
-				"Transaction Overview RPC service disabled",
-			)));
+			return Err(internal_error(DISABLED.into()));
 		};
 
+		let now = std::time::Instant::now();
 		let (response_tx, response_rx) = oneshot::channel();
-
-		let res = sender.send((params, response_tx)).await;
-		if let Err(e) = res {
+		if let Err(e) = sender.send((params, response_tx)).await {
 			return Err(internal_error(e.to_string()));
 		}
 
@@ -112,28 +107,22 @@ impl ApiServer for RPC {
 		&self,
 		params: block_overview::Params,
 	) -> RpcResult<block_overview::ResponseDebug> {
-		let now = std::time::Instant::now();
+		const DISABLED: &str = "Block Overview RPC service disabled";
+
 		let Some(sender) = self.block_overview_sender.as_ref() else {
-			return Err(internal_error(String::from(
-				"Block Overview RPC service disabled",
-			)));
+			return Err(internal_error(DISABLED.into()));
 		};
-
 		let Some(notifier) = self.block_notifier.as_ref() else {
-			return Err(internal_error(String::from(
-				"Block Overview RPC service disabled",
-			)));
+			return Err(internal_error(DISABLED.into()));
 		};
 
+		let now = std::time::Instant::now();
 		let (response_tx, response_rx) = oneshot::channel();
-
-		let res = sender.send((params, response_tx)).await;
-		if let Err(e) = res {
+		if let Err(e) = sender.send((params, response_tx)).await {
 			return Err(internal_error(e.to_string()));
 		}
 
 		notifier.notify_one();
-
 		let res = match response_rx.await {
 			Ok(x) => x,
 			Err(e) => return Err(internal_error(e.to_string())),
@@ -154,28 +143,22 @@ impl ApiServer for RPC {
 	}
 
 	async fn block_data(&self, params: block_data::Params) -> RpcResult<block_data::ResponseDebug> {
-		let now = std::time::Instant::now();
+		const DISABLED: &str = "Block Data RPC service disabled";
+
 		let Some(sender) = self.block_data_sender.as_ref() else {
-			return Err(internal_error(String::from(
-				"Block Data RPC service disabled",
-			)));
+			return Err(internal_error(DISABLED.into()));
 		};
-
 		let Some(notifier) = self.block_notifier.as_ref() else {
-			return Err(internal_error(String::from(
-				"Block Overview RPC service disabled",
-			)));
+			return Err(internal_error(DISABLED.into()));
 		};
 
+		let now = std::time::Instant::now();
 		let (response_tx, response_rx) = oneshot::channel();
-
-		let res = sender.send((params, response_tx)).await;
-		if let Err(e) = res {
+		if let Err(e) = sender.send((params, response_tx)).await {
 			return Err(internal_error(e.to_string()));
 		}
 
 		notifier.notify_one();
-
 		let res = match response_rx.await {
 			Ok(x) => x,
 			Err(e) => return Err(internal_error(e.to_string())),
@@ -195,7 +178,7 @@ impl ApiServer for RPC {
 		}
 	}
 
-	async fn block_service_enabled(&self) -> RpcResult<common::EnabledServices> {
+	async fn services(&self) -> RpcResult<common::EnabledServices> {
 		Ok(common::EnabledServices {
 			transaction_overview: self.transaction_overview_sender.is_some(),
 			block_overview: self.block_overview_sender.is_some(),

@@ -3,6 +3,7 @@ use super::{
 	database_map, CliDeps, Deps, DATABASE_SIZE_BUFFER,
 };
 use crate::workers::{macros::profile, NodeContext, Timer, TransactionEvents, TxIdentifier};
+use block_rpc::transaction_overview;
 use frame_system_rpc_runtime_api::SystemFetchEventsParams;
 use jsonrpsee::tokio;
 use sc_telemetry::log;
@@ -11,7 +12,6 @@ use std::{
 	time::Duration,
 };
 use tokio::sync::Notify;
-use transaction_rpc::transaction_overview;
 
 pub struct DatabaseWorker {
 	ctx: NodeContext,
@@ -98,7 +98,7 @@ impl DatabaseWorker {
 		&mut self,
 		id: TxIdentifier,
 		enable_decoding: bool,
-	) -> Option<transaction_rpc::common::events::Events> {
+	) -> Option<block_rpc::common::events::Events> {
 		let event_entry = self.tx_events(id).await?;
 
 		let mut tx_events = Vec::with_capacity(event_entry.events.len());

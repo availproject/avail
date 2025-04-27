@@ -105,7 +105,7 @@ pub struct FullDeps<C, P, SC, B> {
 	///
 	/// Available configs:
 	/// - TxStateSender,
-	pub transaction_rpc_deps: transaction_rpc::Deps,
+	pub block_rpc_deps: block_rpc::Deps,
 }
 
 /// Instantiate all Full RPC extensions.
@@ -155,7 +155,7 @@ where
 		babe,
 		grandpa,
 		kate_rpc_deps,
-		transaction_rpc_deps,
+		block_rpc_deps: transaction_rpc_deps,
 	} = deps;
 
 	let BabeDeps {
@@ -245,9 +245,9 @@ where
 		|| transaction_rpc_deps.block_overview_sender.is_some()
 		|| transaction_rpc_deps.block_data_sender.is_some()
 	{
-		io.merge(transaction_rpc::ApiServer::into_rpc(
-			transaction_rpc::RPC::new(transaction_rpc_deps),
-		))?;
+		io.merge(block_rpc::ApiServer::into_rpc(block_rpc::RPC::new(
+			transaction_rpc_deps,
+		)))?;
 	}
 
 	#[cfg(feature = "testing-environment")]

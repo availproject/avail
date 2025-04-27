@@ -3,9 +3,9 @@ mod worker;
 
 pub use worker::Worker;
 
+use block_rpc::{block_data, block_overview};
 use jsonrpsee::tokio::sync::Notify;
 use std::sync::Arc;
-use transaction_rpc::{block_data, block_overview};
 
 pub const RPC_CHANNEL_LIMIT: usize = 20_000;
 

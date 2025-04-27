@@ -6,6 +6,11 @@ use crate::workers::{
 	self, macros::profile, AllTransactionEvents, NodeContext, Timer, TxIdentifier,
 };
 use avail_core::OpaqueExtrinsic;
+use block_rpc::{
+	block_data, block_overview,
+	common::{BlockState, Event, HashIndex},
+	BlockIdentifier,
+};
 use codec::Encode;
 use da_runtime::UncheckedExtrinsic;
 use frame_system_rpc_runtime_api::SystemFetchEventsParams;
@@ -16,11 +21,6 @@ use sp_core::{Blake2Hasher, Hasher, H256};
 use sp_runtime::MultiAddress;
 use std::sync::{Arc, RwLock};
 use std::time::Duration;
-use transaction_rpc::{
-	block_data, block_overview,
-	common::{BlockState, Event, HashIndex},
-	BlockIdentifier,
-};
 
 pub struct Worker {
 	ctx: NodeContext,
@@ -373,7 +373,7 @@ fn iter_overview_opaque_events(
 	tx_id: TxIdentifier,
 	params: &block_overview::Params,
 	events: &Option<Arc<AllTransactionEvents>>,
-) -> Option<Option<transaction_rpc::common::Events>> {
+) -> Option<Option<block_rpc::common::Events>> {
 	use block_overview::TransactionFilterOptions;
 	let enable_decoding = params.extension.enable_event_decoding;
 	let filter = &params.filter;

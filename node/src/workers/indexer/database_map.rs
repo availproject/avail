@@ -1,7 +1,7 @@
 use super::{BlockDetails, CliDeps, TransactionDetails};
+use block_rpc::{transaction_overview, BlockIdentifier};
 use sp_core::H256;
 use std::{cmp::Ordering, collections::HashMap};
-use transaction_rpc::{transaction_overview, BlockIdentifier};
 
 type BlockMap = HashMap<u32, BlockIdentifier>;
 
