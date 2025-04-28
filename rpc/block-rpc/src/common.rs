@@ -3,6 +3,11 @@ use sp_core::H256;
 
 pub use events::{DecodedEventData, Event, Events};
 
+// (Pallet id, Call Id)
+pub type DispatchIndex = (u8, u8);
+// (Pallet id, Event Id)
+pub type EmittedIndex = (u8, u8);
+
 #[derive(Clone, Copy, Serialize, Deserialize)]
 pub struct EnabledServices {
 	pub transaction_overview: bool,
@@ -27,6 +32,21 @@ impl From<(H256, u32)> for BlockIdentifier {
 		Self {
 			hash: value.0,
 			height: value.1,
+		}
+	}
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct TransactionLocation {
+	pub hash: H256,
+	pub index: u32,
+}
+
+impl From<(H256, u32)> for TransactionLocation {
+	fn from(value: (H256, u32)) -> Self {
+		Self {
+			hash: value.0,
+			index: value.1,
 		}
 	}
 }
@@ -72,12 +92,16 @@ pub mod events {
 	#[derive(Debug, Clone, Serialize, Deserialize)]
 	pub struct Event {
 		pub index: u32,
-		pub emitted_index: (u8, u8),
+		pub emitted_index: EmittedIndex,
 		pub decoded: Option<DecodedEventData>,
 	}
 
 	impl Event {
-		pub fn new(index: u32, emitted_index: (u8, u8), decoded: Option<DecodedEventData>) -> Self {
+		pub fn new(
+			index: u32,
+			emitted_index: EmittedIndex,
+			decoded: Option<DecodedEventData>,
+		) -> Self {
 			Self {
 				index,
 				emitted_index,

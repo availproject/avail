@@ -2,6 +2,7 @@ use super::chain_api;
 use crate::service::FullClient;
 use avail_core::OpaqueExtrinsic;
 use block_rpc::common::events::DecodedEventData;
+use block_rpc::common::DispatchIndex;
 use block_rpc::BlockIdentifier;
 use codec::Encode;
 use da_runtime::UncheckedExtrinsic;
@@ -22,12 +23,12 @@ pub const SLEEP_ON_FETCH: Duration = Duration::from_secs(1);
 pub const SLEEP_ON_SYNC: Duration = Duration::from_secs(30);
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
-pub struct TxIdentifier {
+pub struct TransactionId {
 	pub block_hash: H256,
 	pub tx_index: u32,
 }
 
-impl From<(H256, u32)> for TxIdentifier {
+impl From<(H256, u32)> for TransactionId {
 	fn from(value: (H256, u32)) -> Self {
 		Self {
 			block_hash: value.0,
@@ -123,7 +124,7 @@ impl NodeContext {
 	}
 }
 
-pub fn read_pallet_call_index(ext: &UncheckedExtrinsic) -> Option<(u8, u8)> {
+pub fn read_pallet_call_index(ext: &UncheckedExtrinsic) -> Option<DispatchIndex> {
 	let ext = ext.function.encode();
 	if ext.len() < 2 {
 		return None;
@@ -247,6 +248,7 @@ pub mod decoding {
 }
 
 pub mod events {
+	use block_rpc::common::EmittedIndex;
 	use frame_system_rpc_runtime_api::events::{RuntimeEntryEvents, RuntimeEvent};
 
 	use super::*;
@@ -319,8 +321,7 @@ pub mod events {
 	#[derive(Debug, Clone)]
 	pub struct Event {
 		pub index: u32,
-		// (Pallet Id, Event Id)
-		pub emitted_index: (u8, u8),
+		pub emitted_index: EmittedIndex,
 		pub encoded: String,
 		pub decoded: Option<DecodedEventData>,
 	}

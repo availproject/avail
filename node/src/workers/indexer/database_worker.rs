@@ -2,7 +2,7 @@ use super::{
 	cache::{Cache, Cacheable, SharedCache},
 	database_map, CliDeps, Deps, DATABASE_SIZE_BUFFER,
 };
-use crate::workers::{macros::profile, NodeContext, Timer, TransactionEvents, TxIdentifier};
+use crate::workers::{macros::profile, NodeContext, Timer, TransactionEvents, TransactionId};
 use block_rpc::transaction_overview;
 use frame_system_rpc_runtime_api::SystemFetchEventsParams;
 use jsonrpsee::tokio;
@@ -86,7 +86,7 @@ impl DatabaseWorker {
 		if params.fetch_events {
 			let enable_decoding = params.enable_event_decoding;
 			for res in &mut response {
-				let id = TxIdentifier::from((res.block_id.hash, res.tx_index));
+				let id = TransactionId::from((res.block_id.hash, res.tx_location.index));
 				res.events = self.get_and_transform_events(id, enable_decoding).await
 			}
 		}
@@ -96,7 +96,7 @@ impl DatabaseWorker {
 
 	async fn get_and_transform_events(
 		&mut self,
-		id: TxIdentifier,
+		id: TransactionId,
 		enable_decoding: bool,
 	) -> Option<block_rpc::common::events::Events> {
 		let event_entry = self.tx_events(id).await?;
@@ -109,7 +109,7 @@ impl DatabaseWorker {
 		Some(tx_events)
 	}
 
-	async fn tx_events(&mut self, id: TxIdentifier) -> Option<TransactionEvents> {
+	async fn tx_events(&mut self, id: TransactionId) -> Option<TransactionEvents> {
 		if let Some(cached) = self.cache.read_cached_events(&id) {
 			return Some(cached);
 		}

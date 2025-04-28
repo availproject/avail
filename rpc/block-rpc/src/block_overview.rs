@@ -1,4 +1,5 @@
 use super::{common, BlockIdentifier, BlockState, HashIndex};
+use crate::common::{DispatchIndex, TransactionLocation};
 use jsonrpsee::tokio::sync::{mpsc, oneshot};
 use serde::{Deserialize, Serialize};
 use sp_core::H256;
@@ -64,24 +65,23 @@ pub struct ResponseDebug {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionData {
-	pub hash: H256,
-	pub index: u32,
-	// (Pallet id, Call Id)
-	pub dispatch_index: (u8, u8),
+	pub location: TransactionLocation,
+	pub dispatch_index: DispatchIndex,
 	pub signature: Option<TransactionSignature>,
 	pub decoded: Option<String>,
 	pub events: Option<common::Events>,
 }
 
 pub mod events {
+	use crate::common::EmittedIndex;
+
 	pub use super::*;
 	pub type ConsensusEvents = Vec<ConsensusEvent>;
 
 	#[derive(Debug, Clone, Serialize, Deserialize)]
 	pub struct ConsensusEvent {
 		pub phase: ConsensusEventPhase,
-		// (Pallet id, Event Id)
-		pub emitted_index: (u8, u8),
+		pub emitted_index: EmittedIndex,
 		pub decoded: Option<common::DecodedEventData>,
 	}
 
@@ -95,6 +95,8 @@ pub mod events {
 }
 
 pub mod filter {
+	use crate::common::EmittedIndex;
+
 	pub use super::*;
 
 	#[derive(Debug, Default, Clone, Serialize, Deserialize)]
@@ -111,8 +113,8 @@ pub mod filter {
 		TxHash(Vec<H256>),
 		TxIndex(Vec<u32>),
 		Pallet(Vec<u8>),
-		PalletCall(Vec<(u8, u8)>),
-		HasEvent(Vec<(u8, u8)>),
+		PalletCall(Vec<DispatchIndex>),
+		HasEvent(Vec<EmittedIndex>),
 	}
 
 	impl TransactionFilterOptions {
@@ -123,7 +125,7 @@ pub mod filter {
 			list.contains(&value).then_some(())
 		}
 
-		pub fn filter_in_pallet_call(&self, value: (u8, u8)) -> Option<()> {
+		pub fn filter_in_pallet_call(&self, value: DispatchIndex) -> Option<()> {
 			let TransactionFilterOptions::PalletCall(list) = self else {
 				return Some(());
 			};

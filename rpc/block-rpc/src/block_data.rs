@@ -1,4 +1,5 @@
 use super::{BlockIdentifier, BlockState, HashIndex};
+use crate::common::{DispatchIndex, EmittedIndex, TransactionLocation};
 use jsonrpsee::tokio::sync::{mpsc, oneshot};
 use serde::{Deserialize, Serialize};
 use sp_core::H256;
@@ -55,19 +56,20 @@ pub struct ResponseDebug {
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct CallData {
-	// (pallet id, call id)
-	pub dispatch_index: (u8, u8),
-	pub tx_index: u32,
-	pub tx_hash: H256,
+	pub tx_location: TransactionLocation,
+	pub dispatch_index: DispatchIndex,
 	pub call: String,
 }
 
 impl CallData {
-	pub fn new(dispatch_index: (u8, u8), tx_index: u32, tx_hash: H256, call: String) -> Self {
+	pub fn new(
+		tx_location: TransactionLocation,
+		dispatch_index: DispatchIndex,
+		call: String,
+	) -> Self {
 		Self {
+			tx_location,
 			dispatch_index,
-			tx_index,
-			tx_hash,
 			call,
 		}
 	}
@@ -76,13 +78,13 @@ impl CallData {
 #[derive(Clone, Serialize, Deserialize)]
 pub struct EventData {
 	// (pallet id, event id)
-	pub emitted_index: (u8, u8),
+	pub emitted_index: EmittedIndex,
 	pub phase: Phase,
 	pub event: String,
 }
 
 impl EventData {
-	pub fn new(emitted_index: (u8, u8), phase: Phase, event: String) -> Self {
+	pub fn new(emitted_index: EmittedIndex, phase: Phase, event: String) -> Self {
 		Self {
 			emitted_index,
 			phase,
@@ -118,7 +120,7 @@ pub mod filter {
 		TxHash(Vec<H256>),
 		TxIndex(Vec<u32>),
 		Pallet(Vec<u8>),
-		PalletCall(Vec<(u8, u8)>),
+		PalletCall(Vec<DispatchIndex>),
 	}
 
 	impl TransactionFilterOptions {
@@ -129,7 +131,7 @@ pub mod filter {
 			list.contains(&value).then_some(())
 		}
 
-		pub fn filter_in_pallet_call(&self, value: (u8, u8)) -> Option<()> {
+		pub fn filter_in_pallet_call(&self, value: DispatchIndex) -> Option<()> {
 			let TransactionFilterOptions::PalletCall(list) = self else {
 				return Some(());
 			};
@@ -212,7 +214,7 @@ pub mod filter {
 	pub enum PalletFilterOptions {
 		All,
 		Pallet(u8),
-		Combination(Vec<(u8, u8)>),
+		Combination(Vec<DispatchIndex>),
 	}
 
 	impl Default for PalletFilterOptions {

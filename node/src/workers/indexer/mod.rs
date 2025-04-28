@@ -5,13 +5,16 @@ mod database_worker;
 
 use super::common::read_pallet_call_index;
 use avail_core::OpaqueExtrinsic;
-use block_rpc::{transaction_overview, BlockIdentifier};
+use block_rpc::{
+	common::{DispatchIndex, TransactionLocation},
+	transaction_overview, BlockIdentifier,
+};
 use codec::Encode;
 use da_runtime::UncheckedExtrinsic;
 pub use database_worker::DatabaseWorker;
 use jsonrpsee::tokio::sync::{mpsc, Notify};
 use serde::{Deserialize, Serialize};
-use sp_core::{Blake2Hasher, Hasher, H256};
+use sp_core::{Blake2Hasher, Hasher};
 use std::sync::Arc;
 
 pub use block_worker::BlockWorker;
@@ -20,7 +23,7 @@ pub type Channel = BlockDetails;
 pub type Receiver = mpsc::Receiver<BlockDetails>;
 pub type Sender = mpsc::Sender<BlockDetails>;
 
-pub const BLOCK_CHANNEL_LIMIT: usize = 100;
+pub const BLOCK_CHANNEL_LIMIT: usize = 20_000;
 pub const RPC_CHANNEL_LIMIT: usize = 20_000;
 pub const DATABASE_SIZE_BUFFER: usize = 180; // in blocks. cca every one hour
 
@@ -68,7 +71,8 @@ impl BlockDetails {
 			};
 
 			let hash = Blake2Hasher::hash(&unchecked_ext.encode());
-			let info = TransactionDetails::new(hash, index as u32, dispatch_index);
+			let location = TransactionLocation::from((hash, index as u32));
+			let info = TransactionDetails::new(location, dispatch_index);
 			transactions.push(info);
 		}
 
@@ -82,17 +86,14 @@ impl BlockDetails {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionDetails {
-	pub hash: H256,
-	pub index: u32,
-	// (Pallet id, Call id)
-	pub dispatch_index: (u8, u8),
+	pub location: TransactionLocation,
+	pub dispatch_index: DispatchIndex,
 }
 
 impl TransactionDetails {
-	pub fn new(hash: H256, index: u32, dispatch_index: (u8, u8)) -> Self {
+	pub fn new(location: TransactionLocation, dispatch_index: DispatchIndex) -> Self {
 		Self {
-			hash,
-			index,
+			location,
 			dispatch_index,
 		}
 	}

@@ -4,7 +4,7 @@ mod macros;
 
 pub(crate) mod block_explorer;
 pub(crate) mod indexer;
-pub(crate) use common::{events::*, CachedValue, NodeContext, Timer, TxIdentifier};
+pub(crate) use common::{events::*, CachedValue, NodeContext, Timer, TransactionId};
 
 #[derive(Clone, Default)]
 pub struct CliDeps {

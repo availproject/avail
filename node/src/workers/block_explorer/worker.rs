@@ -3,12 +3,12 @@ use super::{
 	Deps,
 };
 use crate::workers::{
-	self, macros::profile, AllTransactionEvents, NodeContext, Timer, TxIdentifier,
+	self, macros::profile, AllTransactionEvents, NodeContext, Timer, TransactionId,
 };
 use avail_core::OpaqueExtrinsic;
 use block_rpc::{
 	block_data, block_overview,
-	common::{BlockState, Event, HashIndex},
+	common::{BlockState, Event, HashIndex, TransactionLocation},
 	BlockIdentifier,
 };
 use codec::Encode;
@@ -93,7 +93,7 @@ impl Worker {
 		let opaques = block_body.par_iter().enumerate();
 		let calls: Vec<block_data::CallData> = opaques
 			.filter_map(|(i, opaq)| {
-				let tx_id = TxIdentifier::from((block_id.hash, i as u32));
+				let tx_id = TransactionId::from((block_id.hash, i as u32));
 				iter_data_opaque(tx_id, opaq, self.cache.clone(), params)
 			})
 			.collect();
@@ -163,7 +163,7 @@ impl Worker {
 			.par_iter()
 			.enumerate()
 			.filter_map(|(i, opaq)| {
-				let tx_id = TxIdentifier::from((block_id.hash, i as u32));
+				let tx_id = TransactionId::from((block_id.hash, i as u32));
 				iter_overview_opaque(tx_id, opaq, self.cache.clone(), params, events)
 			})
 			.collect();
@@ -317,7 +317,7 @@ fn read_signature(ext: &UncheckedExtrinsic) -> Option<block_overview::Transactio
 }
 
 fn iter_overview_opaque(
-	tx_id: TxIdentifier,
+	tx_id: TransactionId,
 	opaq: &OpaqueExtrinsic,
 	cache: SharedCache,
 	params: &block_overview::Params,
@@ -358,8 +358,7 @@ fn iter_overview_opaque(
 	let events = iter_overview_opaque_events(tx_id, params, events)?;
 
 	let value = block_overview::TransactionData {
-		hash: tx_hash,
-		index: tx_id.tx_index,
+		location: TransactionLocation::from((tx_hash, tx_id.tx_index)),
 		dispatch_index,
 		signature,
 		decoded: None,
@@ -370,7 +369,7 @@ fn iter_overview_opaque(
 }
 
 fn iter_overview_opaque_events(
-	tx_id: TxIdentifier,
+	tx_id: TransactionId,
 	params: &block_overview::Params,
 	events: &Option<Arc<AllTransactionEvents>>,
 ) -> Option<Option<block_rpc::common::Events>> {
@@ -406,7 +405,7 @@ fn iter_overview_opaque_events(
 }
 
 fn iter_data_opaque(
-	tx_id: TxIdentifier,
+	tx_id: TransactionId,
 	opaq: &OpaqueExtrinsic,
 	cache: SharedCache,
 	params: &block_data::Params,
@@ -452,7 +451,8 @@ fn iter_data_opaque(
 		call
 	};
 
-	let call_data = block_data::CallData::new(dispatch_index, tx_id.tx_index, tx_hash, call);
+	let location = TransactionLocation::from((tx_hash, tx_id.tx_index));
+	let call_data = block_data::CallData::new(location, dispatch_index, call);
 	Some(call_data)
 }
 

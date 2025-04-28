@@ -1,5 +1,8 @@
 use super::{BlockDetails, CliDeps, TransactionDetails};
-use block_rpc::{transaction_overview, BlockIdentifier};
+use block_rpc::{
+	common::{DispatchIndex, TransactionLocation},
+	transaction_overview, BlockIdentifier,
+};
 use sp_core::H256;
 use std::{cmp::Ordering, collections::HashMap};
 
@@ -74,8 +77,7 @@ impl Database {
 				Response {
 					block_id: x.0,
 					block_finalized,
-					tx_hash,
-					tx_index: x.1.index,
+					tx_location: TransactionLocation::from((tx_hash, x.1.index)),
 					dispatch_index: x.1.dispatch_index,
 					events: None,
 				}
@@ -140,14 +142,14 @@ impl Database {
 #[derive(Debug, Clone)]
 struct TransactionData {
 	pub index: u32,
-	pub dispatch_index: (u8, u8),
+	pub dispatch_index: DispatchIndex,
 	pub block_index: u32,
 }
 
 impl TransactionData {
 	pub fn from_details(details: &TransactionDetails, block_index: u32) -> Self {
 		Self {
-			index: details.index,
+			index: details.location.index,
 			dispatch_index: details.dispatch_index,
 			block_index,
 		}
@@ -204,7 +206,7 @@ impl Map {
 		for details in details {
 			let v = TransactionData::from_details(&details, block_index);
 
-			if let Some(entry) = self.multi.get_mut(&details.hash) {
+			if let Some(entry) = self.multi.get_mut(&details.location.hash) {
 				let lowest_height = entry
 					.last()
 					.and_then(|x| block_map.get(&x.block_index).map(|y| y.height))
@@ -222,14 +224,14 @@ impl Map {
 				continue;
 			}
 
-			if let Some(entry) = self.single.remove(&details.hash) {
+			if let Some(entry) = self.single.remove(&details.location.hash) {
 				let mut value = vec![entry, v];
 				value.sort_by(sort);
-				self.multi.insert(details.hash, value);
+				self.multi.insert(details.location.hash, value);
 				continue;
 			}
 
-			self.single.insert(details.hash, v);
+			self.single.insert(details.location.hash, v);
 		}
 	}
 
