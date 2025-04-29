@@ -7,18 +7,18 @@ edition = "2021"
 
 [dev-dependencies]
 avail-subxt = { path = "../avail-subxt" }
-kate-recovery = { git = "https://github.com/availproject/avail-core", rev = "d62ce4875148a69a62d77f224ed6dbe060cc92f5" }
-kate = { git = "https://github.com/availproject/avail-core", rev = "d62ce4875148a69a62d77f224ed6dbe060cc92f5" }
-avail-core = {  git = "https://github.com/availproject/avail-core", rev = "d62ce4875148a69a62d77f224ed6dbe060cc92f5" }
+kate-recovery = { git = "https://github.com/availproject/avail-core", rev = "21274e3da76d8335d49bdfa13a8549f7451032b7" }
+kate = { git = "https://github.com/availproject/avail-core", rev = "21274e3da76d8335d49bdfa13a8549f7451032b7" }
+avail-core = {  git = "https://github.com/availproject/avail-core", rev = "21274e3da76d8335d49bdfa13a8549f7451032b7" }
 # kate-recovery = { path = "../../avail-core/kate/recovery" }
 # kate = { path = "../../avail-core/kate" }
 # avail-core = { path = "../../avail-core/core", features = ["serde"] }
 
 # Parity
-sp-keyring = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "5237e012d7d973b7210fc1929b2f1ff8726333b5" }
-sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "5237e012d7d973b7210fc1929b2f1ff8726333b5" }
+sp-keyring = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "b5e93b5d40386df1bfbfc869b6f3403b842eb8c0" }
+sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "b5e93b5d40386df1bfbfc869b6f3403b842eb8c0" }
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = [ "derive", "full", "bit-vec"] }
-binary-merkle-tree = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "5237e012d7d973b7210fc1929b2f1ff8726333b5" }
+binary-merkle-tree = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "b5e93b5d40386df1bfbfc869b6f3403b842eb8c0" }
 
 # SubXt
 subxt = "0.34"
@@ -41,8 +41,8 @@ hex-literal = { version = "0.3.4" }
 
 # Dependency `subxt` uses it's own 'version' of sp-core so we need to patch it :)
 [patch.crates-io]
-sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "5237e012d7d973b7210fc1929b2f1ff8726333b5" }
-sp-io = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "5237e012d7d973b7210fc1929b2f1ff8726333b5" }
-sp-runtime = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "5237e012d7d973b7210fc1929b2f1ff8726333b5" }
-sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "5237e012d7d973b7210fc1929b2f1ff8726333b5" }
+sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "b5e93b5d40386df1bfbfc869b6f3403b842eb8c0" }
+sp-io = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "b5e93b5d40386df1bfbfc869b6f3403b842eb8c0" }
+sp-runtime = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "b5e93b5d40386df1bfbfc869b6f3403b842eb8c0" }
+sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "b5e93b5d40386df1bfbfc869b6f3403b842eb8c0" }
 subxt = { git = "https://github.com/ToufeeqP/subxt.git", rev = "c4d8cb3cba5d86fc164fc912cb456870e9a2d1d2" }
