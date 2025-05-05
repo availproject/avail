@@ -1,9 +1,9 @@
 use super::{BlockIdentifier, BlockState, HashIndex};
 use crate::common::{DispatchIndex, EmittedIndex, TransactionLocation};
+use frame_system_rpc_runtime_api::RuntimePhase;
 use jsonrpsee::tokio::sync::{mpsc, oneshot};
 use serde::{Deserialize, Serialize};
 use sp_core::H256;
-use frame_system_rpc_runtime_api::{RuntimePhase};
 
 pub use filter::*;
 
@@ -14,7 +14,7 @@ pub type Sender = mpsc::Sender<Channel>;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Params {
-	pub block_id: HashIndex,
+	pub block_index: HashIndex,
 	#[serde(default)]
 	pub fetch_calls: bool,
 	#[serde(default)]
@@ -180,7 +180,7 @@ pub mod filter {
 		}
 	}
 
-	#[derive(Default, Clone, Serialize, Deserialize)]
+	#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 	pub struct EventFilter {
 		#[serde(default)]
 		pub phase: PhaseFilterOptions,

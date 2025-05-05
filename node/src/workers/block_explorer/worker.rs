@@ -7,13 +7,14 @@ use crate::workers::{
 };
 use avail_core::OpaqueExtrinsic;
 use block_rpc::{
-	block_data, block_overview,
+	block_data::{self, PalletFilterOptions, PhaseFilterOptions},
+	block_overview,
 	common::{BlockState, Event, HashIndex, TransactionLocation},
 	BlockIdentifier,
 };
 use codec::Encode;
 use da_runtime::UncheckedExtrinsic;
-use frame_system_rpc_runtime_api::{SystemFetchEventsParams, RuntimePhase};
+use frame_system_rpc_runtime_api::{RuntimePhase, SystemFetchEventsParams};
 use jsonrpsee::tokio::sync::Notify;
 use rayon::prelude::*;
 use sc_telemetry::log;
@@ -67,7 +68,7 @@ impl Worker {
 		&mut self,
 		params: block_data::Params,
 	) -> Result<block_data::Response, String> {
-		let block_id = self.block_identifier(params.block_id).await?;
+		let block_id = self.block_identifier(params.block_index).await?;
 		let block_state = self.block_state(block_id)?;
 
 		let calls = self.data_task_calls(block_id, &params).await?;
@@ -111,10 +112,42 @@ impl Worker {
 		}
 		let block_events = self.block_events(block_id.hash).await?;
 
-		let mut events = Vec::new();
+		let filter = &params.event_filter;
+		let mut events: Vec<EventData> = Vec::new();
 		for cached_event in &block_events.0 {
+			if let PhaseFilterOptions::TxIndex(list) = &filter.phase {
+				let Some(tx_index) = cached_event.phase.tx_index() else {
+					continue;
+				};
+
+				if !list.contains(&tx_index) {
+					continue;
+				}
+			}
+
+			if let PhaseFilterOptions::OnlyConsensus = &filter.phase {
+				if cached_event.phase.tx_index().is_some() {
+					continue;
+				}
+			}
+
 			for ev in &cached_event.events {
-				events.push(EventData::new(ev.emitted_index, cached_event.phase, ev.encoded.clone()));
+				if let PalletFilterOptions::Pallet(pallet_id) = &filter.pallet {
+					if ev.emitted_index.0 != *pallet_id {
+						continue;
+					}
+				}
+				if let PalletFilterOptions::Combination(list) = &filter.pallet {
+					if !list.contains(&ev.emitted_index) {
+						continue;
+					}
+				}
+
+				events.push(EventData::new(
+					ev.emitted_index,
+					cached_event.phase,
+					ev.encoded.clone(),
+				));
 			}
 		}
 		Ok(Some(events))

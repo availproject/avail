@@ -23,10 +23,10 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use sp_std::vec::Vec;
 use codec::MaxEncodedLen;
+use codec::{Decode, Encode};
 use scale_info::TypeInfo;
-use codec::{Encode, Decode};
+use sp_std::vec::Vec;
 
 sp_api::decl_runtime_apis! {
 	/// The API to query account nonce.
@@ -60,7 +60,19 @@ pub struct SystemFetchEventsParams {
 }
 
 /// A phase of a block's execution.
-#[derive(Debug, Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, Eq, Clone, Copy, serde::Serialize, serde::Deserialize)]
+#[derive(
+	Debug,
+	Encode,
+	Decode,
+	TypeInfo,
+	MaxEncodedLen,
+	PartialEq,
+	Eq,
+	Clone,
+	Copy,
+	serde::Serialize,
+	serde::Deserialize,
+)]
 pub enum RuntimePhase {
 	/// Applying an extrinsic.
 	ApplyExtrinsic(u32),
@@ -70,8 +82,16 @@ pub enum RuntimePhase {
 	Initialization,
 }
 
+impl RuntimePhase {
+	pub fn tx_index(&self) -> Option<u32> {
+		match self {
+			RuntimePhase::ApplyExtrinsic(x) => Some(*x),
+			_ => None,
+		}
+	}
+}
 impl From<&frame_system::Phase> for RuntimePhase {
-	fn from(value: &frame_system::Phase) -> Self { 
+	fn from(value: &frame_system::Phase) -> Self {
 		match value {
 			frame_system::Phase::ApplyExtrinsic(x) => Self::ApplyExtrinsic(*x),
 			frame_system::Phase::Finalization => Self::Finalization,
@@ -122,7 +142,6 @@ pub mod events {
 			}
 		}
 	}
-
 
 	// If any change is done here, `decoded_version` needs to be bumped! This is a breaking change!!
 	#[derive(Debug, Clone, scale_info::TypeInfo, codec::Decode, codec::Encode)]
