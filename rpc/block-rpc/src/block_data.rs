@@ -1,4 +1,4 @@
-use super::{BlockIdentifier, BlockState, HashIndex};
+use super::{BlockId, BlockState, HashIndex};
 use crate::common::{DispatchIndex, EmittedIndex, TransactionLocation};
 use frame_system_rpc_runtime_api::RuntimePhase;
 use jsonrpsee::tokio::sync::{mpsc, oneshot};
@@ -27,7 +27,7 @@ pub struct Params {
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Response {
-	pub block_id: BlockIdentifier,
+	pub block_id: BlockId,
 	pub block_state: BlockState,
 	pub calls: Option<Vec<CallData>>,
 	pub events: Option<Vec<EventData>>,
@@ -35,7 +35,7 @@ pub struct Response {
 
 impl Response {
 	pub fn new(
-		block_id: BlockIdentifier,
+		block_id: BlockId,
 		block_state: BlockState,
 		calls: Option<Vec<CallData>>,
 		events: Option<Vec<EventData>>,
@@ -78,9 +78,8 @@ impl CallData {
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct EventData {
-	// (pallet id, event id)
-	pub emitted_index: EmittedIndex,
 	pub phase: RuntimePhase,
+	pub emitted_index: EmittedIndex,
 	pub event: String,
 }
 

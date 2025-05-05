@@ -1,4 +1,5 @@
-use super::{common, BlockIdentifier, BlockState, HashIndex};
+use super::{common, BlockId, BlockState, HashIndex};
+use crate::common::EmittedIndex;
 use crate::common::{DispatchIndex, TransactionLocation};
 use jsonrpsee::tokio::sync::{mpsc, oneshot};
 use serde::{Deserialize, Serialize};
@@ -14,7 +15,7 @@ pub type Sender = mpsc::Sender<Channel>;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Params {
-	pub block_id: HashIndex,
+	pub block_index: HashIndex,
 	#[serde(default)]
 	pub extension: ParamsExtension,
 	#[serde(default)]
@@ -35,7 +36,7 @@ pub struct ParamsExtension {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Response {
-	pub block_id: BlockIdentifier,
+	pub block_id: BlockId,
 	pub block_state: BlockState,
 	pub transactions: Vec<TransactionData>,
 	pub consensus_events: Option<ConsensusEvents>,
@@ -43,7 +44,7 @@ pub struct Response {
 
 impl Response {
 	pub fn new(
-		block_id: BlockIdentifier,
+		block_id: BlockId,
 		block_state: BlockState,
 		transactions: Vec<TransactionData>,
 		consensus_events: Option<ConsensusEvents>,
@@ -73,8 +74,6 @@ pub struct TransactionData {
 }
 
 pub mod events {
-	use crate::common::EmittedIndex;
-
 	pub use super::*;
 	pub type ConsensusEvents = Vec<ConsensusEvent>;
 
@@ -82,7 +81,7 @@ pub mod events {
 	pub struct ConsensusEvent {
 		pub phase: ConsensusEventPhase,
 		pub emitted_index: EmittedIndex,
-		pub decoded: Option<common::DecodedEventData>,
+		pub decoded: Option<String>,
 	}
 
 	#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -148,9 +147,9 @@ pub mod filter {
 
 		pub fn is_has_events(&self) -> bool {
 			let TransactionFilterOptions::HasEvent(..) = self else {
-				return true;
+				return false;
 			};
-			false
+			true
 		}
 	}
 

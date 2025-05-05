@@ -7,7 +7,7 @@ use super::common::read_pallet_call_index;
 use avail_core::OpaqueExtrinsic;
 use block_rpc::{
 	common::{DispatchIndex, TransactionLocation},
-	transaction_overview, BlockIdentifier,
+	transaction_overview, BlockId,
 };
 use codec::Encode;
 use da_runtime::UncheckedExtrinsic;
@@ -47,17 +47,13 @@ pub struct Deps {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BlockDetails {
-	pub block_id: BlockIdentifier,
+	pub block_id: BlockId,
 	pub finalized: bool,
 	pub transactions: Vec<TransactionDetails>,
 }
 
 impl BlockDetails {
-	pub fn from_opaques(
-		opaques: Vec<OpaqueExtrinsic>,
-		block_id: BlockIdentifier,
-		finalized: bool,
-	) -> Self {
+	pub fn from_opaques(opaques: Vec<OpaqueExtrinsic>, block_id: BlockId, finalized: bool) -> Self {
 		let mut transactions: Vec<TransactionDetails> = Vec::with_capacity(opaques.len());
 		for (index, ext) in opaques.iter().enumerate() {
 			let unchecked_ext =

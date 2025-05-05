@@ -1,6 +1,6 @@
 use crate::common::{DispatchIndex, TransactionLocation};
 
-use super::{common, BlockIdentifier};
+use super::{common, BlockId};
 use jsonrpsee::tokio::sync::{mpsc, oneshot};
 use serde::{Deserialize, Serialize};
 use sp_core::H256;
@@ -12,7 +12,7 @@ pub type Sender = mpsc::Sender<Channel>;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Response {
-	pub block_id: BlockIdentifier,
+	pub block_id: BlockId,
 	pub block_finalized: bool,
 	pub tx_location: TransactionLocation,
 	pub dispatch_index: DispatchIndex,

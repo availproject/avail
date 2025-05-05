@@ -3,7 +3,7 @@ use crate::service::FullClient;
 use avail_core::OpaqueExtrinsic;
 use block_rpc::common::events::DecodedEventData;
 use block_rpc::common::DispatchIndex;
-use block_rpc::BlockIdentifier;
+use block_rpc::BlockId;
 use codec::Encode;
 use da_runtime::UncheckedExtrinsic;
 use frame_system_rpc_runtime_api::SystemFetchEventsParams;
@@ -11,7 +11,7 @@ use jsonrpsee::tokio::time::sleep;
 use sc_service::RpcHandlers;
 use sp_core::H256;
 use sp_runtime::AccountId32;
-use sp_runtime::{generic::BlockId, traits::BlockIdTo};
+use sp_runtime::{generic::BlockId as GenericBlockId, traits::BlockIdTo};
 use std::{
 	sync::Arc,
 	time::{Duration, Instant},
@@ -45,18 +45,18 @@ pub struct NodeContext {
 
 impl NodeContext {
 	pub fn to_number(&self, value: H256) -> Result<Option<u32>, sp_blockchain::Error> {
-		self.client.to_number(&BlockId::Hash(value))
+		self.client.to_number(&GenericBlockId::Hash(value))
 	}
 
 	pub fn to_hash(&self, value: u32) -> Result<Option<H256>, sp_blockchain::Error> {
-		self.client.to_hash(&BlockId::Number(value))
+		self.client.to_hash(&GenericBlockId::Number(value))
 	}
 
-	pub fn block_body(&self, height: u32) -> Option<(Vec<OpaqueExtrinsic>, BlockIdentifier)> {
+	pub fn block_body(&self, height: u32) -> Option<(Vec<OpaqueExtrinsic>, BlockId)> {
 		let block_hash = self.to_hash(height).ok().flatten()?;
 		let opaques = self.client.body(block_hash).ok().flatten()?;
 
-		Some((opaques, BlockIdentifier::from((block_hash, height))))
+		Some((opaques, BlockId::from((block_hash, height))))
 	}
 
 	pub fn block_body_hash(&self, hash: H256) -> Option<Vec<OpaqueExtrinsic>> {
@@ -98,7 +98,7 @@ impl NodeContext {
 		}
 	}
 
-	pub async fn wait_for_new_best_block(&self, current_block_hash: H256) -> BlockIdentifier {
+	pub async fn wait_for_new_best_block(&self, current_block_hash: H256) -> BlockId {
 		loop {
 			let chain_info = self.client.chain_info();
 			let (block_hash, block_height) = (chain_info.best_hash, chain_info.best_number);
@@ -107,7 +107,7 @@ impl NodeContext {
 				continue;
 			}
 
-			return BlockIdentifier::from((block_hash, block_height));
+			return BlockId::from((block_hash, block_height));
 		}
 	}
 
@@ -333,7 +333,10 @@ pub mod events {
 
 		pub fn to_tx_rpc_event(&self, enable_decoding: bool) -> block_rpc::common::events::Event {
 			use block_rpc::common::events::Event;
-			let decoded = enable_decoding.then(|| self.decoded.clone()).flatten();
+			let decoded = enable_decoding
+				.then(|| serde_json::to_string(&self.decoded).ok())
+				.flatten();
+
 			Event {
 				index: self.index,
 				emitted_index: self.emitted_index,

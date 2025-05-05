@@ -12,7 +12,7 @@ use jsonrpsee::{
 };
 use std::sync::Arc;
 
-pub use common::{BlockIdentifier, BlockState, HashIndex};
+pub use common::{BlockId, BlockState, HashIndex};
 
 #[derive(Clone, Default)]
 pub struct Deps {

@@ -1,12 +1,12 @@
 use super::{BlockDetails, CliDeps, TransactionDetails};
 use block_rpc::{
 	common::{DispatchIndex, TransactionLocation},
-	transaction_overview, BlockIdentifier,
+	transaction_overview, BlockId,
 };
 use sp_core::H256;
 use std::{cmp::Ordering, collections::HashMap};
 
-type BlockMap = HashMap<u32, BlockIdentifier>;
+type BlockMap = HashMap<u32, BlockId>;
 
 pub struct Database {
 	block_map: BlockMap,
@@ -27,7 +27,7 @@ impl Database {
 		}
 	}
 
-	fn get_or_create_block_index(&mut self, block_id: BlockIdentifier) -> u32 {
+	fn get_or_create_block_index(&mut self, block_id: BlockId) -> u32 {
 		if let Some(item) = self.block_map.iter().find(|x| *x.1 == block_id) {
 			return *item.0;
 		}
@@ -72,16 +72,15 @@ impl Database {
 		use transaction_overview::Response;
 		let mut response: Vec<Response> = Vec::new();
 
-		let to_response =
-			|block_finalized: bool, x: (BlockIdentifier, TransactionData)| -> Response {
-				Response {
-					block_id: x.0,
-					block_finalized,
-					tx_location: TransactionLocation::from((tx_hash, x.1.index)),
-					dispatch_index: x.1.dispatch_index,
-					events: None,
-				}
-			};
+		let to_response = |block_finalized: bool, x: (BlockId, TransactionData)| -> Response {
+			Response {
+				block_id: x.0,
+				block_finalized,
+				tx_location: TransactionLocation::from((tx_hash, x.1.index)),
+				dispatch_index: x.1.dispatch_index,
+				events: None,
+			}
+		};
 
 		if !is_finalized {
 			let result = self.included_tx.find_entries(tx_hash, &self.block_map);
@@ -163,11 +162,7 @@ struct Map {
 }
 
 impl Map {
-	fn find_entries(
-		&self,
-		tx_hash: H256,
-		block_map: &BlockMap,
-	) -> Vec<(BlockIdentifier, TransactionData)> {
+	fn find_entries(&self, tx_hash: H256, block_map: &BlockMap) -> Vec<(BlockId, TransactionData)> {
 		let mut result = Vec::new();
 		if let Some(data) = self.single.get(&tx_hash) {
 			if let Some(block_id) = block_map.get(&data.block_index).copied() {

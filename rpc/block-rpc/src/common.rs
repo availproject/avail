@@ -22,12 +22,12 @@ pub enum HashIndex {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct BlockIdentifier {
+pub struct BlockId {
 	pub hash: H256,
 	pub height: u32,
 }
 
-impl From<(H256, u32)> for BlockIdentifier {
+impl From<(H256, u32)> for BlockId {
 	fn from(value: (H256, u32)) -> Self {
 		Self {
 			hash: value.0,
@@ -93,15 +93,11 @@ pub mod events {
 	pub struct Event {
 		pub index: u32,
 		pub emitted_index: EmittedIndex,
-		pub decoded: Option<DecodedEventData>,
+		pub decoded: Option<String>,
 	}
 
 	impl Event {
-		pub fn new(
-			index: u32,
-			emitted_index: EmittedIndex,
-			decoded: Option<DecodedEventData>,
-		) -> Self {
+		pub fn new(index: u32, emitted_index: EmittedIndex, decoded: Option<String>) -> Self {
 			Self {
 				index,
 				emitted_index,

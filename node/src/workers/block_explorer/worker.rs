@@ -10,7 +10,7 @@ use block_rpc::{
 	block_data::{self, PalletFilterOptions, PhaseFilterOptions},
 	block_overview,
 	common::{BlockState, Event, HashIndex, TransactionLocation},
-	BlockIdentifier,
+	BlockId,
 };
 use codec::Encode;
 use da_runtime::UncheckedExtrinsic;
@@ -80,7 +80,7 @@ impl Worker {
 
 	async fn data_task_calls(
 		&mut self,
-		block_id: BlockIdentifier,
+		block_id: BlockId,
 		params: &block_data::Params,
 	) -> Result<Option<Vec<block_data::CallData>>, String> {
 		if !params.fetch_calls {
@@ -103,7 +103,7 @@ impl Worker {
 
 	async fn data_task_events(
 		&mut self,
-		block_id: BlockIdentifier,
+		block_id: BlockId,
 		params: &block_data::Params,
 	) -> Result<Option<Vec<block_data::EventData>>, String> {
 		use block_data::EventData;
@@ -157,7 +157,7 @@ impl Worker {
 		&mut self,
 		params: block_overview::Params,
 	) -> Result<block_overview::Response, String> {
-		let block_id = self.block_identifier(params.block_id).await?;
+		let block_id = self.block_identifier(params.block_index).await?;
 		let block_state = self.block_state(block_id)?;
 
 		let events = if params.extension.fetch_events {
@@ -178,7 +178,7 @@ impl Worker {
 
 	async fn overview_task_transactions(
 		&mut self,
-		block_id: BlockIdentifier,
+		block_id: BlockId,
 		events: &Option<Arc<AllTransactionEvents>>,
 		params: &block_overview::Params,
 	) -> Result<Vec<block_overview::TransactionData>, String> {
@@ -216,7 +216,7 @@ impl Worker {
 		}
 	}
 
-	async fn block_identifier(&self, block_id: HashIndex) -> Result<BlockIdentifier, String> {
+	async fn block_identifier(&self, block_id: HashIndex) -> Result<BlockId, String> {
 		match block_id {
 			HashIndex::Hash(hash) => {
 				let height = self.ctx.to_number(hash);
@@ -226,7 +226,7 @@ impl Worker {
 						hash
 					));
 				};
-				Ok(BlockIdentifier::from((hash, height)))
+				Ok(BlockId::from((hash, height)))
 			},
 			HashIndex::Index(height) => {
 				let hash = self.ctx.to_hash(height);
@@ -236,7 +236,7 @@ impl Worker {
 						height
 					));
 				};
-				Ok(BlockIdentifier::from((hash, height)))
+				Ok(BlockId::from((hash, height)))
 			},
 		}
 	}
@@ -265,7 +265,7 @@ impl Worker {
 		Ok(events)
 	}
 
-	fn block_state(&self, block_id: BlockIdentifier) -> Result<BlockState, String> {
+	fn block_state(&self, block_id: BlockId) -> Result<BlockState, String> {
 		let chain_info = self.ctx.client.chain_info();
 		if block_id.height > chain_info.finalized_number {
 			return Ok(BlockState::Included);
@@ -308,7 +308,11 @@ fn read_consensus_events(
 			};
 
 			if enable_decoding {
-				ev.decoded = event.decoded.clone()
+				let decoded = event
+					.decoded
+					.map(|x| serde_json::to_string(&x).ok())
+					.flatten();
+				ev.decoded = decoded;
 			}
 
 			consensus_events.push(ev);
@@ -403,26 +407,34 @@ fn iter_overview_opaque_events(
 ) -> Option<Option<block_rpc::common::Events>> {
 	use block_overview::TransactionFilterOptions;
 	let enable_decoding = params.extension.enable_event_decoding;
-	let filter = &params.filter;
+	let filter = &params.filter.transaction;
 
 	let Some(cached_events) = events else {
-		return (!filter.transaction.is_has_events()).then_some(None);
+		if filter.is_has_events() {
+			return None;
+		};
+		return Some(None);
 	};
 
 	let Some(events_entry) = cached_events.tx_events(tx_id.tx_index) else {
-		return (!filter.transaction.is_has_events()).then_some(None);
+		if filter.is_has_events() {
+			return None;
+		};
+		return Some(None);
 	};
 
 	let tx_events: Vec<Event> = events_entry
 		.events
 		.iter()
 		.map(|x| {
-			let decoded = enable_decoding.then(|| x.decoded.clone()).flatten();
+			let decoded = enable_decoding
+				.then(|| serde_json::to_string(&x.decoded).ok())
+				.flatten();
 			Event::new(x.index, x.emitted_index, decoded)
 		})
 		.collect();
 
-	if let TransactionFilterOptions::HasEvent(expected_events) = &filter.transaction {
+	if let TransactionFilterOptions::HasEvent(expected_events) = filter {
 		for exp_ev in expected_events {
 			if !tx_events.iter().any(|x| x.emitted_index == *exp_ev) {
 				return None;
