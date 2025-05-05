@@ -264,8 +264,9 @@ impl_runtime_apis! {
 			let all_events = System::read_events_no_consensus();
 			let mut event_position = 0u32;
 			for event in all_events {
-				let tx_index =  match &event.phase {
-					frame_system::Phase::ApplyExtrinsic(x) => Some(*x),
+				let phase: RuntimePhase = RuntimePhase::from(&event.phase);
+				let tx_index =  match &phase {
+					RuntimePhase::ApplyExtrinsic(x) => Some(*x),
 					_ => None
 				};
 
@@ -294,10 +295,10 @@ impl_runtime_apis! {
 				let decoded = enable_decoding.then(|| decode_runtime_event(&event.event)).flatten();
 
 				let ev = RuntimeEvent::new(event_position, emitted_index, encoded, decoded);
-				if let Some(entry) = result.entries.iter_mut().find(|x| x.phase == event.phase) {
+				if let Some(entry) = result.entries.iter_mut().find(|x| x.phase == phase) {
 					entry.events.push(ev);
 				} else {
-					let v = events::RuntimeEntryEvents {phase: event.phase.clone(), events: vec![ev]};
+					let v = events::RuntimeEntryEvents {phase: phase, events: vec![ev]};
 					result.entries.push(v);
 				};
 

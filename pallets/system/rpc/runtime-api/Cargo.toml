@@ -18,6 +18,7 @@ codec = { package = "parity-scale-codec", version = "3", default-features = fals
 sp-std = { workspace = true, default-features = false }
 scale-info = { workspace = true, default-features = false }
 frame-system = { workspace = true, default-features = false }
+serde = { workspace = true, default-features = false }
 
 [features]
 default = [ "std" ]

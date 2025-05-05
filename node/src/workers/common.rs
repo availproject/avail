@@ -250,6 +250,7 @@ pub mod decoding {
 pub mod events {
 	use block_rpc::common::EmittedIndex;
 	use frame_system_rpc_runtime_api::events::{RuntimeEntryEvents, RuntimeEvent};
+	use frame_system_rpc_runtime_api::RuntimePhase;
 
 	use super::*;
 
@@ -267,13 +268,11 @@ pub mod events {
 		}
 
 		pub fn consensus_events(&self) -> Vec<TransactionEvents> {
-			use frame_system::Phase;
-
 			let events: Vec<TransactionEvents> = self
 				.0
 				.iter()
 				.filter_map(|x| match &x.phase {
-					Phase::Finalization | Phase::Initialization => Some(x.clone()),
+					RuntimePhase::Finalization | RuntimePhase::Initialization => Some(x.clone()),
 					_ => None,
 				})
 				.collect();
@@ -282,17 +281,15 @@ pub mod events {
 		}
 
 		pub fn tx_events(&self, tx_index: u32) -> Option<&TransactionEvents> {
-			use frame_system::Phase;
-
 			self.0
 				.iter()
-				.find(|x| x.phase == Phase::ApplyExtrinsic(tx_index))
+				.find(|x| x.phase == RuntimePhase::ApplyExtrinsic(tx_index))
 		}
 	}
 
 	#[derive(Debug, Clone)]
 	pub struct TransactionEvents {
-		pub phase: frame_system::Phase,
+		pub phase: RuntimePhase,
 		pub events: Vec<Event>,
 	}
 

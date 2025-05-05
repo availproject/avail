@@ -13,7 +13,7 @@ use block_rpc::{
 };
 use codec::Encode;
 use da_runtime::UncheckedExtrinsic;
-use frame_system_rpc_runtime_api::SystemFetchEventsParams;
+use frame_system_rpc_runtime_api::{SystemFetchEventsParams, RuntimePhase};
 use jsonrpsee::tokio::sync::Notify;
 use rayon::prelude::*;
 use sc_telemetry::log;
@@ -113,13 +113,8 @@ impl Worker {
 
 		let mut events = Vec::new();
 		for cached_event in &block_events.0 {
-			let phase = match cached_event.phase {
-				frame_system::Phase::ApplyExtrinsic(x) => block_data::Phase::ApplyExtrinsic(x),
-				frame_system::Phase::Finalization => block_data::Phase::Finalization,
-				frame_system::Phase::Initialization => block_data::Phase::Initialization,
-			};
 			for ev in &cached_event.events {
-				events.push(EventData::new(ev.emitted_index, phase, ev.encoded.clone()));
+				events.push(EventData::new(ev.emitted_index, cached_event.phase, ev.encoded.clone()));
 			}
 		}
 		Ok(Some(events))
@@ -267,8 +262,8 @@ fn read_consensus_events(
 	let mut consensus_events = Vec::new();
 	for cache in cached {
 		let phase = match cache.phase {
-			frame_system::Phase::Finalization => ConsensusEventPhase::Finalization,
-			frame_system::Phase::Initialization => ConsensusEventPhase::Initialization,
+			RuntimePhase::Finalization => ConsensusEventPhase::Finalization,
+			RuntimePhase::Initialization => ConsensusEventPhase::Initialization,
 			_ => continue,
 		};
 

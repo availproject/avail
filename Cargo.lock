@@ -1420,6 +1420,7 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "avail-base",
+ "frame-system-rpc-runtime-api",
  "jsonrpsee",
  "serde",
  "sp-core",
@@ -3881,6 +3882,7 @@ dependencies = [
  "frame-system",
  "parity-scale-codec",
  "scale-info",
+ "serde",
  "sp-api",
  "sp-std",
 ]

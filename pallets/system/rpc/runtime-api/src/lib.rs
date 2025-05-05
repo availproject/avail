@@ -24,6 +24,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use sp_std::vec::Vec;
+use codec::MaxEncodedLen;
+use scale_info::TypeInfo;
+use codec::{Encode, Decode};
 
 sp_api::decl_runtime_apis! {
 	/// The API to query account nonce.
@@ -42,36 +45,52 @@ sp_api::decl_runtime_apis! {
 }
 
 // If any change is done here, `version`` needs to be bumped! This is a breaking change!!
-#[derive(Debug, Clone, scale_info::TypeInfo, codec::Decode, codec::Encode)]
+#[derive(scale_info::TypeInfo, codec::Decode, codec::Encode)]
 pub struct SystemFetchEventsResult {
 	pub version: u8,
 	pub error: u8,
 	pub entries: Vec<events::RuntimeEntryEvents>,
 }
 
-pub type PalletId = u8;
-pub type EventId = u8;
-#[derive(Debug, Clone, Default, scale_info::TypeInfo, codec::Decode, codec::Encode)]
+#[derive(Clone, Default, scale_info::TypeInfo, codec::Decode, codec::Encode)]
 pub struct SystemFetchEventsParams {
 	pub filter_tx_indices: Option<Vec<u32>>,
 	pub enable_encoding: Option<bool>,
 	pub enable_decoding: Option<bool>,
 }
 
+/// A phase of a block's execution.
+#[derive(Debug, Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, Eq, Clone, Copy, serde::Serialize, serde::Deserialize)]
+pub enum RuntimePhase {
+	/// Applying an extrinsic.
+	ApplyExtrinsic(u32),
+	/// Finalizing the block.
+	Finalization,
+	/// Initializing the block.
+	Initialization,
+}
+
+impl From<&frame_system::Phase> for RuntimePhase {
+	fn from(value: &frame_system::Phase) -> Self { 
+		match value {
+			frame_system::Phase::ApplyExtrinsic(x) => Self::ApplyExtrinsic(*x),
+			frame_system::Phase::Finalization => Self::Finalization,
+			frame_system::Phase::Initialization => Self::Initialization,
+		}
+	}
+}
+
 pub mod events {
 	use super::*;
 
-	pub mod error_code {}
-
-	// If any change is done here, `version`` needs to be bumped! This is a breaking change!!
-	#[derive(Debug, Clone, scale_info::TypeInfo, codec::Decode, codec::Encode)]
+	#[derive(scale_info::TypeInfo, codec::Decode, codec::Encode)]
 	pub struct RuntimeEntryEvents {
-		pub phase: frame_system::Phase,
+		pub phase: RuntimePhase,
 		pub events: Vec<RuntimeEvent>,
 	}
 
 	impl RuntimeEntryEvents {
-		pub fn new(phase: frame_system::Phase) -> Self {
+		pub fn new(phase: RuntimePhase) -> Self {
 			Self {
 				phase,
 				events: Vec::new(),
@@ -79,8 +98,7 @@ pub mod events {
 		}
 	}
 
-	// If any change is done here, `decoded_version` needs to be bumped! This is a breaking change!!
-	#[derive(Debug, Clone, scale_info::TypeInfo, codec::Decode, codec::Encode)]
+	#[derive(Clone, scale_info::TypeInfo, codec::Decode, codec::Encode)]
 	pub struct RuntimeEvent {
 		pub index: u32,
 		// (Pallet Id, Event Id)
@@ -104,6 +122,7 @@ pub mod events {
 			}
 		}
 	}
+
 
 	// If any change is done here, `decoded_version` needs to be bumped! This is a breaking change!!
 	#[derive(Debug, Clone, scale_info::TypeInfo, codec::Decode, codec::Encode)]

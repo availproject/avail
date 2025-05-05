@@ -3,6 +3,7 @@ use crate::common::{DispatchIndex, EmittedIndex, TransactionLocation};
 use jsonrpsee::tokio::sync::{mpsc, oneshot};
 use serde::{Deserialize, Serialize};
 use sp_core::H256;
+use frame_system_rpc_runtime_api::{RuntimePhase};
 
 pub use filter::*;
 
@@ -79,28 +80,18 @@ impl CallData {
 pub struct EventData {
 	// (pallet id, event id)
 	pub emitted_index: EmittedIndex,
-	pub phase: Phase,
+	pub phase: RuntimePhase,
 	pub event: String,
 }
 
 impl EventData {
-	pub fn new(emitted_index: EmittedIndex, phase: Phase, event: String) -> Self {
+	pub fn new(emitted_index: EmittedIndex, phase: RuntimePhase, event: String) -> Self {
 		Self {
 			emitted_index,
 			phase,
 			event,
 		}
 	}
-}
-
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-pub enum Phase {
-	/// Applying an extrinsic.
-	ApplyExtrinsic(u32),
-	/// Finalizing the block.
-	Finalization,
-	/// Initializing the block.
-	Initialization,
 }
 
 pub mod filter {
