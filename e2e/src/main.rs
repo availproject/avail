@@ -80,7 +80,7 @@ mod tests {
 		let ctc = concurrent_controller();
 		let available_permits = ctc.available_permits();
 		let permit = ctc.clone().acquire_owned().await.unwrap();
-		trace!(target: "CTC", "Acquired single permit on `{name}`, it was {available_permits} availabled permits");
+		trace!(target: "CTC", "Acquired single permit on `{name}`, it was {available_permits} available permits");
 		permit
 	}
 
@@ -99,12 +99,12 @@ mod tests {
 			.acquire_many_owned(MAX_PERMITS as u32)
 			.await
 			.unwrap();
-		trace!(target: "CTC", "Acquired all permits on `{name}`, it was {available_permits} availabled permits");
+		trace!(target: "CTC", "Acquired all permits on `{name}`, it was {available_permits} available permits");
 
 		permit
 	}
 
-	/// Global Concurency controller.
+	/// Global Concurrency controller.
 	fn concurrent_controller() -> Arc<Semaphore> {
 		static CTC: OnceLock<Arc<Semaphore>> = OnceLock::new();
 		Arc::clone(CTC.get_or_init(|| Arc::new(Semaphore::const_new(MAX_PERMITS))))
