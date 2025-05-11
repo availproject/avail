@@ -94,7 +94,7 @@ impl ApiServer for RPC {
 			Ok(x) => {
 				let r = transaction_overview::ResponseDebug {
 					value: x,
-					debug_execution_time: elapsed.as_millis() as u64,
+					execution_time: elapsed.as_millis() as u64,
 				};
 
 				Ok(r)

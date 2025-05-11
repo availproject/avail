@@ -1,23 +1,23 @@
 mod block_worker;
 mod cache;
-mod database_map;
-mod database_worker;
+mod database;
 
-use super::common::read_pallet_call_index;
 use avail_core::OpaqueExtrinsic;
 use block_rpc::{
 	common::{DispatchIndex, TransactionLocation},
-	transaction_overview, BlockId,
+	transaction_overview,
 };
 use codec::Encode;
 use da_runtime::UncheckedExtrinsic;
-pub use database_worker::DatabaseWorker;
+pub use database::DatabaseWorker;
 use jsonrpsee::tokio::sync::{mpsc, Notify};
-use serde::{Deserialize, Serialize};
 use sp_core::{Blake2Hasher, Hasher};
+use sp_runtime::MultiAddress;
 use std::sync::Arc;
 
 pub use block_worker::BlockWorker;
+
+use super::common::read_pallet_call_index;
 
 pub type Channel = BlockDetails;
 pub type Receiver = mpsc::Receiver<BlockDetails>;
@@ -45,52 +45,84 @@ pub struct Deps {
 	pub cli: CliDeps,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Clone)]
+struct BlockTransactionSignature {
+	nonce: u32,
+	app_id: u32,
+	tip: u128,
+	ss58_address: Option<String>,
+}
+
+#[derive(Clone)]
+struct BlockTransaction {
+	tx_location: TransactionLocation,
+	dispatch_index: DispatchIndex,
+	signature: Option<BlockTransactionSignature>,
+}
+
+#[derive(Clone)]
 pub struct BlockDetails {
-	pub block_id: BlockId,
+	pub block_height: u32,
 	pub finalized: bool,
-	pub transactions: Vec<TransactionDetails>,
+	pub transactions: Vec<BlockTransaction>,
+	pub new_block: bool,
 }
 
 impl BlockDetails {
-	pub fn from_opaques(opaques: Vec<OpaqueExtrinsic>, block_id: BlockId, finalized: bool) -> Self {
-		let mut transactions: Vec<TransactionDetails> = Vec::with_capacity(opaques.len());
-		for (index, ext) in opaques.iter().enumerate() {
+	pub fn from_opaques(
+		opaques: Vec<OpaqueExtrinsic>,
+		block_height: u32,
+		finalized: bool,
+		new_block: bool,
+	) -> Self {
+		let mut transactions: Vec<BlockTransaction> = Vec::with_capacity(opaques.len());
+		for (i, opaq) in opaques.iter().enumerate() {
 			let unchecked_ext =
-				match UncheckedExtrinsic::decode_no_vec_prefix(&mut ext.0.as_slice()) {
+				match UncheckedExtrinsic::decode_no_vec_prefix(&mut opaq.0.as_slice()) {
 					Ok(x) => x,
 					Err(_) => continue,
 				};
+
+			let Some(ext_sig) = unchecked_ext.signature.clone() else {
+				continue;
+			};
 
 			let Some(dispatch_index) = read_pallet_call_index(&unchecked_ext) else {
 				continue;
 			};
 
-			let hash = Blake2Hasher::hash(&unchecked_ext.encode());
-			let location = TransactionLocation::from((hash, index as u32));
-			let info = TransactionDetails::new(location, dispatch_index);
-			transactions.push(info);
+			let mut signature: Option<BlockTransactionSignature> = None;
+			if new_block {
+				let mut ss58_address = None;
+				if let MultiAddress::Id(x) = ext_sig.0 {
+					ss58_address = Some(std::format!("{}", x));
+				}
+
+				signature = Some(BlockTransactionSignature {
+					nonce: ext_sig.2 .5 .0,
+					app_id: ext_sig.2 .8 .0 .0,
+					tip: ext_sig.2 .7.tip(),
+					ss58_address,
+				})
+			}
+			let tx_location = TransactionLocation {
+				hash: Blake2Hasher::hash(&unchecked_ext.encode()),
+				index: i as u32,
+			};
+			let transaction = BlockTransaction {
+				tx_location,
+				dispatch_index,
+				signature,
+			};
+
+			transactions.push(transaction);
 		}
 
 		BlockDetails {
-			block_id,
+			block_height,
 			finalized,
 			transactions,
-		}
-	}
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TransactionDetails {
-	pub location: TransactionLocation,
-	pub dispatch_index: DispatchIndex,
-}
-
-impl TransactionDetails {
-	pub fn new(location: TransactionLocation, dispatch_index: DispatchIndex) -> Self {
-		Self {
-			location,
-			dispatch_index,
+			new_block,
 		}
 	}
 }

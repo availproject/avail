@@ -16,20 +16,24 @@ pub struct Response {
 	pub block_finalized: bool,
 	pub tx_location: TransactionLocation,
 	pub dispatch_index: DispatchIndex,
+	pub nonce: u32,
+	pub app_id: u32,
+	pub tip: u128,
+	pub ss58_address: String,
 	pub events: Option<common::events::Events>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResponseDebug {
 	pub value: Vec<Response>,
-	pub debug_execution_time: u64,
+	pub execution_time: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Params {
 	pub tx_hash: H256,
 	#[serde(default)]
-	pub finalized: bool,
+	pub use_best_block: bool,
 	#[serde(default)]
 	pub fetch_events: bool,
 	#[serde(default)]

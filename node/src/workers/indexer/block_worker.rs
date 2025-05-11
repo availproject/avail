@@ -32,11 +32,11 @@ impl BlockWorker {
 
 		match index_finalized_blocks {
 			true => self.index_finalized_blocks().await,
-			false => self.index_new_blocks().await,
+			false => self.index_best_blocks().await,
 		};
 	}
 
-	async fn index_new_blocks(self) {
+	async fn index_best_blocks(self) {
 		let mut current_block_hash = H256::default();
 		loop {
 			let block_id = self.ctx.wait_for_new_best_block(current_block_hash).await;
@@ -45,7 +45,7 @@ impl BlockWorker {
 			let Some(opaques) = self.ctx.block_body_hash(block_id.hash) else {
 				continue;
 			};
-			let block = BlockDetails::from_opaques(opaques, block_id, false);
+			let block = BlockDetails::from_opaques(opaques, block_id.height, false, true);
 
 			if let Err(e) = self.sender.send(block).await {
 				self.log(&e.to_string());
@@ -71,7 +71,7 @@ impl BlockWorker {
 				block_height += 1;
 				continue;
 			};
-			let block = BlockDetails::from_opaques(opaques, block_id, true);
+			let block = BlockDetails::from_opaques(opaques, block_id.height, true, true);
 
 			if let Err(e) = self.sender.send(block).await {
 				self.log(&e.to_string());
@@ -99,7 +99,7 @@ impl BlockWorker {
 			let Some((opaques, block_id)) = self.ctx.block_body(height) else {
 				break;
 			};
-			let block = BlockDetails::from_opaques(opaques, block_id, true);
+			let block = BlockDetails::from_opaques(opaques, block_id.height, true, false);
 
 			// Failure would mean that the other end of the channel is closed which means that we should bail out.
 			if self.sender.send(block).await.is_err() {
