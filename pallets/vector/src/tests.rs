@@ -14,8 +14,6 @@ use crate::{
 use alloy_sol_types::SolValue;
 use avail_core::data_proof::Message::FungibleToken;
 use avail_core::data_proof::{tx_uid, AddressedMessage, Message};
-use avail_core::fail;
-use codec::Encode;
 use frame_support::{
 	assert_err, assert_ok,
 	traits::{fungible::Inspect, DefensiveTruncateFrom},

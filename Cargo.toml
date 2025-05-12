@@ -51,8 +51,6 @@ iai = "0.1.1"
 iai-callgrind = "0.7.3"
 divan = "0.1.11"
 
-# codspeed-criterion-compat = "2.2.0"
-
 # Logging and testing 
 log = "0.4.20"
 test-case = "1.2.3"

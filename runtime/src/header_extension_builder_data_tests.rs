@@ -32,7 +32,7 @@ use test_case::test_case;
 pub struct CallsProof {
 	pub proof: MerkleProof<H256, Vec<u8>>,
 	pub root: H256,
-	#[allow(dead_code)]
+	#[allow(unused)]
 	pub message: Option<AddressedMessage>,
 }
 

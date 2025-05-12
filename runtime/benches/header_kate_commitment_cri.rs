@@ -1,10 +1,5 @@
 use core::time::Duration;
 
-#[cfg(feature = "codspeed")]
-use codspeed_criterion_compat::{
-	criterion_group, criterion_main, BenchmarkId, Criterion, Throughput,
-};
-#[cfg(not(feature = "codspeed"))]
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
 
 include!("header_kate_commitment.rs");
@@ -18,7 +13,7 @@ fn commitment_builder(c: &mut Criterion) {
 
 		group.throughput(Throughput::Elements(*columns as u64));
 		group.bench_with_input(
-			BenchmarkId::from_parameter(format!("{block_columns:?}")),
+			BenchmarkId::from_parameter(format!("{:?}", block_columns)),
 			&txs,
 			|b, txs| {
 				b.iter_batched(
