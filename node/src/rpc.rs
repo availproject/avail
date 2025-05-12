@@ -55,6 +55,7 @@ use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use sp_consensus::SelectChain;
 use sp_consensus_babe::BabeApi;
 use sp_keystore::KeystorePtr;
+use sp_transaction_pool::runtime_api::TaggedTransactionQueue;
 
 /// Extra dependencies for BABE.
 pub struct BabeDeps {
@@ -101,6 +102,8 @@ pub struct FullDeps<C, P, SC, B> {
 	/// - pub rpc_enabled: bool,
 	/// - pub rpc_metrics_enabled: bool,
 	pub kate_rpc_deps: kate_rpc::Deps,
+	/// Blob RPC dependencies.
+	pub blob_rpc_deps: blob::types::Deps<Block>,
 }
 
 /// Instantiate all Full RPC extensions.
@@ -123,11 +126,13 @@ where
 	C::Api: BabeApi<Block>,
 	C::Api: BlockBuilder<Block>,
 	C::Api: DataAvailApi<Block> + KateApi<Block> + VectorApi<Block>,
-	P: TransactionPool + 'static,
+	C::Api: TaggedTransactionQueue<Block>,
+	P: TransactionPool<Block = Block> + 'static,
 	SC: SelectChain<Block> + 'static,
 	B: sc_client_api::Backend<Block> + Send + Sync + 'static,
 	B::State: sc_client_api::backend::StateBackend<sp_runtime::traits::HashingFor<Block>>,
 {
+	use blob::rpc::{BlobApiServer, BlobRpc};
 	use kate_rpc::metrics::KateApiMetricsServer;
 	use kate_rpc::{Kate, KateApiServer};
 	use mmr_rpc::{Mmr, MmrApiServer};
@@ -152,6 +157,7 @@ where
 		babe,
 		grandpa,
 		kate_rpc_deps,
+		blob_rpc_deps,
 	} = deps;
 
 	let BabeDeps {
@@ -176,7 +182,7 @@ where
 	let properties = chain_spec.properties();
 	io.merge(ChainSpec::new(chain_name, genesis_hash, properties).into_rpc())?;
 
-	io.merge(System::new(client.clone(), pool, deny_unsafe).into_rpc())?;
+	io.merge(System::new(client.clone(), pool.clone(), deny_unsafe).into_rpc())?;
 	// Making synchronous calls in light client freezes the browser currently,
 	// more context: https://github.com/paritytech/substrate/pull/3480
 	// These RPCs should use an asynchronous caller instead.
@@ -222,6 +228,13 @@ where
 	)?;
 
 	io.merge(StateMigration::new(client.clone(), backend, deny_unsafe).into_rpc())?;
+
+	io.merge(BlobApiServer::into_rpc(BlobRpc::<C, P, Block, _>::new(
+		client.clone(),
+		pool,
+		blob_rpc_deps.shard_store,
+		blob_rpc_deps.blob_handle,
+	)))?;
 
 	if is_dev_chain || kate_rpc_deps.rpc_metrics_enabled {
 		io.merge(KateApiMetricsServer::into_rpc(Kate::<C, Block>::new(

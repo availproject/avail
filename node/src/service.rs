@@ -21,6 +21,8 @@
 
 use crate::{cli::Cli, rpc as node_rpc};
 use avail_core::AppId;
+use blob::start_blob_service;
+use blob::types::Deps;
 use da_runtime::{apis::RuntimeApi, NodeBlock as Block, Runtime};
 
 use codec::Encode;
@@ -171,6 +173,7 @@ pub fn new_partial(
 	config: &Configuration,
 	unsafe_da_sync: bool,
 	kate_rpc_deps: kate_rpc::Deps,
+	blob_rpc_deps: blob::types::Deps<Block>,
 ) -> Result<
 	sc_service::PartialComponents<
 		FullClient,
@@ -329,8 +332,8 @@ pub fn new_partial(
 					finality_provider: finality_proof_provider.clone(),
 				},
 				kate_rpc_deps: kate_rpc_deps.clone(),
+				blob_rpc_deps: blob_rpc_deps.clone(),
 			};
-
 			node_rpc::create_full(deps, rpc_backend.clone()).map_err(Into::into)
 		};
 
@@ -383,6 +386,9 @@ pub fn new_full_base(
 		None
 	};
 
+	// Blob protocols setup
+	let (blob_notif_cfg, blob_req_res_cfg, blob_handle, shard_store) = start_blob_service();
+
 	let sc_service::PartialComponents {
 		client,
 		backend,
@@ -392,11 +398,23 @@ pub fn new_full_base(
 		select_chain,
 		transaction_pool,
 		other: (rpc_builder, import_setup, rpc_setup, mut telemetry),
-	} = new_partial(&config, unsafe_da_sync, kate_rpc_deps)?;
+	} = new_partial(
+		&config,
+		unsafe_da_sync,
+		kate_rpc_deps,
+		Deps {
+			blob_handle: blob_handle.clone(),
+			shard_store,
+		},
+	)?;
 
 	let shared_voter_state = rpc_setup;
 	let auth_disc_publish_non_global_ips = config.network.allow_non_globals_in_dht;
 	let mut net_config = sc_network::config::FullNetworkConfiguration::new(&config.network);
+
+	net_config.add_notification_protocol(blob_notif_cfg);
+	net_config.add_request_response_protocol(blob_req_res_cfg);
+
 	let grandpa_protocol_name = sc_consensus_grandpa::protocol_standard_name(
 		&client
 			.block_hash(0)
@@ -427,6 +445,8 @@ pub fn new_full_base(
 			block_relay: None,
 		})?;
 
+	blob_handle.register_network(network.clone());
+
 	let role = config.role.clone();
 	let force_authoring = config.force_authoring;
 	let backoff_authoring_blocks =
@@ -451,7 +471,10 @@ pub fn new_full_base(
 		system_rpc_tx,
 		tx_handler_controller,
 		sync_service: sync_service.clone(),
-		telemetry: telemetry.as_mut(),
+		telemetry: match telemetry.as_mut() {
+			Some(t) => Some(t),
+			None => None,
+		},
 	})?;
 
 	if let Some(hwbench) = hwbench {

@@ -1005,6 +1005,7 @@ dependencies = [
  "async-trait",
  "avail-base",
  "avail-core",
+ "blob",
  "clap 4.5.26",
  "clap-num",
  "clap_complete",
@@ -1067,6 +1068,7 @@ dependencies = [
  "sp-runtime",
  "sp-timestamp",
  "sp-tracing",
+ "sp-transaction-pool",
  "sp-transaction-storage-proof",
  "substrate-build-script-utils",
  "substrate-frame-rpc-system",
@@ -1074,6 +1076,7 @@ dependencies = [
  "substrate-state-trie-migration-rpc",
  "tempfile",
  "testing-rpc",
+ "tokio",
  "try-runtime-cli",
 ]
 
@@ -1391,6 +1394,30 @@ dependencies = [
  "cc",
  "cfg-if",
  "constant_time_eq",
+]
+
+[[package]]
+name = "blob"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-channel",
+ "da-control",
+ "da-runtime",
+ "futures",
+ "jsonrpsee",
+ "log",
+ "once_cell",
+ "parity-scale-codec",
+ "parking_lot 0.12.3",
+ "sc-client-api",
+ "sc-network",
+ "sc-transaction-pool-api",
+ "sp-api",
+ "sp-core",
+ "sp-runtime",
+ "sp-transaction-pool",
+ "tokio",
 ]
 
 [[package]]
