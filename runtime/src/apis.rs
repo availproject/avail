@@ -240,37 +240,6 @@ impl_runtime_apis! {
 		}
 	}
 
-
-	impl frame_system_rpc_runtime_api::SystemEventsApi<Block> for Runtime {
-		fn fetch_transaction_success_status() -> Vec<frame_system_rpc_runtime_api::TransactionSuccessStatus> {
-			use frame_system_rpc_runtime_api::TransactionSuccessStatus;
-			use frame_system::Event;
-
-			let mut results: Vec<TransactionSuccessStatus> = Vec::new();
-			let event_records = System::read_events_no_consensus();
-			for event_record in event_records {
-				let id = match &event_record.phase {
-					frame_system::Phase::ApplyExtrinsic(x) => *x,
-					_ => continue
-				};
-
-				let system_event = match &event_record.event {
-					crate::RuntimeEvent::System(x) => x,
-					_ => continue,
-				};
-
-				match system_event {
-					Event::<Runtime>::ExtrinsicSuccess{dispatch_info: _} => results.push(TransactionSuccessStatus {tx_index: id, tx_success: true}),
-					Event::<Runtime>::ExtrinsicFailed{dispatch_error: _, dispatch_info: _} => results.push(TransactionSuccessStatus {tx_index: id, tx_success: false}),
-					_ => continue,
-				}
-			}
-
-			results
-		}
-	}
-
-
 	impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<
 		Block,
 		Balance,
@@ -406,9 +375,7 @@ impl_runtime_apis! {
 		fn check_if_extrinsic_is_post_inherent(uxt: &<Block as BlockT>::Extrinsic) -> bool {
 			use frame_support::traits::ExtrinsicCall;
 
-			let Ok(xt) =  TryInto::<&RTExtrinsic>::try_into(uxt) else {
-				return false;
-			};
+			let Ok(xt) =  TryInto::<&RTExtrinsic>::try_into(uxt);
 
 			let vector_pallet_call = match xt.call() {
 				RuntimeCall::Vector(call) => call,

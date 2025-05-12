@@ -6,15 +6,14 @@ use crate::{
 	state::Configuration,
 	storage_utils::MessageStatusEnum,
 	Broadcasters, ConfigurationStorage, Error, Event, ExecutionStateRoots, FunctionIds,
-	FunctionInput, FunctionOutput, FunctionProof, Head, Headers, MessageStatus, ProofOutputs,
-	RotateVerificationKey, SP1VerificationKey, SourceChainFrozen, StepVerificationKey,
-	SyncCommitteeHashes, SyncCommitteePoseidons, Updater, ValidProof, WhitelistedDomains,
+	FunctionInput, FunctionOutput, FunctionProof, Head, Headers, MessageStatus, MockEnabled,
+	ProofOutputs, RotateVerificationKey, SP1VerificationKey, SourceChainFrozen,
+	StepVerificationKey, SyncCommitteeHashes, SyncCommitteePoseidons, Updater, ValidProof,
+	WhitelistedDomains,
 };
-use alloy_sol_types::private::primitives::hex::ToHex;
 use alloy_sol_types::SolValue;
 use avail_core::data_proof::Message::FungibleToken;
 use avail_core::data_proof::{tx_uid, AddressedMessage, Message};
-use codec::Encode;
 use frame_support::{
 	assert_err, assert_ok,
 	traits::{fungible::Inspect, DefensiveTruncateFrom},
@@ -1422,7 +1421,7 @@ fn test_fulfill_successfully() {
 		let public_inputs = sp1_proof_with_public_values.public_values.to_vec();
 
 		SP1VerificationKey::<Test>::set(H256(SP1_VERIFICATION_KEY));
-		let proof_outputs: ProofOutputs = SolValue::abi_decode(&public_inputs, true).unwrap();
+		let _proof_outputs: ProofOutputs = SolValue::abi_decode(&public_inputs, true).unwrap();
 		let slots_per_period = 8192;
 		let finality_threshold = 342u16;
 		let last_slot = 6867616u64;
@@ -1484,6 +1483,95 @@ fn test_fulfill_successfully() {
 			)),
 			next_sync_committee_hash
 		);
+	});
+}
+
+#[test]
+fn test_fulfill_successfully_mock_enabled() {
+	new_test_ext().execute_with(|| {
+		let sp1_proof_with_public_values = SP1ProofWithPublicValues::load(PROOF_FILE).unwrap();
+		// proof dummy that should pass when verification is disabled
+		let proof = vec![0x01, 0x02, 0x03, 0x04, 0x05, 0x06];
+		let public_inputs = sp1_proof_with_public_values.public_values.to_vec();
+
+		SP1VerificationKey::<Test>::set(H256(SP1_VERIFICATION_KEY));
+		let slots_per_period = 8192;
+		let finality_threshold = 342u16;
+		let last_slot = 6867616u64;
+		let current_period = last_slot / slots_per_period;
+		Head::<Test>::set(last_slot);
+		SyncCommitteeHashes::<Test>::set(
+			current_period,
+			H256(hex!(
+				"1010a184305750d5dbc946a74673f8391044ff0600b64a5d08b970fcdea4c055"
+			)),
+		);
+
+		ConfigurationStorage::<Test>::set(Configuration {
+			slots_per_period,
+			finality_threshold,
+		});
+		Updater::<Test>::set(H256(TEST_SENDER_VEC));
+
+		// set mock flag
+		MockEnabled::<Test>::set(true);
+
+		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
+		let ok = Bridge::mock_fulfill(
+			origin.clone(),
+			BoundedVec::truncate_from(public_inputs.clone()),
+		);
+
+		assert_ok!(ok);
+		// move head so that proof can pass to the validation point
+		Head::<Test>::set(last_slot + 1);
+		// put back mock enabled to false, and the empty proof should fail
+		MockEnabled::<Test>::set(false);
+		let err = Bridge::fulfill(
+			origin,
+			BoundedVec::truncate_from(proof),
+			BoundedVec::truncate_from(public_inputs),
+		);
+
+		// assert that verification is failed with a dummy proof when verification is not disabled
+		assert_err!(err, Error::<Test>::VerificationFailed);
+	});
+}
+
+#[test]
+fn test_mock_fulfill_disabled() {
+	new_test_ext().execute_with(|| {
+		let sp1_proof_with_public_values = SP1ProofWithPublicValues::load(PROOF_FILE).unwrap();
+		let public_inputs = sp1_proof_with_public_values.public_values.to_vec();
+
+		SP1VerificationKey::<Test>::set(H256(SP1_VERIFICATION_KEY));
+		let slots_per_period = 8192;
+		let finality_threshold = 342u16;
+		let last_slot = 6867616u64;
+		let current_period = last_slot / slots_per_period;
+		Head::<Test>::set(last_slot);
+		SyncCommitteeHashes::<Test>::set(
+			current_period,
+			H256(hex!(
+				"1010a184305750d5dbc946a74673f8391044ff0600b64a5d08b970fcdea4c055"
+			)),
+		);
+
+		ConfigurationStorage::<Test>::set(Configuration {
+			slots_per_period,
+			finality_threshold,
+		});
+		Updater::<Test>::set(H256(TEST_SENDER_VEC));
+
+		// set mock flag
+		MockEnabled::<Test>::set(false);
+
+		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
+		let err = Bridge::mock_fulfill(
+			origin.clone(),
+			BoundedVec::truncate_from(public_inputs.clone()),
+		);
+		assert_err!(err, Error::<Test>::MockIsNotEnabled);
 	});
 }
 
@@ -1777,5 +1865,28 @@ fn set_sync_committee_hash_non_root() {
 
 		assert_err!(err, BadOrigin);
 		assert_eq!(SyncCommitteeHashes::<Test>::get(period), H256::zero());
+	});
+}
+
+#[test]
+fn mock_enable() {
+	new_test_ext().execute_with(|| {
+		let expected_event = RuntimeEvent::Bridge(Event::MockEnabled { value: true });
+		assert_eq!(MockEnabled::<Test>::get(), false);
+		let ok = Bridge::enable_mock(RawOrigin::Root.into(), true);
+		assert_ok!(ok);
+		assert_eq!(MockEnabled::<Test>::get(), true);
+		System::assert_last_event(expected_event);
+	});
+}
+
+#[test]
+fn mock_enable_non_root() {
+	new_test_ext().execute_with(|| {
+		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
+		assert_eq!(MockEnabled::<Test>::get(), false);
+		let err = Bridge::enable_mock(origin, true);
+		assert_err!(err, BadOrigin);
+		assert_eq!(MockEnabled::<Test>::get(), false);
 	});
 }

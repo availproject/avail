@@ -9,7 +9,6 @@ mod cli;
 mod command;
 mod da_block_import;
 mod rpc;
-mod transaction_state;
 
 fn main() -> sc_cli::Result<()> {
 	command::run()

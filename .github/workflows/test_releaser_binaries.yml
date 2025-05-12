@@ -20,9 +20,7 @@ jobs:
           - command: ENGINE=podman DISTRO=ubuntu-2004 ZIP=1 ./scripts/binaries/build.sh
           - command: ENGINE=podman DISTRO=ubuntu-2204 ZIP=1 ./scripts/binaries/build.sh
           - command: ENGINE=podman DISTRO=ubuntu-2404 ZIP=1 ./scripts/binaries/build.sh
-          - command: ENGINE=podman DISTRO=fedora-39 ZIP=1 ./scripts/binaries/build.sh
-          - command: ENGINE=podman DISTRO=fedora-40 ZIP=1 ./scripts/binaries/build.sh
-          - command: ENGINE=podman DISTRO=debian-11 ZIP=1 ./scripts/binaries/build.sh
+          - command: ENGINE=podman DISTRO=fedora-41 ZIP=1 ./scripts/binaries/build.sh
           - command: ENGINE=podman DISTRO=debian-12 ZIP=1 ./scripts/binaries/build.sh
           - command: ENGINE=podman DISTRO=arch ZIP=1 ./scripts/binaries/build.sh
     steps:
@@ -42,8 +40,8 @@ jobs:
           max_attempts: 2
           command: ${{ matrix.command }}
 
-  arm64_ubuntu_2004:
-    runs-on: ubuntu-20.04
+  arm64_ubuntu_2204:
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
 

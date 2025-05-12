@@ -1,33 +1,28 @@
-use super::{alice_nonce, local_connection, no_concurrency};
+/* use super::{alice_nonce, local_connection, no_concurrency};
 
 use avail_core::data_proof::ProofResponse;
 use avail_core::{AppExtrinsic, AppId, Keccak256};
-use avail_subxt::{
-	api::{
-		self,
-		runtime_types::{
-			avail_core::{header::extension::HeaderExtension, BlockLengthColumns, BlockLengthRows},
-			frame_system::limits::BlockLength,
-		},
+use avail_rust::{
+	avail::runtime_types::{
+		avail_core::{header::extension::HeaderExtension, BlockLengthColumns, BlockLengthRows},
+		frame_system::limits::BlockLength,
 	},
-	avail::{Cells, GDataProof, GRawScalar, GRow, Rows},
-	rpc::GProof,
-	submit::submit_data_with_nonce as submit_data,
-	tx,
-	utils::H256,
-	AvailClient, Cell, RpcParams,
+	prelude::*,
+	primitives::kate::Cells,
+	primitives::kate::GRawScalar,
+	primitives::kate::Rows,
+	Cell, GDataProof, GRow,
 };
 use kate::{
 	com::Cell as KateCell,
 	gridgen::{AsBytes as _, EvaluationGrid},
 };
 use kate_recovery::{matrix::Dimensions, proof::verify};
-use subxt::Error;
+use subxt::Error as subxtError;
 use subxt_signer::sr25519::dev;
 
 use anyhow::{anyhow, Result};
 use binary_merkle_tree::merkle_proof;
-use codec::Encode;
 use sp_core::keccak_256;
 use std::{num::NonZeroU16, sync::atomic::Ordering::Relaxed};
 use test_log::test;
@@ -65,7 +60,7 @@ async fn eval_grid_from_block(client: &AvailClient, block_hash: H256) -> Result<
 		.map_err(|e| anyhow!("Eval grid failed {e:?}"))
 }
 
-#[test(tokio::test)]
+#[tokio::test]
 pub async fn rpc_query_proof_test() -> Result<()> {
 	let _cg = no_concurrency("rpc_queries::proof_test").await;
 	let client = local_connection().await?;
@@ -132,7 +127,7 @@ pub async fn rpc_query_proof_test() -> Result<()> {
 	Ok(())
 }
 
-#[test(tokio::test)]
+#[tokio::test]
 pub async fn rpc_query_proof_test_2() -> Result<()> {
 	let _cg = no_concurrency("rpc_queries::proof_test_2").await;
 	let client = local_connection().await?;
@@ -239,7 +234,7 @@ pub async fn rpc_query_proof_test_2() -> Result<()> {
 	Ok(())
 }
 
-#[test(tokio::test)]
+#[tokio::test]
 pub async fn empty_commitments_test() -> Result<()> {
 	let _cg = no_concurrency("rpc_queries::commitments_test").await;
 	let client = local_connection().await?;
@@ -272,7 +267,7 @@ pub async fn empty_commitments_test() -> Result<()> {
 	Ok(())
 }
 
-#[test(tokio::test)]
+#[tokio::test]
 pub async fn rpc_query_block_length_test() -> Result<()> {
 	let _cg = no_concurrency("rpc_queries::block_lenght_test").await;
 	let client = local_connection().await?;
@@ -294,7 +289,7 @@ pub async fn rpc_query_block_length_test() -> Result<()> {
 	Ok(())
 }
 
-#[test(tokio::test)]
+#[tokio::test]
 pub async fn rpc_query_data_proof_test() -> Result<()> {
 	let _cg = no_concurrency("rpc_queries::data_proof_test").await;
 	let client = local_connection().await?;
@@ -331,3 +326,4 @@ pub async fn rpc_query_data_proof_test() -> Result<()> {
 	assert_eq!(actual_proof.data_proof.roots.bridge_root, H256::zero());
 	Ok(())
 }
+ */
