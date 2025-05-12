@@ -5281,127 +5281,127 @@ mod slashing {
 }
 
 mod deposit_avail_to_fusion {
-    use super::*;
+	use super::*;
 
 	#[test]
-    fn deposit_avail() {
-        new_test_ext().execute_with(|| {
-            create_avail_currency();
+	fn deposit_avail() {
+		new_test_ext().execute_with(|| {
+			create_avail_currency();
 
-            let fusion_address = FusionAddress::EvmAddress(H160::zero());
-            let controller = FUSION_STAKER;
-            FusionAddressToSubstrateAddress::<Test>::insert(fusion_address, controller);
+			let fusion_address = FusionAddress::EvmAddress(H160::zero());
+			let controller = FUSION_STAKER;
+			FusionAddressToSubstrateAddress::<Test>::insert(fusion_address, controller);
 
 			let amount = 10 * AVAIL;
 
-            assert_ok!(Fusion::deposit_avail_to_fusion(
-                RawOrigin::Signed(controller).into(),
-                fusion_address,
-                amount,
-            ));
+			assert_ok!(Fusion::deposit_avail_to_fusion(
+				RawOrigin::Signed(controller).into(),
+				fusion_address,
+				amount,
+			));
 
-            let balance = UserCurrencyBalances::<Test>::get(fusion_address, AVAIL_CURRENCY_ID)
-                .expect("should have a balance entry");
-            assert_eq!(balance.amount, amount);
+			let balance = UserCurrencyBalances::<Test>::get(fusion_address, AVAIL_CURRENCY_ID)
+				.expect("should have a balance entry");
+			assert_eq!(balance.amount, amount);
 
-            System::assert_last_event(RuntimeEvent::Fusion(Event::CurrencyDeposited {
-                fusion_address,
-                currency_id: AVAIL_CURRENCY_ID,
-                amount,
-            }));
-        });
-    }
-
-	#[test]
-    fn bad_origin() {
-        new_test_ext().execute_with(|| {
-            let fusion_address = FusionAddress::EvmAddress(H160::zero());
-            assert_noop!(
-                Fusion::deposit_avail_to_fusion(RawOrigin::None.into(), fusion_address, AVAIL),
-                BadOrigin
-            );
-        });
-    }
+			System::assert_last_event(RuntimeEvent::Fusion(Event::CurrencyDeposited {
+				fusion_address,
+				currency_id: AVAIL_CURRENCY_ID,
+				amount,
+			}));
+		});
+	}
 
 	#[test]
-    fn invalid_amount() {
-        new_test_ext().execute_with(|| {
-            create_avail_currency();
-            let fusion_address = FusionAddress::EvmAddress(H160::zero());
-            let controller = FUSION_STAKER;
-            FusionAddressToSubstrateAddress::<Test>::insert(fusion_address, controller);
-
-            assert_noop!(
-                Fusion::deposit_avail_to_fusion(
-                    RawOrigin::Signed(controller).into(),
-                    fusion_address,
-                    0
-                ),
-                Error::<Test>::InvalidAmount
-            );
-        });
-    }
+	fn bad_origin() {
+		new_test_ext().execute_with(|| {
+			let fusion_address = FusionAddress::EvmAddress(H160::zero());
+			assert_noop!(
+				Fusion::deposit_avail_to_fusion(RawOrigin::None.into(), fusion_address, AVAIL),
+				BadOrigin
+			);
+		});
+	}
 
 	#[test]
-    fn currency_not_found() {
-        new_test_ext().execute_with(|| {
-            // Don't create the currency
-            let fusion_address = FusionAddress::EvmAddress(H160::zero());
-            let controller = FUSION_STAKER;
-            FusionAddressToSubstrateAddress::<Test>::insert(fusion_address, controller);
+	fn invalid_amount() {
+		new_test_ext().execute_with(|| {
+			create_avail_currency();
+			let fusion_address = FusionAddress::EvmAddress(H160::zero());
+			let controller = FUSION_STAKER;
+			FusionAddressToSubstrateAddress::<Test>::insert(fusion_address, controller);
 
-            assert_noop!(
-                Fusion::deposit_avail_to_fusion(
-                    RawOrigin::Signed(controller).into(),
-                    fusion_address,
-                    AVAIL
-                ),
-                Error::<Test>::CurrencyNotFound
-            );
-        });
-    }
-
-	#[test]
-    fn invalid_substrate_address() {
-        new_test_ext().execute_with(|| {
-            create_avail_currency();
-            let fusion_address = FusionAddress::EvmAddress(H160::zero());
-            let controller = FUSION_STAKER;
-
-            assert_noop!(
-                Fusion::deposit_avail_to_fusion(
-                    RawOrigin::Signed(controller).into(),
-                    fusion_address,
-                    AVAIL
-                ),
-                Error::<Test>::InvalidSubstrateAddress
-            );
-        });
-    }
+			assert_noop!(
+				Fusion::deposit_avail_to_fusion(
+					RawOrigin::Signed(controller).into(),
+					fusion_address,
+					0
+				),
+				Error::<Test>::InvalidAmount
+			);
+		});
+	}
 
 	#[test]
-    fn insufficient_balance() {
-        new_test_ext().execute_with(|| {
-            create_avail_currency();
-            let fusion_address = FusionAddress::EvmAddress(H160::zero());
-            let controller = FUSION_STAKER;
-            FusionAddressToSubstrateAddress::<Test>::insert(fusion_address, controller);
+	fn currency_not_found() {
+		new_test_ext().execute_with(|| {
+			// Don't create the currency
+			let fusion_address = FusionAddress::EvmAddress(H160::zero());
+			let controller = FUSION_STAKER;
+			FusionAddressToSubstrateAddress::<Test>::insert(fusion_address, controller);
+
+			assert_noop!(
+				Fusion::deposit_avail_to_fusion(
+					RawOrigin::Signed(controller).into(),
+					fusion_address,
+					AVAIL
+				),
+				Error::<Test>::CurrencyNotFound
+			);
+		});
+	}
+
+	#[test]
+	fn invalid_substrate_address() {
+		new_test_ext().execute_with(|| {
+			create_avail_currency();
+			let fusion_address = FusionAddress::EvmAddress(H160::zero());
+			let controller = FUSION_STAKER;
+
+			assert_noop!(
+				Fusion::deposit_avail_to_fusion(
+					RawOrigin::Signed(controller).into(),
+					fusion_address,
+					AVAIL
+				),
+				Error::<Test>::InvalidSubstrateAddress
+			);
+		});
+	}
+
+	#[test]
+	fn insufficient_balance() {
+		new_test_ext().execute_with(|| {
+			create_avail_currency();
+			let fusion_address = FusionAddress::EvmAddress(H160::zero());
+			let controller = FUSION_STAKER;
+			FusionAddressToSubstrateAddress::<Test>::insert(fusion_address, controller);
 
 			// Send balance to zero for the controller account.
 			assert_ok!(Balances::force_set_balance(
-                RawOrigin::Root.into(),
-                controller,
-                0,
-            ));
+				RawOrigin::Root.into(),
+				controller,
+				0,
+			));
 
-            assert_noop!(
-                Fusion::deposit_avail_to_fusion(
-                    RawOrigin::Signed(controller).into(),
-                    fusion_address,
-                    AVAIL
-                ),
-                TokenError::FundsUnavailable
-            );
-        });
-    }
+			assert_noop!(
+				Fusion::deposit_avail_to_fusion(
+					RawOrigin::Signed(controller).into(),
+					fusion_address,
+					AVAIL
+				),
+				TokenError::FundsUnavailable
+			);
+		});
+	}
 }
