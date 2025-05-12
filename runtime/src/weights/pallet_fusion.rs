@@ -428,4 +428,9 @@ impl<T: frame_system::Config> pallet_fusion::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(3_u64))
 			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
+	fn deposit_avail_to_fusion() -> Weight {
+		Weight::from_parts(61_595_000, 14608207)
+			.saturating_add(T::DbWeight::get().reads(3_u64))
+			.saturating_add(T::DbWeight::get().writes(2_u64))
+	}
 }

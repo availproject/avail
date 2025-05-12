@@ -69,6 +69,7 @@ pub trait WeightInfo {
 	fn withdraw_avail_to_controller() -> Weight;
 	fn set_pool_boost_allocations() -> Weight;
 	fn withdraw_pool_account() -> Weight;
+	fn deposit_avail_to_fusion() -> Weight;
 }
 
 /// Weights for `pallet_fusion` using the Avail node and recommended hardware.
@@ -452,6 +453,11 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(3_u64))
 			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
+	fn deposit_avail_to_fusion() -> Weight {
+		Weight::from_parts(10_000_000, 5000)
+            .saturating_add(T::DbWeight::get().reads(3_u64))
+            .saturating_add(T::DbWeight::get().writes(1_u64))
+	}
 }
 
 // For backwards compatibility and tests.
@@ -833,5 +839,10 @@ impl WeightInfo for () {
 		Weight::from_parts(61_595_000, 14608207)
 			.saturating_add(RocksDbWeight::get().reads(3_u64))
 			.saturating_add(RocksDbWeight::get().writes(2_u64))
+	}
+	fn deposit_avail_to_fusion() -> Weight {
+		Weight::from_parts(10_000_000, 5000)
+            .saturating_add(RocksDbWeight::get().reads(3_u64))
+            .saturating_add(RocksDbWeight::get().writes(1u64))
 	}
 }

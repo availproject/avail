@@ -1357,6 +1357,44 @@ pub mod pallet {
 
 			Ok(())
 		}
+
+		/// Deposit native AVAIL into the Fusion balance for a FusionAddress.
+		/// Only callable from a signed Substrate (non-EVM) account which must be the controller
+		/// of the given FusionAddress.
+		#[pallet::call_index(22)]
+		#[pallet::weight(T::WeightInfo::deposit_avail_to_fusion())]
+		pub fn deposit_avail_to_fusion(
+			origin: OriginFor<T>,
+			fusion_address: FusionAddress,
+			amount: BalanceOf<T>,
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+			Self::ensure_valid_fusion_origin(who.clone(), fusion_address)?;
+
+			ensure!(!amount.is_zero(), Error::<T>::InvalidAmount);
+
+			let currency =
+				Currencies::<T>::get(AVAIL_CURRENCY_ID).ok_or(Error::<T>::CurrencyNotFound)?;
+
+			let avail_in_currency = currency.avail_to_currency(AVAIL_CURRENCY_ID, amount, None)?;
+			let pallet_avail = Self::avail_account();
+			T::Currency::transfer(&who, &pallet_avail, amount, ExistenceRequirement::KeepAlive)?;
+
+			Self::add_to_currency_balance(
+				fusion_address,
+				AVAIL_CURRENCY_ID,
+				avail_in_currency,
+				true,
+			)?;
+
+			Self::deposit_event(Event::CurrencyDeposited {
+				fusion_address,
+				currency_id: AVAIL_CURRENCY_ID,
+				amount: avail_in_currency,
+			});
+
+			Ok(())
+		}
 	}
 }
 
@@ -1840,7 +1878,6 @@ impl<T: Config> Pallet<T> {
 		currency_id: CurrencyId,
 		amount: FusionCurrencyBalance,
 	) -> DispatchResult {
-		// TODO - in case we're adding avail, the Avail currency should come from somewhere and put in avail holdings of the pallet, for now we just prevent it
 		ensure!(
 			currency_id != AVAIL_CURRENCY_ID,
 			Error::<T>::CannotDepositAvailCurrency
