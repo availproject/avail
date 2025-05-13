@@ -12,7 +12,7 @@ use sp_core::H256;
 // }
 
 // Vector initial configuration
-pub const BROADCASTER_DOMAIN: u32 = 2;
+pub const BROADCASTER_DOMAIN: H256 = H256([1u8; 32]);
 pub const BROADCASTER: H256 = H256::zero();
 pub const SLOTS_PER_PERIOD: u64 = 8192;
 pub const FINALITY_THRESHOLD: u16 = 342;
