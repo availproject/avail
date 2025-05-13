@@ -24,7 +24,7 @@ pub struct Cli {
 	pub subcommand: Option<Subcommand>,
 
 	#[allow(missing_docs)]
-	#[clap(flatten)]
+	#[command(flatten)]
 	pub run: sc_cli::RunCmd,
 
 	/// Disable automatic hardware benchmarks.
@@ -42,15 +42,15 @@ pub struct Cli {
 	pub unsafe_da_sync: bool,
 
 	/// Provides storage monitoring options on the node
-	#[clap(flatten)]
+	#[command(flatten)]
 	pub storage_monitor: sc_storage_monitor::StorageMonitorParams,
 
 	/// Enable Kate RPC
-	#[clap(long = "enable-kate-rpc", default_value_t = false)]
+	#[arg(long = "enable-kate-rpc", default_value_t = false)]
 	pub kate_rpc_enabled: bool,
 
 	/// Enable Kate RPC Metrics
-	#[clap(long = "enable-kate-rpc-metrics", default_value_t = false)]
+	#[arg(long = "enable-kate-rpc-metrics", default_value_t = false)]
 	pub kate_rpc_metrics_enabled: bool,
 
 	/// The maximum number of cells that can be requested in one go.
