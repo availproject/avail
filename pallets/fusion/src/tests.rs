@@ -4241,19 +4241,51 @@ mod withdraw_avail_to_controller {
 
 			let controller_balance_before = Balances::free_balance(controller_address);
 
+			let avail_currency_balance =
+				UserCurrencyBalances::<Test>::get(fusion_address, AVAIL_CURRENCY_ID)
+					.unwrap()
+					.amount;
+
+			// Full withdraw
 			assert_ok!(Fusion::withdraw_avail_to_controller(
 				RawOrigin::Signed(controller_address).into(),
-				fusion_address
+				fusion_address,
+				avail_currency_balance
 			));
 
 			let controller_balance_after = Balances::free_balance(controller_address);
 
-			assert!(controller_balance_after > controller_balance_before);
+			assert!(controller_balance_after == controller_balance_before + avail_currency_balance);
 
 			System::assert_last_event(RuntimeEvent::Fusion(Event::AvailWithdrawnToController {
 				fusion_address,
 				controller: controller_address,
-				amount: controller_balance_after - controller_balance_before,
+				amount: avail_currency_balance,
+			}));
+
+			// Partial withdraw
+			Fusion::add_to_currency_balance(
+				fusion_address,
+				AVAIL_CURRENCY_ID,
+				1500000000000000000,
+				false,
+			)
+			.unwrap();
+			Balances::force_set_balance(
+				RawOrigin::Root.into(),
+				Fusion::avail_account(),
+				10 * AVAIL,
+			)
+			.unwrap();
+			assert_ok!(Fusion::withdraw_avail_to_controller(
+				RawOrigin::Signed(controller_address).into(),
+				fusion_address,
+				500000000000000000
+			));
+			System::assert_last_event(RuntimeEvent::Fusion(Event::AvailWithdrawnToController {
+				fusion_address,
+				controller: controller_address,
+				amount: 500000000000000000,
 			}));
 		});
 	}
@@ -4272,9 +4304,33 @@ mod withdraw_avail_to_controller {
 			assert_noop!(
 				Fusion::withdraw_avail_to_controller(
 					RawOrigin::Signed(controller_address).into(),
-					fusion_address
+					fusion_address,
+					1,
 				),
 				Error::<Test>::InvalidSubstrateAddress
+			);
+		});
+	}
+
+	#[test]
+	fn invalid_amount() {
+		new_test_ext().execute_with(|| {
+			create_avail_currency();
+			create_avail_pool();
+			create_btc_currency();
+			create_btc_pool();
+
+			let fusion_address = FusionAddress::EvmAddress(H160::zero());
+			let controller_address = FUSION_STAKER;
+			FusionAddressToSubstrateAddress::<Test>::insert(fusion_address, controller_address);
+
+			assert_noop!(
+				Fusion::withdraw_avail_to_controller(
+					RawOrigin::Signed(controller_address).into(),
+					fusion_address,
+					0,
+				),
+				Error::<Test>::InvalidAmount
 			);
 		});
 	}
@@ -4303,7 +4359,8 @@ mod withdraw_avail_to_controller {
 			assert_noop!(
 				Fusion::withdraw_avail_to_controller(
 					RawOrigin::Signed(controller_address).into(),
-					fusion_address
+					fusion_address,
+					1
 				),
 				Error::<Test>::CurrencyNotFound
 			);
@@ -4328,8 +4385,8 @@ mod withdraw_avail_to_controller {
 			.unwrap();
 
 			assert_noop!(
-				Fusion::do_withdraw_avail_to_controller(fusion_address),
-				Error::<Test>::NoControllerAddressForUser
+				Fusion::do_withdraw_avail_to_controller(fusion_address, 1),
+				Error::<Test>::NoControllerAddressForUser,
 			);
 		});
 	}
@@ -4348,7 +4405,8 @@ mod withdraw_avail_to_controller {
 			assert_noop!(
 				Fusion::withdraw_avail_to_controller(
 					RawOrigin::Signed(controller_address).into(),
-					fusion_address
+					fusion_address,
+					1
 				),
 				Error::<Test>::NoCurrencyBalanceForUser
 			);
@@ -4370,9 +4428,57 @@ mod withdraw_avail_to_controller {
 			assert_noop!(
 				Fusion::withdraw_avail_to_controller(
 					RawOrigin::Signed(controller_address).into(),
-					fusion_address
+					fusion_address,
+					1,
 				),
 				Error::<Test>::NoFundsToWithdraw
+			);
+		});
+	}
+
+	#[test]
+	fn not_enough_currency_balance_for_user() {
+		new_test_ext().execute_with(|| {
+			create_avail_currency();
+			create_avail_pool();
+
+			let fusion_address = FusionAddress::EvmAddress(H160::zero());
+			let controller_address = FUSION_STAKER;
+
+			FusionAddressToSubstrateAddress::<Test>::insert(fusion_address, controller_address);
+			Fusion::add_to_currency_balance(fusion_address, AVAIL_CURRENCY_ID, 1, false).unwrap();
+
+			assert_noop!(
+				Fusion::withdraw_avail_to_controller(
+					RawOrigin::Signed(controller_address).into(),
+					fusion_address,
+					2,
+				),
+				Error::<Test>::NotEnoughCurrencyBalanceForUser
+			);
+		});
+	}
+
+	#[test]
+	fn amount_will_go_below_minimum() {
+		new_test_ext().execute_with(|| {
+			create_avail_currency();
+			create_avail_pool();
+
+			let fusion_address = FusionAddress::EvmAddress(H160::zero());
+			let controller_address = FUSION_STAKER;
+
+			FusionAddressToSubstrateAddress::<Test>::insert(fusion_address, controller_address);
+			Fusion::add_to_currency_balance(fusion_address, AVAIL_CURRENCY_ID, AVAIL, false)
+				.unwrap();
+
+			assert_noop!(
+				Fusion::withdraw_avail_to_controller(
+					RawOrigin::Signed(controller_address).into(),
+					fusion_address,
+					1,
+				),
+				Error::<Test>::AmountWillGoBelowMinimum
 			);
 		});
 	}

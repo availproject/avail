@@ -734,7 +734,7 @@ mod benchmarks {
 			.unwrap();
 
 		#[extrinsic_call]
-		_(origin, fusion_address);
+		_(origin, fusion_address, 9_000_000_000_000_000_000);
 
 		Ok(())
 	}

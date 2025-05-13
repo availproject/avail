@@ -615,7 +615,7 @@ pub mod pallet {
 		EntityZeroDoesNotExist,
 		/// Action cannot be performed because other pools still exist
 		OtherPoolsExist,
-		/// TODO Temp, we'll see when bridge com is done
+		/// We cannot directly deposit Avail, we can only use `deposit_avail_to_fusion`
 		CannotDepositAvailCurrency,
 	}
 
@@ -1300,10 +1300,11 @@ pub mod pallet {
 		pub fn withdraw_avail_to_controller(
 			origin: OriginFor<T>,
 			fusion_address: FusionAddress,
+			amount: FusionCurrencyBalance,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 			Self::ensure_valid_fusion_origin(who, fusion_address)?;
-			Self::do_withdraw_avail_to_controller(fusion_address)?;
+			Self::do_withdraw_avail_to_controller(fusion_address, amount)?;
 			Ok(())
 		}
 
@@ -2464,10 +2465,18 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Withdraws AVAIL currency to the controller account for a given Fusion address.
-	pub fn do_withdraw_avail_to_controller(fusion_address: FusionAddress) -> DispatchResult {
+	pub fn do_withdraw_avail_to_controller(
+		fusion_address: FusionAddress,
+		amount: FusionCurrencyBalance,
+	) -> DispatchResult {
+		// Ensure amount is valid
+		ensure!(amount > 0, Error::<T>::InvalidAmount);
+
 		// Get the currency
 		let currency =
 			Currencies::<T>::get(AVAIL_CURRENCY_ID).ok_or(Error::<T>::CurrencyNotFound)?;
+
+		let one_avail = 10u128.pow(currency.nb_decimals.into());
 
 		// Get the controller account
 		let controller_account = FusionAddressToSubstrateAddress::<T>::get(fusion_address)
@@ -2480,25 +2489,50 @@ impl<T: Config> Pallet<T> {
 
 		// Ensure the balance is greater than 0
 		ensure!(balance > 0, Error::<T>::NoFundsToWithdraw);
+		ensure!(
+			amount <= balance,
+			Error::<T>::NotEnoughCurrencyBalanceForUser
+		);
+		if amount < balance {
+			ensure!(
+				balance.checked_sub(amount).unwrap_or_default() >= one_avail,
+				Error::<T>::AmountWillGoBelowMinimum,
+			);
+		}
 
 		// Fusion currency in avail
-		let balance_avail = currency.currency_to_avail(AVAIL_CURRENCY_ID, balance, None)?;
+		let amount_avail = currency.currency_to_avail(AVAIL_CURRENCY_ID, amount, None)?;
 
 		T::Currency::transfer(
 			&Self::avail_account(),
 			&controller_account,
-			balance_avail,
+			amount_avail,
 			ExistenceRequirement::KeepAlive,
 		)?;
 
-		// Remove the user's AVAIL currency balance after minting
-		UserCurrencyBalances::<T>::remove(fusion_address, AVAIL_CURRENCY_ID);
+		if amount == balance {
+			// Remove the user's AVAIL currency balance after minting
+			UserCurrencyBalances::<T>::remove(fusion_address, AVAIL_CURRENCY_ID);
+		} else {
+			let remaining: FusionCurrencyBalance = balance
+				.checked_sub(amount)
+				.ok_or(Error::<T>::ArithmeticError)?;
+			UserCurrencyBalances::<T>::insert(
+				fusion_address,
+				AVAIL_CURRENCY_ID,
+				FusionUserCurrencyBalance {
+					currency_id: AVAIL_CURRENCY_ID,
+					fusion_address,
+					amount: remaining,
+				},
+			);
+		}
 
 		// Emit an event indicating successful withdrawal
 		Self::deposit_event(Event::AvailWithdrawnToController {
 			fusion_address,
 			controller: controller_account,
-			amount: balance_avail,
+			amount: amount_avail,
 		});
 
 		Ok(())
