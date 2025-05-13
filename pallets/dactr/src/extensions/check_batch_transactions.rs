@@ -171,7 +171,7 @@ mod tests {
 		RuntimeCall::Vector(VectorCall::send_message {
 			message,
 			to: H256::default(),
-			domain: 0,
+			domain: H256([0u8; 32]),
 		})
 	}
 

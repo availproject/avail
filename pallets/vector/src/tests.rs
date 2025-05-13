@@ -168,8 +168,8 @@ pub fn get_valid_message() -> AddressedMessage {
 		message: Message::FungibleToken { asset_id, amount },
 		from: from.into(),
 		to: to.into(),
-		origin_domain: 2,
-		destination_domain: 1,
+		origin_app_address: H256([1u8; 32]),
+		destination_app_address: H256([0u8; 32]),
 		id: 0,
 	}
 }
@@ -183,8 +183,8 @@ fn get_valid_amb_message() -> AddressedMessage {
 		message: Message::ArbitraryMessage(data),
 		from: from.into(),
 		to: recipient.into(),
-		origin_domain: 2,
-		destination_domain: 1,
+		origin_app_address: H256([1u8; 32]),
+		destination_app_address: H256([0u8; 32]),
 		id: 0,
 	}
 }
@@ -299,7 +299,7 @@ fn test_execute_fungible_token_via_storage() {
 	new_test_ext().execute_with(|| {
 		let balance_before = Balances::balance(&Bridge::account_id());
 		Broadcasters::<Test>::set(
-			2,
+			H256([1u8; 32]),
 			H256(hex!(
 				"DC3542b6fcC39dC0d51ecdCbc6Fbb130D5e48d95000000000000000000000000"
 			)),
@@ -350,7 +350,7 @@ fn test_execute_fungible_token_via_storage_with_trimmed_storage_value() {
 	new_test_ext().execute_with(|| {
 		let balance_before = Balances::balance(&Bridge::account_id());
 		Broadcasters::<Test>::set(
-			2,
+			H256([1u8; 32]),
 			H256(hex!(
 				"1369a4c9391cf90d393b40faead521b0f7019dc5000000000000000000000000"
 			)),
@@ -378,8 +378,8 @@ fn test_execute_fungible_token_via_storage_with_trimmed_storage_value() {
 			to: H256(hex!(
 				"1a985fdff5f6eee4afce1dc0f367ab925cdca57e7e8585329830fc3ce6ef4e7a"
 			)),
-			origin_domain: 2,
-			destination_domain: 1,
+			origin_app_address: H256([1u8; 32]),
+			destination_app_address: H256([0u8; 32]),
 			id: 5469,
 		};
 
@@ -416,7 +416,7 @@ fn test_execute_fungible_token_via_storage_with_trimmed_storage_value() {
 fn test_execute_message_with_frozen_chain() {
 	new_test_ext().execute_with(|| {
 		Broadcasters::<Test>::set(
-			2,
+			H256([1u8; 32]),
 			H256(hex!(
 				"DC3542b6fcC39dC0d51ecdCbc6Fbb130D5e48d95000000000000000000000000"
 			)),
@@ -435,7 +435,7 @@ fn test_execute_message_with_frozen_chain() {
 		let storage_proof = get_valid_storage_proof();
 
 		// Goal: Prevent from executing message
-		SourceChainFrozen::<Test>::set(2, true);
+		SourceChainFrozen::<Test>::set(H256([1u8; 32]), true);
 		let error = Bridge::execute(
 			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
 			slot,
@@ -452,7 +452,7 @@ fn test_execute_message_with_frozen_chain() {
 fn test_execute_message_with_faulty_account_proof() {
 	new_test_ext().execute_with(|| {
 		Broadcasters::<Test>::set(
-			2,
+			H256([1u8; 32]),
 			H256(hex!(
 				"DC3542b6fcC39dC0d51ecdCbc6Fbb130D5e48d95000000000000000000000000"
 			)),
@@ -487,7 +487,7 @@ fn test_execute_message_with_faulty_account_proof() {
 fn test_execute_message_with_faulty_storage_proof() {
 	new_test_ext().execute_with(|| {
 		Broadcasters::<Test>::set(
-			2,
+			H256([1u8; 32]),
 			H256(hex!(
 				"DC3542b6fcC39dC0d51ecdCbc6Fbb130D5e48d95000000000000000000000000"
 			)),
@@ -523,7 +523,7 @@ fn test_execute_message_with_already_executed_message() {
 		let balance_before_transfer = Balances::balance(&Bridge::account_id());
 
 		Broadcasters::<Test>::set(
-			2,
+			H256([1u8; 32]),
 			H256(hex!(
 				"DC3542b6fcC39dC0d51ecdCbc6Fbb130D5e48d95000000000000000000000000"
 			)),
@@ -578,7 +578,7 @@ fn test_execute_message_with_already_executed_message() {
 fn test_execute_message_with_unsupported_domain() {
 	new_test_ext().execute_with(|| {
 		Broadcasters::<Test>::set(
-			2,
+			H256([1u8; 32]),
 			H256(hex!(
 				"DC3542b6fcC39dC0d51ecdCbc6Fbb130D5e48d95000000000000000000000000"
 			)),
@@ -594,7 +594,7 @@ fn test_execute_message_with_unsupported_domain() {
 
 		let mut message = get_valid_message();
 		// alter message
-		message.origin_domain = 4;
+		message.origin_app_address = H256([4u8; 32]);
 
 		let account_proof = get_valid_account_proof();
 		let storage_proof = get_valid_storage_proof();
@@ -902,7 +902,16 @@ fn test_fulfill_rotate_call_verification_key_is_not_set() {
 #[test]
 fn set_whitelisted_domains_works_with_root() {
 	new_test_ext().execute_with(|| {
-		let domains = BoundedVec::try_from([0, 1, 2, 3].to_vec()).unwrap();
+		let domains = BoundedVec::try_from(
+			[
+				H256([0u8; 32]),
+				H256([1u8; 32]),
+				H256([2u8; 32]),
+				H256([3u8; 32]),
+			]
+			.to_vec(),
+		)
+		.unwrap();
 		assert_ne!(WhitelistedDomains::<Test>::get(), domains);
 
 		let ok = Bridge::set_whitelisted_domains(RawOrigin::Root.into(), domains.clone());
@@ -916,7 +925,16 @@ fn set_whitelisted_domains_works_with_root() {
 #[test]
 fn set_whitelisted_domains_does_not_work_with_non_root() {
 	new_test_ext().execute_with(|| {
-		let domains = BoundedVec::try_from([0, 1, 2, 3].to_vec()).unwrap();
+		let domains = BoundedVec::try_from(
+			[
+				H256([0u8; 32]),
+				H256([1u8; 32]),
+				H256([2u8; 32]),
+				H256([3u8; 32]),
+			]
+			.to_vec(),
+		)
+		.unwrap();
 		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
 		let ok = Bridge::set_whitelisted_domains(origin, domains.clone());
 		assert_err!(ok, BadOrigin);
@@ -961,7 +979,7 @@ fn set_configuration_does_not_work_with_non_root() {
 #[test]
 fn set_broadcaster_works_with_root() {
 	new_test_ext().execute_with(|| {
-		let domain = 2;
+		let domain = H256([1u8; 32]);
 		let old = Broadcasters::<Test>::get(domain);
 		assert_ne!(old, STEP_FUNCTION_ID);
 
@@ -972,7 +990,7 @@ fn set_broadcaster_works_with_root() {
 		let expected_event = RuntimeEvent::Bridge(Event::BroadcasterUpdated {
 			old,
 			new: STEP_FUNCTION_ID,
-			domain,
+			app_address: domain,
 		});
 		System::assert_last_event(expected_event);
 	});
@@ -982,7 +1000,7 @@ fn set_broadcaster_works_with_root() {
 fn set_broadcaster_does_not_work_with_non_root() {
 	new_test_ext().execute_with(|| {
 		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
-		let ok = Bridge::set_broadcaster(origin, 2, STEP_FUNCTION_ID);
+		let ok = Bridge::set_broadcaster(origin, H256([1u8; 32]), STEP_FUNCTION_ID);
 		assert_err!(ok, BadOrigin);
 	});
 }
@@ -1047,16 +1065,23 @@ fn set_poseidon_hash_does_not_work_with_non_root() {
 #[test]
 fn source_chain_froze_works_with_root() {
 	new_test_ext().execute_with(|| {
-		let source_chain_id = 2;
+		let source_chain_app_address = H256([1u8; 32]);
 		let frozen = true;
-		assert_ne!(SourceChainFrozen::<Test>::get(source_chain_id), frozen);
+		assert_ne!(
+			SourceChainFrozen::<Test>::get(source_chain_app_address),
+			frozen
+		);
 
-		let ok = Bridge::source_chain_froze(RawOrigin::Root.into(), source_chain_id, frozen);
+		let ok =
+			Bridge::source_chain_froze(RawOrigin::Root.into(), source_chain_app_address, frozen);
 		assert_ok!(ok);
-		assert_eq!(SourceChainFrozen::<Test>::get(source_chain_id), frozen);
+		assert_eq!(
+			SourceChainFrozen::<Test>::get(source_chain_app_address),
+			frozen
+		);
 
 		let expected_event = RuntimeEvent::Bridge(Event::SourceChainFrozen {
-			source_chain_id,
+			source_chain_app_address,
 			frozen,
 		});
 		System::assert_last_event(expected_event);
@@ -1068,7 +1093,7 @@ fn source_chain_froze_does_not_work_with_non_root() {
 	new_test_ext().execute_with(|| {
 		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
 
-		let ok = Bridge::source_chain_froze(origin, 2, true);
+		let ok = Bridge::source_chain_froze(origin, H256([1u8; 32]), true);
 		assert_err!(ok, BadOrigin);
 	});
 }
@@ -1079,7 +1104,7 @@ fn send_message_arbitrary_message_works() {
 		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
 		let message = Message::ArbitraryMessage(BoundedVec::truncate_from([0, 1, 2, 3].to_vec()));
 		let to = ROTATE_FUNCTION_ID;
-		let domain = 2;
+		let domain = H256([1u8; 32]);
 
 		let event = Event::MessageSubmitted {
 			from: TEST_SENDER_VEC.into(),
@@ -1100,7 +1125,7 @@ fn send_message_arbitrary_message_doesnt_accept_empty_data() {
 		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
 		let message = Message::ArbitraryMessage(BoundedVec::truncate_from(vec![]));
 
-		let ok = Bridge::send_message(origin, message, ROTATE_FUNCTION_ID, 2);
+		let ok = Bridge::send_message(origin, message, ROTATE_FUNCTION_ID, H256([1u8; 32]));
 		assert_err!(ok, Error::<Test>::InvalidBridgeInputs);
 	});
 }
@@ -1117,7 +1142,7 @@ fn send_message_fungible_token_works() {
 			amount: 100,
 		};
 		let to = ROTATE_FUNCTION_ID;
-		let domain = 2;
+		let domain = H256([1u8; 32]);
 
 		Balances::make_free_balance_be(
 			&TEST_SENDER_VEC.into(),
@@ -1146,7 +1171,7 @@ fn send_message_fungible_token_does_not_accept_zero_amount() {
 			amount: 0,
 		};
 		let to = ROTATE_FUNCTION_ID;
-		let domain = 2;
+		let domain = H256([1u8; 32]);
 
 		let err = Bridge::send_message(origin, message, to, domain);
 		assert_err!(err, Error::<Test>::InvalidBridgeInputs);
@@ -1166,7 +1191,7 @@ fn execute_arbitrary_message_works() {
 		);
 
 		Broadcasters::<Test>::set(
-			2,
+			H256([1u8; 32]),
 			H256(hex!(
 				"Aa8c1bFC413e00884A7ac991851686D27b387997000000000000000000000000"
 			)),
@@ -1223,7 +1248,7 @@ fn test_double_execute_arbitrary_message() {
 		);
 
 		Broadcasters::<Test>::set(
-			2,
+			H256([1u8; 32]),
 			H256(hex!(
 				"Aa8c1bFC413e00884A7ac991851686D27b387997000000000000000000000000"
 			)),

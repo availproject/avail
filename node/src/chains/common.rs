@@ -14,6 +14,7 @@ use sc_telemetry::TelemetryEndpoints;
 use serde_json::{json, Value};
 use sp_core::crypto::AccountId32;
 use sp_core::sr25519::Public;
+use sp_core::H256;
 
 pub const PROTOCOL_ID: &str = "Avail";
 pub const TESTNET_TELEMETRY_URL: &str = "ws://telemetry.avail.tools:8001/submit";
@@ -144,7 +145,7 @@ pub fn runtime_genesis_config(
 			"syncCommitteePoseidon":get_poseidon_hash_for_period(),
 			"stepVerificationKey": STEP_VK.as_bytes().to_vec(),
 			"rotateVerificationKey": ROTATE_VK.as_bytes().to_vec(),
-			"whitelistedDomains": vec![2],
+			"whitelistedDomains": vec![H256([1u8; 32])],
 		},
 		"nominationPools": {
 			"minCreateBond": constants::nomination_pools::MIN_CREATE_BOND,

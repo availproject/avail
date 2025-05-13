@@ -235,7 +235,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 		function_ids: (STEP_FUNCTION_ID, ROTATE_FUNCTION_ID),
 		step_verification_key: STEP_VK.as_bytes().to_vec(),
 		rotate_verification_key: ROTATE_VK.as_bytes().to_vec(),
-		whitelisted_domains: vec![2],
+		whitelisted_domains: vec![H256::from([2; 32])],
 		..Default::default()
 	}
 	.assimilate_storage(&mut t)

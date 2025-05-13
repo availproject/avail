@@ -160,7 +160,7 @@ fn bridge_msg(data: Vec<u8>) -> Vec<u8> {
 	let function = VectorCall::send_message {
 		message,
 		to,
-		domain: 2,
+		domain: H256([1u8; 32]),
 	}
 	.into();
 
@@ -173,7 +173,7 @@ fn bridge_fungible_msg(asset_id: H256, amount: u128) -> Vec<u8> {
 	let function = VectorCall::send_message {
 		message,
 		to,
-		domain: 2,
+		domain: H256([1u8; 32]),
 	}
 	.into();
 
@@ -307,8 +307,8 @@ mod bridge_tests {
 			message,
 			hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d").into(),
 			hex!("0101010101010101010101010101010101010101010101010101010101010101").into(),
-			1,
-			2,
+			H256([0; 32]),
+			H256([1; 32]),
 			0,
 		);
 
@@ -320,8 +320,8 @@ mod bridge_tests {
 			message_fungible,
 			hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d").into(),
 			hex!("0101010101010101010101010101010101010101010101010101010101010101").into(),
-			1,
-			2,
+			H256([0; 32]),
+			H256([1; 32]),
 			1,
 		);
 		HeaderExtensionBuilderData {
@@ -568,8 +568,8 @@ mod data_root {
 			message: Message::FungibleToken { asset_id, amount },
 			from: hex!("681257BED628425a28B469114Dc21A7c30205cFD000000000000000000000000").into(),
 			to: hex!("0000000000000000000000000000000000000000000000000000000000000001").into(),
-			origin_domain: 2,
-			destination_domain: 1,
+			origin_app_address: H256([0; 32]),
+			destination_app_address: H256([1; 32]),
 			id: 0,
 		};
 
@@ -594,8 +594,8 @@ mod data_root {
 			message: Message::FungibleToken { asset_id, amount },
 			from: hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d").into(),
 			to: hex!("0000000000000000000000000000000000000000000000000000000000000001").into(),
-			origin_domain: 1,
-			destination_domain: 2,
+			origin_app_address: H256([0; 32]),
+			destination_app_address: H256([1; 32]),
 			id: 1,
 		};
 
@@ -612,8 +612,8 @@ mod data_root {
 			message: Message::FungibleToken { asset_id, amount },
 			from: hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d").into(),
 			to: hex!("0000000000000000000000000000000000000000000000000000000000000001").into(),
-			origin_domain: 1,
-			destination_domain: 2,
+			origin_app_address: H256([0; 32]),
+			destination_app_address: H256([1; 32]),
 			id: 1,
 		};
 
@@ -639,8 +639,8 @@ mod data_root {
 			to: H256(hex!(
 				"c437b127628aa7984af0f001dc7ac023eee266f0df6356ef9243f340af884236"
 			)),
-			origin_domain: 2,
-			destination_domain: 1,
+			origin_app_address: H256([0; 32]),
+			destination_app_address: H256([1; 32]),
 			id: 1,
 		};
 		let encoded_message = message.abi_encode();
@@ -659,8 +659,8 @@ mod data_root {
 			message: Message::ArbitraryMessage(data),
 			from: hex!("681257BED628425a28B469114Dc21A7c30205cFD000000000000000000000000").into(),
 			to: hex!("3547517355657647456b6f7847444a5044576251694b4478714b6d675a357047").into(),
-			origin_domain: 2,
-			destination_domain: 1,
+			origin_app_address: H256([0; 32]),
+			destination_app_address: H256([1; 32]),
 			id: 0,
 		};
 

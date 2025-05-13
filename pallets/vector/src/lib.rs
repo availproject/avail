@@ -153,7 +153,11 @@ pub mod pallet {
 		/// Emit event once the sync committee updates.
 		SyncCommitteeUpdated { period: u64, root: U256 },
 		/// Emit when new updater is set.
-		BroadcasterUpdated { old: H256, new: H256, domain: u32 },
+		BroadcasterUpdated {
+			old: H256,
+			new: H256,
+			app_address: H256,
+		},
 		/// Emit when message gets executed.
 		MessageExecuted {
 			from: H256,
@@ -162,13 +166,16 @@ pub mod pallet {
 			message_root: H256,
 		},
 		/// Emit if source chain gets frozen.
-		SourceChainFrozen { source_chain_id: u32, frozen: bool },
+		SourceChainFrozen {
+			source_chain_app_address: H256,
+			frozen: bool,
+		},
 		/// Emit when message is submitted.
 		MessageSubmitted {
 			from: T::AccountId,
 			to: H256,
 			message_type: MessageType,
-			destination_domain: u32,
+			destination_domain: H256,
 			message_id: u64,
 		},
 		/// Emit whitelisted domains that are updated.
@@ -229,15 +236,16 @@ pub mod pallet {
 
 	/// Mapping between source chainId and the address of the broadcaster on that chain.
 	#[pallet::storage]
-	pub type Broadcasters<T> = StorageMap<_, Identity, u32, H256, ValueQuery>;
+	pub type Broadcasters<T> = StorageMap<_, Identity, H256, H256, ValueQuery>;
 
 	/// Flags source chain to be frozen.
 	#[pallet::storage]
-	pub type SourceChainFrozen<T> = StorageMap<_, Identity, u32, bool, ValueQuery>;
+	pub type SourceChainFrozen<T> = StorageMap<_, Identity, H256, bool, ValueQuery>;
 
 	/// List of permitted domains.
 	#[pallet::storage]
-	pub type WhitelistedDomains<T> = StorageValue<_, BoundedVec<u32, ConstU32<10_000>>, ValueQuery>;
+	pub type WhitelistedDomains<T> =
+		StorageValue<_, BoundedVec<H256, ConstU32<10_000>>, ValueQuery>;
 
 	/// The storage for the step function identifier and the rotate function identifier.
 	/// Step function id is used to distinguish step-related functionality within the fulfill_call function.
@@ -306,6 +314,14 @@ pub mod pallet {
 			pub const BridgePalletId: PalletId = PalletId(*b"avl/brdg");
 		}
 
+		#[derive(Copy, Clone, Eq, PartialEq)]
+		pub struct ZeroH256;
+		impl Get<H256> for ZeroH256 {
+			fn get() -> H256 {
+				H256::zero()
+			}
+		}
+
 		/// Provides a viable default config that can be used with
 		/// [`derive_impl`](`frame_support::derive_impl`) to derive a testing pallet config
 		/// based on this one.
@@ -319,7 +335,7 @@ pub mod pallet {
 		impl DefaultConfig for TestDefaultConfig {
 			type WeightInfo = ();
 			type MessageMappingStorageIndex = ConstU64<1>;
-			type AvailDomain = ConstU32<1>;
+			type AvailDomain = ZeroH256;
 			#[inject_runtime_type]
 			type RuntimeEvent = ();
 			#[inject_runtime_type]
@@ -355,7 +371,7 @@ pub mod pallet {
 		type PalletId: Get<PalletId>;
 		/// Unique value associated with Avail Network. Used to distinguish messages between Avail and non-Avail networks.
 		#[pallet::constant]
-		type AvailDomain: Get<u32>;
+		type AvailDomain: Get<H256>;
 	}
 
 	#[pallet::genesis_config]
@@ -367,10 +383,10 @@ pub mod pallet {
 		pub sync_committee_poseidon: U256,
 		pub period: u64,
 		pub broadcaster: H256,
-		pub broadcaster_domain: u32,
+		pub broadcaster_domain: H256,
 		pub step_verification_key: Vec<u8>,
 		pub rotate_verification_key: Vec<u8>,
-		pub whitelisted_domains: Vec<u32>,
+		pub whitelisted_domains: Vec<H256>,
 		pub genesis_validator_root: H256,
 		pub genesis_time: u64,
 		pub seconds_per_slot: u64,
@@ -530,11 +546,11 @@ pub mod pallet {
 			Self::check_preconditions(&addr_message, message_root)?;
 
 			ensure!(
-				!SourceChainFrozen::<T>::get(addr_message.origin_domain),
+				!SourceChainFrozen::<T>::get(addr_message.origin_app_address),
 				Error::<T>::SourceChainFrozen
 			);
 			let root = ExecutionStateRoots::<T>::get(slot);
-			let broadcaster = Broadcasters::<T>::get(addr_message.origin_domain);
+			let broadcaster = Broadcasters::<T>::get(addr_message.origin_app_address);
 
 			// extract contract address
 			let contract_broadcaster_address = H160::from_slice(broadcaster[..20].as_ref());
@@ -597,14 +613,14 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::source_chain_froze())]
 		pub fn source_chain_froze(
 			origin: OriginFor<T>,
-			#[pallet::compact] source_chain_id: u32,
+			source_chain_app_address: H256,
 			frozen: bool,
 		) -> DispatchResult {
 			ensure_root(origin)?;
 
-			SourceChainFrozen::<T>::set(source_chain_id, frozen);
+			SourceChainFrozen::<T>::set(source_chain_app_address, frozen);
 			Self::deposit_event(Event::<T>::SourceChainFrozen {
-				source_chain_id,
+				source_chain_app_address,
 				frozen,
 			});
 
@@ -629,7 +645,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			message: Message,
 			to: H256,
-			#[pallet::compact] domain: u32,
+			domain: H256,
 		) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
 
@@ -685,7 +701,7 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::set_broadcaster())]
 		pub fn set_broadcaster(
 			origin: OriginFor<T>,
-			#[pallet::compact] broadcaster_domain: u32,
+			broadcaster_domain: H256,
 			broadcaster: H256,
 		) -> DispatchResult {
 			ensure_root(origin)?;
@@ -696,7 +712,7 @@ pub mod pallet {
 			Self::deposit_event(Event::BroadcasterUpdated {
 				old: old_bc,
 				new: broadcaster,
-				domain: broadcaster_domain,
+				app_address: broadcaster_domain,
 			});
 
 			Ok(())
@@ -710,7 +726,7 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::set_whitelisted_domains())]
 		pub fn set_whitelisted_domains(
 			origin: OriginFor<T>,
-			value: BoundedVec<u32, ConstU32<10_000>>,
+			value: BoundedVec<H256, ConstU32<10_000>>,
 		) -> DispatchResult {
 			ensure_root(origin)?;
 			WhitelistedDomains::<T>::put(value);
@@ -965,7 +981,7 @@ pub mod pallet {
 			who: T::AccountId,
 			message: Message,
 			to: H256,
-			domain: u32,
+			domain: H256,
 		) -> DispatchResultWithPostInfo {
 			// Ensure the domain is currently supported
 			ensure!(
@@ -1031,16 +1047,16 @@ pub mod pallet {
 			);
 
 			ensure!(
-				message.destination_domain == T::AvailDomain::get(),
+				message.destination_app_address == T::AvailDomain::get(),
 				Error::<T>::WrongDestinationChain
 			);
 
 			ensure!(
-				WhitelistedDomains::<T>::get().contains(&message.origin_domain),
+				WhitelistedDomains::<T>::get().contains(&message.origin_app_address),
 				Error::<T>::UnsupportedOriginChain
 			);
 
-			let source_chain = Broadcasters::<T>::get(message.origin_domain);
+			let source_chain = Broadcasters::<T>::get(message.origin_app_address);
 			ensure!(
 				source_chain != H256::zero(),
 				Error::<T>::BroadcasterSourceChainNotSet
@@ -1218,7 +1234,7 @@ pub mod pallet {
 		}
 
 		/// Check if the given domain is supported or not
-		fn is_domain_valid(domain: u32) -> bool {
+		fn is_domain_valid(domain: H256) -> bool {
 			WhitelistedDomains::<T>::get().contains(&domain)
 		}
 

@@ -19,7 +19,7 @@ use test_log::test;
 use tracing::trace;
 
 const DATA: &[u8] = b"Test 42";
-const DOMAIN: u32 = 2;
+const DOMAIN: u32 = H256([1; 32]);
 
 fn messages() -> Vec<Message> {
 	vec![
@@ -110,7 +110,8 @@ fn messages_to_leaves(block_number: u32, tx_indexes: Vec<u32>) -> Vec<Leaf> {
 		.enumerate()
 		.map(|(leaf_idx, (m, tx_idx))| {
 			let id = tx_uid(block_number, tx_idx);
-			let addr_msg = AddressedMessage::new(m, H256(from.0), H256(to.0), 1, DOMAIN, id);
+			let addr_msg =
+				AddressedMessage::new(m, H256(from.0), H256(to.0), H256([0; 32]), DOMAIN, id);
 			let leaf = addr_msg.abi_encode();
 			Leaf::new(leaf_idx, tx_idx, leaf)
 		})

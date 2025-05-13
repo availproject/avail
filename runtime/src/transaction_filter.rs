@@ -115,7 +115,7 @@ fn filter_vector_call(
 
 	let from: [u8; 32] = *caller?.as_ref();
 	let id = tx_uid(block, tx_index);
-	let msg = AddressedMessage::new(message.clone(), H256(from), *to, 1, *domain, id);
+	let msg = AddressedMessage::new(message.clone(), H256(from), *to, H256([0; 32]), *domain, id);
 	let bridge_data = Some(BridgedData::new(tx_index, msg));
 	Some(ExtractedTxData {
 		bridge_data,

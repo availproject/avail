@@ -225,8 +225,8 @@ mod test {
 			message: Message::FungibleToken { asset_id, amount },
 			from: from.into(),
 			to: to.into(),
-			origin_domain: 2,
-			destination_domain: 1,
+			origin_app_address: H256([1u8; 32]),
+			destination_app_address: H256([0u8; 32]),
 			id: 0,
 		};
 

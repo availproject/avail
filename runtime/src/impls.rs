@@ -38,6 +38,7 @@ use pallet_identity::legacy::IdentityInfo;
 use pallet_transaction_payment::{FungibleAdapter, Multiplier, TargetedFeeAdjustment};
 use pallet_treasury::TreasuryAccountId;
 use pallet_tx_pause::RuntimeCallNameOf;
+use pallet_vector::config_preludes::ZeroH256;
 use sp_core::{ConstU64, RuntimeDebug};
 use sp_runtime::{
 	generic::Era,
@@ -77,7 +78,7 @@ impl pallet_vector::Config for Runtime {
 	type Currency = Balances;
 	type MessageMappingStorageIndex = ConstU64<1>;
 	type PalletId = BridgePalletId;
-	type AvailDomain = ConstU32<1>;
+	type AvailDomain = ZeroH256;
 }
 
 parameter_types! {
