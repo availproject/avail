@@ -2,7 +2,7 @@ pub mod native;
 pub mod runtime;
 
 #[cfg(feature = "std")]
-use kate::gridgen::CellBlock;
+use kate::gridgen::core::CellBlock;
 // Reexport
 pub use runtime::{grid, multiproof, proof};
 
@@ -17,7 +17,7 @@ use sp_std::vec::Vec;
 use thiserror_no_std::Error;
 
 #[cfg(feature = "std")]
-use kate::{com::Error as KateError, gridgen::AppRowError as KateAppRowError};
+use kate::{com::Error as KateError, gridgen::core::AppRowError as KateAppRowError};
 
 pub type GRawScalar = U256;
 pub type GRow = Vec<GRawScalar>;

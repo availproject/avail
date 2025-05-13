@@ -967,7 +967,7 @@ dependencies = [
 [[package]]
 name = "avail-core"
 version = "0.6.2"
-source = "git+https://github.com/availproject/avail-core.git?branch=mmp-integration#8550c4a4a71ac75a758496528c716055ad363e12"
+source = "git+https://github.com/availproject/avail-core.git?branch=mmp-integration#80d6b06e19ee68055752180d577c3761860cc778"
 dependencies = [
  "binary-merkle-tree",
  "blake2b_simd",
