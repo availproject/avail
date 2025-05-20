@@ -44,6 +44,8 @@ frame-system = { path = "pallets/system", default-features = false }
 frame-system-rpc-runtime-api = { path = "pallets/system/rpc/runtime-api", default-features = false }
 frame-system-benchmarking = { path = "pallets/system/benchmarking", default-features = false }
 blob = { path = "blob", default-features = false }
+kvdb = { version = "0.13.0", default-features = false }
+kvdb-rocksdb = { version = "0.19.0", default-features = false }
 
 # benchmarking
 criterion = { version = "0.4", default-features = false }

@@ -22,7 +22,7 @@
 use crate::{cli::Cli, rpc as node_rpc};
 use avail_core::AppId;
 use blob::start_blob_service;
-use blob::types::Deps;
+use blob::types::{Deps, FullClient};
 use da_runtime::{apis::RuntimeApi, NodeBlock as Block, Runtime};
 
 use codec::Encode;
@@ -31,7 +31,6 @@ use futures::prelude::*;
 use pallet_transaction_payment::ChargeTransactionPayment;
 use sc_client_api::{Backend, BlockBackend};
 use sc_consensus_babe::{self, SlotProportion};
-pub use sc_executor::NativeElseWasmExecutor;
 use sc_network::{Event, NetworkEventStream, NetworkService};
 use sc_network_sync::SyncingService;
 use sc_service::{
@@ -48,34 +47,10 @@ use substrate_prometheus_endpoint::{PrometheusError, Registry};
 
 pub const LOG_TARGET: &str = "avail::node::service";
 
-// Declare an instance of the native executor named `ExecutorDispatch`. Include the wasm binary as
-// the equivalent wasm code.
-pub struct ExecutorDispatch;
-
-impl sc_executor::NativeExecutionDispatch for ExecutorDispatch {
-	type ExtendHostFunctions = (
-		frame_benchmarking::benchmarking::HostFunctions,
-		frame_system::native::hosted_header_builder::hosted_header_builder::HostFunctions,
-		avail_base::mem_tmp_storage::hosted_mem_tmp_storage::HostFunctions,
-		da_runtime::kate::native::hosted_kate::HostFunctions,
-	);
-
-	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-		da_runtime::apis::api::dispatch(method, data)
-	}
-
-	fn native_version() -> sc_executor::NativeVersion {
-		da_runtime::native_version()
-	}
-}
-
 /// The minimum period of blocks on which justifications will be
 /// imported and generated.
 const GRANDPA_JUSTIFICATION_PERIOD: u32 = 512;
 
-/// The full client type definition.
-pub type FullClient =
-	sc_service::TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<ExecutorDispatch>>;
 pub type FullBackend = sc_service::TFullBackend<Block>;
 type FullSelectChain = sc_consensus::LongestChain<FullBackend, Block>;
 type FullGrandpaBlockImport =
@@ -311,6 +286,7 @@ pub fn new_partial(
 		let select_chain = select_chain.clone();
 		let keystore = keystore_container.keystore();
 		let chain_spec = config.chain_spec.cloned_box();
+		let local_keystore = keystore_container.local_keystore();
 
 		let rpc_backend = backend.clone();
 		let rpc_extensions_builder = move |deny_unsafe, subscription_executor| {
@@ -332,7 +308,10 @@ pub fn new_partial(
 					finality_provider: finality_proof_provider.clone(),
 				},
 				kate_rpc_deps: kate_rpc_deps.clone(),
-				blob_rpc_deps: blob_rpc_deps.clone(),
+				blob_rpc_deps: Deps {
+					keystore: Some(local_keystore.clone()),
+					..blob_rpc_deps.clone()
+				},
 			};
 			node_rpc::create_full(deps, rpc_backend.clone()).map_err(Into::into)
 		};
@@ -387,7 +366,8 @@ pub fn new_full_base(
 	};
 
 	// Blob protocols setup
-	let (blob_notif_cfg, blob_req_res_cfg, blob_handle, shard_store) = start_blob_service();
+	let (blob_notif_cfg, blob_req_res_cfg, blob_handle, shard_store) =
+		start_blob_service(config.base_path.path(), config.role.clone());
 
 	let sc_service::PartialComponents {
 		client,
@@ -405,6 +385,8 @@ pub fn new_full_base(
 		Deps {
 			blob_handle: blob_handle.clone(),
 			shard_store,
+			keystore: None,
+			role: config.role.clone(),
 		},
 	)?;
 
@@ -414,6 +396,8 @@ pub fn new_full_base(
 
 	net_config.add_notification_protocol(blob_notif_cfg);
 	net_config.add_request_response_protocol(blob_req_res_cfg);
+	blob_handle.register_keystore(keystore_container.local_keystore());
+	blob_handle.register_client(client.clone());
 
 	let grandpa_protocol_name = sc_consensus_grandpa::protocol_standard_name(
 		&client

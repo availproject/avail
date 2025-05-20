@@ -19,6 +19,7 @@
 use std::sync::Arc;
 
 use avail_node::chains;
+use blob::types::FullClient;
 use da_runtime::Block;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use sc_cli::{Result, SubstrateCli};
@@ -31,7 +32,7 @@ use {
 
 use crate::{
 	cli::{Cli, Subcommand},
-	service::{self, new_partial, FullClient},
+	service::{self, new_partial},
 };
 
 use avail_node::NODE_VERSION;

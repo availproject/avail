@@ -8,22 +8,37 @@ da-runtime = { workspace = true, default-features = false }
 da-control = { workspace = true, default-features = false }
 
 codec = { package = "parity-scale-codec", version = "3", default-features = false }
+frame-benchmarking = { workspace = true, default-features = false }
+frame-system = { workspace = true, default-features = false }
+avail-base = { workspace = true, default-features = false }
 sp-core = { workspace = true, default-features = false }
 sp-runtime = { workspace = true, default-features = false }
 sp-api = { workspace = true, default-features = false }
 sc-network = { workspace = true, default-features = false }
 sc-client-api = { workspace = true, default-features = false }
+sc-service = { workspace = true, default-features = false }
+sc-executor = { workspace = true, default-features = false }
 sp-transaction-pool = { workspace = true, default-features = false }
 sc-transaction-pool-api = { workspace = true, default-features = false }
-
+sc-keystore = { workspace = true, default-features = false }
+sp-authority-discovery = { workspace = true, default-features = false }
+sc-authority-discovery = { workspace = true, default-features = false }
+kvdb = { workspace = true, default-features = false }
+kvdb-rocksdb = { workspace = true, default-features = false }
+tempfile = "3"
 jsonrpsee = { workspace = true }
 futures = { workspace = true }
 log = { workspace = true }
+hex = { workspace = true }
 async-channel = { workspace = true }
 once_cell = { workspace = true }
-
 anyhow = "1.0"
-tokio = { version = "1.43.0", features = ["sync", "fs", "macros", "rt-multi-thread"] }
+tokio = { version = "1.43.0", features = [
+    "sync",
+    "fs",
+    "macros",
+    "rt-multi-thread",
+] }
 parking_lot = { workspace = true }
 
 [features]

@@ -41,6 +41,7 @@ use da_runtime::{
 	AccountId, Balance, BlockNumber, Hash, Index, NodeBlock as Block,
 };
 use jsonrpsee::RpcModule;
+use sc_authority_discovery::AuthorityDiscovery;
 use sc_client_api::AuxStore;
 use sc_consensus_babe::BabeWorkerHandle;
 use sc_consensus_grandpa::{
@@ -115,6 +116,7 @@ where
 	C: ProvideRuntimeApi<Block>
 		+ sc_client_api::BlockBackend<Block>
 		+ HeaderBackend<Block>
+		+ AuthorityDiscovery<Block>
 		+ AuxStore
 		+ HeaderMetadata<Block, Error = BlockChainError>
 		+ Sync
@@ -229,11 +231,10 @@ where
 
 	io.merge(StateMigration::new(client.clone(), backend, deny_unsafe).into_rpc())?;
 
-	io.merge(BlobApiServer::into_rpc(BlobRpc::<C, P, Block, _>::new(
+	io.merge(BlobApiServer::into_rpc(BlobRpc::<C, P, Block>::new(
 		client.clone(),
 		pool,
-		blob_rpc_deps.shard_store,
-		blob_rpc_deps.blob_handle,
+		blob_rpc_deps,
 	)))?;
 
 	if is_dev_chain || kate_rpc_deps.rpc_metrics_enabled {

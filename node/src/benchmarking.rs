@@ -23,6 +23,7 @@
 use std::{sync::Arc, time::Duration};
 
 use avail_core::AppId;
+use blob::types::FullClient;
 use codec::Encode;
 use da_runtime::{AccountId, Balance, BalancesCall};
 use frame_system::Call as SystemCall;
@@ -31,7 +32,7 @@ use sp_inherents::{InherentData, InherentDataProvider};
 use sp_keyring::Sr25519Keyring;
 use sp_runtime::OpaqueExtrinsic;
 
-use crate::service::{create_extrinsic, FullClient};
+use crate::service::create_extrinsic;
 
 /// Generates `System::Remark` extrinsics for the benchmarks.
 ///
