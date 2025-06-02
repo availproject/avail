@@ -4218,6 +4218,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "gnark-bn-verifier"
+version = "0.1.0"
+source = "git+https://github.com/brevis-network/gnark-bn-verifier.git#5fecfd113bc5858fa6e1691a07ad9066a7cee812"
+dependencies = [
+ "anyhow",
+ "substrate-bn-succinct",
+]
+
+[[package]]
 name = "governor"
 version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7901,6 +7910,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "gnark-bn-verifier",
  "hex-literal",
  "log",
  "pallet-balances",
@@ -7918,6 +7928,7 @@ dependencies = [
  "sp-std",
  "sp1-sdk",
  "sp1-verifier",
+ "substrate-bn-succinct",
  "trie-db 0.24.0",
 ]
 
@@ -12064,13 +12075,12 @@ dependencies = [
 
 [[package]]
 name = "sp1-lib"
-version = "4.0.0"
+version = "3.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2378a017c2159e1ab89ed73ff797771ab8b00b11ee1d86852c00c2c9fabc76ce"
+checksum = "7a5729da1b05d56c01457e5ecabdc77f1cc941df23f2921163a2f325aec22428"
 dependencies = [
  "bincode",
  "serde",
- "sp1-primitives",
 ]
 
 [[package]]
@@ -12343,10 +12353,11 @@ dependencies = [
 
 [[package]]
 name = "sp1-verifier"
-version = "4.0.0"
+version = "4.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "613b9d79e1dd8d1b584654710a462340ff6b4b1ad8762830c4c9f772892467f8"
+checksum = "b4d4609dbb9662e4619e35666ea5fd89ee3dee59c2822b9c9c09dc25f585e3be"
 dependencies = [
+ "cfg-if",
  "hex",
  "lazy_static",
  "sha2 0.10.8",
@@ -12541,9 +12552,9 @@ dependencies = [
 
 [[package]]
 name = "substrate-bn-succinct"
-version = "0.6.0-v4-rc.8"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4b9a33ccd271a0ad4cc5ddef11ca419fe8d22c669920965be1cecbbe7d866ae1"
+checksum = "114c855c26ad0594c830129cb868552fb41415603a6133276c2ecdd9e5ef4255"
 dependencies = [
  "bytemuck",
  "byteorder",
