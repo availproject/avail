@@ -55,7 +55,7 @@ where
 	fn decode_plan(data: &[u8]) -> Result<NodePlan, Self::Error> {
 		if data == HASHED_NULL_NODE {
 			// early return if this is == keccak(rlp(null)), aka empty trie root
-			// source: https://ethereum.github.io/execution-specs/diffs/frontier_homestead/trie/index.html#empty-trie-root
+			// source: https://web.archive.org/web/20231004211316/https://ethereum.github.io/execution-specs/diffs/frontier_homestead/trie/index.html#empty-trie-root
 			return Ok(NodePlan::Empty);
 		}
 
