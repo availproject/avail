@@ -1638,18 +1638,18 @@ fn test_fulfill_successfully_sync_committee_not_set() {
 
 #[test]
 fn test_fulfill_incorrect_proof() {
-    new_test_ext().execute_with(|| {
-        let sp1_proof_with_public_values = SP1ProofWithPublicValues::load(PROOF_FILE).unwrap();
-        let mut proof = sp1_proof_with_public_values.bytes();
-        //  make proof incorrect
-        proof[10] = 0x01;
+	new_test_ext().execute_with(|| {
+		let sp1_proof_with_public_values = SP1ProofWithPublicValues::load(PROOF_FILE).unwrap();
+		let mut proof = sp1_proof_with_public_values.bytes();
+		//  make proof incorrect
+		proof[10] = 0x01;
 
-        let public_inputs = sp1_proof_with_public_values.public_values.to_vec();
-        SP1VerificationKey::<Test>::set(H256(SP1_VERIFICATION_KEY));
+		let public_inputs = sp1_proof_with_public_values.public_values.to_vec();
+		SP1VerificationKey::<Test>::set(H256(SP1_VERIFICATION_KEY));
 
-        let proof_outputs: ProofOutputs = SolValue::abi_decode(&public_inputs, true).unwrap();
-        let slots_per_period = 8192;
-        let finality_threshold = 342;
+		let proof_outputs: ProofOutputs = SolValue::abi_decode(&public_inputs, true).unwrap();
+		let slots_per_period = 8192;
+		let finality_threshold = 342;
 		let last_slot = 7762303u64;
 		let current_period = last_slot / slots_per_period;
 		Head::<Test>::set(last_slot);
@@ -1661,27 +1661,26 @@ fn test_fulfill_incorrect_proof() {
 			)),
 		);
 
+		ConfigurationStorage::<Test>::set(Configuration {
+			slots_per_period,
+			finality_threshold: finality_threshold as u16,
+		});
 
-        ConfigurationStorage::<Test>::set(Configuration {
-            slots_per_period,
-            finality_threshold: finality_threshold as u16,
-        });
+		Updater::<Test>::set(H256(TEST_SENDER_VEC));
+		SyncCommitteeHashes::<Test>::set(
+			current_period,
+			H256::from(proof_outputs.syncCommitteeHash.0),
+		);
 
-        Updater::<Test>::set(H256(TEST_SENDER_VEC));
-        SyncCommitteeHashes::<Test>::set(
-            current_period,
-            H256::from(proof_outputs.syncCommitteeHash.0),
-        );
+		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
+		let err = Bridge::fulfill(
+			origin,
+			BoundedVec::truncate_from(proof),
+			BoundedVec::truncate_from(public_inputs),
+		);
 
-        let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
-        let err = Bridge::fulfill(
-            origin,
-            BoundedVec::truncate_from(proof),
-            BoundedVec::truncate_from(public_inputs),
-        );
-
-        assert_err!(err, Error::<Test>::VerificationFailed);
-    });
+		assert_err!(err, Error::<Test>::VerificationFailed);
+	});
 }
 
 #[test]
@@ -1748,7 +1747,7 @@ fn test_fulfill_head_not_greater() {
 
 		ConfigurationStorage::<Test>::set(Configuration {
 			slots_per_period,
-			finality_threshold: finality_threshold,
+			finality_threshold,
 		});
 
 		// set current head
