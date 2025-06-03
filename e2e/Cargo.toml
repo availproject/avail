@@ -11,3 +11,4 @@ avail-rust = { git = "https://github.com/availproject/avail-rust", tag = "v0.1.4
 # Other
 serde = { version = "1.0.195", default-features = false, features = [ "derive", "alloc" ] }
 tokio = { version = "1.43.0", features = ["sync", "fs", "macros", "rt-multi-thread"] }
+rustls-webpki = "0.102"

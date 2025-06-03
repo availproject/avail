@@ -234,14 +234,17 @@ pub mod staking {
 	parameter_types! {
 		pub const SessionsPerEra: sp_staking::SessionIndex = 1;
 		pub const BondingDuration: sp_staking::EraIndex = 2; // 2 eras
-		pub const SlashDeferDuration: sp_staking::EraIndex = BondingDuration::get() - 1;
+		pub const FusionBondingDuration: sp_staking::EraIndex = 2; // 2 eras
+		pub const SlashDeferDuration: sp_staking::EraIndex = FusionBondingDuration::get() - 1;
 	}
 
 	#[cfg(not(feature = "fast-runtime"))]
 	parameter_types! {
 		pub const SessionsPerEra: sp_staking::SessionIndex = 6;
 		pub const BondingDuration: sp_staking::EraIndex = 28; // 28 days
-		pub const SlashDeferDuration: sp_staking::EraIndex = BondingDuration::get() - 1; // 27 Days
+		pub const FusionBondingDuration: sp_staking::EraIndex = 7; // 2 days
+		// SlashDeferDuration should be the lowest between FusionBondingDuration and BondingDuration
+		pub const SlashDeferDuration: sp_staking::EraIndex = FusionBondingDuration::get() - 1;
 	}
 
 	parameter_types! {
@@ -267,7 +270,7 @@ pub mod staking {
 
 		pub SolutionImprovementThreshold: Perbill = Perbill::from_rational(1u32, 10_000);
 		// miner configs		/// We prioritize im-online heartbeats over election solution submission.
-		pub const StakingUnsignedPriority: TransactionPriority = TransactionPriority::max_value() / 2;
+		pub const StakingUnsignedPriority: TransactionPriority = TransactionPriority::MAX / 2;
 		pub const MultiPhaseUnsignedPriority: TransactionPriority = StakingUnsignedPriority::get() - 1u64;
 		pub MinerMaxWeight: Weight = system::RuntimeBlockWeights::get()
 			.get(DispatchClass::Normal)
@@ -325,7 +328,7 @@ pub mod im {
 	use super::*;
 
 	parameter_types! {
-		pub const ImOnlineUnsignedPriority: TransactionPriority = TransactionPriority::max_value();
+		pub const ImOnlineUnsignedPriority: TransactionPriority = TransactionPriority::MAX;
 
 	}
 
