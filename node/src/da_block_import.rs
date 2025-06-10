@@ -4,14 +4,22 @@
 /// to Babe and Grandpa.
 /// It double-checks the **extension header** which contains the `Kate Commitment` and `Data
 /// Root`.
-use avail_base::metrics::avail::{MetricObserver, ObserveKind};
-use avail_core::{
-	ensure, header::HeaderExtension, BlockLengthColumns, BlockLengthRows, OpaqueExtrinsic,
-	BLOCK_CHUNK_SIZE,
+use avail_base::{
+	metrics::avail::{MetricObserver, ObserveKind},
+	HeaderExtensionBuilderData,
 };
+use avail_core::{
+	ensure,
+	header::{extension as he, HeaderExtension},
+	kate::COMMITMENT_SIZE,
+	kate_commitment as kc, AppId, BlockLengthColumns, BlockLengthRows, DataLookup, HeaderVersion,
+	OpaqueExtrinsic, BLOCK_CHUNK_SIZE,
+};
+use codec::{Decode, Encode};
+use da_control::extensions::native::build_da_commitments::build_da_commitments;
 use da_runtime::{
 	apis::{DataAvailApi, ExtensionBuilder},
-	Header as DaHeader,
+	Header as DaHeader, Runtime,
 };
 use frame_system::limits::BlockLength;
 
@@ -25,6 +33,9 @@ use sp_consensus::{BlockOrigin, Error as ConsensusError};
 use sp_core::H256;
 use sp_runtime::traits::Block as BlockT;
 use std::{marker::PhantomData, sync::Arc};
+
+pub const SEED: [u8; 32] = [0u8; 32];
+type RTExtractor = <Runtime as frame_system::Config>::HeaderExtensionDataFilter;
 
 pub struct BlockImport<B, C, I> {
 	client: Arc<C>,
@@ -92,15 +103,13 @@ where
 		let data_root = api
 			.build_data_root(parent_hash, block_number, extrinsics())
 			.map_err(data_root_fail)?;
-		let extension = api
-			.build_extension(
-				parent_hash,
-				extrinsics(),
-				data_root,
-				block_len,
-				block_number,
-			)
-			.map_err(build_ext_fail)?;
+		let extension = build_extension_with_comms(
+			extrinsics(),
+			data_root,
+			block_len,
+			block_number,
+			block.header.extension.get_header_version(),
+		)?;
 
 		// Check equality between calculated and imported extensions.
 		ensure!(
@@ -167,6 +176,93 @@ impl<B, C, I: Clone> Clone for BlockImport<B, C, I> {
 	}
 }
 
+/// builds header extension by regenerating the commitments for DA txs
+fn build_extension_with_comms(
+	extrinsics: Vec<OpaqueExtrinsic>,
+	data_root: H256,
+	block_length: BlockLength,
+	block_number: u32,
+	version: HeaderVersion,
+) -> Result<HeaderExtension, ConsensusError> {
+	let app_extrinsics = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(
+		block_number,
+		&extrinsics,
+	)
+	.data_submissions;
+
+	// Blocks with non-DA extrinsics will have empty commitments
+	if app_extrinsics.is_empty() {
+		return Ok(HeaderExtension::get_empty_header(data_root, version));
+	}
+
+	let max_columns = block_length.cols.0 as usize;
+	if max_columns == 0 {
+		return Ok(HeaderExtension::get_empty_header(data_root, version));
+	}
+	let total_commitments_len: usize = app_extrinsics
+		.iter()
+		.map(|da_call| da_call.commitments.len())
+		.sum();
+	let mut commitment = Vec::with_capacity(total_commitments_len);
+
+	let mut app_rows: Vec<(AppId, usize)> = Vec::with_capacity(app_extrinsics.len());
+
+	for da_call in app_extrinsics.iter() {
+		let expected_commitments = &da_call.commitments;
+		let generated_commitments =
+			build_da_commitments(da_call.data.clone(), block_length.clone(), SEED);
+		// Early return if any of the DA commitments does not match.
+		ensure!(
+			expected_commitments == &generated_commitments,
+			commitments_mismatch(da_call.tx_index)
+		);
+		commitment.extend(da_call.commitments.clone());
+		let rows_taken = da_call.commitments.len() / COMMITMENT_SIZE;
+
+		// Update app_rows
+		app_rows.push((da_call.id, rows_taken));
+	}
+
+	let app_lookup = DataLookup::from_id_and_len_iter(app_rows.clone().into_iter())
+		.map_err(|_| data_lookup_failed())?;
+	let original_rows = app_lookup.len();
+	let padded_rows = original_rows.next_power_of_two();
+	if padded_rows > original_rows {
+		let (_, padded_row_commitment) =
+			kate::gridgen::get_pregenerated_row_and_commitment(max_columns)
+				.map_err(|_| pregenerated_comms_failed())?;
+		commitment = commitment
+			.into_iter()
+			.chain(
+				std::iter::repeat(padded_row_commitment)
+					.take((padded_rows - original_rows) as usize)
+					.flatten(),
+			)
+			.collect();
+	}
+	let extension: HeaderExtension = match version {
+		HeaderVersion::V3 => {
+			let commitment = kc::v3::KateCommitment::new(
+				padded_rows.try_into().unwrap_or_default(),
+				max_columns.try_into().unwrap_or_default(),
+				data_root,
+				commitment,
+			);
+			he::v3::HeaderExtension {
+				app_lookup,
+				commitment,
+			}
+			.into()
+		},
+	};
+	// TEMP FIX: Currently when DataLookup is encoded & decoded back, empty lookup entry for AppId(0) is being added,
+	// as a result extension validation will fail if locally contructed extension's DataLookup does not have it. Hence we
+	// encode & decode the extension.
+	let encoded = extension.encode();
+	let decoded = Decode::decode(&mut &encoded[..]).map_err(|_| extension_decode_failed())?;
+	Ok(decoded)
+}
+
 /// Calculate block length from `extension`.
 fn extension_block_len(extension: &HeaderExtension) -> BlockLength {
 	BlockLength::with_normal_ratio(
@@ -180,7 +276,27 @@ fn extension_block_len(extension: &HeaderExtension) -> BlockLength {
 
 fn extension_mismatch(imported: &HeaderExtension, generated: &HeaderExtension) -> ConsensusError {
 	let msg =
-		format!("DA Extension does NOT match\nExpected: {imported:#?}\nGenerated:{generated:#?}");
+		format!("DA Extension does NOT match\nExpected: {imported:#?}\nGenerated: {generated:#?}");
+	ConsensusError::ClientImport(msg)
+}
+
+fn commitments_mismatch(tx_id: u32) -> ConsensusError {
+	let msg = format!("DA Commitments does NOT match for tx_id: {tx_id}.");
+	ConsensusError::ClientImport(msg)
+}
+
+fn pregenerated_comms_failed() -> ConsensusError {
+	let msg = format!("Failed to get pregenerated rows & commitments.");
+	ConsensusError::ClientImport(msg)
+}
+
+fn extension_decode_failed() -> ConsensusError {
+	let msg = format!("Failed to decode HeaderExtension.");
+	ConsensusError::ClientImport(msg)
+}
+
+fn data_lookup_failed() -> ConsensusError {
+	let msg = format!("Failed to construct DataLookup.");
 	ConsensusError::ClientImport(msg)
 }
 

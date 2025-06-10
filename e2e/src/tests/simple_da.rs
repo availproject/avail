@@ -22,7 +22,7 @@ async fn test() -> Result<()> {
 	let data = b"test".to_vec();
 	// let data = vec![200; TX_MAX_SIZE];
 	let da_commitments =
-		build_da_commitments::build_da_commitments(data.clone(), 256, 256, Seed::default())
+		build_da_commitments::build_da_commitments(data.clone(), 1024, 1024, Seed::default())
 			.unwrap();
 
 	println!(
