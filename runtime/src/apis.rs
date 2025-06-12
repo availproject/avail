@@ -1,9 +1,11 @@
 use super::kate::{Error as RTKateError, GDataProof, GRow};
 use crate::{
-	constants, mmr, version::VERSION, AccountId, AuthorityDiscovery, Babe, Block, BlockNumber,
-	EpochDuration, Executive, Grandpa, Historical, Index, InherentDataExt, Mmr, NominationPools,
-	OpaqueMetadata, Runtime, RuntimeCall, RuntimeGenesisConfig, SessionKeys, Staking, System,
-	TransactionPayment, LOG_TARGET,
+	constants::{self},
+	mmr,
+	version::VERSION,
+	AccountId, AuthorityDiscovery, Babe, Block, BlockNumber, EpochDuration, Executive, Grandpa,
+	Historical, Index, InherentDataExt, Mmr, NominationPools, OpaqueMetadata, Runtime, RuntimeCall,
+	RuntimeGenesisConfig, SessionKeys, Staking, System, TransactionPayment, LOG_TARGET,
 };
 use avail_base::{HeaderExtensionBuilderData, ProvidePostInherent};
 use avail_core::{
@@ -236,7 +238,6 @@ impl_runtime_apis! {
 		}
 	}
 
-
 	impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<
 		Block,
 		Balance,
@@ -372,9 +373,7 @@ impl_runtime_apis! {
 		fn check_if_extrinsic_is_post_inherent(uxt: &<Block as BlockT>::Extrinsic) -> bool {
 			use frame_support::traits::ExtrinsicCall;
 
-			let Ok(xt) =  TryInto::<&RTExtrinsic>::try_into(uxt) else {
-				return false;
-			};
+			let Ok(xt) =  TryInto::<&RTExtrinsic>::try_into(uxt);
 
 			let vector_pallet_call = match xt.call() {
 				RuntimeCall::Vector(call) => call,

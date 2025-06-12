@@ -14,6 +14,11 @@ Please add the labels corresponding to the type of changes your PR introduces:
 - [ ] Testing
 - [ ] Other:
 
+<!--
+## Contribution Guidelines
+Please note that we currently prioritize substantial contributions over minor changes like lint fixes or typo corrections from new contributors. For larger, impactful contributions, feel free to reach out through our community channels to discuss tasks where your help is most needed.
+ -->
+
 ## Description
 <!-- Summarize the changes made in this pull request. Include the motivation for these changes and highlight any key updates. -->
 

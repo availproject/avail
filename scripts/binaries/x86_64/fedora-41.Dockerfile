@@ -1,8 +1,8 @@
-FROM ubuntu:22.04 AS builder
+FROM fedora:41 AS builder
 
 # This installs all dependencies that we need (besides Rust).
-RUN apt update -y && \
-    apt install --fix-missing build-essential git clang curl libssl-dev llvm libudev-dev make cmake protobuf-compiler -y
+RUN dnf update -y && \
+    dnf install git clang curl make cmake protobuf-compiler -y
 
 # This installs Rust
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rust_install.sh && chmod u+x rust_install.sh && ./rust_install.sh -y
@@ -20,4 +20,4 @@ RUN $HOME/.cargo/bin/cargo build --locked --release
 RUN mkdir -p output
 
 VOLUME ["/output"]
-CMD ./target/release/avail-node build-spec --chain ./misc/genesis/mainnet.chain.spec.json --raw > /output/mainnet.chain.spec.raw.json
+CMD cp ./target/release/avail-node /output

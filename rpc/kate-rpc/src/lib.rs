@@ -32,6 +32,18 @@ pub type Cells = BoundedVec<Cell, MaxCells>;
 pub mod justifications;
 pub mod metrics;
 
+#[derive(Clone, Default)]
+pub struct Deps {
+	/// The maximum number of cells that can be requested in one go.
+	pub max_cells_size: usize,
+	/// Enable Kate RPCs
+	pub rpc_enabled: bool,
+	/// Enable Kate RPCs Metrics
+	///
+	/// Should not be used unless unless you know what you're doing.
+	pub rpc_metrics_enabled: bool,
+}
+
 /// # TODO
 /// - [ ] Update type definitions for RPCs in our subxt & explorer.
 #[rpc(client, server)]

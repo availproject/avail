@@ -58,7 +58,7 @@ sp-storage = { workspace = true, default-features = false }
 
 ## frame dependencies
 frame-support = { workspace = true, default-features = false }
-frame-system = { workspace = true, default-features = false, features = ["serde"] }
+frame-system = { workspace = true, default-features = false }
 frame-executive = { workspace = true, default-features = false }
 frame-try-runtime = { workspace = true, default-features = false, optional = true }
 
@@ -115,7 +115,6 @@ pallet-staking-reward-fn = { workspace = true, default-features = false }
 iai.workspace = true
 iai-callgrind.workspace = true
 criterion.workspace = true
-# codspeed-criterion-compat.workspace = true
 divan.workspace = true
 
 [[bench]]
@@ -139,7 +138,7 @@ default = [ "std" ]
 with-tracing = [ "frame-executive/with-tracing" ]
 fast-runtime = []
 testing-environment = [ "frame-system/testing-environment" ]
-# codspeed = []
+secure_padding_fill = []
 header_commitment_corruption = [ "frame-system/header_commitment_corruption" ]
 std = [
 	"avail-base/std",

@@ -9,11 +9,16 @@ use avail_core::{
 };
 
 use da_control::Call as DACall;
+use pallet_multisig::Call as MultisigCall;
+use pallet_proxy::Call as ProxyCall;
 use pallet_vector::Call as VectorCall;
 use sp_core::H256;
 use sp_std::vec::Vec;
 
-/// Filters and extracts `data` from `call` if it is a `DataAvailability::submit_data` type.
+const MAX_FILTER_ITERATIONS: usize = 3;
+
+/// Filters and extracts `data` from `call` if it is a `DataAvailability::submit_data` or `Vector::send_message` type.
+/// Handles N levels of nesting in case those calls are wrapped in proxy / multisig calls.
 impl HeaderExtensionDataFilter for Runtime {
 	fn filter(
 		failed_transactions: &[u32],
@@ -28,15 +33,26 @@ impl HeaderExtensionDataFilter for Runtime {
 		let app_id = unchecked_extrinsic.app_id();
 		let maybe_caller = unchecked_extrinsic.caller();
 
-		match &unchecked_extrinsic.function {
-			Call::Vector(call) => {
-				filter_vector_call(failed_transactions, maybe_caller, call, block, tx_index)
-			},
-			Call::DataAvailability(call) => {
-				let app_extrinsic = AppExtrinsic::from(unchecked_extrinsic.clone());
-				filter_da_call(app_extrinsic, call, app_id, tx_index)
-			},
-			_ => None,
+		let (final_call, nb_iterations) = extract_final_call(&unchecked_extrinsic.function);
+
+		if nb_iterations > 0 {
+			match final_call {
+				Call::Vector(call) => {
+					filter_vector_call(failed_transactions, maybe_caller, call, block, tx_index)
+				},
+				_ => None,
+			}
+		} else {
+			match final_call {
+				Call::Vector(call) => {
+					filter_vector_call(failed_transactions, maybe_caller, call, block, tx_index)
+				},
+				Call::DataAvailability(call) => {
+					let app_extrinsic = AppExtrinsic::from(unchecked_extrinsic.clone());
+					filter_da_call(app_extrinsic, call, app_id, tx_index)
+				},
+				_ => None,
+			}
 		}
 	}
 
@@ -120,4 +136,31 @@ fn filter_vector_call(
 		bridge_data,
 		..Default::default()
 	})
+}
+
+/// Recursively unwrap Proxy/Multisig calls up to `MAX_ITERATIONS` to find `DataAvailability::submit_data` or `Vector::send_message` calls.
+/// If we exceed `MAX_ITERATIONS`, we stop and return the current call.
+fn extract_final_call(mut call: &Call) -> (&Call, usize) {
+	let mut nb_iterations = 0;
+	for i in 0..MAX_FILTER_ITERATIONS {
+		nb_iterations = i;
+		match call {
+			Call::Proxy(proxy_call) => match proxy_call {
+				ProxyCall::proxy { call: inner, .. }
+				| ProxyCall::proxy_announced { call: inner, .. } => {
+					call = inner;
+				},
+				_ => break,
+			},
+			Call::Multisig(multisig_call) => match multisig_call {
+				MultisigCall::as_multi_threshold_1 { call: inner, .. }
+				| MultisigCall::as_multi { call: inner, .. } => {
+					call = inner;
+				},
+				_ => break,
+			},
+			_ => break,
+		}
+	}
+	(call, nb_iterations)
 }

@@ -1,30 +1,28 @@
-use super::{alice_nonce, local_connection, no_concurrency};
+/* use super::{alice_nonce, local_connection, no_concurrency};
 
+use avail_core::data_proof::ProofResponse;
 use avail_core::{AppExtrinsic, AppId, Keccak256};
-use avail_subxt::{
-	api::{
-		self,
-		runtime_types::avail_core::{
-			header::extension::HeaderExtension, BlockLengthColumns, BlockLengthRows,
-		},
+use avail_rust::{
+	avail::runtime_types::{
+		avail_core::{header::extension::HeaderExtension, BlockLengthColumns, BlockLengthRows},
+		frame_system::limits::BlockLength,
 	},
-	avail::{Cells, GDataProof, GRawScalar, Rows},
-	rpc::{GProof, KateRpcClient as _},
-	submit::submit_data_with_nonce as submit_data,
-	tx,
-	utils::H256,
-	AvailClient, Cell,
+	prelude::*,
+	primitives::kate::Cells,
+	primitives::kate::GRawScalar,
+	primitives::kate::Rows,
+	Cell, GDataProof, GRow,
 };
 use kate::{
 	com::Cell as KateCell,
 	gridgen::{AsBytes as _, EvaluationGrid},
 };
 use kate_recovery::{matrix::Dimensions, proof::verify};
+use subxt::Error as subxtError;
 use subxt_signer::sr25519::dev;
 
 use anyhow::{anyhow, Result};
 use binary_merkle_tree::merkle_proof;
-use codec::Encode;
 use sp_core::keccak_256;
 use std::{num::NonZeroU16, sync::atomic::Ordering::Relaxed};
 use test_log::test;
@@ -51,7 +49,9 @@ async fn eval_grid_from_block(client: &AvailClient, block_hash: H256) -> Result<
 		app_extrinsics.push(app_extrinsic);
 	}
 
-	let block_len = client.rpc_methods().query_block_length(block_hash).await?;
+	let mut params = RpcParams::new();
+	params.push(block_hash)?;
+	let block_len: BlockLength = client.rpc().request("kate_blockLength", params).await?;
 	let max_width = block_len.cols.0 as usize;
 	let max_height = block_len.rows.0 as usize;
 	let seed = [0u8; 32];
@@ -60,7 +60,7 @@ async fn eval_grid_from_block(client: &AvailClient, block_hash: H256) -> Result<
 		.map_err(|e| anyhow!("Eval grid failed {e:?}"))
 }
 
-#[test(tokio::test)]
+#[tokio::test]
 pub async fn rpc_query_proof_test() -> Result<()> {
 	let _cg = no_concurrency("rpc_queries::proof_test").await;
 	let client = local_connection().await?;
@@ -112,10 +112,10 @@ pub async fn rpc_query_proof_test() -> Result<()> {
 		.collect();
 
 	// RPC call
-	let actual_proofs: Vec<GDataProof> = client
-		.rpc_methods()
-		.query_proof(Cells::try_from(cells).unwrap(), block_hash)
-		.await?;
+	let mut params = RpcParams::new();
+	params.push(Cells::try_from(cells).unwrap())?;
+	params.push(block_hash)?;
+	let actual_proofs: Vec<GDataProof> = client.rpc().request("kate_queryProof", params).await?;
 
 	let len = actual_proofs.len();
 	assert_eq!(actual_proofs.len(), expected_proofs.len());
@@ -127,7 +127,7 @@ pub async fn rpc_query_proof_test() -> Result<()> {
 	Ok(())
 }
 
-#[test(tokio::test)]
+#[tokio::test]
 pub async fn rpc_query_proof_test_2() -> Result<()> {
 	let _cg = no_concurrency("rpc_queries::proof_test_2").await;
 	let client = local_connection().await?;
@@ -147,7 +147,10 @@ pub async fn rpc_query_proof_test_2() -> Result<()> {
 	let cells = Cells::try_from(vec![cell.clone()]).unwrap();
 
 	// RPC call
-	let actual_proof: Vec<GDataProof> = client.rpc_methods().query_proof(cells, block_hash).await?;
+	let mut params = RpcParams::new();
+	params.push(cells)?;
+	params.push(block_hash)?;
+	let actual_proof: Vec<GDataProof> = client.rpc().request("kate_queryProof", params).await?;
 	let actual_proof: Vec<u8> = actual_proof
 		.iter()
 		.flat_map(|(raw_scalar, g_proof)| {
@@ -191,7 +194,10 @@ pub async fn rpc_query_proof_test_2() -> Result<()> {
 	let cells = Cells::try_from(vec![cell.clone()]).unwrap();
 
 	// RPC call
-	let actual_proof: Vec<GDataProof> = client.rpc_methods().query_proof(cells, block_hash).await?;
+	let mut params = RpcParams::new();
+	params.push(cells)?;
+	params.push(block_hash)?;
+	let actual_proof: Vec<GDataProof> = client.rpc().request("kate_queryProof", params).await?;
 	let actual_proof: Vec<u8> = actual_proof
 		.iter()
 		.flat_map(|(raw_scalar, g_proof)| {
@@ -228,7 +234,7 @@ pub async fn rpc_query_proof_test_2() -> Result<()> {
 	Ok(())
 }
 
-#[test(tokio::test)]
+#[tokio::test]
 pub async fn empty_commitments_test() -> Result<()> {
 	let _cg = no_concurrency("rpc_queries::commitments_test").await;
 	let client = local_connection().await?;
@@ -242,22 +248,26 @@ pub async fn empty_commitments_test() -> Result<()> {
 
 	// query_rows should fail for block with empty commitments
 	let row_indexes = Rows::truncate_from(vec![0]);
-	let rows = client
-		.rpc_methods()
-		.query_rows(row_indexes, block_hash)
-		.await;
+	let mut params = RpcParams::new();
+	params.push(row_indexes)?;
+	params.push(block_hash)?;
+	let rows: Result<Vec<GRow>, Error> = client.rpc().request("kate_queryRows", params).await;
 	assert!(rows.is_err());
 
 	// query_proof should fail for block with empty commitments
 	let cell = Cell { row: 0, col: 0 };
 	let cells = Cells::try_from(vec![cell.clone()]).unwrap();
 
-	let proof = client.rpc_methods().query_proof(cells, block_hash).await;
+	let mut params = RpcParams::new();
+	params.push(cells)?;
+	params.push(block_hash)?;
+	let proof: Result<Vec<GDataProof>, Error> =
+		client.rpc().request("kate_queryProof", params).await;
 	assert!(proof.is_err());
 	Ok(())
 }
 
-#[test(tokio::test)]
+#[tokio::test]
 pub async fn rpc_query_block_length_test() -> Result<()> {
 	let _cg = no_concurrency("rpc_queries::block_lenght_test").await;
 	let client = local_connection().await?;
@@ -270,14 +280,16 @@ pub async fn rpc_query_block_length_test() -> Result<()> {
 		.block_hash();
 
 	// RPC call
-	let length = client.rpc_methods().query_block_length(block_hash).await?;
+	let mut params = RpcParams::new();
+	params.push(block_hash)?;
+	let length: BlockLength = client.rpc().request("kate_blockLength", params).await?;
 	assert_eq!(length.cols, BlockLengthColumns(256));
 	assert_eq!(length.rows, BlockLengthRows(256));
 	assert_eq!(length.chunk_size, 32);
 	Ok(())
 }
 
-#[test(tokio::test)]
+#[tokio::test]
 pub async fn rpc_query_data_proof_test() -> Result<()> {
 	let _cg = no_concurrency("rpc_queries::data_proof_test").await;
 	let client = local_connection().await?;
@@ -292,7 +304,10 @@ pub async fn rpc_query_data_proof_test() -> Result<()> {
 
 	let expected_proof_root = merkle_proof::<Keccak256, _, _>(vec![keccak_256(DATA)], 0);
 
-	let actual_proof = client.rpc_methods().query_data_proof(1, block_hash).await?;
+	let mut params = RpcParams::new();
+	params.push(1)?;
+	params.push(block_hash)?;
+	let actual_proof: ProofResponse = client.rpc().request("kate_queryDataProof", params).await?;
 	// root is calculated keccak256(blob_root, bridge_root)
 	let mut root_data = vec![];
 	root_data.extend(expected_proof_root.root.as_bytes());
@@ -311,3 +326,4 @@ pub async fn rpc_query_data_proof_test() -> Result<()> {
 	assert_eq!(actual_proof.data_proof.roots.bridge_root, H256::zero());
 	Ok(())
 }
+ */

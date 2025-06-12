@@ -34,28 +34,25 @@ use frame_support::{
 	ensure,
 	weights::{constants, Weight},
 };
-use kate::config::{MAX_BLOCK_COLUMNS, MAX_BLOCK_ROWS};
 use scale_info::{build::Fields, Path, Type, TypeInfo};
-#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use sp_runtime::{traits::Bounded, Perbill, RuntimeDebug};
 use sp_runtime_interface::pass_by::PassByCodec;
 use sp_std::vec::Vec;
 use static_assertions::const_assert;
 
+pub const MAX_BLOCK_COLUMNS: BlockLengthColumns = BlockLengthColumns(512);
+pub const MAX_BLOCK_ROWS: BlockLengthRows = BlockLengthRows(256);
+
 /// Block length limit configuration.
-#[cfg_attr(
-	feature = "serde",
-	derive(Serialize, Deserialize),
-	serde(rename_all = "camelCase")
-)]
-#[derive(RuntimeDebug, PartialEq, Clone, PassByCodec, MaxEncodedLen)]
+#[derive(RuntimeDebug, PartialEq, Clone, PassByCodec, MaxEncodedLen, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct BlockLength {
 	/// Maximal total length in bytes for each extrinsic class.
 	///
 	/// In the worst case, the total block length is going to be:
 	/// `MAX(max)`
-	#[cfg_attr(feature = "serde", serde(with = "per_dispatch_class_serde"))]
+	#[serde(with = "per_dispatch_class_serde")]
 	pub max: PerDispatchClass<u32>,
 	pub cols: BlockLengthColumns,
 	pub rows: BlockLengthRows,
@@ -162,7 +159,6 @@ impl Decode for BlockLength {
 }
 
 /// This module adds serialization support to `BlockLength::max` field.
-#[cfg(feature = "serde")]
 mod per_dispatch_class_serde {
 	use serde::{Deserializer, Serializer};
 
@@ -375,7 +371,7 @@ pub struct WeightsPerClass {
 ///   #           \
 ///   #   `Ext8`   - `reserved`
 ///   #          _/
-/// | # | `Ext7                 | - - `Operational` limit
+/// | # | `Ext7`                | - - `Operational` limit
 /// |#  | `Ext6`                |   |
 /// |#  | `Ext5`                |-# - `Normal` limit
 /// |#  | `Ext4`                |## |

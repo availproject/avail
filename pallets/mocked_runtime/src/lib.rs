@@ -8,7 +8,7 @@ use frame_support::{
 	},
 };
 use frame_system::{CheckEra, CheckNonce, CheckWeight};
-use pallet_transaction_payment::CurrencyAdapter;
+use pallet_transaction_payment::FungibleAdapter;
 use sp_runtime::traits::{BlakeTwo256, ConstU32, IdentityLookup, TrailingZeroInput};
 use sp_std::marker::PhantomData;
 
@@ -110,7 +110,7 @@ parameter_types! {
 	pub const MinBlockRows: BlockLengthRows = BlockLengthRows(32);
 	pub const MaxBlockRows: BlockLengthRows = BlockLengthRows(1024);
 	pub const MinBlockCols: BlockLengthColumns = BlockLengthColumns(32);
-	pub const MaxBlockCols: BlockLengthColumns = kate::config::MAX_BLOCK_COLUMNS;
+	pub const MaxBlockCols: BlockLengthColumns = frame_system::limits::MAX_BLOCK_COLUMNS;
 }
 
 #[derive(Clone, Copy)]
@@ -161,7 +161,7 @@ impl frame_system::Config for Runtime {
 #[derive_impl(pallet_transaction_payment::config_preludes::TestDefaultConfig as pallet_transaction_payment::DefaultConfig)]
 impl pallet_transaction_payment::Config for Runtime {
 	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
-	type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
+	type OnChargeTransaction = FungibleAdapter<Balances, ()>;
 	type WeightToFee = IdentityFee<Balance>;
 }
 

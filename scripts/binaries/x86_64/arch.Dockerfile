@@ -1,5 +1,5 @@
 # This is the first stage. Here we install all the dependencies that we need in order to build the Ternoa binary.
-FROM registry.hub.docker.com/archlinux/archlinux:latest as builder
+FROM registry.hub.docker.com/archlinux/archlinux:latest AS builder
 
 # This installs all dependencies that we need (besides Rust).
 RUN pacman -Syu --noconfirm git clang curl cmake make protobuf -y

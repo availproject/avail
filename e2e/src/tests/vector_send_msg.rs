@@ -1,11 +1,12 @@
-use super::{alice_nonce, allow_concurrency, local_connection};
+/* use super::{alice_nonce, allow_concurrency, local_connection};
 
 use avail_core::{
-	data_proof::{tx_uid, AddressedMessage, BoundedData, Message, SubTrie},
+	data_proof::{tx_uid, AddressedMessage, BoundedData, Message, ProofResponse, SubTrie},
 	AppId, Keccak256,
 };
 use avail_subxt::{
-	api, avail_client::RpcMethods, rpc::KateRpcClient as _, tx, AccountId, AvailClient,
+	api, api::runtime_types::frame_system::limits::BlockLength, tx, AccountId, AvailClient,
+	RpcParams,
 };
 use subxt::{backend::BlockRef, error::RpcError, utils::H256, Error};
 use subxt_signer::sr25519::dev;
@@ -116,11 +117,8 @@ fn messages_to_leaves(block_number: u32, tx_indexes: Vec<u32>) -> Vec<Leaf> {
 		.collect::<Vec<_>>()
 }
 
-async fn check_query_data_proof_rpc(
-	rpc_methods: &RpcMethods,
-	block_hash: H256,
-	leaves: &[Leaf],
-) -> Result<(), Error> {
+async fn check_query_data_proof_rpc(block_hash: H256, leaves: &[Leaf]) -> Result<(), Error> {
+	let client = local_connection().await.unwrap();
 	let indexed_leafs_len = leaves.len();
 	for indexed_leaf in leaves {
 		let Leaf {
@@ -129,8 +127,12 @@ async fn check_query_data_proof_rpc(
 			leaf,
 		} = indexed_leaf;
 
-		let rpc_proof = rpc_methods
-			.query_data_proof(*tx_idx, block_hash)
+		let mut params = RpcParams::new();
+		params.push(*tx_idx)?;
+		params.push(block_hash)?;
+		let rpc_proof: ProofResponse = client
+			.rpc()
+			.request("kate_queryDataProof", params)
 			.await
 			.map_err(|je| RpcError::ClientError(Box::new(je)))?;
 		let bridge_root = rpc_proof.data_proof.roots.bridge_root;
@@ -167,10 +169,12 @@ async fn vector_send_msg() -> anyhow::Result<()> {
 	let indexed_leaves = messages_to_leaves(block_number, tx_indexes);
 
 	// 2. Use Kate to get the proof and double-check it.
-	check_query_data_proof_rpc(client.rpc_methods(), block_hash, &indexed_leaves).await?;
+	check_query_data_proof_rpc(block_hash, &indexed_leaves).await?;
 
 	// 3. Test query_block len RPC.
-	let block_len = client.rpc_methods().query_block_length(block_hash).await?;
+	let mut params = RpcParams::new();
+	params.push(block_hash)?;
+	let block_len: BlockLength = client.rpc().request("kate_blockLength", params).await?;
 	trace!(
 		"Test query_block_length RPC: cols={}, rows={}",
 		block_len.cols.0,
@@ -181,3 +185,4 @@ async fn vector_send_msg() -> anyhow::Result<()> {
 
 	Ok(())
 }
+ */

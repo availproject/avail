@@ -63,6 +63,11 @@ pub struct Cli {
 	#[cfg(feature = "grandpa-justifications")]
 	#[arg(long, default_value_t =512, value_parser=grandpa_justification_period_bounds)]
 	pub grandpa_justification_period: u32,
+	/// The name of the network.
+	///
+	/// This parameter can be used to update the network name and id of the `dev` and `dev_tri` chains.
+	#[arg(long)]
+	pub network_name: Option<String>,
 }
 
 fn kate_max_cells_size_upper_bound(s: &str) -> Result<usize, String> {
@@ -127,23 +132,4 @@ pub enum Subcommand {
 
 	/// Db meta columns information.
 	ChainInfo(sc_cli::ChainInfoCmd),
-}
-
-impl Cli {
-	/// Partially clones the Cli options, excluding the subcommand.
-	/// WARNING: Use with caution and only if you're certain about its effects.
-	pub fn partial_clone(&self) -> Cli {
-		Cli {
-			subcommand: None,
-			run: self.run.clone(),
-			no_hardware_benchmarks: self.no_hardware_benchmarks,
-			unsafe_da_sync: self.unsafe_da_sync,
-			storage_monitor: self.storage_monitor.clone(),
-			kate_rpc_enabled: self.kate_rpc_enabled,
-			kate_rpc_metrics_enabled: self.kate_rpc_metrics_enabled,
-			kate_max_cells_size: self.kate_max_cells_size,
-			#[cfg(feature = "grandpa-justifications")]
-			grandpa_justification_period: self.grandpa_justification_period,
-		}
-	}
 }

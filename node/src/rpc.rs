@@ -94,14 +94,13 @@ pub struct FullDeps<C, P, SC, B> {
 	pub babe: BabeDeps,
 	/// GRANDPA specific dependencies.
 	pub grandpa: GrandpaDeps<B>,
-	/// The maximum number of cells that can be requested in one go.
-	pub kate_max_cells_size: usize,
-	/// Enable Kate RPCs
-	pub kate_rpc_enabled: bool,
-	/// Enable Kate RPCs Metrics
+	/// Kate RPC specific dependencies.
 	///
-	/// Should not be used unless unless you know what you're doing.
-	pub kate_rpc_metrics_enabled: bool,
+	/// Available configs:
+	/// - pub max_cells_size: usize,
+	/// - pub rpc_enabled: bool,
+	/// - pub rpc_metrics_enabled: bool,
+	pub kate_rpc_deps: kate_rpc::Deps,
 }
 
 /// Instantiate all Full RPC extensions.
@@ -154,9 +153,7 @@ where
 		deny_unsafe,
 		babe,
 		grandpa,
-		kate_max_cells_size,
-		kate_rpc_enabled,
-		kate_rpc_metrics_enabled,
+		kate_rpc_deps,
 	} = deps;
 
 	let BabeDeps {
@@ -228,17 +225,17 @@ where
 
 	io.merge(StateMigration::new(client.clone(), backend, deny_unsafe).into_rpc())?;
 
-	if is_dev_chain || kate_rpc_metrics_enabled {
+	if is_dev_chain || kate_rpc_deps.rpc_metrics_enabled {
 		io.merge(KateApiMetricsServer::into_rpc(Kate::<C, Block>::new(
 			client.clone(),
-			kate_max_cells_size,
+			kate_rpc_deps.max_cells_size,
 		)))?;
 	}
 
-	if is_dev_chain || kate_rpc_enabled || kate_rpc_metrics_enabled {
+	if is_dev_chain || kate_rpc_deps.rpc_enabled || kate_rpc_deps.rpc_metrics_enabled {
 		io.merge(KateApiServer::into_rpc(Kate::<C, Block>::new(
-			client.clone(),
-			kate_max_cells_size,
+			client,
+			kate_rpc_deps.max_cells_size,
 		)))?;
 	}
 

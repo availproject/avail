@@ -34,16 +34,6 @@ use crate::RuntimeHoldReason;
 
 /// cannot have validators higher than this count.
 pub type MaxAuthorities = ConstU32<100_000>;
-/// cannot have active validators higher than this count.
-pub type MaxActiveValidators = ConstU32<1200>;
-
-parameter_types! {
-	/// We take the top 12500 nominators as electing voters..
-	pub const MaxElectingVoters: u32 = 22_500;
-	/// ... and all of the validators as electable targets. Whilst this is the case, we cannot and
-	/// shall not increase the size of the validator intentions.
-	pub const MaxElectableTargets: u16 = u16::MAX;
-}
 
 /// Money matters.
 pub mod currency {
@@ -223,7 +213,7 @@ pub mod staking {
 	const REWARD_CURVE: PiecewiseLinear<'static> = curve!(
 		min_inflation: 0_010_000, // minimum_inflation_rate = 1%
 		max_inflation: 0_050_000, // maximum_inflation_rate = 5%
-		ideal_stake: 0_500_000, // target_staking_rate = 50%
+		ideal_stake: 0_750_000, // target_staking_rate = 75%
 		falloff: 0_050_000,  // inflation_decay = 5%
 		max_piece_count: 40,
 		test_precision: 0_005_000,
@@ -255,6 +245,13 @@ pub mod staking {
 	}
 
 	parameter_types! {
+		/// We take the top 22500 nominators as electing voters..
+		pub const MaxElectingVoters: u32 = 22_500;
+		/// For onchain solutions, which are used as fallback(s), we only consider top 5K nominators as electing voters
+		pub const MaxOnchainElectingVoters: u32 = 5000;
+		/// cannot have active validators higher than this count.
+		pub const MaxActiveValidators: u32 = 1200;
+
 		pub const MaxNominations: u32 = <NposSolution16 as frame_election_provider_support::NposSolution>::LIMIT as u32;
 		pub const OffendingValidatorsThreshold: Perbill = Perbill::from_percent(17);
 		pub const RewardCurve: &'static PiecewiseLinear<'static> = &REWARD_CURVE;
@@ -286,9 +283,9 @@ pub mod staking {
 		// Note: the EPM in this runtime runs the election on-chain. The election bounds must be
 		// carefully set so that an election round fits in one block.
 		pub ElectionBoundsMultiPhase: ElectionBounds = ElectionBoundsBuilder::default()
-			.voters_count(10_000.into()).targets_count(1_500.into()).build();
+			.voters_count(MaxElectingVoters::get().into()).build();
 		pub ElectionBoundsOnChain: ElectionBounds = ElectionBoundsBuilder::default()
-			.voters_count(5_000.into()).targets_count(1_250.into()).build();
+			.voters_count(MaxOnchainElectingVoters::get().into()).build();
 	}
 
 	pub type MaxControllersInDeprecationBatch = ConstU32<5900>;
@@ -300,13 +297,6 @@ pub mod staking {
 	pub type MaxExposurePageSize = ConstU32<256>;
 	pub type MaxUnlockingChunks = ConstU32<32>;
 	pub type HistoryDepth = ConstU32<84>;
-
-	// OnChain values are lower.
-	pub type MaxOnChainElectingVoters = ConstU32<1_024>;
-	pub type MaxOnChainElectableTargets = ConstU16<512>;
-	// The maximum winners that can be elected by the Election pallet which is equivalent to the
-	// maximum active validators the staking pallet can have.
-	pub type MaxActiveValidators = MaxAuthorities;
 
 	// signed config
 	pub type SignedMaxSubmissions = ConstU32<16>;
@@ -362,10 +352,10 @@ pub mod da {
 		pub const MinBlockRows: BlockLengthRows = BlockLengthRows(32);
 		pub const MaxBlockRows: BlockLengthRows = BlockLengthRows(1024);
 		pub const MinBlockCols: BlockLengthColumns = BlockLengthColumns(64);
-		pub const MaxBlockCols: BlockLengthColumns = kate::config::MAX_BLOCK_COLUMNS;
+		pub const MaxBlockCols: BlockLengthColumns = BlockLengthColumns(1024);
 	}
 	pub type MaxAppKeyLength = ConstU32<64>;
-	pub type MaxAppDataLength = ConstU32<524_288>; // 512 Kb
+	pub type MaxAppDataLength = ConstU32<1_048_576>; // 1 Mb
 }
 
 /// Macro to set a value (e.g. when using the `parameter_types` macro) to either a production value

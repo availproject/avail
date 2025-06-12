@@ -1,6 +1,6 @@
 # Phase 1: Builder
 # =========================
-FROM debian:12.5-slim as builder
+FROM debian:12.5-slim AS builder
 
 # Install needed packages
 RUN apt update -y && \

@@ -70,8 +70,8 @@ impl SubstrateCli for Cli {
 					"Please specify which chain you want to run, e.g. --chain mainnet".into(),
 				)
 			},
-			"dev" => Box::new(chains::dev::chain_spec()),
-			"dev.tri" => Box::new(chains::dev_tri::chain_spec()),
+			"dev" => Box::new(chains::dev::chain_spec(self.network_name.clone())),
+			"dev.tri" => Box::new(chains::dev_tri::chain_spec(self.network_name.clone())),
 			"devnet0" => Box::new(chains::devnet0::chain_spec()?),
 			"mainnet" => Box::new(chains::mainnet::chain_spec()?),
 			"turing" => Box::new(chains::turing::chain_spec()?),
@@ -205,7 +205,7 @@ pub fn run() -> Result<()> {
 					task_manager,
 					import_queue,
 					..
-				} = new_partial(&config, cli.partial_clone())?;
+				} = new_partial(&config, cli.unsafe_da_sync, kate_rpc::Deps::default())?;
 				Ok((cmd.run(client, import_queue), task_manager))
 			})
 		},
@@ -216,7 +216,7 @@ pub fn run() -> Result<()> {
 					client,
 					task_manager,
 					..
-				} = new_partial(&config, cli.partial_clone())?;
+				} = new_partial(&config, cli.unsafe_da_sync, kate_rpc::Deps::default())?;
 				Ok((cmd.run(client, config.database), task_manager))
 			})
 		},
@@ -227,7 +227,7 @@ pub fn run() -> Result<()> {
 					client,
 					task_manager,
 					..
-				} = new_partial(&config, cli.partial_clone())?;
+				} = new_partial(&config, cli.unsafe_da_sync, kate_rpc::Deps::default())?;
 				Ok((cmd.run(client, config.chain_spec), task_manager))
 			})
 		},
@@ -239,7 +239,7 @@ pub fn run() -> Result<()> {
 					task_manager,
 					import_queue,
 					..
-				} = new_partial(&config, cli.partial_clone())?;
+				} = new_partial(&config, cli.unsafe_da_sync, kate_rpc::Deps::default())?;
 				Ok((cmd.run(client, import_queue), task_manager))
 			})
 		},
@@ -255,7 +255,7 @@ pub fn run() -> Result<()> {
 					task_manager,
 					backend,
 					..
-				} = new_partial(&config, cli.partial_clone())?;
+				} = new_partial(&config, cli.unsafe_da_sync, kate_rpc::Deps::default())?;
 				let aux_revert = Box::new(|client: Arc<FullClient>, backend, blocks| {
 					sc_consensus_babe::revert(client.clone(), backend, blocks)?;
 					sc_consensus_grandpa::revert(client, blocks)?;

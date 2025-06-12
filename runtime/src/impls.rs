@@ -22,8 +22,10 @@ use frame_support::{
 	pallet_prelude::{Get, Weight},
 	parameter_types,
 	traits::{
-		fungible::HoldConsideration,
-		tokens::{pay::PayFromAccount, Imbalance, UnityAssetBalanceConversion},
+		fungible::{Balanced, Credit, HoldConsideration},
+		tokens::{
+			imbalance::ResolveTo, pay::PayFromAccount, Imbalance, UnityAssetBalanceConversion,
+		},
 		ConstU32, Contains, Currency, EitherOf, EitherOfDiverse, EqualPrivilegeOnly, InsideBoth,
 		InstanceFilter, LinearStoragePrice, OnUnbalanced,
 	},
@@ -33,7 +35,8 @@ use frame_support::{
 use frame_system::{limits::BlockLength, EnsureRoot, EnsureRootWithSuccess, EnsureWithSuccess};
 use pallet_election_provider_multi_phase::{GeometricDepositBase, SolutionAccuracyOf};
 use pallet_identity::legacy::IdentityInfo;
-use pallet_transaction_payment::{CurrencyAdapter, Multiplier, TargetedFeeAdjustment};
+use pallet_transaction_payment::{FungibleAdapter, Multiplier, TargetedFeeAdjustment};
+use pallet_treasury::TreasuryAccountId;
 use pallet_tx_pause::RuntimeCallNameOf;
 use sp_core::{ConstU64, RuntimeDebug};
 use sp_runtime::{
@@ -165,15 +168,8 @@ impl pallet_transaction_payment::Config for Runtime {
 		MinimumMultiplier,
 		MaximumMultiplier,
 	>;
-	// type LengthMultiplierUpdate = LengthFeeAdjustment<
-	// 	Self,
-	// 	TargetBlockFullness,
-	// 	LenAdjustmentVariable,
-	// 	MinLenMultiplier,
-	// 	MaximumMultiplier,
-	// >;
 	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
-	type OnChargeTransaction = CurrencyAdapter<Balances, DealWithFees<Runtime>>;
+	type OnChargeTransaction = FungibleAdapter<Balances, DealWithFees<Runtime>>;
 	type OperationalFeeMultiplier = OperationalFeeMultiplier;
 	type RuntimeEvent = RuntimeEvent;
 	type WeightToFee = ConstantMultiplier<Balance, WeightFee>; // 1 weight = 10 picoAVAIL -> second_price = 10 AVAIL
@@ -215,30 +211,31 @@ impl pallet_session::historical::Config for Runtime {
 
 /// Logic for the author to get a portion of fees.
 pub struct Author<R>(sp_std::marker::PhantomData<R>);
-
-impl<R> OnUnbalanced<NegativeImbalance<R>> for Author<R>
+impl<R> OnUnbalanced<Credit<R::AccountId, pallet_balances::Pallet<R>>> for Author<R>
 where
 	R: pallet_balances::Config + pallet_authorship::Config,
 	<R as frame_system::Config>::AccountId: From<AccountId>,
 	<R as frame_system::Config>::AccountId: Into<AccountId>,
 {
-	fn on_nonzero_unbalanced(amount: NegativeImbalance<R>) {
+	fn on_nonzero_unbalanced(
+		amount: Credit<<R as frame_system::Config>::AccountId, pallet_balances::Pallet<R>>,
+	) {
 		if let Some(author) = <pallet_authorship::Pallet<R>>::author() {
-			<pallet_balances::Pallet<R>>::resolve_creating(&author, amount);
+			let _ = <pallet_balances::Pallet<R>>::resolve(&author, amount);
 		}
 	}
 }
 
-pub struct DealWithFees<R>(sp_std::marker::PhantomData<R>);
-
-impl<R> OnUnbalanced<NegativeImbalance<R>> for DealWithFees<R>
+pub struct DealWithFees<R>(core::marker::PhantomData<R>);
+impl<R> OnUnbalanced<Credit<R::AccountId, pallet_balances::Pallet<R>>> for DealWithFees<R>
 where
-	R: pallet_balances::Config + pallet_treasury::Config + pallet_authorship::Config,
-	pallet_treasury::Pallet<R>: OnUnbalanced<NegativeImbalance<R>>,
+	R: pallet_balances::Config + pallet_authorship::Config + pallet_treasury::Config,
 	<R as frame_system::Config>::AccountId: From<AccountId>,
 	<R as frame_system::Config>::AccountId: Into<AccountId>,
 {
-	fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance<R>>) {
+	fn on_unbalanceds<B>(
+		mut fees_then_tips: impl Iterator<Item = Credit<R::AccountId, pallet_balances::Pallet<R>>>,
+	) {
 		if let Some(fees) = fees_then_tips.next() {
 			// for fees, 20% to author, 80% to treasury
 			let mut split = fees.ration(80, 20);
@@ -246,8 +243,7 @@ where
 				// for tips, if any, 100% to author
 				tips.merge_into(&mut split.1);
 			}
-			use pallet_treasury::Pallet as Treasury;
-			<Treasury<R> as OnUnbalanced<_>>::on_unbalanced(split.0);
+			ResolveTo::<TreasuryAccountId<R>, pallet_balances::Pallet<R>>::on_unbalanced(split.0);
 			<Author<R> as OnUnbalanced<_>>::on_unbalanced(split.1);
 		}
 	}
@@ -455,7 +451,7 @@ impl pallet_election_provider_multi_phase::Config for Runtime {
 	type Fallback = onchain::OnChainExecution<OnChainSeqPhragmen>;
 	type ForceOrigin = EnsureRoot<AccountId>;
 	type GovernanceFallback = onchain::OnChainExecution<OnChainSeqPhragmen>;
-	type MaxWinners = constants::MaxActiveValidators;
+	type MaxWinners = constants::staking::MaxActiveValidators;
 	type MinerConfig = Self;
 	type MinerTxPriority = constants::staking::MultiPhaseUnsignedPriority;
 	type OffchainRepeat = constants::staking::OffchainRepeat;
