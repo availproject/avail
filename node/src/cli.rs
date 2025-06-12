@@ -60,7 +60,6 @@ pub struct Cli {
 	pub kate_max_cells_size: usize,
 
 	/// The interval, in blocks, at which Grandpa justifications are either imported or generated and stored in the backend.
-	#[cfg(feature = "grandpa-justifications")]
 	#[arg(long, default_value_t =512, value_parser=grandpa_justification_period_bounds)]
 	pub grandpa_justification_period: u32,
 	/// The name of the network.
@@ -74,7 +73,6 @@ fn kate_max_cells_size_upper_bound(s: &str) -> Result<usize, String> {
 	clap_num::number_range(s, 0, 10_000)
 }
 
-#[cfg(feature = "grandpa-justifications")]
 fn grandpa_justification_period_bounds(s: &str) -> Result<u32, String> {
 	clap_num::number_range(s, 1, u32::MAX)
 }

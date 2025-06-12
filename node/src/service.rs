@@ -67,10 +67,6 @@ impl sc_executor::NativeExecutionDispatch for ExecutorDispatch {
 	}
 }
 
-/// The minimum period of blocks on which justifications will be
-/// imported and generated.
-const GRANDPA_JUSTIFICATION_PERIOD: u32 = 512;
-
 /// The full client type definition.
 pub type FullClient =
 	sc_service::TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<ExecutorDispatch>>;
@@ -171,6 +167,7 @@ pub fn new_partial(
 	config: &Configuration,
 	unsafe_da_sync: bool,
 	kate_rpc_deps: kate_rpc::Deps,
+	grandpa_justification_period: u32,
 ) -> Result<
 	sc_service::PartialComponents<
 		FullClient,
@@ -246,10 +243,6 @@ pub fn new_partial(
 		client.clone(),
 	);
 
-	#[cfg(not(feature = "grandpa-justifications"))]
-	let grandpa_justification_period = GRANDPA_JUSTIFICATION_PERIOD;
-	#[cfg(feature = "grandpa-justifications")]
-	let grandpa_justification_period = cli.grandpa_justification_period;
 
 	let (grandpa_block_import, grandpa_link) = sc_consensus_grandpa::block_import(
 		client.clone(),
@@ -378,6 +371,7 @@ pub fn new_full_base(
 	with_startup_data: impl FnOnce(&BlockImport, &sc_consensus_babe::BabeLink<Block>),
 	unsafe_da_sync: bool,
 	kate_rpc_deps: kate_rpc::Deps,
+	grandpa_justification_period: u32,
 ) -> Result<NewFullBase, ServiceError> {
 	let hwbench = if !disable_hardware_benchmarks {
 		config.database.path().map(|database_path| {
@@ -388,11 +382,6 @@ pub fn new_full_base(
 		None
 	};
 
-	#[cfg(not(feature = "grandpa-justifications"))]
-	let grandpa_justification_period = GRANDPA_JUSTIFICATION_PERIOD;
-	#[cfg(feature = "grandpa-justifications")]
-	let grandpa_justification_period = cli.grandpa_justification_period;
-
 	let sc_service::PartialComponents {
 		client,
 		backend,
@@ -402,7 +391,7 @@ pub fn new_full_base(
 		select_chain,
 		transaction_pool,
 		other: (rpc_builder, import_setup, rpc_setup, mut telemetry),
-	} = new_partial(&config, unsafe_da_sync, kate_rpc_deps)?;
+	} = new_partial(&config, unsafe_da_sync, kate_rpc_deps, grandpa_justification_period)?;
 
 	let shared_voter_state = rpc_setup;
 	let auth_disc_publish_non_global_ips = config.network.allow_non_globals_in_dht;
@@ -666,6 +655,7 @@ pub fn new_full(config: Configuration, cli: Cli) -> Result<TaskManager, ServiceE
 		|_, _| (),
 		cli.unsafe_da_sync,
 		kate_rpc_deps,
+		cli.grandpa_justification_period,
 	)
 	.map(|NewFullBase { task_manager, .. }| task_manager)?;
 
