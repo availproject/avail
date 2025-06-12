@@ -204,6 +204,11 @@ where
 					return Err(internal_err!("Requested block {at} has empty commitments"));
 				}
 			},
+			HeaderExtension::V4(ext) => {
+				if ext.commitment.commitment.is_empty() {
+					return Err(internal_err!("Requested block {at} has empty commitments"));
+				}
+			},
 		};
 
 		let grid_rows = api
@@ -234,6 +239,11 @@ where
 		let (api, at, number, block_len, extrinsics, header) = self.scope(at)?;
 		match header.extension() {
 			HeaderExtension::V3(ext) => {
+				if ext.commitment.commitment.is_empty() {
+					return Err(internal_err!("Requested block {at} has empty commitments"));
+				}
+			},
+			HeaderExtension::V4(ext) => {
 				if ext.commitment.commitment.is_empty() {
 					return Err(internal_err!("Requested block {at} has empty commitments"));
 				}

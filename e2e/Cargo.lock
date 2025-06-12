@@ -48,12 +48,6 @@ dependencies = [
 
 [[package]]
 name = "ahash"
-version = "0.4.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0453232ace82dee0dd0b4c87a59bd90f7b53b314f3e0f61fe2ee7c8a16482289"
-
-[[package]]
-name = "ahash"
 version = "0.7.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "891477e0c6a8957309ee5c45a6368af3ae14bb510732d2684ffa19af310920f9"
@@ -722,7 +716,7 @@ dependencies = [
 [[package]]
 name = "avail-core"
 version = "0.6.2"
-source = "git+https://github.com/availproject/avail-core?rev=d62ce4875148a69a62d77f224ed6dbe060cc92f5#d62ce4875148a69a62d77f224ed6dbe060cc92f5"
+source = "git+https://github.com/availproject/avail-core?rev=08364e189f355e20cdc8e8b8997d13a6913c1a89#08364e189f355e20cdc8e8b8997d13a6913c1a89"
 dependencies = [
  "binary-merkle-tree",
  "blake2b_simd",
@@ -735,13 +729,13 @@ dependencies = [
  "hex",
  "impl-serde 0.5.0",
  "log",
+ "num-traits",
  "parity-scale-codec",
  "primitive-types 0.12.2",
  "scale-info",
  "serde",
  "sha2 0.10.8",
  "sha3",
- "sp-arithmetic",
  "sp-debug-derive 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?rev=5237e012d7d973b7210fc1929b2f1ff8726333b5)",
  "sp-runtime",
  "sp-runtime-interface 24.0.0 (git+https://github.com/availproject/polkadot-sdk.git?rev=5237e012d7d973b7210fc1929b2f1ff8726333b5)",
@@ -1009,8 +1003,9 @@ dependencies = [
 
 [[package]]
 name = "blst"
-version = "0.3.11"
-source = "git+https://github.com/ToufeeqP/blst?rev=afdb0a4b7d98d4ff22c3a1d35faca223cde0ef3a#afdb0a4b7d98d4ff22c3a1d35faca223cde0ef3a"
+version = "0.3.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4fd49896f12ac9b6dcd7a5998466b9b58263a695a3dd1ecc1aaca2e12a90b080"
 dependencies = [
  "cc",
  "glob",
@@ -1540,17 +1535,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "derive-hex"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4b6618553c32cd1c1f4fbdb9418cc035f3168422f24406ebb08576f6db5ed6ec"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 1.0.109",
-]
-
-[[package]]
 name = "derive-syn-parse"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1663,56 +1647,6 @@ name = "downcast-rs"
 version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "75b325c5dbd37f80359721ad39aca5a29fb04c89279657cffdda8736d0c0b9d2"
-
-[[package]]
-name = "dusk-bls12_381"
-version = "0.11.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "81cded349291dd4620fd02065cc0fb9a1da7bea8cfe479e0dd067a4cd87225ea"
-dependencies = [
- "byteorder",
- "dusk-bytes",
- "rand_core 0.6.4",
- "rayon",
- "subtle",
-]
-
-[[package]]
-name = "dusk-bytes"
-version = "0.1.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d5d209b92f0741edf1d99369bd4c1a1ef2fd0a85e885220f9e3fb0df3c61337f"
-dependencies = [
- "derive-hex",
-]
-
-[[package]]
-name = "dusk-jubjub"
-version = "0.12.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c228f2adec5255faf67fe6d106caa093a6c2ef798dca42019b684716528250ff"
-dependencies = [
- "dusk-bls12_381",
- "dusk-bytes",
- "rand_core 0.6.4",
- "subtle",
-]
-
-[[package]]
-name = "dusk-plonk"
-version = "0.12.0"
-source = "git+https://github.com/availproject/plonk.git?tag=v0.12.0-polygon-2#6ada57a82b6e3a92a677b9f6263f9f3c9b501b23"
-dependencies = [
- "cfg-if",
- "dusk-bls12_381",
- "dusk-bytes",
- "dusk-jubjub",
- "hashbrown 0.9.1",
- "itertools 0.9.0",
- "merlin 3.0.0",
- "rand_core 0.6.4",
- "rayon",
-]
 
 [[package]]
 name = "dyn-clonable"
@@ -2388,7 +2322,7 @@ dependencies = [
  "pin-project",
  "serde",
  "serde_json",
- "thiserror",
+ "thiserror 1.0.60",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
@@ -2462,15 +2396,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "92c171d55b98633f4ed3860808f004099b36c1cc29c42cfc53aa8591b21efcf2"
 dependencies = [
  "crunchy",
-]
-
-[[package]]
-name = "hashbrown"
-version = "0.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d7afe4a420e3fe79967a00898cc1f4db7c8a49a9333a29f8a4bd76a253d5cd04"
-dependencies = [
- "ahash 0.4.8",
 ]
 
 [[package]]
@@ -2874,15 +2799,6 @@ checksum = "f8478577c03552c21db0e2724ffb8986a5ce7af88107e6be5d2ee6e158c12800"
 
 [[package]]
 name = "itertools"
-version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "284f18f85651fe11e8a991b2adb42cb078325c996ed026d994719efcfca1d54b"
-dependencies = [
- "either",
-]
-
-[[package]]
-name = "itertools"
 version = "0.10.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b0fd2260e829bddf4cb6ea802289de2f86d6a7a690192fbe91b3f46e0f2c8473"
@@ -2955,7 +2871,7 @@ dependencies = [
  "rustls-native-certs 0.7.0",
  "rustls-pki-types",
  "soketto",
- "thiserror",
+ "thiserror 1.0.60",
  "tokio",
  "tokio-rustls 0.25.0",
  "tokio-util",
@@ -2978,7 +2894,7 @@ dependencies = [
  "rustls-native-certs 0.7.0",
  "rustls-pki-types",
  "soketto",
- "thiserror",
+ "thiserror 1.0.60",
  "tokio",
  "tokio-rustls 0.25.0",
  "tokio-util",
@@ -3005,7 +2921,7 @@ dependencies = [
  "rustc-hash",
  "serde",
  "serde_json",
- "thiserror",
+ "thiserror 1.0.60",
  "tokio",
  "tokio-stream",
  "tracing",
@@ -3028,7 +2944,7 @@ dependencies = [
  "rustc-hash",
  "serde",
  "serde_json",
- "thiserror",
+ "thiserror 1.0.60",
  "tokio",
  "tokio-stream",
  "tracing",
@@ -3048,7 +2964,7 @@ dependencies = [
  "jsonrpsee-types 0.21.0",
  "serde",
  "serde_json",
- "thiserror",
+ "thiserror 1.0.60",
  "tokio",
  "tower",
  "tracing",
@@ -3068,7 +2984,7 @@ dependencies = [
  "jsonrpsee-types 0.22.5",
  "serde",
  "serde_json",
- "thiserror",
+ "thiserror 1.0.60",
  "tokio",
  "tower",
  "tracing",
@@ -3098,7 +3014,7 @@ dependencies = [
  "beef",
  "serde",
  "serde_json",
- "thiserror",
+ "thiserror 1.0.60",
 ]
 
 [[package]]
@@ -3111,7 +3027,7 @@ dependencies = [
  "beef",
  "serde",
  "serde_json",
- "thiserror",
+ "thiserror 1.0.60",
 ]
 
 [[package]]
@@ -3154,12 +3070,10 @@ dependencies = [
 [[package]]
 name = "kate"
 version = "0.9.2"
-source = "git+https://github.com/availproject/avail-core?rev=d62ce4875148a69a62d77f224ed6dbe060cc92f5#d62ce4875148a69a62d77f224ed6dbe060cc92f5"
+source = "git+https://github.com/availproject/avail-core?rev=08364e189f355e20cdc8e8b8997d13a6913c1a89#08364e189f355e20cdc8e8b8997d13a6913c1a89"
 dependencies = [
  "avail-core",
  "derive_more",
- "dusk-bytes",
- "dusk-plonk",
  "hex",
  "hex-literal",
  "kate-recovery",
@@ -3174,7 +3088,7 @@ dependencies = [
  "rayon",
  "serde",
  "serde_json",
- "sp-arithmetic",
+ "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?rev=5237e012d7d973b7210fc1929b2f1ff8726333b5)",
  "static_assertions",
  "thiserror-no-std",
 ]
@@ -3182,18 +3096,19 @@ dependencies = [
 [[package]]
 name = "kate-recovery"
 version = "0.10.0"
-source = "git+https://github.com/availproject/avail-core?rev=d62ce4875148a69a62d77f224ed6dbe060cc92f5#d62ce4875148a69a62d77f224ed6dbe060cc92f5"
+source = "git+https://github.com/availproject/avail-core?rev=08364e189f355e20cdc8e8b8997d13a6913c1a89#08364e189f355e20cdc8e8b8997d13a6913c1a89"
 dependencies = [
  "avail-core",
  "derive_more",
- "dusk-bytes",
- "dusk-plonk",
+ "hex-literal",
+ "log",
+ "num-traits",
  "once_cell",
  "parity-scale-codec",
+ "poly-multiproof",
  "rand 0.8.5",
  "rand_chacha 0.3.1",
  "serde",
- "sp-arithmetic",
  "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?rev=5237e012d7d973b7210fc1929b2f1ff8726333b5)",
  "static_assertions",
  "thiserror-no-std",
@@ -3909,8 +3824,8 @@ dependencies = [
 
 [[package]]
 name = "poly-multiproof"
-version = "0.0.1"
-source = "git+https://github.com/availproject/poly-multiproof?branch=toufeeq/blst-0.3.11#e17285c264d7acd6faea0da5950677e8beebe14e"
+version = "0.1.1"
+source = "git+https://github.com/availproject/poly-multiproof?rev=c2794e32ca040e6b2544abde18b7187af3e66feb#c2794e32ca040e6b2544abde18b7187af3e66feb"
 dependencies = [
  "ark-bls12-381",
  "ark-ec",
@@ -3920,6 +3835,7 @@ dependencies = [
  "ark-std",
  "blst",
  "merlin 3.0.0",
+ "thiserror 2.0.12",
 ]
 
 [[package]]
@@ -4060,7 +3976,7 @@ dependencies = [
  "lazy_static",
  "memchr",
  "parking_lot",
- "thiserror",
+ "thiserror 1.0.60",
 ]
 
 [[package]]
@@ -4594,7 +4510,7 @@ dependencies = [
  "quote",
  "scale-info",
  "syn 2.0.100",
- "thiserror",
+ "thiserror 1.0.60",
 ]
 
 [[package]]
@@ -5112,7 +5028,7 @@ dependencies = [
  "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?rev=5237e012d7d973b7210fc1929b2f1ff8726333b5)",
  "sp-trie",
  "sp-version",
- "thiserror",
+ "thiserror 1.0.60",
 ]
 
 [[package]]
@@ -5214,7 +5130,7 @@ dependencies = [
  "sp-storage 19.0.0 (git+https://github.com/availproject/polkadot-sdk.git?rev=5237e012d7d973b7210fc1929b2f1ff8726333b5)",
  "ss58-registry",
  "substrate-bip39",
- "thiserror",
+ "thiserror 1.0.60",
  "tracing",
  "w3f-bls",
  "zeroize",
@@ -5340,7 +5256,7 @@ dependencies = [
  "scale-info",
  "sp-runtime",
  "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?rev=5237e012d7d973b7210fc1929b2f1ff8726333b5)",
- "thiserror",
+ "thiserror 1.0.60",
 ]
 
 [[package]]
@@ -5387,7 +5303,7 @@ dependencies = [
  "parking_lot",
  "sp-core",
  "sp-externalities 0.25.0 (git+https://github.com/availproject/polkadot-sdk.git?rev=5237e012d7d973b7210fc1929b2f1ff8726333b5)",
- "thiserror",
+ "thiserror 1.0.60",
 ]
 
 [[package]]
@@ -5528,7 +5444,7 @@ dependencies = [
  "sp-panic-handler",
  "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?rev=5237e012d7d973b7210fc1929b2f1ff8726333b5)",
  "sp-trie",
- "thiserror",
+ "thiserror 1.0.60",
  "tracing",
  "trie-db",
 ]
@@ -5609,7 +5525,7 @@ dependencies = [
  "sp-core",
  "sp-externalities 0.25.0 (git+https://github.com/availproject/polkadot-sdk.git?rev=5237e012d7d973b7210fc1929b2f1ff8726333b5)",
  "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?rev=5237e012d7d973b7210fc1929b2f1ff8726333b5)",
- "thiserror",
+ "thiserror 1.0.60",
  "tracing",
  "trie-db",
  "trie-root",
@@ -5629,7 +5545,7 @@ dependencies = [
  "sp-runtime",
  "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?rev=5237e012d7d973b7210fc1929b2f1ff8726333b5)",
  "sp-version-proc-macro",
- "thiserror",
+ "thiserror 1.0.60",
 ]
 
 [[package]]
@@ -5804,7 +5720,7 @@ dependencies = [
  "hyper",
  "log",
  "prometheus",
- "thiserror",
+ "thiserror 1.0.60",
  "tokio",
 ]
 
@@ -5843,7 +5759,7 @@ dependencies = [
  "subxt-lightclient",
  "subxt-macro",
  "subxt-metadata",
- "thiserror",
+ "thiserror 1.0.60",
  "tokio-util",
  "tracing",
  "url",
@@ -5865,7 +5781,7 @@ dependencies = [
  "scale-typegen",
  "subxt-metadata",
  "syn 2.0.100",
- "thiserror",
+ "thiserror 1.0.60",
  "tokio",
 ]
 
@@ -5879,7 +5795,7 @@ dependencies = [
  "serde",
  "serde_json",
  "smoldot-light",
- "thiserror",
+ "thiserror 1.0.60",
  "tokio",
  "tokio-stream",
  "tracing",
@@ -5908,7 +5824,7 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "sp-core-hashing",
- "thiserror",
+ "thiserror 1.0.60",
 ]
 
 [[package]]
@@ -5929,7 +5845,7 @@ dependencies = [
  "sha2 0.10.8",
  "sp-core-hashing",
  "subxt",
- "thiserror",
+ "thiserror 1.0.60",
  "zeroize",
 ]
 
@@ -6013,7 +5929,16 @@ version = "1.0.60"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "579e9083ca58dd9dcf91a9923bb9054071b9ebbd800b342194c9feb0ee89fc18"
 dependencies = [
- "thiserror-impl",
+ "thiserror-impl 1.0.60",
+]
+
+[[package]]
+name = "thiserror"
+version = "2.0.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "567b8a2dae586314f7be2a752ec7474332959c6460e02bde30d702a66d488708"
+dependencies = [
+ "thiserror-impl 2.0.12",
 ]
 
 [[package]]
@@ -6021,6 +5946,17 @@ name = "thiserror-impl"
 version = "1.0.60"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2470041c06ec3ac1ab38d0356a6119054dedaea53e12fbefc0de730a1c08524"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.100",
+]
+
+[[package]]
+name = "thiserror-impl"
+version = "2.0.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7f7cf42b4507d8ea322120659672cf1b9dbb93f8f2d4ecfd6e51350ff5b17a1d"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -6572,7 +6508,7 @@ dependencies = [
  "rand_core 0.6.4",
  "sha2 0.10.8",
  "sha3",
- "thiserror",
+ "thiserror 1.0.60",
  "zeroize",
 ]
 
@@ -6771,7 +6707,7 @@ dependencies = [
  "object 0.30.4",
  "serde",
  "target-lexicon",
- "thiserror",
+ "thiserror 1.0.60",
  "wasmparser",
  "wasmtime-types",
 ]
@@ -6851,7 +6787,7 @@ checksum = "a4f6fffd2a1011887d57f07654dd112791e872e3ff4a2e626aee8059ee17f06f"
 dependencies = [
  "cranelift-entity",
  "serde",
- "thiserror",
+ "thiserror 1.0.60",
  "wasmparser",
 ]
 

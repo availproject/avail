@@ -66,7 +66,9 @@ decl_runtime_apis! {
 
 	pub trait KateApi {
 		fn data_proof(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, tx_idx: u32) -> Option<ProofResponse>;
+		#[api_version(2)]
 		fn rows(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, rows: Vec<u32>) -> Result<Vec<GRow>, RTKateError >;
+		#[api_version(2)]
 		fn proof(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, cells: Vec<(u32,u32)> ) -> Result<Vec<GDataProof>, RTKateError>;
 	}
 }
@@ -397,7 +399,7 @@ impl_runtime_apis! {
 			use frame_system::native::hosted_header_builder::da::HeaderExtensionBuilder;
 			use frame_system::HeaderExtensionBuilder as _;
 
-			let app_extrinsics = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block_number, &extrinsics).data_submissions;
+			let app_extrinsics = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block_number, &extrinsics).to_app_extrinsics();
 			HeaderExtensionBuilder::<Runtime>::build(app_extrinsics, data_root, block_length, block_number)
 		}
 
@@ -430,6 +432,7 @@ impl_runtime_apis! {
 		}
 	}
 
+	#[api_version(2)]
 	impl crate::apis::KateApi<Block> for Runtime {
 		fn data_proof(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, tx_idx: u32) -> Option<ProofResponse> {
 			let data = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block_number, &extrinsics);
@@ -462,14 +465,14 @@ impl_runtime_apis! {
 
 		fn rows(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, rows: Vec<u32>) -> Result<Vec<GRow>, RTKateError> {
 			let da_extrinsics = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block_number, &extrinsics).data_submissions;
-			let grid_rows = super::kate::grid::<Runtime>(da_extrinsics, block_len, rows)?;
+			let grid_rows = super::kate::grid_v4::<Runtime>(da_extrinsics, block_len, rows)?;
 			log::trace!(target: LOG_TARGET, "KateApi::rows: rows={grid_rows:#?}");
 			Ok(grid_rows)
 		}
 
 		fn proof(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, cells: Vec<(u32,u32)> ) -> Result<Vec<GDataProof>, RTKateError> {
 			let da_extrinsics = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block_number, &extrinsics).data_submissions;
-			let data_proofs = super::kate::proof::<Runtime>(da_extrinsics, block_len, cells)?;
+			let data_proofs = super::kate::proof_v4::<Runtime>(da_extrinsics, block_len, cells)?;
 			log::trace!(target: LOG_TARGET, "KateApi::proof: data_proofs={data_proofs:#?}");
 			Ok(data_proofs)
 		}

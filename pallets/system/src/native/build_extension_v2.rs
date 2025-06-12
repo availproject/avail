@@ -7,6 +7,9 @@
 use super::hosted_header_builder::MIN_WIDTH;
 use crate::limits::BlockLength;
 use avail_base::header_extension::SubmittedData;
+use avail_base::metrics::avail::{
+	HeaderExtensionBuilderMetrics as Metrics, MetricObserver, ObserveKind,
+};
 use avail_core::{
 	app_extrinsic::AppExtrinsic,
 	header::{extension as he, HeaderExtension},
@@ -15,9 +18,8 @@ use avail_core::{
 };
 use kate::{
 	couscous::multiproof_params,
-	gridgen::{AsBytes, EvaluationGrid},
-	pmp::m1_blst::M1NoPrecomp,
-	Seed,
+	gridgen::core::{AsBytes, EvaluationGrid},
+	M1NoPrecomp, Seed,
 };
 use sp_core::H256;
 use sp_runtime::SaturatedConversion;
@@ -28,12 +30,13 @@ use avail_base::testing_env::*;
 
 static PMP: OnceLock<M1NoPrecomp> = OnceLock::new();
 
-#[allow(dead_code)]
 fn build_grid(
 	submitted: Vec<AppExtrinsic>,
 	block_length: BlockLength,
 	seed: Seed,
 ) -> Result<EvaluationGrid, String> {
+	let _metric_observer = MetricObserver::new(ObserveKind::HEGrid);
+
 	#[cfg(feature = "testing-environment")]
 	{
 		unsafe {
@@ -55,8 +58,9 @@ fn build_grid(
 	Ok(grid)
 }
 
-#[allow(dead_code)]
 fn build_commitment(grid: &EvaluationGrid) -> Result<Vec<u8>, String> {
+	let _metric_observer = MetricObserver::new(ObserveKind::HEGrid);
+
 	#[cfg(feature = "testing-environment")]
 	{
 		unsafe {
@@ -88,13 +92,84 @@ fn build_commitment(grid: &EvaluationGrid) -> Result<Vec<u8>, String> {
 	Ok(commitment)
 }
 
+/// V3 header_extension
 #[allow(unused_mut)]
 pub fn build_extension(
-	mut submitted: Vec<SubmittedData>,
+	mut submitted: Vec<AppExtrinsic>,
 	data_root: H256,
 	block_length: BlockLength,
 	_block_number: u32,
-	_seed: Seed,
+	seed: Seed,
+	version: HeaderVersion,
+) -> HeaderExtension {
+	#[cfg(feature = "testing-environment")]
+	{
+		unsafe {
+			if ENABLE_TEST_EXTENSION_FAILURE {
+				return HeaderExtension::get_faulty_header(data_root, version);
+			}
+
+			if let Some(new_extrinsics) = &TEST_POPULATE_GRID {
+				submitted = new_extrinsics.clone();
+			}
+		}
+	}
+
+	// Blocks with non-DA extrinsics will have empty commitments
+	if submitted.is_empty() {
+		return HeaderExtension::get_empty_header(data_root, version);
+	}
+
+	let _metric_observer = MetricObserver::new(ObserveKind::HETotalExecutionTime);
+
+	// Build the grid
+	let maybe_grid = build_grid(submitted, block_length, seed);
+
+	// We get the grid or return an empty header in case of an error
+	let grid = match maybe_grid {
+		Ok(res) => res,
+		Err(message) => {
+			log::error!("NODE_CRITICAL_ERROR_001 - A critical error has occured: {message:?}.");
+			log::error!("NODE_CRITICAL_ERROR_001 - If you see this, please warn Avail team and raise an issue.");
+			return HeaderExtension::get_faulty_header(data_root, version);
+		},
+	};
+
+	let maybe_commitment = build_commitment(&grid);
+
+	// We get the commitment or return an empty header in case of an error
+	let commitment = match maybe_commitment {
+		Ok(res) => res,
+		Err(message) => {
+			log::error!("NODE_CRITICAL_ERROR_002 - A critical error has occured: {message:?}.");
+			log::error!("NODE_CRITICAL_ERROR_002 - If you see this, please warn Avail team and raise an issue.");
+			return HeaderExtension::get_faulty_header(data_root, version);
+		},
+	};
+
+	// Note that this uses the original dims, _not the extended ones_
+	let rows = grid.dims().rows().get();
+	let cols = grid.dims().cols().get();
+
+	// Grid Metrics
+	Metrics::observe_grid_rows(rows as f64);
+	Metrics::observe_grid_cols(cols as f64);
+
+	let app_lookup = grid.lookup().clone();
+
+	let commitment = kc::v3::KateCommitment::new(rows, cols, data_root, commitment);
+	he::v3::HeaderExtension {
+		app_lookup,
+		commitment,
+	}
+	.into()
+}
+
+#[allow(unused_mut)]
+pub fn build_extension_v4(
+	mut submitted: Vec<SubmittedData>,
+	data_root: H256,
+	block_length: BlockLength,
 	version: HeaderVersion,
 ) -> HeaderExtension {
 	#[cfg(feature = "testing-environment")]
@@ -148,7 +223,7 @@ pub fn build_extension(
 	// We can reduce the header size further letting the verification clients to do this padding since anyway they're extending the commitments
 	if padded_rows > original_rows {
 		let (_, padded_row_commitment) =
-			kate::gridgen::get_pregenerated_row_and_commitment(max_columns)
+			kate::gridgen::core::get_pregenerated_row_and_commitment(max_columns)
 				.expect("lets hope, it works :)");
 		commitment = commitment
 			.into_iter()
@@ -160,20 +235,15 @@ pub fn build_extension(
 			.collect();
 	}
 
-	match version {
-		HeaderVersion::V3 => {
-			// TODO: Based on the approach we select for ASDR, either we should update the KateCommitment struct or correctly update the rows & cols values here
-			let commitment = kc::v3::KateCommitment::new(
-				padded_rows.try_into().unwrap_or_default(),
-				max_columns.try_into().unwrap_or_default(),
-				data_root,
-				commitment,
-			);
-			he::v3::HeaderExtension {
-				app_lookup,
-				commitment,
-			}
-			.into()
-		},
+	let commitment = kc::v3::KateCommitment::new(
+		padded_rows.try_into().unwrap_or_default(),
+		max_columns.try_into().unwrap_or_default(),
+		data_root,
+		commitment,
+	);
+	he::v4::HeaderExtension {
+		app_lookup,
+		commitment,
 	}
+	.into()
 }

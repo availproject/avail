@@ -1,6 +1,7 @@
 use super::{get_account_id_from_seed, AuthorityKeys};
-use avail_core::{BlockLengthColumns, BlockLengthRows, BLOCK_CHUNK_SIZE, DA_DISPATCH_RATIO};
+use avail_core::{BlockLengthColumns, BlockLengthRows, BLOCK_CHUNK_SIZE};
 
+use da_control::DA_DISPATCH_RATIO_PERBILL;
 use da_runtime::{
 	constants, AccountId, Balance, DataAvailabilityConfig, SessionKeys, StakerStatus,
 };
@@ -97,7 +98,7 @@ pub fn runtime_genesis_config(
 		BlockLengthRows(1024),
 		BlockLengthColumns(1024),
 		BLOCK_CHUNK_SIZE,
-		DA_DISPATCH_RATIO,
+		DA_DISPATCH_RATIO_PERBILL,
 	)
 	.expect("Valid `BlockLength` genesis definition .qed");
 

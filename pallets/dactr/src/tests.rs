@@ -1,4 +1,4 @@
-use avail_core::{BlockLengthColumns, BlockLengthRows, BLOCK_CHUNK_SIZE, DA_DISPATCH_RATIO};
+use avail_core::{BlockLengthColumns, BlockLengthRows, BLOCK_CHUNK_SIZE};
 use frame_support::{assert_noop, assert_ok, error::BadOrigin};
 use frame_system::{limits::BlockLength, RawOrigin};
 use sp_core::H256;
@@ -8,7 +8,7 @@ use crate::config_preludes::{
 };
 use crate::{
 	mock::{new_test_ext, DataAvailability, RuntimeEvent, RuntimeOrigin, System, Test},
-	AppDataFor, AppKeyFor, AppKeyInfoFor, Event,
+	AppDataFor, AppKeyFor, AppKeyInfoFor, Event, DA_DISPATCH_RATIO_PERBILL,
 };
 
 type Error = crate::Error<Test>;
@@ -133,9 +133,13 @@ mod submit_block_length_proposal {
 			));
 
 			let dynamic_block_length = System::block_length();
-			let new_block_length =
-				BlockLength::with_normal_ratio(rows, cols, BLOCK_CHUNK_SIZE, DA_DISPATCH_RATIO)
-					.unwrap();
+			let new_block_length = BlockLength::with_normal_ratio(
+				rows,
+				cols,
+				BLOCK_CHUNK_SIZE,
+				DA_DISPATCH_RATIO_PERBILL,
+			)
+			.unwrap();
 			assert_eq!(dynamic_block_length, new_block_length);
 
 			let event =
@@ -156,9 +160,13 @@ mod submit_block_length_proposal {
 			));
 
 			let dynamic_block_length = System::block_length();
-			let new_block_length =
-				BlockLength::with_normal_ratio(rows, cols, BLOCK_CHUNK_SIZE, DA_DISPATCH_RATIO)
-					.unwrap();
+			let new_block_length = BlockLength::with_normal_ratio(
+				rows,
+				cols,
+				BLOCK_CHUNK_SIZE,
+				DA_DISPATCH_RATIO_PERBILL,
+			)
+			.unwrap();
 			assert_eq!(dynamic_block_length, new_block_length);
 
 			let event =
@@ -179,9 +187,13 @@ mod submit_block_length_proposal {
 			));
 
 			let dynamic_block_length = System::block_length();
-			let new_block_length =
-				BlockLength::with_normal_ratio(rows, cols, BLOCK_CHUNK_SIZE, DA_DISPATCH_RATIO)
-					.unwrap();
+			let new_block_length = BlockLength::with_normal_ratio(
+				rows,
+				cols,
+				BLOCK_CHUNK_SIZE,
+				DA_DISPATCH_RATIO_PERBILL,
+			)
+			.unwrap();
 			assert_eq!(dynamic_block_length, new_block_length);
 
 			let event =

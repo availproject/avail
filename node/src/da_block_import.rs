@@ -15,7 +15,6 @@ use avail_core::{
 	kate_commitment as kc, AppId, BlockLengthColumns, BlockLengthRows, DataLookup, HeaderVersion,
 	OpaqueExtrinsic, BLOCK_CHUNK_SIZE,
 };
-use codec::{Decode, Encode};
 use da_control::extensions::native::build_da_commitments::build_da_commitments;
 use da_runtime::{
 	apis::{DataAvailApi, ExtensionBuilder},
@@ -103,13 +102,25 @@ where
 		let data_root = api
 			.build_data_root(parent_hash, block_number, extrinsics())
 			.map_err(data_root_fail)?;
-		let extension = build_extension_with_comms(
-			extrinsics(),
-			data_root,
-			block_len,
-			block_number,
-			block.header.extension.get_header_version(),
-		)?;
+		let version = block.header.extension.get_header_version();
+		let extension = match version {
+			HeaderVersion::V3 => api
+				.build_extension(
+					parent_hash,
+					extrinsics(),
+					data_root,
+					block_len,
+					block_number,
+				)
+				.map_err(build_ext_fail)?,
+			HeaderVersion::V4 => build_extension_with_comms(
+				extrinsics(),
+				data_root,
+				block_len,
+				block_number,
+				block.header.extension.get_header_version(),
+			)?,
+		};
 
 		// Check equality between calculated and imported extensions.
 		ensure!(
@@ -229,7 +240,7 @@ fn build_extension_with_comms(
 	let padded_rows = original_rows.next_power_of_two();
 	if padded_rows > original_rows {
 		let (_, padded_row_commitment) =
-			kate::gridgen::get_pregenerated_row_and_commitment(max_columns)
+			kate::gridgen::core::get_pregenerated_row_and_commitment(max_columns)
 				.map_err(|_| pregenerated_comms_failed())?;
 		commitment = commitment
 			.into_iter()
@@ -240,27 +251,17 @@ fn build_extension_with_comms(
 			)
 			.collect();
 	}
-	let extension: HeaderExtension = match version {
-		HeaderVersion::V3 => {
-			let commitment = kc::v3::KateCommitment::new(
-				padded_rows.try_into().unwrap_or_default(),
-				max_columns.try_into().unwrap_or_default(),
-				data_root,
-				commitment,
-			);
-			he::v3::HeaderExtension {
-				app_lookup,
-				commitment,
-			}
-			.into()
-		},
-	};
-	// TEMP FIX: Currently when DataLookup is encoded & decoded back, empty lookup entry for AppId(0) is being added,
-	// as a result extension validation will fail if locally contructed extension's DataLookup does not have it. Hence we
-	// encode & decode the extension.
-	let encoded = extension.encode();
-	let decoded = Decode::decode(&mut &encoded[..]).map_err(|_| extension_decode_failed())?;
-	Ok(decoded)
+	let commitment = kc::v3::KateCommitment::new(
+		padded_rows.try_into().unwrap_or_default(),
+		max_columns.try_into().unwrap_or_default(),
+		data_root,
+		commitment,
+	);
+	Ok(he::v4::HeaderExtension {
+		app_lookup,
+		commitment,
+	}
+	.into())
 }
 
 /// Calculate block length from `extension`.
@@ -287,11 +288,6 @@ fn commitments_mismatch(tx_id: u32) -> ConsensusError {
 
 fn pregenerated_comms_failed() -> ConsensusError {
 	let msg = format!("Failed to get pregenerated rows & commitments.");
-	ConsensusError::ClientImport(msg)
-}
-
-fn extension_decode_failed() -> ConsensusError {
-	let msg = format!("Failed to decode HeaderExtension.");
 	ConsensusError::ClientImport(msg)
 }
 

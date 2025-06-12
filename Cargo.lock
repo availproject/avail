@@ -96,12 +96,6 @@ dependencies = [
 
 [[package]]
 name = "ahash"
-version = "0.4.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0453232ace82dee0dd0b4c87a59bd90f7b53b314f3e0f61fe2ee7c8a16482289"
-
-[[package]]
-name = "ahash"
 version = "0.7.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "891477e0c6a8957309ee5c45a6368af3ae14bb510732d2684ffa19af310920f9"
@@ -967,7 +961,7 @@ dependencies = [
 [[package]]
 name = "avail-core"
 version = "0.6.2"
-source = "git+https://github.com/availproject/avail-core?rev=d62ce4875148a69a62d77f224ed6dbe060cc92f5#d62ce4875148a69a62d77f224ed6dbe060cc92f5"
+source = "git+https://github.com/availproject/avail-core?rev=08364e189f355e20cdc8e8b8997d13a6913c1a89#08364e189f355e20cdc8e8b8997d13a6913c1a89"
 dependencies = [
  "binary-merkle-tree",
  "blake2b_simd",
@@ -980,13 +974,13 @@ dependencies = [
  "hex",
  "impl-serde 0.5.0",
  "log",
+ "num-traits",
  "parity-scale-codec",
  "primitive-types 0.12.2",
  "scale-info",
  "serde",
  "sha2 0.10.8",
  "sha3",
- "sp-arithmetic",
  "sp-debug-derive",
  "sp-runtime",
  "sp-runtime-interface",
@@ -1427,8 +1421,9 @@ dependencies = [
 
 [[package]]
 name = "blst"
-version = "0.3.11"
-source = "git+https://github.com/ToufeeqP/blst?rev=afdb0a4b7d98d4ff22c3a1d35faca223cde0ef3a#afdb0a4b7d98d4ff22c3a1d35faca223cde0ef3a"
+version = "0.3.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4fd49896f12ac9b6dcd7a5998466b9b58263a695a3dd1ecc1aaca2e12a90b080"
 dependencies = [
  "cc",
  "glob",
@@ -2689,17 +2684,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "derive-hex"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4b6618553c32cd1c1f4fbdb9418cc035f3168422f24406ebb08576f6db5ed6ec"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 1.0.109",
-]
-
-[[package]]
 name = "derive-syn-parse"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2969,56 +2953,6 @@ name = "dunce"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "92773504d58c093f6de2459af4af33faa518c13451eb8f2b5698ed3d36e7c813"
-
-[[package]]
-name = "dusk-bls12_381"
-version = "0.11.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "81cded349291dd4620fd02065cc0fb9a1da7bea8cfe479e0dd067a4cd87225ea"
-dependencies = [
- "byteorder",
- "dusk-bytes",
- "rand_core 0.6.4",
- "rayon",
- "subtle 2.6.1",
-]
-
-[[package]]
-name = "dusk-bytes"
-version = "0.1.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d5d209b92f0741edf1d99369bd4c1a1ef2fd0a85e885220f9e3fb0df3c61337f"
-dependencies = [
- "derive-hex",
-]
-
-[[package]]
-name = "dusk-jubjub"
-version = "0.12.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c228f2adec5255faf67fe6d106caa093a6c2ef798dca42019b684716528250ff"
-dependencies = [
- "dusk-bls12_381",
- "dusk-bytes",
- "rand_core 0.6.4",
- "subtle 2.6.1",
-]
-
-[[package]]
-name = "dusk-plonk"
-version = "0.12.0"
-source = "git+https://github.com/availproject/plonk.git?tag=v0.12.0-polygon-2#6ada57a82b6e3a92a677b9f6263f9f3c9b501b23"
-dependencies = [
- "cfg-if",
- "dusk-bls12_381",
- "dusk-bytes",
- "dusk-jubjub",
- "hashbrown 0.9.1",
- "itertools 0.9.0",
- "merlin",
- "rand_core 0.6.4",
- "rayon",
-]
 
 [[package]]
 name = "dyn-clonable"
@@ -4334,15 +4268,6 @@ dependencies = [
 
 [[package]]
 name = "hashbrown"
-version = "0.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d7afe4a420e3fe79967a00898cc1f4db7c8a49a9333a29f8a4bd76a253d5cd04"
-dependencies = [
- "ahash 0.4.8",
-]
-
-[[package]]
-name = "hashbrown"
 version = "0.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ab5ef0d4909ef3724cc8cce6ccc8572c5c817592e9285f5464f8e86f8bd3726e"
@@ -5145,15 +5070,6 @@ checksum = "7943c866cc5cd64cbc25b2e01621d07fa8eb2a1a23160ee81ce38704e97b8ecf"
 
 [[package]]
 name = "itertools"
-version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "284f18f85651fe11e8a991b2adb42cb078325c996ed026d994719efcfca1d54b"
-dependencies = [
- "either",
-]
-
-[[package]]
-name = "itertools"
 version = "0.10.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b0fd2260e829bddf4cb6ea802289de2f86d6a7a690192fbe91b3f46e0f2c8473"
@@ -5396,12 +5312,10 @@ dependencies = [
 [[package]]
 name = "kate"
 version = "0.9.2"
-source = "git+https://github.com/availproject/avail-core?rev=d62ce4875148a69a62d77f224ed6dbe060cc92f5#d62ce4875148a69a62d77f224ed6dbe060cc92f5"
+source = "git+https://github.com/availproject/avail-core?rev=08364e189f355e20cdc8e8b8997d13a6913c1a89#08364e189f355e20cdc8e8b8997d13a6913c1a89"
 dependencies = [
  "avail-core",
  "derive_more 0.99.18",
- "dusk-bytes",
- "dusk-plonk",
  "hex",
  "hex-literal 0.3.4",
  "kate-recovery",
@@ -5416,7 +5330,7 @@ dependencies = [
  "rayon",
  "serde",
  "serde_json",
- "sp-arithmetic",
+ "sp-std",
  "static_assertions",
  "thiserror-no-std",
 ]
@@ -5424,18 +5338,19 @@ dependencies = [
 [[package]]
 name = "kate-recovery"
 version = "0.10.0"
-source = "git+https://github.com/availproject/avail-core?rev=d62ce4875148a69a62d77f224ed6dbe060cc92f5#d62ce4875148a69a62d77f224ed6dbe060cc92f5"
+source = "git+https://github.com/availproject/avail-core?rev=08364e189f355e20cdc8e8b8997d13a6913c1a89#08364e189f355e20cdc8e8b8997d13a6913c1a89"
 dependencies = [
  "avail-core",
  "derive_more 0.99.18",
- "dusk-bytes",
- "dusk-plonk",
+ "hex-literal 0.3.4",
+ "log",
+ "num-traits",
  "once_cell",
  "parity-scale-codec",
+ "poly-multiproof",
  "rand",
  "rand_chacha 0.3.1",
  "serde",
- "sp-arithmetic",
  "sp-std",
  "static_assertions",
  "thiserror-no-std",
@@ -8292,8 +8207,8 @@ dependencies = [
 
 [[package]]
 name = "poly-multiproof"
-version = "0.0.1"
-source = "git+https://github.com/availproject/poly-multiproof?branch=toufeeq/blst-0.3.11#e17285c264d7acd6faea0da5950677e8beebe14e"
+version = "0.1.1"
+source = "git+https://github.com/availproject/poly-multiproof?rev=c2794e32ca040e6b2544abde18b7187af3e66feb#c2794e32ca040e6b2544abde18b7187af3e66feb"
 dependencies = [
  "ark-bls12-381",
  "ark-ec 0.4.2",
@@ -8303,6 +8218,7 @@ dependencies = [
  "ark-std 0.4.0",
  "blst",
  "merlin",
+ "thiserror 2.0.11",
 ]
 
 [[package]]

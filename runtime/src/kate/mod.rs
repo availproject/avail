@@ -2,7 +2,7 @@ pub mod native;
 pub mod runtime;
 
 // Reexport
-pub use runtime::{grid, proof};
+pub use runtime::{grid, grid_v4, proof, proof_v4};
 
 use codec::{Decode, Encode};
 use core::num::TryFromIntError;
@@ -15,7 +15,7 @@ use sp_std::vec::Vec;
 use thiserror_no_std::Error;
 
 #[cfg(feature = "std")]
-use kate::{com::Error as KateError, gridgen::AppRowError as KateAppRowError};
+use kate::{com::Error as KateError, gridgen::core::AppRowError as KateAppRowError};
 
 pub type GRawScalar = U256;
 pub type GRow = Vec<GRawScalar>;
