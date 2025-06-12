@@ -223,8 +223,14 @@ pub fn build_extension_v4(
 	// We can reduce the header size further letting the verification clients to do this padding since anyway they're extending the commitments
 	if padded_rows > original_rows {
 		let (_, padded_row_commitment) =
-			kate::gridgen::core::get_pregenerated_row_and_commitment(max_columns)
-				.expect("lets hope, it works :)");
+			match kate::gridgen::core::get_pregenerated_row_and_commitment(max_columns) {
+				Ok(result) => result,
+				Err(e) => {
+					log::error!("NODE_CRITICAL_ERROR_003 - A critical error has occured: {e:?}.");
+					log::error!("NODE_CRITICAL_ERROR_003 - If you see this, please warn Avail team and raise an issue.");
+					return HeaderExtension::get_faulty_header(data_root, version);
+				},
+			};
 		commitment = commitment
 			.into_iter()
 			.chain(
