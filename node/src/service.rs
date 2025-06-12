@@ -243,7 +243,6 @@ pub fn new_partial(
 		client.clone(),
 	);
 
-
 	let (grandpa_block_import, grandpa_link) = sc_consensus_grandpa::block_import(
 		client.clone(),
 		grandpa_justification_period,
@@ -391,7 +390,12 @@ pub fn new_full_base(
 		select_chain,
 		transaction_pool,
 		other: (rpc_builder, import_setup, rpc_setup, mut telemetry),
-	} = new_partial(&config, unsafe_da_sync, kate_rpc_deps, grandpa_justification_period)?;
+	} = new_partial(
+		&config,
+		unsafe_da_sync,
+		kate_rpc_deps,
+		grandpa_justification_period,
+	)?;
 
 	let shared_voter_state = rpc_setup;
 	let auth_disc_publish_non_global_ips = config.network.allow_non_globals_in_dht;
