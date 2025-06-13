@@ -1,11 +1,13 @@
 mod max_block_submit;
+mod infinity_da_test;
 
 use avail_rust::prelude::*;
 use std::time::Duration;
 
 #[tokio::main]
 async fn main() -> Result<(), ClientError> {
-	max_block_submit::run().await?;
+	// max_block_submit::run().await?;
+	infinity_da_test::run().await?;
 
 	Ok(())
 }

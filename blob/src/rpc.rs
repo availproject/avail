@@ -6,6 +6,7 @@ use crate::{
 	BLOB_TTL, MAX_BLOB_SIZE, MIN_TRANSACTION_VALIDITY, SHARD_SIZE, TMP_BLOB_TTL,
 };
 use anyhow::{anyhow, Result};
+use avail_base::build_da_commitments::build_da_commitments;
 use codec::Decode;
 use da_control::Call;
 use da_runtime::{RuntimeCall, UncheckedExtrinsic};
@@ -14,6 +15,7 @@ use jsonrpsee::{
 	proc_macros::rpc,
 	types::error::ErrorObject,
 };
+use kate::Seed;
 use sc_authority_discovery::AuthorityDiscovery;
 use sc_client_api::{BlockBackend, HeaderBackend};
 use sc_keystore::LocalKeystore;
@@ -144,31 +146,48 @@ where
 		}
 
 		// --- 4. Decode to concrete call to read the metadata, Check hash, commitment, ... of the blob compared to the submitted metadata ----------------
+		let blob_hash = H256::from(blake2_256(&blob));
 		let encoded_metadata_signed_transaction: UncheckedExtrinsic =
 			Decode::decode(&mut &metadata_signed_transaction[..])
 				.map_err(|_| internal_err!("failed to decode concrete metadata call"))?;
 
-		if let RuntimeCall::DataAvailability(Call::submit_data { data }) =
-			encoded_metadata_signed_transaction.function
+		if let RuntimeCall::DataAvailability(Call::submit_blob_metadata {
+			size,
+			blob_hash: provided_blob_hash,
+			commitments,
+		}) = encoded_metadata_signed_transaction.function
 		{
-			if data.len() != blob.0.len() {
-				// Change to check that the len in the metadata equals len of the blob
-				// Just to show we can do some checks
+			// Check size
+			if size as usize != blob.0.len() {
 				return Err(internal_err!(
 					"submit data length ({}) != blob length ({})",
-					data.len(),
+					size,
 					blob.0.len()
 				));
 			}
+
+			// Check blob_hash
+			if provided_blob_hash != blob_hash {
+				return Err(internal_err!("submitted blob: {provided_blob_hash:?} does not correspond to generated blob {blob_hash:?}"));
+			}
+
+			// Check commitments
+			let generated_commitment =
+				build_da_commitments(blob.to_vec(), 512, 512, Seed::default())
+					.map_err(|e| internal_err!("Build commitment error: {e:?}"))?;
+			if commitments != generated_commitment {
+				return Err(internal_err!("submitted blob commitments: {commitments:?} does not correspond to generated commitments {generated_commitment:?}"));
+			}
+
+			println!("ALL CHECKS WENT FINE: {generated_commitment:?} VS {commitments:?}");
 		} else {
 			return Err(internal_err!(
-				"metadata extrinsic must be dataAvailability.submitData"
+				"metadata extrinsic must be dataAvailability.submitBlobMetadata"
 			));
 		}
 
 		// --- 5. Setup blob metadata and split the blob into shard
 		// If I am a validator, I also might need to store a shard, hence putting a bigger TTL
-		let blob_hash = H256::from(blake2_256(&blob));
 		let total_shards = ((blob.len() as u64 + SHARD_SIZE - 1) / SHARD_SIZE) as u16;
 		let blob_metadata = BlobMetadata {
 			hash: blob_hash,

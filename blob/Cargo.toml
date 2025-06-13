@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 da-runtime = { workspace = true, default-features = false }
 da-control = { workspace = true, default-features = false }
+kate = { workspace = true, default-features = false }
 
 codec = { package = "parity-scale-codec", version = "3", default-features = false }
 frame-benchmarking = { workspace = true, default-features = false }

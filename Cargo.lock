@@ -951,6 +951,7 @@ dependencies = [
  "frame-support",
  "hex-literal",
  "itertools 0.10.5",
+ "kate",
  "log",
  "once_cell",
  "parity-scale-codec",
@@ -962,12 +963,12 @@ dependencies = [
  "sp-std",
  "substrate-prometheus-endpoint",
  "test-case",
+ "thiserror-no-std",
 ]
 
 [[package]]
 name = "avail-core"
 version = "0.6.2"
-source = "git+https://github.com/availproject/avail-core?tag=core-node-7#70458d5430a5209f14369c42ded3243fce8fa1cb"
 dependencies = [
  "binary-merkle-tree",
  "blake2b_simd",
@@ -1410,6 +1411,7 @@ dependencies = [
  "futures",
  "hex",
  "jsonrpsee",
+ "kate",
  "kvdb",
  "kvdb-rocksdb",
  "log",
@@ -5445,7 +5447,6 @@ dependencies = [
 [[package]]
 name = "kate"
 version = "0.9.2"
-source = "git+https://github.com/availproject/avail-core?tag=core-node-7#70458d5430a5209f14369c42ded3243fce8fa1cb"
 dependencies = [
  "avail-core",
  "derive_more 0.99.18",
@@ -5472,7 +5473,6 @@ dependencies = [
 [[package]]
 name = "kate-recovery"
 version = "0.10.0"
-source = "git+https://github.com/availproject/avail-core?tag=core-node-7#70458d5430a5209f14369c42ded3243fce8fa1cb"
 dependencies = [
  "avail-core",
  "derive_more 0.99.18",
@@ -11242,7 +11242,7 @@ dependencies = [
 [[package]]
 name = "sp-ark-bls12-381"
 version = "0.4.2"
-source = "git+https://github.com/paritytech/arkworks-substrate#caa2eed74beb885dd07c7db5f916f2281dad818f"
+source = "git+https://github.com/paritytech/arkworks-substrate#f08093a5f7c32778eae1295430ec064dccd062a6"
 dependencies = [
  "ark-bls12-381-ext",
  "sp-crypto-ec-utils",
@@ -11251,7 +11251,7 @@ dependencies = [
 [[package]]
 name = "sp-ark-ed-on-bls12-381-bandersnatch"
 version = "0.4.2"
-source = "git+https://github.com/paritytech/arkworks-substrate#caa2eed74beb885dd07c7db5f916f2281dad818f"
+source = "git+https://github.com/paritytech/arkworks-substrate#f08093a5f7c32778eae1295430ec064dccd062a6"
 dependencies = [
  "ark-ed-on-bls12-381-bandersnatch-ext",
  "sp-crypto-ec-utils",

@@ -293,6 +293,33 @@ pub mod pallet {
 
 			Ok(().into())
 		}
+
+		#[pallet::call_index(5)]
+		#[pallet::weight((
+			weight_helper::submit_data::<T>(*size as usize),
+			DispatchClass::Normal,
+			SubmitDataFeeModifier::<T>::get()
+		))]
+		pub fn submit_blob_metadata(
+			origin: OriginFor<T>,
+			blob_hash: H256,
+			size: u64,
+			commitments: Vec<u8>,
+		) -> DispatchResultWithPostInfo {
+			let who = ensure_signed(origin)?;
+			ensure!(size > 0, Error::<T>::DataCannotBeEmpty);
+			ensure!(commitments.len() > 0, Error::<T>::DataCannotBeEmpty);
+			ensure!(blob_hash.0.len() > 0, Error::<T>::DataCannotBeEmpty);
+
+			Self::deposit_event(Event::SubmitBlobMetadataRequest {
+				who,
+				size,
+				blob_hash,
+				commitments,
+			});
+
+			Ok(().into())
+		}
 	}
 
 	/// Event for the pallet.
@@ -319,6 +346,12 @@ pub mod pallet {
 		},
 		SubmitDataFeeModifierSet {
 			value: DispatchFeeModifier,
+		},
+		SubmitBlobMetadataRequest {
+			who: T::AccountId,
+			blob_hash: H256,
+			size: u64,
+			commitments: Vec<u8>,
 		},
 	}
 
