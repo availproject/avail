@@ -9612,6 +9612,7 @@ name = "sc-basic-authorship"
 version = "0.10.0-dev"
 dependencies = [
  "avail-base",
+ "da-control",
  "da-runtime",
  "futures",
  "futures-timer",

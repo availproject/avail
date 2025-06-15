@@ -21,7 +21,8 @@
 // FIXME #1021 move this into sp-consensus
 use avail_base::{PostInherentsBackend, PostInherentsProvider};
 
-use codec::Encode;
+use codec::{Decode, Encode};
+use da_runtime::{RuntimeCall, UncheckedExtrinsic};
 use futures::{
 	channel::oneshot,
 	future,
@@ -39,7 +40,7 @@ use sp_core::traits::SpawnNamed;
 use sp_inherents::InherentData;
 use sp_runtime::{
 	traits::{BlakeTwo256, Block as BlockT, Hash as HashT, Header as HeaderT},
-	Digest, Percent, SaturatedConversion,
+	BoundedVec, Digest, Percent, SaturatedConversion,
 };
 use std::{marker::PhantomData, pin::Pin, sync::Arc, time};
 
@@ -517,6 +518,15 @@ where
 
 			let pending_tx_data = pending_tx.data().clone();
 			let pending_tx_hash = pending_tx.hash().clone();
+
+			// TODO Infinity da
+			println!("pending_tx_data: {pending_tx_data:?}");
+			let bytes = pending_tx_data.encode();
+			let uxt: UncheckedExtrinsic = Decode::decode(&mut &bytes[..]).unwrap();
+			println!("pending_tx_data decoded: {uxt:?}");
+			// let call = RuntimeCall::DataAvailability(da_control::Call::submit_data {
+			// 	data: BoundedVec::default(),
+			// });
 
 			let block_size =
 				block_builder.estimate_block_size(self.include_proof_in_block_size_estimation);
