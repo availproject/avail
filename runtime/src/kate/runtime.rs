@@ -1,5 +1,6 @@
 use super::{native::hosted_kate, Error, GDataProof, GRow};
 use avail_base::header_extension::SubmittedData;
+use avail_core::AppExtrinsic;
 use da_control::LOG_TARGET as DALOG_TARGET;
 
 use frame_system::{limits::BlockLength, Config as SystemConfig};
@@ -25,7 +26,7 @@ fn random_seed<T: SystemConfig>() -> Seed {
 }
 
 pub fn grid<T: SystemConfig>(
-	app_extrinsics: Vec<SubmittedData>,
+	app_extrinsics: Vec<AppExtrinsic>,
 	block_length: BlockLength,
 	selected_rows: Vec<u32>,
 ) -> Result<Vec<GRow>, Error> {
@@ -34,10 +35,28 @@ pub fn grid<T: SystemConfig>(
 }
 
 pub fn proof<T: SystemConfig>(
+	app_extrinsics: Vec<AppExtrinsic>,
+	block_len: BlockLength,
+	cells: Vec<(u32, u32)>,
+) -> Result<Vec<GDataProof>, Error> {
+	let seed = random_seed::<T>();
+	hosted_kate::proof(app_extrinsics, block_len, seed, cells)
+}
+
+pub fn grid_v4<T: SystemConfig>(
+	app_extrinsics: Vec<SubmittedData>,
+	block_length: BlockLength,
+	selected_rows: Vec<u32>,
+) -> Result<Vec<GRow>, Error> {
+	let seed = random_seed::<T>();
+	hosted_kate::grid_v4(app_extrinsics, block_length, seed, selected_rows)
+}
+
+pub fn proof_v4<T: SystemConfig>(
 	da_extrinsics: Vec<SubmittedData>,
 	block_len: BlockLength,
 	cells: Vec<(u32, u32)>,
 ) -> Result<Vec<GDataProof>, Error> {
 	let seed = random_seed::<T>();
-	hosted_kate::proof(da_extrinsics, block_len, seed, cells)
+	hosted_kate::proof_v4(da_extrinsics, block_len, seed, cells)
 }

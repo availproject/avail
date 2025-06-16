@@ -116,6 +116,9 @@ pub mod system {
 	/// This is used to limit the maximal weight of a single extrinsic.
 	const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
 
+	pub const NORMAL_DISPATCH_RATIO_PERBILL: Perbill =
+		Perbill::from_percent(NORMAL_DISPATCH_RATIO as u32);
+
 	/// We allow for 2 seconds of compute with a 6 second average block time, with maximum proof size.
 	#[cfg(feature = "fast-runtime")]
 	const MAXIMUM_BLOCK_WEIGHT: Weight =
@@ -134,20 +137,22 @@ pub mod system {
 				weights.base_extrinsic = ExtrinsicBaseWeight::get().saturating_mul(100);
 			})
 			.for_class(DispatchClass::Normal, |weights| {
-				weights.max_total = Some(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);
+				weights.max_total = Some(NORMAL_DISPATCH_RATIO_PERBILL * MAXIMUM_BLOCK_WEIGHT);
 			})
 			.for_class(DispatchClass::Operational, |weights| {
 				weights.max_total = Some(MAXIMUM_BLOCK_WEIGHT);
 				// Operational transactions have some extra reserved space, so that they
 				// are included even if block reached `MAXIMUM_BLOCK_WEIGHT`.
 				weights.reserved = Some(
-					MAXIMUM_BLOCK_WEIGHT - NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT
+					MAXIMUM_BLOCK_WEIGHT - NORMAL_DISPATCH_RATIO_PERBILL * MAXIMUM_BLOCK_WEIGHT
 				);
 			})
 			.avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
 			.build_or_panic();
 	}
-	const_assert!(NORMAL_DISPATCH_RATIO.deconstruct() >= AVERAGE_ON_INITIALIZE_RATIO.deconstruct());
+	const_assert!(
+		NORMAL_DISPATCH_RATIO_PERBILL.deconstruct() >= AVERAGE_ON_INITIALIZE_RATIO.deconstruct()
+	);
 }
 
 pub mod indices {

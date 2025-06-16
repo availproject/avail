@@ -1,8 +1,8 @@
 use avail_core::{AppExtrinsic, BlockLengthColumns};
 use kate::{
 	couscous::multiproof_params,
-	gridgen::{AsBytes, EvaluationGrid},
-	pmp::m1_blst::M1NoPrecomp,
+	gridgen::core::{AsBytes, EvaluationGrid},
+	M1NoPrecomp,
 	Seed,
 };
 use std::{sync::OnceLock, vec::Vec};

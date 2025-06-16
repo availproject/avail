@@ -64,8 +64,14 @@ fn filter_da_call(
 	app_id: AppId,
 	tx_index: usize,
 ) -> Option<ExtractedTxData> {
-	let DACall::submit_data_with_commitments { data, commitments } = call else {
-		return None;
+	let (data, commitments) = match call {
+		DACall::submit_data_with_commitments { data, commitments } => {
+			(data.as_slice(), commitments.as_slice())
+		},
+		DACall::submit_data { data } => {
+			(data.as_slice(), &[][..]) // Empty commitments for legacy call
+		},
+		_ => return None,
 	};
 
 	if data.is_empty() {
@@ -76,8 +82,8 @@ fn filter_da_call(
 	let submitted_data = Some(SubmittedData::new(
 		app_id,
 		tx_index,
-		data.as_slice().to_vec(),
-		commitments.as_slice().to_vec(),
+		data.to_vec(),
+		commitments.to_vec(),
 	));
 
 	Some(ExtractedTxData {
