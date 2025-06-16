@@ -16,7 +16,7 @@ path = "src/e2e.rs"
 
 [dependencies]
 avail-base = { path = "../base" }
-avail-core = { git = "https://github.com/availproject/avail-core", rev = "8668871d43a18998746f1e1e2a609b1cf3e5ff45", features = ["serde"] }
+avail-core = { git = "https://github.com/availproject/avail-core", rev = "2d0ed8547a97a5ce79f3b0f483be2ee067e8f7fc", features = ["serde"] }
 # avail-core = { path = "../../avail-core/core", features = ["serde"] }
 
 # Other
@@ -41,8 +41,8 @@ serde_json = { version = "1.0", features = ["arbitrary_precision"] }
 
 # Substrate
 subxt = "0.34"
-sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "b5e93b5d40386df1bfbfc869b6f3403b842eb8c0", default-features = false }
-sp-runtime = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "b5e93b5d40386df1bfbfc869b6f3403b842eb8c0", default-features = false }
+sp-core = { git = "https://github.com/ToufeeqP/polkadot-sdk.git", rev = "c7dbe7a9938c03961aeda40bbe59ce3987094d3e", default-features = false }
+sp-runtime = { git = "https://github.com/ToufeeqP/polkadot-sdk.git", rev = "c7dbe7a9938c03961aeda40bbe59ce3987094d3e", default-features = false }
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = [
 	"derive",
 	"full",
@@ -52,7 +52,7 @@ scale-info = { version = "2.5.0", features = ["bit-vec"] }
 bounded-collections = { version = "0.2.0", features = ["serde"] }
 
 [dev-dependencies]
-avail-core = {  git = "https://github.com/availproject/avail-core", rev = "8668871d43a18998746f1e1e2a609b1cf3e5ff45", features = ["serde", "runtime"] }
+avail-core = {  git = "https://github.com/availproject/avail-core", rev = "2d0ed8547a97a5ce79f3b0f483be2ee067e8f7fc", features = ["serde", "runtime"] }
 # avail-core = { path = "../../avail-core/core", features = ["serde"] }
 
 async-std = { version = "1.12.0", features = ["attributes", "tokio1"] }
@@ -66,18 +66,18 @@ indicatif = "0.17"
 rand = "0.8.5"
 
 # Substrate
-sp-keyring = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "b5e93b5d40386df1bfbfc869b6f3403b842eb8c0" }
-binary-merkle-tree = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "b5e93b5d40386df1bfbfc869b6f3403b842eb8c0", default-features = false }
+sp-keyring = { git = "https://github.com/ToufeeqP/polkadot-sdk.git", rev = "c7dbe7a9938c03961aeda40bbe59ce3987094d3e" }
+binary-merkle-tree = { git = "https://github.com/ToufeeqP/polkadot-sdk.git", rev = "c7dbe7a9938c03961aeda40bbe59ce3987094d3e", default-features = false }
 subxt-signer = "0.34"
 
 # Dependency `subxt` uses it's own 'version' of sp-core so we need to patch it :)
 [patch.crates-io]
-sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "b5e93b5d40386df1bfbfc869b6f3403b842eb8c0" }
-sp-io = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "b5e93b5d40386df1bfbfc869b6f3403b842eb8c0" }
-sp-runtime = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "b5e93b5d40386df1bfbfc869b6f3403b842eb8c0" }
-sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "b5e93b5d40386df1bfbfc869b6f3403b842eb8c0" }
+sp-core = { git = "https://github.com/ToufeeqP/polkadot-sdk.git", rev = "c7dbe7a9938c03961aeda40bbe59ce3987094d3e" }
+sp-io = { git = "https://github.com/ToufeeqP/polkadot-sdk.git", rev = "c7dbe7a9938c03961aeda40bbe59ce3987094d3e" }
+sp-runtime = { git = "https://github.com/ToufeeqP/polkadot-sdk.git", rev = "c7dbe7a9938c03961aeda40bbe59ce3987094d3e" }
+sp-std = { git = "https://github.com/ToufeeqP/polkadot-sdk.git", rev = "c7dbe7a9938c03961aeda40bbe59ce3987094d3e" }
 subxt = { git = "https://github.com/ToufeeqP/subxt.git", rev = "c4d8cb3cba5d86fc164fc912cb456870e9a2d1d2" }
-# frame-metadata = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "b5e93b5d40386df1bfbfc869b6f3403b842eb8c0" }
+# frame-metadata = { git = "https://github.com/ToufeeqP/polkadot-sdk.git", rev = "c7dbe7a9938c03961aeda40bbe59ce3987094d3e" }
 
 
 [features]

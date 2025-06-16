@@ -302,7 +302,7 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(5)]
-		#[pallet::weight(T::WeightInfo::submit_data(data.len() as u32))]
+		#[pallet::weight(T::WeightInfo::submit_data(100u32))]
 		pub fn submit_data_with_commitments(
 			origin: OriginFor<T>,
 			data: AppDataFor<T>,
@@ -316,6 +316,22 @@ pub mod pallet {
 			Self::deposit_event(Event::DataSubmitted {
 				who,
 				data_hash: H256(data_hash),
+			});
+
+			Ok(().into())
+		}
+
+		#[pallet::call_index(6)]
+		#[pallet::weight(T::WeightInfo::submit_data(100u32))]
+		pub fn da_light(
+			origin: OriginFor<T>,
+			data_hash: H256,
+		) -> DispatchResultWithPostInfo {
+			let who = ensure_signed(origin)?;
+
+			Self::deposit_event(Event::DataSubmitted {
+				who,
+				data_hash,
 			});
 
 			Ok(().into())

@@ -8,7 +8,7 @@ use crate::{
 	UncheckedExtrinsic, VoterList, MINUTES, SLOT_DURATION, VERSION,
 };
 use avail_core::{
-	currency::{Balance, AVAIL, CENTS, NANO_AVAIL, PICO_AVAIL},
+	currency::{Balance, AVAIL, CENTS, PICO_AVAIL},
 	AppId,
 };
 
@@ -150,11 +150,11 @@ parameter_types! {
 
 parameter_types! {
 	pub const WeightFee: Balance = 10 * PICO_AVAIL;
-	pub const TransactionByteFee: Balance = 100 * NANO_AVAIL; // 100 nanoAVAIL
+	// pub const TransactionByteFee: Balance = 100 * NANO_AVAIL; // 100 nanoAVAIL
+	pub const TransactionByteFee: Balance = 0; // Temp
 	pub const OperationalFeeMultiplier: u8 = 5u8;
 	pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(50); // target_utilization 50%
 	pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(1, 1_000_000); // 0.000001
-	// pub LenAdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(4, 1000); // 0.004 to make fee 4x in one epoch on a fully congested network
 	pub MinimumMultiplier: Multiplier = Multiplier::saturating_from_rational(1, 1_000_000_000u128);
 	pub MinLenMultiplier: Multiplier = Multiplier::from_u32(1);
 	pub MaximumMultiplier: Multiplier = Bounded::max_value();

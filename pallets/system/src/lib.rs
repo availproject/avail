@@ -103,10 +103,10 @@ use avail_core::{
 	ensure,
 	header::{Header as DaHeader, HeaderExtension},
 	traits::{ExtendedBlock, ExtendedHeader, GetAppId, MaybeCaller},
-	HeaderVersion,
+	HeaderVersion, ORIGINAL_CALL_INDEX, ORIGINAL_PALLET_INDEX, LIGHT_CALL_INDEX,
 };
 
-use codec::{Decode, Encode, EncodeLike, FullCodec, MaxEncodedLen};
+use codec::{Compact, Decode, Encode, EncodeLike, FullCodec, Input, MaxEncodedLen};
 use frame_support::{
 	dispatch::{
 		extract_actual_pays_fee, extract_actual_weight, DispatchClass, DispatchInfo,
@@ -195,6 +195,78 @@ pub fn extrinsics_root<H: Hash, E: codec::Encode>(extrinsics: &[E]) -> H::Output
 /// `state_version` 0.
 pub fn extrinsics_data_root<H: Hash>(xts: Vec<Vec<u8>>) -> H::Output {
 	H::ordered_trie_root(xts, sp_core::storage::StateVersion::V0)
+}
+
+pub fn filtered_extrinsics_data_root<H: Hash>(xts: Vec<Vec<u8>>) -> H::Output {
+    let filtered = xts
+        .into_iter()
+        .filter(|ext_bytes| {
+            let mut input = &ext_bytes[..];
+
+            // === Decode Compact<u32> length prefix ===
+            if Compact::<u32>::decode(&mut input).is_err() {
+                return true; // Malformed: keep it for safety
+            }
+
+            // === Decode version byte ===
+            let version = match u8::decode(&mut input) {
+                Ok(v) => v,
+                Err(_) => return true,
+            };
+
+            // If it's not a signed extrinsic, we can't decode it meaningfully — keep it
+            if version & 0b1000_0000 == 0 {
+                return true;
+            }
+
+            // === Skip signer: type (1) + id (32) ===
+            if input.len() < 1 + 32 {
+                return true;
+            }
+            input = &input[1 + 32..];
+
+            // === Skip signature type (1) + sig (64) ===
+            if input.len() < 1 + 64 {
+                return true;
+            }
+            input = &input[1 + 64..];
+
+            // === Skip era ===
+            let era_first = match input.read_byte() {
+                Ok(b) => b,
+                Err(_) => return true,
+            };
+            if era_first != 0 {
+                if input.read_byte().is_err() {
+                    return true;
+                }
+            }
+
+            // === Skip nonce, tip, app_id ===
+            if Compact::<u32>::decode(&mut input).is_err()
+                || Compact::<u128>::decode(&mut input).is_err()
+                || Compact::<u32>::decode(&mut input).is_err()
+            {
+                return true;
+            }
+
+            // === Decode pallet + call index ===
+            let pallet = match input.read_byte() {
+                Ok(p) => p,
+                Err(_) => return true,
+            };
+            let call = match input.read_byte() {
+                Ok(c) => c,
+                Err(_) => return true,
+            };
+
+            // === Filter out target extrinsics ===
+            !((pallet == ORIGINAL_PALLET_INDEX && call == ORIGINAL_CALL_INDEX)
+                || (pallet == ORIGINAL_PALLET_INDEX && call == LIGHT_CALL_INDEX))
+        })
+        .collect::<Vec<_>>();
+
+    H::ordered_trie_root(filtered, sp_core::storage::StateVersion::V0)
 }
 
 /// An object to track the currently used extrinsic weight in a block.
@@ -1770,7 +1842,7 @@ impl<T: Config> Pallet<T> {
 
 		// Remove previous block data from storage
 		BlockWeight::<T>::kill();
-		AllExtrinsicsLen::<T>::kill();
+		// AllExtrinsicsLen::<T>::kill();
 	}
 
 	/// Remove temporary "environment" entries in storage, compute the storage root and return the
@@ -1813,7 +1885,7 @@ impl<T: Config> Pallet<T> {
 		);
 		ExecutionPhase::<T>::kill();
 		// This will be cleared in on_initialise of next block
-		// AllExtrinsicsLen::<T>::kill();
+		AllExtrinsicsLen::<T>::kill();
 		storage::unhashed::kill(well_known_keys::INTRABLOCK_ENTROPY);
 		// The following fields
 		//
@@ -1859,7 +1931,9 @@ impl<T: Config> Pallet<T> {
 		let header_extension_builder_data = HeaderExtensionBuilderData::from_raw_extrinsics::<
 			T::HeaderExtensionDataFilter,
 		>(block_number, &extrinsics);
-		let extrinsics_root = extrinsics_data_root::<T::Hashing>(extrinsics);
+		// let extrinsics_root = extrinsics_data_root::<T::Hashing>(extrinsics);
+		// extrinsics_root will be computed by filtering out original & light DA extrinsics
+		let extrinsics_root = filtered_extrinsics_data_root::<T::Hashing>(extrinsics);
 
 		let block_length = Self::block_length();
 

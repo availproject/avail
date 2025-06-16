@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 /// # Data Avail Protocol
 ///
 /// This `BlockImport` ensures that any block follows the Data Availability Protocol before send it
@@ -160,7 +161,9 @@ where
 		let skip_sync = self.unsafe_da_sync && is_sync;
 		if !is_own && !skip_sync && !block.with_state() {
 			self.ensure_last_extrinsic_is_failed_send_message_txs(&block)?;
-			self.ensure_valid_header_extension(&block)?;
+			// TEMP: skip header extension check for now & add it later for supernode role
+			// Also, should handle the data_root calculation using da_light
+			// self.ensure_valid_header_extension(&block)?;
 		}
 
 		// Next import block stage & metrics
