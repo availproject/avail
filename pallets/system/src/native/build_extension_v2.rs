@@ -16,7 +16,7 @@ use avail_core::{
 };
 use kate::{
 	couscous::multiproof_params,
-	gridgen::{core::EvaluationGrid, utils::AsBytes},
+	gridgen::core::{AsBytes, EvaluationGrid},
 	M1NoPrecomp, Seed,
 };
 use sp_core::H256;

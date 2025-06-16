@@ -6,7 +6,7 @@ use frame_system::{limits::BlockLength, native::hosted_header_builder::MIN_WIDTH
 use kate::{
 	com::Cell,
 	couscous::multiproof_params,
-	gridgen::{core::EvaluationGrid as EGrid, utils::AsBytes as _},
+	gridgen::core::{AsBytes as _, EvaluationGrid as EGrid},
 	M1NoPrecomp,
 };
 use kate::{ArkScalar, Seed};
