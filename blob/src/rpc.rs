@@ -187,7 +187,6 @@ where
 		}
 
 		// --- 5. Setup blob metadata and split the blob into shard
-		// If I am a validator, I also might need to store a shard, hence putting a bigger TTL
 		let total_shards = ((blob.len() as u64 + SHARD_SIZE - 1) / SHARD_SIZE) as u16;
 		let blob_metadata = BlobMetadata {
 			hash: blob_hash,

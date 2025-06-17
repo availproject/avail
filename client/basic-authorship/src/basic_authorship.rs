@@ -21,7 +21,9 @@
 // FIXME #1021 move this into sp-consensus
 use avail_base::{PostInherentsBackend, PostInherentsProvider};
 
+use blob::check_and_sample_blobs;
 use codec::{Decode, Encode};
+use da_control::Call;
 use da_runtime::{RuntimeCall, UncheckedExtrinsic};
 use futures::{
 	channel::oneshot,
@@ -40,7 +42,7 @@ use sp_core::traits::SpawnNamed;
 use sp_inherents::InherentData;
 use sp_runtime::{
 	traits::{BlakeTwo256, Block as BlockT, Hash as HashT, Header as HeaderT},
-	BoundedVec, Digest, Percent, SaturatedConversion,
+	Digest, Percent, SaturatedConversion,
 };
 use std::{marker::PhantomData, pin::Pin, sync::Arc, time};
 
@@ -353,9 +355,11 @@ where
 		// TODO call `after_inherents` and check if we should apply extrinsincs here
 		// <https://github.com/paritytech/substrate/pull/14275/>
 
-		let end_reason = self
+		let (end_reason, failed_blob_txs) = self
 			.apply_extrinsics(&mut block_builder, deadline, block_size_limit)
 			.await?;
+
+		println!("Failed blob txs: {failed_blob_txs:?}");
 
 		self.apply_post_inherents(&mut block_builder)?;
 
@@ -461,7 +465,7 @@ where
 		block_builder: &mut sc_block_builder::BlockBuilder<'_, Block, C>,
 		deadline: time::Instant,
 		block_size_limit: Option<usize>,
-	) -> Result<EndProposingReason, sp_blockchain::Error> {
+	) -> Result<(EndProposingReason, Vec<RuntimeCall>), sp_blockchain::Error> {
 		// proceed with transactions
 		// We calculate soft deadline used only in case we start skipping transactions.
 		let now = (self.now)();
@@ -494,6 +498,8 @@ where
 		debug!(target: LOG_TARGET, "Pool status: {:?}", self.transaction_pool.status());
 		let mut transaction_pushed = false;
 
+		let mut submit_blob_metadata_calls = Vec::new();
+
 		let end_reason = loop {
 			let pending_tx = if let Some(pending_tx) = pending_iterator.next() {
 				pending_tx
@@ -518,15 +524,6 @@ where
 
 			let pending_tx_data = pending_tx.data().clone();
 			let pending_tx_hash = pending_tx.hash().clone();
-
-			// TODO Infinity da
-			println!("pending_tx_data: {pending_tx_data:?}");
-			let bytes = pending_tx_data.encode();
-			let uxt: UncheckedExtrinsic = Decode::decode(&mut &bytes[..]).unwrap();
-			println!("pending_tx_data decoded: {uxt:?}");
-			// let call = RuntimeCall::DataAvailability(da_control::Call::submit_data {
-			// 	data: BoundedVec::default(),
-			// });
 
 			let block_size =
 				block_builder.estimate_block_size(self.include_proof_in_block_size_estimation);
@@ -559,10 +556,22 @@ where
 			}
 
 			trace!(target: LOG_TARGET, "[{:?}] Pushing to the block.", pending_tx_hash);
-			match sc_block_builder::BlockBuilder::push(block_builder, pending_tx_data) {
+			match sc_block_builder::BlockBuilder::push(block_builder, pending_tx_data.clone()) {
 				Ok(()) => {
 					transaction_pushed = true;
 					debug!(target: LOG_TARGET, "[{:?}] Pushed to the block.", pending_tx_hash);
+
+					let extrinsic: Option<UncheckedExtrinsic> =
+						Decode::decode(&mut &pending_tx_data.encode()[..]).ok();
+					if let Some(extrinsic) = extrinsic {
+						let extrinsic_data = extrinsic.function;
+						if matches!(
+							extrinsic_data,
+							RuntimeCall::DataAvailability(Call::submit_blob_metadata { .. })
+						) {
+							submit_blob_metadata_calls.push(extrinsic_data);
+						}
+					}
 				},
 				Err(ApplyExtrinsicFailed(Validity(e))) if e.exhausted_resources() => {
 					pending_iterator.report_invalid(&pending_tx);
@@ -603,8 +612,10 @@ where
 			);
 		}
 
+		let failed_blob_txs = check_and_sample_blobs(&submit_blob_metadata_calls).await;
+
 		self.transaction_pool.remove_invalid(&unqueue_invalid);
-		Ok(end_reason)
+		Ok((end_reason, failed_blob_txs))
 	}
 
 	/// Prints a summary and does telemetry + metrics.
