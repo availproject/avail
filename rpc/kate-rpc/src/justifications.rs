@@ -7,7 +7,7 @@ use sc_client_api::BlockBackend;
 use sp_runtime::traits::Block as BlockT;
 use std::{marker::PhantomData, sync::Arc};
 
-/// GRANDPA consensus engine_id  
+/// GRANDPA consensus engine_id
 pub const GRANDPA_ENGINE_ID: [u8; 4] = *b"FRNK";
 
 #[rpc(client, server)]
@@ -16,7 +16,7 @@ where
 	Block: BlockT,
 {
 	#[method(name = "grandpa_blockJustification")]
-	async fn block_justification(&self, block_number: u32) -> RpcResult<Vec<u8>>;
+	async fn block_justification(&self, block_number: u32) -> RpcResult<Option<Vec<u8>>>;
 }
 
 pub struct GrandpaJustifications<Client, Block: BlockT> {
@@ -64,7 +64,21 @@ where
 	Client: Send + Sync + 'static,
 	Client: BlockBackend<Block>,
 {
-	async fn block_justification(&self, block_number: u32) -> RpcResult<Vec<u8>> {
+	/// Returns the GRANDPA justification for the given block number, if available.
+	///
+	/// # Parameters
+	/// - `block_number`: The number of the block for which the justification is requested.
+	///
+	/// # Returns
+	/// - `Ok(Some(Vec<u8>))`: The encoded justification bytes for the block.
+	/// - `Ok(None)`: Indicates that no justification is available for the specified block.
+	/// - `Err`: If there is an error retrieving the block hash or justifications from the backend.
+	///
+	/// # Notes
+	/// This method checks whether a justification exists in the backend for the block.
+	/// If the justification exists for the `GRANDPA_ENGINE_ID`, it is returned.
+	/// Otherwise, `None` is returned, indicating no justification is present.
+	async fn block_justification(&self, block_number: u32) -> RpcResult<Option<Vec<u8>>> {
 		// Fetch the block hash
 		let block_hash = self
 			.client
@@ -79,7 +93,6 @@ where
 			.map_err(|e| internal_err!("Failed to fetch justifications: {e:?}"))?
 			.and_then(|just| just.into_justification(GRANDPA_ENGINE_ID));
 
-		justification
-			.ok_or_else(|| internal_err!("Cannot fetch justification for block #{block_number}"))
+		Ok(justification)
 	}
 }
