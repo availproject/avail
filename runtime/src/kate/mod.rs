@@ -1,8 +1,10 @@
 pub mod native;
 pub mod runtime;
 
+#[cfg(feature = "std")]
+use kate::gridgen::core::CellBlock;
 // Reexport
-pub use runtime::{grid, proof};
+pub use runtime::{grid, multiproof, proof};
 
 use codec::{Decode, Encode};
 use core::num::TryFromIntError;
@@ -15,11 +17,32 @@ use sp_std::vec::Vec;
 use thiserror_no_std::Error;
 
 #[cfg(feature = "std")]
-use kate::{com::Error as KateError, gridgen::AppRowError as KateAppRowError};
+use kate::{com::Error as KateError, gridgen::core::AppRowError as KateAppRowError};
 
 pub type GRawScalar = U256;
 pub type GRow = Vec<GRawScalar>;
 pub type GDataProof = (GRawScalar, GProof);
+pub type GMultiProof = (Vec<GRawScalar>, GProof);
+#[derive(Encode, Decode, TypeInfo, PassByCodec, Debug, Clone)]
+#[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
+pub struct GCellBlock {
+	pub start_x: u32,
+	pub start_y: u32,
+	pub end_x: u32,
+	pub end_y: u32,
+}
+
+impl GCellBlock {
+	#[cfg(feature = "std")]
+	pub fn from(block: CellBlock) -> Self {
+		Self {
+			start_x: block.start_x as u32,
+			start_y: block.start_y as u32,
+			end_x: block.end_x as u32,
+			end_y: block.end_y as u32,
+		}
+	}
+}
 
 /// # NOTE
 /// `Serde` requires a custom implementation for `GProof` due to the array size (greater than `[T;32]`).
