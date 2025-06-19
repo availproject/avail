@@ -322,15 +322,15 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(6)]
-		#[pallet::weight(T::WeightInfo::set_submit_data_fee_modifier())]
+		#[pallet::weight((
+			T::WeightInfo::set_submit_data_fee_modifier(),
+			DispatchClass::Mandatory
+		))]
 		pub fn failed_submit_blob_txs(
 			origin: OriginFor<T>,
-			failed_txs: Vec<H256>,
+			_failed_txs: Vec<H256>,
 		) -> DispatchResult {
 			ensure_none(origin)?;
-			Self::deposit_event(Event::FailedSubmitBlob {
-				blob_hashes: failed_txs
-			});
 			Ok(())
 		}
 	}
@@ -365,9 +365,6 @@ pub mod pallet {
 			blob_hash: H256,
 			size: u64,
 			commitments: Vec<u8>,
-		},
-		FailedSubmitBlob {
-			blob_hashes: Vec<H256>,
 		},
 	}
 

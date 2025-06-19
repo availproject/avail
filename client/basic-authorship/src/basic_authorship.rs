@@ -21,7 +21,7 @@
 // FIXME #1021 move this into sp-consensus
 use avail_base::{PostInherentsBackend, PostInherentsProvider};
 
-use blob::check_and_sample_blobs;
+use blob::sample_and_get_failed_blobs;
 use codec::{Decode, Encode};
 use da_control::Call;
 use da_runtime::{RuntimeCall, UncheckedExtrinsic};
@@ -38,7 +38,7 @@ use sc_transaction_pool_api::{InPoolTransaction, TransactionPool};
 use sp_api::{ApiExt, CallApiAt, ProvideRuntimeApi};
 use sp_blockchain::{ApplyExtrinsicFailed::Validity, Error::ApplyExtrinsicFailed, HeaderBackend};
 use sp_consensus::{DisableProofRecording, EnableProofRecording, ProofRecording, Proposal};
-use sp_core::traits::SpawnNamed;
+use sp_core::{traits::SpawnNamed, H256};
 use sp_inherents::InherentData;
 use sp_runtime::{
 	traits::{BlakeTwo256, Block as BlockT, Hash as HashT, Header as HeaderT},
@@ -355,13 +355,11 @@ where
 		// TODO call `after_inherents` and check if we should apply extrinsincs here
 		// <https://github.com/paritytech/substrate/pull/14275/>
 
-		let (end_reason, failed_blob_txs) = self
+		let (end_reason, failed_blob_hashes) = self
 			.apply_extrinsics(&mut block_builder, deadline, block_size_limit)
 			.await?;
 
-		println!("Failed blob txs: {failed_blob_txs:?}");
-
-		self.apply_post_inherents(&mut block_builder)?;
+		self.apply_post_inherents(&mut block_builder, failed_blob_hashes)?;
 
 		let (block, storage_changes, proof) = block_builder.build()?.into_inner();
 		let block_took = block_timer.elapsed();
@@ -424,12 +422,13 @@ where
 	fn apply_post_inherents(
 		&self,
 		block_builder: &mut sc_block_builder::BlockBuilder<'_, Block, C>,
+		failed_blob_hashes: Vec<H256>,
 	) -> Result<(), sp_blockchain::Error> {
 		let data = self.client.post_inherent_data();
 		let post_inherents: Vec<_> = self
 			.client
 			.runtime_api()
-			.create_post_inherent_extrinsics(self.parent_hash, data)
+			.create_post_inherent_extrinsics(self.parent_hash, data, failed_blob_hashes)
 			.map_err(|api_err| sp_blockchain::Error::RuntimeApiError(api_err))?;
 
 		for inherent in post_inherents {
@@ -465,7 +464,7 @@ where
 		block_builder: &mut sc_block_builder::BlockBuilder<'_, Block, C>,
 		deadline: time::Instant,
 		block_size_limit: Option<usize>,
-	) -> Result<(EndProposingReason, Vec<RuntimeCall>), sp_blockchain::Error> {
+	) -> Result<(EndProposingReason, Vec<H256>), sp_blockchain::Error> {
 		// proceed with transactions
 		// We calculate soft deadline used only in case we start skipping transactions.
 		let now = (self.now)();
@@ -612,10 +611,11 @@ where
 			);
 		}
 
-		let failed_blob_txs = check_and_sample_blobs(&submit_blob_metadata_calls).await;
+		let failed_blob_hashes =
+			sample_and_get_failed_blobs(&submit_blob_metadata_calls).await;
 
 		self.transaction_pool.remove_invalid(&unqueue_invalid);
-		Ok((end_reason, failed_blob_txs))
+		Ok((end_reason, failed_blob_hashes))
 	}
 
 	/// Prints a summary and does telemetry + metrics.

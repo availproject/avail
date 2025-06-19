@@ -2,7 +2,7 @@ use crate::{p2p::NetworkHandle, types::BlobHash};
 use anyhow::{anyhow, Result};
 use codec::{Decode, Encode};
 use da_control::Call;
-use da_runtime::{RuntimeCall, UncheckedExtrinsic};
+use da_runtime::RuntimeCall;
 use once_cell::sync::OnceCell;
 use sc_authority_discovery::AuthorityDiscovery;
 use sc_client_api::HeaderBackend;
@@ -398,20 +398,22 @@ fn fetch_shards(store: &RocksdbShardStore, shard_request: &ShardRequest) -> Resu
 		.collect()
 }
 
-pub async fn check_and_sample_blobs(submit_blob_metadata_calls: &Vec<RuntimeCall>) -> Vec<RuntimeCall>
-{
-	let mut failed_txs: Vec<RuntimeCall> = Vec::new();
+pub async fn sample_and_get_failed_blobs(
+	submit_blob_metadata_calls: &Vec<RuntimeCall>,
+) -> Vec<BlobHash> {
+	let mut failed_txs: Vec<BlobHash> = Vec::new();
 	for tx in submit_blob_metadata_calls {
-		if let RuntimeCall::DataAvailability(Call::submit_blob_metadata { size, blob_hash, commitments }) = tx {
+		if let RuntimeCall::DataAvailability(Call::submit_blob_metadata {
+			size,
+			blob_hash,
+			commitments,
+		}) = tx
+		{
 			// Todo sampling
+			println!("Should sample: size-{size:?} blob_hash-{blob_hash:?} commitments-{commitments:?}");
+			// If failed
+			failed_txs.push(*blob_hash)
 		}
 	}
 	failed_txs
-}
-
-pub fn create_post_inherent(blob_hashes: Vec<BlobHash>) {
-	// TODO CREATE INHERENT
-	let call = RuntimeCall::DataAvailability(da_control::Call::failed_submit_blob_txs {
-		failed_txs: blob_hashes,
-	});
 }

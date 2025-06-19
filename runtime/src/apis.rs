@@ -445,13 +445,20 @@ impl_runtime_apis! {
 	}
 
 	impl avail_base::PostInherentsProvider<Block> for Runtime {
-		fn create_post_inherent_extrinsics(data: avail_base::StorageMap) -> Vec<<Block as BlockT>::Extrinsic> {
-			pallet_vector::Pallet::<Runtime>::create_inherent(&data)
+		fn create_post_inherent_extrinsics(data: avail_base::StorageMap, failed_txs: Vec<H256>) -> Vec<<Block as BlockT>::Extrinsic> {
+			let mut post_inherent_extrinsics: Vec<<Block as BlockT>::Extrinsic> = pallet_vector::Pallet::<Runtime>::create_inherent(&data)
 				.into_iter()
 				.filter_map(|inherent| {
 					<Block as BlockT>::Extrinsic::new(inherent.into(), None)
 				})
-				.collect()
+				.collect();
+
+			let da_inherent_call: da_control::Call<Runtime> = da_control::Call::failed_submit_blob_txs { failed_txs };
+			if let Some(da_inherent_extrinsic) = <Block as BlockT>::Extrinsic::new(da_inherent_call.into(), None) {
+				post_inherent_extrinsics.insert(0, da_inherent_extrinsic);
+			};
+
+			post_inherent_extrinsics
 		}
 	}
 
