@@ -1,12 +1,16 @@
+use std::{marker::PhantomData, sync::Arc};
+
 use codec::{decode_from_bytes, Encode};
-use frame_system_rpc_runtime_api::system_events_api::fetch_events_v1;
+use frame_system_rpc_runtime_api::{system_events_api::fetch_events_v1, SystemEventsApi};
 use jsonrpsee::{
 	core::{async_trait, RpcResult},
 	proc_macros::rpc,
 	types::error::ErrorObject,
 };
 use sc_service::RpcHandlers;
+use sp_api::ProvideRuntimeApi;
 use sp_core::{bytes::from_hex, H256};
+use sp_runtime::traits::Block as BlockT;
 
 #[rpc(client, server)]
 pub trait Api {
@@ -18,61 +22,69 @@ pub trait Api {
 	) -> RpcResult<fetch_events_v1::ApiResult>;
 }
 
-pub struct Rpc {
-	pub handlers: RpcHandlers,
+pub struct Rpc<C, Block>
+where
+	C: ProvideRuntimeApi<Block> + Send + Sync + 'static,
+	C::Api: frame_system_rpc_runtime_api::SystemEventsApi<Block>,
+	Block: BlockT,
+	<Block as BlockT>::Hash: From<H256>,
+{
+	pub client: Arc<C>,
+	_phantom: PhantomData<Block>,
 }
-impl Rpc {
-	pub fn new(handlers: RpcHandlers) -> Self {
-		Self { handlers }
+impl<C, Block> Rpc<C, Block>
+where
+	C: ProvideRuntimeApi<Block> + Send + Sync + 'static,
+	C::Api: frame_system_rpc_runtime_api::SystemEventsApi<Block>,
+	Block: BlockT,
+	<Block as BlockT>::Hash: From<H256>,
+{
+	pub fn new(client: Arc<C>) -> Self {
+		Self {
+			client,
+			_phantom: PhantomData,
+		}
 	}
 }
 
-fn internal_error<'a>(msg: String) -> ErrorObject<'a> {
-	ErrorObject::owned(0, msg, None::<()>)
+/// Error type for this RPC API.
+pub enum Error {
+	/// Generic runtime error.
+	RuntimeApiError,
+}
+
+impl Error {
+	pub fn runtime_api_error<'a>(msg: String) -> ErrorObject<'a> {
+		ErrorObject::owned(Error::RuntimeApiError.into(), msg, None::<()>)
+	}
+}
+
+impl From<Error> for i32 {
+	fn from(e: Error) -> i32 {
+		match e {
+			Error::RuntimeApiError => 1,
+		}
+	}
 }
 
 #[async_trait]
-impl ApiServer for Rpc {
+impl<C, Block> ApiServer for Rpc<C, Block>
+where
+	C: ProvideRuntimeApi<Block> + Send + Sync + 'static,
+	C::Api: frame_system_rpc_runtime_api::SystemEventsApi<Block>,
+	Block: BlockT,
+	<Block as BlockT>::Hash: From<H256>,
+{
 	async fn fetch_events_v1(
 		&self,
 		params: fetch_events_v1::Params,
 		at: H256,
 	) -> RpcResult<fetch_events_v1::ApiResult> {
-		runtime_api_fetch_events_v1(&self.handlers, params, &at)
-			.await
-			.map_err(|x| internal_error(x))
+		let runtime_api = self.client.runtime_api();
+		let result = runtime_api
+			.fetch_events_v1(at.into(), params)
+			.map_err(|x| Error::runtime_api_error(x.to_string()))?;
+
+		Ok(result)
 	}
-}
-
-pub async fn runtime_api_fetch_events_v1(
-	handlers: &RpcHandlers,
-	params: fetch_events_v1::Params,
-	at: &H256,
-) -> Result<fetch_events_v1::ApiResult, String> {
-	let query = format!(
-		r#"{{
-		"jsonrpc": "2.0",
-		"method": "state_call",
-		"params": ["SystemEventsApi_fetchEventsV1", "0x{}", "{:?}"],
-		"id": 0
-	}}"#,
-		hex::encode(params.encode()),
-		at
-	);
-
-	let (res, _) = handlers
-		.rpc_query(&query)
-		.await
-		.map_err(|x| x.to_string())?;
-	let json = serde_json::from_str::<serde_json::Value>(&res).map_err(|x| x.to_string())?;
-
-	let Some(result_json) = json["result"].as_str() else {
-		return Err(String::from("Failed to call event api"));
-	};
-	let result = from_hex(result_json).map_err(|x| x.to_string())?;
-	let res: fetch_events_v1::ApiResult =
-		decode_from_bytes::<fetch_events_v1::ApiResult>(result.into())
-			.map_err(|x| x.to_string())?;
-
-	Ok(res)
 }
