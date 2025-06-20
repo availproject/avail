@@ -30,6 +30,7 @@ pub type Cells = BoundedVec<Cell, MaxCells>;
 
 pub mod justifications;
 pub mod metrics;
+pub mod system;
 
 #[derive(Clone, Default)]
 pub struct Deps {
