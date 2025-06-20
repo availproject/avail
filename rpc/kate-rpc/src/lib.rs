@@ -28,6 +28,7 @@ pub type Rows = BoundedVec<u32, MaxRows>;
 pub type MaxCells = ConstU32<10_000>;
 pub type Cells = BoundedVec<Cell, MaxCells>;
 
+pub mod justifications;
 pub mod metrics;
 
 #[derive(Clone, Default)]
