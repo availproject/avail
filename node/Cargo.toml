@@ -26,7 +26,6 @@ da-runtime.workspace = true
 da-control.workspace = true
 kate-rpc.workspace = true
 testing-rpc.workspace = true
-system-rpc.workspace = true
 pallet-vector.workspace = true
 frame-system-rpc-runtime-api.workspace = true
 frame-system = { workspace = true, default-features = false }

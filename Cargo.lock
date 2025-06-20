@@ -1066,7 +1066,6 @@ dependencies = [
  "substrate-frame-rpc-system",
  "substrate-prometheus-endpoint",
  "substrate-state-trie-migration-rpc",
- "system-rpc",
  "tempfile",
  "testing-rpc",
  "try-runtime-cli",
@@ -5388,13 +5387,20 @@ dependencies = [
  "da-runtime",
  "frame-support",
  "frame-system",
+ "frame-system-rpc-runtime-api",
+ "hex",
  "jsonrpsee",
  "kate",
  "kate-recovery",
  "log",
+ "parity-scale-codec",
  "sc-client-api",
+ "sc-service",
+ "serde",
+ "serde_json",
  "sp-api",
  "sp-blockchain",
+ "sp-core",
  "sp-runtime",
 ]
 
@@ -12692,23 +12698,6 @@ checksum = "8e1d1b10ced5ca923a1fcb8d03e96b8d3268065d724548c0211415ff6ac6bac4"
 dependencies = [
  "core-foundation-sys",
  "libc",
-]
-
-[[package]]
-name = "system-rpc"
-version = "0.3.0"
-dependencies = [
- "async-trait",
- "avail-base",
- "frame-system",
- "frame-system-rpc-runtime-api",
- "hex",
- "jsonrpsee",
- "parity-scale-codec",
- "sc-service",
- "serde",
- "serde_json",
- "sp-core",
 ]
 
 [[package]]
