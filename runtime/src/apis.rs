@@ -241,38 +241,24 @@ impl_runtime_apis! {
 	}
 
 	impl frame_system_rpc_runtime_api::SystemEventsApi<Block> for Runtime {
-		fn fetch_events_v1(params: frame_system_rpc_runtime_api::system_events_api::fetch_events_v1::Params) -> frame_system_rpc_runtime_api::system_events_api::fetch_events_v1::Result {
+		fn fetch_events_v1(params: frame_system_rpc_runtime_api::system_events_api::fetch_events_v1::Params) -> frame_system_rpc_runtime_api::system_events_api::fetch_events_v1::ApiResult {
 			use sp_std::vec;
-			use frame_system_rpc_runtime_api::system_events_api::fetch_events_v1::{RuntimePhase, RuntimeEvent, GroupedRuntimeEvents, Result, ERROR_INVALID_INPUTS, MAX_INDICES_COUNT};
+			use frame_system_rpc_runtime_api::system_events_api::fetch_events_v1::{RuntimeEvent, GroupedRuntimeEvents, ERROR_INVALID_INPUTS};
 			use codec::Encode;
 
-			let mut result = Result {
-				error: None,
-				groups: Vec::new(),
-			};
+			let filter = params.filter.unwrap_or_default();
+			if !filter.is_valid() {
+				return Err(ERROR_INVALID_INPUTS);
+			}
 
 			let enable_encoding = params.enable_encoding.unwrap_or(false);
 			let enable_decoding = params.enable_decoding.unwrap_or(false);
 
-			if params.filter_by_tx_indices.as_ref().is_some_and(|x| x.len() > MAX_INDICES_COUNT as usize) {
-				result.error = Some(ERROR_INVALID_INPUTS);
-				return result;
-			}
-
+			let mut result: Vec<GroupedRuntimeEvents> = Vec::new();
 			let all_events = System::read_events_no_consensus();
 			for (position, event) in all_events.enumerate() {
-				let phase: RuntimePhase = RuntimePhase::from(&event.phase);
-				let tx_index =  phase.tx_index();
-
-				// Filter TX Indices
-				if let Some(filter) = &params.filter_by_tx_indices {
-					if let Some(tx_index) = tx_index {
-						if !filter.contains(&tx_index) {
-							continue;
-						}
-					} else {
-						continue;
-					}
+				if !filter.should_allow(event.phase) {
+					continue
 				}
 
 				let encoded = event.event.encode();
@@ -285,14 +271,14 @@ impl_runtime_apis! {
 				let decoded = enable_decoding.then(|| decode_runtime_event_v1(&event.event)).flatten();
 
 				let ev = RuntimeEvent::new(position as u32, emitted_index, encoded, decoded);
-				if let Some(entry) = result.groups.iter_mut().find(|x| x.phase == phase) {
+				if let Some(entry) = result.iter_mut().find(|x| x.phase == event.phase) {
 					entry.events.push(ev);
 				} else {
-					result.groups.push(GroupedRuntimeEvents {phase: phase, events: vec![ev]});
+					result.push(GroupedRuntimeEvents {phase: event.phase, events: vec![ev]});
 				};
 			}
 
-			result
+			Ok(result)
 		}
 	}
 

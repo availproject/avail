@@ -15,7 +15,7 @@ pub trait Api {
 		&self,
 		params: fetch_events_v1::Params,
 		at: H256,
-	) -> RpcResult<fetch_events_v1::Result>;
+	) -> RpcResult<fetch_events_v1::ApiResult>;
 }
 
 pub struct Rpc {
@@ -37,7 +37,7 @@ impl ApiServer for Rpc {
 		&self,
 		params: fetch_events_v1::Params,
 		at: H256,
-	) -> RpcResult<fetch_events_v1::Result> {
+	) -> RpcResult<fetch_events_v1::ApiResult> {
 		runtime_api_fetch_events_v1(&self.handlers, params, &at)
 			.await
 			.map_err(|x| internal_error(x))
@@ -48,7 +48,7 @@ pub async fn runtime_api_fetch_events_v1(
 	handlers: &RpcHandlers,
 	params: fetch_events_v1::Params,
 	at: &H256,
-) -> Result<fetch_events_v1::Result, String> {
+) -> Result<fetch_events_v1::ApiResult, String> {
 	let query = format!(
 		r#"{{
 		"jsonrpc": "2.0",
@@ -70,8 +70,9 @@ pub async fn runtime_api_fetch_events_v1(
 		return Err(String::from("Failed to call event api"));
 	};
 	let result = from_hex(result_json).map_err(|x| x.to_string())?;
-	let res: fetch_events_v1::Result =
-		decode_from_bytes::<fetch_events_v1::Result>(result.into()).map_err(|x| x.to_string())?;
+	let res: fetch_events_v1::ApiResult =
+		decode_from_bytes::<fetch_events_v1::ApiResult>(result.into())
+			.map_err(|x| x.to_string())?;
 
 	Ok(res)
 }
