@@ -76,11 +76,12 @@ pub mod system_events_api {
 			serde::Serialize,
 			serde::Deserialize,
 		)]
+		#[repr(u8)]
 		pub enum Filter {
-			All,
-			OnlyExtrinsics,
-			OnlyNonExtrinsics,
-			Only(Vec<u32>),
+			All = 0,
+			OnlyExtrinsics = 1,
+			OnlyNonExtrinsics = 2,
+			Only(Vec<u32>) = 3,
 		}
 
 		impl Default for Filter {

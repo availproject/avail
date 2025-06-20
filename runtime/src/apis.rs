@@ -627,15 +627,6 @@ fn decode_runtime_event_v1(event: &super::RuntimeEvent) -> Option<Vec<u8>> {
 	use codec::Encode;
 
 	match event {
-		RuntimeEvent::System(e) => match e {
-			frame_system::Event::<Runtime>::ExtrinsicSuccess { .. } => {
-				return Some(Vec::new());
-			},
-			frame_system::Event::<Runtime>::ExtrinsicFailed { .. } => {
-				return Some(Vec::new());
-			},
-			_ => (),
-		},
 		RuntimeEvent::Sudo(e) => match e {
 			pallet_sudo::Event::<Runtime>::Sudid { sudo_result } => {
 				let mut event_data = Vec::<u8>::new();

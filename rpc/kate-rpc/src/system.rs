@@ -1,16 +1,13 @@
-use std::{marker::PhantomData, sync::Arc};
-
-use codec::{decode_from_bytes, Encode};
 use frame_system_rpc_runtime_api::{system_events_api::fetch_events_v1, SystemEventsApi};
 use jsonrpsee::{
 	core::{async_trait, RpcResult},
 	proc_macros::rpc,
 	types::error::ErrorObject,
 };
-use sc_service::RpcHandlers;
 use sp_api::ProvideRuntimeApi;
-use sp_core::{bytes::from_hex, H256};
+use sp_core::H256;
 use sp_runtime::traits::Block as BlockT;
+use std::{marker::PhantomData, sync::Arc};
 
 #[rpc(client, server)]
 pub trait Api {
