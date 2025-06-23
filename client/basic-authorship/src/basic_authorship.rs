@@ -21,18 +21,18 @@
 // FIXME #1021 move this into sp-consensus
 use avail_base::{PostInherentsBackend, PostInherentsProvider};
 
-use blob::sample_and_get_failed_blobs;
+use blob::{sample_and_get_failed_blobs, store::RocksdbShardStore, types::BlobNotification};
 use codec::{Decode, Encode};
 use da_control::Call;
-use da_runtime::{RuntimeCall, UncheckedExtrinsic};
+use da_runtime::{RuntimeCall, UncheckedExtrinsic };
 use futures::{
 	channel::oneshot,
-	future,
-	future::{Future, FutureExt},
+	future::{self, Future, FutureExt},
 	select,
 };
 use log::{debug, error, info, trace, warn};
 use sc_block_builder::{BlockBuilderApi, BlockBuilderBuilder};
+use sc_network::NetworkService;
 use sc_telemetry::{telemetry, TelemetryHandle, CONSENSUS_INFO};
 use sc_transaction_pool_api::{InPoolTransaction, TransactionPool};
 use sp_api::{ApiExt, CallApiAt, ProvideRuntimeApi};
@@ -48,6 +48,7 @@ use std::{marker::PhantomData, pin::Pin, sync::Arc, time};
 
 use sc_proposer_metrics::{EndProposingReason, MetricsLink as PrometheusMetrics};
 use substrate_prometheus_endpoint::Registry as PrometheusRegistry;
+use tokio::sync::mpsc::UnboundedSender;
 
 /// Default block size limit in bytes used by [`Proposer`].
 ///
@@ -63,7 +64,7 @@ const DEFAULT_SOFT_DEADLINE_PERCENT: Percent = Percent::from_percent(50);
 const LOG_TARGET: &'static str = "basic-authorship";
 
 /// [`Proposer`] factory.
-pub struct ProposerFactory<A, C, PR> {
+pub struct ProposerFactory<A, C, B: BlockT, PR> {
 	spawn_handle: Box<dyn SpawnNamed>,
 	/// The client instance.
 	client: Arc<C>,
@@ -87,11 +88,20 @@ pub struct ProposerFactory<A, C, PR> {
 	telemetry: Option<TelemetryHandle>,
 	/// When estimating the block size, should the proof be included?
 	include_proof_in_block_size_estimation: bool,
+	/// Network service to send and submit request for blob data
+	network: Arc<NetworkService<B, <B as BlockT>::Hash>>,
+	/// Blob notification service to send notification for blob data
+	blob_notif_sender: UnboundedSender<BlobNotification>,
+	/// Shard store to check what the client already has for blob data
+	shard_store: Arc<RocksdbShardStore>,
 	/// phantom member to pin the `ProofRecording` type.
 	_phantom: PhantomData<PR>,
 }
 
-impl<A, C> ProposerFactory<A, C, DisableProofRecording> {
+impl<A, C, B> ProposerFactory<A, C, B, DisableProofRecording>
+where
+	B: BlockT,
+{
 	/// Create a new proposer factory.
 	///
 	/// Proof recording will be disabled when using proposers built by this instance to build
@@ -102,6 +112,9 @@ impl<A, C> ProposerFactory<A, C, DisableProofRecording> {
 		transaction_pool: Arc<A>,
 		prometheus: Option<&PrometheusRegistry>,
 		telemetry: Option<TelemetryHandle>,
+		network: Arc<NetworkService<B, <B as BlockT>::Hash>>,
+		blob_notif_sender: UnboundedSender<BlobNotification>,
+		shard_store: Arc<RocksdbShardStore>,
 	) -> Self {
 		ProposerFactory {
 			spawn_handle: Box::new(spawn_handle),
@@ -112,12 +125,18 @@ impl<A, C> ProposerFactory<A, C, DisableProofRecording> {
 			telemetry,
 			client,
 			include_proof_in_block_size_estimation: false,
+			network,
+			blob_notif_sender,
+			shard_store,
 			_phantom: PhantomData,
 		}
 	}
 }
 
-impl<A, C> ProposerFactory<A, C, EnableProofRecording> {
+impl<A, C, B> ProposerFactory<A, C, B, EnableProofRecording>
+where
+	B: BlockT,
+{
 	/// Create a new proposer factory with proof recording enabled.
 	///
 	/// Each proposer created by this instance will record a proof while building a block.
@@ -130,6 +149,9 @@ impl<A, C> ProposerFactory<A, C, EnableProofRecording> {
 		transaction_pool: Arc<A>,
 		prometheus: Option<&PrometheusRegistry>,
 		telemetry: Option<TelemetryHandle>,
+		network: Arc<NetworkService<B, <B as BlockT>::Hash>>,
+		blob_notif_sender: UnboundedSender<BlobNotification>,
+		shard_store: Arc<RocksdbShardStore>,
 	) -> Self {
 		ProposerFactory {
 			client,
@@ -140,6 +162,9 @@ impl<A, C> ProposerFactory<A, C, EnableProofRecording> {
 			soft_deadline_percent: DEFAULT_SOFT_DEADLINE_PERCENT,
 			telemetry,
 			include_proof_in_block_size_estimation: true,
+			network,
+			blob_notif_sender,
+			shard_store,
 			_phantom: PhantomData,
 		}
 	}
@@ -150,7 +175,10 @@ impl<A, C> ProposerFactory<A, C, EnableProofRecording> {
 	}
 }
 
-impl<A, C, PR> ProposerFactory<A, C, PR> {
+impl<A, C, B, PR> ProposerFactory<A, C, B, PR>
+where
+	B: BlockT,
+{
 	/// Set the default block size limit in bytes.
 	///
 	/// The default value for the block size limit is:
@@ -179,7 +207,7 @@ impl<A, C, PR> ProposerFactory<A, C, PR> {
 	}
 }
 
-impl<Block, C, A, PR> ProposerFactory<A, C, PR>
+impl<Block, C, A, PR> ProposerFactory<A, C, Block, PR>
 where
 	A: TransactionPool<Block = Block> + 'static,
 	Block: BlockT,
@@ -214,6 +242,9 @@ where
 			default_block_size_limit: self.default_block_size_limit,
 			soft_deadline_percent: self.soft_deadline_percent,
 			telemetry: self.telemetry.clone(),
+			network: self.network.clone(),
+			blob_notif_sender: self.blob_notif_sender.clone(),
+			shard_store: self.shard_store.clone(),
 			_phantom: PhantomData,
 			include_proof_in_block_size_estimation: self.include_proof_in_block_size_estimation,
 		};
@@ -222,7 +253,7 @@ where
 	}
 }
 
-impl<A, Block, C, PR> sp_consensus::Environment<Block> for ProposerFactory<A, C, PR>
+impl<A, Block, C, PR> sp_consensus::Environment<Block> for ProposerFactory<A, C, Block, PR>
 where
 	A: TransactionPool<Block = Block> + 'static,
 	Block: BlockT,
@@ -260,6 +291,9 @@ pub struct Proposer<Block: BlockT, C, A: TransactionPool, PR> {
 	include_proof_in_block_size_estimation: bool,
 	soft_deadline_percent: Percent,
 	telemetry: Option<TelemetryHandle>,
+	network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
+	blob_notif_sender: UnboundedSender<BlobNotification>,
+	shard_store: Arc<RocksdbShardStore>,
 	_phantom: PhantomData<PR>,
 }
 
@@ -611,8 +645,13 @@ where
 			);
 		}
 
-		let failed_blob_hashes =
-			sample_and_get_failed_blobs(&submit_blob_metadata_calls).await;
+		let failed_blob_hashes = sample_and_get_failed_blobs(
+			&submit_blob_metadata_calls,
+			self.network.clone(),
+			self.blob_notif_sender.clone(),
+			self.shard_store.clone(),
+		)
+		.await;
 
 		self.transaction_pool.remove_invalid(&unqueue_invalid);
 		Ok((end_reason, failed_blob_hashes))

@@ -13,6 +13,7 @@ use sc_network::{
 };
 use sp_authority_discovery::AuthorityId;
 use sp_runtime::{key_types, traits::Block as BlockT, Perbill};
+use tokio::sync::mpsc::UnboundedSender;
 use std::{path::Path, sync::Arc, time::Duration};
 use store::{RocksdbShardStore, ShardStore};
 use tempfile::TempDir;
@@ -398,9 +399,15 @@ fn fetch_shards(store: &RocksdbShardStore, shard_request: &ShardRequest) -> Resu
 		.collect()
 }
 
-pub async fn sample_and_get_failed_blobs(
+pub async fn sample_and_get_failed_blobs<Block>(
 	submit_blob_metadata_calls: &Vec<RuntimeCall>,
-) -> Vec<BlobHash> {
+	network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
+	blob_notif_sender: UnboundedSender<BlobNotification>,
+	shard_store: Arc<RocksdbShardStore>,
+) -> Vec<BlobHash>
+where
+	Block: BlockT
+{
 	let mut failed_txs: Vec<BlobHash> = Vec::new();
 	for tx in submit_blob_metadata_calls {
 		if let RuntimeCall::DataAvailability(Call::submit_blob_metadata {
@@ -412,7 +419,7 @@ pub async fn sample_and_get_failed_blobs(
 			// Todo sampling
 			println!("Should sample: size-{size:?} blob_hash-{blob_hash:?} commitments-{commitments:?}");
 			// If failed
-			failed_txs.push(*blob_hash)
+			failed_txs.push(*blob_hash);
 		}
 	}
 	failed_txs

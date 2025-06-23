@@ -383,7 +383,7 @@ pub fn new_full_base(
 		grandpa_justification_period,
 		Deps {
 			blob_handle: blob_handle.clone(),
-			shard_store,
+			shard_store: shard_store.clone(),
 			keystore: None,
 			role: config.role.clone(),
 		},
@@ -484,6 +484,9 @@ pub fn new_full_base(
 			transaction_pool.clone(),
 			prometheus_registry.as_ref(),
 			telemetry.as_ref().map(|x| x.handle()),
+			network.clone(),
+			blob_handle.blob_notification_sender.clone(),
+			shard_store,
 		);
 
 		let client_clone = client.clone();

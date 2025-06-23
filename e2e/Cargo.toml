@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 avail-rust = { git = "https://github.com/availproject/avail-rust", tag = "v0.1.4" }
-avail-base = { path = "../base", features = ["std"]}
+da-commitment = { path = "../da-commitment" }
 sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-12", default-features = false }
 kate = { path = "../../avail-core/kate/", default-features = false, features = ["std"]}
 hex = "0.4"

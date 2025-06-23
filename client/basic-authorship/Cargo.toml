@@ -30,6 +30,7 @@ sc-proposer-metrics.workspace = true
 sc-telemetry.workspace = true
 sc-transaction-pool-api.workspace = true
 sc-block-builder.workspace = true
+sc-network.workspace = true
 
 sp-api = { workspace = true, features = ["std"] }
 sp-blockchain.workspace = true
@@ -38,6 +39,13 @@ sp-inherents = { workspace = true, features = ["std"] }
 sp-runtime = { workspace = true, features = ["std"] }
 sp-consensus.workspace = true
 da-runtime = { workspace = true, features = ["std"]  }
+
+tokio = { version = "1.43.0", features = [
+    "sync",
+    "fs",
+    "macros",
+    "rt-multi-thread",
+], default-features = false }
 
 [dev-dependencies]
 parking_lot.workspace = true
