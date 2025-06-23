@@ -10,9 +10,7 @@ repository.workspace = true
 workspace = true
 
 [dependencies]
-avail-core = { workspace = true, default-features = false, features = ["std"]}
-kate = { workspace = true, default-features = false, features = ["std"] }
-thiserror-no-std.workspace = true
+avail-core = { workspace = true, default-features = false }
 
 # Substrate related
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }

@@ -6,7 +6,7 @@ use crate::{
 	BLOB_TTL, MAX_BLOB_SIZE, MIN_TRANSACTION_VALIDITY, SHARD_SIZE, TMP_BLOB_TTL,
 };
 use anyhow::{anyhow, Result};
-use avail_base::build_da_commitments::build_da_commitments;
+use da_commitment::build_da_commitments::build_da_commitments;
 use codec::Decode;
 use da_control::Call;
 use da_runtime::{RuntimeCall, UncheckedExtrinsic};

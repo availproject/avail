@@ -1,5 +1,5 @@
-use avail_core::{AppExtrinsic, BlockLengthColumns, BLOCK_CHUNK_SIZE, DA_DISPATCH_RATIO};
-use da_control::Config as DAConfig;
+use avail_core::{AppExtrinsic, BlockLengthColumns, BLOCK_CHUNK_SIZE};
+use da_control::{Config as DAConfig, DA_DISPATCH_RATIO_PERBILL};
 use da_runtime::Runtime;
 use frame_support::traits::Get as _;
 use frame_system::{limits::BlockLength, native::hosted_header_builder::hosted_header_builder};
@@ -27,7 +27,7 @@ fn make_txs(cols: BlockLengthColumns) -> Vec<AppExtrinsic> {
 #[allow(dead_code)]
 fn block_length(cols: BlockLengthColumns) -> BlockLength {
 	let rows = <Runtime as DAConfig>::MaxBlockRows::get();
-	BlockLength::with_normal_ratio(rows, cols, BLOCK_CHUNK_SIZE, DA_DISPATCH_RATIO).unwrap()
+	BlockLength::with_normal_ratio(rows, cols, BLOCK_CHUNK_SIZE, DA_DISPATCH_RATIO_PERBILL).unwrap()
 }
 
 #[allow(dead_code)]

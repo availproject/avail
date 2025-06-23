@@ -47,10 +47,6 @@ use substrate_prometheus_endpoint::{PrometheusError, Registry};
 
 pub const LOG_TARGET: &str = "avail::node::service";
 
-/// The minimum period of blocks on which justifications will be
-/// imported and generated.
-const GRANDPA_JUSTIFICATION_PERIOD: u32 = 512;
-
 pub type FullBackend = sc_service::TFullBackend<Block>;
 type FullSelectChain = sc_consensus::LongestChain<FullBackend, Block>;
 type FullGrandpaBlockImport =
@@ -148,6 +144,7 @@ pub fn new_partial(
 	config: &Configuration,
 	unsafe_da_sync: bool,
 	kate_rpc_deps: kate_rpc::Deps,
+	grandpa_justification_period: u32,
 	blob_rpc_deps: blob::types::Deps<Block>,
 ) -> Result<
 	sc_service::PartialComponents<
@@ -226,7 +223,7 @@ pub fn new_partial(
 
 	let (grandpa_block_import, grandpa_link) = sc_consensus_grandpa::block_import(
 		client.clone(),
-		GRANDPA_JUSTIFICATION_PERIOD,
+		grandpa_justification_period,
 		&(client.clone() as Arc<_>),
 		select_chain.clone(),
 		telemetry.as_ref().map(|x| x.handle()),
@@ -355,6 +352,7 @@ pub fn new_full_base(
 	with_startup_data: impl FnOnce(&BlockImport, &sc_consensus_babe::BabeLink<Block>),
 	unsafe_da_sync: bool,
 	kate_rpc_deps: kate_rpc::Deps,
+	grandpa_justification_period: u32,
 ) -> Result<NewFullBase, ServiceError> {
 	let hwbench = if !disable_hardware_benchmarks {
 		config.database.path().map(|database_path| {
@@ -382,6 +380,7 @@ pub fn new_full_base(
 		&config,
 		unsafe_da_sync,
 		kate_rpc_deps,
+		grandpa_justification_period,
 		Deps {
 			blob_handle: blob_handle.clone(),
 			shard_store,
@@ -577,7 +576,7 @@ pub fn new_full_base(
 	let grandpa_config = sc_consensus_grandpa::Config {
 		// Considering our block_time of 20 seconds, we may consider increasing this to 2 seconds without introducing delay in finality.
 		gossip_duration: std::time::Duration::from_millis(1000),
-		justification_generation_period: GRANDPA_JUSTIFICATION_PERIOD,
+		justification_generation_period: grandpa_justification_period,
 		name: Some(name),
 		observer_enabled: false,
 		keystore,
@@ -651,6 +650,7 @@ pub fn new_full_base(
 /// Builds a new service for a full client.
 pub fn new_full(config: Configuration, cli: Cli) -> Result<TaskManager, ServiceError> {
 	let database_path = config.database.path().map(Path::to_path_buf);
+	let storage_param = cli.storage_monitor.clone();
 	let kate_rpc_deps = kate_rpc::Deps {
 		max_cells_size: cli.kate_max_cells_size,
 		rpc_enabled: cli.kate_rpc_enabled,
@@ -662,12 +662,13 @@ pub fn new_full(config: Configuration, cli: Cli) -> Result<TaskManager, ServiceE
 		|_, _| (),
 		cli.unsafe_da_sync,
 		kate_rpc_deps,
+		cli.grandpa_justification_period,
 	)
 	.map(|NewFullBase { task_manager, .. }| task_manager)?;
 
 	if let Some(database_path) = database_path {
 		sc_storage_monitor::StorageMonitorService::try_spawn(
-			cli.storage_monitor,
+			storage_param,
 			database_path,
 			&task_manager.spawn_essential_handle(),
 		)

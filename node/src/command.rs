@@ -210,6 +210,7 @@ pub fn run() -> Result<()> {
 					&config,
 					cli.unsafe_da_sync,
 					kate_rpc::Deps::default(),
+					cli.grandpa_justification_period,
 					blob::types::Deps::default(),
 				)?;
 				Ok((cmd.run(client, import_queue), task_manager))
@@ -226,6 +227,7 @@ pub fn run() -> Result<()> {
 					&config,
 					cli.unsafe_da_sync,
 					kate_rpc::Deps::default(),
+					cli.grandpa_justification_period,
 					blob::types::Deps::default(),
 				)?;
 				Ok((cmd.run(client, config.database), task_manager))
@@ -242,6 +244,7 @@ pub fn run() -> Result<()> {
 					&config,
 					cli.unsafe_da_sync,
 					kate_rpc::Deps::default(),
+					cli.grandpa_justification_period,
 					blob::types::Deps::default(),
 				)?;
 				Ok((cmd.run(client, config.chain_spec), task_manager))
@@ -259,6 +262,7 @@ pub fn run() -> Result<()> {
 					&config,
 					cli.unsafe_da_sync,
 					kate_rpc::Deps::default(),
+					cli.grandpa_justification_period,
 					blob::types::Deps::default(),
 				)?;
 				Ok((cmd.run(client, import_queue), task_manager))
@@ -280,6 +284,7 @@ pub fn run() -> Result<()> {
 					&config,
 					cli.unsafe_da_sync,
 					kate_rpc::Deps::default(),
+					cli.grandpa_justification_period,
 					blob::types::Deps::default(),
 				)?;
 				let aux_revert = Box::new(|client: Arc<FullClient>, backend, blocks| {

@@ -12,6 +12,7 @@ members = [
 	"runtime/fuzz",
 	"node",
 	"blob",
+	"da-commitment"
 ]
 
 [workspace.package]
@@ -23,14 +24,15 @@ homepage = "https://www.availproject.org/"
 
 
 [workspace.dependencies]
-# avail-core = { git = "https://github.com/availproject/avail-core", tag = "core-node-7", default-features = false, features = [ "runtime"] }
-# kate = { git = "https://github.com/availproject/avail-core", tag = "core-node-7", default-features = false }
-# kate-recovery = { git = "https://github.com/availproject/avail-core", tag = "core-node-7", default-features = false  }
+# avail-core = { git = "https://github.com/availproject/avail-core.git", tag = "core-node-10", default-features = false, features = [ "runtime"] }
+# kate = { git = "https://github.com/availproject/avail-core", tag = "core-node-10", default-features = false }
+# kate-recovery = { git = "https://github.com/availproject/avail-core", tag = "core-node-10", default-features = false  }
 avail-core = { path = "../avail-core/core", default-features = false, features = [ "runtime"] }
 kate = { path = "../avail-core/kate/", default-features = false }
 kate-recovery = { path = "../avail-core/kate/recovery/", default-features = false}
 
 avail-base = { path = "base", default-features = false }
+da-commitment = { path = "da-commitment", default-features = false }
 da-control = { path = "pallets/dactr", default-features = false }
 pallet-mandate = { path = "pallets/mandate", default-features = false }
 pallet-vector = { path = "pallets/vector", default-features = false }
@@ -50,10 +52,10 @@ kvdb-rocksdb = { version = "0.19.0", default-features = false }
 # benchmarking
 criterion = { version = "0.4", default-features = false }
 iai = "0.1.1"
-iai-callgrind = "0.7.3" 
+iai-callgrind = "0.7.3"
 divan = "0.1.11"
 
-# Logging and testing 
+# Logging and testing
 log = "0.4.20"
 test-case = "1.2.3"
 hex = "0.4"
@@ -132,7 +134,7 @@ clap = { version = "4.4.17", features = ["derive"] }
 clap-num = "1.1.1"
 clap_complete = "4.0.2"
 
-# Polkadot 
+# Polkadot
 frame-executive = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-12", default-features = false }
 sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-12", default-features = false }
 frame-support = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-12", default-features = false }

@@ -12,6 +12,7 @@ codec = { package = "parity-scale-codec", version = "3", default-features = fals
 frame-benchmarking = { workspace = true, default-features = false }
 frame-system = { workspace = true, default-features = false }
 avail-base = { workspace = true, default-features = false }
+da-commitment = { workspace = true, default-features = false }
 sp-core = { workspace = true, default-features = false }
 sp-runtime = { workspace = true, default-features = false }
 sp-api = { workspace = true, default-features = false }
@@ -26,7 +27,7 @@ sp-authority-discovery = { workspace = true, default-features = false }
 sc-authority-discovery = { workspace = true, default-features = false }
 kvdb = { workspace = true, default-features = false }
 kvdb-rocksdb = { workspace = true, default-features = false }
-tempfile = "3"
+tempfile = { workspace = true }
 jsonrpsee = { workspace = true }
 futures = { workspace = true }
 log = { workspace = true }
@@ -39,7 +40,7 @@ tokio = { version = "1.43.0", features = [
     "fs",
     "macros",
     "rt-multi-thread",
-] }
+], default-features = false }
 parking_lot = { workspace = true }
 
 [features]

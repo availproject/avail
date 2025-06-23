@@ -1,5 +1,5 @@
 use crate::ClientError;
-use avail_base::build_da_commitments::build_da_commitments;
+use da_commitment::build_da_commitments::build_da_commitments;
 use kate::Seed;
 use sp_core::{blake2_256, H256};
 

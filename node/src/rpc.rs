@@ -135,6 +135,7 @@ where
 	B::State: sc_client_api::backend::StateBackend<sp_runtime::traits::HashingFor<Block>>,
 {
 	use blob::rpc::{BlobApiServer, BlobRpc};
+	use kate_rpc::justifications::{GrandpaJustifications, GrandpaServer};
 	use kate_rpc::metrics::KateApiMetricsServer;
 	use kate_rpc::{Kate, KateApiServer};
 	use mmr_rpc::{Mmr, MmrApiServer};
@@ -246,13 +247,17 @@ where
 
 	if is_dev_chain || kate_rpc_deps.rpc_enabled || kate_rpc_deps.rpc_metrics_enabled {
 		io.merge(KateApiServer::into_rpc(Kate::<C, Block>::new(
-			client,
+			client.clone(),
 			kate_rpc_deps.max_cells_size,
 		)))?;
 	}
 
 	#[cfg(feature = "testing-environment")]
 	io.merge(TestingApiServer::into_rpc(TestingEnv))?;
+
+	io.merge(GrandpaServer::into_rpc(
+		GrandpaJustifications::<C, Block>::new(client),
+	))?;
 
 	Ok(io)
 }

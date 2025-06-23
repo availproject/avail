@@ -11,6 +11,7 @@ da-runtime.workspace = true
 frame-system = { workspace = true, default-features = false }
 avail-core = { workspace = true, default-features = false }
 kate = { workspace = true, default-features = false }
+kate-recovery = { workspace = true, default-features = false }
 
 # 3rd party
 jsonrpsee.workspace = true
@@ -36,8 +37,8 @@ std = [
 	"sp-runtime/std",
 ]
 
-# Enables secure seed generation using for padding fill during the matrix 
+# Enables secure seed generation using for padding fill during the matrix
 # generation for Kate commitment.
-# NOTE: WIP because that affects the Data Availability Protocol used during 
+# NOTE: WIP because that affects the Data Availability Protocol used during
 # the block import process.
 secure_padding_fill = []

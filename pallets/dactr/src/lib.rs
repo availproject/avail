@@ -33,6 +33,9 @@ use frame_support::dispatch::DispatchFeeModifier;
 pub mod weights;
 
 pub const LOG_TARGET: &str = "runtime::da_control";
+pub const DA_DISPATCH_RATIO_PERBILL: Perbill = Perbill::from_percent(DA_DISPATCH_RATIO as u32);
+pub const NORMAL_DISPATCH_RATIO_PERBILL: Perbill =
+	Perbill::from_percent(NORMAL_DISPATCH_RATIO as u32);
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -235,9 +238,13 @@ pub mod pallet {
 				Error::<T>::InvalidBlockWeightReduction
 			);
 
-			let block_length =
-				BlockLength::with_normal_ratio(rows, cols, BLOCK_CHUNK_SIZE, DA_DISPATCH_RATIO)
-					.map_err(|_| Error::<T>::BlockDimensionsOutOfBounds)?;
+			let block_length = BlockLength::with_normal_ratio(
+				rows,
+				cols,
+				BLOCK_CHUNK_SIZE,
+				DA_DISPATCH_RATIO_PERBILL,
+			)
+			.map_err(|_| Error::<T>::BlockDimensionsOutOfBounds)?;
 
 			DynamicBlockLength::<T>::put(block_length);
 
@@ -479,12 +486,12 @@ pub mod weight_helper {
 		let chunk_size: u32 = 32;
 
 		// We compute the maximum numbers of scalars in the matrix and multiply with the DA dispatch ratio.
-		let max_scalar_da_ratio = DA_DISPATCH_RATIO * cols.saturating_mul(rows);
+		let max_scalar_da_ratio = DA_DISPATCH_RATIO_PERBILL * cols.saturating_mul(rows);
 
 		// We get the current maximum weight in a block and multiply with normal dispatch ratio.
 		let block_weights = <T as frame_system::Config>::BlockWeights::get();
 		let max_weight_normal_ratio: u64 =
-			NORMAL_DISPATCH_RATIO * block_weights.max_block.ref_time();
+			NORMAL_DISPATCH_RATIO_PERBILL * block_weights.max_block.ref_time();
 
 		// We compute the number of scalars
 		let nb_scalar = encoded_data_len
