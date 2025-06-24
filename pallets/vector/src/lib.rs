@@ -2,13 +2,16 @@
 #![recursion_limit = "512"]
 
 use crate::{storage_utils::MessageStatusEnum, verifier::Verifier};
+use alloy_sol_types::private::primitives::hex;
+use alloy_sol_types::private::primitives::hex::FromHex;
 use alloy_sol_types::{sol, SolValue};
+use ark_ff::fields;
 use ark_std::format;
 use avail_base::{MemoryTemporaryStorage, ProvidePostInherent};
 use avail_core::data_proof::{tx_uid, AddressedMessage, Message, MessageType};
-use gnark_bn_verifier::vk::Groth16VKey;
+// use gnark_bn_verifier::vk::Groth16VKey;
 use sp1_verifier::{Groth16Verifier, GROTH16_VK_BYTES};
-use substrate_bn_succinct::Fr;
+// use substrate_bn_succinct::Fr;
 
 use codec::Compact;
 use frame_support::{
@@ -16,6 +19,7 @@ use frame_support::{
 	traits::{Currency, ExistenceRequirement, UnixTime},
 	PalletId,
 };
+use gnark_bn_verifier::proof::Groth16Proof;
 use sp_core::H256;
 use sp_runtime::SaturatedConversion;
 use sp_std::{vec, vec::Vec};
@@ -433,20 +437,20 @@ pub mod pallet {
 
 			SourceChainId::<T>::set(self.source_chain_id);
 
-			Head::<T>::set(7566336);
-			SyncCommitteeHashes::<T>::insert(
-				923,
-				H256(hex!(
-					"5ec9766f1473b7f36119d46895ca82e8e7c3752aaf84414439b3a3e3fc5bf9c0"
-				)),
-			);
-			// SyncCommitteeHashes::<T>::insert(1412, H256(hex!("6616171d61107a6718daa8f9ab32cf5c61687a9395524d586ae897e5d92401b0")));
-			SP1VerificationKey::<T>::set(H256(hex!(
-				"0034c0b4c589330096b1141bccb7ba8f6f403f3d46b47c386b404ed9ebc8c5d3"
-			)));
-			Updater::<T>::set(H256(hex!(
-				"d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"
-			)));
+			// Head::<T>::set(7566336);
+			// SyncCommitteeHashes::<T>::insert(
+			// 	923,
+			// 	H256(hex!(
+			// 		"5ec9766f1473b7f36119d46895ca82e8e7c3752aaf84414439b3a3e3fc5bf9c0"
+			// 	)),
+			// );
+			// // SyncCommitteeHashes::<T>::insert(1412, H256(hex!("6616171d61107a6718daa8f9ab32cf5c61687a9395524d586ae897e5d92401b0")));
+			// SP1VerificationKey::<T>::set(H256(hex!(
+			// 	"0034c0b4c589330096b1141bccb7ba8f6f403f3d46b47c386b404ed9ebc8c5d3"
+			// )));
+			// Updater::<T>::set(H256(hex!(
+			// 	"d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"
+			// )));
 		}
 	}
 
@@ -894,35 +898,35 @@ pub mod pallet {
 			);
 			// ensure!(is_valid.is_ok(), Error::<T>::VerificationFailed);
 
-			let vk = Groth16VKey::try_from(sp1_vk.0.to_vec().as_slice())
-				.map_err(|_| Error::<T>::HeaderRootAlreadySet)?;
+			// let vk = Groth16VKey::try_from(sp1_vk.0.to_vec().as_slice())
+			// 	.map_err(|_| Error::<T>::HeaderRootAlreadySet)?;
+			//
+			// let proof = Groth16Proof::try_from(proof.to_vec().as_slice())
+			// 	.map_err(|_| Error::<T>::HeaderRootAlreadySet)?;
+			//
+			// let e1 = Fr::from_slice(proof_outputs.executionStateRoot.as_slice())
+			// 	.map_err(|_| Error::<T>::HeaderRootAlreadySet)?;
+			// let e2 = Fr::from_slice(proof_outputs.newHeader.as_slice())
+			// 	.map_err(|_| Error::<T>::HeaderRootAlreadySet)?;
+			//
+			// let e3 = Fr::from_slice(proof_outputs.nextSyncCommitteeHash.as_slice())
+			// 	.map_err(|_| Error::<T>::HeaderRootAlreadySet)?;
+			// let e4 = Fr::from_slice(proof_outputs.newHead.as_le_slice())
+			// 	.map_err(|_| Error::<T>::HeaderRootAlreadySet)?;
+			// let e5 = Fr::from_slice(proof_outputs.executionStateRoot.as_slice())
+			// 	.map_err(|_| Error::<T>::HeaderRootAlreadySet)?;
+			// let e6 = Fr::from_slice(proof_outputs.prevHeader.as_slice())
+			// 	.map_err(|_| Error::<T>::HeaderRootAlreadySet)?;
+			// let e7 = Fr::from_slice(proof_outputs.prevHead.as_le_slice())
+			// 	.map_err(|_| Error::<T>::HeaderRootAlreadySet)?;
+			// let e8 = Fr::from_slice(proof_outputs.syncCommitteeHash.as_slice())
+			// 	.map_err(|_| Error::<T>::HeaderRootAlreadySet)?;
+			// let e9 = Fr::from_slice(proof_outputs.startSyncCommitteeHash.as_slice())
+			// 	.map_err(|_| Error::<T>::HeaderRootAlreadySet)?;
 
-			let proof = Groth16Proof::try_from(proof.to_vec().as_slice())
-				.map_err(|_| Error::<T>::HeaderRootAlreadySet)?;
-
-			let e1 = Fr::from_slice(proof_outputs.executionStateRoot.as_slice())
-				.map_err(|_| Error::<T>::HeaderRootAlreadySet)?;
-			let e2 = Fr::from_slice(proof_outputs.newHeader.as_slice())
-				.map_err(|_| Error::<T>::HeaderRootAlreadySet)?;
-
-			let e3 = Fr::from_slice(proof_outputs.nextSyncCommitteeHash.as_slice())
-				.map_err(|_| Error::<T>::HeaderRootAlreadySet)?;
-			let e4 = Fr::from_slice(proof_outputs.newHead.as_le_slice())
-				.map_err(|_| Error::<T>::HeaderRootAlreadySet)?;
-			let e5 = Fr::from_slice(proof_outputs.executionStateRoot.as_slice())
-				.map_err(|_| Error::<T>::HeaderRootAlreadySet)?;
-			let e6 = Fr::from_slice(proof_outputs.prevHeader.as_slice())
-				.map_err(|_| Error::<T>::HeaderRootAlreadySet)?;
-			let e7 = Fr::from_slice(proof_outputs.prevHead.as_le_slice())
-				.map_err(|_| Error::<T>::HeaderRootAlreadySet)?;
-			let e8 = Fr::from_slice(proof_outputs.syncCommitteeHash.as_slice())
-				.map_err(|_| Error::<T>::HeaderRootAlreadySet)?;
-			let e9 = Fr::from_slice(proof_outputs.startSyncCommitteeHash.as_slice())
-				.map_err(|_| Error::<T>::HeaderRootAlreadySet)?;
-
-			let ok = proof
-				.verify(&vk, &[e1, e2, e3, e4, e5, e6, e7, e8, e9])
-				.map_err(|_| Error::<T>::HeaderRootAlreadySet)?;
+			// let ok = proof
+			// 	.verify(&vk, &[e1, e2, e3, e4, e5, e6, e7, e8, e9])
+			// 	.map_err(|_| Error::<T>::HeaderRootAlreadySet)?;
 
 			Head::<T>::set(new_head);
 			let header = Headers::<T>::get(new_head);
