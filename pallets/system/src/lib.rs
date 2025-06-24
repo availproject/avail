@@ -103,7 +103,7 @@ use avail_core::{
 	ensure,
 	header::{Header as DaHeader, HeaderExtension},
 	traits::{ExtendedBlock, ExtendedHeader, GetAppId, MaybeCaller},
-	HeaderVersion, ORIGINAL_CALL_INDEX, ORIGINAL_PALLET_INDEX, LIGHT_CALL_INDEX,
+	HeaderVersion, LIGHT_CALL_INDEX, ORIGINAL_CALL_INDEX, ORIGINAL_PALLET_INDEX,
 };
 
 use codec::{Compact, Decode, Encode, EncodeLike, FullCodec, Input, MaxEncodedLen};
@@ -198,75 +198,75 @@ pub fn extrinsics_data_root<H: Hash>(xts: Vec<Vec<u8>>) -> H::Output {
 }
 
 pub fn filtered_extrinsics_data_root<H: Hash>(xts: Vec<Vec<u8>>) -> H::Output {
-    let filtered = xts
-        .into_iter()
-        .filter(|ext_bytes| {
-            let mut input = &ext_bytes[..];
+	let filtered = xts
+		.into_iter()
+		.filter(|ext_bytes| {
+			let mut input = &ext_bytes[..];
 
-            // === Decode Compact<u32> length prefix ===
-            if Compact::<u32>::decode(&mut input).is_err() {
-                return true; // Malformed: keep it for safety
-            }
+			// === Decode Compact<u32> length prefix ===
+			if Compact::<u32>::decode(&mut input).is_err() {
+				return true; // Malformed: keep it for safety
+			}
 
-            // === Decode version byte ===
-            let version = match u8::decode(&mut input) {
-                Ok(v) => v,
-                Err(_) => return true,
-            };
+			// === Decode version byte ===
+			let version = match u8::decode(&mut input) {
+				Ok(v) => v,
+				Err(_) => return true,
+			};
 
-            // If it's not a signed extrinsic, we can't decode it meaningfully — keep it
-            if version & 0b1000_0000 == 0 {
-                return true;
-            }
+			// If it's not a signed extrinsic, we can't decode it meaningfully — keep it
+			if version & 0b1000_0000 == 0 {
+				return true;
+			}
 
-            // === Skip signer: type (1) + id (32) ===
-            if input.len() < 1 + 32 {
-                return true;
-            }
-            input = &input[1 + 32..];
+			// === Skip signer: type (1) + id (32) ===
+			if input.len() < 1 + 32 {
+				return true;
+			}
+			input = &input[1 + 32..];
 
-            // === Skip signature type (1) + sig (64) ===
-            if input.len() < 1 + 64 {
-                return true;
-            }
-            input = &input[1 + 64..];
+			// === Skip signature type (1) + sig (64) ===
+			if input.len() < 1 + 64 {
+				return true;
+			}
+			input = &input[1 + 64..];
 
-            // === Skip era ===
-            let era_first = match input.read_byte() {
-                Ok(b) => b,
-                Err(_) => return true,
-            };
-            if era_first != 0 {
-                if input.read_byte().is_err() {
-                    return true;
-                }
-            }
+			// === Skip era ===
+			let era_first = match input.read_byte() {
+				Ok(b) => b,
+				Err(_) => return true,
+			};
+			if era_first != 0 {
+				if input.read_byte().is_err() {
+					return true;
+				}
+			}
 
-            // === Skip nonce, tip, app_id ===
-            if Compact::<u32>::decode(&mut input).is_err()
-                || Compact::<u128>::decode(&mut input).is_err()
-                || Compact::<u32>::decode(&mut input).is_err()
-            {
-                return true;
-            }
+			// === Skip nonce, tip, app_id ===
+			if Compact::<u32>::decode(&mut input).is_err()
+				|| Compact::<u128>::decode(&mut input).is_err()
+				|| Compact::<u32>::decode(&mut input).is_err()
+			{
+				return true;
+			}
 
-            // === Decode pallet + call index ===
-            let pallet = match input.read_byte() {
-                Ok(p) => p,
-                Err(_) => return true,
-            };
-            let call = match input.read_byte() {
-                Ok(c) => c,
-                Err(_) => return true,
-            };
+			// === Decode pallet + call index ===
+			let pallet = match input.read_byte() {
+				Ok(p) => p,
+				Err(_) => return true,
+			};
+			let call = match input.read_byte() {
+				Ok(c) => c,
+				Err(_) => return true,
+			};
 
-            // === Filter out target extrinsics ===
-            !((pallet == ORIGINAL_PALLET_INDEX && call == ORIGINAL_CALL_INDEX)
-                || (pallet == ORIGINAL_PALLET_INDEX && call == LIGHT_CALL_INDEX))
-        })
-        .collect::<Vec<_>>();
+			// === Filter out target extrinsics ===
+			!((pallet == ORIGINAL_PALLET_INDEX && call == ORIGINAL_CALL_INDEX)
+				|| (pallet == ORIGINAL_PALLET_INDEX && call == LIGHT_CALL_INDEX))
+		})
+		.collect::<Vec<_>>();
 
-    H::ordered_trie_root(filtered, sp_core::storage::StateVersion::V0)
+	H::ordered_trie_root(filtered, sp_core::storage::StateVersion::V0)
 }
 
 /// An object to track the currently used extrinsic weight in a block.
