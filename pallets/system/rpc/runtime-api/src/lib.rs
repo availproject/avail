@@ -53,29 +53,16 @@ pub mod system_events_api {
 
 		pub type ApiResult = Result<Vec<GroupedRuntimeEvents>, u8>;
 
-		#[derive(
-			Clone,
-			Default,
-			scale_info::TypeInfo,
-			codec::Decode,
-			codec::Encode,
-			serde::Serialize,
-			serde::Deserialize,
-		)]
+		#[derive(Clone, Default, scale_info::TypeInfo, codec::Decode, codec::Encode)]
+		#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 		pub struct Params {
 			pub filter: Option<Filter>,
 			pub enable_encoding: Option<bool>,
 			pub enable_decoding: Option<bool>,
 		}
 
-		#[derive(
-			Clone,
-			scale_info::TypeInfo,
-			codec::Decode,
-			codec::Encode,
-			serde::Serialize,
-			serde::Deserialize,
-		)]
+		#[derive(Clone, scale_info::TypeInfo, codec::Decode, codec::Encode)]
+		#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 		#[repr(u8)]
 		pub enum Filter {
 			All = 0,
@@ -119,14 +106,8 @@ pub mod system_events_api {
 			}
 		}
 
-		#[derive(
-			scale_info::TypeInfo,
-			codec::Decode,
-			codec::Encode,
-			serde::Serialize,
-			serde::Deserialize,
-			Clone,
-		)]
+		#[derive(scale_info::TypeInfo, codec::Decode, codec::Encode, Clone)]
+		#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 		pub struct GroupedRuntimeEvents {
 			pub phase: frame_system::Phase,
 			pub events: Vec<RuntimeEvent>,
@@ -141,14 +122,8 @@ pub mod system_events_api {
 			}
 		}
 
-		#[derive(
-			Clone,
-			scale_info::TypeInfo,
-			codec::Decode,
-			codec::Encode,
-			serde::Serialize,
-			serde::Deserialize,
-		)]
+		#[derive(Clone, scale_info::TypeInfo, codec::Decode, codec::Encode)]
+		#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 		pub struct RuntimeEvent {
 			pub index: u32,
 			// (Pallet Id, Event Id)

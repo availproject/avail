@@ -47,19 +47,19 @@ where
 /// Error type for this RPC API.
 pub enum Error {
 	/// Generic runtime error.
-	RuntimeApiError,
+	RuntimeApi,
 }
 
 impl Error {
-	pub fn runtime_api_error<'a>(msg: String) -> ErrorObject<'a> {
-		ErrorObject::owned(Error::RuntimeApiError.into(), msg, None::<()>)
+	pub fn into_error_object<'a>(self, msg: String) -> ErrorObject<'a> {
+		ErrorObject::owned(i32::from(self), msg, None::<()>)
 	}
 }
 
 impl From<Error> for i32 {
 	fn from(e: Error) -> i32 {
 		match e {
-			Error::RuntimeApiError => 1,
+			Error::RuntimeApi => 1,
 		}
 	}
 }
@@ -80,7 +80,7 @@ where
 		let runtime_api = self.client.runtime_api();
 		let result = runtime_api
 			.fetch_events_v1(at.into(), params)
-			.map_err(|x| Error::runtime_api_error(x.to_string()))?;
+			.map_err(|x| Error::RuntimeApi.into_error_object(x.to_string()))?;
 
 		Ok(result)
 	}
