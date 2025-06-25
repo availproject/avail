@@ -124,7 +124,7 @@ use kate::Seed;
 use pallet_prelude::{BlockNumberFor, HeaderFor};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use sp_core::storage::well_known_keys;
 use sp_io::hashing::blake2_256;
 #[cfg(any(feature = "std", test))]
@@ -1060,8 +1060,8 @@ pub type Key = Vec<u8>;
 pub type KeyValue = (Vec<u8>, Vec<u8>);
 
 /// A phase of a block's execution.
-#[derive(Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-#[cfg_attr(feature = "std", derive(Serialize, PartialEq, Eq, Clone))]
+#[derive(Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum Phase {
 	/// Applying an extrinsic.
 	ApplyExtrinsic(u32),
