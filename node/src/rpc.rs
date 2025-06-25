@@ -55,6 +55,7 @@ use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use sp_consensus::SelectChain;
 use sp_consensus_babe::BabeApi;
 use sp_keystore::KeystorePtr;
+use sp_runtime::traits::BlockIdTo;
 
 /// Extra dependencies for BABE.
 pub struct BabeDeps {
@@ -111,6 +112,7 @@ pub fn create_full<C, P, SC, B>(
 where
 	C: ProvideRuntimeApi<Block>
 		+ sc_client_api::BlockBackend<Block>
+		+ BlockIdTo<Block>
 		+ HeaderBackend<Block>
 		+ AuxStore
 		+ HeaderMetadata<Block, Error = BlockChainError>
