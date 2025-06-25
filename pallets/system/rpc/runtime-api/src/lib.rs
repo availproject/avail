@@ -48,7 +48,7 @@ pub mod system_events_api {
 	pub mod fetch_events_v1 {
 		use super::*;
 
-		pub const MAX_INDICES_COUNT: usize = 10;
+		pub const MAX_INDICES_COUNT: usize = 30;
 		pub const ERROR_INVALID_INPUTS: u8 = 1;
 
 		pub type ApiResult = Result<Vec<GroupedRuntimeEvents>, u8>;

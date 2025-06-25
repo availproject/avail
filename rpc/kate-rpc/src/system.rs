@@ -9,6 +9,8 @@ use sp_core::H256;
 use sp_runtime::traits::Block as BlockT;
 use std::{marker::PhantomData, sync::Arc};
 
+pub type FetchEventsV1Result = Vec<fetch_events_v1::GroupedRuntimeEvents>;
+
 #[rpc(client, server)]
 pub trait Api {
 	#[method(name = "system_fetchEventsV1")]
@@ -16,7 +18,7 @@ pub trait Api {
 		&self,
 		params: fetch_events_v1::Params,
 		at: H256,
-	) -> RpcResult<fetch_events_v1::ApiResult>;
+	) -> RpcResult<FetchEventsV1Result>;
 }
 
 pub struct Rpc<C, Block>
@@ -48,6 +50,8 @@ where
 pub enum Error {
 	/// Generic runtime error.
 	RuntimeApi,
+	// Invalid Inputs
+	InvalidInput,
 }
 
 impl Error {
@@ -60,6 +64,7 @@ impl From<Error> for i32 {
 	fn from(e: Error) -> i32 {
 		match e {
 			Error::RuntimeApi => 1,
+			Error::InvalidInput => 2,
 		}
 	}
 }
@@ -76,12 +81,16 @@ where
 		&self,
 		params: fetch_events_v1::Params,
 		at: H256,
-	) -> RpcResult<fetch_events_v1::ApiResult> {
+	) -> RpcResult<FetchEventsV1Result> {
 		let runtime_api = self.client.runtime_api();
 		let result = runtime_api
 			.fetch_events_v1(at.into(), params)
 			.map_err(|x| Error::RuntimeApi.into_error_object(x.to_string()))?;
 
-		Ok(result)
+		match result {
+			Ok(res) => Ok(res),
+			Err(code) => Err(Error::InvalidInput
+				.into_error_object(std::format!("Runtime Api Error Code: {code}"))),
+		}
 	}
 }
