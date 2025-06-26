@@ -16,7 +16,7 @@ where
 	Block: BlockT,
 {
 	#[method(name = "grandpa_blockJustification")]
-	async fn block_justification(&self, block_number: u32) -> RpcResult<Option<Vec<u8>>>;
+	async fn block_justification(&self, block_number: u32) -> RpcResult<Option<String>>;
 }
 
 pub struct GrandpaJustifications<Client, Block: BlockT> {
@@ -78,7 +78,7 @@ where
 	/// This method checks whether a justification exists in the backend for the block.
 	/// If the justification exists for the `GRANDPA_ENGINE_ID`, it is returned.
 	/// Otherwise, `None` is returned, indicating no justification is present.
-	async fn block_justification(&self, block_number: u32) -> RpcResult<Option<Vec<u8>>> {
+	async fn block_justification(&self, block_number: u32) -> RpcResult<Option<String>> {
 		// Fetch the block hash
 		let block_hash = self
 			.client
@@ -93,6 +93,19 @@ where
 			.map_err(|e| internal_err!("Failed to fetch justifications: {e:?}"))?
 			.and_then(|just| just.into_justification(GRANDPA_ENGINE_ID));
 
-		Ok(justification)
+		let Some(justification) = justification else {
+			return Ok(None);
+		};
+
+		let mut encoded: Vec<u8> = vec![0u8; justification.len() * 2 + 2];
+		encoded[0] = b'0';
+		encoded[1] = b'x';
+		if encoded[2..].len() >= justification.len() * 2 {
+			hex::encode_to_slice(justification, &mut encoded[2..])
+				.expect("Made sure that encoded has enough space");
+		}
+		let encoded = unsafe { String::from_utf8_unchecked(encoded) };
+
+		Ok(Some(encoded))
 	}
 }

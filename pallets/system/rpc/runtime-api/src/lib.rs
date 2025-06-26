@@ -107,7 +107,6 @@ pub mod system_events_api {
 		}
 
 		#[derive(scale_info::TypeInfo, codec::Decode, codec::Encode, Clone)]
-		#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 		pub struct GroupedRuntimeEvents {
 			pub phase: frame_system::Phase,
 			pub events: Vec<RuntimeEvent>,
@@ -123,7 +122,6 @@ pub mod system_events_api {
 		}
 
 		#[derive(Clone, scale_info::TypeInfo, codec::Decode, codec::Encode)]
-		#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 		pub struct RuntimeEvent {
 			pub index: u32,
 			// (Pallet Id, Event Id)

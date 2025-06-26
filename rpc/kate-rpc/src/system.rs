@@ -1,7 +1,7 @@
 use avail_core::OpaqueExtrinsic;
 use codec::Encode;
 use da_runtime::UncheckedExtrinsic;
-use frame_system_rpc_runtime_api::{system_events_api::fetch_events_v1, SystemEventsApi};
+use frame_system_rpc_runtime_api::SystemEventsApi;
 use jsonrpsee::{
 	core::{async_trait, RpcResult},
 	proc_macros::rpc,
@@ -16,8 +16,6 @@ use std::{
 	sync::{Arc, Mutex},
 };
 
-pub type FetchEventsV1Result = Vec<fetch_events_v1::GroupedRuntimeEvents>;
-
 #[rpc(client, server)]
 pub trait Api {
 	#[method(name = "system_fetchEventsV1")]
@@ -25,7 +23,7 @@ pub trait Api {
 		&self,
 		params: fetch_events_v1::Params,
 		at: H256,
-	) -> RpcResult<FetchEventsV1Result>;
+	) -> RpcResult<fetch_events_v1::ApiResult>;
 
 	#[method(name = "system_fetchExtrinsicsV1")]
 	async fn fetch_extrinsics_v1(
@@ -54,7 +52,7 @@ where
 	pub fn new(client: Arc<C>) -> Self {
 		Self {
 			client,
-			block_cache: Arc::new(Mutex::new(fetch_extrinsics_v1::Cache::new(5))),
+			block_cache: Arc::new(Mutex::new(fetch_extrinsics_v1::Cache::new(3))),
 			_phantom: PhantomData,
 		}
 	}
@@ -104,14 +102,16 @@ where
 		&self,
 		params: fetch_events_v1::Params,
 		at: H256,
-	) -> RpcResult<FetchEventsV1Result> {
+	) -> RpcResult<fetch_events_v1::ApiResult> {
+		use fetch_events_v1::GroupedRuntimeEvents;
+
 		let runtime_api = self.client.runtime_api();
 		let result = runtime_api
 			.fetch_events_v1(at.into(), params)
 			.map_err(|x| Error::RuntimeApi.into_error_object(x.to_string()))?;
 
 		match result {
-			Ok(res) => Ok(res),
+			Ok(res) => Ok(res.into_iter().map(GroupedRuntimeEvents::from).collect()),
 			Err(code) => Err(Error::InvalidInput
 				.into_error_object(std::format!("Runtime Api Error Code: {code}"))),
 		}
@@ -187,7 +187,8 @@ where
 				};
 
 				let tx_hash = Blake2Hasher::hash(&ext_encoded);
-				cached_extrinsic.ext_cached = Some(ExtCached::new(ext_encoded.clone(), tx_hash));
+				let ext_encoded = hex_encode(ext_encoded);
+				cached_extrinsic.ext_cached = Some(ExtCached::new(ext_encoded, tx_hash));
 				cached_extrinsic.ext_cached.as_ref().expect("Just added it")
 			};
 
@@ -210,11 +211,12 @@ where
 					}
 					let dispatch_index = (call_encoded[0], call_encoded[1]);
 					let signature = TransactionSignature::from_unchecked(&uxt);
+					let call_encoded = hex_encode(call_encoded);
 
 					cached_extrinsic.unchecked_cached = Some(UncheckedCached::new(
 						signature.clone(),
 						dispatch_index,
-						call_encoded.clone(),
+						call_encoded,
 					));
 					cached_extrinsic
 						.unchecked_cached
@@ -239,9 +241,9 @@ where
 			}
 
 			let encoded = match encode_selector {
-				EncodeSelector::None => Vec::new(),
-				EncodeSelector::Call => unchecked_cache.call_encoded.clone(),
-				EncodeSelector::Extrinsic => ext_cache.ext_encoded.clone(),
+				EncodeSelector::None => None,
+				EncodeSelector::Call => Some(unchecked_cache.call_encoded.clone()),
+				EncodeSelector::Extrinsic => Some(ext_cache.ext_encoded.clone()),
 			};
 
 			let ext_info = ExtrinsicInformation {
@@ -259,6 +261,74 @@ where
 	}
 }
 
+pub mod fetch_events_v1 {
+	use super::hex_encode;
+	pub use frame_system_rpc_runtime_api::system_events_api::fetch_events_v1::{
+		GroupedRuntimeEvents as RuntimeGroupedRuntimeEvents, Params,
+		RuntimeEvent as RuntimeRuntimeEvent,
+	};
+	pub type ApiResult = Vec<GroupedRuntimeEvents>;
+
+	#[derive(Clone, serde::Serialize, serde::Deserialize)]
+	pub struct GroupedRuntimeEvents {
+		pub phase: frame_system::Phase,
+		pub events: Vec<RuntimeEvent>,
+	}
+
+	impl GroupedRuntimeEvents {
+		pub fn new(phase: frame_system::Phase) -> Self {
+			Self {
+				phase,
+				events: Vec::new(),
+			}
+		}
+	}
+
+	impl From<RuntimeGroupedRuntimeEvents> for GroupedRuntimeEvents {
+		fn from(value: RuntimeGroupedRuntimeEvents) -> Self {
+			Self {
+				phase: value.phase,
+				events: value.events.into_iter().map(RuntimeEvent::from).collect(),
+			}
+		}
+	}
+
+	#[derive(Clone, serde::Serialize, serde::Deserialize)]
+	pub struct RuntimeEvent {
+		pub index: u32,
+		// (Pallet Id, Event Id)
+		pub emitted_index: (u8, u8),
+		pub encoded: Option<String>,
+		pub decoded: Option<String>,
+	}
+
+	impl From<RuntimeRuntimeEvent> for RuntimeEvent {
+		fn from(value: RuntimeRuntimeEvent) -> Self {
+			Self {
+				index: value.index,
+				emitted_index: value.emitted_index,
+				encoded: value.encoded.map(hex_encode),
+				decoded: value.decoded.map(hex_encode),
+			}
+		}
+	}
+}
+
+// Efficient way to concatenate two strings.
+// `hex::encode_to_slice` returns a valid utf8 string so `from_utf8_unchecked` will always work
+fn hex_encode(input: Vec<u8>) -> String {
+	let mut encoded: Vec<u8> = vec![0u8; input.len() * 2 + 2];
+	encoded[0] = b'0';
+	encoded[1] = b'x';
+
+	if encoded[2..].len() >= input.len() * 2 {
+		hex::encode_to_slice(input, &mut encoded[2..])
+			.expect("Made sure that encoded has enough space");
+	}
+
+	unsafe { String::from_utf8_unchecked(encoded) }
+}
+
 pub mod fetch_extrinsics_v1 {
 	use super::*;
 	use serde::{Deserialize, Serialize};
@@ -268,7 +338,7 @@ pub mod fetch_extrinsics_v1 {
 
 	#[derive(Clone, Serialize, Deserialize)]
 	pub struct ExtrinsicInformation {
-		pub encoded: Vec<u8>,
+		pub encoded: Option<String>,
 		pub tx_hash: H256,
 		pub tx_index: u32,
 		pub pallet_id: u8,
@@ -483,14 +553,15 @@ pub mod fetch_extrinsics_v1 {
 	pub struct UncheckedCached {
 		pub signature: Option<TransactionSignature>,
 		pub dispatch_index: (u8, u8),
-		pub call_encoded: Vec<u8>,
+		// Hex string encoded with 0x
+		pub call_encoded: String,
 	}
 
 	impl UncheckedCached {
 		pub fn new(
 			signature: Option<TransactionSignature>,
 			dispatch_index: (u8, u8),
-			call_encoded: Vec<u8>,
+			call_encoded: String,
 		) -> Self {
 			Self {
 				signature,
@@ -501,12 +572,13 @@ pub mod fetch_extrinsics_v1 {
 	}
 
 	pub struct ExtCached {
-		pub ext_encoded: Vec<u8>,
+		// Hex string encoded with 0x
+		pub ext_encoded: String,
 		pub tx_hash: H256,
 	}
 
 	impl ExtCached {
-		pub fn new(ext_encoded: Vec<u8>, tx_hash: H256) -> Self {
+		pub fn new(ext_encoded: String, tx_hash: H256) -> Self {
 			Self {
 				ext_encoded,
 				tx_hash,
