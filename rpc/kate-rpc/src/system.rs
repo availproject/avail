@@ -326,7 +326,7 @@ pub mod fetch_events_v1 {
 	}
 }
 
-// Efficient way to concatenate two strings.
+// Efficient way to crate hex string with 0x
 // `hex::encode_to_slice` returns a valid utf8 string so `from_utf8_unchecked` will always work
 fn hex_encode(input: Vec<u8>) -> String {
 	let mut encoded: Vec<u8> = vec![0u8; input.len() * 2 + 2];

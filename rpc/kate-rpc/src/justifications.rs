@@ -1,9 +1,12 @@
+use codec::Decode;
+use da_runtime::Header;
 use jsonrpsee::{
 	core::{async_trait, RpcResult},
 	proc_macros::rpc,
 	types::error::ErrorObject,
 };
 use sc_client_api::BlockBackend;
+use sp_core::H256;
 use sp_runtime::traits::Block as BlockT;
 use std::{marker::PhantomData, sync::Arc};
 
@@ -17,6 +20,12 @@ where
 {
 	#[method(name = "grandpa_blockJustification")]
 	async fn block_justification(&self, block_number: u32) -> RpcResult<Option<String>>;
+
+	#[method(name = "grandpa_blockJustificationJson")]
+	async fn block_justification_json(
+		&self,
+		block_number: u32,
+	) -> RpcResult<Option<GrandpaJustification>>;
 }
 
 pub struct GrandpaJustifications<Client, Block: BlockT> {
@@ -97,15 +106,145 @@ where
 			return Ok(None);
 		};
 
-		let mut encoded: Vec<u8> = vec![0u8; justification.len() * 2 + 2];
-		encoded[0] = b'0';
-		encoded[1] = b'x';
-		if encoded[2..].len() >= justification.len() * 2 {
-			hex::encode_to_slice(justification, &mut encoded[2..])
-				.expect("Made sure that encoded has enough space");
-		}
-		let encoded = unsafe { String::from_utf8_unchecked(encoded) };
-
-		Ok(Some(encoded))
+		Ok(Some(hex_encode(&justification)))
 	}
+
+	/// Returns the GRANDPA justification for the given block number, if available.
+	/// Same as block_justification but instead returns a decoded GrandpaJustification object
+	async fn block_justification_json(
+		&self,
+		block_number: u32,
+	) -> RpcResult<Option<GrandpaJustification>> {
+		// Fetch the block hash
+		let block_hash = self
+			.client
+			.block_hash(block_number.into())
+			.map_err(|e| internal_err!("Failed to fetch block hash: {e:?}"))?
+			.ok_or_else(|| internal_err!("Block hash not found for block #{block_number}"))?;
+
+		// Fetch the justification for the block hash
+		let justification = self
+			.client
+			.justifications(block_hash)
+			.map_err(|e| internal_err!("Failed to fetch justifications: {e:?}"))?
+			.and_then(|just| just.into_justification(GRANDPA_ENGINE_ID));
+
+		let Some(justification) = justification else {
+			return Ok(None);
+		};
+
+		let Ok(justification) = GrandpaJustification::decode(&mut justification.as_slice()) else {
+			return Err(internal_err!("Failed to decode grandpa justification"));
+		};
+
+		Ok(Some(justification))
+	}
+}
+
+#[derive(Clone, codec::Decode)]
+pub struct AuthorityId(pub [u8; 32]);
+
+impl serde::Serialize for AuthorityId {
+	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+	where
+		S: serde::Serializer,
+	{
+		let encoded = hex_encode(&self.0);
+		serializer.serialize_str(&encoded)
+	}
+}
+
+impl<'a> serde::Deserialize<'a> for AuthorityId {
+	fn deserialize<D>(de: D) -> Result<Self, D::Error>
+	where
+		D: serde::Deserializer<'a>,
+	{
+		let r = String::deserialize(de)?;
+		let without_prefix = r.trim_start_matches("0x");
+		let result = hex::decode(without_prefix)
+			.map_err(|e| serde::de::Error::custom(format!("Decode error: {}", e)))?;
+		let result: [u8; 32] = result
+			.try_into()
+			.map_err(|e| serde::de::Error::custom(format!("Decode error: {:?}", e)))?;
+		Ok(AuthorityId(result))
+	}
+}
+
+#[derive(Clone, Copy, codec::Decode)]
+pub struct Signature(pub [u8; 64]);
+
+impl serde::Serialize for Signature {
+	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+	where
+		S: serde::Serializer,
+	{
+		let encoded = hex_encode(&self.0);
+		serializer.serialize_str(&encoded)
+	}
+}
+
+impl<'a> serde::Deserialize<'a> for Signature {
+	fn deserialize<D>(de: D) -> Result<Self, D::Error>
+	where
+		D: serde::Deserializer<'a>,
+	{
+		let r = String::deserialize(de)?;
+		let without_prefix = r.trim_start_matches("0x");
+		let result = hex::decode(without_prefix)
+			.map_err(|e| serde::de::Error::custom(format!("Decode error: {}", e)))?;
+		let result: [u8; 64] = result
+			.try_into()
+			.map_err(|e| serde::de::Error::custom(format!("Decode error: {:?}", e)))?;
+		Ok(Signature(result))
+	}
+}
+
+#[derive(Clone, codec::Decode, serde::Serialize, serde::Deserialize)]
+pub struct Precommit {
+	/// The target block's hash.
+	pub target_hash: H256,
+	/// The target block's number
+	pub target_number: u32,
+}
+
+#[derive(Clone, codec::Decode, serde::Serialize, serde::Deserialize)]
+pub struct SignedPrecommit {
+	/// The precommit message which has been signed.
+	pub precommit: Precommit,
+	/// The signature on the message.
+	pub signature: Signature,
+	/// The Id of the signer.
+	pub id: AuthorityId,
+}
+
+#[derive(Clone, codec::Decode, serde::Serialize, serde::Deserialize)]
+pub struct Commit {
+	/// The target block's hash.
+	pub target_hash: H256,
+	/// The target block's number.
+	pub target_number: u32,
+	/// Precommits for target block or any block after it that justify this commit.
+	pub precommits: Vec<SignedPrecommit>,
+}
+
+#[derive(Clone, codec::Decode, serde::Serialize, serde::Deserialize)]
+pub struct GrandpaJustification {
+	pub round: u64,
+	pub commit: Commit,
+	pub votes_ancestries: Vec<Header>,
+}
+
+// Efficient way to crate hex string with 0x
+// `hex::encode_to_slice` returns a valid utf8 string so `from_utf8_unchecked` will always work
+fn hex_encode(input: &[u8]) -> String {
+	let mut encoded: Vec<u8> = vec![0u8; input.len() * 2 + 2];
+	encoded[0] = b'0';
+	encoded[1] = b'x';
+
+	if encoded[2..].len() >= input.len() * 2 {
+		hex::encode_to_slice(input, &mut encoded[2..])
+			.expect("Made sure that encoded has enough space");
+	}
+
+	unsafe { String::from_utf8_unchecked(encoded) }
 }
