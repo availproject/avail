@@ -122,8 +122,8 @@ where
 		params: fetch_extrinsics_v1::Params,
 	) -> RpcResult<fetch_extrinsics_v1::ApiResult> {
 		use fetch_extrinsics_v1::{
-			BlockId, EncodeSelector, ExtCached, ExtrinsicInformation, TransactionSignature,
-			UncheckedCached,
+			BlockId, EncodeSelector, ExtCached, ExtrinsicInformation, TransactionFilterOptions,
+			TransactionSignature, UncheckedCached,
 		};
 		let filter = params.filter.unwrap_or_default();
 		let tx_filter = filter.transaction.unwrap_or_default();
@@ -254,7 +254,19 @@ where
 				call_id: dispatch_index.1,
 				signature: signature.clone(),
 			};
-			found_extrinsics.push(ext_info)
+			found_extrinsics.push(ext_info);
+
+			if let TransactionFilterOptions::TxIndex(list) = &tx_filter {
+				if found_extrinsics.len() >= list.len() {
+					break;
+				}
+			}
+
+			if let TransactionFilterOptions::TxHash(list) = &tx_filter {
+				if found_extrinsics.len() >= list.len() {
+					break;
+				}
+			}
 		}
 
 		Ok(found_extrinsics)
