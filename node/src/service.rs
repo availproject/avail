@@ -23,13 +23,14 @@ use crate::transaction_state;
 use crate::{cli::Cli, rpc as node_rpc};
 use avail_core::AppId;
 use da_runtime::{apis::RuntimeApi, NodeBlock as Block, Runtime};
+use da_sampling::{DaSamplesDownloader, DaSamplesRequestHandler};
 
 use codec::Encode;
 use frame_system_rpc_runtime_api::AccountNonceApi;
 use futures::prelude::*;
 use jsonrpsee::tokio::sync::mpsc::channel;
 use pallet_transaction_payment::ChargeTransactionPayment;
-use sc_client_api::{Backend, BlockBackend};
+use sc_client_api::{Backend, BlockBackend, BlockchainEvents};
 use sc_consensus_babe::{self, SlotProportion};
 pub use sc_executor::NativeElseWasmExecutor;
 use sc_network::{Event, NetworkEventStream, NetworkService};
@@ -430,14 +431,14 @@ pub fn new_full_base(
 	let shared_voter_state = rpc_setup;
 	let auth_disc_publish_non_global_ips = config.network.allow_non_globals_in_dht;
 	let mut net_config = sc_network::config::FullNetworkConfiguration::new(&config.network);
-	let grandpa_protocol_name = sc_consensus_grandpa::protocol_standard_name(
-		&client
-			.block_hash(0)
-			.ok()
-			.flatten()
-			.expect("Genesis block exists; qed"),
-		&config.chain_spec,
-	);
+	let genesis_hash = &client
+		.block_hash(0)
+		.ok()
+		.flatten()
+		.expect("Genesis block exists; qed");
+	let role = config.role.clone();
+	let grandpa_protocol_name =
+		sc_consensus_grandpa::protocol_standard_name(genesis_hash, &config.chain_spec);
 	let (grandpa_protocol_config, grandpa_notification_service) =
 		sc_consensus_grandpa::grandpa_peers_set_config(grandpa_protocol_name.clone());
 	net_config.add_notification_protocol(grandpa_protocol_config);
@@ -447,6 +448,17 @@ pub fn new_full_base(
 		Vec::default(),
 	));
 
+	if role.is_supernode() {
+		let (sampling_handler, da_sampling_config) =
+			DaSamplesRequestHandler::<Block>::new(client.clone(), genesis_hash, &config.chain_spec);
+		net_config.add_request_response_protocol(da_sampling_config);
+
+		task_manager.spawn_handle().spawn(
+			"da-sample-handler",
+			Some("networking"),
+			sampling_handler.run(),
+		);
+	}
 	let (network, system_rpc_tx, tx_handler_controller, network_starter, sync_service) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
 			config: &config,
@@ -461,7 +473,20 @@ pub fn new_full_base(
 			keystore: keystore_container.keystore(),
 		})?;
 
-	let role = config.role.clone();
+	if role.is_authority() && !role.is_supernode() {
+		let da_sampling_prortocol_name =
+			da_sampling::get_protocol_name(genesis_hash, &config.chain_spec);
+		let sample_downloader = DaSamplesDownloader::new(
+			da_sampling_prortocol_name,
+			client.import_notification_stream().boxed(),
+			network.clone(),
+		);
+		task_manager.spawn_handle().spawn(
+			"da-sample-downloader",
+			Some("networking"),
+			sample_downloader.run(),
+		);
+	}
 	let force_authoring = config.force_authoring;
 	let backoff_authoring_blocks =
 		Some(sc_consensus_slots::BackoffAuthoringOnFinalizedHeadLagging::default());

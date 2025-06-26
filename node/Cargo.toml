@@ -24,6 +24,7 @@ avail-core = { workspace = true, features = ["std"] }
 kate.workspace = true
 da-runtime.workspace = true
 da-control.workspace = true
+da-sampling.workspace = true
 kate-rpc.workspace = true
 testing-rpc.workspace = true
 pallet-vector.workspace = true

@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package api.v1.sampling;
+
+// A single cell coordinate in the grid (row, column).
+message CellCoordinate {
+	uint32 row = 1;
+	uint32 col = 2;
+}
+
+// Request for DA sampling proof for a given block.
+message SamplingRequest {
+	// Hash of the block to sample from.
+	bytes block_hash = 1;
+
+	// List of cell coordinates to request proofs for.
+	repeated CellCoordinate cells = 2;
+}
+
+// A single proof for a cell.
+message CellProof {
+	// Coordinate of the cell.
+	CellCoordinate cell = 1;
+
+	// The actual data in the cell (e.g., field element or byte chunk).
+	bytes data = 2;
+
+	// The proof for the cell (e.g., KZG proof).
+	bytes proof = 3;
+}
+
+// Response to `SamplingRequest`.
+message SamplingResponse {
+	// List of cell proofs.
+	repeated CellProof proofs = 1;
+}
