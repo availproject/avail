@@ -156,7 +156,6 @@ where
 			},
 		};
 
-		let mut found_extrinsics = Vec::new();
 		let block = match self.client.block(block_hash.into()) {
 			Ok(x) => x,
 			Err(err) => return Err(Error::NoBlockFound.into_error_object(err.to_string())),
@@ -170,6 +169,13 @@ where
 		};
 		let cached_block = cache.block_mut(block_hash);
 		let extrinsics = block.block.extrinsics();
+
+		let mut found_extrinsics = match &tx_filter {
+			TransactionFilterOptions::All => Vec::with_capacity(extrinsics.len()),
+			TransactionFilterOptions::TxHash(list) => Vec::with_capacity(list.len()),
+			TransactionFilterOptions::TxIndex(list) => Vec::with_capacity(list.len()),
+			_ => Vec::new(),
+		};
 		for (i, ext) in extrinsics.iter().enumerate() {
 			if !tx_filter.filter_in_tx_index(i as u32) {
 				continue;
