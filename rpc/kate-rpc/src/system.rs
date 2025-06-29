@@ -1,6 +1,5 @@
 use avail_core::OpaqueExtrinsic;
 use codec::Encode;
-use da_runtime::UncheckedExtrinsic;
 use frame_system_rpc_runtime_api::SystemEventsApi;
 use jsonrpsee::{
 	core::{async_trait, RpcResult},
@@ -10,7 +9,7 @@ use jsonrpsee::{
 use sc_client_api::BlockBackend;
 use sp_api::ProvideRuntimeApi;
 use sp_core::{Blake2Hasher, Hasher, H256};
-use sp_runtime::traits::{Block as BlockT, BlockIdTo, Header as HeaderT};
+use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 use std::{
 	marker::PhantomData,
 	sync::{Arc, Mutex},
@@ -52,7 +51,7 @@ where
 	pub fn new(client: Arc<C>) -> Self {
 		Self {
 			client,
-			block_cache: Arc::new(Mutex::new(fetch_extrinsics_v1::Cache::new(3))),
+			block_cache: Arc::new(Mutex::new(fetch_extrinsics_v1::Cache::new(5))),
 			_phantom: PhantomData,
 		}
 	}
@@ -92,7 +91,6 @@ impl<'a, C, Block> ApiServer for Rpc<C, Block>
 where
 	C: ProvideRuntimeApi<Block> + Send + Sync + 'static,
 	C: BlockBackend<Block>,
-	C: BlockIdTo<Block>,
 	C::Api: frame_system_rpc_runtime_api::SystemEventsApi<Block>,
 	Block: BlockT<Extrinsic = OpaqueExtrinsic>,
 	<Block as BlockT>::Hash: From<H256> + Into<H256>,
@@ -122,8 +120,7 @@ where
 		params: fetch_extrinsics_v1::Params,
 	) -> RpcResult<fetch_extrinsics_v1::ApiResult> {
 		use fetch_extrinsics_v1::{
-			BlockId, EncodeSelector, ExtCached, ExtrinsicInformation, TransactionFilterOptions,
-			TransactionSignature, UncheckedCached,
+			BlockId, EncodeSelector, ExtrinsicInformation, TransactionFilterOptions,
 		};
 		let filter = params.filter.unwrap_or_default();
 		let tx_filter = filter.transaction.unwrap_or_default();
@@ -143,8 +140,7 @@ where
 		let block_hash = match params.block_id {
 			BlockId::Hash(h) => h,
 			BlockId::Number(n) => {
-				let n = &sp_runtime::generic::BlockId::Number(n.into());
-				let hash = match self.client.to_hash(n) {
+				let hash = match self.client.block_hash(n.into()) {
 					Ok(ok) => ok,
 					Err(err) => return Err(Error::NoBlockFound.into_error_object(err.to_string())),
 				};
@@ -155,110 +151,53 @@ where
 				hash.into()
 			},
 		};
-
-		let block = match self.client.block(block_hash.into()) {
-			Ok(x) => x,
-			Err(err) => return Err(Error::NoBlockFound.into_error_object(err.to_string())),
-		};
-		let Some(block) = block else {
-			return Err(Error::NoBlockFound.into_error_object(String::from("No block found")));
-		};
-
 		let Ok(mut cache) = self.block_cache.lock() else {
 			return Err(Error::Other.into_error_object(String::from("failed to lock mutex")));
 		};
-		let cached_block = cache.block_mut(block_hash);
-		let extrinsics = block.block.extrinsics();
 
+		let cached_block = match cache.block(block_hash) {
+			Some(block) => block,
+			None => {
+				let block = fetch_extrinsics_v1::cache_block::<C, Block>(&self.client, block_hash)?;
+				cache.insert(block_hash, block)
+			},
+		};
+
+		let transactions = cached_block.transactions();
 		let mut found_extrinsics = match &tx_filter {
-			TransactionFilterOptions::All => Vec::with_capacity(extrinsics.len()),
+			TransactionFilterOptions::All => Vec::with_capacity(transactions.len()),
 			TransactionFilterOptions::TxHash(list) => Vec::with_capacity(list.len()),
 			TransactionFilterOptions::TxIndex(list) => Vec::with_capacity(list.len()),
 			_ => Vec::new(),
 		};
-		for (i, ext) in extrinsics.iter().enumerate() {
-			if !tx_filter.filter_in_tx_index(i as u32) {
+		for tx in transactions.iter() {
+			if !tx_filter.filter_in_tx_index(tx.index) || !tx_filter.filter_in_tx_hash(tx.tx_hash) {
 				continue;
 			}
 
-			let cached_extrinsic = cached_block.extrinsic_mut(i as u32);
-			let ext_cache: &ExtCached = if let Some(x) = cached_extrinsic.ext_cached.as_ref() {
-				x
-			} else {
-				let ext_encoded = {
-					let mut encoded: Vec<u8> = Vec::with_capacity(ext.0.len() + 4);
-					codec::Compact::<u32>(ext.0.len() as u32).encode_to(&mut encoded);
-					encoded.extend_from_slice(&ext.0);
-					encoded
-				};
-
-				let tx_hash = Blake2Hasher::hash(&ext_encoded);
-				let ext_encoded = hex::encode(ext_encoded);
-				cached_extrinsic.ext_cached = Some(ExtCached::new(ext_encoded, tx_hash));
-				cached_extrinsic.ext_cached.as_ref().expect("Just added it")
-			};
-
-			let tx_hash = ext_cache.tx_hash.clone();
-			if !tx_filter.filter_in_tx_hash(tx_hash) {
+			if !tx_filter.filter_in_pallet(tx.dispatch_index.0)
+				|| !tx_filter.filter_in_pallet_call(tx.dispatch_index)
+			{
 				continue;
 			}
 
-			let unchecked_cache: &UncheckedCached = {
-				if let Some(cached) = cached_extrinsic.unchecked_cached.as_ref() {
-					cached
-				} else {
-					let Ok(uxt) = UncheckedExtrinsic::decode_no_vec_prefix(&mut ext.0.as_slice())
-					else {
-						continue;
-					};
-					let call_encoded = uxt.function.encode();
-					if call_encoded.len() < 2 {
-						continue;
-					}
-					let dispatch_index = (call_encoded[0], call_encoded[1]);
-					let signature = TransactionSignature::from_unchecked(&uxt);
-					let call_encoded = hex::encode(call_encoded);
-
-					cached_extrinsic.unchecked_cached = Some(UncheckedCached::new(
-						signature.clone(),
-						dispatch_index,
-						call_encoded,
-					));
-					cached_extrinsic
-						.unchecked_cached
-						.as_ref()
-						.expect("Just added it")
-				}
-			};
-
-			let signature = &unchecked_cache.signature;
-			let dispatch_index = unchecked_cache.dispatch_index;
-
-			if !sig_filter.filter_in(signature) {
-				continue;
-			}
-
-			if !tx_filter.filter_in_pallet(dispatch_index.0) {
-				continue;
-			}
-
-			if !tx_filter.filter_in_pallet_call(dispatch_index) {
+			if !sig_filter.filter_in(&tx.signature) {
 				continue;
 			}
 
 			let encoded = match encode_selector {
 				EncodeSelector::None => None,
-				EncodeSelector::Call => Some(unchecked_cache.call_encoded.clone()),
-				EncodeSelector::Extrinsic => Some(ext_cache.ext_encoded.clone()),
+				EncodeSelector::Call => Some((&tx.tx_encoded[tx.call_start_pos..]).to_string()),
+				EncodeSelector::Extrinsic => Some(tx.tx_encoded.clone()),
 			};
 
 			let ext_info = ExtrinsicInformation {
 				encoded,
-				tx_hash,
-				tx_index: i as u32,
-				pallet_id: dispatch_index.0,
-				call_id: dispatch_index.1,
-				signature: signature.clone(),
+				tx_hash: tx.tx_hash,
+				tx_index: tx.index,
+				pallet_id: tx.dispatch_index.0,
+				call_id: tx.dispatch_index.1,
+				signature: tx.signature.clone(),
 			};
 			found_extrinsics.push(ext_info);
 
@@ -333,8 +272,12 @@ pub mod fetch_events_v1 {
 
 pub mod fetch_extrinsics_v1 {
 	use super::*;
+	use avail_core::asdr::EXTRINSIC_FORMAT_VERSION;
+	use codec::{Decode, Input};
+	use da_runtime::{Address, Signature, SignedExtra};
 	use serde::{Deserialize, Serialize};
 	use sp_runtime::MultiAddress;
+	type SignaturePayload = (Address, Signature, SignedExtra);
 
 	pub type ApiResult = Vec<ExtrinsicInformation>;
 
@@ -525,8 +468,8 @@ pub mod fetch_extrinsics_v1 {
 	}
 
 	impl TransactionSignature {
-		pub fn from_unchecked(ext: &UncheckedExtrinsic) -> Option<Self> {
-			let Some(sig) = &ext.signature else {
+		pub fn from_signature_payload(sig: &Option<SignaturePayload>) -> Option<Self> {
+			let Some(sig) = sig else {
 				return None;
 			};
 
@@ -552,67 +495,32 @@ pub mod fetch_extrinsics_v1 {
 		}
 	}
 
-	pub struct UncheckedCached {
+	pub struct CachedTransaction {
+		pub index: u32,
 		pub signature: Option<TransactionSignature>,
 		pub dispatch_index: (u8, u8),
-		// Hex string encoded without 0x
-		pub call_encoded: String,
-	}
-
-	impl UncheckedCached {
-		pub fn new(
-			signature: Option<TransactionSignature>,
-			dispatch_index: (u8, u8),
-			call_encoded: String,
-		) -> Self {
-			Self {
-				signature,
-				dispatch_index,
-				call_encoded,
-			}
-		}
-	}
-
-	pub struct ExtCached {
-		// Hex string encoded without 0x
-		pub ext_encoded: String,
 		pub tx_hash: H256,
-	}
-
-	impl ExtCached {
-		pub fn new(ext_encoded: String, tx_hash: H256) -> Self {
-			Self {
-				ext_encoded,
-				tx_hash,
-			}
-		}
-	}
-
-	#[derive(Default)]
-	pub struct CachedExtrinsic {
-		pub unchecked_cached: Option<UncheckedCached>,
-		pub ext_cached: Option<ExtCached>,
+		// This is the whole tx encoded together with signature and call
+		pub tx_encoded: String,
+		// position from where the call starts in the encoded transaction
+		pub call_start_pos: usize,
 	}
 
 	pub struct CachedBlock {
-		extrinsics: Vec<(u32, CachedExtrinsic)>,
+		transactions: Vec<CachedTransaction>,
 	}
 
 	impl CachedBlock {
-		pub fn new() -> Self {
-			Self {
-				extrinsics: Vec::new(),
-			}
+		pub fn new(transactions: Vec<CachedTransaction>) -> Self {
+			Self { transactions }
 		}
 
-		pub fn extrinsic_mut(&mut self, index: u32) -> &mut CachedExtrinsic {
-			let pos = self.extrinsics.iter().position(|x| x.0 == index);
-			if let Some(pos) = pos {
-				return &mut self.extrinsics[pos].1;
-			}
+		pub fn transactions(&self) -> &Vec<CachedTransaction> {
+			&self.transactions
+		}
 
-			self.extrinsics.push((index, CachedExtrinsic::default()));
-			&mut self.extrinsics.last_mut().expect("Just added it").1
+		pub fn insert(&mut self, value: CachedTransaction) {
+			self.transactions.push(value);
 		}
 	}
 
@@ -629,17 +537,90 @@ pub mod fetch_extrinsics_v1 {
 			}
 		}
 
-		pub fn block_mut(&mut self, block_hash: H256) -> &mut CachedBlock {
-			let pos = self.blocks.iter().position(|x| x.0 == block_hash);
-			if let Some(pos) = pos {
-				return &mut self.blocks[pos].1;
-			}
+		pub fn block(&self, block_hash: H256) -> Option<&CachedBlock> {
+			self.blocks.iter().find(|x| x.0 == block_hash).map(|x| &x.1)
+		}
 
+		pub fn insert(&mut self, hash: H256, value: CachedBlock) -> &CachedBlock {
 			if self.blocks.len() >= self.max_size as usize && self.blocks.len() > 0 {
 				self.blocks.remove(0);
 			}
-			self.blocks.push((block_hash, CachedBlock::new()));
-			&mut self.blocks.last_mut().expect("Just added it").1
+			self.blocks.push((hash, value));
+			&self.blocks.last().expect("Just added it").1
 		}
+	}
+
+	pub fn cache_block<'a, C, Block>(client: &C, block_hash: H256) -> RpcResult<CachedBlock>
+	where
+		C: BlockBackend<Block>,
+		Block: BlockT<Extrinsic = OpaqueExtrinsic>,
+		<Block as BlockT>::Hash: From<H256> + Into<H256>,
+		<<Block as BlockT>::Header as HeaderT>::Number: From<u32>,
+	{
+		let opaque_extrinsics = match client.block_body(block_hash.into()) {
+			Ok(x) => x,
+			Err(err) => return Err(Error::NoBlockFound.into_error_object(err.to_string())),
+		};
+		let Some(opaque_extrinsics) = opaque_extrinsics else {
+			return Err(Error::NoBlockFound.into_error_object(String::from("No block found")));
+		};
+
+		let mut cached_transactions: Vec<CachedTransaction> =
+			Vec::with_capacity(opaque_extrinsics.len());
+
+		for (index, ext) in opaque_extrinsics.iter().enumerate() {
+			let ext_slice = &mut ext.0.as_slice();
+			let Ok(version) = ext_slice.read_byte() else {
+				continue;
+			};
+
+			let is_signed = version & 0b1000_0000 != 0;
+			let version = version & 0b0111_1111;
+			if version != EXTRINSIC_FORMAT_VERSION {
+				continue;
+			}
+
+			let signature = if is_signed {
+				let Ok(signature) = SignaturePayload::decode(ext_slice) else {
+					continue;
+				};
+				Some(signature)
+			} else {
+				None
+			};
+			let call_start_pos = ext.0.len() - ext_slice.len();
+			let call_length = ext_slice.len();
+			let Some(pallet_id) = ext.0.get(call_start_pos) else {
+				continue;
+			};
+			let Some(call_id) = ext.0.get(call_start_pos + 1) else {
+				continue;
+			};
+			let dispatch_index = (*pallet_id, *call_id);
+
+			let (tx_encoded, tx_hash) = {
+				let mut encoded: Vec<u8> = Vec::with_capacity(ext.0.len() + 4);
+				codec::Compact::<u32>(ext.0.len() as u32).encode_to(&mut encoded);
+				encoded.extend_from_slice(&ext.0);
+
+				let tx_hash = Blake2Hasher::hash(&encoded);
+				(hex::encode(encoded), tx_hash)
+			};
+
+			let signature = TransactionSignature::from_signature_payload(&signature);
+			let encoded_call_start_pos = tx_encoded.len().saturating_sub(call_length * 2);
+
+			let tx = CachedTransaction {
+				index: index as u32,
+				signature,
+				dispatch_index,
+				tx_hash,
+				tx_encoded,
+				call_start_pos: encoded_call_start_pos,
+			};
+			cached_transactions.push(tx)
+		}
+
+		Ok(CachedBlock::new(cached_transactions))
 	}
 }
