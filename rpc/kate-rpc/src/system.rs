@@ -193,7 +193,7 @@ where
 				};
 
 				let tx_hash = Blake2Hasher::hash(&ext_encoded);
-				let ext_encoded = hex_encode(ext_encoded);
+				let ext_encoded = hex::encode(ext_encoded);
 				cached_extrinsic.ext_cached = Some(ExtCached::new(ext_encoded, tx_hash));
 				cached_extrinsic.ext_cached.as_ref().expect("Just added it")
 			};
@@ -217,7 +217,7 @@ where
 					}
 					let dispatch_index = (call_encoded[0], call_encoded[1]);
 					let signature = TransactionSignature::from_unchecked(&uxt);
-					let call_encoded = hex_encode(call_encoded);
+					let call_encoded = hex::encode(call_encoded);
 
 					cached_extrinsic.unchecked_cached = Some(UncheckedCached::new(
 						signature.clone(),
@@ -280,7 +280,6 @@ where
 }
 
 pub mod fetch_events_v1 {
-	use super::hex_encode;
 	pub use frame_system_rpc_runtime_api::system_events_api::fetch_events_v1::{
 		GroupedRuntimeEvents as RuntimeGroupedRuntimeEvents, Params,
 		RuntimeEvent as RuntimeRuntimeEvent,
@@ -325,26 +324,11 @@ pub mod fetch_events_v1 {
 			Self {
 				index: value.index,
 				emitted_index: value.emitted_index,
-				encoded: value.encoded.map(hex_encode),
-				decoded: value.decoded.map(hex_encode),
+				encoded: value.encoded.map(hex::encode),
+				decoded: value.decoded.map(hex::encode),
 			}
 		}
 	}
-}
-
-// Efficient way to crate hex string with 0x
-// `hex::encode_to_slice` returns a valid utf8 string so `from_utf8_unchecked` will always work
-fn hex_encode(input: Vec<u8>) -> String {
-	let mut encoded: Vec<u8> = vec![0u8; input.len() * 2 + 2];
-	encoded[0] = b'0';
-	encoded[1] = b'x';
-
-	if encoded[2..].len() >= input.len() * 2 {
-		hex::encode_to_slice(input, &mut encoded[2..])
-			.expect("Made sure that encoded has enough space");
-	}
-
-	unsafe { String::from_utf8_unchecked(encoded) }
 }
 
 pub mod fetch_extrinsics_v1 {
@@ -571,7 +555,7 @@ pub mod fetch_extrinsics_v1 {
 	pub struct UncheckedCached {
 		pub signature: Option<TransactionSignature>,
 		pub dispatch_index: (u8, u8),
-		// Hex string encoded with 0x
+		// Hex string encoded without 0x
 		pub call_encoded: String,
 	}
 
@@ -590,7 +574,7 @@ pub mod fetch_extrinsics_v1 {
 	}
 
 	pub struct ExtCached {
-		// Hex string encoded with 0x
+		// Hex string encoded without 0x
 		pub ext_encoded: String,
 		pub tx_hash: H256,
 	}

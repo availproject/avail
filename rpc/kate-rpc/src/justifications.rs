@@ -106,7 +106,7 @@ where
 			return Ok(None);
 		};
 
-		Ok(Some(hex_encode(&justification)))
+		Ok(Some(hex::encode(&justification)))
 	}
 
 	/// Returns the GRANDPA justification for the given block number, if available.
@@ -149,7 +149,7 @@ impl serde::Serialize for AuthorityId {
 	where
 		S: serde::Serializer,
 	{
-		let encoded = hex_encode(&self.0);
+		let encoded = hex::encode(&self.0);
 		serializer.serialize_str(&encoded)
 	}
 }
@@ -178,7 +178,7 @@ impl serde::Serialize for Signature {
 	where
 		S: serde::Serializer,
 	{
-		let encoded = hex_encode(&self.0);
+		let encoded = hex::encode(&self.0);
 		serializer.serialize_str(&encoded)
 	}
 }
@@ -232,19 +232,4 @@ pub struct GrandpaJustification {
 	pub round: u64,
 	pub commit: Commit,
 	pub votes_ancestries: Vec<Header>,
-}
-
-// Efficient way to crate hex string with 0x
-// `hex::encode_to_slice` returns a valid utf8 string so `from_utf8_unchecked` will always work
-fn hex_encode(input: &[u8]) -> String {
-	let mut encoded: Vec<u8> = vec![0u8; input.len() * 2 + 2];
-	encoded[0] = b'0';
-	encoded[1] = b'x';
-
-	if encoded[2..].len() >= input.len() * 2 {
-		hex::encode_to_slice(input, &mut encoded[2..])
-			.expect("Made sure that encoded has enough space");
-	}
-
-	unsafe { String::from_utf8_unchecked(encoded) }
 }
