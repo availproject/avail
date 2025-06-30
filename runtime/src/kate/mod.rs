@@ -48,6 +48,16 @@ impl TryFrom<Vec<u8>> for GProof {
 	}
 }
 
+impl GProof {
+	pub fn as_slice(&self) -> &[u8] {
+		&self.0
+	}
+
+	pub fn to_vec(&self) -> Vec<u8> {
+		self.0.to_vec()
+	}
+}
+
 #[derive(Error, Encode, Decode, TypeInfo, PassByCodec, Debug)]
 pub enum Error {
 	#[error("Invalid integer conversion")]

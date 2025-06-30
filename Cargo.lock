@@ -1276,7 +1276,7 @@ checksum = "33415e24172c1b7d6066f6d999545375ab8e1d95421d6784bdfff9496f292387"
 dependencies = [
  "bitcoin_hashes",
  "rand",
- "rand_core 0.6.4",
+ "rand_core 0.5.1",
  "serde",
  "unicode-normalization",
 ]
@@ -2527,14 +2527,20 @@ version = "0.1.0"
 dependencies = [
  "array-bytes 6.2.3",
  "async-channel",
+ "avail-core",
+ "da-runtime",
  "futures",
+ "kate",
+ "kate-recovery",
  "libp2p-identity",
  "log",
  "prost 0.12.6",
  "prost-build",
+ "rand",
  "sc-chain-spec",
  "sc-client-api",
  "sc-network",
+ "sp-api",
  "sp-blockchain",
  "sp-runtime",
  "thiserror 2.0.11",
@@ -11141,7 +11147,7 @@ dependencies = [
 [[package]]
 name = "sp-ark-bls12-381"
 version = "0.4.2"
-source = "git+https://github.com/paritytech/arkworks-substrate#caa2eed74beb885dd07c7db5f916f2281dad818f"
+source = "git+https://github.com/paritytech/arkworks-substrate#f08093a5f7c32778eae1295430ec064dccd062a6"
 dependencies = [
  "ark-bls12-381-ext",
  "sp-crypto-ec-utils",
@@ -11150,7 +11156,7 @@ dependencies = [
 [[package]]
 name = "sp-ark-ed-on-bls12-381-bandersnatch"
 version = "0.4.2"
-source = "git+https://github.com/paritytech/arkworks-substrate#caa2eed74beb885dd07c7db5f916f2281dad818f"
+source = "git+https://github.com/paritytech/arkworks-substrate#f08093a5f7c32778eae1295430ec064dccd062a6"
 dependencies = [
  "ark-ed-on-bls12-381-bandersnatch-ext",
  "sp-crypto-ec-utils",

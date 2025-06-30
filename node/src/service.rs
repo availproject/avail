@@ -448,11 +448,14 @@ pub fn new_full_base(
 		Vec::default(),
 	));
 
+	let (sampling_handler, da_sampling_config) = DaSamplesRequestHandler::<Block, FullClient>::new(
+		client.clone(),
+		genesis_hash,
+		&config.chain_spec,
+	);
+	let da_sampling_protocol_name = da_sampling_config.name.clone();
+	net_config.add_request_response_protocol(da_sampling_config);
 	if role.is_supernode() {
-		let (sampling_handler, da_sampling_config) =
-			DaSamplesRequestHandler::<Block>::new(client.clone(), genesis_hash, &config.chain_spec);
-		net_config.add_request_response_protocol(da_sampling_config);
-
 		task_manager.spawn_handle().spawn(
 			"da-sample-handler",
 			Some("networking"),
@@ -474,17 +477,12 @@ pub fn new_full_base(
 		})?;
 
 	if role.is_authority() && !role.is_supernode() {
-		let da_sampling_prortocol_name =
-			da_sampling::get_protocol_name(genesis_hash, &config.chain_spec);
-		let sample_downloader = DaSamplesDownloader::new(
-			da_sampling_prortocol_name,
-			client.import_notification_stream().boxed(),
-			network.clone(),
-		);
+		let sample_downloader =
+			DaSamplesDownloader::new(da_sampling_protocol_name, network.clone());
 		task_manager.spawn_handle().spawn(
 			"da-sample-downloader",
 			Some("networking"),
-			sample_downloader.run(),
+			sample_downloader.run(client.import_notification_stream().boxed()),
 		);
 	}
 	let force_authoring = config.force_authoring;

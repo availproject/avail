@@ -19,14 +19,11 @@ message SamplingRequest {
 
 // A single proof for a cell.
 message CellProof {
-	// Coordinate of the cell.
-	CellCoordinate cell = 1;
-
 	// The actual data in the cell (e.g., field element or byte chunk).
-	bytes data = 2;
+	bytes data = 1;
 
 	// The proof for the cell (e.g., KZG proof).
-	bytes proof = 3;
+	bytes proof = 2;
 }
 
 // Response to `SamplingRequest`.

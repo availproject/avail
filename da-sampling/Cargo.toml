@@ -8,13 +8,19 @@ license.workspace = true
 homepage.workspace = true
 
 [dependencies]
+avail-core = { workspace = true, default-features = false, features = ["std"] }
+kate = { workspace = true}
+kate-recovery = { workspace = true}
+da-runtime.workspace = true
 array-bytes.workspace = true
 async-channel.workspace = true
 futures.workspace = true
 libp2p-identity = { workspace = true, features = ["peerid"] }
 log.workspace = true
 prost.workspace = true
+rand.workspace = true
 thiserror.workspace = true
+sp-api = { workspace = true, default-features = false }
 sc-client-api = { workspace = true, default-features = false }
 sc-chain-spec = { workspace = true, default-features = false }
 sc-network = { workspace = true, default-features = false }
@@ -29,3 +35,14 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [build-dependencies]
 prost-build = "0.11"
+
+[features]
+default = [ "std" ]
+std = [
+	"da-runtime/std",
+	"futures/std",
+	"log/std",
+	"prost/std",
+	"sp-runtime/std",
+	"thiserror/std",
+]
