@@ -1,9 +1,11 @@
 #![allow(dead_code)]
 mod schema;
 
-use std::{collections::HashSet, io, sync::Arc, time::Duration};
 use avail_core::{header::HeaderExtension, OpaqueExtrinsic};
-use da_runtime::{apis::{DataAvailApi, KateApi}, Header as DaHeader};
+use da_runtime::{
+	apis::{DataAvailApi, KateApi},
+	Header as DaHeader,
+};
 use futures::{
 	channel::oneshot,
 	stream::{BoxStream, StreamExt},
@@ -16,16 +18,16 @@ use kate_recovery::{
 	proof::verify_v2,
 };
 use libp2p_identity::PeerId;
-use log::{debug, error, trace};
+use log::{debug, error, trace, warn};
+use parking_lot::RwLock;
 use prost::Message;
 use rand::{thread_rng, Rng};
 use sc_chain_spec::ChainSpec;
 use sc_client_api::{BlockBackend, BlockImportNotification};
 use sc_network::{
-	NetworkRequest,
-	NetworkService,
 	request_responses::{IfDisconnected, IncomingRequest, OutgoingResponse, ProtocolConfig},
 	types::ProtocolName,
+	NetworkRequest, NetworkService,
 };
 use schema::v1::da_sampling::*;
 use sp_api::ProvideRuntimeApi;
@@ -33,15 +35,42 @@ use sp_runtime::{
 	testing::H256,
 	traits::{Block as BlockT, Header, PhantomData},
 };
-use tokio::time::sleep;
+use std::{
+	collections::{HashMap, HashSet},
+	io,
+	sync::{
+		atomic::{AtomicBool, Ordering},
+		Arc,
+	},
+	time::{Duration, Instant},
+};
+use tokio::time::{sleep, timeout};
 
 const LOG_TARGET: &str = "da-sampling";
 const MAX_PACKET_SIZE: u64 = 16 * 1024 * 1024; // Match Substrate protocol max
 const MAX_REQUEST_QUEUE: usize = 100;
 const NAME: &str = "/da-sampling/1";
 const CELL_COUNT: u32 = 14; // Number of cells required for 99.99% confidence
+const MAX_RETRIES: u32 = 3;
+const REQUEST_TIMEOUT: Duration = Duration::from_secs(10);
+const PEER_RESPONSE_TIMEOUT: Duration = Duration::from_secs(30);
 
 static PP: std::sync::OnceLock<ArkPublicParams> = std::sync::OnceLock::new();
+
+/// Block verification status
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BlockVerificationStatus {
+	/// Verification not started yet
+	Pending,
+	/// Verification in progress
+	InProgress,
+	/// Verification succeeded
+	Verified,
+	/// Verification failed
+	Failed,
+	/// Verification timed out
+	TimedOut,
+}
 
 /// DA sampling protocol errors
 #[derive(Debug, thiserror::Error)]
@@ -66,9 +95,80 @@ pub enum SamplingError {
 
 	#[error(transparent)]
 	Api(#[from] sp_api::ApiError),
+
+	#[error("Verification failed for block")]
+	VerificationFailed,
+
+	#[error("Operation timed out")]
+	Timeout,
+
+	#[error("No peers available")]
+	NoPeersAvailable,
 }
 
-/// DA samples request handler (server side).
+/// Verification state for a block
+#[derive(Debug, Clone)]
+struct BlockVerificationState {
+	status: BlockVerificationStatus,
+	last_attempt: Option<Instant>,
+	retry_count: u32,
+	failed_cells: Vec<CellCoordinate>,
+}
+
+/// Shared state for block's DA verification
+#[derive(Debug, Clone)]
+pub struct VerificationTracker {
+	blocks: Arc<RwLock<HashMap<H256, BlockVerificationState>>>,
+	shutdown: Arc<AtomicBool>,
+}
+
+impl VerificationTracker {
+	pub fn new() -> Self {
+		Self {
+			blocks: Arc::new(RwLock::new(HashMap::new())),
+			shutdown: Arc::new(AtomicBool::new(false)),
+		}
+	}
+
+	pub fn set_status(&self, block_hash: H256, status: BlockVerificationStatus) {
+		let mut blocks = self.blocks.write();
+		blocks.entry(block_hash).and_modify(|state| {
+			state.status = status;
+			if status == BlockVerificationStatus::InProgress {
+				state.last_attempt = Some(Instant::now());
+			}
+		});
+	}
+
+	pub fn get_status(&self, block_hash: &H256) -> Option<BlockVerificationStatus> {
+		self.blocks.read().get(block_hash).map(|s| s.status)
+	}
+
+	pub fn record_failed_cells(&self, block_hash: H256, cells: Vec<CellCoordinate>) {
+		let mut blocks = self.blocks.write();
+		blocks.entry(block_hash).and_modify(|state| {
+			state.failed_cells.extend(cells);
+		});
+	}
+
+	pub fn increment_retry(&self, block_hash: H256) {
+		let mut blocks = self.blocks.write();
+		blocks.entry(block_hash).and_modify(|state| {
+			state.retry_count += 1;
+			state.last_attempt = Some(Instant::now());
+		});
+	}
+
+	pub fn should_shutdown(&self) -> bool {
+		self.shutdown.load(Ordering::SeqCst)
+	}
+
+	pub fn shutdown(&self) {
+		self.shutdown.store(true, Ordering::SeqCst);
+	}
+}
+
+/// DA samples request handler (server side)
 pub struct DaSamplesRequestHandler<B, Client> {
 	client: Arc<Client>,
 	request_receiver: async_channel::Receiver<IncomingRequest>,
@@ -117,6 +217,7 @@ where
 				payload,
 				pending_response,
 			} = request;
+
 			let response = self.handle_message(&peer, &payload);
 
 			let result = match response {
@@ -127,11 +228,13 @@ where
 				},
 			};
 
-			let _ = pending_response.send(OutgoingResponse {
+			if let Err(e) = pending_response.send(OutgoingResponse {
 				result,
 				sent_feedback: None,
 				reputation_changes: Vec::new(),
-			});
+			}) {
+				error!(target: LOG_TARGET, "Failed to send response to {peer}: {e:?}");
+			}
 		}
 	}
 
@@ -190,86 +293,171 @@ where
 	}
 }
 
-/// DA samples downloader (client side).
+/// DA samples downloader (client side)
 pub struct DaSamplesDownloader<B: BlockT> {
 	protocol_name: ProtocolName,
 	network: Arc<NetworkService<B, B::Hash>>,
+	verification_tracker: VerificationTracker,
 }
 
 impl<B> DaSamplesDownloader<B>
 where
-	B: BlockT<Header = DaHeader>,
+	B: BlockT<Header = DaHeader, Hash = H256>,
 {
 	pub fn new(protocol_name: ProtocolName, network: Arc<NetworkService<B, B::Hash>>) -> Self {
 		Self {
 			protocol_name,
 			network,
+			verification_tracker: VerificationTracker::new(),
 		}
 	}
 
-	pub async fn run(self, mut import_stream: BoxStream<'static, BlockImportNotification<B>>) {
+	pub async fn run(self, import_stream: BoxStream<'static, BlockImportNotification<B>>) {
 		debug!(target: LOG_TARGET, "Starting DA sample downloader");
 
+		tokio::pin!(import_stream);
+
 		while let Some(notification) = import_stream.next().await {
-			trace!(target: LOG_TARGET, "Received block import notification for: {:?}", notification.hash);
+			if self.verification_tracker.should_shutdown() {
+				break;
+			}
+
+			let block_hash = notification.hash;
 
 			let header: DaHeader = notification.header;
 			if header.extension.app_lookup().is_empty() {
-				trace!(target: LOG_TARGET, "Empty app lookup, skipping sampling");
+				trace!(target: LOG_TARGET, "Block does not have any DA txs, skipping DA verification for {:?}", block_hash);
 				continue;
 			}
+			trace!(target: LOG_TARGET, "Processing DA samples for block {:?}", block_hash);
 
-			let dimensions = Dimensions::new(header.extension.rows(), header.extension.cols())
-				.expect("Valid dimensions");
-			let cells = generate_random_cells(dimensions, CELL_COUNT);
-
-			let commitments = match header.extension {
-				HeaderExtension::V3(ext) => ext.commitment.commitment,
-				HeaderExtension::V4(ext) => ext.commitment.commitment,
-			};
-
-			let original_commitments: Vec<ArkCommitment> = commitments
-				.chunks_exact(48)
-				.map(|chunk| ArkCommitment::from_bytes(chunk.try_into().expect("48 bytes")))
-				.collect::<Result<_, _>>()
-				.expect("Valid commitments");
-
-			let extended_commitments = ArkCommitment::extend_commitments(
-				&original_commitments,
-				original_commitments.len() * 2,
-			)
-			.expect("Valid extension");
-
-			let commitments: Vec<_> = extended_commitments
-				.into_iter()
-				.map(|c| c.to_bytes().expect("Valid commitment"))
-				.collect();
-
-			let peers = self.network.reserved_peers().await.unwrap();
-			let request = SamplingRequest {
-				cells,
-				block_hash: notification.hash.as_ref().to_vec(),
-			};
-
-			// Temp delay to ensure the super has time to process the block
-			sleep(Duration::from_secs(3)).await;
-
-			// Process peers in parallel
-			let futures = peers.into_iter().map(|peer| {
-				self.request_cell_proofs(peer, request.clone(), commitments.clone(), dimensions)
-			});
-
-			futures::future::join_all(futures).await;
+			match self.verify_block(block_hash, header).await {
+				Ok(_) => {
+					debug!(target: LOG_TARGET, "Verified DA samples for block {:?}", block_hash)
+				},
+				Err(e) => {
+					error!(target: LOG_TARGET, "Failed to verify DA samples for block {:?}: {}", block_hash, e)
+				},
+			}
 		}
 	}
 
-	async fn request_cell_proofs(
+	async fn verify_block(&self, block_hash: H256, header: DaHeader) -> Result<(), SamplingError> {
+		let dimensions = Dimensions::new(header.extension.rows(), header.extension.cols())
+			.ok_or_else(|| {
+				error!(target: LOG_TARGET, "Invalid dimensions");
+				SamplingError::RequestFailure(format!("Invalid dimensions fro {block_hash:?}"))
+			})?;
+
+		let cells = generate_random_cells(dimensions, CELL_COUNT);
+
+		let commitments = match header.extension {
+			HeaderExtension::V3(ext) => ext.commitment.commitment,
+			HeaderExtension::V4(ext) => ext.commitment.commitment,
+		};
+
+		let original_commitments: Vec<ArkCommitment> = commitments
+			.chunks_exact(48)
+			.map(|chunk| {
+				ArkCommitment::from_bytes(chunk.try_into().expect("48 bytes")).map_err(|e| {
+					error!(target: LOG_TARGET, "Invalid commitment: {e}");
+					SamplingError::RequestFailure(format!("Invalid commitment: {e}"))
+				})
+			})
+			.collect::<Result<_, _>>()?;
+
+		let extended_commitments = ArkCommitment::extend_commitments(
+			&original_commitments,
+			original_commitments.len() * 2,
+		)
+		.map_err(|e| {
+			error!(target: LOG_TARGET, "Commitment extension failed: {e}");
+			SamplingError::RequestFailure(format!("Commitment extension failed: {e}"))
+		})?;
+
+		let commitments: Vec<_> = extended_commitments
+			.into_iter()
+			.map(|c| {
+				c.to_bytes().map_err(|e| {
+					error!(target: LOG_TARGET, "Invalid commitment bytes: {e}");
+					SamplingError::RequestFailure(format!("Invalid commitment bytes: {e}"))
+				})
+			})
+			.collect::<Result<_, _>>()?;
+
+		let peers = self
+			.network
+			.reserved_peers()
+			.await
+			.map_err(|_| SamplingError::NoPeersAvailable)?;
+
+		if peers.is_empty() {
+			return Err(SamplingError::NoPeersAvailable);
+		}
+
+		let request = SamplingRequest {
+			cells,
+			block_hash: block_hash.as_ref().to_vec(),
+		};
+
+		let mut retry_count = 0;
+		let mut verification_success = false;
+		let mut failed_cells = Vec::new();
+
+		while retry_count < MAX_RETRIES && !verification_success {
+			if self.verification_tracker.should_shutdown() {
+				break;
+			}
+
+			debug!(target: LOG_TARGET, "Attempt {} for block {:?}", retry_count + 1, block_hash);
+
+			let futures = peers.iter().map(|peer| {
+				self.request_and_verify_cells(
+					*peer,
+					request.clone(),
+					commitments.clone(),
+					dimensions,
+				)
+			});
+
+			let results = futures::future::join_all(futures).await;
+
+			// Process results
+			let mut temp_failed_cells = Vec::new();
+			for result in results {
+				match result {
+					Ok(failed) => {
+						if failed.is_empty() {
+							verification_success = true;
+						} else {
+							temp_failed_cells.extend(failed);
+						}
+					},
+					Err(e) => {
+						warn!(target: LOG_TARGET, "Peer verification failed: {e}");
+					},
+				}
+			}
+
+			if !verification_success {
+				failed_cells = temp_failed_cells;
+				self.verification_tracker
+					.record_failed_cells(block_hash, failed_cells.clone());
+				retry_count += 1;
+				self.verification_tracker.increment_retry(block_hash);
+				sleep(Duration::from_secs(1)).await;
+			}
+		}
+		Ok(())
+	}
+
+	async fn request_and_verify_cells(
 		&self,
 		peer: PeerId,
 		request: SamplingRequest,
 		commitments: Vec<[u8; 48]>,
 		dimensions: Dimensions,
-	) -> Result<(), SamplingError> {
+	) -> Result<Vec<CellCoordinate>, SamplingError> {
 		let mut buf = Vec::with_capacity(request.encoded_len());
 		request
 			.encode(&mut buf)
@@ -286,10 +474,24 @@ where
 		);
 
 		debug!(target: LOG_TARGET, "Sent request to {peer}");
-		let response = rx
-			.await
-			.map_err(|_| SamplingError::RequestFailure("Channel closed".into()))?
-			.map_err(|_| SamplingError::RequestFailure("Request failed".into()))?;
+
+		let response = match timeout(PEER_RESPONSE_TIMEOUT, rx).await {
+			Ok(Ok(Ok(response))) => response,
+			Ok(Ok(Err(e))) => {
+				warn!(target: LOG_TARGET, "Request to {peer} failed: {e}");
+				return Err(SamplingError::RequestFailure(format!(
+					"Request to {peer} failed: {e}"
+				)));
+			},
+			Ok(Err(_)) => {
+				warn!(target: LOG_TARGET, "Channel closed for peer {peer}");
+				return Err(SamplingError::RequestFailure("Channel closed".into()));
+			},
+			Err(_) => {
+				warn!(target: LOG_TARGET, "Request to {peer} timed out");
+				return Err(SamplingError::Timeout);
+			},
+		};
 
 		let decoded = SamplingResponse::decode(&*response.0)?;
 		trace!(target: LOG_TARGET, "Received response from {peer}: {:?}", decoded);
@@ -322,18 +524,28 @@ where
 			.collect::<Vec<_>>();
 
 		let pp = PP.get_or_init(multiproof_params);
-		for cell in cells {
+		let mut failed_cells = Vec::new();
+
+		for (cell, coord) in cells.into_iter().zip(request.cells.iter()) {
 			if let Err(e) = verify_v2(
 				pp,
 				dimensions,
 				&commitments[cell.position.row as usize],
 				&cell,
 			) {
-				error!(target: LOG_TARGET, "Cell proof verification failed: {e}");
+				warn!(
+					target: LOG_TARGET,
+					"Cell proof verification failed for {:?}: {e}", coord
+				);
+				failed_cells.push(coord.clone());
 			}
 		}
 
-		Ok(())
+		if !failed_cells.is_empty() {
+			Ok(failed_cells)
+		} else {
+			Ok(Vec::new())
+		}
 	}
 }
 

@@ -18,6 +18,7 @@ futures.workspace = true
 libp2p-identity = { workspace = true, features = ["peerid"] }
 log.workspace = true
 prost.workspace = true
+parking_lot.workspace = true
 rand.workspace = true
 thiserror.workspace = true
 tokio.workspace = true

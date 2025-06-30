@@ -2534,6 +2534,7 @@ dependencies = [
  "kate-recovery",
  "libp2p-identity",
  "log",
+ "parking_lot 0.12.3",
  "prost 0.12.6",
  "prost-build",
  "rand",
