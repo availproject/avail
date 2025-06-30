@@ -326,7 +326,9 @@ where
 
 			let header: DaHeader = notification.header;
 			if header.extension.app_lookup().is_empty() {
-				trace!(target: LOG_TARGET, "Block does not have any DA txs, skipping DA verification for {:?}", block_hash);
+				trace!(target: LOG_TARGET, "Block does not have any DA txs, marking as verified {:?}", block_hash);
+				self.verification_tracker
+					.set_status(block_hash, BlockVerificationStatus::Verified);
 				continue;
 			}
 			trace!(target: LOG_TARGET, "Processing DA samples for block {:?}", block_hash);
@@ -343,6 +345,8 @@ where
 	}
 
 	async fn verify_block(&self, block_hash: H256, header: DaHeader) -> Result<(), SamplingError> {
+		self.verification_tracker
+			.set_status(block_hash, BlockVerificationStatus::InProgress);
 		let dimensions = Dimensions::new(header.extension.rows(), header.extension.cols())
 			.ok_or_else(|| {
 				error!(target: LOG_TARGET, "Invalid dimensions");
@@ -448,7 +452,16 @@ where
 				sleep(Duration::from_secs(1)).await;
 			}
 		}
-		Ok(())
+
+		if verification_success {
+			self.verification_tracker
+				.set_status(block_hash, BlockVerificationStatus::Verified);
+			Ok(())
+		} else {
+			self.verification_tracker
+				.set_status(block_hash, BlockVerificationStatus::Failed);
+			Err(SamplingError::VerificationFailed)
+		}
 	}
 
 	async fn request_and_verify_cells(
