@@ -303,9 +303,8 @@ pub mod pallet {
 
 		#[pallet::call_index(5)]
 		#[pallet::weight((
-			weight_helper::submit_data::<T>(*size as usize),
-			DispatchClass::Normal,
-			SubmitDataFeeModifier::<T>::get()
+			T::WeightInfo::set_submit_data_fee_modifier(),
+			DispatchClass::Normal
 		))]
 		pub fn submit_blob_metadata(
 			origin: OriginFor<T>,
@@ -335,7 +334,7 @@ pub mod pallet {
 		))]
 		pub fn failed_submit_blob_txs(
 			origin: OriginFor<T>,
-			_failed_txs: Vec<H256>,
+			_failed_txs: Vec<(H256, String)>,
 		) -> DispatchResult {
 			ensure_none(origin)?;
 			Ok(())

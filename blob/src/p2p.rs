@@ -1,155 +1,216 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{path::Path, sync::Arc};
 
 use crate::{
-	decode_blob_notification, decode_blob_request,
+	decode_blob_notification, handle_incoming_blob_request,
 	store::RocksdbShardStore,
-	types::{BlobNotification, FullClient},
+	types::{BlobGossipValidator, BlobNotification, FullClient, BLOB_GOSSIP_PROTO, BLOB_REQ_PROTO},
+	LOG_TARGET, NOTIFICATION_MAX_SIZE, REQUEST_MAX_SIZE, REQUEST_TIME_OUT, RESPONSE_MAX_SIZE,
 };
-use async_channel::Receiver;
 use codec::Encode;
-use futures::FutureExt;
+use futures::{FutureExt, StreamExt};
 use once_cell::sync::OnceCell;
-use parking_lot::Mutex;
 use sc_keystore::LocalKeystore;
 use sc_network::{
-	config::{IncomingRequest, Role},
-	service::traits::NotificationEvent,
-	NetworkPeers, NetworkService, NotificationService, ObservedRole, PeerId,
+	config::{NonDefaultSetConfig, RequestResponseConfig, Role}, NetworkService, NotificationService
 };
+use sc_network_gossip::GossipEngine;
+use sc_network_sync::SyncingService;
+use sc_service::SpawnTaskHandle;
 use sp_runtime::traits::Block as BlockT;
 use tokio::sync::mpsc;
 
 #[derive(Clone)]
-pub struct NetworkHandle<Block>
+pub struct BlobHandle<Block>
 where
 	Block: BlockT,
 {
-	pub blob_notification_sender: mpsc::UnboundedSender<BlobNotification>,
 	pub network: Arc<OnceCell<Arc<NetworkService<Block, <Block as BlockT>::Hash>>>>,
+	pub sync_service: Arc<OnceCell<Arc<SyncingService<Block>>>>,
+	pub gossip_cmd_sender: Arc<OnceCell<mpsc::UnboundedSender<BlobNotification>>>,
 	pub keystore: Arc<OnceCell<Arc<LocalKeystore>>>,
 	pub client: Arc<OnceCell<Arc<FullClient>>>,
+	pub shard_store: Arc<RocksdbShardStore>,
+	pub role: Role,
 }
 
-impl<Block> NetworkHandle<Block>
+impl<Block> BlobHandle<Block>
 where
 	Block: BlockT,
 {
-	pub fn register_network(&self, network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>) {
+	pub fn new_blob_service(
+		path: &Path,
+		role: Role,
+	) -> (
+		Arc<Self>,
+		RequestResponseConfig,
+		NonDefaultSetConfig,
+		Box<dyn NotificationService>,
+	) {
+		// Initialize the shard store
+		let db_path = path.join("blob_store");
+		let shard_store =
+			Arc::new(RocksdbShardStore::open(db_path).expect("opening RocksDB blob store failed"));
+
+		// Initialize the blob shard req/res protocol config
+		let (request_sender, request_receiver) = async_channel::unbounded();
+		let blob_req_res_cfg = RequestResponseConfig {
+			name: BLOB_REQ_PROTO,
+			fallback_names: vec![],
+			max_request_size: REQUEST_MAX_SIZE,
+			max_response_size: RESPONSE_MAX_SIZE,
+			request_timeout: REQUEST_TIME_OUT,
+			inbound_queue: Some(request_sender),
+		};
+
+		// Initialize the blob gossip protocol config
+		let (blob_gossip_cfg, blob_gossip_service) = NonDefaultSetConfig::new(
+			BLOB_GOSSIP_PROTO,
+			Vec::default(),
+			NOTIFICATION_MAX_SIZE,
+			None,
+			Default::default(),
+		);
+
+		let network = Arc::new(OnceCell::new());
+		let sync_service = Arc::new(OnceCell::new());
+		let keystore = Arc::new(OnceCell::new());
+		let client = Arc::new(OnceCell::new());
+		let gossip_cmd_sender = Arc::new(OnceCell::new());
+		let shard_store_clone = shard_store.clone();
+
+		tokio::spawn({
+			async move {
+				loop {
+					futures::select! {
+						// Request response handler
+						maybe_req = request_receiver.recv().fuse() => {
+							if let Ok(request) = maybe_req {
+								handle_incoming_blob_request(request, &shard_store_clone);
+							} else {
+								break;
+							}
+						}
+
+
+					}
+				}
+			}
+		});
+
+		let blob_handle = BlobHandle {
+			network,
+			keystore,
+			client,
+			sync_service,
+			gossip_cmd_sender,
+			shard_store,
+			role,
+		};
+
+		log::info!(target: LOG_TARGET, "Blob service correctly initialized");
+		(
+			Arc::new(blob_handle),
+			blob_req_res_cfg,
+			blob_gossip_cfg,
+			blob_gossip_service,
+		)
+	}
+
+	pub fn start_blob_gossip(
+		&self,
+		spawn_handle: SpawnTaskHandle,
+		notif_service: Box<dyn NotificationService>,
+	) {
+		log::info!(target: LOG_TARGET, "Blob gossip protocol initialized");
+		let network = self.network.get().expect("Network should be registered");
+		let sync_service = self
+			.sync_service
+			.get()
+			.expect("Syncing service should be registered");
+		let validator: Arc<BlobGossipValidator> = Arc::new(BlobGossipValidator);
+
+		let mut gossip_engine = GossipEngine::<Block>::new(
+			network.clone(),
+			sync_service.clone(),
+			notif_service,
+			BLOB_GOSSIP_PROTO,
+			validator,
+			None,
+		);
+
+		let topic = Block::Hash::default();
+		let mut incoming_receiver = gossip_engine.messages_for(topic);
+
+		let (gossip_cmd_sender, mut gossip_cmd_receiver) =
+			mpsc::unbounded_channel::<BlobNotification>();
+
+		spawn_handle.spawn("gossip-sender", None, async move {
+			loop {
+				futures::select! {
+					() = (&mut gossip_engine).fuse() => break,
+					maybe_cmd = gossip_cmd_receiver.recv().fuse() => {
+						match maybe_cmd {
+							Some(blob_notification) => {
+								gossip_engine.gossip_message(topic, blob_notification.encode(), false)
+							},
+							_ => break,
+						}
+					}
+				}
+			}
+		});
+
+		spawn_handle.spawn("gossip-listener", None, {
+			let blob_handle = self.clone();
+			async move {
+				while let Some(notification) = incoming_receiver.next().await {
+					if let Some(_peer) = notification.sender {
+						decode_blob_notification(
+							&notification.message,
+							&blob_handle
+						)
+						.await;
+					};
+				}
+			}
+		});
+
+		self.gossip_cmd_sender
+			.set(gossip_cmd_sender)
+			.map_err(|_| "Setting gossip_cmd_sender called more than once")
+			.expect("Registering gossip_cmd_sender cannot fail");
+	}
+
+	pub fn register_network_and_sync(
+		&self,
+		network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
+		sync_service: Arc<SyncingService<Block>>,
+	) {
+		log::info!(target: LOG_TARGET, "Registering network");
 		self.network
 			.set(network)
-			.map_err(|_| "NetworkHandle::register_network called more than once")
+			.map_err(|_| "BlobHandle::register_network called more than once")
 			.expect("Registering network cannot fail");
+
+		self.sync_service
+			.set(sync_service)
+			.map_err(|_| "BlobHandle::register_sync_service called more than once")
+			.expect("Registering sync_state cannot fail");
 	}
 
 	pub fn register_keystore(&self, keystore: Arc<LocalKeystore>) {
+		log::info!(target: LOG_TARGET, "Registering keystore");
 		self.keystore
 			.set(keystore)
-			.map_err(|_| "NetworkHandle::register_keystore called more than once")
+			.map_err(|_| "BlobHandle::register_keystore called more than once")
 			.expect("Registering keystore cannot fail");
 	}
 
 	pub fn register_client(&self, client: Arc<FullClient>) {
+		log::info!(target: LOG_TARGET, "Registering client");
 		self.client
 			.set(client)
-			.map_err(|_| "NetworkHandle::register_client called more than once")
+			.map_err(|_| "BlobHandle::register_client called more than once")
 			.expect("Registering client cannot fail");
-	}
-}
-
-pub fn spawn<Block>(
-	store: Arc<RocksdbShardStore>,
-	mut svc: Box<dyn NotificationService + Send>,
-	request_receiver: Receiver<IncomingRequest>,
-	role: Role,
-) -> NetworkHandle<Block>
-where
-	Block: BlockT,
-{
-	let peers: Arc<Mutex<HashMap<PeerId, Option<ObservedRole>>>> =
-		Arc::new(Mutex::new(HashMap::new()));
-	let (blob_notification_sender, mut blob_notification_receiver) =
-		mpsc::unbounded_channel::<BlobNotification>();
-	let network = Arc::new(OnceCell::new());
-	let keystore = Arc::new(OnceCell::new());
-	let client = Arc::new(OnceCell::new());
-
-	tokio::spawn({
-		let network = network.clone();
-		let keystore = keystore.clone();
-		let client = client.clone();
-
-		async move {
-			loop {
-				futures::select! {
-					// Notification dispatcher
-					maybe_cmd = blob_notification_receiver.recv().fuse() => {
-						if let Some(annoucement) = maybe_cmd {
-							let data = annoucement.encode();
-							// Sending the notification only to authorities that need to handle it.
-							let snapshot: Vec<PeerId> = peers.lock().iter().filter_map(|(peer_id, role_opt)| {
-								match role_opt {
-									Some(ObservedRole::Authority) => Some(peer_id.clone()),
-									_ => None,
-								}
-							}).collect();
-							for peer in snapshot {
-								let _ = svc.send_async_notification(&peer, data.clone()).await.map_err(|e| {
-									log::error!("Failed to send announcement notification to peer: {peer:?} - Error: {e:?}");
-								});
-							}
-						} else {
-							break;
-						}
-					}
-
-					// Notification handler
-					maybe_evt = svc.next_event().fuse() => {
-						if let Some(evt) = maybe_evt {
-							match evt {
-								NotificationEvent::NotificationStreamOpened { peer, handshake, .. } => {
-									let net: &Arc<NetworkService<Block, <Block as BlockT>::Hash>> = network.get().unwrap();
-									let peer_role = net.peer_role(peer, handshake);
-
-									if let Some(peer_role) = peer_role {
-										peers.lock().insert(peer, Some(peer_role));
-									}
-								}
-								NotificationEvent::NotificationStreamClosed { peer } => {
-									peers.lock().remove(&peer);
-								}
-								NotificationEvent::NotificationReceived { peer, notification } => {
-									decode_blob_notification(&notification, &network, peer, &store, &keystore, &role, &client).await;
-								}
-								NotificationEvent::ValidateInboundSubstream {..} => {
-									// Nothing since we don't do handshake or peer validation for now
-								}
-							}
-						} else {
-							break;
-						}
-					},
-
-					// Request response handler
-					maybe_req = request_receiver.recv().fuse() => {
-						if let Ok(request) = maybe_req {
-							let peer = request.peer;
-							let peer_role = peers.lock().get(&peer).cloned().unwrap_or(None);
-							decode_blob_request(request, &store, &peer_role).await;
-						} else {
-							break;
-						}
-					}
-
-
-				}
-			}
-		}
-	});
-
-	NetworkHandle {
-		blob_notification_sender,
-		network,
-		keystore,
-		client,
 	}
 }

@@ -1,5 +1,5 @@
 [package]
-name = "blob"
+name = "avail-blob"
 version = "0.1.0"
 edition = "2021"
 
@@ -16,7 +16,10 @@ da-commitment = { workspace = true, default-features = false }
 sp-core = { workspace = true, default-features = false }
 sp-runtime = { workspace = true, default-features = false }
 sp-api = { workspace = true, default-features = false }
+sp-std = { workspace = true, default-features = false }
 sc-network = { workspace = true, default-features = false }
+sc-network-gossip = { workspace = true, default-features = false }
+sc-network-sync = { workspace = true, default-features = false }
 sc-client-api = { workspace = true, default-features = false }
 sc-service = { workspace = true, default-features = false }
 sc-executor = { workspace = true, default-features = false }

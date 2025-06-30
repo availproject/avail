@@ -1,8 +1,7 @@
-mod max_block_submit;
+// mod max_block_submit;
 mod infinity_da_test;
 
-use avail_rust::prelude::*;
-use std::time::Duration;
+use avail_rust_client::prelude::*;
 
 #[tokio::main]
 async fn main() -> Result<(), ClientError> {
@@ -12,17 +11,17 @@ async fn main() -> Result<(), ClientError> {
 	Ok(())
 }
 
-pub async fn wait_for_new_block(sdk: &SDK) -> Result<(), ClientError> {
-	let current_block = sdk.client.best_block_number().await?;
-	loop {
-		let new_block = sdk.client.best_block_number().await?;
-		if current_block != new_block {
-			break Ok(());
-		}
+// pub async fn wait_for_new_block(sdk: &SDK) -> Result<(), ClientError> {
+// 	let current_block = sdk.client.best_block_number().await?;
+// 	loop {
+// 		let new_block = sdk.client.best_block_number().await?;
+// 		if current_block != new_block {
+// 			break Ok(());
+// 		}
 
-		tokio::time::sleep(Duration::from_secs(1)).await;
-	}
-}
+// 		tokio::time::sleep(Duration::from_secs(1)).await;
+// 	}
+// }
 /*
 #[cfg(test)]
 mod tests {

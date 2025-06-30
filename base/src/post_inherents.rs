@@ -61,7 +61,7 @@ decl_runtime_apis! {
 	#[core_trait]
 	#[allow(unused_imports)]
 	pub trait PostInherentsProvider {
-		fn create_post_inherent_extrinsics(data: StorageMap, failed_txs: Vec<sp_core::H256>) -> Vec<<Block as BlockT>::Extrinsic>;
+		fn create_post_inherent_extrinsics(data: StorageMap, failed_txs: Vec<(sp_core::H256, String)>) -> Vec<<Block as BlockT>::Extrinsic>;
 	}
 }
 

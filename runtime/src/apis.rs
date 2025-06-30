@@ -454,7 +454,7 @@ impl_runtime_apis! {
 	}
 
 	impl avail_base::PostInherentsProvider<Block> for Runtime {
-		fn create_post_inherent_extrinsics(data: avail_base::StorageMap, failed_txs: Vec<H256>) -> Vec<<Block as BlockT>::Extrinsic> {
+		fn create_post_inherent_extrinsics(data: avail_base::StorageMap, failed_txs: Vec<(H256, String)>) -> Vec<<Block as BlockT>::Extrinsic> {
 			let mut post_inherent_extrinsics: Vec<<Block as BlockT>::Extrinsic> = pallet_vector::Pallet::<Runtime>::create_inherent(&data)
 				.into_iter()
 				.filter_map(|inherent| {

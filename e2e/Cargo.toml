@@ -6,12 +6,13 @@ edition = "2021"
 [workspace]
 
 [dependencies]
-avail-rust = { git = "https://github.com/availproject/avail-rust", tag = "v0.1.4" }
+avail-rust-client = { git = "https://github.com/availproject/avail-rust", branch = "ghali/infinity-da-rpc" }
 da-commitment = { path = "../da-commitment" }
-sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-12", default-features = false }
-kate = { path = "../../avail-core/kate/", default-features = false, features = ["std"]}
+sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-12", default-features = false, features = ["std"] }
+sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", tag = "polkadot-1.7.1-patch-12", default-features = false, features = ["std"] }
+kate = { git = "https://github.com/availproject/avail-core", branch = "ghali/infinity-da-rpc", default-features = false, features = ["std"] }
 hex = "0.4"
 
 # Other
 serde = { version = "1.0.195", default-features = false, features = [ "derive", "alloc" ] }
-tokio = { version = "1.43.0", features = ["sync", "fs", "macros", "rt-multi-thread"] }
+tokio = { version = "1.45.1", features = ["sync", "fs", "macros", "rt-multi-thread"] }

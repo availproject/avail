@@ -21,10 +21,12 @@
 // FIXME #1021 move this into sp-consensus
 use avail_base::{PostInherentsBackend, PostInherentsProvider};
 
-use blob::{sample_and_get_failed_blobs, store::RocksdbShardStore, types::BlobNotification};
-use codec::{Decode, Encode};
-use da_control::Call;
-use da_runtime::{RuntimeCall, UncheckedExtrinsic };
+use avail_blob::{
+	store::RocksdbShardStore,
+	types::BlobMetadata,
+	utils::{check_if_wait_next_block, sample_and_get_failed_blobs},
+};
+use codec::Encode;
 use futures::{
 	channel::oneshot,
 	future::{self, Future, FutureExt},
@@ -44,11 +46,11 @@ use sp_runtime::{
 	traits::{BlakeTwo256, Block as BlockT, Hash as HashT, Header as HeaderT},
 	Digest, Percent, SaturatedConversion,
 };
-use std::{marker::PhantomData, pin::Pin, sync::Arc, time};
+use sp_transaction_pool::runtime_api::TaggedTransactionQueue;
+use std::{collections::BTreeMap, marker::PhantomData, pin::Pin, sync::Arc, time};
 
 use sc_proposer_metrics::{EndProposingReason, MetricsLink as PrometheusMetrics};
 use substrate_prometheus_endpoint::Registry as PrometheusRegistry;
-use tokio::sync::mpsc::UnboundedSender;
 
 /// Default block size limit in bytes used by [`Proposer`].
 ///
@@ -90,8 +92,6 @@ pub struct ProposerFactory<A, C, B: BlockT, PR> {
 	include_proof_in_block_size_estimation: bool,
 	/// Network service to send and submit request for blob data
 	network: Arc<NetworkService<B, <B as BlockT>::Hash>>,
-	/// Blob notification service to send notification for blob data
-	blob_notif_sender: UnboundedSender<BlobNotification>,
 	/// Shard store to check what the client already has for blob data
 	shard_store: Arc<RocksdbShardStore>,
 	/// phantom member to pin the `ProofRecording` type.
@@ -113,7 +113,6 @@ where
 		prometheus: Option<&PrometheusRegistry>,
 		telemetry: Option<TelemetryHandle>,
 		network: Arc<NetworkService<B, <B as BlockT>::Hash>>,
-		blob_notif_sender: UnboundedSender<BlobNotification>,
 		shard_store: Arc<RocksdbShardStore>,
 	) -> Self {
 		ProposerFactory {
@@ -126,7 +125,6 @@ where
 			client,
 			include_proof_in_block_size_estimation: false,
 			network,
-			blob_notif_sender,
 			shard_store,
 			_phantom: PhantomData,
 		}
@@ -150,7 +148,6 @@ where
 		prometheus: Option<&PrometheusRegistry>,
 		telemetry: Option<TelemetryHandle>,
 		network: Arc<NetworkService<B, <B as BlockT>::Hash>>,
-		blob_notif_sender: UnboundedSender<BlobNotification>,
 		shard_store: Arc<RocksdbShardStore>,
 	) -> Self {
 		ProposerFactory {
@@ -163,7 +160,6 @@ where
 			telemetry,
 			include_proof_in_block_size_estimation: true,
 			network,
-			blob_notif_sender,
 			shard_store,
 			_phantom: PhantomData,
 		}
@@ -217,7 +213,10 @@ where
 		+ Send
 		+ Sync
 		+ 'static,
-	C::Api: ApiExt<Block> + BlockBuilderApi<Block> + PostInherentsProvider<Block>,
+	C::Api: ApiExt<Block>
+		+ BlockBuilderApi<Block>
+		+ PostInherentsProvider<Block>
+		+ TaggedTransactionQueue<Block>,
 {
 	fn init_with_now(
 		&mut self,
@@ -243,7 +242,6 @@ where
 			soft_deadline_percent: self.soft_deadline_percent,
 			telemetry: self.telemetry.clone(),
 			network: self.network.clone(),
-			blob_notif_sender: self.blob_notif_sender.clone(),
 			shard_store: self.shard_store.clone(),
 			_phantom: PhantomData,
 			include_proof_in_block_size_estimation: self.include_proof_in_block_size_estimation,
@@ -264,7 +262,10 @@ where
 		+ Send
 		+ Sync
 		+ 'static,
-	C::Api: ApiExt<Block> + BlockBuilderApi<Block> + PostInherentsProvider<Block>,
+	C::Api: ApiExt<Block>
+		+ BlockBuilderApi<Block>
+		+ PostInherentsProvider<Block>
+		+ TaggedTransactionQueue<Block>,
 	PR: ProofRecording,
 {
 	type CreateProposer = future::Ready<Result<Self::Proposer, Self::Error>>;
@@ -292,7 +293,6 @@ pub struct Proposer<Block: BlockT, C, A: TransactionPool, PR> {
 	soft_deadline_percent: Percent,
 	telemetry: Option<TelemetryHandle>,
 	network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
-	blob_notif_sender: UnboundedSender<BlobNotification>,
 	shard_store: Arc<RocksdbShardStore>,
 	_phantom: PhantomData<PR>,
 }
@@ -308,7 +308,10 @@ where
 		+ Send
 		+ Sync
 		+ 'static,
-	C::Api: ApiExt<Block> + BlockBuilderApi<Block> + PostInherentsProvider<Block>,
+	C::Api: ApiExt<Block>
+		+ BlockBuilderApi<Block>
+		+ PostInherentsProvider<Block>
+		+ TaggedTransactionQueue<Block>,
 	PR: ProofRecording,
 {
 	type Proposal =
@@ -365,7 +368,10 @@ where
 		+ Send
 		+ Sync
 		+ 'static,
-	C::Api: ApiExt<Block> + BlockBuilderApi<Block> + PostInherentsProvider<Block>,
+	C::Api: ApiExt<Block>
+		+ BlockBuilderApi<Block>
+		+ PostInherentsProvider<Block>
+		+ TaggedTransactionQueue<Block>,
 	PR: ProofRecording,
 {
 	async fn propose_with(
@@ -456,7 +462,7 @@ where
 	fn apply_post_inherents(
 		&self,
 		block_builder: &mut sc_block_builder::BlockBuilder<'_, Block, C>,
-		failed_blob_hashes: Vec<H256>,
+		failed_blob_hashes: Vec<(H256, String)>,
 	) -> Result<(), sp_blockchain::Error> {
 		let data = self.client.post_inherent_data();
 		let post_inherents: Vec<_> = self
@@ -498,7 +504,7 @@ where
 		block_builder: &mut sc_block_builder::BlockBuilder<'_, Block, C>,
 		deadline: time::Instant,
 		block_size_limit: Option<usize>,
-	) -> Result<(EndProposingReason, Vec<H256>), sp_blockchain::Error> {
+	) -> Result<(EndProposingReason, Vec<(H256, String)>), sp_blockchain::Error> {
 		// proceed with transactions
 		// We calculate soft deadline used only in case we start skipping transactions.
 		let now = (self.now)();
@@ -532,6 +538,7 @@ where
 		let mut transaction_pushed = false;
 
 		let mut submit_blob_metadata_calls = Vec::new();
+		let mut blob_metadata: BTreeMap<H256, BlobMetadata> = BTreeMap::new();
 
 		let end_reason = loop {
 			let pending_tx = if let Some(pending_tx) = pending_iterator.next() {
@@ -588,26 +595,29 @@ where
 				}
 			}
 
+			let encoded = pending_tx_data.clone().encode();
+			let (should_continue, submit_blob_metadata_pushed) = check_if_wait_next_block(
+				&self.client,
+				&self.shard_store,
+				encoded.clone(),
+				&mut submit_blob_metadata_calls,
+				&mut blob_metadata,
+			);
+			if should_continue {
+				continue;
+			}
+
 			trace!(target: LOG_TARGET, "[{:?}] Pushing to the block.", pending_tx_hash);
-			match sc_block_builder::BlockBuilder::push(block_builder, pending_tx_data.clone()) {
+			match sc_block_builder::BlockBuilder::push(block_builder, pending_tx_data) {
 				Ok(()) => {
 					transaction_pushed = true;
 					debug!(target: LOG_TARGET, "[{:?}] Pushed to the block.", pending_tx_hash);
-
-					let extrinsic: Option<UncheckedExtrinsic> =
-						Decode::decode(&mut &pending_tx_data.encode()[..]).ok();
-					if let Some(extrinsic) = extrinsic {
-						let extrinsic_data = extrinsic.function;
-						if matches!(
-							extrinsic_data,
-							RuntimeCall::DataAvailability(Call::submit_blob_metadata { .. })
-						) {
-							submit_blob_metadata_calls.push(extrinsic_data);
-						}
-					}
 				},
 				Err(ApplyExtrinsicFailed(Validity(e))) if e.exhausted_resources() => {
 					pending_iterator.report_invalid(&pending_tx);
+					if submit_blob_metadata_pushed {
+						submit_blob_metadata_calls.pop();
+					}
 					if skipped < MAX_SKIPPED_TRANSACTIONS {
 						skipped += 1;
 						debug!(target: LOG_TARGET,
@@ -629,6 +639,9 @@ where
 				},
 				Err(e) => {
 					pending_iterator.report_invalid(&pending_tx);
+					if submit_blob_metadata_pushed {
+						submit_blob_metadata_calls.pop();
+					}
 					debug!(
 						target: LOG_TARGET,
 						"[{:?}] Invalid transaction: {}", pending_tx_hash, e
@@ -645,13 +658,16 @@ where
 			);
 		}
 
-		let failed_blob_hashes = sample_and_get_failed_blobs(
-			&submit_blob_metadata_calls,
-			self.network.clone(),
-			self.blob_notif_sender.clone(),
-			self.shard_store.clone(),
-		)
-		.await;
+		let failed_blob_hashes = if submit_blob_metadata_calls.len() > 0 {
+			sample_and_get_failed_blobs(
+				&submit_blob_metadata_calls,
+				self.network.clone(),
+				blob_metadata,
+			)
+			.await
+		} else {
+			Vec::new()
+		};
 
 		self.transaction_pool.remove_invalid(&unqueue_invalid);
 		Ok((end_reason, failed_blob_hashes))

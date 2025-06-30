@@ -1,13 +1,9 @@
 use crate::{
-	get_my_validator_id, get_shards_to_store,
-	p2p::NetworkHandle,
-	store::{RocksdbShardStore, ShardStore},
-	types::{BlobMetadata, BlobNotification, Deps, Shard},
-	BLOB_TTL, MAX_BLOB_SIZE, MIN_TRANSACTION_VALIDITY, SHARD_SIZE, TMP_BLOB_TTL,
+	p2p::BlobHandle, store::ShardStore, types::{BlobMetadata, BlobNotification, BlobReceived, Deps, Shard}, utils::{get_my_validator_id, get_nb_shards_from_blob_size, get_shards_to_store}, LOG_TARGET, MAX_BLOB_SIZE, MAX_TRANSACTION_VALIDITY, MIN_TRANSACTION_VALIDITY, SHARD_SIZE
 };
 use anyhow::{anyhow, Result};
-use da_commitment::build_da_commitments::build_da_commitments;
 use codec::Decode;
+use da_commitment::build_da_commitments::build_da_commitments;
 use da_control::Call;
 use da_runtime::{RuntimeCall, UncheckedExtrinsic};
 use jsonrpsee::{
@@ -19,15 +15,18 @@ use kate::Seed;
 use sc_authority_discovery::AuthorityDiscovery;
 use sc_client_api::{BlockBackend, HeaderBackend};
 use sc_keystore::LocalKeystore;
+use sc_network::NetworkStateInfo;
 use sc_service::Role;
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::ProvideRuntimeApi;
+use sp_authority_discovery::AuthorityId;
 use sp_core::{blake2_256, Bytes, H256};
 use sp_runtime::transaction_validity::TransactionSource;
 use sp_runtime::{traits::Block as BlockT, SaturatedConversion};
 use sp_transaction_pool::runtime_api::TaggedTransactionQueue;
 use std::{
 	cmp,
+	collections::BTreeMap,
 	marker::{PhantomData, Sync},
 	sync::Arc,
 };
@@ -66,10 +65,7 @@ where
 pub struct BlobRpc<Client, Pool, Block: BlockT> {
 	client: Arc<Client>,
 	pool: Arc<Pool>,
-	store: Arc<RocksdbShardStore>,
-	network: Arc<NetworkHandle<Block>>,
-	keystore: Option<Arc<LocalKeystore>>,
-	role: Role,
+	blob_handle: Arc<BlobHandle<Block>>,
 	_block: PhantomData<Block>,
 }
 
@@ -78,10 +74,7 @@ impl<Client, Pool, Block: BlockT> BlobRpc<Client, Pool, Block> {
 		Self {
 			client,
 			pool,
-			store: deps.shard_store,
-			network: deps.blob_handle,
-			keystore: deps.keystore,
-			role: deps.role,
+			blob_handle: deps.blob_handle,
 			_block: PhantomData,
 		}
 	}
@@ -138,10 +131,16 @@ where
 			));
 		};
 
-		// --- 3. Todo, check also that transaction lifetime is above minimum tx lifetime so it does not expire. If validity is not correct, we reject the tx
+		// --- 3. Check also that transaction lifetime is above minimum tx lifetime so it does not expire. If validity is not correct, we reject the tx
 		if validity.longevity < MIN_TRANSACTION_VALIDITY {
 			return Err(internal_err!(
 				"signed transaction does not live for enough time"
+			));
+		}
+
+		if validity.longevity > MAX_TRANSACTION_VALIDITY {
+			return Err(internal_err!(
+				"signed transaction lifetime is too long"
 			));
 		}
 
@@ -151,10 +150,11 @@ where
 			Decode::decode(&mut &metadata_signed_transaction[..])
 				.map_err(|_| internal_err!("failed to decode concrete metadata call"))?;
 
+		let commitments: Vec<u8>;
 		if let RuntimeCall::DataAvailability(Call::submit_blob_metadata {
 			size,
 			blob_hash: provided_blob_hash,
-			commitments,
+			commitments: provided_commitments,
 		}) = encoded_metadata_signed_transaction.function
 		{
 			// Check size
@@ -172,14 +172,13 @@ where
 			}
 
 			// Check commitments
+			commitments = provided_commitments;
 			let generated_commitment =
-				build_da_commitments(blob.to_vec(), 512, 512, Seed::default())
+				build_da_commitments(blob.to_vec(), 1024, 2048, Seed::default())
 					.map_err(|e| internal_err!("Build commitment error: {e:?}"))?;
 			if commitments != generated_commitment {
 				return Err(internal_err!("submitted blob commitments: {commitments:?} does not correspond to generated commitments {generated_commitment:?}"));
 			}
-
-			println!("ALL CHECKS WENT FINE: {generated_commitment:?} VS {commitments:?}");
 		} else {
 			return Err(internal_err!(
 				"metadata extrinsic must be dataAvailability.submitBlobMetadata"
@@ -187,60 +186,86 @@ where
 		}
 
 		// --- 5. Setup blob metadata and split the blob into shard
-		let total_shards = ((blob.len() as u64 + SHARD_SIZE - 1) / SHARD_SIZE) as u16;
-		let blob_metadata = BlobMetadata {
+		let blob_len = blob.len();
+		let nb_shards = get_nb_shards_from_blob_size(blob_len);
+		let mut blob_metadata = BlobMetadata {
 			hash: blob_hash,
-			size: blob.len().saturated_into(),
-			nb_shard: total_shards,
-			block_ttl: TMP_BLOB_TTL,
+			size: blob_len.saturated_into(),
+			nb_shards,
+			commitments,
+			ownership: BTreeMap::new(),
 		};
 
-		let shards_index_to_store = get_shards_to_store_rpc::<Client, Block>(
-			&self.role,
+		// Get my own peer id data
+		let net = self
+			.blob_handle
+			.network
+			.get()
+			.ok_or_else(|| internal_err!("Could not get network to get my peer id"))
+			.map_err(|e| e)?;
+
+		let my_peer_id = net.local_peer_id();
+		let my_peer_id_base58 = my_peer_id.to_base58();
+
+		// Get shards that we need to store in case we're a RPC and a validator
+		// TODO Blob: use _shards_index_to_store to actually change TTL based on wether we need to store the shard or just have it for few minutes / hours
+		let (_shards_index_to_store, ownership) = get_shards_to_store_rpc::<Client, Block>(
+			&self.blob_handle.role,
 			&self.client,
-			&self.keystore,
+			&self.blob_handle.keystore.get().cloned(),
 			blob_metadata.clone(),
 			best_hash,
+			my_peer_id_base58.clone(),
 		)
 		.await
 		.map_err(|e| internal_err!("could not get shards to store: {e}"))?;
 
+		blob_metadata.ownership = ownership.clone();
+
 		let mut shards: Vec<Shard> = Vec::new();
-		for shard_id in 0..total_shards {
+		for shard_id in 0..nb_shards {
 			let start = shard_id as usize * (SHARD_SIZE as usize);
 			let end = cmp::min(blob.len(), start + SHARD_SIZE as usize);
 			let data = blob[start..end].to_vec();
 
 			let shard = Shard {
-				hash: blob_hash,
+				blob_hash,
 				shard_id,
+				size: data.len().saturated_into(),
 				data,
-				block_ttl: if shards_index_to_store.contains(&shard_id) {
-					BLOB_TTL
-				} else {
-					TMP_BLOB_TTL
-				},
 			};
 
 			shards.push(shard);
 		}
 
 		// --- 6. Store the blob in the store, temporarily except for shards that I need to keep -------------------
-		self.store
+		self.blob_handle
+			.shard_store
 			.insert_blob_metadata(&blob_metadata.hash, &blob_metadata)
 			.map_err(|e| internal_err!("failed to insert blob metadata into store: {e}"))?;
-		self.store
+		self.blob_handle
+			.shard_store
 			.insert_shards(&shards)
 			.map_err(|e| internal_err!("failed to insert blob shards into store: {e}"))?;
 
 		// --- 7. Announce the blob to the network -------------------
-		let announce = BlobNotification::Announce(blob_metadata);
-		self.network
-			.blob_notification_sender
-			.send(announce)
+		let blob_received_notification = BlobNotification::BlobReceived(BlobReceived {
+			hash: blob_metadata.hash,
+			size: blob_metadata.size,
+			nb_shards: blob_metadata.nb_shards,
+			commitments: blob_metadata.commitments,
+			ownership,
+			original_peer_id: my_peer_id_base58,
+		});
+
+		let Some(gossip_cmd_sender) = self.blob_handle.gossip_cmd_sender.get() else {
+			return Err(internal_err!("gossip_cmd_sender was not initialized"));
+		};
+		gossip_cmd_sender
+			.send(blob_received_notification)
 			.map_err(|e| internal_err!("internal channel closed: {e}"))?;
 
-		// --- 8. Check validity once more, if the tx has expired, we need to remove the blob once again
+		// --- 8. Check validity once more, if the tx has expired, we need to remove the blob once again (TODO Blob)
 		// This should not happen, it would mean our minimum tx lifetime is too low
 		let best_hash = self.client.info().best_hash;
 		let validity = self
@@ -255,7 +280,7 @@ where
 			.map_err(|e| internal_err!("second runtime validate_transaction error: {e}"))?;
 		if validity.is_err() {
 			return Err(internal_err!(
-				"second validation failed: metadata extrinsic rejected by runtime: {validity:?}. Please check the `MIN_TRANSACTION_VALIDITY`."
+				"second validation failed: metadata extrinsic rejected by runtime: {validity:?}. Please check the `MIN_TRANSACTION_VALIDITY` and `MAX_TRANSACTION_VALIDITY`."
 			));
 		}
 
@@ -264,6 +289,8 @@ where
 			.submit_one(best_hash, TransactionSource::External, opaque_tx)
 			.await
 			.map_err(|e| internal_err!("tx-pool error: {e}"))?;
+
+		log::info!(target:LOG_TARGET, "0 - Just submitted a TX to the pool after uploading the blob");
 
 		Ok(())
 	}
@@ -275,13 +302,17 @@ async fn get_shards_to_store_rpc<Client, Block>(
 	keystore: &Option<Arc<LocalKeystore>>,
 	blob_metadata: BlobMetadata,
 	best_hash: <Block as BlockT>::Hash,
-) -> Result<Vec<u16>>
+	my_peer_id_encoded: String,
+) -> Result<(Vec<u16>, BTreeMap<u16, Vec<(AuthorityId, String)>>)>
 where
 	Block: BlockT,
 	Client: HeaderBackend<Block> + ProvideRuntimeApi<Block> + AuthorityDiscovery<Block>,
 {
+	let mut ownership = BTreeMap::new();
+
 	if !role.is_authority() {
-		return Ok(Vec::new());
+		log::info!(target: LOG_TARGET, "RPC node (me) is not an authority, so I don't have to store shards");
+		return Ok((Vec::new(), ownership));
 	}
 
 	let validators = client
@@ -298,10 +329,27 @@ where
 	};
 
 	let Some(my_validator_id) = maybe_val_id else {
-		return Ok(Vec::new());
+		return Ok((Vec::new(), ownership));
 	};
 
-	let shards_to_store = get_shards_to_store(blob_metadata, &validators, my_validator_id);
+	let shards_to_store = match get_shards_to_store(
+		blob_metadata.hash,
+		blob_metadata.nb_shards,
+		&validators,
+		&my_validator_id,
+	) {
+		Ok(s) => s,
+		Err(e) => {
+			return Err(anyhow!("failed to get shards from the store: {e}"));
+		},
+	};
 
-	shards_to_store
+	for shard_to_store in &shards_to_store {
+		ownership.insert(
+			*shard_to_store,
+			vec![(my_validator_id.clone(), my_peer_id_encoded.clone())],
+		);
+	}
+
+	Ok((shards_to_store, ownership))
 }

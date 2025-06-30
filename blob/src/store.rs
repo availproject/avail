@@ -1,19 +1,27 @@
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use codec::{Decode, Encode};
 use kvdb::DBTransaction;
 use kvdb_rocksdb::Database;
 use std::path::Path;
 use tempfile::TempDir;
 
-use crate::types::{BlobHash, BlobMetadata, Shard};
+use crate::{
+	types::{BlobHash, BlobMetadata, Shard},
+	LOG_TARGET,
+};
 
 pub trait ShardStore: Send + Sync + 'static {
+	// Blob metadata
 	fn insert_blob_metadata(&self, hash: &BlobHash, blob_metadata: &BlobMetadata) -> Result<()>;
+	fn get_blob_metadata(&self, hash: &BlobHash) -> Result<Option<BlobMetadata>>;
 	fn remove_blob_metadata(&self, hash: &BlobHash) -> Result<()>;
+
+	// Shards
 	fn insert_shards(&self, shards: &Vec<Shard>) -> Result<()>;
+	fn get_shard(&self, hash: &BlobHash, shard_id: u16) -> Result<Option<Shard>>;
 	fn remove_shards(&self, shards: &Vec<(BlobHash, u16)>) -> Result<()>;
-	fn has_shard(&self, hash: &BlobHash, shard_id: u16) -> Result<bool>;
-	fn get_shard(&self, hash: &BlobHash, shard_id: u16) -> Result<Option<Vec<u8>>>;
+
+	// Testing stuff
 	fn log_all_entries(&self) -> Result<()>;
 }
 
@@ -59,7 +67,19 @@ impl ShardStore for RocksdbShardStore {
 		let mut tx = DBTransaction::new();
 		tx.put(0, &Self::blob_key(hash), &blob_metadata.encode());
 		self.db.write(tx)?;
+		// let _ = self.log_all_entries();
 		Ok(())
+	}
+
+	fn get_blob_metadata(&self, hash: &BlobHash) -> Result<Option<BlobMetadata>> {
+		self.db
+			.get(0, &Self::blob_key(hash))?
+			.map(|bytes| {
+				let mut slice = bytes.as_slice();
+				BlobMetadata::decode(&mut slice)
+					.map_err(|_| anyhow!("failed to decode blob metadata from the store"))
+			})
+			.transpose()
 	}
 
 	fn remove_blob_metadata(&self, hash: &BlobHash) -> Result<()> {
@@ -74,12 +94,24 @@ impl ShardStore for RocksdbShardStore {
 		for shard in shards {
 			tx.put(
 				0,
-				&&Self::shard_key(&shard.hash, shard.shard_id),
+				&Self::shard_key(&shard.blob_hash, shard.shard_id),
 				&shard.encode(),
 			);
 		}
 		self.db.write(tx)?;
+		// let _ = self.log_all_entries();
 		Ok(())
+	}
+
+	fn get_shard(&self, hash: &BlobHash, shard_id: u16) -> Result<Option<Shard>> {
+		self.db
+			.get(0, &Self::shard_key(hash, shard_id))?
+			.map(|bytes| {
+				let mut slice = bytes.as_slice();
+				Shard::decode(&mut slice)
+					.map_err(|_| anyhow!("failed to decode shard from the store"))
+			})
+			.transpose()
 	}
 
 	fn remove_shards(&self, shards: &Vec<(BlobHash, u16)>) -> Result<()> {
@@ -91,36 +123,29 @@ impl ShardStore for RocksdbShardStore {
 		Ok(())
 	}
 
-	fn has_shard(&self, hash: &BlobHash, shard_id: u16) -> Result<bool> {
-		Ok(self
-			.db
-			.get(0, &Self::shard_key(hash, shard_id))
-			.map(|opt| opt.is_some())?)
-	}
-
-	fn get_shard(&self, hash: &BlobHash, shard_id: u16) -> Result<Option<Vec<u8>>> {
-		Ok(self.db.get(0, &Self::shard_key(hash, shard_id))?)
-	}
-
 	fn log_all_entries(&self) -> Result<()> {
 		let mut iter = self.db.iter(0);
-		log::info!("📦 Logging all entries in RocksdbShardStore...");
+		log::info!(target: LOG_TARGET, "📦 Logging all entries in RocksdbShardStore...");
 
 		while let Some(entry) = iter.next() {
 			match entry {
 				Ok((key, value)) => {
 					if key.starts_with(b"blob:") {
-						let hash_hex = hex::encode(&key[5..]); // after "blob:"
+						let hash_hex = hex::encode(&key[5..]);
 						match BlobMetadata::decode(&mut &value[..]) {
 							Ok(metadata) => {
 								log::info!(
-									"🔹 BlobMetadata [hash: 0x{}]: {:#?}",
+									target: LOG_TARGET,
+									"🔹 BlobMetadata [hash: 0x{}, blob.len = {}, nb_shards = {}, ownership = {:#?}]",
 									hash_hex,
-									metadata
+									metadata.size,
+									metadata.nb_shards,
+									metadata.ownership,
 								);
 							},
 							Err(e) => {
 								log::error!(
+									target: LOG_TARGET,
 									"❌ Failed to decode BlobMetadata for key 0x{}: {:?}",
 									hash_hex,
 									e
@@ -133,15 +158,17 @@ impl ShardStore for RocksdbShardStore {
 						match Shard::decode(&mut &value[..]) {
 							Ok(shard) => {
 								log::info!(
-									"🧩 Shard [hash: 0x{}, id: {}]: data.len = {}, ttl = {}",
+									target: LOG_TARGET,
+									"🧩 Shard [hash: 0x{}, id: {}]: data.len = {}, blob_hash = {}",
 									hash_hex,
 									shard.shard_id,
-									shard.data.len(),
-									shard.block_ttl
+									shard.size,
+									shard.blob_hash,
 								);
 							},
 							Err(e) => {
 								log::error!(
+									target: LOG_TARGET,
 									"❌ Failed to decode Shard [hash: 0x{}, id: {}]: {:?}",
 									hash_hex,
 									shard_id,
@@ -151,6 +178,7 @@ impl ShardStore for RocksdbShardStore {
 						}
 					} else {
 						log::info!(
+							target: LOG_TARGET,
 							"❓ Unknown entry: key = {}, value.len = {}",
 							hex::encode(&key),
 							value.len()
@@ -158,11 +186,11 @@ impl ShardStore for RocksdbShardStore {
 					}
 				},
 				Err(e) => {
-					log::error!("❌ Failed to read from DB iterator: {:?}", e);
+					log::error!(target: LOG_TARGET,"❌ Failed to read from DB iterator: {:?}", e);
 				},
 			}
 		}
-		log::info!("✅ Finished logging RocksDB entries.");
+		log::info!(target: LOG_TARGET,"✅ Finished logging RocksDB entries.");
 		Ok(())
 	}
 }

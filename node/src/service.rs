@@ -20,9 +20,9 @@
 #![allow(dead_code)]
 
 use crate::{cli::Cli, rpc as node_rpc};
+use avail_blob::p2p::BlobHandle;
+use avail_blob::types::{Deps, FullClient};
 use avail_core::AppId;
-use blob::start_blob_service;
-use blob::types::{Deps, FullClient};
 use da_runtime::{apis::RuntimeApi, NodeBlock as Block, Runtime};
 
 use codec::Encode;
@@ -145,7 +145,7 @@ pub fn new_partial(
 	unsafe_da_sync: bool,
 	kate_rpc_deps: kate_rpc::Deps,
 	grandpa_justification_period: u32,
-	blob_rpc_deps: blob::types::Deps<Block>,
+	blob_rpc_deps: avail_blob::types::Deps<Block>,
 ) -> Result<
 	sc_service::PartialComponents<
 		FullClient,
@@ -283,7 +283,6 @@ pub fn new_partial(
 		let select_chain = select_chain.clone();
 		let keystore = keystore_container.keystore();
 		let chain_spec = config.chain_spec.cloned_box();
-		let local_keystore = keystore_container.local_keystore();
 
 		let rpc_backend = backend.clone();
 		let rpc_extensions_builder = move |deny_unsafe, subscription_executor| {
@@ -305,10 +304,7 @@ pub fn new_partial(
 					finality_provider: finality_proof_provider.clone(),
 				},
 				kate_rpc_deps: kate_rpc_deps.clone(),
-				blob_rpc_deps: Deps {
-					keystore: Some(local_keystore.clone()),
-					..blob_rpc_deps.clone()
-				},
+				blob_rpc_deps: blob_rpc_deps.clone(),
 			};
 			node_rpc::create_full(deps, rpc_backend.clone()).map_err(Into::into)
 		};
@@ -364,8 +360,8 @@ pub fn new_full_base(
 	};
 
 	// Blob protocols setup
-	let (blob_notif_cfg, blob_req_res_cfg, blob_handle, shard_store) =
-		start_blob_service(config.base_path.path(), config.role.clone());
+	let (blob_handle, blob_req_res_cfg, blob_gossip_cfg, blob_gossip_service) =
+		BlobHandle::new_blob_service(config.base_path.path(), config.role.clone());
 
 	let sc_service::PartialComponents {
 		client,
@@ -383,20 +379,12 @@ pub fn new_full_base(
 		grandpa_justification_period,
 		Deps {
 			blob_handle: blob_handle.clone(),
-			shard_store: shard_store.clone(),
-			keystore: None,
-			role: config.role.clone(),
 		},
 	)?;
 
 	let shared_voter_state = rpc_setup;
 	let auth_disc_publish_non_global_ips = config.network.allow_non_globals_in_dht;
 	let mut net_config = sc_network::config::FullNetworkConfiguration::new(&config.network);
-
-	net_config.add_notification_protocol(blob_notif_cfg);
-	net_config.add_request_response_protocol(blob_req_res_cfg);
-	blob_handle.register_keystore(keystore_container.local_keystore());
-	blob_handle.register_client(client.clone());
 
 	let grandpa_protocol_name = sc_consensus_grandpa::protocol_standard_name(
 		&client
@@ -409,6 +397,10 @@ pub fn new_full_base(
 	let (grandpa_protocol_config, grandpa_notification_service) =
 		sc_consensus_grandpa::grandpa_peers_set_config(grandpa_protocol_name.clone());
 	net_config.add_notification_protocol(grandpa_protocol_config);
+
+	net_config.add_request_response_protocol(blob_req_res_cfg);
+	net_config.add_notification_protocol(blob_gossip_cfg);
+
 	let warp_sync = Arc::new(sc_consensus_grandpa::warp_proof::NetworkProvider::new(
 		backend.clone(),
 		import_setup.1.shared_authority_set().clone(),
@@ -428,7 +420,10 @@ pub fn new_full_base(
 			block_relay: None,
 		})?;
 
-	blob_handle.register_network(network.clone());
+	blob_handle.register_keystore(keystore_container.local_keystore());
+	blob_handle.register_client(client.clone());
+	blob_handle.register_network_and_sync(network.clone(), sync_service.clone());
+	blob_handle.start_blob_gossip(task_manager.spawn_handle(), blob_gossip_service);
 
 	let role = config.role.clone();
 	let force_authoring = config.force_authoring;
@@ -485,8 +480,7 @@ pub fn new_full_base(
 			prometheus_registry.as_ref(),
 			telemetry.as_ref().map(|x| x.handle()),
 			network.clone(),
-			blob_handle.blob_notification_sender.clone(),
-			shard_store,
+			blob_handle.shard_store.clone(),
 		);
 
 		let client_clone = client.clone();

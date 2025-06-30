@@ -959,8 +959,50 @@ dependencies = [
 ]
 
 [[package]]
+name = "avail-blob"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-channel",
+ "avail-base",
+ "da-commitment",
+ "da-control",
+ "da-runtime",
+ "frame-benchmarking",
+ "frame-system",
+ "futures",
+ "hex",
+ "jsonrpsee",
+ "kate",
+ "kvdb",
+ "kvdb-rocksdb",
+ "log",
+ "once_cell",
+ "parity-scale-codec",
+ "parking_lot 0.12.3",
+ "sc-authority-discovery",
+ "sc-client-api",
+ "sc-executor",
+ "sc-keystore",
+ "sc-network",
+ "sc-network-gossip",
+ "sc-network-sync",
+ "sc-service",
+ "sc-transaction-pool-api",
+ "sp-api",
+ "sp-authority-discovery",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+ "sp-transaction-pool",
+ "tempfile",
+ "tokio",
+]
+
+[[package]]
 name = "avail-core"
 version = "0.6.2"
+source = "git+https://github.com/availproject/avail-core.git?branch=ghali/infinity-da-rpc#b12c44903847a437e3f8b1c20429e9e3433bf040"
 dependencies = [
  "binary-merkle-tree",
  "blake2b_simd",
@@ -997,8 +1039,8 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "avail-base",
+ "avail-blob",
  "avail-core",
- "blob",
  "clap 4.5.26",
  "clap-num",
  "clap_complete",
@@ -1032,6 +1074,7 @@ dependencies = [
  "sc-executor",
  "sc-keystore",
  "sc-network",
+ "sc-network-gossip",
  "sc-network-sync",
  "sc-offchain",
  "sc-rpc",
@@ -1387,44 +1430,6 @@ dependencies = [
  "cc",
  "cfg-if",
  "constant_time_eq",
-]
-
-[[package]]
-name = "blob"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-channel",
- "avail-base",
- "da-commitment",
- "da-control",
- "da-runtime",
- "frame-benchmarking",
- "frame-system",
- "futures",
- "hex",
- "jsonrpsee",
- "kate",
- "kvdb",
- "kvdb-rocksdb",
- "log",
- "once_cell",
- "parity-scale-codec",
- "parking_lot 0.12.3",
- "sc-authority-discovery",
- "sc-client-api",
- "sc-executor",
- "sc-keystore",
- "sc-network",
- "sc-service",
- "sc-transaction-pool-api",
- "sp-api",
- "sp-authority-discovery",
- "sp-core",
- "sp-runtime",
- "sp-transaction-pool",
- "tempfile",
- "tokio",
 ]
 
 [[package]]
@@ -5379,6 +5384,7 @@ dependencies = [
 [[package]]
 name = "kate"
 version = "0.9.2"
+source = "git+https://github.com/availproject/avail-core.git?branch=ghali/infinity-da-rpc#b12c44903847a437e3f8b1c20429e9e3433bf040"
 dependencies = [
  "avail-core",
  "derive_more 0.99.18",
@@ -5403,6 +5409,7 @@ dependencies = [
 [[package]]
 name = "kate-recovery"
 version = "0.10.0"
+source = "git+https://github.com/availproject/avail-core.git?branch=ghali/infinity-da-rpc#b12c44903847a437e3f8b1c20429e9e3433bf040"
 dependencies = [
  "avail-core",
  "derive_more 0.99.18",
@@ -9535,7 +9542,7 @@ name = "sc-basic-authorship"
 version = "0.10.0-dev"
 dependencies = [
  "avail-base",
- "blob",
+ "avail-blob",
  "da-control",
  "da-runtime",
  "futures",
@@ -9556,6 +9563,7 @@ dependencies = [
  "sp-core",
  "sp-inherents",
  "sp-runtime",
+ "sp-transaction-pool",
  "substrate-prometheus-endpoint",
  "tokio",
 ]

@@ -104,7 +104,7 @@ pub struct FullDeps<C, P, SC, B> {
 	/// - pub rpc_metrics_enabled: bool,
 	pub kate_rpc_deps: kate_rpc::Deps,
 	/// Blob RPC dependencies.
-	pub blob_rpc_deps: blob::types::Deps<Block>,
+	pub blob_rpc_deps: avail_blob::types::Deps<Block>,
 }
 
 /// Instantiate all Full RPC extensions.
@@ -134,7 +134,7 @@ where
 	B: sc_client_api::Backend<Block> + Send + Sync + 'static,
 	B::State: sc_client_api::backend::StateBackend<sp_runtime::traits::HashingFor<Block>>,
 {
-	use blob::rpc::{BlobApiServer, BlobRpc};
+	use avail_blob::rpc::{BlobApiServer, BlobRpc};
 	use kate_rpc::justifications::{GrandpaJustifications, GrandpaServer};
 	use kate_rpc::metrics::KateApiMetricsServer;
 	use kate_rpc::{Kate, KateApiServer};

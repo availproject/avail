@@ -30,7 +30,7 @@ pallet-vector.workspace = true
 frame-system-rpc-runtime-api.workspace = true
 frame-system = { workspace = true, default-features = false }
 sc-basic-authorship.workspace = true
-blob = { workspace = true }
+avail-blob = { workspace = true }
 
 # 3rd-party
 codec = { package = "parity-scale-codec", version = "3" }
@@ -74,6 +74,7 @@ sp-timestamp = { workspace = true, default-features = false }
 sc-consensus-babe = { workspace = true, default-features = false }
 sc-consensus-slots = { workspace = true, default-features = false }
 sc-network = { workspace = true, default-features = false }
+sc-network-gossip = { workspace = true, default-features = false }
 sp-authority-discovery = { workspace = true, default-features = false }
 sc-authority-discovery = { workspace = true, default-features = false }
 sc-chain-spec = { workspace = true, default-features = false }
