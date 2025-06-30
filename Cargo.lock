@@ -2544,6 +2544,7 @@ dependencies = [
  "sp-blockchain",
  "sp-runtime",
  "thiserror 2.0.11",
+ "tokio",
 ]
 
 [[package]]

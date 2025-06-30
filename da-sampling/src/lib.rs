@@ -1,35 +1,39 @@
 #![allow(dead_code)]
 mod schema;
-use avail_core::header::HeaderExtension;
-use avail_core::OpaqueExtrinsic;
-use da_runtime::apis::{DataAvailApi, KateApi};
-use da_runtime::Header as DaHeader;
-use futures::stream::BoxStream;
-use futures::{channel::oneshot, stream::StreamExt};
-use kate::couscous::multiproof_params;
-use kate::gridgen::core::AsBytes;
-use kate_recovery::commons::{ArkCommitment, ArkPublicParams};
-use kate_recovery::matrix::{Dimensions, Position};
-use kate_recovery::{data::SingleCell, proof::verify_v2};
+
+use std::{collections::HashSet, io, sync::Arc, time::Duration};
+use avail_core::{header::HeaderExtension, OpaqueExtrinsic};
+use da_runtime::{apis::{DataAvailApi, KateApi}, Header as DaHeader};
+use futures::{
+	channel::oneshot,
+	stream::{BoxStream, StreamExt},
+};
+use kate::{couscous::multiproof_params, gridgen::core::AsBytes};
+use kate_recovery::{
+	commons::{ArkCommitment, ArkPublicParams},
+	data::SingleCell,
+	matrix::{Dimensions, Position},
+	proof::verify_v2,
+};
 use libp2p_identity::PeerId;
 use log::{debug, error, trace};
 use prost::Message;
 use rand::{thread_rng, Rng};
 use sc_chain_spec::ChainSpec;
-use sc_client_api::BlockBackend;
-use sc_client_api::BlockImportNotification;
-use sc_network::NetworkRequest;
+use sc_client_api::{BlockBackend, BlockImportNotification};
 use sc_network::{
+	NetworkRequest,
+	NetworkService,
 	request_responses::{IfDisconnected, IncomingRequest, OutgoingResponse, ProtocolConfig},
 	types::ProtocolName,
-	NetworkService,
 };
 use schema::v1::da_sampling::*;
 use sp_api::ProvideRuntimeApi;
-use sp_runtime::testing::H256;
-use sp_runtime::traits::{Block as BlockT, Header, PhantomData};
-use std::collections::HashSet;
-use std::{io, sync::Arc, time::Duration};
+use sp_runtime::{
+	testing::H256,
+	traits::{Block as BlockT, Header, PhantomData},
+};
+use tokio::time::sleep;
 
 const LOG_TARGET: &str = "da-sampling";
 const MAX_PACKET_SIZE: u64 = 16 * 1024 * 1024; // Match Substrate protocol max
@@ -59,7 +63,7 @@ pub enum SamplingError {
 
 	#[error(transparent)]
 	Io(#[from] io::Error),
-	
+
 	#[error(transparent)]
 	Api(#[from] sp_api::ApiError),
 }
@@ -246,6 +250,9 @@ where
 				cells,
 				block_hash: notification.hash.as_ref().to_vec(),
 			};
+
+			// Temp delay to ensure the super has time to process the block
+			sleep(Duration::from_secs(3)).await;
 
 			// Process peers in parallel
 			let futures = peers.into_iter().map(|peer| {
