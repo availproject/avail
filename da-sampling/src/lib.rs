@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+pub mod da_voting_rule;
 mod schema;
 
 use avail_core::{header::HeaderExtension, OpaqueExtrinsic};
@@ -31,6 +32,7 @@ use sc_network::{
 };
 use schema::v1::da_sampling::*;
 use sp_api::ProvideRuntimeApi;
+use sp_consensus::BlockOrigin;
 use sp_runtime::{
 	testing::H256,
 	traits::{Block as BlockT, Header, PhantomData},
@@ -132,12 +134,24 @@ impl VerificationTracker {
 
 	pub fn set_status(&self, block_hash: H256, status: BlockVerificationStatus) {
 		let mut blocks = self.blocks.write();
-		blocks.entry(block_hash).and_modify(|state| {
-			state.status = status;
-			if status == BlockVerificationStatus::InProgress {
-				state.last_attempt = Some(Instant::now());
-			}
-		});
+		blocks
+			.entry(block_hash)
+			.and_modify(|state| {
+				state.status = status;
+				if status == BlockVerificationStatus::InProgress {
+					state.last_attempt = Some(Instant::now());
+				}
+			})
+			.or_insert_with(|| BlockVerificationState {
+				status,
+				last_attempt: if status == BlockVerificationStatus::InProgress {
+					Some(Instant::now())
+				} else {
+					None
+				},
+				retry_count: 0,
+				failed_cells: Vec::new(),
+			});
 	}
 
 	pub fn get_status(&self, block_hash: &H256) -> Option<BlockVerificationStatus> {
@@ -297,18 +311,22 @@ where
 pub struct DaSamplesDownloader<B: BlockT> {
 	protocol_name: ProtocolName,
 	network: Arc<NetworkService<B, B::Hash>>,
-	verification_tracker: VerificationTracker,
+	pub verification_tracker: Arc<VerificationTracker>,
 }
 
 impl<B> DaSamplesDownloader<B>
 where
 	B: BlockT<Header = DaHeader, Hash = H256>,
 {
-	pub fn new(protocol_name: ProtocolName, network: Arc<NetworkService<B, B::Hash>>) -> Self {
+	pub fn new(
+		protocol_name: ProtocolName,
+		network: Arc<NetworkService<B, B::Hash>>,
+		tracker: Arc<VerificationTracker>,
+	) -> Self {
 		Self {
 			protocol_name,
 			network,
-			verification_tracker: VerificationTracker::new(),
+			verification_tracker: tracker,
 		}
 	}
 
@@ -327,6 +345,13 @@ where
 			let header: DaHeader = notification.header;
 			if header.extension.app_lookup().is_empty() {
 				trace!(target: LOG_TARGET, "Block does not have any DA txs, marking as verified {:?}", block_hash);
+				self.verification_tracker
+					.set_status(block_hash, BlockVerificationStatus::Verified);
+				continue;
+			}
+			let is_own = matches!(notification.origin, BlockOrigin::Own);
+			if is_own {
+				trace!(target: LOG_TARGET, "Skipping DA verification of own block {:?}", block_hash);
 				self.verification_tracker
 					.set_status(block_hash, BlockVerificationStatus::Verified);
 				continue;

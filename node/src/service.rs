@@ -23,7 +23,7 @@ use crate::transaction_state;
 use crate::{cli::Cli, rpc as node_rpc};
 use avail_core::AppId;
 use da_runtime::{apis::RuntimeApi, NodeBlock as Block, Runtime};
-use da_sampling::{DaSamplesDownloader, DaSamplesRequestHandler};
+use da_sampling::{DaSamplesDownloader, DaSamplesRequestHandler, VerificationTracker};
 
 use codec::Encode;
 use frame_system_rpc_runtime_api::AccountNonceApi;
@@ -476,15 +476,24 @@ pub fn new_full_base(
 			keystore: keystore_container.keystore(),
 		})?;
 
-	if role.is_authority() && !role.is_supernode() {
+	let grandpa_voting_rules = if role.is_authority() && !role.is_supernode() {
+		let tracker = Arc::new(VerificationTracker::new());
 		let sample_downloader =
-			DaSamplesDownloader::new(da_sampling_protocol_name, network.clone());
+			DaSamplesDownloader::new(da_sampling_protocol_name, network.clone(), tracker.clone());
+		let da_voting_rule =
+			da_sampling::da_voting_rule::DaVerificationVotingRule::<Block>::new(tracker.clone());
 		task_manager.spawn_handle().spawn(
 			"da-sample-downloader",
 			Some("networking"),
 			sample_downloader.run(client.import_notification_stream().boxed()),
 		);
-	}
+
+		sc_consensus_grandpa::VotingRulesBuilder::default()
+			.add(da_voting_rule)
+			.build()
+	} else {
+		sc_consensus_grandpa::VotingRulesBuilder::default().build()
+	};
 	let force_authoring = config.force_authoring;
 	let backoff_authoring_blocks =
 		Some(sc_consensus_slots::BackoffAuthoringOnFinalizedHeadLagging::default());
@@ -650,7 +659,7 @@ pub fn new_full_base(
 			notification_service: grandpa_notification_service,
 			sync: Arc::new(sync_service.clone()),
 			telemetry: telemetry.as_ref().map(|x| x.handle()),
-			voting_rule: sc_consensus_grandpa::VotingRulesBuilder::default().build(),
+			voting_rule: grandpa_voting_rules,
 			prometheus_registry,
 			shared_voter_state,
 			offchain_tx_pool_factory: OffchainTransactionPoolFactory::new(transaction_pool.clone()),

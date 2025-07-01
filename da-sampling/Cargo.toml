@@ -25,8 +25,10 @@ tokio.workspace = true
 sp-api = { workspace = true, default-features = false }
 sc-client-api = { workspace = true, default-features = false }
 sc-chain-spec = { workspace = true, default-features = false }
+sc-consensus-grandpa = { workspace = true, default-features = false }
 sc-network = { workspace = true, default-features = false }
 sp-blockchain = { workspace = true, default-features = false }
+sp-consensus = { workspace = true, default-features = false }
 sp-runtime = { workspace = true, default-features = false }
 
 [lints]
