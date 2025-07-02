@@ -59,9 +59,9 @@ static PP: std::sync::OnceLock<ArkPublicParams> = std::sync::OnceLock::new();
 /// Block verification status
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BlockVerificationStatus {
-	/// Verification not started yet
+	/// Downloader has seen the block but verification not started yet
 	Pending,
-	/// Verification in progress
+	/// Downloader has created a request & verification in progress
 	InProgress,
 	/// Verification succeeded
 	Verified,
@@ -368,7 +368,7 @@ where
 
 	async fn verify_block(&self, block_hash: Hash, header: DaHeader) -> Result<(), SamplingError> {
 		self.verification_tracker
-			.set_status(block_hash, BlockVerificationStatus::InProgress);
+			.set_status(block_hash, BlockVerificationStatus::Pending);
 		let dimensions = Dimensions::new(header.extension.rows(), header.extension.cols())
 			.ok_or_else(|| {
 				error!(target: LOG_TARGET, "Invalid dimensions");
@@ -418,6 +418,8 @@ where
 			.map_err(|_| SamplingError::NoPeersAvailable)?;
 
 		if peers.is_empty() {
+			error!(target: LOG_TARGET, "No supernod peers available to provide DA sampling cell proof for block {:?}", block_hash);
+
 			return Err(SamplingError::NoPeersAvailable);
 		}
 
@@ -430,6 +432,8 @@ where
 		let mut verification_success = false;
 		let mut failed_cells = Vec::new();
 
+		self.verification_tracker
+			.set_status(block_hash, BlockVerificationStatus::InProgress);
 		while retry_count < MAX_RETRIES && !verification_success {
 			if self.verification_tracker.should_shutdown() {
 				break;
@@ -524,6 +528,10 @@ where
 			},
 			Err(_) => {
 				warn!(target: LOG_TARGET, "Request to {peer} timed out");
+				self.verification_tracker.set_status(
+					Hash::from_slice(&request.block_hash).into(),
+					BlockVerificationStatus::TimedOut,
+				);
 				return Err(SamplingError::Timeout);
 			},
 		};
