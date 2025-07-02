@@ -5,18 +5,18 @@ use sp_core::blake2_256;
 use sp_std::iter::repeat;
 
 pub async fn run() -> Result<(), ClientError> {
-	println!("---------- START ---------- ");
-	let string = "aaaaa";
-	let blob = string.as_bytes().to_vec();
-	let blob_hash = H256::from(blake2_256(&blob));
-	let commitments = build_da_commitments(blob.clone(), 1024, 2048, Seed::default()).unwrap();
-	let commitments_hex = hex::encode(&commitments);
+	// println!("---------- START ---------- ");
+	// let string = "aaaaa";
+	// let blob = string.as_bytes().to_vec();
+	// let blob_hash = H256::from(blake2_256(&blob));
+	// let commitments = build_da_commitments(blob.clone(), 1024, 2048, Seed::default()).unwrap();
+	// let commitments_hex = hex::encode(&commitments);
 
-	println!("string = {}", string);
-	println!("blob = {:?}", blob);
-	println!("blob_hash = {:?}", blob_hash);
-	println!("commitments = {:?}", commitments);
-	println!("commitments_hex = {:?}", commitments_hex);
+	// println!("string = {}", string);
+	// println!("blob = {:?}", blob);
+	// println!("blob_hash = {:?}", blob_hash);
+	// println!("commitments = {:?}", commitments);
+	// println!("commitments_hex = {:?}", commitments_hex);
 
 	// string = aaaaa
 	// blob = [97, 97, 97, 97, 97]
@@ -38,31 +38,62 @@ pub async fn run() -> Result<(), ClientError> {
 
 	println!("---------- START Submission ---------- ");
 	let len = 32 * 1024 * 1024;
-	let client = Client::new(LOCAL_ENDPOINT).await?;
-	let signer = alice();
-	// let signer = bob();
+	let mode = 3;
+
+	let local_endpoint: &str = if mode == 1 {
+		"http://127.0.0.1:9944"
+	} else if mode == 2 {
+		"http://127.0.0.1:9945"
+	} else {
+		"http://127.0.0.1:9946"
+	};
+
+	let client = Client::new(local_endpoint).await?;
+	let signer = if mode == 1 {
+		alice()
+	} else if mode == 2 {
+		bob()
+	} else {
+		charlie()
+	};
+	let byte = if mode == 1 {
+		b'A'
+	} else if mode == 2 {
+		b'B'
+	} else {
+		b'C'
+	};
+
 	let nonce = client.nonce(&signer.account_id()).await?;
 	println!("Nonce: {nonce}");
-	for i in 0..100 {
-		println!("---------- START Submission {i} ---------- ");
-		let blob: Vec<u8> = repeat(b'A').take(len - i).collect::<Vec<u8>>();
+
+	let mut blobs: Vec<(Vec<u8>, H256, Vec<u8>)> = Vec::new();
+	println!("---------- START Commitments generation ---------- ");
+	for i in 0..50 {
+		println!("---------- START Commitment generation {i} ---------- ");
+		let blob: Vec<u8> = repeat(byte).take(len - i).collect::<Vec<u8>>();
 		let blob_hash = H256::from(blake2_256(&blob));
 		let commitments = build_da_commitments(blob.clone(), 1024, 2048, Seed::default()).unwrap();
 		println!("blob len = {:?}", blob.len());
 		println!("blob_hash = {:?}", blob_hash);
 		println!("commitments len = {:?}", commitments.len());
-
+		blobs.push((blob, blob_hash, commitments));
+	}
+	for (i, (blob, hash, commitments)) in blobs.into_iter().enumerate() {
+		println!("---------- START Submission {i} ---------- ");
 		let options = Options::new().app_id(0).nonce(nonce + i as u32);
 		let unsigned_tx = client.tx().data_availability().submit_blob_metadata(
-			blob_hash,
+			hash,
 			blob.len() as u64,
 			commitments,
 		);
 
-		let tx = unsigned_tx.sign(&signer, options).await.unwrap();
-		let tx_vec = tx.0.encode();
+		let tx = unsigned_tx.sign(&signer, options).await.unwrap().0.encode();
 
-		let _a = submit_blob(&client.rpc_client, tx_vec, blob).await.unwrap();
+		if let Err(e) = submit_blob(&client.rpc_client, tx, blob).await {
+			println!("An error has occured: {e}");
+		}
+		println!("---------- END Submission {i} ---------- ");
 	}
 
 	Ok(())

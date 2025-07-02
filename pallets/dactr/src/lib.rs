@@ -332,9 +332,10 @@ pub mod pallet {
 			T::WeightInfo::set_submit_data_fee_modifier(),
 			DispatchClass::Mandatory
 		))]
-		pub fn failed_submit_blob_txs(
+		pub fn submit_blob_txs_summary(
 			origin: OriginFor<T>,
 			_failed_txs: Vec<(H256, String)>,
+			_total_blob_size: u64,
 		) -> DispatchResult {
 			ensure_none(origin)?;
 			Ok(())

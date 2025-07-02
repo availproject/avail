@@ -395,11 +395,11 @@ where
 		// TODO call `after_inherents` and check if we should apply extrinsincs here
 		// <https://github.com/paritytech/substrate/pull/14275/>
 
-		let (end_reason, failed_blob_hashes) = self
+		let (end_reason, failed_blob_hashes, total_blob_size) = self
 			.apply_extrinsics(&mut block_builder, deadline, block_size_limit)
 			.await?;
 
-		self.apply_post_inherents(&mut block_builder, failed_blob_hashes)?;
+		self.apply_post_inherents(&mut block_builder, failed_blob_hashes, total_blob_size)?;
 
 		let (block, storage_changes, proof) = block_builder.build()?.into_inner();
 		let block_took = block_timer.elapsed();
@@ -463,12 +463,18 @@ where
 		&self,
 		block_builder: &mut sc_block_builder::BlockBuilder<'_, Block, C>,
 		failed_blob_hashes: Vec<(H256, String)>,
+		total_blob_size: u64,
 	) -> Result<(), sp_blockchain::Error> {
 		let data = self.client.post_inherent_data();
 		let post_inherents: Vec<_> = self
 			.client
 			.runtime_api()
-			.create_post_inherent_extrinsics(self.parent_hash, data, failed_blob_hashes)
+			.create_post_inherent_extrinsics(
+				self.parent_hash,
+				data,
+				failed_blob_hashes,
+				total_blob_size,
+			)
 			.map_err(|api_err| sp_blockchain::Error::RuntimeApiError(api_err))?;
 
 		for inherent in post_inherents {
@@ -504,7 +510,7 @@ where
 		block_builder: &mut sc_block_builder::BlockBuilder<'_, Block, C>,
 		deadline: time::Instant,
 		block_size_limit: Option<usize>,
-	) -> Result<(EndProposingReason, Vec<(H256, String)>), sp_blockchain::Error> {
+	) -> Result<(EndProposingReason, Vec<(H256, String)>, u64), sp_blockchain::Error> {
 		// proceed with transactions
 		// We calculate soft deadline used only in case we start skipping transactions.
 		let now = (self.now)();
@@ -658,7 +664,7 @@ where
 			);
 		}
 
-		let failed_blob_hashes = if submit_blob_metadata_calls.len() > 0 {
+		let (failed_blob_hashes, total_blob_size) = if submit_blob_metadata_calls.len() > 0 {
 			sample_and_get_failed_blobs(
 				&submit_blob_metadata_calls,
 				self.network.clone(),
@@ -666,11 +672,11 @@ where
 			)
 			.await
 		} else {
-			Vec::new()
+			(Vec::new(), 0)
 		};
 
 		self.transaction_pool.remove_invalid(&unqueue_invalid);
-		Ok((end_reason, failed_blob_hashes))
+		Ok((end_reason, failed_blob_hashes, total_blob_size))
 	}
 
 	/// Prints a summary and does telemetry + metrics.

@@ -224,11 +224,12 @@ pub async fn sample_and_get_failed_blobs<Block>(
 	submit_blob_metadata_calls: &Vec<RuntimeCall>,
 	network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
 	blob_metadata: BTreeMap<BlobHash, BlobMetadata>,
-) -> Vec<(BlobHash, String)>
+) -> (Vec<(BlobHash, String)>, u64)
 where
 	Block: BlockT,
 {
 	let mut failed_txs: Vec<(BlobHash, String)> = Vec::new();
+	let mut total_blob_size: u64 = 0;
 	for tx in submit_blob_metadata_calls {
 		if let RuntimeCall::DataAvailability(Call::submit_blob_metadata {
 			size,
@@ -307,15 +308,10 @@ where
 
 				// TODO Blob sampling
 				log::info!("Should sample: size-{size:?} blob_hash-{blob_hash:?}");
-
-				// TODO Blob For now we randomly put failed tx for fun
-				if some_index % 2 == 1 {
-					// Say if failed or not with a reason
-					failed_txs.push((*blob_hash, format!("Fake reason for fun")));
-				}
 			}
+			total_blob_size += size;
 		}
 	}
 
-	failed_txs
+	(failed_txs, total_blob_size)
 }
