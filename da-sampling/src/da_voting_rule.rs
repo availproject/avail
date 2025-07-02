@@ -52,9 +52,20 @@ where
 		) {
 			debug!(
 				target: LOG_TARGET,
-				"Restricting vote due to unverified DA block {} {}", first_unverified, unverified_number
+				"Restricting vote due to unverified DA block #{} ({})", unverified_number, first_unverified
 			);
-			return Box::pin(async move { Some((first_unverified, unverified_number)) });
+
+			if let Ok(Some(header)) = backend.header(first_unverified) {
+				let parent_hash = *header.parent_hash();
+				let parent_number = unverified_number.saturating_sub(1u32.into());
+
+				return Box::pin(async move { Some((parent_hash, parent_number)) });
+			} else {
+				warn!(target: LOG_TARGET, "Could not get parent of unverified block {}", first_unverified);
+				let fallback_hash = base.hash();
+				let fallback_number = *base.number();
+				return Box::pin(async move { Some((fallback_hash, fallback_number)) });
+			}
 		}
 
 		debug!(
