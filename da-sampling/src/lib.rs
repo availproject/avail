@@ -5,7 +5,7 @@ mod schema;
 use avail_core::{header::HeaderExtension, OpaqueExtrinsic};
 use da_runtime::{
 	apis::{DataAvailApi, KateApi},
-	Header as DaHeader,
+	Hash, Header as DaHeader,
 };
 use futures::{
 	channel::oneshot,
@@ -33,10 +33,7 @@ use sc_network::{
 use schema::v1::da_sampling::*;
 use sp_api::ProvideRuntimeApi;
 use sp_consensus::BlockOrigin;
-use sp_runtime::{
-	testing::H256,
-	traits::{Block as BlockT, Header, PhantomData},
-};
+use sp_runtime::traits::{Block as BlockT, Header, PhantomData};
 use std::{
 	collections::{HashMap, HashSet},
 	io,
@@ -120,7 +117,7 @@ struct BlockVerificationState {
 /// Shared state for block's DA verification
 #[derive(Debug, Clone)]
 pub struct VerificationTracker {
-	blocks: Arc<RwLock<HashMap<H256, BlockVerificationState>>>,
+	blocks: Arc<RwLock<HashMap<Hash, BlockVerificationState>>>,
 	shutdown: Arc<AtomicBool>,
 }
 
@@ -132,7 +129,7 @@ impl VerificationTracker {
 		}
 	}
 
-	pub fn set_status(&self, block_hash: H256, status: BlockVerificationStatus) {
+	pub fn set_status(&self, block_hash: Hash, status: BlockVerificationStatus) {
 		let mut blocks = self.blocks.write();
 		blocks
 			.entry(block_hash)
@@ -154,18 +151,18 @@ impl VerificationTracker {
 			});
 	}
 
-	pub fn get_status(&self, block_hash: &H256) -> Option<BlockVerificationStatus> {
+	pub fn get_status(&self, block_hash: &Hash) -> Option<BlockVerificationStatus> {
 		self.blocks.read().get(block_hash).map(|s| s.status)
 	}
 
-	pub fn record_failed_cells(&self, block_hash: H256, cells: Vec<CellCoordinate>) {
+	pub fn record_failed_cells(&self, block_hash: Hash, cells: Vec<CellCoordinate>) {
 		let mut blocks = self.blocks.write();
 		blocks.entry(block_hash).and_modify(|state| {
 			state.failed_cells.extend(cells);
 		});
 	}
 
-	pub fn increment_retry(&self, block_hash: H256) {
+	pub fn increment_retry(&self, block_hash: Hash) {
 		let mut blocks = self.blocks.write();
 		blocks.entry(block_hash).and_modify(|state| {
 			state.retry_count += 1;
@@ -191,7 +188,7 @@ pub struct DaSamplesRequestHandler<B, Client> {
 
 impl<B, Client> DaSamplesRequestHandler<B, Client>
 where
-	B: BlockT<Header = DaHeader, Hash = H256, Extrinsic = OpaqueExtrinsic>,
+	B: BlockT<Header = DaHeader, Hash = Hash, Extrinsic = OpaqueExtrinsic>,
 	Client: Send + Sync + 'static + ProvideRuntimeApi<B> + BlockBackend<B>,
 	Client::Api: DataAvailApi<B> + KateApi<B>,
 {
@@ -256,7 +253,7 @@ where
 		debug!(target: LOG_TARGET, "Handling da-sampling request from {peer}");
 
 		let req = SamplingRequest::decode(payload)?;
-		let block_hash: B::Hash = H256::from_slice(&req.block_hash).into();
+		let block_hash: B::Hash = Hash::from_slice(&req.block_hash).into();
 
 		let block = self.client.block(block_hash)?.ok_or_else(|| {
 			SamplingError::RequestFailure(format!("Block not found: {:?}", block_hash))
@@ -316,7 +313,7 @@ pub struct DaSamplesDownloader<B: BlockT> {
 
 impl<B> DaSamplesDownloader<B>
 where
-	B: BlockT<Header = DaHeader, Hash = H256>,
+	B: BlockT<Header = DaHeader, Hash = Hash>,
 {
 	pub fn new(
 		protocol_name: ProtocolName,
@@ -369,7 +366,7 @@ where
 		}
 	}
 
-	async fn verify_block(&self, block_hash: H256, header: DaHeader) -> Result<(), SamplingError> {
+	async fn verify_block(&self, block_hash: Hash, header: DaHeader) -> Result<(), SamplingError> {
 		self.verification_tracker
 			.set_status(block_hash, BlockVerificationStatus::InProgress);
 		let dimensions = Dimensions::new(header.extension.rows(), header.extension.cols())

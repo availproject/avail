@@ -1,9 +1,11 @@
 use crate::{BlockVerificationStatus, VerificationTracker, LOG_TARGET};
-use log::debug;
+use da_runtime::Hash;
+use log::{debug, trace, warn};
 use sc_consensus_grandpa::{VotingRule, VotingRuleResult};
+use sp_blockchain::HeaderBackend;
 use sp_runtime::{
-	testing::H256,
-	traits::{Block as BlockT, Header},
+	traits::{Block as BlockT, Header, NumberFor},
+	Saturating,
 };
 use std::sync::Arc;
 
@@ -25,41 +27,81 @@ impl<Block: BlockT> DaVerificationVotingRule<Block> {
 
 impl<Block, B> VotingRule<Block, B> for DaVerificationVotingRule<Block>
 where
-	Block: BlockT<Hash = H256>,
+	Block: BlockT<Hash = Hash>,
 	B: sc_client_api::HeaderBackend<Block>,
 {
 	fn restrict_vote(
 		&self,
-		_backend: Arc<B>,
-		_base: &Block::Header,
-		_best_target: &Block::Header,
+		backend: Arc<B>,
+		base: &Block::Header,
+		best_target: &Block::Header,
 		current_target: &Block::Header,
 	) -> VotingRuleResult<Block> {
-		let block_hash = current_target.hash();
+		trace!(target: LOG_TARGET, "restrict_vote called with base: {:?}, best: {:?} current_target: {:?}", base.hash(), best_target.hash(), current_target.hash());
+		let current_hash = current_target.hash();
+		let current_number = *current_target.number();
 
-		match self.tracker.get_status(&block_hash) {
-			Some(BlockVerificationStatus::Verified) => {
-				debug!(target: LOG_TARGET, "Block {} is verified", block_hash);
-			},
-			other => {
-				debug!(target: LOG_TARGET, "Block {} verification status: {:?}", block_hash, other);
-			},
-		}
-		if !matches!(
-			self.tracker.get_status(&block_hash),
-			Some(BlockVerificationStatus::Verified)
+		// Check all un-finalized blocks from base to current_target
+		if let Some((first_unverified, unverified_number)) = find_first_unverified_da_block(
+			&*backend,
+			&*self.tracker,
+			base.hash(),
+			*base.number(),
+			current_hash,
+			current_number,
 		) {
 			debug!(
 				target: LOG_TARGET,
-				"Restricting vote for block {} - DA verification missing/failed",
-				block_hash
+				"Restricting vote due to unverified DA block {} {}", first_unverified, unverified_number
 			);
-			return Box::pin(std::future::ready(Some((
-				block_hash,
-				*current_target.number(),
-			))));
+			return Box::pin(async move { Some((first_unverified, unverified_number)) });
 		}
 
+		debug!(
+			target: LOG_TARGET,
+			"Allowing vote - all un-finalized DA blocks verified up to {}", current_hash
+		);
 		Box::pin(async { None })
 	}
+}
+
+/// Walk the chain from `start_hash` to `end_hash` and find the first unverified DA block
+fn find_first_unverified_da_block<Block, B>(
+	backend: &B,
+	tracker: &VerificationTracker,
+	start_hash: Block::Hash,
+	start_number: NumberFor<Block>,
+	end_hash: Block::Hash,
+	end_number: NumberFor<Block>,
+) -> Option<(Block::Hash, NumberFor<Block>)>
+where
+	Block: BlockT<Hash = Hash>,
+	B: HeaderBackend<Block>,
+{
+	let mut current_hash = end_hash;
+	let mut current_number = end_number;
+	let mut deepest_unverified: Option<(Block::Hash, NumberFor<Block>)> = None;
+
+	while current_hash != start_hash && current_number >= start_number {
+		match tracker.get_status(&current_hash) {
+			Some(BlockVerificationStatus::Verified) => { /* all good */ },
+			_ => {
+				deepest_unverified = Some((current_hash, current_number));
+			},
+		}
+
+		// Always walk to parent
+		match backend.header(current_hash) {
+			Ok(Some(header)) => {
+				current_hash = *header.parent_hash();
+				current_number = current_number.saturating_sub(1u32.into());
+			},
+			Ok(None) => break, // Shouldn't happen for un-finalized blocks
+			Err(e) => {
+				warn!("Error fetching header: {:?}", e);
+				break;
+			},
+		}
+	}
+	deepest_unverified
 }

@@ -488,11 +488,14 @@ pub fn new_full_base(
 			sample_downloader.run(client.import_notification_stream().boxed()),
 		);
 
-		sc_consensus_grandpa::VotingRulesBuilder::default()
+		sc_consensus_grandpa::VotingRulesBuilder::new()
 			.add(da_voting_rule)
+			.add(sc_consensus_grandpa::BeforeBestBlockBy(1u32))
 			.build()
 	} else {
-		sc_consensus_grandpa::VotingRulesBuilder::default().build()
+		sc_consensus_grandpa::VotingRulesBuilder::new()
+			.add(sc_consensus_grandpa::BeforeBestBlockBy(1u32))
+			.build()
 	};
 	let force_authoring = config.force_authoring;
 	let backoff_authoring_blocks =
