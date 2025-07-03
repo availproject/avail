@@ -32,6 +32,7 @@ use sc_network::{
 };
 use schema::v1::da_sampling::*;
 use sp_api::ProvideRuntimeApi;
+use sp_blockchain::HeaderBackend;
 use sp_consensus::BlockOrigin;
 use sp_runtime::traits::{Block as BlockT, Header, PhantomData};
 use std::{
@@ -305,23 +306,29 @@ where
 }
 
 /// DA samples downloader (client side)
-pub struct DaSamplesDownloader<B: BlockT> {
+#[derive(Clone)]
+pub struct DaSamplesDownloader<B: BlockT, Client> {
+	client: Arc<Client>,
 	protocol_name: ProtocolName,
 	network: Arc<NetworkService<B, B::Hash>>,
 	pub verification_tracker: Arc<VerificationTracker>,
 }
 
-impl<B> DaSamplesDownloader<B>
+impl<B, Client> DaSamplesDownloader<B, Client>
 where
 	B: BlockT<Header = DaHeader, Hash = Hash>,
+	Client: Send + Sync + 'static + ProvideRuntimeApi<B> + HeaderBackend<B>,
+	Client::Api: DataAvailApi<B> + KateApi<B>,
 {
 	pub fn new(
 		protocol_name: ProtocolName,
+		client: Arc<Client>,
 		network: Arc<NetworkService<B, B::Hash>>,
 		tracker: Arc<VerificationTracker>,
 	) -> Self {
 		Self {
 			protocol_name,
+			client,
 			network,
 			verification_tracker: tracker,
 		}
@@ -330,6 +337,74 @@ where
 	pub async fn run(self, import_stream: BoxStream<'static, BlockImportNotification<B>>) {
 		debug!(target: LOG_TARGET, "Starting DA sample downloader");
 
+		let tracker = self.verification_tracker.clone();
+		let network = self.network.clone();
+		let protocol_name = self.protocol_name.clone();
+
+		let client = self.client.clone();
+
+		tokio::spawn(async move {
+			use std::time::Duration;
+			use tokio::time::interval;
+
+			let mut retry_interval = interval(Duration::from_secs(10));
+
+			loop {
+				trace!(target: LOG_TARGET, "Retrying DA verification for blocks");
+				retry_interval.tick().await;
+
+				let finalized = client.info().finalized_number;
+
+				let blocks = tracker.blocks.read().clone();
+				for (hash, state) in blocks {
+					let eligible = match state.status {
+						BlockVerificationStatus::Verified | BlockVerificationStatus::Failed => {
+							false
+						},
+						_ => true,
+					};
+
+					if !eligible {
+						continue;
+					}
+					trace!(target: LOG_TARGET, "Checking block {hash:?} for retry with status {:?}", state.status);
+					if let Ok(Some(header)) = client.header(hash) {
+						let number = *header.number();
+						if number <= finalized {
+							continue;
+						}
+
+						if header.extension.app_lookup().is_empty() {
+							trace!(target: LOG_TARGET, "Block does not have any DA txs, marking as verified {:?}", hash);
+							tracker.set_status(hash, BlockVerificationStatus::Verified);
+							continue;
+						}
+
+						debug!(
+							target: LOG_TARGET,
+							"Retrying DA verification for block {hash} (attempt {})",
+							state.retry_count + 1
+						);
+
+						let header = header.clone();
+						let tracker = tracker.clone();
+						let downloader = DaSamplesDownloader {
+							protocol_name: protocol_name.clone(),
+							network: network.clone(),
+							verification_tracker: tracker.clone(),
+							client: client.clone(),
+						};
+
+						tokio::spawn(async move {
+							if let Err(e) = downloader.verify_block(hash, header).await {
+								error!(target: LOG_TARGET, "Retry DA verification failed for {hash}: {e}");
+								tracker.set_status(hash, BlockVerificationStatus::TimedOut);
+							}
+						});
+					}
+				}
+			}
+		});
 		tokio::pin!(import_stream);
 
 		while let Some(notification) = import_stream.next().await {

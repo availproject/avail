@@ -96,6 +96,12 @@ where
 	while current_hash != start_hash && current_number >= start_number {
 		match tracker.get_status(&current_hash) {
 			Some(BlockVerificationStatus::Verified) => { /* all good */ },
+			None => {
+				debug!(target: LOG_TARGET, "No verification status for block {} at number {}, adding new entry", current_hash, current_number);
+				tracker.set_status(current_hash, BlockVerificationStatus::Pending);
+				deepest_unverified = Some((current_hash, current_number));
+				continue;
+			},
 			_ => {
 				deepest_unverified = Some((current_hash, current_number));
 			},

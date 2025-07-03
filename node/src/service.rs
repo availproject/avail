@@ -479,7 +479,7 @@ pub fn new_full_base(
 	let grandpa_voting_rules = if role.is_authority() && !role.is_supernode() {
 		let tracker = Arc::new(VerificationTracker::new());
 		let sample_downloader =
-			DaSamplesDownloader::new(da_sampling_protocol_name, network.clone(), tracker.clone());
+			DaSamplesDownloader::new(da_sampling_protocol_name, client.clone(), network.clone(), tracker.clone());
 		let da_voting_rule =
 			da_sampling::da_voting_rule::DaVerificationVotingRule::<Block>::new(tracker.clone());
 		task_manager.spawn_handle().spawn(
