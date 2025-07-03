@@ -1,5 +1,5 @@
 use crate::{
-	send_cell_request,
+	process_cell_request_inner, send_cell_request,
 	store::{RocksdbShardStore, ShardStore},
 	types::{
 		BlobHash, BlobMetadata, CellRequest, CellUnitRequest, FullClient, Shard, ShardRequest,
@@ -11,6 +11,7 @@ use anyhow::{anyhow, Result};
 use codec::Decode;
 use da_control::Call;
 use da_runtime::{RuntimeCall, UncheckedExtrinsic};
+use futures::{future::try_join_all, stream::FuturesUnordered, StreamExt};
 use sc_authority_discovery::AuthorityDiscovery;
 use sc_client_api::HeaderBackend;
 use sc_keystore::{Keystore, LocalKeystore};
@@ -223,95 +224,119 @@ where
 pub async fn sample_and_get_failed_blobs<Block>(
 	submit_blob_metadata_calls: &Vec<RuntimeCall>,
 	network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
+	shard_store: &Arc<RocksdbShardStore>,
 	blob_metadata: BTreeMap<BlobHash, BlobMetadata>,
 ) -> (Vec<(BlobHash, String)>, u64)
 where
 	Block: BlockT,
 {
-	let mut failed_txs: Vec<(BlobHash, String)> = Vec::new();
-	let mut total_blob_size: u64 = 0;
-	for tx in submit_blob_metadata_calls {
+	let mut tx_futures = FuturesUnordered::new();
+
+	for tx in submit_blob_metadata_calls.iter().cloned() {
 		if let RuntimeCall::DataAvailability(Call::submit_blob_metadata {
 			size,
 			blob_hash,
 			commitments,
 		}) = tx
 		{
-			// Get blob metadata from storage
-			let Some(blob_metadata) = blob_metadata.get(blob_hash) else {
-				failed_txs.push((
-					*blob_hash,
-					"Blob metadata not found in the store to sample the blob".to_string(),
-				));
-				continue;
-			};
+			let network = network.clone();
+			let shard_store = shard_store.clone();
+			let blob_metadata = blob_metadata.clone();
+			let fut = async move {
+				// Get blob metadata from storage
+				let Some(meta) = blob_metadata.get(&blob_hash) else {
+					return Err((
+						blob_hash,
+						"Blob metadata not found in the store to sample the blob".to_string(),
+					));
+				};
+				// Check that values match
+				if meta.size != size || meta.commitments != commitments {
+					return Err((
+						blob_hash,
+						"Blob metadata from the store did not match the one from the transaction"
+							.to_string(),
+					));
+				}
 
-			// Check that values match
-			if blob_metadata.size != *size || blob_metadata.commitments != *commitments {
-				failed_txs.push((
-					*blob_hash,
-					"Blob metadata from the store did not match the one from the transaction"
-						.to_string(),
-				));
-				continue;
-			}
-
-			// TODO Blob GET REAL SHARDS NEEDED FOR SAMPLING, for now we sample a pseudo random blob for fun
-			let some_bytes: [u8; 8] = blob_hash.0[0..8].try_into().unwrap();
-			let some_number: u64 = u64::from_le_bytes(some_bytes);
-			let some_index: u16 = (some_number % (blob_metadata.nb_shards as u64))
-				.try_into()
-				.unwrap();
-
-			// TODO Blob Select peer to target with request, for now we select the first and fail if no response, will need retry mechanism and timeout.
-			let Some(peers) = blob_metadata.ownership.get(&some_index) else {
-				failed_txs.push((*blob_hash, format!("No ownership find in the blob_metadata for the shard {some_index} of blob hash {blob_hash}")));
-				continue;
-			};
-			if peers.len() == 0 {
-				failed_txs.push((*blob_hash, format!("Ownership is empty in the blob_metadata for the shard {some_index} of blob hash {blob_hash}")));
-				continue;
-			}
-			let peer_base58 = &peers[peers.len() - 1].1;
-			let Ok(peer) = PeerId::from_str(&peer_base58) else {
-				failed_txs.push((*blob_hash, format!("Could not parse the peer Id for the shard {some_index} of blob hash {blob_hash}")));
-				continue;
-			};
-
-			// TODO Blob we still need to sample our own shards if needed, for now ignore
-			let my_peer_id = network.local_peer_id();
-			if my_peer_id != peer {
-				// TODO Blob Send request to get shards for each shard needed of the blobs, for now we get one random
-				// TODO Blob Make sure we don't do a request to ourselves which is not required
-				let cell_request = CellRequest {
-					hash: *blob_hash,
-					cell_units: vec![CellUnitRequest {
-						shard_id: some_index,
-						start: 0,
-						end: if blob_metadata.size == 0 {
-							0
-						} else {
-							(blob_metadata.size as f64 * 0.1).ceil() as u64
-						},
-					}],
+				// TODO Blob GET REAL SHARDS NEEDED FOR SAMPLING, for now we sample first / last, and we take 10% of a shard
+				let shard_ids = if meta.nb_shards > 1 {
+					vec![0, meta.nb_shards - 1]
+				} else {
+					vec![0]
 				};
 
-				// TODO Blob here we should keep track of already failed blobs so we don't request cells for nothing
-				let _cell_response = match send_cell_request(cell_request, &network, peer).await {
-					Ok(c) => c,
+				let mut cell_futures = Vec::new();
+				let mut own_cell_response = Vec::new();
+				for shard_id in shard_ids {
+					let Some(peers) = meta.ownership.get(&shard_id) else {
+						return Err((
+							blob_hash,
+							format!("No ownership find in the blob_metadata for the shard {shard_id} of blob hash {blob_hash}"),
+						));
+					};
+					let peer_ids: Vec<PeerId> = peers
+						.into_iter()
+						.filter_map(|(_, base58)| PeerId::from_str(&base58).ok())
+						.collect();
+					if peer_ids.is_empty() {
+						return Err((
+							blob_hash,
+							format!("Ownership is empty in the blob_metadata for the shard {shard_id} of blob hash {blob_hash}"),
+						));
+					}
+					let my_peer_id = network.local_peer_id();
+
+					let req = CellRequest {
+						hash: blob_hash,
+						cell_units: vec![CellUnitRequest {
+							shard_id,
+							start: 0,
+							end: if shard_id == meta.nb_shards - 1 {
+								((meta.size % (meta.nb_shards as u64)) as f64 * 0.1).floor() as u64
+							} else {
+								(SHARD_SIZE as f64 * 0.1).floor() as u64
+							},
+						}],
+					};
+					if !peer_ids.contains(&my_peer_id) {
+						// TODO Blob: Actually select correct peer and make retry mechanism with others
+						cell_futures.push(send_cell_request(req, &network, peer_ids[0]));
+					} else {
+						// If i'm supposed to have this shard, might as well get it from myself
+						own_cell_response.push(process_cell_request_inner(req, &shard_store));
+					}
+				}
+
+				let mut results = match try_join_all(cell_futures).await {
+					Ok(r) => r,
 					Err(e) => {
-						log::error!(target: LOG_TARGET, "Could not get response from peer {peer_base58} for shard {some_index} of blob hash {blob_hash}: {e}");
-						failed_txs.push((*blob_hash, format!("Could not get response from peer {peer_base58} for shard {some_index} of blob hash {blob_hash}: {e}")));
-						continue;
+						return Err((
+							blob_hash,
+							format!("Cell request error for blob {}: {}", blob_hash, e),
+						));
 					},
 				};
 
-				// TODO Blob sampling
-				log::info!("Should sample: size-{size:?} blob_hash-{blob_hash:?}");
-			}
-			total_blob_size += size;
+				results.extend(own_cell_response);
+
+				// TODO Blob: Use results to sample
+
+				// If ok, we can also add the size
+				Ok(size)
+			};
+			tx_futures.push(fut);
 		}
 	}
 
-	(failed_txs, total_blob_size)
+	let mut failed = Vec::new();
+	let mut total_size = 0;
+	while let Some(res) = tx_futures.next().await {
+		match res {
+			Ok(size) => total_size += size,
+			Err((blob_hash, reason)) => failed.push((blob_hash, reason)),
+		}
+	}
+
+	(failed, total_size)
 }

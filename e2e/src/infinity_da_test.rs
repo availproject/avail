@@ -9,7 +9,7 @@ pub async fn run() -> Result<(), ClientError> {
 	// let string = "aaaaa";
 	// let blob = string.as_bytes().to_vec();
 	// let blob_hash = H256::from(blake2_256(&blob));
-	// let commitments = build_da_commitments(blob.clone(), 1024, 2048, Seed::default()).unwrap();
+	// let commitments = build_da_commitments(blob.clone(), 1024, 4096, Seed::default()).unwrap();
 	// let commitments_hex = hex::encode(&commitments);
 
 	// println!("string = {}", string);
@@ -38,7 +38,7 @@ pub async fn run() -> Result<(), ClientError> {
 
 	println!("---------- START Submission ---------- ");
 	let len = 32 * 1024 * 1024;
-	let mode = 3;
+	let mode = 1;
 
 	let local_endpoint: &str = if mode == 1 {
 		"http://127.0.0.1:9944"
@@ -73,7 +73,7 @@ pub async fn run() -> Result<(), ClientError> {
 		println!("---------- START Commitment generation {i} ---------- ");
 		let blob: Vec<u8> = repeat(byte).take(len - i).collect::<Vec<u8>>();
 		let blob_hash = H256::from(blake2_256(&blob));
-		let commitments = build_da_commitments(blob.clone(), 1024, 2048, Seed::default()).unwrap();
+		let commitments = build_da_commitments(blob.clone(), 1024, 4096, Seed::default()).unwrap();
 		println!("blob len = {:?}", blob.len());
 		println!("blob_hash = {:?}", blob_hash);
 		println!("commitments len = {:?}", commitments.len());

@@ -38,12 +38,6 @@ hex = { workspace = true }
 async-channel = { workspace = true }
 once_cell = { workspace = true }
 anyhow = "1.0"
-tokio = { version = "1.43.0", features = [
-    "sync",
-    "fs",
-    "macros",
-    "rt-multi-thread",
-], default-features = false }
 parking_lot = { workspace = true }
 
 [features]

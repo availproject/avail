@@ -4,20 +4,21 @@ use crate::{
 	decode_blob_notification, handle_incoming_blob_request,
 	store::RocksdbShardStore,
 	types::{BlobGossipValidator, BlobNotification, FullClient, BLOB_GOSSIP_PROTO, BLOB_REQ_PROTO},
-	LOG_TARGET, NOTIFICATION_MAX_SIZE, REQUEST_MAX_SIZE, REQUEST_TIME_OUT, RESPONSE_MAX_SIZE,
+	CONCURRENT_REQUESTS, LOG_TARGET, NOTIFICATION_MAX_SIZE, REQUEST_MAX_SIZE, REQUEST_TIME_OUT,
+	RESPONSE_MAX_SIZE,
 };
 use codec::Encode;
 use futures::{FutureExt, StreamExt};
 use once_cell::sync::OnceCell;
 use sc_keystore::LocalKeystore;
 use sc_network::{
-	config::{NonDefaultSetConfig, RequestResponseConfig, Role}, NetworkService, NotificationService
+	config::{IncomingRequest, NonDefaultSetConfig, RequestResponseConfig, Role},
+	NetworkService, NotificationService,
 };
 use sc_network_gossip::GossipEngine;
 use sc_network_sync::SyncingService;
 use sc_service::SpawnTaskHandle;
 use sp_runtime::traits::Block as BlockT;
-use tokio::sync::mpsc;
 
 #[derive(Clone)]
 pub struct BlobHandle<Block>
@@ -26,7 +27,7 @@ where
 {
 	pub network: Arc<OnceCell<Arc<NetworkService<Block, <Block as BlockT>::Hash>>>>,
 	pub sync_service: Arc<OnceCell<Arc<SyncingService<Block>>>>,
-	pub gossip_cmd_sender: Arc<OnceCell<mpsc::UnboundedSender<BlobNotification>>>,
+	pub gossip_cmd_sender: Arc<OnceCell<async_channel::Sender<BlobNotification>>>,
 	pub keystore: Arc<OnceCell<Arc<LocalKeystore>>>,
 	pub client: Arc<OnceCell<Arc<FullClient>>>,
 	pub shard_store: Arc<RocksdbShardStore>,
@@ -43,6 +44,7 @@ where
 	) -> (
 		Arc<Self>,
 		RequestResponseConfig,
+		async_channel::Receiver<IncomingRequest>,
 		NonDefaultSetConfig,
 		Box<dyn NotificationService>,
 	) {
@@ -52,14 +54,14 @@ where
 			Arc::new(RocksdbShardStore::open(db_path).expect("opening RocksDB blob store failed"));
 
 		// Initialize the blob shard req/res protocol config
-		let (request_sender, request_receiver) = async_channel::unbounded();
+		let (blob_req_sender, blob_req_receiver) = async_channel::unbounded();
 		let blob_req_res_cfg = RequestResponseConfig {
 			name: BLOB_REQ_PROTO,
 			fallback_names: vec![],
 			max_request_size: REQUEST_MAX_SIZE,
 			max_response_size: RESPONSE_MAX_SIZE,
 			request_timeout: REQUEST_TIME_OUT,
-			inbound_queue: Some(request_sender),
+			inbound_queue: Some(blob_req_sender),
 		};
 
 		// Initialize the blob gossip protocol config
@@ -76,26 +78,6 @@ where
 		let keystore = Arc::new(OnceCell::new());
 		let client = Arc::new(OnceCell::new());
 		let gossip_cmd_sender = Arc::new(OnceCell::new());
-		let shard_store_clone = shard_store.clone();
-
-		tokio::spawn({
-			async move {
-				loop {
-					futures::select! {
-						// Request response handler
-						maybe_req = request_receiver.recv().fuse() => {
-							if let Ok(request) = maybe_req {
-								handle_incoming_blob_request(request, &shard_store_clone);
-							} else {
-								break;
-							}
-						}
-
-
-					}
-				}
-			}
-		});
 
 		let blob_handle = BlobHandle {
 			network,
@@ -111,9 +93,47 @@ where
 		(
 			Arc::new(blob_handle),
 			blob_req_res_cfg,
+			blob_req_receiver,
 			blob_gossip_cfg,
 			blob_gossip_service,
 		)
+	}
+
+	pub fn start_blob_service(
+		&self,
+		spawn_handle: SpawnTaskHandle,
+		req_receiver: async_channel::Receiver<IncomingRequest>,
+		notif_service: Box<dyn NotificationService>,
+		network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
+		sync_service: Arc<SyncingService<Block>>,
+		keystore: Arc<LocalKeystore>,
+		client: Arc<FullClient>,
+	) {
+		self.register_keystore(keystore);
+		self.register_client(client.clone());
+		self.register_network_and_sync(network.clone(), sync_service.clone());
+		self.start_blob_req_res(spawn_handle.clone(), req_receiver);
+		self.start_blob_gossip(spawn_handle, notif_service);
+	}
+
+	pub fn start_blob_req_res(
+		&self,
+		spawn_handle: SpawnTaskHandle,
+		req_receiver: async_channel::Receiver<IncomingRequest>,
+	) {
+		spawn_handle.spawn("request-listener", None, {
+			let shard_store_clone = self.shard_store.clone();
+			async move {
+				req_receiver
+					.for_each_concurrent(CONCURRENT_REQUESTS, |request| {
+						let store = shard_store_clone.clone();
+						async move {
+							handle_incoming_blob_request(request, &store);
+						}
+					})
+					.await;
+			}
+		});
 	}
 
 	pub fn start_blob_gossip(
@@ -139,18 +159,18 @@ where
 		);
 
 		let topic = Block::Hash::default();
-		let mut incoming_receiver = gossip_engine.messages_for(topic);
+		let incoming_receiver = gossip_engine.messages_for(topic);
 
-		let (gossip_cmd_sender, mut gossip_cmd_receiver) =
-			mpsc::unbounded_channel::<BlobNotification>();
+		let (gossip_cmd_sender, gossip_cmd_receiver) =
+			async_channel::unbounded::<BlobNotification>();
 
 		spawn_handle.spawn("gossip-sender", None, async move {
 			loop {
 				futures::select! {
-					() = (&mut gossip_engine).fuse() => break,
+					() = (&mut gossip_engine).fuse() => break, // Important
 					maybe_cmd = gossip_cmd_receiver.recv().fuse() => {
 						match maybe_cmd {
-							Some(blob_notification) => {
+							Ok(blob_notification) => {
 								gossip_engine.gossip_message(topic, blob_notification.encode(), false)
 							},
 							_ => break,
@@ -163,15 +183,16 @@ where
 		spawn_handle.spawn("gossip-listener", None, {
 			let blob_handle = self.clone();
 			async move {
-				while let Some(notification) = incoming_receiver.next().await {
-					if let Some(_peer) = notification.sender {
-						decode_blob_notification(
-							&notification.message,
-							&blob_handle
-						)
-						.await;
-					};
-				}
+				incoming_receiver
+					.for_each_concurrent(CONCURRENT_REQUESTS, |notification| {
+						let blob_handle = blob_handle.clone();
+						async move {
+							if let Some(_peer) = notification.sender {
+								decode_blob_notification(&notification.message, &blob_handle).await;
+							}
+						}
+					})
+					.await;
 			}
 		});
 
@@ -186,7 +207,6 @@ where
 		network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
 		sync_service: Arc<SyncingService<Block>>,
 	) {
-		log::info!(target: LOG_TARGET, "Registering network");
 		self.network
 			.set(network)
 			.map_err(|_| "BlobHandle::register_network called more than once")
@@ -199,7 +219,6 @@ where
 	}
 
 	pub fn register_keystore(&self, keystore: Arc<LocalKeystore>) {
-		log::info!(target: LOG_TARGET, "Registering keystore");
 		self.keystore
 			.set(keystore)
 			.map_err(|_| "BlobHandle::register_keystore called more than once")
@@ -207,7 +226,6 @@ where
 	}
 
 	pub fn register_client(&self, client: Arc<FullClient>) {
-		log::info!(target: LOG_TARGET, "Registering client");
 		self.client
 			.set(client)
 			.map_err(|_| "BlobHandle::register_client called more than once")

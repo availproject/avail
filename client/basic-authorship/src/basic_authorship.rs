@@ -668,6 +668,7 @@ where
 			sample_and_get_failed_blobs(
 				&submit_blob_metadata_calls,
 				self.network.clone(),
+				&self.shard_store,
 				blob_metadata,
 			)
 			.await

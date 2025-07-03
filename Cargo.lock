@@ -996,7 +996,6 @@ dependencies = [
  "sp-std",
  "sp-transaction-pool",
  "tempfile",
- "tokio",
 ]
 
 [[package]]
@@ -9565,7 +9564,6 @@ dependencies = [
  "sp-runtime",
  "sp-transaction-pool",
  "substrate-prometheus-endpoint",
- "tokio",
 ]
 
 [[package]]

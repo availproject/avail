@@ -41,13 +41,6 @@ sp-consensus.workspace = true
 sp-transaction-pool = { workspace = true, features = ["std"] }
 da-runtime = { workspace = true, features = ["std"]  }
 
-tokio = { version = "1.43.0", features = [
-    "sync",
-    "fs",
-    "macros",
-    "rt-multi-thread",
-], default-features = false }
-
 [dev-dependencies]
 parking_lot.workspace = true
 sc-client-api.workspace = true

@@ -1,14 +1,14 @@
 use crate::{
 	p2p::BlobHandle,
 	types::{
-		BlobMetadata, BlobReceived, CellRequest, CellResponse, CellUnitResponse, ShardReceived,
-		ShardResponse,
+		BlobHash, BlobMetadata, BlobReceived, CellRequest, CellResponse, CellUnitResponse,
+		ShardReceived, ShardResponse,
 	},
 	utils::{fetch_shards, get_my_validator_id, get_shards_to_store, get_validators},
 };
 use anyhow::{anyhow, Result};
 use codec::{Decode, Encode};
-use futures::channel::oneshot;
+use futures::{channel::oneshot, stream::FuturesUnordered, StreamExt};
 use sc_network::{
 	config::{IncomingRequest, OutgoingResponse},
 	IfDisconnected, NetworkRequest, NetworkService, NetworkStateInfo, PeerId,
@@ -27,21 +27,23 @@ pub mod utils;
 
 pub(crate) const LOG_TARGET: &str = "avail::blob";
 
-/***** TODO Blob: Make CLI args from this *****/
+/***** TODO Blob: Make CLI / Runtime args from this, must be compatible with rpc flags *****/
 /// Maximum notification size, 128kb
-pub const NOTIFICATION_MAX_SIZE: u64 = 128 * 1024; // 128 kb
+pub const NOTIFICATION_MAX_SIZE: u64 = 128 * 1024;
 /// Maximum request size, 32kb
-pub const REQUEST_MAX_SIZE: u64 = 32 * 1024; // 32 kb
-/// Maximum response size, 32mb
-pub const RESPONSE_MAX_SIZE: u64 = 32 * 1024 * 1024; // 32 mb
+pub const REQUEST_MAX_SIZE: u64 = 32 * 1024;
+/// Maximum response size, 65mb
+pub const RESPONSE_MAX_SIZE: u64 = 65 * 1024 * 1024;
 /// Maximum request time
 pub const REQUEST_TIME_OUT: Duration = Duration::from_secs(5);
+/// The maximum number of allowed concurrent request processing or notification processing
+pub const CONCURRENT_REQUESTS: usize = 100;
 
-/***** TODO Blob: Make runtime variable for this *****/
+// Business logic
 /// Maximum size of a blob, need to change the rpc request and response size to handle this
-pub const MAX_BLOB_SIZE: u64 = 32 * 1024 * 1024; // 32mb
+pub const MAX_BLOB_SIZE: u64 = 64 * 1024 * 1024;
 /// Maximum shard size
-pub const SHARD_SIZE: u64 = 16 * 1024 * 1024; // TODO Blob change to this for fun: 16 * 1024 * 1024; // 16mb
+pub const SHARD_SIZE: u64 = 32 * 1024 * 1024;
 /// Minimum percentage of validator that needs to store a shard, we take the maximum between this and MIN_SHARD_HOLDER_COUNT
 pub const MIN_SHARD_HOLDER_PERCENTAGE: Perbill = Perbill::from_percent(10);
 /// Minimum amount of validator that needs to store a shard, if we have less than minimum, everyone stores it.
@@ -56,34 +58,32 @@ const _TMP_BLOB_TTL: u32 = 180; // 1 hour
 pub const MIN_TRANSACTION_VALIDITY: u64 = 15; // 5 mn
 /// Max Amount of block for which the transaction submitted through RPC is valid.
 /// This value is used so a transaction won't be stuck in the mempool.
-pub const MAX_TRANSACTION_VALIDITY: u64 = 30; // 10 mn
+pub const MAX_TRANSACTION_VALIDITY: u64 = 150; // 50 mn
 
 pub async fn decode_blob_notification<Block>(data: &[u8], blob_handle: &BlobHandle<Block>)
 where
 	Block: BlockT,
 {
 	match BlobNotification::decode(&mut &data[..]) {
-		Ok(notification) => {
-			match notification {
-				BlobNotification::BlobReceived(blob_received) => {
-					match PeerId::from_str(&blob_received.original_peer_id.clone()) {
-						Ok(original_peer_id) => {
-							handle_blob_received_notification::<Block>(
-								blob_received,
-								blob_handle,
-								original_peer_id,
-							)
-							.await;
-						},
-						Err(e) => {
-							log::error!(target: LOG_TARGET, "Could not decode peer id from Blob received notification: {e}");
-						},
-					}
-				},
-				BlobNotification::ShardReceived(shard_received) => {
-					handle_shard_received_notification(shard_received, &blob_handle.shard_store);
-				},
-			}
+		Ok(notification) => match notification {
+			BlobNotification::BlobReceived(blob_received) => {
+				match PeerId::from_str(&blob_received.original_peer_id.clone()) {
+					Ok(original_peer_id) => {
+						handle_blob_received_notification::<Block>(
+							blob_received,
+							blob_handle,
+							original_peer_id,
+						)
+						.await;
+					},
+					Err(e) => {
+						log::error!(target: LOG_TARGET, "Could not decode peer id from Blob received notification: {e}");
+					},
+				}
+			},
+			BlobNotification::ShardReceived(shard_received) => {
+				handle_shard_received_notification(shard_received, &blob_handle.shard_store);
+			},
 		},
 		Err(err) => {
 			log::error!(
@@ -174,13 +174,9 @@ async fn handle_blob_received_notification<Block>(
 			blob_metadata.insert_in_ownership(shard_id, &my_validator_id, &my_peer_id_base58);
 		}
 
-		let shard_request = ShardRequest {
-			hash: blob_received.hash,
-			shard_ids: shards_to_store,
-		};
-
 		send_shard_request(
-			shard_request,
+			blob_received.hash,
+			shards_to_store,
 			blob_handle,
 			network,
 			original_peer_id,
@@ -212,7 +208,8 @@ async fn handle_blob_received_notification<Block>(
 }
 
 async fn send_shard_request<Block>(
-	shard_request: ShardRequest,
+	blob_hash: BlobHash,
+	shard_ids: Vec<u16>,
 	blob_handle: &BlobHandle<Block>,
 	network: &Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
 	original_peer_id: PeerId,
@@ -220,47 +217,82 @@ async fn send_shard_request<Block>(
 ) where
 	Block: BlockT,
 {
-	log::info!(target: LOG_TARGET, "2 - Sending a shard request");
-	let blob_request = BlobRequest::ShardRequest(shard_request);
-	let response = network
-		.request(
-			original_peer_id,
-			BLOB_REQ_PROTO,
-			blob_request.encode(),
-			None,
-			IfDisconnected::TryConnect,
-		)
-		.await;
+	let shards_per_request = (RESPONSE_MAX_SIZE / SHARD_SIZE) as usize;
+	if shards_per_request == 0 {
+		log::error!(
+			target: LOG_TARGET,
+			"RESPONSE_MAX_SIZE ({}) is smaller than SHARD_SIZE ({}), cannot request any shard.",
+			RESPONSE_MAX_SIZE,
+			SHARD_SIZE
+		);
+		return;
+	}
 
-	match response {
-		Ok((data, _proto)) => {
-			let mut buf: &[u8] = &data;
-			match BlobResponse::decode(&mut buf) {
-				Ok(response) => match response {
-					BlobResponse::ShardResponse(shard_response) => {
-						process_shard_response(shard_response, blob_handle, my_validator_id);
-					},
-					BlobResponse::CellResponse(_) => {
-						log::error!(
-							target: LOG_TARGET,
-							"Invalid response in send_shard_request, got CellResponse, expected ShardResponse"
-						);
-					},
+	let futures = FuturesUnordered::new();
+
+	for shard_ids_chunk in shard_ids.chunks(shards_per_request) {
+		let chunk_shard_request = ShardRequest {
+			hash: blob_hash,
+			shard_ids: shard_ids_chunk.to_vec(),
+		};
+		let blob_request = BlobRequest::ShardRequest(chunk_shard_request);
+		let my_validator_id = my_validator_id.clone();
+		let blob_handle = blob_handle.clone();
+        let network = network.clone();
+
+		let fut = async move {
+			log::info!(target: LOG_TARGET, "2 - Sending a shard request for {} shards", shard_ids_chunk.len());
+
+			let response = network
+				.request(
+					original_peer_id,
+					BLOB_REQ_PROTO,
+					blob_request.encode(),
+					None,
+					IfDisconnected::TryConnect,
+				)
+				.await;
+
+			match response {
+				Ok((data, _proto)) => {
+					let mut buf: &[u8] = &data;
+					match BlobResponse::decode(&mut buf) {
+						Ok(response) => match response {
+							BlobResponse::ShardResponse(shard_response) => {
+								process_shard_response(
+									shard_response,
+									&blob_handle,
+									my_validator_id,
+								)
+								.await;
+							},
+							BlobResponse::CellResponse(_) => {
+								log::error!(
+									target: LOG_TARGET,
+									"Invalid response in send_shard_request, got CellResponse, expected ShardResponse"
+								);
+							},
+						},
+						Err(err) => {
+							log::error!(
+								target: LOG_TARGET,
+								"Failed to decode Blob response ({} bytes): {:?}",
+								data.len(),
+								err
+							);
+						},
+					}
 				},
-				Err(err) => {
-					log::error!(
-						target: LOG_TARGET,
-						"Failed to decode Blob response ({} bytes): {:?}",
-						data.len(),
-						err
-					);
+				Err(e) => {
+					log::error!(target: LOG_TARGET, "An error has occured while trying to send shard request for a chunk: {e}");
 				},
 			}
-		},
-		Err(e) => {
-			log::error!(target: LOG_TARGET, "An error has occured while trying to send shard request: {e}");
-		},
+		};
+
+		futures.push(fut);
 	}
+
+	futures.collect::<()>().await;
 }
 
 pub fn handle_incoming_blob_request(request: IncomingRequest, store: &RocksdbShardStore) {
@@ -285,6 +317,11 @@ pub fn handle_incoming_blob_request(request: IncomingRequest, store: &RocksdbSha
 				data.len(),
 				err
 			);
+			let _ = response_tx.send(OutgoingResponse {
+				result: Err(()),
+				reputation_changes: Vec::default(),
+				sent_feedback: None,
+			});
 		},
 	}
 }
@@ -321,11 +358,11 @@ fn process_shard_request(
 	};
 
 	if let Err(e) = response_tx.send(res) {
-		log::error!(target: LOG_TARGET, "An error has occured in handle_shard_received_notification: {e:?}");
+		log::error!(target: LOG_TARGET, "An error has occured in process_shard_request: {e:?}");
 	}
 }
 
-fn process_shard_response<Block>(
+async fn process_shard_response<Block>(
 	shard_response: ShardResponse,
 	blob_handle: &BlobHandle<Block>,
 	my_validator_id: AuthorityId,
@@ -339,7 +376,7 @@ fn process_shard_response<Block>(
 	{
 		Ok(()) => {
 			log::info!(target: LOG_TARGET, "Stored {} shards in the db", shard_response.shards.len());
-			send_shard_received_notification(shard_response, blob_handle, my_validator_id);
+			send_shard_received_notification(shard_response, blob_handle, my_validator_id).await;
 		},
 		Err(e) => {
 			log::error!(target: LOG_TARGET, "An error occured while trying to store shards: {e}");
@@ -347,7 +384,7 @@ fn process_shard_response<Block>(
 	};
 }
 
-fn send_shard_received_notification<Block>(
+async fn send_shard_received_notification<Block>(
 	shard_response: ShardResponse,
 	blob_handle: &BlobHandle<Block>,
 	my_validator_id: AuthorityId,
@@ -378,7 +415,10 @@ fn send_shard_received_notification<Block>(
 			return;
 		};
 
-		if let Err(e) = gossip_cmd_sender.send(BlobNotification::ShardReceived(shard_received)) {
+		if let Err(e) = gossip_cmd_sender
+			.send(BlobNotification::ShardReceived(shard_received))
+			.await
+		{
 			log::error!(target: LOG_TARGET, "Could not send ShardReceived notification: {e}")
 		}
 	}
@@ -458,11 +498,10 @@ where
 	}
 }
 
-pub fn process_cell_request(
+pub fn process_cell_request_inner(
 	cell_request: CellRequest,
 	store: &RocksdbShardStore,
-	response_tx: oneshot::Sender<OutgoingResponse>,
-) {
+) -> CellResponse {
 	log::info!(target: LOG_TARGET, "8 - Processing cell request");
 	let mut cell_response = CellResponse {
 		hash: cell_request.hash,
@@ -520,6 +559,15 @@ pub fn process_cell_request(
 
 		cell_response.cell_units_response.push(cell_unit_response);
 	}
+	cell_response
+}
+
+pub fn process_cell_request(
+	cell_request: CellRequest,
+	store: &RocksdbShardStore,
+	response_tx: oneshot::Sender<OutgoingResponse>,
+) {
+	let cell_response = process_cell_request_inner(cell_request, store);
 
 	// Return the data as a CellResponse
 	let res = OutgoingResponse {

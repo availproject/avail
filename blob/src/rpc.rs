@@ -1,5 +1,9 @@
 use crate::{
-	p2p::BlobHandle, store::ShardStore, types::{BlobMetadata, BlobNotification, BlobReceived, Deps, Shard}, utils::{get_my_validator_id, get_nb_shards_from_blob_size, get_shards_to_store}, LOG_TARGET, MAX_BLOB_SIZE, MAX_TRANSACTION_VALIDITY, MIN_TRANSACTION_VALIDITY, SHARD_SIZE
+	p2p::BlobHandle,
+	store::ShardStore,
+	types::{BlobMetadata, BlobNotification, BlobReceived, Deps, Shard},
+	utils::{get_my_validator_id, get_nb_shards_from_blob_size, get_shards_to_store},
+	LOG_TARGET, MAX_BLOB_SIZE, MAX_TRANSACTION_VALIDITY, MIN_TRANSACTION_VALIDITY, SHARD_SIZE,
 };
 use anyhow::{anyhow, Result};
 use codec::Decode;
@@ -139,9 +143,7 @@ where
 		}
 
 		if validity.longevity > MAX_TRANSACTION_VALIDITY {
-			return Err(internal_err!(
-				"signed transaction lifetime is too long"
-			));
+			return Err(internal_err!("signed transaction lifetime is too long"));
 		}
 
 		// --- 4. Decode to concrete call to read the metadata, Check hash, commitment, ... of the blob compared to the submitted metadata ----------------
@@ -174,7 +176,7 @@ where
 			// Check commitments
 			commitments = provided_commitments;
 			let generated_commitment =
-				build_da_commitments(blob.to_vec(), 1024, 2048, Seed::default())
+				build_da_commitments(blob.to_vec(), 1024, 4096, Seed::default())
 					.map_err(|e| internal_err!("Build commitment error: {e:?}"))?;
 			if commitments != generated_commitment {
 				return Err(internal_err!("submitted blob commitments: {commitments:?} does not correspond to generated commitments {generated_commitment:?}"));
@@ -263,6 +265,7 @@ where
 		};
 		gossip_cmd_sender
 			.send(blob_received_notification)
+			.await
 			.map_err(|e| internal_err!("internal channel closed: {e}"))?;
 
 		// --- 8. Check validity once more, if the tx has expired, we need to remove the blob once again (TODO Blob)

@@ -360,7 +360,7 @@ pub fn new_full_base(
 	};
 
 	// Blob protocols setup
-	let (blob_handle, blob_req_res_cfg, blob_gossip_cfg, blob_gossip_service) =
+	let (blob_handle, blob_req_res_cfg, blob_req_receiver, blob_gossip_cfg, blob_gossip_service) =
 		BlobHandle::new_blob_service(config.base_path.path(), config.role.clone());
 
 	let sc_service::PartialComponents {
@@ -420,10 +420,15 @@ pub fn new_full_base(
 			block_relay: None,
 		})?;
 
-	blob_handle.register_keystore(keystore_container.local_keystore());
-	blob_handle.register_client(client.clone());
-	blob_handle.register_network_and_sync(network.clone(), sync_service.clone());
-	blob_handle.start_blob_gossip(task_manager.spawn_handle(), blob_gossip_service);
+	blob_handle.start_blob_service(
+		task_manager.spawn_handle(),
+		blob_req_receiver,
+		blob_gossip_service,
+		network.clone(),
+		sync_service.clone(),
+		keystore_container.local_keystore(),
+		client.clone(),
+	);
 
 	let role = config.role.clone();
 	let force_authoring = config.force_authoring;
