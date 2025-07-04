@@ -3,7 +3,8 @@ use crate::{
 	store::ShardStore,
 	types::{BlobMetadata, BlobNotification, BlobReceived, Deps, Shard},
 	utils::{get_my_validator_id, get_nb_shards_from_blob_size, get_shards_to_store},
-	LOG_TARGET, MAX_BLOB_SIZE, MAX_TRANSACTION_VALIDITY, MIN_TRANSACTION_VALIDITY, SHARD_SIZE,
+	BLOB_TTL, LOG_TARGET, MAX_BLOB_SIZE, MAX_TRANSACTION_VALIDITY, MIN_TRANSACTION_VALIDITY,
+	SHARD_SIZE, TMP_BLOB_TTL,
 };
 use anyhow::{anyhow, Result};
 use codec::Decode;
@@ -118,7 +119,9 @@ where
 				.map_err(|_| internal_err!("failed to decode metadata extrinsic"))?;
 
 		// --- 2. Let the runtime validate it (signature, nonce, weight) ------
-		let best_hash = self.client.info().best_hash;
+		let client_info = self.client.info();
+		let best_hash = client_info.best_hash;
+
 		let validity = self
 			.client
 			.runtime_api()
@@ -190,6 +193,8 @@ where
 		// --- 5. Setup blob metadata and split the blob into shard
 		let blob_len = blob.len();
 		let nb_shards = get_nb_shards_from_blob_size(blob_len);
+		let block_number = client_info.finalized_number.saturated_into::<u64>();
+
 		let mut blob_metadata = BlobMetadata {
 			hash: blob_hash,
 			size: blob_len.saturated_into(),
@@ -197,6 +202,7 @@ where
 			commitments,
 			ownership: BTreeMap::new(),
 			is_notified: true,
+			expires_at: block_number.saturating_add(TMP_BLOB_TTL),
 		};
 
 		// Get my own peer id data
@@ -212,7 +218,7 @@ where
 
 		// Get shards that we need to store in case we're a RPC and a validator
 		// TODO Blob: use _shards_index_to_store to actually change TTL based on wether we need to store the shard or just have it for few minutes / hours
-		let (_shards_index_to_store, ownership) = get_shards_to_store_rpc::<Client, Block>(
+		let (shards_index_to_store, ownership) = get_shards_to_store_rpc::<Client, Block>(
 			&self.blob_handle.role,
 			&self.client,
 			&self.blob_handle.keystore.get().cloned(),
@@ -222,6 +228,10 @@ where
 		)
 		.await
 		.map_err(|e| internal_err!("could not get shards to store: {e}"))?;
+
+		if shards_index_to_store.len() > 0 {
+			blob_metadata.expires_at = block_number.saturating_add(BLOB_TTL);
+		}
 
 		blob_metadata.ownership = ownership.clone();
 

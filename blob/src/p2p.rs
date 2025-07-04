@@ -1,15 +1,12 @@
 use std::{path::Path, sync::Arc};
 
 use crate::{
-	decode_blob_notification, handle_incoming_blob_request,
-	store::RocksdbShardStore,
-	types::{BlobGossipValidator, BlobNotification, FullClient, BLOB_GOSSIP_PROTO, BLOB_REQ_PROTO},
-	CONCURRENT_REQUESTS, LOG_TARGET, NOTIFICATION_MAX_SIZE, REQUEST_MAX_SIZE, REQUEST_TIME_OUT,
-	RESPONSE_MAX_SIZE,
+	decode_blob_notification, handle_incoming_blob_request, store::{RocksdbShardStore, ShardStore}, types::{BlobGossipValidator, BlobNotification, FullClient, BLOB_GOSSIP_PROTO, BLOB_REQ_PROTO}, BLOB_EXPIRATION_CHECK_PERIOD, CONCURRENT_REQUESTS, LOG_TARGET, NOTIFICATION_MAX_SIZE, REQUEST_MAX_SIZE, REQUEST_TIME_OUT, RESPONSE_MAX_SIZE
 };
 use codec::Encode;
 use futures::{FutureExt, StreamExt};
 use once_cell::sync::OnceCell;
+use sc_client_api::BlockchainEvents;
 use sc_keystore::LocalKeystore;
 use sc_network::{
 	config::{IncomingRequest, NonDefaultSetConfig, RequestResponseConfig, Role},
@@ -19,6 +16,8 @@ use sc_network_gossip::GossipEngine;
 use sc_network_sync::SyncingService;
 use sc_service::SpawnTaskHandle;
 use sp_runtime::traits::Block as BlockT;
+use sp_runtime::traits::Header;
+use sp_runtime::SaturatedConversion;
 
 #[derive(Clone)]
 pub struct BlobHandle<Block>
@@ -113,10 +112,11 @@ where
 		self.register_client(client.clone());
 		self.register_network_and_sync(network.clone(), sync_service.clone());
 		self.start_blob_req_res(spawn_handle.clone(), req_receiver);
-		self.start_blob_gossip(spawn_handle, notif_service);
+		self.start_blob_gossip(spawn_handle.clone(), notif_service);
+		self.start_blob_cleaning_service(spawn_handle);
 	}
 
-	pub fn start_blob_req_res(
+	fn start_blob_req_res(
 		&self,
 		spawn_handle: SpawnTaskHandle,
 		req_receiver: async_channel::Receiver<IncomingRequest>,
@@ -136,7 +136,7 @@ where
 		});
 	}
 
-	pub fn start_blob_gossip(
+	fn start_blob_gossip(
 		&self,
 		spawn_handle: SpawnTaskHandle,
 		notif_service: Box<dyn NotificationService>,
@@ -202,7 +202,31 @@ where
 			.expect("Registering gossip_cmd_sender cannot fail");
 	}
 
-	pub fn register_network_and_sync(
+	fn start_blob_cleaning_service(&self, spawn_handle: SpawnTaskHandle) {
+		let Some(client) = self.client.get() else {
+			log::error!(target: LOG_TARGET, "Client not yet registered");
+			return;
+		};
+
+		let shard_store = self.shard_store.clone();
+		let client = client.clone();
+		spawn_handle.spawn("blob-cleanup", None, async move {
+			let mut block_sub = client.finality_notification_stream();
+
+			while let Some(imported_block) = block_sub.next().await {
+				let block_number = imported_block
+					.header
+					.number()
+					.clone()
+					.saturated_into::<u64>();
+				if block_number % BLOB_EXPIRATION_CHECK_PERIOD == 0 {
+					let _ = shard_store.clean_expired_blobs(block_number);
+				}
+			}
+		});
+	}
+
+	fn register_network_and_sync(
 		&self,
 		network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
 		sync_service: Arc<SyncingService<Block>>,
@@ -218,14 +242,14 @@ where
 			.expect("Registering sync_state cannot fail");
 	}
 
-	pub fn register_keystore(&self, keystore: Arc<LocalKeystore>) {
+	fn register_keystore(&self, keystore: Arc<LocalKeystore>) {
 		self.keystore
 			.set(keystore)
 			.map_err(|_| "BlobHandle::register_keystore called more than once")
 			.expect("Registering keystore cannot fail");
 	}
 
-	pub fn register_client(&self, client: Arc<FullClient>) {
+	fn register_client(&self, client: Arc<FullClient>) {
 		self.client
 			.set(client)
 			.map_err(|_| "BlobHandle::register_client called more than once")

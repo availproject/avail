@@ -123,6 +123,8 @@ pub struct BlobMetadata {
 	/// This is expected in P2P protocols, we use this field in case we record shard for a blob we don't have yet.
 	/// In case we are not notified, we'll use a way shorter time to live.
 	pub is_notified: bool,
+	/// Block from which this blob is considered expired
+	pub expires_at: u64,
 }
 
 impl BlobMetadata {

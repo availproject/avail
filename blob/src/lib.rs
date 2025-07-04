@@ -9,12 +9,13 @@ use crate::{
 use anyhow::{anyhow, Result};
 use codec::{Decode, Encode};
 use futures::{channel::oneshot, stream::FuturesUnordered, StreamExt};
+use sc_client_api::HeaderBackend;
 use sc_network::{
 	config::{IncomingRequest, OutgoingResponse},
 	IfDisconnected, NetworkRequest, NetworkService, NetworkStateInfo, PeerId,
 };
 use sp_authority_discovery::AuthorityId;
-use sp_runtime::{traits::Block as BlockT, Perbill};
+use sp_runtime::{traits::Block as BlockT, Perbill, SaturatedConversion};
 use std::{collections::BTreeMap, str::FromStr, sync::Arc, time::Duration};
 use store::{RocksdbShardStore, ShardStore};
 use types::{BlobNotification, BlobRequest, BlobResponse, ShardRequest, BLOB_REQ_PROTO};
@@ -29,38 +30,40 @@ pub(crate) const LOG_TARGET: &str = "avail::blob";
 
 /***** TODO Blob: Make CLI / Runtime args from this, must be compatible with rpc flags *****/
 /// Maximum notification size, 128kb
-pub const NOTIFICATION_MAX_SIZE: u64 = 128 * 1024;
+const NOTIFICATION_MAX_SIZE: u64 = 128 * 1024;
 /// Maximum request size, 32kb
-pub const REQUEST_MAX_SIZE: u64 = 32 * 1024;
+const REQUEST_MAX_SIZE: u64 = 32 * 1024;
 /// Maximum response size, 65mb
-pub const RESPONSE_MAX_SIZE: u64 = 65 * 1024 * 1024;
+const RESPONSE_MAX_SIZE: u64 = 65 * 1024 * 1024;
 /// Maximum request time
-pub const REQUEST_TIME_OUT: Duration = Duration::from_secs(5);
+const REQUEST_TIME_OUT: Duration = Duration::from_secs(5);
 /// The maximum number of allowed concurrent request processing or notification processing
-pub const CONCURRENT_REQUESTS: usize = 100;
+const CONCURRENT_REQUESTS: usize = 100;
 
 // Business logic
 /// Maximum size of a blob, need to change the rpc request and response size to handle this
-pub const MAX_BLOB_SIZE: u64 = 64 * 1024 * 1024;
+const MAX_BLOB_SIZE: u64 = 64 * 1024 * 1024;
 /// Maximum shard size
-pub const SHARD_SIZE: u64 = 32 * 1024 * 1024;
+const SHARD_SIZE: u64 = 32 * 1024 * 1024;
 /// Minimum percentage of validator that needs to store a shard, we take the maximum between this and MIN_SHARD_HOLDER_COUNT
-pub const MIN_SHARD_HOLDER_PERCENTAGE: Perbill = Perbill::from_percent(10);
+const MIN_SHARD_HOLDER_PERCENTAGE: Perbill = Perbill::from_percent(10);
 /// Minimum amount of validator that needs to store a shard, if we have less than minimum, everyone stores it.
 /// We take the maximum between this and MIN_SHARD_HOLDER_COUNT
-pub const MIN_SHARD_HOLDER_COUNT: u32 = 2; // TODO Blob Put like 10 validators
-/// TODO Blob Amount of block for which we need to store the blob metadata and shards.
-const _BLOB_TTL: u32 = 120_960; // 28 days
-/// TODO Blob Amount of block for which the receiving rpc node need to store the blob metadata and shards.
-const _TMP_BLOB_TTL: u32 = 180; // 1 hour
+const MIN_SHARD_HOLDER_COUNT: u32 = 2; // TODO Blob Put like 10 validators
+/// Amount of block for which we need to store the blob metadata and shards.
+const BLOB_TTL: u64 = 120_960; // 28 days
+/// Amount of block for which the receiving rpc node need to store the blob metadata and shards.
+const TMP_BLOB_TTL: u64 = 180; // 1 hour
+/// Amount of blocks used to periodically check wether we should remove expired blobs or not.
+const BLOB_EXPIRATION_CHECK_PERIOD: u64 = TMP_BLOB_TTL;
 /// Min Amount of block for which the transaction submitted through RPC is valid.
 /// This value needs to handle the time to upload the blob to the store
-pub const MIN_TRANSACTION_VALIDITY: u64 = 15; // 5 mn
+const MIN_TRANSACTION_VALIDITY: u64 = 15; // 5 mn
 /// Max Amount of block for which the transaction submitted through RPC is valid.
 /// This value is used so a transaction won't be stuck in the mempool.
-pub const MAX_TRANSACTION_VALIDITY: u64 = 150; // 50 mn
+const MAX_TRANSACTION_VALIDITY: u64 = 150; // 50 mn
 /// The number of time we'll allow trying to fetch internal blob metadata before letting the transaction go through to get discarded
-pub const MAX_BLOB_RETRY_BEFORE_DISCARDING: u16 = 1;
+const MAX_BLOB_RETRY_BEFORE_DISCARDING: u16 = 1;
 
 pub async fn decode_blob_notification<Block>(data: &[u8], blob_handle: &BlobHandle<Block>)
 where
@@ -84,7 +87,7 @@ where
 				}
 			},
 			BlobNotification::ShardReceived(shard_received) => {
-				handle_shard_received_notification(shard_received, &blob_handle.shard_store);
+				handle_shard_received_notification(shard_received, &blob_handle);
 			},
 		},
 		Err(err) => {
@@ -155,6 +158,11 @@ async fn handle_blob_received_notification<Block>(
 		commitments: blob_received.commitments,
 		ownership: blob_received.ownership,
 		is_notified: true,
+		expires_at: client
+			.info()
+			.finalized_number
+			.saturated_into::<u64>()
+			.saturating_add(BLOB_TTL),
 	};
 
 	// Check existence of blob metadata in case we had the shard received notification before blob received.
@@ -450,9 +458,23 @@ async fn send_shard_received_notification<Block>(
 	}
 }
 
-fn handle_shard_received_notification(shard_received: ShardReceived, store: &RocksdbShardStore) {
+fn handle_shard_received_notification<Block>(
+	shard_received: ShardReceived,
+	blob_handle: &BlobHandle<Block>,
+) where
+	Block: BlockT,
+{
 	log::info!(target: LOG_TARGET, "6 - Handling incoming shard received notification");
-	let Ok(maybe_meta) = store.get_blob_metadata(&shard_received.hash) else {
+
+	let Some(client) = blob_handle.client.get() else {
+		log::error!(target: LOG_TARGET, "Client not yet registered");
+		return;
+	};
+
+	let Ok(maybe_meta) = blob_handle
+		.shard_store
+		.get_blob_metadata(&shard_received.hash)
+	else {
 		log::error!(target: LOG_TARGET, "An error has occured while trying to get blob from the store");
 		return;
 	};
@@ -464,6 +486,11 @@ fn handle_shard_received_notification(shard_received: ShardReceived, store: &Roc
 		commitments: Vec::new(),
 		ownership: BTreeMap::new(),
 		is_notified: false,
+		expires_at: client
+			.info()
+			.finalized_number
+			.saturated_into::<u64>()
+			.saturating_add(TMP_BLOB_TTL),
 	});
 	if !blob_metadata.is_notified {
 		log::info!(target: LOG_TARGET, "A ShardReceived was received before BlobReceived, creating empty blob metadata.");
@@ -477,7 +504,10 @@ fn handle_shard_received_notification(shard_received: ShardReceived, store: &Roc
 		);
 	}
 
-	if let Err(e) = store.insert_blob_metadata(&blob_metadata.hash, &blob_metadata) {
+	if let Err(e) = blob_handle
+		.shard_store
+		.insert_blob_metadata(&blob_metadata.hash, &blob_metadata)
+	{
 		log::error!(
 			target: LOG_TARGET,
 			"An error has occured while trying to save blob_metadata in the store: {e}"
