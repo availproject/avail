@@ -196,6 +196,7 @@ where
 			nb_shards,
 			commitments,
 			ownership: BTreeMap::new(),
+			is_notified: true,
 		};
 
 		// Get my own peer id data

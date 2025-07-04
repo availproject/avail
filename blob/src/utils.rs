@@ -4,8 +4,8 @@ use crate::{
 	types::{
 		BlobHash, BlobMetadata, CellRequest, CellUnitRequest, FullClient, Shard, ShardRequest,
 	},
-	LOG_TARGET, MAX_TRANSACTION_VALIDITY, MIN_SHARD_HOLDER_COUNT, MIN_SHARD_HOLDER_PERCENTAGE,
-	MIN_TRANSACTION_VALIDITY, SHARD_SIZE,
+	LOG_TARGET, MAX_BLOB_RETRY_BEFORE_DISCARDING, MAX_TRANSACTION_VALIDITY, MIN_SHARD_HOLDER_COUNT,
+	MIN_SHARD_HOLDER_PERCENTAGE, MIN_TRANSACTION_VALIDITY, SHARD_SIZE,
 };
 use anyhow::{anyhow, Result};
 use codec::Decode;
@@ -170,46 +170,62 @@ where
 		if let RuntimeCall::DataAvailability(Call::submit_blob_metadata { blob_hash, .. }) =
 			&extrinsic_data
 		{
-			let should_submit = match shard_store.get_blob_metadata(blob_hash) {
+			let mut should_submit = true;
+			let mut should_check_validity = false;
+			match shard_store.get_blob_metadata(blob_hash) {
 				// If we have metadata…
 				Ok(Some(meta)) => {
 					blob_metadata.insert(meta.hash, meta.clone());
 					// check if every shard has non-empty ownership
-					let ownership_valid = (0..meta.nb_shards)
-						.all(|i| meta.ownership.get(&i).map_or(false, |v| !v.is_empty()));
+					let metadata_valid = meta.is_notified
+						&& (0..meta.nb_shards)
+							.all(|i| meta.ownership.get(&i).map_or(false, |v| !v.is_empty()));
 
-					if ownership_valid {
-						// ownership already complete, we can submit it properly
-						true
-					} else {
-						// ownership incomplete, re-check transaction validity to see if we can wait next block
-						let still_valid =
-							codec::Decode::decode(&mut &encoded[..])
-								.ok()
-								.and_then(|tx| {
-									client
-										.runtime_api()
-										.validate_transaction(
-											client.info().best_hash,
-											TransactionSource::External,
-											tx,
-											client.info().best_hash,
-										)
-										.ok()
-										.and_then(Result::ok)
-								});
-
-						// if we failed any step → assume invalid and submit so it disappears;
-						// otherwise only submit if longevity is out of your bounds
-						still_valid.map_or(true, |v| {
-							v.longevity < MIN_TRANSACTION_VALIDITY
-								|| v.longevity > MAX_TRANSACTION_VALIDITY
-						})
+					// If ownership is complete, no changes, if not, we whould recheck validity to see if we can wait for ownership data to arrive
+					if !metadata_valid {
+						should_check_validity = true;
 					}
 				},
 				// Err or Ok(None), definitely submit the tx so it fails and disappear.
-				_ => true,
+				// We still let a chance in case the transaction was only tried once, valid blob metadata may arrive soon.
+				_ => {
+					let tried_count = shard_store.get_blob_retry(blob_hash).unwrap_or(0);
+					if tried_count < MAX_BLOB_RETRY_BEFORE_DISCARDING {
+						log::info!(target: LOG_TARGET, "A transaction will be retried after being tried {tried_count} - blob hash: {blob_hash}");
+						should_check_validity = true;
+						let _ = shard_store.insert_blob_retry(blob_hash, tried_count + 1);
+					} else {
+						// Transaction will be submitted and discarded
+						log::info!(target: LOG_TARGET, "A transaction will be discarded after being tried {tried_count} - blob hash: {blob_hash}");
+					}
+				},
 			};
+
+			if should_check_validity {
+				// Ownership incomplete or the blob was not notified yet or we don't have the blob yet
+				// Re-check transaction validity to see if we can wait next block
+				let still_valid = codec::Decode::decode(&mut &encoded[..])
+					.ok()
+					.and_then(|tx| {
+						client
+							.runtime_api()
+							.validate_transaction(
+								client.info().best_hash,
+								TransactionSource::External,
+								tx,
+								client.info().best_hash,
+							)
+							.ok()
+							.and_then(Result::ok)
+					});
+
+				// if we failed any step → assume invalid and submit so it disappears;
+				// otherwise only submit if longevity is out of your bounds (to discard the tx)
+				should_submit = still_valid.map_or(true, |v| {
+					v.longevity < MIN_TRANSACTION_VALIDITY || v.longevity > MAX_TRANSACTION_VALIDITY
+				});
+			}
+
 			if should_submit {
 				submit_blob_metadata_calls.push(extrinsic_data);
 				submit_blob_metadata_pushed = true;

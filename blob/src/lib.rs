@@ -15,7 +15,7 @@ use sc_network::{
 };
 use sp_authority_discovery::AuthorityId;
 use sp_runtime::{traits::Block as BlockT, Perbill};
-use std::{str::FromStr, sync::Arc, time::Duration};
+use std::{collections::BTreeMap, str::FromStr, sync::Arc, time::Duration};
 use store::{RocksdbShardStore, ShardStore};
 use types::{BlobNotification, BlobRequest, BlobResponse, ShardRequest, BLOB_REQ_PROTO};
 
@@ -59,6 +59,8 @@ pub const MIN_TRANSACTION_VALIDITY: u64 = 15; // 5 mn
 /// Max Amount of block for which the transaction submitted through RPC is valid.
 /// This value is used so a transaction won't be stuck in the mempool.
 pub const MAX_TRANSACTION_VALIDITY: u64 = 150; // 50 mn
+/// The number of time we'll allow trying to fetch internal blob metadata before letting the transaction go through to get discarded
+pub const MAX_BLOB_RETRY_BEFORE_DISCARDING: u16 = 1;
 
 pub async fn decode_blob_notification<Block>(data: &[u8], blob_handle: &BlobHandle<Block>)
 where
@@ -152,7 +154,31 @@ async fn handle_blob_received_notification<Block>(
 		nb_shards: blob_received.nb_shards,
 		commitments: blob_received.commitments,
 		ownership: blob_received.ownership,
+		is_notified: true,
 	};
+
+	// Check existence of blob metadata in case we had the shard received notification before blob received.
+	let existing_ownership = match blob_handle
+		.shard_store
+		.get_blob_metadata(&blob_received.hash)
+	{
+		Ok(Some(meta)) => {
+			if !meta.is_notified {
+				Some(meta.ownership)
+			} else {
+				None
+			}
+		},
+		_ => None,
+	};
+	if let Some(existing_ownership) = existing_ownership {
+		for (shard_id, mut owners) in existing_ownership {
+			let entry = blob_metadata.ownership.entry(shard_id).or_default();
+			entry.append(&mut owners);
+			entry.sort_unstable();
+			entry.dedup();
+		}
+	}
 
 	let shards_to_store = match get_shards_to_store(
 		blob_received.hash,
@@ -238,7 +264,7 @@ async fn send_shard_request<Block>(
 		let blob_request = BlobRequest::ShardRequest(chunk_shard_request);
 		let my_validator_id = my_validator_id.clone();
 		let blob_handle = blob_handle.clone();
-        let network = network.clone();
+		let network = network.clone();
 
 		let fut = async move {
 			log::info!(target: LOG_TARGET, "2 - Sending a shard request for {} shards", shard_ids_chunk.len());
@@ -431,10 +457,17 @@ fn handle_shard_received_notification(shard_received: ShardReceived, store: &Roc
 		return;
 	};
 
-	let Some(mut blob_metadata) = maybe_meta else {
-		log::error!(target: LOG_TARGET, "Blob metadata not found in the store");
-		return;
-	};
+	let mut blob_metadata = maybe_meta.unwrap_or(BlobMetadata {
+		hash: shard_received.hash,
+		size: 0,
+		nb_shards: 0,
+		commitments: Vec::new(),
+		ownership: BTreeMap::new(),
+		is_notified: false,
+	});
+	if !blob_metadata.is_notified {
+		log::info!(target: LOG_TARGET, "A ShardReceived was received before BlobReceived, creating empty blob metadata.");
+	}
 
 	for shard_id in shard_received.shard_ids {
 		blob_metadata.insert_in_ownership(

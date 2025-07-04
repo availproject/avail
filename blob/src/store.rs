@@ -16,6 +16,11 @@ pub trait ShardStore: Send + Sync + 'static {
 	fn get_blob_metadata(&self, hash: &BlobHash) -> Result<Option<BlobMetadata>>;
 	fn remove_blob_metadata(&self, hash: &BlobHash) -> Result<()>;
 
+	// Blob read error retry count
+	fn insert_blob_retry(&self, hash: &BlobHash, count: u16) -> Result<()>;
+	fn get_blob_retry(&self, hash: &BlobHash) -> Result<u16>;
+	fn remove_blob_retry(&self, hash: &BlobHash) -> Result<()>;
+
 	// Shards
 	fn insert_shards(&self, shards: &Vec<Shard>) -> Result<()>;
 	fn get_shard(&self, hash: &BlobHash, shard_id: u16) -> Result<Option<Shard>>;
@@ -39,6 +44,13 @@ impl RocksdbShardStore {
 	/// blob key = b"blob:" || hash_bytes
 	fn blob_key(hash: &BlobHash) -> Vec<u8> {
 		let mut k = b"blob:".to_vec();
+		k.extend_from_slice(hash.as_bytes());
+		k
+	}
+
+	/// blob key = b"blob:" || hash_bytes
+	fn blob_count_key(hash: &BlobHash) -> Vec<u8> {
+		let mut k = b"count:".to_vec();
 		k.extend_from_slice(hash.as_bytes());
 		k
 	}
@@ -85,6 +97,31 @@ impl ShardStore for RocksdbShardStore {
 	fn remove_blob_metadata(&self, hash: &BlobHash) -> Result<()> {
 		let mut tx = DBTransaction::new();
 		tx.delete(0, &Self::blob_key(hash));
+		self.db.write(tx)?;
+		Ok(())
+	}
+
+	fn insert_blob_retry(&self, hash: &BlobHash, count: u16) -> Result<()> {
+		let mut tx = DBTransaction::new();
+		tx.put(0, &Self::blob_count_key(hash), &count.encode());
+		self.db.write(tx)?;
+		Ok(())
+	}
+	fn get_blob_retry(&self, hash: &BlobHash) -> Result<u16> {
+		self.db
+			.get(0, &Self::blob_count_key(hash))?
+			.map(|bytes| {
+				let mut slice = bytes.as_slice();
+				u16::decode(&mut slice)
+					.map_err(|_| anyhow!("failed to decode blob retry value from the store"))
+			})
+			.transpose()
+			.map(|opt| opt.unwrap_or(0))
+	}
+
+	fn remove_blob_retry(&self, hash: &BlobHash) -> Result<()> {
+		let mut tx = DBTransaction::new();
+		tx.delete(0, &Self::blob_count_key(hash));
 		self.db.write(tx)?;
 		Ok(())
 	}

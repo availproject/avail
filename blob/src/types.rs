@@ -114,10 +114,15 @@ pub struct BlobMetadata {
 	pub size: u64,
 	/// The number of shards for the blob.
 	pub nb_shards: u16,
-	/// The commitments of the blob
+	/// The commitments of the blob.
 	pub commitments: Vec<u8>,
-	/// The ownership data of the blob: shard_id -> (validator address, base58 PeerId)
+	/// The ownership data of the blob: shard_id -> (validator address, base58 PeerId).
 	pub ownership: BTreeMap<u16, Vec<(AuthorityId, String)>>,
+	/// This field is used to determine wether we received the BlobReceived notification.
+	/// In some cases, we can receive ShardReceived notification before BlobReceived notification.
+	/// This is expected in P2P protocols, we use this field in case we record shard for a blob we don't have yet.
+	/// In case we are not notified, we'll use a way shorter time to live.
+	pub is_notified: bool,
 }
 
 impl BlobMetadata {
