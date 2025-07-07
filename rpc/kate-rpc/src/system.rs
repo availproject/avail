@@ -284,9 +284,22 @@ pub mod fetch_extrinsics_v1 {
 
 	pub type ApiResult = Vec<ExtrinsicInformation>;
 
+	#[allow(dead_code)]
+	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
+	struct ApiResultTS(pub Vec<ExtrinsicInformation>);
+
+	#[allow(dead_code)]
+	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
+	struct ApiParamsTS(pub (BlockId, Option<Options>));
+
 	#[derive(Clone, Serialize, Deserialize)]
+	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
 	pub struct ExtrinsicInformation {
 		pub encoded: Option<String>,
+		#[cfg_attr(feature = "ts", ts(as = "String"))]
 		pub tx_hash: H256,
 		pub tx_index: u32,
 		pub pallet_id: u8,
@@ -295,20 +308,27 @@ pub mod fetch_extrinsics_v1 {
 	}
 
 	#[derive(Clone, Copy, Serialize, Deserialize)]
+	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
 	pub enum BlockId {
 		/// Identify by block header hash.
+		#[cfg_attr(feature = "ts", ts(as = "String"))]
 		Hash(H256),
 		/// Identify by block number.
 		Number(u32),
 	}
 
 	#[derive(Default, Clone, Serialize, Deserialize)]
+	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
 	pub struct Options {
 		pub filter: Option<Filter>,
 		pub encode_selector: Option<EncodeSelector>,
 	}
 
 	#[derive(Clone, Serialize, Deserialize)]
+	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
 	#[repr(u8)]
 	pub enum EncodeSelector {
 		None = 0,
@@ -339,14 +359,19 @@ pub mod fetch_extrinsics_v1 {
 	}
 
 	#[derive(Default, Clone, Serialize, Deserialize)]
+	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
 	pub struct Filter {
 		pub transaction: Option<TransactionFilterOptions>,
 		pub signature: Option<SignatureFilterOptions>,
 	}
 
 	#[derive(Clone, Serialize, Deserialize)]
+	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
 	pub enum TransactionFilterOptions {
 		All,
+		#[cfg_attr(feature = "ts", ts(as = "Vec<String>"))]
 		TxHash(Vec<H256>),
 		TxIndex(Vec<u32>),
 		Pallet(Vec<u8>),
@@ -407,6 +432,8 @@ pub mod fetch_extrinsics_v1 {
 	}
 
 	#[derive(Default, Clone, Serialize, Deserialize)]
+	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
 	pub struct SignatureFilterOptions {
 		pub ss58_address: Option<String>,
 		pub app_id: Option<u32>,
@@ -462,6 +489,8 @@ pub mod fetch_extrinsics_v1 {
 	}
 
 	#[derive(Clone, Serialize, Deserialize)]
+	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
 	pub struct TransactionSignature {
 		pub ss58_address: Option<String>,
 		pub nonce: u32,

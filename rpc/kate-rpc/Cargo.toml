@@ -30,6 +30,7 @@ sp-runtime = { workspace = true, default-features = false }
 sc-service = { workspace = true, default-features = false }
 sp-core = { workspace = true, default-features = false }
 frame-system-rpc-runtime-api = { workspace = true, default-features = false }
+ts-rs = { workspace = true, optional = true }
 
 [features]
 default = [ "std" ]
@@ -51,3 +52,4 @@ std = [
 # NOTE: WIP because that affects the Data Availability Protocol used during
 # the block import process.
 secure_padding_fill = []
+ts = ["ts-rs"]
