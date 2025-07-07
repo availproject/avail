@@ -44,7 +44,7 @@ where
 		// Check all un-finalized blocks from base to current_target
 		if let Some((first_unverified, unverified_number)) = find_first_unverified_da_block(
 			&*backend,
-			&*self.tracker,
+			&self.tracker,
 			base.hash(),
 			*base.number(),
 			current_hash,
