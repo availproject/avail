@@ -18,17 +18,14 @@ pub trait ShardStore: Send + Sync + 'static {
 	// Blob metadata
 	fn insert_blob_metadata(&self, hash: &BlobHash, blob_metadata: &BlobMetadata) -> Result<()>;
 	fn get_blob_metadata(&self, hash: &BlobHash) -> Result<Option<BlobMetadata>>;
-	fn remove_blob_metadata(&self, hash: &BlobHash) -> Result<()>;
 
 	// Blob read error retry count
 	fn insert_blob_retry(&self, hash: &BlobHash, count: u16) -> Result<()>;
 	fn get_blob_retry(&self, hash: &BlobHash) -> Result<u16>;
-	fn remove_blob_retry(&self, hash: &BlobHash) -> Result<()>;
 
 	// Shards
 	fn insert_shards(&self, shards: &Vec<Shard>) -> Result<()>;
 	fn get_shard(&self, hash: &BlobHash, shard_id: u16) -> Result<Option<Shard>>;
-	fn remove_shards(&self, shards: &Vec<(BlobHash, u16)>) -> Result<()>;
 
 	// Cleaning
 	fn clean_blob_data(&self, hash: &BlobHash) -> Result<()>;
@@ -99,13 +96,6 @@ impl ShardStore for RocksdbShardStore {
 			.transpose()
 	}
 
-	fn remove_blob_metadata(&self, hash: &BlobHash) -> Result<()> {
-		let mut tx = DBTransaction::new();
-		tx.delete(COL_BLOB_METADATA, &Self::blob_key(hash));
-		self.db.write(tx)?;
-		Ok(())
-	}
-
 	fn insert_blob_retry(&self, hash: &BlobHash, count: u16) -> Result<()> {
 		let mut tx = DBTransaction::new();
 		tx.put(COL_BLOB_RETRY, &Self::blob_count_key(hash), &count.encode());
@@ -122,13 +112,6 @@ impl ShardStore for RocksdbShardStore {
 			})
 			.transpose()
 			.map(|opt| opt.unwrap_or(0))
-	}
-
-	fn remove_blob_retry(&self, hash: &BlobHash) -> Result<()> {
-		let mut tx = DBTransaction::new();
-		tx.delete(COL_BLOB_RETRY, &Self::blob_count_key(hash));
-		self.db.write(tx)?;
-		Ok(())
 	}
 
 	fn insert_shards(&self, shards: &Vec<Shard>) -> Result<()> {
@@ -153,15 +136,6 @@ impl ShardStore for RocksdbShardStore {
 					.map_err(|_| anyhow!("failed to decode shard from the store"))
 			})
 			.transpose()
-	}
-
-	fn remove_shards(&self, shards: &Vec<(BlobHash, u16)>) -> Result<()> {
-		let mut tx = DBTransaction::new();
-		for (blob_hash, shard_index) in shards {
-			tx.delete(COL_SHARDS, &&Self::shard_key(blob_hash, *shard_index));
-		}
-		self.db.write(tx)?;
-		Ok(())
 	}
 
 	fn clean_blob_data(&self, hash: &BlobHash) -> Result<()> {
