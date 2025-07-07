@@ -133,13 +133,29 @@ impl BlobMetadata {
 		shard_id: &u16,
 		authority_id: &AuthorityId,
 		encoded_peer_id: &String,
-	) {
+	) -> bool {
+		let mut already_stored = false;
 		self.ownership
 			.entry(*shard_id)
 			.and_modify(|existing_ownership| {
-				existing_ownership.push((authority_id.clone(), encoded_peer_id.clone()))
+				let new_entry = (authority_id.clone(), encoded_peer_id.clone());
+				if !existing_ownership.contains(&new_entry) {
+					existing_ownership.push(new_entry);
+				} else {
+					already_stored = true;
+				}
 			})
 			.or_insert_with(|| vec![(authority_id.clone(), encoded_peer_id.clone())]);
+		already_stored
+	}
+
+	pub fn merge_ownerships(&mut self, ownerhsip: BTreeMap<u16, Vec<(AuthorityId, String)>>) {
+		for (shard_id, mut owners) in ownerhsip {
+			let entry = self.ownership.entry(shard_id).or_default();
+			entry.append(&mut owners);
+			entry.sort_unstable();
+			entry.dedup();
+		}
 	}
 }
 

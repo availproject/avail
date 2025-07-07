@@ -4,7 +4,7 @@ use crate::{
 	types::{BlobMetadata, BlobNotification, BlobReceived, Deps, Shard},
 	utils::{get_my_validator_id, get_nb_shards_from_blob_size, get_shards_to_store},
 	BLOB_TTL, LOG_TARGET, MAX_BLOB_SIZE, MAX_TRANSACTION_VALIDITY, MIN_TRANSACTION_VALIDITY,
-	SHARD_SIZE, TMP_BLOB_TTL,
+	SHARD_SIZE,
 };
 use anyhow::{anyhow, Result};
 use codec::Decode;
@@ -190,21 +190,6 @@ where
 			));
 		}
 
-		// --- 5. Setup blob metadata and split the blob into shard
-		let blob_len = blob.len();
-		let nb_shards = get_nb_shards_from_blob_size(blob_len);
-		let block_number = client_info.finalized_number.saturated_into::<u64>();
-
-		let mut blob_metadata = BlobMetadata {
-			hash: blob_hash,
-			size: blob_len.saturated_into(),
-			nb_shards,
-			commitments,
-			ownership: BTreeMap::new(),
-			is_notified: true,
-			expires_at: block_number.saturating_add(TMP_BLOB_TTL),
-		};
-
 		// Get my own peer id data
 		let net = self
 			.blob_handle
@@ -216,9 +201,38 @@ where
 		let my_peer_id = net.local_peer_id();
 		let my_peer_id_base58 = my_peer_id.to_base58();
 
+		// --- 5. Setup blob metadata and split the blob into shard
+		// --- Check first in case we already received this exact blob before
+		let block_number = client_info.finalized_number.saturated_into::<u64>();
+
+		let expiration = block_number.saturating_add(BLOB_TTL);
+		let mut blob_metadata = self
+			.blob_handle
+			.shard_store
+			.get_blob_metadata(&blob_hash)
+			.map_err(|e| internal_err!("Failed to get data from blob storage: {e}"))?
+			.unwrap_or_else(|| {
+				let blob_len = blob.len();
+				let nb_shards = get_nb_shards_from_blob_size(blob_len);
+
+				BlobMetadata {
+					hash: blob_hash,
+					size: blob_len.saturated_into(),
+					nb_shards,
+					commitments,
+					ownership: BTreeMap::new(),
+					is_notified: true,
+					expires_at: expiration,
+				}
+			});
+
+		if blob_metadata.expires_at < expiration {
+			blob_metadata.expires_at = expiration;
+		}
+
 		// Get shards that we need to store in case we're a RPC and a validator
-		// TODO Blob: use _shards_index_to_store to actually change TTL based on wether we need to store the shard or just have it for few minutes / hours
-		let (shards_index_to_store, ownership) = get_shards_to_store_rpc::<Client, Block>(
+		// TODO Blob - RPC Will anyway store all shards for now, _shards_index_to_store should be used to check what shard we don't need to delete them after
+		let (_shards_index_to_store, ownership) = get_shards_to_store_rpc::<Client, Block>(
 			&self.blob_handle.role,
 			&self.client,
 			&self.blob_handle.keystore.get().cloned(),
@@ -229,14 +243,10 @@ where
 		.await
 		.map_err(|e| internal_err!("could not get shards to store: {e}"))?;
 
-		if shards_index_to_store.len() > 0 {
-			blob_metadata.expires_at = block_number.saturating_add(BLOB_TTL);
-		}
-
-		blob_metadata.ownership = ownership.clone();
+		blob_metadata.merge_ownerships(ownership);
 
 		let mut shards: Vec<Shard> = Vec::new();
-		for shard_id in 0..nb_shards {
+		for shard_id in 0..blob_metadata.nb_shards {
 			let start = shard_id as usize * (SHARD_SIZE as usize);
 			let end = cmp::min(blob.len(), start + SHARD_SIZE as usize);
 			let data = blob[start..end].to_vec();
@@ -261,25 +271,7 @@ where
 			.insert_shards(&shards)
 			.map_err(|e| internal_err!("failed to insert blob shards into store: {e}"))?;
 
-		// --- 7. Announce the blob to the network -------------------
-		let blob_received_notification = BlobNotification::BlobReceived(BlobReceived {
-			hash: blob_metadata.hash,
-			size: blob_metadata.size,
-			nb_shards: blob_metadata.nb_shards,
-			commitments: blob_metadata.commitments,
-			ownership,
-			original_peer_id: my_peer_id_base58,
-		});
-
-		let Some(gossip_cmd_sender) = self.blob_handle.gossip_cmd_sender.get() else {
-			return Err(internal_err!("gossip_cmd_sender was not initialized"));
-		};
-		gossip_cmd_sender
-			.send(blob_received_notification)
-			.await
-			.map_err(|e| internal_err!("internal channel closed: {e}"))?;
-
-		// --- 8. Check validity once more, if the tx has expired, we need to remove the blob once again (TODO Blob)
+		// --- 7. Check validity once more, if the tx has expired, we need to remove the blob once again (TODO Blob)
 		// This should not happen, it would mean our minimum tx lifetime is too low
 		let best_hash = self.client.info().best_hash;
 		let validity = self
@@ -297,6 +289,24 @@ where
 				"second validation failed: metadata extrinsic rejected by runtime: {validity:?}. Please check the `MIN_TRANSACTION_VALIDITY` and `MAX_TRANSACTION_VALIDITY`."
 			));
 		}
+
+		// --- 8. Announce the blob to the network -------------------
+		let blob_received_notification = BlobNotification::BlobReceived(BlobReceived {
+			hash: blob_metadata.hash,
+			size: blob_metadata.size,
+			nb_shards: blob_metadata.nb_shards,
+			commitments: blob_metadata.commitments,
+			ownership: blob_metadata.ownership,
+			original_peer_id: my_peer_id_base58,
+		});
+
+		let Some(gossip_cmd_sender) = self.blob_handle.gossip_cmd_sender.get() else {
+			return Err(internal_err!("gossip_cmd_sender was not initialized"));
+		};
+		gossip_cmd_sender
+			.send(blob_received_notification)
+			.await
+			.map_err(|e| internal_err!("internal channel closed: {e}"))?;
 
 		// --- 9. Push the clean extrinsic to the tx pool ---------------------
 		self.pool

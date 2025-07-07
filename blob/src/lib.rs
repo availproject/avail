@@ -1,7 +1,7 @@
 use crate::{
 	p2p::BlobHandle,
 	types::{
-		BlobHash, BlobMetadata, BlobReceived, CellRequest, CellResponse, CellUnitResponse,
+		BlobHash, BlobMetadata, BlobReceived, CellRequest, CellResponse, CellUnitResponse, Shard,
 		ShardReceived, ShardResponse,
 	},
 	utils::{fetch_shards, get_my_validator_id, get_shards_to_store, get_validators},
@@ -16,7 +16,9 @@ use sc_network::{
 };
 use sp_authority_discovery::AuthorityId;
 use sp_runtime::{traits::Block as BlockT, Perbill, SaturatedConversion};
-use std::{collections::BTreeMap, str::FromStr, sync::Arc, time::Duration};
+use std::{
+	collections::BTreeMap, future::Future, pin::Pin, str::FromStr, sync::Arc, time::Duration,
+};
 use store::{RocksdbShardStore, ShardStore};
 use types::{BlobNotification, BlobRequest, BlobResponse, ShardRequest, BLOB_REQ_PROTO};
 
@@ -52,10 +54,8 @@ const MIN_SHARD_HOLDER_PERCENTAGE: Perbill = Perbill::from_percent(10);
 const MIN_SHARD_HOLDER_COUNT: u32 = 2; // TODO Blob Put like 10 validators
 /// Amount of block for which we need to store the blob metadata and shards.
 const BLOB_TTL: u64 = 120_960; // 28 days
-/// Amount of block for which the receiving rpc node need to store the blob metadata and shards.
-const TMP_BLOB_TTL: u64 = 180; // 1 hour
 /// Amount of blocks used to periodically check wether we should remove expired blobs or not.
-const BLOB_EXPIRATION_CHECK_PERIOD: u64 = TMP_BLOB_TTL;
+const BLOB_EXPIRATION_CHECK_PERIOD: u64 = 180; // 1 hour
 /// Min Amount of block for which the transaction submitted through RPC is valid.
 /// This value needs to handle the time to upload the blob to the store
 const MIN_TRANSACTION_VALIDITY: u64 = 15; // 5 mn
@@ -151,42 +151,42 @@ async fn handle_blob_received_notification<Block>(
 		},
 	};
 
-	let mut blob_metadata = BlobMetadata {
-		hash: blob_received.hash,
-		size: blob_received.size,
-		nb_shards: blob_received.nb_shards,
-		commitments: blob_received.commitments,
-		ownership: blob_received.ownership,
-		is_notified: true,
-		expires_at: client
-			.info()
-			.finalized_number
-			.saturated_into::<u64>()
-			.saturating_add(BLOB_TTL),
-	};
+	let finalized_blob_number = client.info().finalized_number.saturated_into::<u64>();
 
-	// Check existence of blob metadata in case we had the shard received notification before blob received.
-	let existing_ownership = match blob_handle
+	let maybe_metadata = match blob_handle
 		.shard_store
 		.get_blob_metadata(&blob_received.hash)
 	{
-		Ok(Some(meta)) => {
-			if !meta.is_notified {
-				Some(meta.ownership)
-			} else {
-				None
-			}
+		Ok(maybe_meta) => maybe_meta,
+		Err(e) => {
+			log::error!("Failed to get data from blob storage: {e}");
+			return;
 		},
-		_ => None,
 	};
-	if let Some(existing_ownership) = existing_ownership {
-		for (shard_id, mut owners) in existing_ownership {
-			let entry = blob_metadata.ownership.entry(shard_id).or_default();
-			entry.append(&mut owners);
-			entry.sort_unstable();
-			entry.dedup();
-		}
+
+	// Get the existing blob or create a new one
+	let expires_at = finalized_blob_number.saturating_add(BLOB_TTL);
+	let mut blob_meta = maybe_metadata.unwrap_or_else(|| BlobMetadata {
+		hash: blob_received.hash,
+		size: blob_received.size,
+		nb_shards: blob_received.nb_shards,
+		commitments: blob_received.commitments.clone(),
+		ownership: BTreeMap::new(),
+		is_notified: true,
+		expires_at: 0,
+	});
+
+	// If we already had the blob metadata but incomplete (is notified == false) we fill the missing data.
+	if !blob_meta.is_notified {
+		blob_meta.size = blob_received.size;
+		blob_meta.nb_shards = blob_received.nb_shards;
+		blob_meta.commitments = blob_received.commitments;
+		blob_meta.is_notified = true;
 	}
+	// Here, no matter if it's a new blob or a duplicate, we set the new expiration time and update the ownership.
+	blob_meta.expires_at = expires_at;
+	blob_meta.merge_ownerships(blob_received.ownership);
+
 
 	let shards_to_store = match get_shards_to_store(
 		blob_received.hash,
@@ -204,13 +204,23 @@ async fn handle_blob_received_notification<Block>(
 	if shards_to_store.len() > 0 {
 		let my_peer_id = network.local_peer_id();
 		let my_peer_id_base58 = my_peer_id.to_base58();
+		let mut shard_to_request = Vec::new();
+		let mut shard_already_stored = Vec::new();
+
 		for shard_id in &shards_to_store {
-			blob_metadata.insert_in_ownership(shard_id, &my_validator_id, &my_peer_id_base58);
+			let already_stored =
+				blob_meta.insert_in_ownership(shard_id, &my_validator_id, &my_peer_id_base58);
+			if already_stored {
+				shard_already_stored.push(*shard_id);
+			} else {
+				shard_to_request.push(*shard_id)
+			}
 		}
 
 		send_shard_request(
 			blob_received.hash,
-			shards_to_store,
+			shard_to_request,
+			shard_already_stored,
 			blob_handle,
 			network,
 			original_peer_id,
@@ -221,20 +231,20 @@ async fn handle_blob_received_notification<Block>(
 
 	match blob_handle
 		.shard_store
-		.insert_blob_metadata(&blob_metadata.hash, &blob_metadata)
+		.insert_blob_metadata(&blob_meta.hash, &blob_meta)
 	{
 		Ok(()) => {
 			log::info!(
 				target: LOG_TARGET,
 				"Stored blob metadata {} in the store db",
-				blob_metadata.hash
+				blob_meta.hash
 			)
 		},
 		Err(e) => {
 			log::error!(
 				target: LOG_TARGET,
 				"An error occured while trying to store blob metadata {}: {}",
-				blob_metadata.hash,
+				blob_meta.hash,
 				e
 			)
 		},
@@ -243,7 +253,8 @@ async fn handle_blob_received_notification<Block>(
 
 async fn send_shard_request<Block>(
 	blob_hash: BlobHash,
-	shard_ids: Vec<u16>,
+	shard_ids_to_request: Vec<u16>,
+	shard_ids_already_stored: Vec<u16>,
 	blob_handle: &BlobHandle<Block>,
 	network: &Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
 	original_peer_id: PeerId,
@@ -262,9 +273,10 @@ async fn send_shard_request<Block>(
 		return;
 	}
 
-	let futures = FuturesUnordered::new();
+	let futures: FuturesUnordered<Pin<Box<dyn Future<Output = ()> + Send>>> =
+		FuturesUnordered::new();
 
-	for shard_ids_chunk in shard_ids.chunks(shards_per_request) {
+	for shard_ids_chunk in shard_ids_to_request.chunks(shards_per_request) {
 		let chunk_shard_request = ShardRequest {
 			hash: blob_hash,
 			shard_ids: shard_ids_chunk.to_vec(),
@@ -323,7 +335,27 @@ async fn send_shard_request<Block>(
 			}
 		};
 
-		futures.push(fut);
+		futures.push(Box::pin(fut));
+	}
+
+	if shard_ids_already_stored.len() > 0 {
+		let my_validator_id = my_validator_id.clone();
+		let blob_handle = blob_handle.clone();
+		let shard_response = ShardResponse {
+			hash: blob_hash,
+			shards: shard_ids_already_stored
+				.into_iter()
+				.map(|shard_id| Shard {
+					blob_hash,
+					shard_id,
+					data: Vec::new(), // We don't care about those values as we just want the ID to send the response.
+					size: 0,
+				})
+				.collect(),
+		};
+		futures.push(Box::pin(async move {
+			send_shard_received_notification(shard_response, &blob_handle, my_validator_id).await;
+		}));
 	}
 
 	futures.collect::<()>().await;
@@ -443,7 +475,6 @@ async fn send_shard_received_notification<Block>(
 	};
 
 	if shard_received.shard_ids.len() > 0 {
-		log::info!(target: LOG_TARGET, "Sending ShardReceived notification");
 		let Some(gossip_cmd_sender) = blob_handle.gossip_cmd_sender.get() else {
 			log::error!(target: LOG_TARGET, "Could not send gossip notification since gossip_cmd_sender was not initialized");
 			return;
@@ -490,7 +521,7 @@ fn handle_shard_received_notification<Block>(
 			.info()
 			.finalized_number
 			.saturated_into::<u64>()
-			.saturating_add(TMP_BLOB_TTL),
+			.saturating_add(BLOB_TTL),
 	});
 	if !blob_metadata.is_notified {
 		log::info!(target: LOG_TARGET, "A ShardReceived was received before BlobReceived, creating empty blob metadata.");
