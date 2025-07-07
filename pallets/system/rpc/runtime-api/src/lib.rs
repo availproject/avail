@@ -24,7 +24,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use system_events_api::fetch_events_v1::ApiResult as FetchEventsResult;
-use system_events_api::fetch_events_v1::Params as FetchEventsParams;
+use system_events_api::fetch_events_v1::Options as FetchEventsOptions;
 
 sp_api::decl_runtime_apis! {
 	/// The API to query account nonce.
@@ -38,7 +38,7 @@ sp_api::decl_runtime_apis! {
 
 	pub trait SystemEventsApi
 	{
-		fn fetch_events_v1(params: FetchEventsParams) -> FetchEventsResult;
+		fn fetch_events_v1(options: FetchEventsOptions) -> FetchEventsResult;
 	}
 }
 
@@ -55,7 +55,7 @@ pub mod system_events_api {
 
 		#[derive(Clone, Default, scale_info::TypeInfo, codec::Decode, codec::Encode)]
 		#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
-		pub struct Params {
+		pub struct Options {
 			pub filter: Option<Filter>,
 			pub enable_encoding: Option<bool>,
 			pub enable_decoding: Option<bool>,

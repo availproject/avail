@@ -21,7 +21,7 @@ pub trait Api {
 	async fn fetch_events_v1(
 		&self,
 		at: H256,
-		params: Option<fetch_events_v1::Params>,
+		options: Option<fetch_events_v1::Options>,
 	) -> RpcResult<fetch_events_v1::ApiResult>;
 
 	#[method(name = "system_fetchExtrinsicsV1")]
@@ -100,13 +100,13 @@ where
 	async fn fetch_events_v1(
 		&self,
 		at: H256,
-		params: Option<fetch_events_v1::Params>,
+		options: Option<fetch_events_v1::Options>,
 	) -> RpcResult<fetch_events_v1::ApiResult> {
 		use fetch_events_v1::GroupedRuntimeEvents;
 
 		let runtime_api = self.client.runtime_api();
 		let result = runtime_api
-			.fetch_events_v1(at.into(), params.unwrap_or_default())
+			.fetch_events_v1(at.into(), options.unwrap_or_default())
 			.map_err(|x| Error::RuntimeApi.into_error_object(x.to_string()))?;
 
 		match result {
@@ -223,7 +223,7 @@ where
 
 pub mod fetch_events_v1 {
 	pub use frame_system_rpc_runtime_api::system_events_api::fetch_events_v1::{
-		GroupedRuntimeEvents as RuntimeGroupedRuntimeEvents, Params,
+		GroupedRuntimeEvents as RuntimeGroupedRuntimeEvents, Options,
 		RuntimeEvent as RuntimeRuntimeEvent,
 	};
 	pub type ApiResult = Vec<GroupedRuntimeEvents>;
