@@ -3,5 +3,5 @@ target
 .github
 .maintain
 misc
-avail-subxt
 tests
+ts-interfaces

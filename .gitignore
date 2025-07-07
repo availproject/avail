@@ -6,3 +6,4 @@ dist
 tests/rust_scripts/target
 .vscode
 output
+ts-interfaces

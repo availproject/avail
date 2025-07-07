@@ -20,14 +20,15 @@ pub trait Api {
 	#[method(name = "system_fetchEventsV1")]
 	async fn fetch_events_v1(
 		&self,
-		params: fetch_events_v1::Params,
 		at: H256,
+		options: Option<fetch_events_v1::Options>,
 	) -> RpcResult<fetch_events_v1::ApiResult>;
 
 	#[method(name = "system_fetchExtrinsicsV1")]
 	async fn fetch_extrinsics_v1(
 		&self,
-		params: fetch_extrinsics_v1::Params,
+		block_id: fetch_extrinsics_v1::BlockId,
+		options: Option<fetch_extrinsics_v1::Options>,
 	) -> RpcResult<fetch_extrinsics_v1::ApiResult>;
 }
 
@@ -98,14 +99,14 @@ where
 {
 	async fn fetch_events_v1(
 		&self,
-		params: fetch_events_v1::Params,
 		at: H256,
+		options: Option<fetch_events_v1::Options>,
 	) -> RpcResult<fetch_events_v1::ApiResult> {
 		use fetch_events_v1::GroupedRuntimeEvents;
 
 		let runtime_api = self.client.runtime_api();
 		let result = runtime_api
-			.fetch_events_v1(at.into(), params)
+			.fetch_events_v1(at.into(), options.unwrap_or_default())
 			.map_err(|x| Error::RuntimeApi.into_error_object(x.to_string()))?;
 
 		match result {
@@ -117,15 +118,17 @@ where
 
 	async fn fetch_extrinsics_v1(
 		&self,
-		params: fetch_extrinsics_v1::Params,
+		block_id: fetch_extrinsics_v1::BlockId,
+		options: Option<fetch_extrinsics_v1::Options>,
 	) -> RpcResult<fetch_extrinsics_v1::ApiResult> {
 		use fetch_extrinsics_v1::{
 			BlockId, EncodeSelector, ExtrinsicInformation, TransactionFilterOptions,
 		};
-		let filter = params.filter.unwrap_or_default();
+		let options = options.unwrap_or_default();
+		let filter = options.filter.unwrap_or_default();
 		let tx_filter = filter.transaction.unwrap_or_default();
 		let sig_filter = filter.signature.unwrap_or_default();
-		let encode_selector = params.encode_selector.unwrap_or_default();
+		let encode_selector = options.encode_selector.unwrap_or_default();
 
 		if !tx_filter.is_valid() {
 			return Err(Error::InvalidInput
@@ -137,7 +140,7 @@ where
 				.into_error_object(String::from("Signature filter: Invalid input")));
 		}
 
-		let block_hash = match params.block_id {
+		let block_hash = match block_id {
 			BlockId::Hash(h) => h,
 			BlockId::Number(n) => {
 				let hash = match self.client.block_hash(n.into()) {
@@ -220,12 +223,24 @@ where
 
 pub mod fetch_events_v1 {
 	pub use frame_system_rpc_runtime_api::system_events_api::fetch_events_v1::{
-		GroupedRuntimeEvents as RuntimeGroupedRuntimeEvents, Params,
+		GroupedRuntimeEvents as RuntimeGroupedRuntimeEvents, Options,
 		RuntimeEvent as RuntimeRuntimeEvent,
 	};
 	pub type ApiResult = Vec<GroupedRuntimeEvents>;
 
+	#[allow(dead_code)]
+	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchEvents.ts"))]
+	struct ApiResultTS(pub Vec<GroupedRuntimeEvents>);
+
+	#[allow(dead_code)]
+	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchEvents.ts"))]
+	struct ApiParamsTS((String, Option<Options>));
+
 	#[derive(Clone, serde::Serialize, serde::Deserialize)]
+	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchEvents.ts"))]
 	pub struct GroupedRuntimeEvents {
 		pub phase: frame_system::Phase,
 		pub events: Vec<RuntimeEvent>,
@@ -250,6 +265,8 @@ pub mod fetch_events_v1 {
 	}
 
 	#[derive(Clone, serde::Serialize, serde::Deserialize)]
+	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchEvents.ts"))]
 	pub struct RuntimeEvent {
 		pub index: u32,
 		// (Pallet Id, Event Id)
@@ -281,9 +298,22 @@ pub mod fetch_extrinsics_v1 {
 
 	pub type ApiResult = Vec<ExtrinsicInformation>;
 
+	#[allow(dead_code)]
+	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
+	struct ApiResultTS(pub Vec<ExtrinsicInformation>);
+
+	#[allow(dead_code)]
+	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
+	struct ApiParamsTS(pub (BlockId, Option<Options>));
+
 	#[derive(Clone, Serialize, Deserialize)]
+	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
 	pub struct ExtrinsicInformation {
 		pub encoded: Option<String>,
+		#[cfg_attr(feature = "ts", ts(as = "String"))]
 		pub tx_hash: H256,
 		pub tx_index: u32,
 		pub pallet_id: u8,
@@ -292,21 +322,27 @@ pub mod fetch_extrinsics_v1 {
 	}
 
 	#[derive(Clone, Copy, Serialize, Deserialize)]
+	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
 	pub enum BlockId {
 		/// Identify by block header hash.
+		#[cfg_attr(feature = "ts", ts(as = "String"))]
 		Hash(H256),
 		/// Identify by block number.
 		Number(u32),
 	}
 
-	#[derive(Clone, Serialize, Deserialize)]
-	pub struct Params {
-		pub block_id: BlockId,
+	#[derive(Default, Clone, Serialize, Deserialize)]
+	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
+	pub struct Options {
 		pub filter: Option<Filter>,
 		pub encode_selector: Option<EncodeSelector>,
 	}
 
 	#[derive(Clone, Serialize, Deserialize)]
+	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
 	#[repr(u8)]
 	pub enum EncodeSelector {
 		None = 0,
@@ -337,14 +373,19 @@ pub mod fetch_extrinsics_v1 {
 	}
 
 	#[derive(Default, Clone, Serialize, Deserialize)]
+	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
 	pub struct Filter {
 		pub transaction: Option<TransactionFilterOptions>,
 		pub signature: Option<SignatureFilterOptions>,
 	}
 
 	#[derive(Clone, Serialize, Deserialize)]
+	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
 	pub enum TransactionFilterOptions {
 		All,
+		#[cfg_attr(feature = "ts", ts(as = "Vec<String>"))]
 		TxHash(Vec<H256>),
 		TxIndex(Vec<u32>),
 		Pallet(Vec<u8>),
@@ -405,6 +446,8 @@ pub mod fetch_extrinsics_v1 {
 	}
 
 	#[derive(Default, Clone, Serialize, Deserialize)]
+	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
 	pub struct SignatureFilterOptions {
 		pub ss58_address: Option<String>,
 		pub app_id: Option<u32>,
@@ -460,6 +503,8 @@ pub mod fetch_extrinsics_v1 {
 	}
 
 	#[derive(Clone, Serialize, Deserialize)]
+	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
 	pub struct TransactionSignature {
 		pub ss58_address: Option<String>,
 		pub nonce: u32,

@@ -241,18 +241,18 @@ impl_runtime_apis! {
 	}
 
 	impl frame_system_rpc_runtime_api::SystemEventsApi<Block> for Runtime {
-		fn fetch_events_v1(params: frame_system_rpc_runtime_api::system_events_api::fetch_events_v1::Params) -> frame_system_rpc_runtime_api::system_events_api::fetch_events_v1::ApiResult {
+		fn fetch_events_v1(options: frame_system_rpc_runtime_api::system_events_api::fetch_events_v1::Options) -> frame_system_rpc_runtime_api::system_events_api::fetch_events_v1::ApiResult {
 			use sp_std::vec;
 			use frame_system_rpc_runtime_api::system_events_api::fetch_events_v1::{RuntimeEvent, GroupedRuntimeEvents, ERROR_INVALID_INPUTS};
 			use codec::Encode;
 
-			let filter = params.filter.unwrap_or_default();
+			let filter = options.filter.unwrap_or_default();
 			if !filter.is_valid() {
 				return Err(ERROR_INVALID_INPUTS);
 			}
 
-			let enable_encoding = params.enable_encoding.unwrap_or(false);
-			let enable_decoding = params.enable_decoding.unwrap_or(false);
+			let enable_encoding = options.enable_encoding.unwrap_or(false);
+			let enable_decoding = options.enable_decoding.unwrap_or(false);
 
 			let mut result: Vec<GroupedRuntimeEvents> = Vec::new();
 			let all_events = System::read_events_no_consensus();

@@ -200,26 +200,36 @@ impl<'a> serde::Deserialize<'a> for Signature {
 }
 
 #[derive(Clone, codec::Decode, serde::Serialize, serde::Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+#[cfg_attr(feature = "ts", ts(export, export_to = "BlockJustification.ts"))]
 pub struct Precommit {
 	/// The target block's hash.
+	#[cfg_attr(feature = "ts", ts(as = "String"))]
 	pub target_hash: H256,
 	/// The target block's number
 	pub target_number: u32,
 }
 
 #[derive(Clone, codec::Decode, serde::Serialize, serde::Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+#[cfg_attr(feature = "ts", ts(export, export_to = "BlockJustification.ts"))]
 pub struct SignedPrecommit {
 	/// The precommit message which has been signed.
 	pub precommit: Precommit,
 	/// The signature on the message.
+	#[cfg_attr(feature = "ts", ts(as = "String"))]
 	pub signature: Signature,
 	/// The Id of the signer.
+	#[cfg_attr(feature = "ts", ts(as = "String"))]
 	pub id: AuthorityId,
 }
 
 #[derive(Clone, codec::Decode, serde::Serialize, serde::Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+#[cfg_attr(feature = "ts", ts(export, export_to = "BlockJustification.ts"))]
 pub struct Commit {
 	/// The target block's hash.
+	#[cfg_attr(feature = "ts", ts(as = "String"))]
 	pub target_hash: H256,
 	/// The target block's number.
 	pub target_number: u32,
@@ -228,8 +238,11 @@ pub struct Commit {
 }
 
 #[derive(Clone, codec::Decode, serde::Serialize, serde::Deserialize)]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+#[cfg_attr(feature = "ts", ts(export, export_to = "BlockJustification.ts"))]
 pub struct GrandpaJustification {
 	pub round: u64,
 	pub commit: Commit,
+	#[cfg_attr(feature = "ts", ts(as = "Vec<String>"))]
 	pub votes_ancestries: Vec<Header>,
 }
