@@ -20,14 +20,15 @@ pub trait Api {
 	#[method(name = "system_fetchEventsV1")]
 	async fn fetch_events_v1(
 		&self,
-		params: fetch_events_v1::Params,
 		at: H256,
+		params: Option<fetch_events_v1::Params>,
 	) -> RpcResult<fetch_events_v1::ApiResult>;
 
 	#[method(name = "system_fetchExtrinsicsV1")]
 	async fn fetch_extrinsics_v1(
 		&self,
-		params: fetch_extrinsics_v1::Params,
+		block_id: fetch_extrinsics_v1::BlockId,
+		options: Option<fetch_extrinsics_v1::Options>,
 	) -> RpcResult<fetch_extrinsics_v1::ApiResult>;
 }
 
@@ -98,14 +99,14 @@ where
 {
 	async fn fetch_events_v1(
 		&self,
-		params: fetch_events_v1::Params,
 		at: H256,
+		params: Option<fetch_events_v1::Params>,
 	) -> RpcResult<fetch_events_v1::ApiResult> {
 		use fetch_events_v1::GroupedRuntimeEvents;
 
 		let runtime_api = self.client.runtime_api();
 		let result = runtime_api
-			.fetch_events_v1(at.into(), params)
+			.fetch_events_v1(at.into(), params.unwrap_or_default())
 			.map_err(|x| Error::RuntimeApi.into_error_object(x.to_string()))?;
 
 		match result {
@@ -117,15 +118,17 @@ where
 
 	async fn fetch_extrinsics_v1(
 		&self,
-		params: fetch_extrinsics_v1::Params,
+		block_id: fetch_extrinsics_v1::BlockId,
+		options: Option<fetch_extrinsics_v1::Options>,
 	) -> RpcResult<fetch_extrinsics_v1::ApiResult> {
 		use fetch_extrinsics_v1::{
 			BlockId, EncodeSelector, ExtrinsicInformation, TransactionFilterOptions,
 		};
-		let filter = params.filter.unwrap_or_default();
+		let options = options.unwrap_or_default();
+		let filter = options.filter.unwrap_or_default();
 		let tx_filter = filter.transaction.unwrap_or_default();
 		let sig_filter = filter.signature.unwrap_or_default();
-		let encode_selector = params.encode_selector.unwrap_or_default();
+		let encode_selector = options.encode_selector.unwrap_or_default();
 
 		if !tx_filter.is_valid() {
 			return Err(Error::InvalidInput
@@ -137,7 +140,7 @@ where
 				.into_error_object(String::from("Signature filter: Invalid input")));
 		}
 
-		let block_hash = match params.block_id {
+		let block_hash = match block_id {
 			BlockId::Hash(h) => h,
 			BlockId::Number(n) => {
 				let hash = match self.client.block_hash(n.into()) {
@@ -299,9 +302,8 @@ pub mod fetch_extrinsics_v1 {
 		Number(u32),
 	}
 
-	#[derive(Clone, Serialize, Deserialize)]
-	pub struct Params {
-		pub block_id: BlockId,
+	#[derive(Default, Clone, Serialize, Deserialize)]
+	pub struct Options {
 		pub filter: Option<Filter>,
 		pub encode_selector: Option<EncodeSelector>,
 	}
