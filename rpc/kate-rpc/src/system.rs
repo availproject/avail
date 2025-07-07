@@ -228,7 +228,19 @@ pub mod fetch_events_v1 {
 	};
 	pub type ApiResult = Vec<GroupedRuntimeEvents>;
 
+	#[allow(dead_code)]
+	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchEvents.ts"))]
+	struct ApiResultTS(pub Vec<GroupedRuntimeEvents>);
+
+	#[allow(dead_code)]
+	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchEvents.ts"))]
+	struct ApiParamsTS((String, Option<Options>));
+
 	#[derive(Clone, serde::Serialize, serde::Deserialize)]
+	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchEvents.ts"))]
 	pub struct GroupedRuntimeEvents {
 		pub phase: frame_system::Phase,
 		pub events: Vec<RuntimeEvent>,
@@ -253,6 +265,8 @@ pub mod fetch_events_v1 {
 	}
 
 	#[derive(Clone, serde::Serialize, serde::Deserialize)]
+	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchEvents.ts"))]
 	pub struct RuntimeEvent {
 		pub index: u32,
 		// (Pallet Id, Event Id)

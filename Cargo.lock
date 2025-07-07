@@ -3789,6 +3789,7 @@ dependencies = [
  "static_assertions",
  "test-case",
  "thiserror-no-std",
+ "ts-rs",
 ]
 
 [[package]]
@@ -3819,6 +3820,7 @@ dependencies = [
  "serde",
  "sp-api",
  "sp-std",
+ "ts-rs",
 ]
 
 [[package]]

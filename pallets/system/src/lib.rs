@@ -1062,6 +1062,8 @@ pub type KeyValue = (Vec<u8>, Vec<u8>);
 /// A phase of a block's execution.
 #[derive(Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+#[cfg_attr(feature = "ts", ts(export, export_to = "FetchEvents.ts"))]
 pub enum Phase {
 	/// Applying an extrinsic.
 	ApplyExtrinsic(u32),

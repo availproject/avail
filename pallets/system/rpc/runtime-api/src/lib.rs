@@ -55,6 +55,8 @@ pub mod system_events_api {
 
 		#[derive(Clone, Default, scale_info::TypeInfo, codec::Decode, codec::Encode)]
 		#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
+		#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+		#[cfg_attr(feature = "ts", ts(export, export_to = "FetchEvents.ts"))]
 		pub struct Options {
 			pub filter: Option<Filter>,
 			pub enable_encoding: Option<bool>,
@@ -63,6 +65,8 @@ pub mod system_events_api {
 
 		#[derive(Clone, scale_info::TypeInfo, codec::Decode, codec::Encode)]
 		#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
+		#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+		#[cfg_attr(feature = "ts", ts(export, export_to = "FetchEvents.ts"))]
 		#[repr(u8)]
 		pub enum Filter {
 			All = 0,
