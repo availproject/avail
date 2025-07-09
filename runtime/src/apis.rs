@@ -240,6 +240,48 @@ impl_runtime_apis! {
 		}
 	}
 
+	impl frame_system_rpc_runtime_api::SystemEventsApi<Block> for Runtime {
+		fn fetch_events_v1(options: frame_system_rpc_runtime_api::system_events_api::fetch_events_v1::Options) -> frame_system_rpc_runtime_api::system_events_api::fetch_events_v1::ApiResult {
+			use sp_std::vec;
+			use frame_system_rpc_runtime_api::system_events_api::fetch_events_v1::{RuntimeEvent, GroupedRuntimeEvents, ERROR_INVALID_INPUTS};
+			use codec::Encode;
+
+			let filter = options.filter.unwrap_or_default();
+			if !filter.is_valid() {
+				return Err(ERROR_INVALID_INPUTS);
+			}
+
+			let enable_encoding = options.enable_encoding.unwrap_or(false);
+			let enable_decoding = options.enable_decoding.unwrap_or(false);
+
+			let mut result: Vec<GroupedRuntimeEvents> = Vec::new();
+			let all_events = System::read_events_no_consensus();
+			for (position, event) in all_events.enumerate() {
+				if !filter.should_allow(event.phase) {
+					continue
+				}
+
+				let encoded = event.event.encode();
+				if encoded.len() <2 {
+					continue
+				}
+
+				let emitted_index: (u8, u8) = (encoded[0], encoded[1]);
+				let encoded = enable_encoding.then(|| encoded);
+				let decoded = enable_decoding.then(|| decode_runtime_event_v1(&event.event)).flatten();
+
+				let ev = RuntimeEvent::new(position as u32, emitted_index, encoded, decoded);
+				if let Some(entry) = result.iter_mut().find(|x| x.phase == event.phase) {
+					entry.events.push(ev);
+				} else {
+					result.push(GroupedRuntimeEvents {phase: event.phase, events: vec![ev]});
+				};
+			}
+
+			Ok(result)
+		}
+	}
+
 	impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<
 		Block,
 		Balance,
@@ -585,4 +627,74 @@ impl_runtime_apis! {
 			build_config::<RuntimeGenesisConfig>(config)
 		}
 	}
+}
+
+fn decode_runtime_event_v1(event: &super::RuntimeEvent) -> Option<Vec<u8>> {
+	use super::*;
+	use codec::Encode;
+
+	match event {
+		RuntimeEvent::Sudo(e) => match e {
+			pallet_sudo::Event::<Runtime>::Sudid { sudo_result } => {
+				let mut event_data = Vec::<u8>::new();
+				sudo_result.is_ok().encode_to(&mut event_data);
+
+				return Some(event_data);
+			},
+			pallet_sudo::Event::<Runtime>::SudoAsDone { sudo_result } => {
+				let mut event_data = Vec::<u8>::new();
+				sudo_result.is_ok().encode_to(&mut event_data);
+
+				return Some(event_data);
+			},
+			_ => (),
+		},
+		RuntimeEvent::Multisig(e) => match e {
+			pallet_multisig::Event::<Runtime>::MultisigExecuted {
+				multisig,
+				call_hash,
+				result: x,
+				..
+			} => {
+				let mut event_data = Vec::<u8>::new();
+				multisig.encode_to(&mut event_data);
+				call_hash.encode_to(&mut event_data);
+				x.is_ok().encode_to(&mut event_data);
+
+				return Some(event_data);
+			},
+			_ => (),
+		},
+		RuntimeEvent::Proxy(e) => match e {
+			pallet_proxy::Event::<Runtime>::ProxyExecuted { result, .. } => {
+				let mut event_data = Vec::<u8>::new();
+				result.is_ok().encode_to(&mut event_data);
+
+				return Some(event_data);
+			},
+			_ => (),
+		},
+		RuntimeEvent::Scheduler(e) => match e {
+			pallet_scheduler::Event::<Runtime>::Dispatched { result, .. } => {
+				let mut event_data = Vec::<u8>::new();
+				result.is_ok().encode_to(&mut event_data);
+
+				return Some(event_data);
+			},
+			_ => (),
+		},
+		RuntimeEvent::DataAvailability(e) => match e {
+			da_control::Event::<Runtime>::DataSubmitted { who, data_hash } => {
+				let mut event_data = Vec::<u8>::new();
+				who.encode_to(&mut event_data);
+				data_hash.encode_to(&mut event_data);
+
+				return Some(event_data);
+			},
+			_ => (),
+		},
+		_ => (),
+	};
+
+	None
 }

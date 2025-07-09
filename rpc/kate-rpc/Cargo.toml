@@ -12,6 +12,10 @@ frame-system = { workspace = true, default-features = false }
 avail-core = { workspace = true, default-features = false }
 kate = { workspace = true, default-features = false }
 kate-recovery = { workspace = true, default-features = false }
+hex.workspace = true
+codec = { package = "parity-scale-codec", version = "3" }
+serde_json.workspace = true
+serde.workspace = true
 
 # 3rd party
 jsonrpsee.workspace = true
@@ -23,6 +27,10 @@ frame-support = { workspace = true, default-features = false }
 sc-client-api = { workspace = true, default-features = false }
 sp-blockchain = { workspace = true, default-features = false }
 sp-runtime = { workspace = true, default-features = false }
+sc-service = { workspace = true, default-features = false }
+sp-core = { workspace = true, default-features = false }
+frame-system-rpc-runtime-api = { workspace = true, default-features = false }
+ts-rs = { workspace = true, optional = true }
 
 [features]
 default = [ "std" ]
@@ -35,6 +43,8 @@ std = [
 	"kate/std",
 	"sp-api/std",
 	"sp-runtime/std",
+	"serde/std",
+	"sp-core/std",
 ]
 
 # Enables secure seed generation using for padding fill during the matrix
@@ -42,3 +52,4 @@ std = [
 # NOTE: WIP because that affects the Data Availability Protocol used during
 # the block import process.
 secure_padding_fill = []
+ts = ["ts-rs"]

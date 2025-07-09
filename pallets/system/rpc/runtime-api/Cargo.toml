@@ -15,7 +15,13 @@ targets = ["x86_64-unknown-linux-gnu"]
 [dependencies]
 sp-api = { workspace = true, default-features = false }
 codec = { package = "parity-scale-codec", version = "3", default-features = false }
+scale-info = { workspace = true, default-features = false }
+frame-system = { workspace = true, default-features = false }
+serde = { workspace = true, default-features = false }
+sp-std = { workspace = true, default-features = false }
+ts-rs = { workspace = true, optional = true }
 
 [features]
 default = [ "std" ]
-std = [ "codec/std", "sp-api/std" ]
+std = [ "codec/std", "sp-api/std", "serde/std", "frame-system/std" ]
+ts = ["ts-rs"]

@@ -57,6 +57,7 @@ use sp_consensus::SelectChain;
 use sp_consensus_babe::BabeApi;
 use sp_keystore::KeystorePtr;
 use sp_transaction_pool::runtime_api::TaggedTransactionQueue;
+use sp_runtime::traits::BlockIdTo;
 
 /// Extra dependencies for BABE.
 pub struct BabeDeps {
@@ -115,6 +116,7 @@ pub fn create_full<C, P, SC, B>(
 where
 	C: ProvideRuntimeApi<Block>
 		+ sc_client_api::BlockBackend<Block>
+		+ BlockIdTo<Block>
 		+ HeaderBackend<Block>
 		+ AuthorityDiscovery<Block>
 		+ AuxStore
@@ -123,6 +125,7 @@ where
 		+ Send
 		+ 'static,
 	C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>,
+	C::Api: frame_system_rpc_runtime_api::SystemEventsApi<Block>,
 	C::Api: mmr_rpc::MmrRuntimeApi<Block, <Block as sp_runtime::traits::Block>::Hash, BlockNumber>,
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
 	C::Api: BabeApi<Block>,
@@ -256,7 +259,11 @@ where
 	io.merge(TestingApiServer::into_rpc(TestingEnv))?;
 
 	io.merge(GrandpaServer::into_rpc(
-		GrandpaJustifications::<C, Block>::new(client),
+		GrandpaJustifications::<C, Block>::new(client.clone()),
+	))?;
+
+	io.merge(kate_rpc::system::ApiServer::into_rpc(
+		kate_rpc::system::Rpc::<C, Block>::new(client),
 	))?;
 
 	Ok(io)

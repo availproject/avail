@@ -50,14 +50,12 @@ jobs:
         include:
           - command: ENGINE=podman SCRIPT_LOC=./scripts/workflows/releaser_wasm.sh ./scripts/workflows/run.sh
             output_file: output/da_runtime.compact.compressed.wasm
-          - command: ENGINE=podman DISTRO=ubuntu-2004 ZIP=1 ./scripts/binaries/build.sh
-            output_file: output/zips/x86_64-ubuntu-2004-avail-node.tar.gz
           - command: ENGINE=podman DISTRO=ubuntu-2204 ZIP=1 ./scripts/binaries/build.sh
             output_file: output/zips/x86_64-ubuntu-2204-avail-node.tar.gz
           - command: ENGINE=podman DISTRO=ubuntu-2404 ZIP=1 ./scripts/binaries/build.sh
             output_file: output/zips/x86_64-ubuntu-2404-avail-node.tar.gz
-          - command: ENGINE=podman DISTRO=fedora-41 ZIP=1 ./scripts/binaries/build.sh
-            output_file: output/zips/x86_64-fedora-41-avail-node.tar.gz
+          - command: ENGINE=podman DISTRO=fedora-42 ZIP=1 ./scripts/binaries/build.sh
+            output_file: output/zips/x86_64-fedora-42-avail-node.tar.gz
           - command: ENGINE=podman DISTRO=debian-12 ZIP=1 ./scripts/binaries/build.sh
             output_file: output/zips/x86_64-debian-12-avail-node.tar.gz
           - command: ENGINE=podman DISTRO=arch ZIP=1 ./scripts/binaries/build.sh

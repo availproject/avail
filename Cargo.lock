@@ -3841,6 +3841,7 @@ dependencies = [
  "static_assertions",
  "test-case",
  "thiserror-no-std",
+ "ts-rs",
 ]
 
 [[package]]
@@ -3865,8 +3866,13 @@ dependencies = [
 name = "frame-system-rpc-runtime-api"
 version = "4.0.0-dev"
 dependencies = [
+ "frame-system",
  "parity-scale-codec",
+ "scale-info",
+ "serde",
  "sp-api",
+ "sp-std",
+ "ts-rs",
 ]
 
 [[package]]
@@ -5435,14 +5441,22 @@ dependencies = [
  "da-runtime",
  "frame-support",
  "frame-system",
+ "frame-system-rpc-runtime-api",
+ "hex",
  "jsonrpsee",
  "kate",
  "kate-recovery",
  "log",
+ "parity-scale-codec",
  "sc-client-api",
+ "sc-service",
+ "serde",
+ "serde_json",
  "sp-api",
  "sp-blockchain",
+ "sp-core",
  "sp-runtime",
+ "ts-rs",
 ]
 
 [[package]]
@@ -13460,6 +13474,27 @@ dependencies = [
  "sp-weights",
  "substrate-rpc-client",
  "zstd 0.12.4",
+]
+
+[[package]]
+name = "ts-rs"
+version = "11.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6ef1b7a6d914a34127ed8e1fa927eb7088903787bcded4fa3eef8f85ee1568be"
+dependencies = [
+ "thiserror 2.0.11",
+ "ts-rs-macros",
+]
+
+[[package]]
+name = "ts-rs-macros"
+version = "11.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e9d4ed7b4c18cc150a6a0a1e9ea1ecfa688791220781af6e119f9599a8502a0a"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.96",
 ]
 
 [[package]]
