@@ -93,7 +93,7 @@ pub struct ProposerFactory<A, C, B: BlockT, PR> {
 	/// Network service to send and submit request for blob data
 	network: Arc<NetworkService<B, <B as BlockT>::Hash>>,
 	/// Shard store to check what the client already has for blob data
-	shard_store: Arc<RocksdbShardStore>,
+	shard_store: Arc<RocksdbShardStore<B>>,
 	/// phantom member to pin the `ProofRecording` type.
 	_phantom: PhantomData<PR>,
 }
@@ -113,7 +113,7 @@ where
 		prometheus: Option<&PrometheusRegistry>,
 		telemetry: Option<TelemetryHandle>,
 		network: Arc<NetworkService<B, <B as BlockT>::Hash>>,
-		shard_store: Arc<RocksdbShardStore>,
+		shard_store: Arc<RocksdbShardStore<B>>,
 	) -> Self {
 		ProposerFactory {
 			spawn_handle: Box::new(spawn_handle),
@@ -148,7 +148,7 @@ where
 		prometheus: Option<&PrometheusRegistry>,
 		telemetry: Option<TelemetryHandle>,
 		network: Arc<NetworkService<B, <B as BlockT>::Hash>>,
-		shard_store: Arc<RocksdbShardStore>,
+		shard_store: Arc<RocksdbShardStore<B>>,
 	) -> Self {
 		ProposerFactory {
 			client,
@@ -293,7 +293,7 @@ pub struct Proposer<Block: BlockT, C, A: TransactionPool, PR> {
 	soft_deadline_percent: Percent,
 	telemetry: Option<TelemetryHandle>,
 	network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
-	shard_store: Arc<RocksdbShardStore>,
+	shard_store: Arc<RocksdbShardStore<Block>>,
 	_phantom: PhantomData<PR>,
 }
 
@@ -544,7 +544,7 @@ where
 		let mut transaction_pushed = false;
 
 		let mut submit_blob_metadata_calls = Vec::new();
-		let mut blob_metadata: BTreeMap<H256, BlobMetadata> = BTreeMap::new();
+		let mut blob_metadata: BTreeMap<H256, BlobMetadata<Block>> = BTreeMap::new();
 
 		let end_reason = loop {
 			let pending_tx = if let Some(pending_tx) = pending_iterator.next() {

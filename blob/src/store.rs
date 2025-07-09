@@ -2,7 +2,8 @@ use anyhow::{anyhow, Result};
 use codec::{Decode, Encode};
 use kvdb::DBTransaction;
 use kvdb_rocksdb::{Database, DatabaseConfig};
-use std::path::Path;
+use sp_runtime::traits::Block as BlockT;
+use std::{marker::PhantomData, path::Path};
 use tempfile::TempDir;
 
 use crate::{
@@ -14,10 +15,14 @@ const COL_BLOB_METADATA: u32 = 0;
 const COL_BLOB_RETRY: u32 = 1;
 const COL_SHARDS: u32 = 2;
 
-pub trait ShardStore: Send + Sync + 'static {
+pub trait ShardStore<Block: BlockT>: Send + Sync + 'static {
 	// Blob metadata
-	fn insert_blob_metadata(&self, hash: &BlobHash, blob_metadata: &BlobMetadata) -> Result<()>;
-	fn get_blob_metadata(&self, hash: &BlobHash) -> Result<Option<BlobMetadata>>;
+	fn insert_blob_metadata(
+		&self,
+		hash: &BlobHash,
+		blob_metadata: &BlobMetadata<Block>,
+	) -> Result<()>;
+	fn get_blob_metadata(&self, hash: &BlobHash) -> Result<Option<BlobMetadata<Block>>>;
 
 	// Blob read error retry count
 	fn insert_blob_retry(&self, hash: &BlobHash, count: u16) -> Result<()>;
@@ -35,17 +40,21 @@ pub trait ShardStore: Send + Sync + 'static {
 	fn log_all_entries(&self) -> Result<()>;
 }
 
-pub struct RocksdbShardStore {
+pub struct RocksdbShardStore<Block: BlockT> {
 	db: Database,
+	_block: PhantomData<Block>,
 }
 
-impl RocksdbShardStore {
+impl<Block: BlockT> RocksdbShardStore<Block> {
 	/// Open (or create) a new DB at `path`, with a single column.
 	pub fn open(path: impl AsRef<Path>) -> Result<Self> {
 		let num_columns = 3;
 		let db_config = DatabaseConfig::with_columns(num_columns);
 		let db = Database::open(&db_config, path.as_ref())?;
-		Ok(RocksdbShardStore { db })
+		Ok(RocksdbShardStore::<Block> {
+			db,
+			_block: PhantomData,
+		})
 	}
 
 	/// blob key = b"blob:" || hash_bytes
@@ -66,26 +75,37 @@ impl RocksdbShardStore {
 	}
 }
 
-impl Default for RocksdbShardStore {
+impl<Block: BlockT> Default for RocksdbShardStore<Block> {
 	fn default() -> Self {
 		let temp_dir = TempDir::new().expect("failed to create temp dir for RocksdbShardStore");
 		let db_path = temp_dir.path().join("blob_store");
 		let num_columns = 3;
 		let db_config = DatabaseConfig::with_columns(num_columns);
 		let db = Database::open(&db_config, db_path).expect("opening RocksDB blob store failed");
-		RocksdbShardStore { db }
+		RocksdbShardStore::<Block> {
+			db,
+			_block: PhantomData,
+		}
 	}
 }
 
-impl ShardStore for RocksdbShardStore {
-	fn insert_blob_metadata(&self, hash: &BlobHash, blob_metadata: &BlobMetadata) -> Result<()> {
+impl<Block: BlockT> ShardStore<Block> for RocksdbShardStore<Block> {
+	fn insert_blob_metadata(
+		&self,
+		hash: &BlobHash,
+		blob_metadata: &BlobMetadata<Block>,
+	) -> Result<()> {
 		let mut tx = DBTransaction::new();
-		tx.put(COL_BLOB_METADATA, &Self::blob_key(hash), &blob_metadata.encode());
+		tx.put(
+			COL_BLOB_METADATA,
+			&Self::blob_key(hash),
+			&blob_metadata.encode(),
+		);
 		self.db.write(tx)?;
 		Ok(())
 	}
 
-	fn get_blob_metadata(&self, hash: &BlobHash) -> Result<Option<BlobMetadata>> {
+	fn get_blob_metadata(&self, hash: &BlobHash) -> Result<Option<BlobMetadata<Block>>> {
 		self.db
 			.get(COL_BLOB_METADATA, &Self::blob_key(hash))?
 			.map(|bytes| {
@@ -161,7 +181,7 @@ impl ShardStore for RocksdbShardStore {
 	fn clean_expired_blobs(&self, current_block: u64) -> Result<()> {
 		let mut expired_blobs = Vec::new();
 		for (key, value) in self.db.iter(COL_BLOB_METADATA).filter_map(Result::ok) {
-			if let Ok(blob_metadata) = BlobMetadata::decode(&mut value.as_slice()) {
+			if let Ok(blob_metadata) = BlobMetadata::<Block>::decode(&mut value.as_slice()) {
 				if blob_metadata.expires_at <= current_block {
 					let hash = BlobHash::from_slice(&key);
 					expired_blobs.push(hash);
@@ -188,7 +208,7 @@ impl ShardStore for RocksdbShardStore {
 		// Log Blob Metadata
 		log::info!(target: LOG_TARGET, "--- Blob Metadatas ---");
 		for (_key, value) in self.db.iter(COL_BLOB_METADATA).filter_map(Result::ok) {
-			if let Ok(blob_metadata) = BlobMetadata::decode(&mut value.as_slice()) {
+			if let Ok(blob_metadata) = BlobMetadata::<Block>::decode(&mut value.as_slice()) {
 				log::info!(
 					target: LOG_TARGET,
 					"Blob: hash={:?}, size={}, nb_shards={}, commitments_len={}, ownership={:?}, is_notified={}, expires_at={}",
@@ -230,4 +250,3 @@ impl ShardStore for RocksdbShardStore {
 		Ok(())
 	}
 }
-

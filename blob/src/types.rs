@@ -107,7 +107,7 @@ where
 /// The metadata of a blob and ownership data (who owns what shards)
 /// This will be stored by everyone for now
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
-pub struct BlobMetadata {
+pub struct BlobMetadata<Block: BlockT> {
 	/// The Hash of the blob.
 	pub hash: BlobHash,
 	/// The size of the blob.
@@ -125,9 +125,13 @@ pub struct BlobMetadata {
 	pub is_notified: bool,
 	/// Block from which this blob is considered expired
 	pub expires_at: u64,
+	/// The finalized block hash for other nodes reference
+	pub finalized_block_hash: Block::Hash,
+	/// The finalized block number for other nodes reference
+	pub finalized_block_number: u64,
 }
 
-impl BlobMetadata {
+impl<Block: BlockT> BlobMetadata<Block> {
 	pub fn insert_in_ownership(
 		&mut self,
 		shard_id: &u16,
@@ -175,7 +179,7 @@ pub struct Shard {
 /***** Structs used for notification / request / response *****/
 /// Structure for the notification when a blob is received from the RPC
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
-pub struct BlobReceived {
+pub struct BlobReceived<Block: BlockT> {
 	/// The hash of the blob
 	pub hash: BlobHash,
 	/// The size of the blob.
@@ -188,6 +192,10 @@ pub struct BlobReceived {
 	pub ownership: BTreeMap<u16, Vec<(AuthorityId, String)>>,
 	/// The original encoded peerId that received the blob
 	pub original_peer_id: String,
+	/// The finalized block hash for other nodes reference
+	pub finalized_block_hash: <Block as BlockT>::Hash,
+	/// The finalized block number for other nodes reference
+	pub finalized_block_number: u64,
 }
 
 /// Structure for the request when a shard is requested from a validator
@@ -267,8 +275,8 @@ pub struct CellResponse {
 /***** Enums used for notification / request / response *****/
 /// Enum for different types of notifications.
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
-pub enum BlobNotification {
-	BlobReceived(BlobReceived),
+pub enum BlobNotification<Block: BlockT> {
+	BlobReceived(BlobReceived<Block>),
 	ShardReceived(ShardReceived),
 }
 

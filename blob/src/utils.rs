@@ -2,7 +2,7 @@ use crate::{
 	process_cell_request_inner, send_cell_request,
 	store::{RocksdbShardStore, ShardStore},
 	types::{
-		BlobHash, BlobMetadata, CellRequest, CellUnitRequest, FullClient, Shard, ShardRequest,
+		BlobHash, BlobMetadata, CellRequest, CellUnitRequest, Shard, ShardRequest,
 	},
 	LOG_TARGET, MAX_BLOB_RETRY_BEFORE_DISCARDING, MAX_TRANSACTION_VALIDITY, MIN_SHARD_HOLDER_COUNT,
 	MIN_SHARD_HOLDER_PERCENTAGE, MIN_TRANSACTION_VALIDITY, SHARD_SIZE,
@@ -12,7 +12,6 @@ use codec::Decode;
 use da_control::Call;
 use da_runtime::{RuntimeCall, UncheckedExtrinsic};
 use futures::{future::try_join_all, stream::FuturesUnordered, StreamExt};
-use sc_authority_discovery::AuthorityDiscovery;
 use sc_client_api::HeaderBackend;
 use sc_keystore::{Keystore, LocalKeystore};
 use sc_network::{NetworkService, NetworkStateInfo, PeerId};
@@ -27,14 +26,6 @@ use std::{collections::BTreeMap, str::FromStr, sync::Arc};
 pub fn get_nb_shards_from_blob_size(size: usize) -> u16 {
 	let shard_size = SHARD_SIZE as usize;
 	((size + shard_size - 1) / shard_size).saturated_into()
-}
-
-/// Get the current elected validators
-pub async fn get_validators(client: &Arc<FullClient>) -> Result<Vec<AuthorityId>> {
-	let best_hash = client.info().best_hash;
-	client.authorities(best_hash).await.map_err(|e| {
-		return anyhow!("Could not get validators: {e:?}");
-	})
 }
 
 /// Get this node Authority ID
@@ -130,7 +121,7 @@ pub fn get_shards_to_store(
 	Ok(shards_to_store)
 }
 
-pub fn fetch_shards(store: &RocksdbShardStore, shard_request: &ShardRequest) -> Result<Vec<Shard>> {
+pub fn fetch_shards<Block: BlockT>(store: &RocksdbShardStore<Block>, shard_request: &ShardRequest) -> Result<Vec<Shard>> {
 	let shards = shard_request
 		.shard_ids
 		.iter()
@@ -150,10 +141,10 @@ pub fn fetch_shards(store: &RocksdbShardStore, shard_request: &ShardRequest) -> 
 
 pub fn check_if_wait_next_block<C, Block>(
 	client: &Arc<C>,
-	shard_store: &Arc<RocksdbShardStore>,
+	shard_store: &Arc<RocksdbShardStore<Block>>,
 	encoded: Vec<u8>,
 	submit_blob_metadata_calls: &mut Vec<RuntimeCall>,
-	blob_metadata: &mut BTreeMap<BlobHash, BlobMetadata>,
+	blob_metadata: &mut BTreeMap<BlobHash, BlobMetadata<Block>>,
 ) -> (bool, bool)
 where
 	Block: BlockT,
@@ -237,11 +228,11 @@ where
 	(should_continue, submit_blob_metadata_pushed)
 }
 
-pub async fn sample_and_get_failed_blobs<Block>(
+pub async fn sample_and_get_failed_blobs<Block: BlockT>(
 	submit_blob_metadata_calls: &Vec<RuntimeCall>,
-	network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
-	shard_store: &Arc<RocksdbShardStore>,
-	blob_metadata: BTreeMap<BlobHash, BlobMetadata>,
+	network: Arc<NetworkService<Block, Block::Hash>>,
+	shard_store: &Arc<RocksdbShardStore<Block>>,
+	blob_metadata: BTreeMap<BlobHash, BlobMetadata<Block>>,
 ) -> (Vec<(BlobHash, String)>, u64)
 where
 	Block: BlockT,

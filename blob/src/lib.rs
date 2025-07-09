@@ -4,15 +4,17 @@ use crate::{
 		BlobHash, BlobMetadata, BlobReceived, CellRequest, CellResponse, CellUnitResponse, Shard,
 		ShardReceived, ShardResponse,
 	},
-	utils::{fetch_shards, get_my_validator_id, get_shards_to_store, get_validators},
+	utils::{fetch_shards, get_my_validator_id, get_shards_to_store},
 };
 use anyhow::{anyhow, Result};
 use codec::{Decode, Encode};
 use futures::{channel::oneshot, stream::FuturesUnordered, StreamExt};
+use sc_authority_discovery::AuthorityDiscovery;
 use sc_client_api::HeaderBackend;
 use sc_network::{
 	config::{IncomingRequest, OutgoingResponse},
-	IfDisconnected, NetworkRequest, NetworkService, NetworkStateInfo, PeerId,
+	IfDisconnected, NetworkPeers, NetworkRequest, NetworkService, NetworkStateInfo, ObservedRole,
+	PeerId,
 };
 use sp_authority_discovery::AuthorityId;
 use sp_runtime::{traits::Block as BlockT, Perbill, SaturatedConversion};
@@ -54,6 +56,8 @@ const MIN_SHARD_HOLDER_PERCENTAGE: Perbill = Perbill::from_percent(10);
 const MIN_SHARD_HOLDER_COUNT: u32 = 2; // TODO Blob Put like 10 validators
 /// Amount of block for which we need to store the blob metadata and shards.
 const BLOB_TTL: u64 = 120_960; // 28 days
+/// Amount of block for which we need to store the blob metadata if the blob is not notified yet.
+const TEMP_BLOB_TTL: u64 = 180;
 /// Amount of blocks used to periodically check wether we should remove expired blobs or not.
 const BLOB_EXPIRATION_CHECK_PERIOD: u64 = 180; // 1 hour
 /// Min Amount of block for which the transaction submitted through RPC is valid.
@@ -64,6 +68,8 @@ const MIN_TRANSACTION_VALIDITY: u64 = 15; // 5 mn
 const MAX_TRANSACTION_VALIDITY: u64 = 150; // 50 mn
 /// The number of time we'll allow trying to fetch internal blob metadata before letting the transaction go through to get discarded
 const MAX_BLOB_RETRY_BEFORE_DISCARDING: u16 = 1;
+/// The number of block for which a notification is considered valid
+const NOTIFICATION_EXPIRATION_PERIOD: u64 = 180;
 
 pub async fn decode_blob_notification<Block>(data: &[u8], blob_handle: &BlobHandle<Block>)
 where
@@ -102,36 +108,13 @@ where
 }
 
 async fn handle_blob_received_notification<Block>(
-	blob_received: BlobReceived,
+	blob_received: BlobReceived<Block>,
 	blob_handle: &BlobHandle<Block>,
 	original_peer_id: PeerId,
 ) where
 	Block: BlockT,
 {
 	log::info!(target: LOG_TARGET, "1 - Got a blob notification");
-	if !blob_handle.role.is_authority() {
-		log::info!(target: LOG_TARGET, "Got a blob notification but ignoring it since this node is not an authority.");
-		return;
-	}
-
-	let Some(keystore) = blob_handle.keystore.get() else {
-		log::error!(target: LOG_TARGET, "Keystore not yet registered");
-		return;
-	};
-
-	let my_validator_id = match get_my_validator_id(&keystore) {
-		Ok(maybe_validator_id) => match maybe_validator_id {
-			Some(v) => v,
-			None => {
-				log::info!(target: LOG_TARGET, "This node is not a current authority, skipping recording blobs");
-				return;
-			},
-		},
-		Err(e) => {
-			log::error!(target: LOG_TARGET, "Error happened while trying to get this node's id: {e}");
-			return;
-		},
-	};
 
 	let Some(client) = blob_handle.client.get() else {
 		log::error!(target: LOG_TARGET, "Client not yet registered");
@@ -143,15 +126,29 @@ async fn handle_blob_received_notification<Block>(
 		return;
 	};
 
-	let validators = match get_validators(client).await {
-		Ok(v) => v,
-		Err(e) => {
-			log::error!(target: LOG_TARGET, "Could not get validator from the runtime: {e}");
-			return;
-		},
+	let is_authority = blob_handle.role.is_authority();
+
+	let announced_finalized_hash = blob_received.finalized_block_hash;
+	let announced_finalized_number = blob_received.finalized_block_number;
+
+	let Ok(Some(finalized_hash)) = client.hash(announced_finalized_number.saturated_into()) else {
+		log::error!(target: LOG_TARGET, "Could not get announced block hash from backend");
+		return;
 	};
 
-	let finalized_blob_number = client.info().finalized_number.saturated_into::<u64>();
+	if finalized_hash.encode() != announced_finalized_hash.encode() {
+		log::error!(target: LOG_TARGET, "Invalid finalized block hash.");
+		return;
+	}
+
+	let client_info = client.info();
+	let finalized_block_number = client_info.finalized_number.saturated_into::<u64>();
+	if announced_finalized_number > finalized_block_number
+		|| finalized_block_number - announced_finalized_number > NOTIFICATION_EXPIRATION_PERIOD
+	{
+		log::error!(target: LOG_TARGET, "Invalid announced finalized block number.");
+		return;
+	}
 
 	let maybe_metadata = match blob_handle
 		.shard_store
@@ -159,13 +156,13 @@ async fn handle_blob_received_notification<Block>(
 	{
 		Ok(maybe_meta) => maybe_meta,
 		Err(e) => {
-			log::error!("Failed to get data from blob storage: {e}");
+			log::error!("Failed to check data from blob storage: {e}");
 			return;
 		},
 	};
 
 	// Get the existing blob or create a new one
-	let expires_at = finalized_blob_number.saturating_add(BLOB_TTL);
+	let expires_at = announced_finalized_number.saturating_add(BLOB_TTL);
 	let mut blob_meta = maybe_metadata.unwrap_or_else(|| BlobMetadata {
 		hash: blob_received.hash,
 		size: blob_received.size,
@@ -174,6 +171,8 @@ async fn handle_blob_received_notification<Block>(
 		ownership: BTreeMap::new(),
 		is_notified: true,
 		expires_at: 0,
+		finalized_block_hash: announced_finalized_hash,
+		finalized_block_number: announced_finalized_number,
 	});
 
 	// If we already had the blob metadata but incomplete (is notified == false) we fill the missing data.
@@ -187,46 +186,74 @@ async fn handle_blob_received_notification<Block>(
 	blob_meta.expires_at = expires_at;
 	blob_meta.merge_ownerships(blob_received.ownership);
 
-
-	let shards_to_store = match get_shards_to_store(
-		blob_received.hash,
-		blob_received.nb_shards,
-		&validators,
-		&my_validator_id,
-	) {
-		Ok(s) => s,
-		Err(e) => {
-			log::error!(target: LOG_TARGET, "Could not get shards to store: {e}");
+	if is_authority {
+		let Some(keystore) = blob_handle.keystore.get() else {
+			log::error!(target: LOG_TARGET, "Keystore not yet registered");
 			return;
-		},
-	};
+		};
 
-	if shards_to_store.len() > 0 {
-		let my_peer_id = network.local_peer_id();
-		let my_peer_id_base58 = my_peer_id.to_base58();
-		let mut shard_to_request = Vec::new();
-		let mut shard_already_stored = Vec::new();
+		let my_validator_id = match get_my_validator_id(&keystore) {
+			Ok(maybe_validator_id) => match maybe_validator_id {
+				Some(v) => v,
+				None => {
+					log::info!(target: LOG_TARGET, "This node is not a current authority, skipping recording blobs");
+					return;
+				},
+			},
+			Err(e) => {
+				log::error!(target: LOG_TARGET, "Error happened while trying to get this node's id: {e}");
+				return;
+			},
+		};
 
-		for shard_id in &shards_to_store {
-			let already_stored =
-				blob_meta.insert_in_ownership(shard_id, &my_validator_id, &my_peer_id_base58);
-			if already_stored {
-				shard_already_stored.push(*shard_id);
-			} else {
-				shard_to_request.push(*shard_id)
-			}
-		}
+		let validators = match client.authorities(finalized_hash).await {
+			Ok(v) => v,
+			Err(e) => {
+				log::error!(target: LOG_TARGET, "Could not get validator from the runtime: {e}");
+				return;
+			},
+		};
 
-		send_shard_request(
+		let shards_to_store = match get_shards_to_store(
 			blob_received.hash,
-			shard_to_request,
-			shard_already_stored,
-			blob_handle,
-			network,
-			original_peer_id,
-			my_validator_id,
-		)
-		.await;
+			blob_received.nb_shards,
+			&validators,
+			&my_validator_id,
+		) {
+			Ok(s) => s,
+			Err(e) => {
+				log::error!(target: LOG_TARGET, "Could not get shards to store: {e}");
+				return;
+			},
+		};
+
+		if shards_to_store.len() > 0 {
+			let my_peer_id = network.local_peer_id();
+			let my_peer_id_base58 = my_peer_id.to_base58();
+			let mut shard_to_request = Vec::new();
+			let mut shard_already_stored = Vec::new();
+
+			for shard_id in &shards_to_store {
+				let already_stored =
+					blob_meta.insert_in_ownership(shard_id, &my_validator_id, &my_peer_id_base58);
+				if already_stored {
+					shard_already_stored.push(*shard_id);
+				} else {
+					shard_to_request.push(*shard_id)
+				}
+			}
+
+			send_shard_request(
+				blob_received.hash,
+				shard_to_request,
+				shard_already_stored,
+				blob_handle,
+				network,
+				original_peer_id,
+				my_validator_id,
+			)
+			.await;
+		}
 	}
 
 	match blob_handle
@@ -256,7 +283,7 @@ async fn send_shard_request<Block>(
 	shard_ids_to_request: Vec<u16>,
 	shard_ids_already_stored: Vec<u16>,
 	blob_handle: &BlobHandle<Block>,
-	network: &Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
+	network: &Arc<NetworkService<Block, Block::Hash>>,
 	original_peer_id: PeerId,
 	my_validator_id: AuthorityId,
 ) where
@@ -315,7 +342,7 @@ async fn send_shard_request<Block>(
 							BlobResponse::CellResponse(_) => {
 								log::error!(
 									target: LOG_TARGET,
-									"Invalid response in send_shard_request, got CellResponse, expected ShardResponse"
+									"Invalid response in send shard request, got CellResponse, expected ShardResponse"
 								);
 							},
 						},
@@ -361,10 +388,24 @@ async fn send_shard_request<Block>(
 	futures.collect::<()>().await;
 }
 
-pub fn handle_incoming_blob_request(request: IncomingRequest, store: &RocksdbShardStore) {
+pub fn handle_incoming_blob_request<Block: BlockT>(
+	request: IncomingRequest,
+	store: &RocksdbShardStore<Block>,
+	network: &Arc<NetworkService<Block, Block::Hash>>,
+) where
+	Block: BlockT,
+{
 	log::info!(target: LOG_TARGET, "X - In handle incoming blob request");
 	let data = request.payload;
 	let response_tx = request.pending_response;
+	let peer_id = request.peer;
+	let role = network.peer_role(peer_id, Vec::new());
+	if role != Some(ObservedRole::Authority) {
+		log::error!(
+			target: LOG_TARGET,
+			"Not answering to {peer_id:?} as it's not an authority.",
+		);
+	}
 
 	let mut buf: &[u8] = &data;
 	match BlobRequest::decode(&mut buf) {
@@ -392,9 +433,9 @@ pub fn handle_incoming_blob_request(request: IncomingRequest, store: &RocksdbSha
 	}
 }
 
-fn process_shard_request(
+fn process_shard_request<Block: BlockT>(
 	shard_request: ShardRequest,
-	store: &RocksdbShardStore,
+	store: &RocksdbShardStore<Block>,
 	response_tx: oneshot::Sender<OutgoingResponse>,
 ) {
 	log::info!(target: LOG_TARGET, "3 - processing incoming shard_request");
@@ -517,11 +558,13 @@ fn handle_shard_received_notification<Block>(
 		commitments: Vec::new(),
 		ownership: BTreeMap::new(),
 		is_notified: false,
+		finalized_block_hash: Block::Hash::default(),
+		finalized_block_number: 0,
 		expires_at: client
 			.info()
 			.finalized_number
 			.saturated_into::<u64>()
-			.saturating_add(BLOB_TTL),
+			.saturating_add(TEMP_BLOB_TTL),
 	});
 	if !blob_metadata.is_notified {
 		log::info!(target: LOG_TARGET, "A ShardReceived was received before BlobReceived, creating empty blob metadata.");
@@ -548,7 +591,7 @@ fn handle_shard_received_notification<Block>(
 
 async fn send_cell_request<Block>(
 	cell_request: CellRequest,
-	network: &Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
+	network: &Arc<NetworkService<Block, Block::Hash>>,
 	target_peer: PeerId,
 ) -> Result<CellResponse>
 where
@@ -572,7 +615,7 @@ where
 			match BlobResponse::decode(&mut buf) {
 				Ok(response) => match response {
 					BlobResponse::ShardResponse(_) => {
-						Err(anyhow!("Invalid response in send_cell_request, got ShardResponse, expected CellResponse"))
+						Err(anyhow!("Invalid response in send cell request, got ShardResponse, expected CellResponse"))
 					},
 					BlobResponse::CellResponse(cell_response) => {
 						Ok(process_cell_response(cell_response))
@@ -592,9 +635,9 @@ where
 	}
 }
 
-pub fn process_cell_request_inner(
+pub fn process_cell_request_inner<Block: BlockT>(
 	cell_request: CellRequest,
-	store: &RocksdbShardStore,
+	store: &RocksdbShardStore<Block>,
 ) -> CellResponse {
 	log::info!(target: LOG_TARGET, "8 - Processing cell request");
 	let mut cell_response = CellResponse {
@@ -656,9 +699,9 @@ pub fn process_cell_request_inner(
 	cell_response
 }
 
-pub fn process_cell_request(
+pub fn process_cell_request<Block: BlockT>(
 	cell_request: CellRequest,
-	store: &RocksdbShardStore,
+	store: &RocksdbShardStore<Block>,
 	response_tx: oneshot::Sender<OutgoingResponse>,
 ) {
 	let cell_response = process_cell_request_inner(cell_request, store);

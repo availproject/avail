@@ -203,9 +203,10 @@ where
 
 		// --- 5. Setup blob metadata and split the blob into shard
 		// --- Check first in case we already received this exact blob before
-		let block_number = client_info.finalized_number.saturated_into::<u64>();
+		let finalized_block_number = client_info.finalized_number.saturated_into::<u64>();
+		let finalized_block_hash = client_info.finalized_hash;
 
-		let expiration = block_number.saturating_add(BLOB_TTL);
+		let expiration = finalized_block_number.saturating_add(BLOB_TTL);
 		let mut blob_metadata = self
 			.blob_handle
 			.shard_store
@@ -223,6 +224,8 @@ where
 					ownership: BTreeMap::new(),
 					is_notified: true,
 					expires_at: expiration,
+					finalized_block_hash,
+					finalized_block_number,
 				}
 			});
 
@@ -237,7 +240,7 @@ where
 			&self.client,
 			&self.blob_handle.keystore.get().cloned(),
 			blob_metadata.clone(),
-			best_hash,
+			finalized_block_hash,
 			my_peer_id_base58.clone(),
 		)
 		.await
@@ -271,26 +274,7 @@ where
 			.insert_shards(&shards)
 			.map_err(|e| internal_err!("failed to insert blob shards into store: {e}"))?;
 
-		// --- 7. Check validity once more, if the tx has expired, we need to remove the blob once again (TODO Blob)
-		// This should not happen, it would mean our minimum tx lifetime is too low
-		let best_hash = self.client.info().best_hash;
-		let validity = self
-			.client
-			.runtime_api()
-			.validate_transaction(
-				best_hash,
-				TransactionSource::External,
-				opaque_tx.clone(),
-				best_hash,
-			)
-			.map_err(|e| internal_err!("second runtime validate_transaction error: {e}"))?;
-		if validity.is_err() {
-			return Err(internal_err!(
-				"second validation failed: metadata extrinsic rejected by runtime: {validity:?}. Please check the `MIN_TRANSACTION_VALIDITY` and `MAX_TRANSACTION_VALIDITY`."
-			));
-		}
-
-		// --- 8. Announce the blob to the network -------------------
+		// --- 7. Announce the blob to the network -------------------
 		let blob_received_notification = BlobNotification::BlobReceived(BlobReceived {
 			hash: blob_metadata.hash,
 			size: blob_metadata.size,
@@ -298,6 +282,8 @@ where
 			commitments: blob_metadata.commitments,
 			ownership: blob_metadata.ownership,
 			original_peer_id: my_peer_id_base58,
+			finalized_block_hash,
+			finalized_block_number,
 		});
 
 		let Some(gossip_cmd_sender) = self.blob_handle.gossip_cmd_sender.get() else {
@@ -308,7 +294,9 @@ where
 			.await
 			.map_err(|e| internal_err!("internal channel closed: {e}"))?;
 
-		// --- 9. Push the clean extrinsic to the tx pool ---------------------
+		// --- 8. Push the clean extrinsic to the tx pool ---------------------
+		// Get the best hash once more, to submit the tx
+		let best_hash = self.client.info().best_hash;
 		self.pool
 			.submit_one(best_hash, TransactionSource::External, opaque_tx)
 			.await
@@ -324,8 +312,8 @@ async fn get_shards_to_store_rpc<Client, Block>(
 	role: &Role,
 	client: &Client,
 	keystore: &Option<Arc<LocalKeystore>>,
-	blob_metadata: BlobMetadata,
-	best_hash: <Block as BlockT>::Hash,
+	blob_metadata: BlobMetadata<Block>,
+	finalized_hash: Block::Hash,
 	my_peer_id_encoded: String,
 ) -> Result<(Vec<u16>, BTreeMap<u16, Vec<(AuthorityId, String)>>)>
 where
@@ -340,7 +328,7 @@ where
 	}
 
 	let validators = client
-		.authorities(best_hash)
+		.authorities(finalized_hash)
 		.await
 		.map_err(|e| anyhow!("failed to get validators from runtime: {e}"))?;
 

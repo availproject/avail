@@ -24,12 +24,12 @@ pub struct BlobHandle<Block>
 where
 	Block: BlockT,
 {
-	pub network: Arc<OnceCell<Arc<NetworkService<Block, <Block as BlockT>::Hash>>>>,
+	pub network: Arc<OnceCell<Arc<NetworkService<Block, Block::Hash>>>>,
 	pub sync_service: Arc<OnceCell<Arc<SyncingService<Block>>>>,
-	pub gossip_cmd_sender: Arc<OnceCell<async_channel::Sender<BlobNotification>>>,
+	pub gossip_cmd_sender: Arc<OnceCell<async_channel::Sender<BlobNotification<Block>>>>,
 	pub keystore: Arc<OnceCell<Arc<LocalKeystore>>>,
 	pub client: Arc<OnceCell<Arc<FullClient>>>,
-	pub shard_store: Arc<RocksdbShardStore>,
+	pub shard_store: Arc<RocksdbShardStore<Block>>,
 	pub role: Role,
 }
 
@@ -103,7 +103,7 @@ where
 		spawn_handle: SpawnTaskHandle,
 		req_receiver: async_channel::Receiver<IncomingRequest>,
 		notif_service: Box<dyn NotificationService>,
-		network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
+		network: Arc<NetworkService<Block, Block::Hash>>,
 		sync_service: Arc<SyncingService<Block>>,
 		keystore: Arc<LocalKeystore>,
 		client: Arc<FullClient>,
@@ -121,14 +121,18 @@ where
 		spawn_handle: SpawnTaskHandle,
 		req_receiver: async_channel::Receiver<IncomingRequest>,
 	) {
+		let network_cell = self.network.clone();
+		let network = network_cell.get().expect("Network should be registered").clone();
 		spawn_handle.spawn("request-listener", None, {
 			let shard_store_clone = self.shard_store.clone();
+			let network_clone = network;
 			async move {
 				req_receiver
 					.for_each_concurrent(CONCURRENT_REQUESTS, |request| {
 						let store = shard_store_clone.clone();
+						let network = network_clone.clone();
 						async move {
-							handle_incoming_blob_request(request, &store);
+							handle_incoming_blob_request(request, &store, &network);
 						}
 					})
 					.await;
@@ -162,7 +166,7 @@ where
 		let incoming_receiver = gossip_engine.messages_for(topic);
 
 		let (gossip_cmd_sender, gossip_cmd_receiver) =
-			async_channel::unbounded::<BlobNotification>();
+			async_channel::unbounded::<BlobNotification<Block>>();
 
 		spawn_handle.spawn("gossip-sender", None, async move {
 			loop {
@@ -228,7 +232,7 @@ where
 
 	fn register_network_and_sync(
 		&self,
-		network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
+		network: Arc<NetworkService<Block, Block::Hash>>,
 		sync_service: Arc<SyncingService<Block>>,
 	) {
 		self.network
