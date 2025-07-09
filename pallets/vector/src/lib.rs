@@ -141,6 +141,12 @@ pub mod pallet {
 		SyncCommitteeStartMismatch,
 		/// Mock is not enabled.
 		MockIsNotEnabled,
+		/// Pico VK cannot be embedded
+		BadPicoVkKey,
+		/// Pico proof decoding error.
+		CannotDecodePicoProof,
+		/// Pico proof cannot be embedded
+		BadPicoProof,
 	}
 
 	#[pallet::event]
@@ -192,8 +198,12 @@ pub mod pallet {
 		},
 		/// Emit new updater.
 		NewUpdater { old: H256, new: H256 },
+		/// Emit new updater.
+		NewPicoUpdater { old: H256, new: H256 },
 		/// Emit new SP1 verification key.
 		NewSP1VerificationKey { old: H256, new: H256 },
+		/// Emit new Pico verification key.
+		NewPicoVerificationKey { old: H256, new: H256 },
 		/// Emit when new sync committee is updated.
 		SyncCommitteeHashUpdated { period: u64, hash: H256 },
 		/// Emit when mocks are enabled or disabled
@@ -289,6 +299,11 @@ pub mod pallet {
 	#[pallet::getter(fn updater)]
 	pub type Updater<T: Config> = StorageValue<_, H256, ValueQuery>;
 
+	/// Updater that can submit updates
+	#[pallet::storage]
+	#[pallet::getter(fn pico_updater)]
+	pub type PicoUpdater<T: Config> = StorageValue<_, H256, ValueQuery>;
+
 	/// Maps from a period to the the sync committee hash.
 	#[pallet::storage]
 	#[pallet::getter(fn sync_committee_hashes)]
@@ -298,6 +313,10 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn sp1_verification_key)]
 	pub type SP1VerificationKey<T: Config> = StorageValue<_, H256, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn pico_verification_key)]
+	pub type PicoVerificationKey<T: Config> = StorageValue<_, H256, ValueQuery>;
 
 	/// Enable mock functions
 	#[pallet::storage]
@@ -444,6 +463,10 @@ pub mod pallet {
 
 			Weight::zero()
 		}
+	}
+	enum UType {
+		Sp1,
+		Pico,
 	}
 
 	#[pallet::call]
@@ -841,8 +864,18 @@ pub mod pallet {
 			proof: ProofInput,
 			public_values: PublicValuesInput,
 		) -> DispatchResultWithPostInfo {
+			use substrate_bn_succinct::Fr;
 			let sender: [u8; 32] = ensure_signed(origin)?.into();
-			let updater = Updater::<T>::get();
+			let pico_updater = PicoUpdater::<T>::get();
+			let sp1_updater = Updater::<T>::get();
+			let (updater, updater_type) = if H256(sender) == pico_updater {
+				(pico_updater, UType::Pico)
+			} else if H256(sender) == sp1_updater {
+				(sp1_updater, UType::Sp1)
+			} else {
+				return Err(Error::<T>::UpdaterMisMatch.into());
+			};
+
 			// ensure sender is preconfigured
 			ensure!(H256(sender) == updater, Error::<T>::UpdaterMisMatch);
 
@@ -865,14 +898,44 @@ pub mod pallet {
 				Error::<T>::SyncCommitteeStartMismatch
 			);
 
-			let sp1_vk = SP1VerificationKey::<T>::get();
-			let is_valid = Groth16Verifier::verify(
-				&proof,
-				&public_values,
-				&format!("{:?}", sp1_vk),
-				&GROTH16_VK_BYTES,
-			);
-			ensure!(is_valid.is_ok(), Error::<T>::VerificationFailed);
+			match updater_type {
+				UType::Sp1 => {
+					let sp1_vk = SP1VerificationKey::<T>::get();
+					let is_valid = Groth16Verifier::verify(
+						&proof,
+						&public_values,
+						&format!("{:?}", sp1_vk),
+						&GROTH16_VK_BYTES,
+					);
+					ensure!(is_valid.is_ok(), Error::<T>::VerificationFailed);
+				},
+				UType::Pico => {
+					let riscv_vk = PicoVerificationKey::<T>::get();
+
+					let vk_bin = include_bytes!("../pico_vk.bin");
+					let vk = gnark_bn_verifier::vk::Groth16VKey::try_from(vk_bin.as_slice());
+					ensure!(vk.is_ok(), Error::<T>::BadPicoVkKey);
+					let vk = vk.unwrap();
+
+					let groth16_proof =
+						gnark_bn_verifier::proof::Groth16Proof::try_from(&proof[..])
+							.map_err(|_| Error::<T>::BadPicoProof)?;
+
+					let pub_input_hash = hash_public_inputs(public_values.as_slice());
+
+					let mut vkh: Vec<u8> = riscv_vk.0.into();
+					vkh.extend(&pub_input_hash);
+
+					let public_inputs = vkh
+						.chunks(32)
+						.map(|e| Fr::from_slice(e).unwrap())
+						.collect::<Vec<_>>();
+
+					let is_valid = groth16_proof.verify(&vk, public_inputs.as_slice());
+
+					ensure!(is_valid.is_ok(), Error::<T>::VerificationFailed);
+				},
+			};
 
 			Head::<T>::set(new_head);
 			let header = Headers::<T>::get(new_head);
@@ -990,7 +1053,16 @@ pub mod pallet {
 			);
 
 			let sender: [u8; 32] = ensure_signed(origin)?.into();
-			let updater = Updater::<T>::get();
+			let pico_updater = PicoUpdater::<T>::get();
+			let sp1_updater = Updater::<T>::get();
+			let (updater, _updater_type) = if H256(sender) == pico_updater {
+				(pico_updater, UType::Pico)
+			} else if H256(sender) == sp1_updater {
+				(sp1_updater, UType::Sp1)
+			} else {
+				return Err(Error::<T>::UpdaterMisMatch.into());
+			};
+
 			// ensure sender is preconfigured
 			ensure!(H256(sender) == updater, Error::<T>::UpdaterMisMatch);
 
@@ -1072,6 +1144,32 @@ pub mod pallet {
 			Timestamps::<T>::insert(new_head, T::TimeProvider::now().as_secs());
 
 			Ok(().into())
+		}
+
+		#[pallet::call_index(18)]
+		#[pallet::weight(T::WeightInfo::set_pico_updater())]
+		pub fn set_pico_updater(origin: OriginFor<T>, updater: H256) -> DispatchResult {
+			ensure_root(origin)?;
+			let old = PicoUpdater::<T>::get();
+			PicoUpdater::<T>::set(updater);
+
+			Self::deposit_event(Event::<T>::NewPicoUpdater { old, new: updater });
+			Ok(())
+		}
+
+		#[pallet::call_index(19)]
+		#[pallet::weight(T::WeightInfo::set_pico_verification_key())]
+		pub fn set_pico_verification_key(origin: OriginFor<T>, pico_vk: H256) -> DispatchResult {
+			ensure_root(origin)?;
+			let old_vk = PicoVerificationKey::<T>::get();
+			PicoVerificationKey::<T>::put(pico_vk);
+
+			Self::deposit_event(Event::NewPicoVerificationKey {
+				old: old_vk,
+				new: pico_vk,
+			});
+
+			Ok(())
 		}
 	}
 
@@ -1345,6 +1443,23 @@ pub mod pallet {
 			}
 		}
 	}
+}
+
+pub fn hash_public_inputs(public_inputs: &[u8]) -> [u8; 32] {
+	hash_public_inputs_with_fn(public_inputs, sp_io::hashing::sha2_256)
+}
+
+pub fn hash_public_inputs_with_fn<F>(public_inputs: &[u8], hasher: F) -> [u8; 32]
+where
+	F: Fn(&[u8]) -> [u8; 32],
+{
+	let mut result = hasher(public_inputs);
+
+	// The Plonk and Groth16 verifiers operate over a 254 bit field, so we need to zero
+	// out the first 3 bits. The same logic happens in the SP1 Ethereum verifier contract.
+	result[0] &= 0x1F;
+
+	result
 }
 
 impl<T: Config> ProvidePostInherent for Pallet<T>

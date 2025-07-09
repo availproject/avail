@@ -4164,6 +4164,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "gnark-bn-verifier"
+version = "0.1.0"
+source = "git+https://github.com/availproject/gnark-bn-verifier?branch=no-std#7cb69460b449f0f130fd716e071ae4d1098b33bd"
+dependencies = [
+ "anyhow",
+ "substrate-bn-succinct",
+]
+
+[[package]]
 name = "governor"
 version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7815,6 +7824,8 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "gnark-bn-verifier",
+ "hex",
  "hex-literal",
  "log",
  "pallet-balances",
@@ -7832,6 +7843,7 @@ dependencies = [
  "sp-std",
  "sp1-sdk",
  "sp1-verifier",
+ "substrate-bn-succinct",
  "trie-db 0.24.0",
 ]
 
