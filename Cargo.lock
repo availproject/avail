@@ -948,6 +948,7 @@ dependencies = [
  "log",
  "once_cell",
  "parity-scale-codec",
+ "scale-info",
  "sp-api",
  "sp-core",
  "sp-io",

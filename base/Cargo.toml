@@ -14,6 +14,7 @@ avail-core = { workspace = true, default-features = false }
 
 # Substrate related
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
+scale-info = { workspace = true, default-features = false }
 sp-core = { workspace = true, default-features = false, features = ["serde"] }
 sp-std = { workspace = true, default-features = false }
 sp-api = { workspace = true, default-features = false }

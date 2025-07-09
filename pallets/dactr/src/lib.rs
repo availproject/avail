@@ -10,6 +10,7 @@ use codec::{Compact, CompactLen as _};
 use frame_support::weights::constants::ExtrinsicBaseWeight;
 use frame_support::{dispatch::DispatchClass, traits::Get, weights::Weight};
 use frame_system::{limits::BlockLength, pallet::DynamicBlockLength};
+use scale_info::prelude::string::String;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_arithmetic::traits::{CheckedAdd, One, SaturatedConversion};

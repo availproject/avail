@@ -3,6 +3,7 @@ use crate::{MemoryTemporaryStorage, StorageMap};
 use sp_api::decl_runtime_apis;
 use sp_runtime::traits::Block as BlockT;
 use sp_std::vec::Vec;
+use scale_info::prelude::string::String;
 
 /// A pallet that provides or verifies an inherent extrinsic will implement this trait.
 ///
