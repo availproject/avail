@@ -17,6 +17,7 @@ async-channel.workspace = true
 futures.workspace = true
 libp2p-identity = { workspace = true, features = ["peerid"] }
 log.workspace = true
+lru.workspace = true
 prost.workspace = true
 parking_lot.workspace = true
 rand.workspace = true
