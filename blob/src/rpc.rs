@@ -336,11 +336,7 @@ where
 		return Err(anyhow!("failed to get keystore"));
 	};
 
-	let Ok(maybe_val_id) = get_my_validator_id(&keystore) else {
-		return Err(anyhow!("failed to get my validator id"));
-	};
-
-	let Some(my_validator_id) = maybe_val_id else {
+	let Some(my_validator_id) = get_my_validator_id(&keystore) else {
 		return Ok((Vec::new(), ownership));
 	};
 

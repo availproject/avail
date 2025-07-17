@@ -205,6 +205,8 @@ pub struct ShardRequest {
 	pub hash: BlobHash,
 	/// The index of the shard.
 	pub shard_ids: Vec<u16>,
+	/// The data the validator signs to prove he received the shard (blob_hash - shard_ids - "shard")
+	pub signature_data: BlobSignatureData,
 }
 
 /// Structure for the response after a shard is requested from a validator
@@ -227,6 +229,8 @@ pub struct ShardReceived {
 	pub address: AuthorityId,
 	/// The original encode peerId that received the blob
 	pub original_peer_id: String,
+	/// The data the validator signs to prove he received the shard (blob_hash - shard_ids - "received")
+	pub signature_data: BlobSignatureData,
 }
 
 /// Structure used in the Cell request
@@ -247,6 +251,8 @@ pub struct CellRequest {
 	pub hash: BlobHash,
 	/// The specific cell ranges we need
 	pub cell_units: Vec<CellUnitRequest>,
+	/// The data the validator signs to prove he received the shard (blob_hash - shard_ids - "cell")
+	pub signature_data: BlobSignatureData,
 }
 
 /// Structure used in the Cell response
@@ -270,6 +276,13 @@ pub struct CellResponse {
 	pub hash: BlobHash,
 	/// The specific cell ranges data
 	pub cell_units_response: Vec<CellUnitResponse>,
+}
+
+/// Structure for the signature that validator sends when sending notification / requests
+#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
+pub struct BlobSignatureData {
+	pub signer: Vec<u8>,
+	pub signature: Vec<u8>,
 }
 
 /***** Enums used for notification / request / response *****/

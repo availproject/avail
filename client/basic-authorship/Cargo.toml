@@ -31,6 +31,7 @@ sc-telemetry.workspace = true
 sc-transaction-pool-api.workspace = true
 sc-block-builder.workspace = true
 sc-network.workspace = true
+sc-keystore.workspace = true
 
 sp-api = { workspace = true, features = ["std"] }
 sp-blockchain.workspace = true

@@ -485,6 +485,7 @@ pub fn new_full_base(
 			prometheus_registry.as_ref(),
 			telemetry.as_ref().map(|x| x.handle()),
 			network.clone(),
+			keystore_container.local_keystore(),
 			blob_handle.shard_store.clone(),
 		);
 

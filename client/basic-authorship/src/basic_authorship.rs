@@ -34,6 +34,7 @@ use futures::{
 };
 use log::{debug, error, info, trace, warn};
 use sc_block_builder::{BlockBuilderApi, BlockBuilderBuilder};
+use sc_keystore::LocalKeystore;
 use sc_network::NetworkService;
 use sc_telemetry::{telemetry, TelemetryHandle, CONSENSUS_INFO};
 use sc_transaction_pool_api::{InPoolTransaction, TransactionPool};
@@ -92,6 +93,8 @@ pub struct ProposerFactory<A, C, B: BlockT, PR> {
 	include_proof_in_block_size_estimation: bool,
 	/// Network service to send and submit request for blob data
 	network: Arc<NetworkService<B, <B as BlockT>::Hash>>,
+	/// Keystore used to sign blob data
+	keystore: Arc<LocalKeystore>,
 	/// Shard store to check what the client already has for blob data
 	shard_store: Arc<RocksdbShardStore<B>>,
 	/// phantom member to pin the `ProofRecording` type.
@@ -113,6 +116,7 @@ where
 		prometheus: Option<&PrometheusRegistry>,
 		telemetry: Option<TelemetryHandle>,
 		network: Arc<NetworkService<B, <B as BlockT>::Hash>>,
+		keystore: Arc<LocalKeystore>,
 		shard_store: Arc<RocksdbShardStore<B>>,
 	) -> Self {
 		ProposerFactory {
@@ -125,6 +129,7 @@ where
 			client,
 			include_proof_in_block_size_estimation: false,
 			network,
+			keystore,
 			shard_store,
 			_phantom: PhantomData,
 		}
@@ -148,6 +153,7 @@ where
 		prometheus: Option<&PrometheusRegistry>,
 		telemetry: Option<TelemetryHandle>,
 		network: Arc<NetworkService<B, <B as BlockT>::Hash>>,
+		keystore: Arc<LocalKeystore>,
 		shard_store: Arc<RocksdbShardStore<B>>,
 	) -> Self {
 		ProposerFactory {
@@ -160,6 +166,7 @@ where
 			telemetry,
 			include_proof_in_block_size_estimation: true,
 			network,
+			keystore,
 			shard_store,
 			_phantom: PhantomData,
 		}
@@ -242,6 +249,7 @@ where
 			soft_deadline_percent: self.soft_deadline_percent,
 			telemetry: self.telemetry.clone(),
 			network: self.network.clone(),
+			keystore: self.keystore.clone(),
 			shard_store: self.shard_store.clone(),
 			_phantom: PhantomData,
 			include_proof_in_block_size_estimation: self.include_proof_in_block_size_estimation,
@@ -293,6 +301,7 @@ pub struct Proposer<Block: BlockT, C, A: TransactionPool, PR> {
 	soft_deadline_percent: Percent,
 	telemetry: Option<TelemetryHandle>,
 	network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
+	keystore: Arc<LocalKeystore>,
 	shard_store: Arc<RocksdbShardStore<Block>>,
 	_phantom: PhantomData<PR>,
 }
@@ -668,6 +677,7 @@ where
 			sample_and_get_failed_blobs(
 				&submit_blob_metadata_calls,
 				self.network.clone(),
+				&self.keystore,
 				&self.shard_store,
 				blob_metadata,
 			)

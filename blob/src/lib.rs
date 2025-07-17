@@ -4,7 +4,10 @@ use crate::{
 		BlobHash, BlobMetadata, BlobReceived, CellRequest, CellResponse, CellUnitResponse, Shard,
 		ShardReceived, ShardResponse,
 	},
-	utils::{fetch_shards, get_my_validator_id, get_shards_to_store},
+	utils::{
+		build_signature_payload, fetch_shards, get_my_validator_id, get_shards_to_store,
+		sign_blob_data, verify_signed_blob_data,
+	},
 };
 use anyhow::{anyhow, Result};
 use codec::{Decode, Encode};
@@ -193,15 +196,9 @@ async fn handle_blob_received_notification<Block>(
 		};
 
 		let my_validator_id = match get_my_validator_id(&keystore) {
-			Ok(maybe_validator_id) => match maybe_validator_id {
-				Some(v) => v,
-				None => {
-					log::info!(target: LOG_TARGET, "This node is not a current authority, skipping recording blobs");
-					return;
-				},
-			},
-			Err(e) => {
-				log::error!(target: LOG_TARGET, "Error happened while trying to get this node's id: {e}");
+			Some(v) => v,
+			None => {
+				log::error!(target: LOG_TARGET, "No keys found while trying to get this node's id");
 				return;
 			},
 		};
@@ -304,9 +301,20 @@ async fn send_shard_request<Block>(
 		FuturesUnordered::new();
 
 	for shard_ids_chunk in shard_ids_to_request.chunks(shards_per_request) {
+		let signature_payload =
+			build_signature_payload(blob_hash, shard_ids_chunk.to_vec(), b"shard".to_vec());
+		let signature_data = match sign_blob_data(blob_handle, signature_payload) {
+			Ok(s) => s,
+			Err(e) => {
+				log::error!(target: LOG_TARGET, "An error has occured while trying to sign data, exiting the function: {e}");
+				return;
+			},
+		};
+
 		let chunk_shard_request = ShardRequest {
 			hash: blob_hash,
 			shard_ids: shard_ids_chunk.to_vec(),
+			signature_data,
 		};
 		let blob_request = BlobRequest::ShardRequest(chunk_shard_request);
 		let my_validator_id = my_validator_id.clone();
@@ -439,17 +447,43 @@ fn process_shard_request<Block: BlockT>(
 	response_tx: oneshot::Sender<OutgoingResponse>,
 ) {
 	log::info!(target: LOG_TARGET, "3 - processing incoming shard_request");
+	let expected_payload = build_signature_payload(
+		shard_request.hash,
+		shard_request.shard_ids.clone(),
+		b"shard".to_vec(),
+	);
+	match verify_signed_blob_data(shard_request.signature_data.clone(), expected_payload) {
+		Ok(valid) => {
+			if !valid {
+				log::error!(target: LOG_TARGET, "An error has occured in process_shard_request: Invalid signature");
+				let _ = response_tx.send(OutgoingResponse {
+					result: Err(()),
+					reputation_changes: Vec::default(),
+					sent_feedback: None,
+				});
+				return;
+			}
+		},
+		Err(e) => {
+			log::error!(target: LOG_TARGET, "An error has occured while checking the signature: {e}");
+			let _ = response_tx.send(OutgoingResponse {
+				result: Err(()),
+				reputation_changes: Vec::default(),
+				sent_feedback: None,
+			});
+			return;
+		},
+	}
+
 	let shards = match fetch_shards(&store, &shard_request) {
 		Ok(s) => s,
 		Err(e) => {
 			log::error!(target: LOG_TARGET, "Could not get shards: {e}");
-			if let Err(e) = response_tx.send(OutgoingResponse {
+			let _ = response_tx.send(OutgoingResponse {
 				result: Err(()),
 				reputation_changes: Vec::default(),
 				sent_feedback: None,
-			}) {
-				log::error!(target: LOG_TARGET, "An error has occured in process_shard_request: {e:?}");
-			}
+			});
 			return;
 		},
 	};
@@ -504,15 +538,28 @@ async fn send_shard_received_notification<Block>(
 		return;
 	};
 
+	let shard_ids: Vec<u16> = shard_response
+		.shards
+		.into_iter()
+		.map(|shard| shard.shard_id)
+		.collect();
+
+	let signature_payload =
+		build_signature_payload(shard_response.hash, shard_ids.clone(), b"received".to_vec());
+	let signature_data = match sign_blob_data(blob_handle, signature_payload) {
+		Ok(s) => s,
+		Err(e) => {
+			log::error!(target: LOG_TARGET, "An error has occured while trying to sign data, exiting the function: {e}");
+			return;
+		},
+	};
+
 	let shard_received = ShardReceived {
 		hash: shard_response.hash,
-		shard_ids: shard_response
-			.shards
-			.into_iter()
-			.map(|shard| shard.shard_id)
-			.collect(),
+		shard_ids,
 		address: my_validator_id,
 		original_peer_id: network.local_peer_id().to_base58(),
+		signature_data,
 	};
 
 	if shard_received.shard_ids.len() > 0 {
@@ -543,6 +590,24 @@ fn handle_shard_received_notification<Block>(
 		return;
 	};
 
+	let expected_payload = build_signature_payload(
+		shard_received.hash,
+		shard_received.shard_ids.clone(),
+		b"received".to_vec(),
+	);
+	match verify_signed_blob_data(shard_received.signature_data.clone(), expected_payload) {
+		Ok(valid) => {
+			if !valid {
+				log::error!(target: LOG_TARGET, "An error has occured in handle_shard_received_notification: Invalid signature");
+				return;
+			}
+		},
+		Err(e) => {
+			log::error!(target: LOG_TARGET, "An error has occured while checking the signature: {e}");
+			return;
+		},
+	}
+
 	let Ok(maybe_meta) = blob_handle
 		.shard_store
 		.get_blob_metadata(&shard_received.hash)
@@ -567,7 +632,7 @@ fn handle_shard_received_notification<Block>(
 			.saturating_add(TEMP_BLOB_TTL),
 	});
 	if !blob_metadata.is_notified {
-		log::info!(target: LOG_TARGET, "A ShardReceived was received before BlobReceived, creating empty blob metadata.");
+		log::info!(target: LOG_TARGET, "A Shard Received notification was received before Blob Received, creating empty blob metadata.");
 	}
 
 	for shard_id in shard_received.shard_ids {
@@ -704,6 +769,39 @@ pub fn process_cell_request<Block: BlockT>(
 	store: &RocksdbShardStore<Block>,
 	response_tx: oneshot::Sender<OutgoingResponse>,
 ) {
+	let shard_ids: Vec<u16> = cell_request
+		.cell_units
+		.iter()
+		.map(|cell_unit| cell_unit.shard_id)
+		.collect();
+	let expected_payload = build_signature_payload(
+		cell_request.hash,
+		shard_ids,
+		b"cell".to_vec(),
+	);
+	match verify_signed_blob_data(cell_request.signature_data.clone(), expected_payload) {
+		Ok(valid) => {
+			if !valid {
+				log::error!(target: LOG_TARGET, "An error has occured in process_cell_request: Invalid signature");
+				let _ = response_tx.send(OutgoingResponse {
+					result: Err(()),
+					reputation_changes: Vec::default(),
+					sent_feedback: None,
+				});
+				return;
+			}
+		},
+		Err(e) => {
+			log::error!(target: LOG_TARGET, "An error has occured while checking the signature: {e}");
+			let _ = response_tx.send(OutgoingResponse {
+				result: Err(()),
+				reputation_changes: Vec::default(),
+				sent_feedback: None,
+			});
+			return;
+		},
+	}
+
 	let cell_response = process_cell_request_inner(cell_request, store);
 
 	// Return the data as a CellResponse

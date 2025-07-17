@@ -1,14 +1,16 @@
 use crate::{
+	p2p::BlobHandle,
 	process_cell_request_inner, send_cell_request,
 	store::{RocksdbShardStore, ShardStore},
 	types::{
-		BlobHash, BlobMetadata, CellRequest, CellUnitRequest, Shard, ShardRequest,
+		BlobHash, BlobMetadata, BlobSignatureData, CellRequest, CellUnitRequest, Shard,
+		ShardRequest,
 	},
 	LOG_TARGET, MAX_BLOB_RETRY_BEFORE_DISCARDING, MAX_TRANSACTION_VALIDITY, MIN_SHARD_HOLDER_COUNT,
 	MIN_SHARD_HOLDER_PERCENTAGE, MIN_TRANSACTION_VALIDITY, SHARD_SIZE,
 };
-use anyhow::{anyhow, Result};
-use codec::Decode;
+use anyhow::{anyhow, Context, Result};
+use codec::{Decode, Encode};
 use da_control::Call;
 use da_runtime::{RuntimeCall, UncheckedExtrinsic};
 use futures::{future::try_join_all, stream::FuturesUnordered, StreamExt};
@@ -18,7 +20,12 @@ use sc_network::{NetworkService, NetworkStateInfo, PeerId};
 use sc_transaction_pool_api::TransactionSource;
 use sp_api::ProvideRuntimeApi;
 use sp_authority_discovery::AuthorityId;
-use sp_runtime::{key_types, traits::Block as BlockT, SaturatedConversion};
+use sp_core::sr25519;
+use sp_runtime::{
+	key_types,
+	traits::{Block as BlockT, Verify},
+	SaturatedConversion,
+};
 use sp_transaction_pool::runtime_api::TaggedTransactionQueue;
 use std::{collections::BTreeMap, str::FromStr, sync::Arc};
 
@@ -29,35 +36,18 @@ pub fn get_nb_shards_from_blob_size(size: usize) -> u16 {
 }
 
 /// Get this node Authority ID
-pub fn get_my_validator_id(keystore: &Arc<LocalKeystore>) -> Result<Option<AuthorityId>> {
+pub fn get_my_validator_id(keystore: &Arc<LocalKeystore>) -> Option<AuthorityId> {
 	let key_type = key_types::BABE;
 
-	// Try to get keys from the keystore
-	let Ok(keys) = keystore.keys(key_type) else {
-		return Err(anyhow!(
-			"Could not get keys from keystore, not storing blobs"
-		));
-	};
+	// Get keys from the keystore
+	let keys = keystore.sr25519_public_keys(key_type);
 
 	// Return None if no keys are in the keystore
 	if keys.len() == 0 {
-		return Ok(None);
+		return None;
 	}
 
-	// Try to get the last created key from the keystore
-	let Some(key) = keys.get(keys.len() - 1) else {
-		return Err(anyhow!(
-			"An error has occured while trying to get the key from the keystore"
-		));
-	};
-
-	let Ok(my_address) = AuthorityId::decode(&mut &key[..]) else {
-		return Err(anyhow!(
-			"Could not decode malformed BABE key from the keystore"
-		));
-	};
-
-	Ok(Some(my_address))
+	Some(keys[keys.len() - 1].into())
 }
 
 /// Get the number of validator that need to store a single shard.
@@ -121,7 +111,10 @@ pub fn get_shards_to_store(
 	Ok(shards_to_store)
 }
 
-pub fn fetch_shards<Block: BlockT>(store: &RocksdbShardStore<Block>, shard_request: &ShardRequest) -> Result<Vec<Shard>> {
+pub fn fetch_shards<Block: BlockT>(
+	store: &RocksdbShardStore<Block>,
+	shard_request: &ShardRequest,
+) -> Result<Vec<Shard>> {
 	let shards = shard_request
 		.shard_ids
 		.iter()
@@ -231,12 +224,10 @@ where
 pub async fn sample_and_get_failed_blobs<Block: BlockT>(
 	submit_blob_metadata_calls: &Vec<RuntimeCall>,
 	network: Arc<NetworkService<Block, Block::Hash>>,
+	keystore: &Arc<LocalKeystore>,
 	shard_store: &Arc<RocksdbShardStore<Block>>,
 	blob_metadata: BTreeMap<BlobHash, BlobMetadata<Block>>,
-) -> (Vec<(BlobHash, String)>, u64)
-where
-	Block: BlockT,
-{
+) -> (Vec<(BlobHash, String)>, u64) {
 	let mut tx_futures = FuturesUnordered::new();
 
 	for tx in submit_blob_metadata_calls.iter().cloned() {
@@ -294,6 +285,21 @@ where
 					}
 					let my_peer_id = network.local_peer_id();
 
+					let signature_payload =
+						build_signature_payload(blob_hash, vec![shard_id], b"cell".to_vec());
+					let signature_data = match sign_blob_data_inner(keystore, signature_payload) {
+						Ok(s) => s,
+						Err(e) => {
+							return Err((
+								blob_hash,
+								format!(
+									"Could not sign data for cell request {}: {}",
+									blob_hash, e
+								),
+							));
+						},
+					};
+
 					let req = CellRequest {
 						hash: blob_hash,
 						cell_units: vec![CellUnitRequest {
@@ -305,6 +311,7 @@ where
 								(SHARD_SIZE as f64 * 0.1).floor() as u64
 							},
 						}],
+						signature_data,
 					};
 					if !peer_ids.contains(&my_peer_id) {
 						// TODO Blob: Actually select correct peer and make retry mechanism with others
@@ -346,4 +353,94 @@ where
 	}
 
 	(failed, total_size)
+}
+
+pub fn build_signature_payload(
+	blob_hash: BlobHash,
+	shard_ids: Vec<u16>,
+	additional: Vec<u8>,
+) -> Vec<u8> {
+	let mut payload = Vec::new();
+	payload.extend(blob_hash.encode());
+	payload.extend(shard_ids.encode());
+	payload.extend(additional.encode());
+	payload
+}
+
+pub fn sign_blob_data<Block: BlockT>(
+	blob_handle: &BlobHandle<Block>,
+	payload: Vec<u8>,
+) -> Result<BlobSignatureData> {
+	let Some(keystore) = blob_handle.keystore.get() else {
+		return Err(anyhow!("Keystore is not yet registered"));
+	};
+
+	sign_blob_data_inner(keystore, payload)
+}
+
+fn sign_blob_data_inner(
+	keystore: &Arc<LocalKeystore>,
+	payload: Vec<u8>,
+) -> Result<BlobSignatureData> {
+	let key_type = key_types::BABE;
+	let keys = keystore.sr25519_public_keys(key_type);
+
+	if keys.len() == 0 {
+		return Err(anyhow!(
+			"No keys found in the store when trying to sign data"
+		));
+	}
+	let public = keys[keys.len() - 1];
+	let signature_result = keystore.sr25519_sign(key_type, &public, &payload);
+
+	let signature = match signature_result {
+		Ok(maybe_sig) => match maybe_sig {
+			Some(sig) => sig,
+			None => {
+				return Err(anyhow!(
+						"An error has occured while trying to sign data: the given `key_type` and `public` combination doesn't exist in the keystore"
+					));
+			},
+		},
+		Err(e) => {
+			return Err(anyhow!(
+				"An error has occured while trying to sign data: {e}"
+			));
+		},
+	};
+
+	let pubkey_bytes = public.0.to_vec();
+	let sig_bytes = signature.0.to_vec();
+	Ok(BlobSignatureData {
+		signer: pubkey_bytes,
+		signature: sig_bytes,
+	})
+}
+
+pub fn verify_signed_blob_data(
+	signature_data: BlobSignatureData,
+	payload: Vec<u8>,
+) -> Result<bool> {
+	let public: [u8; 32] = signature_data
+		.signer
+		.as_slice()
+		.try_into()
+		.context(format!(
+			"Public key had wrong length: expected 32 bytes, got {}",
+			signature_data.signer.len()
+		))?;
+	let public = sr25519::Public::from_raw(public);
+
+	let signature: [u8; 64] = signature_data
+		.signature
+		.as_slice()
+		.try_into()
+		.context(format!(
+			"Signature had wrong length: expected 64 bytes, got {}",
+			signature_data.signature.len()
+		))?;
+	let signature = sr25519::Signature::from_raw(signature.try_into().unwrap());
+
+	let valid = signature.verify(payload.as_slice(), &public);
+	Ok(valid)
 }
