@@ -32,7 +32,6 @@ use {
 use crate::{
 	cli::{Cli, Subcommand},
 	service::{self, new_partial, FullClient},
-	transaction_state,
 };
 
 use avail_node::NODE_VERSION;
@@ -210,7 +209,6 @@ pub fn run() -> Result<()> {
 					&config,
 					cli.unsafe_da_sync,
 					kate_rpc::Deps::default(),
-					transaction_state::CliDeps::default(),
 				)?;
 				Ok((cmd.run(client, import_queue), task_manager))
 			})
@@ -226,7 +224,6 @@ pub fn run() -> Result<()> {
 					&config,
 					cli.unsafe_da_sync,
 					kate_rpc::Deps::default(),
-					transaction_state::CliDeps::default(),
 				)?;
 				Ok((cmd.run(client, config.database), task_manager))
 			})
@@ -242,7 +239,6 @@ pub fn run() -> Result<()> {
 					&config,
 					cli.unsafe_da_sync,
 					kate_rpc::Deps::default(),
-					transaction_state::CliDeps::default(),
 				)?;
 				Ok((cmd.run(client, config.chain_spec), task_manager))
 			})
@@ -259,7 +255,6 @@ pub fn run() -> Result<()> {
 					&config,
 					cli.unsafe_da_sync,
 					kate_rpc::Deps::default(),
-					transaction_state::CliDeps::default(),
 				)?;
 				Ok((cmd.run(client, import_queue), task_manager))
 			})
@@ -280,7 +275,6 @@ pub fn run() -> Result<()> {
 					&config,
 					cli.unsafe_da_sync,
 					kate_rpc::Deps::default(),
-					transaction_state::CliDeps::default(),
 				)?;
 				let aux_revert = Box::new(|client: Arc<FullClient>, backend, blocks| {
 					sc_consensus_babe::revert(client.clone(), backend, blocks)?;

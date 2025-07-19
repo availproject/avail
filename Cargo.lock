@@ -3781,8 +3781,10 @@ dependencies = [
 name = "frame-system-rpc-runtime-api"
 version = "4.0.0-dev"
 dependencies = [
+ "frame-system",
  "parity-scale-codec",
  "scale-info",
+ "serde",
  "sp-api",
  "sp-std",
 ]
@@ -5365,12 +5367,19 @@ dependencies = [
  "da-runtime",
  "frame-support",
  "frame-system",
+ "frame-system-rpc-runtime-api",
+ "hex",
  "jsonrpsee",
  "kate",
  "log",
+ "parity-scale-codec",
  "sc-client-api",
+ "sc-service",
+ "serde",
+ "serde_json",
  "sp-api",
  "sp-blockchain",
+ "sp-core",
  "sp-runtime",
 ]
 

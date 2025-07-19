@@ -101,11 +101,6 @@ pub struct FullDeps<C, P, SC, B> {
 	/// - pub rpc_enabled: bool,
 	/// - pub rpc_metrics_enabled: bool,
 	pub kate_rpc_deps: kate_rpc::Deps,
-	/// Transaction RPC specific dependencies.
-	///
-	/// Available configs:
-	/// - TxStateSender,
-	pub transaction_rpc_deps: Option<transaction_rpc::Deps>,
 }
 
 /// Instantiate all Full RPC extensions.
@@ -157,7 +152,6 @@ where
 		babe,
 		grandpa,
 		kate_rpc_deps,
-		transaction_rpc_deps,
 	} = deps;
 
 	let BabeDeps {
@@ -241,12 +235,6 @@ where
 			client,
 			kate_rpc_deps.max_cells_size,
 		)))?;
-	}
-
-	if let Some(deps) = transaction_rpc_deps {
-		io.merge(transaction_rpc::TransactionStateServer::into_rpc(
-			transaction_rpc::System::new(deps),
-		))?;
 	}
 
 	#[cfg(feature = "testing-environment")]
