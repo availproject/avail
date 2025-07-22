@@ -280,8 +280,8 @@ pub mod fetch_events_v1 {
 			Self {
 				index: value.index,
 				emitted_index: value.emitted_index,
-				encoded: value.encoded.map(hex::encode),
-				decoded: value.decoded.map(hex::encode),
+				encoded: value.encoded.map(const_hex::encode),
+				decoded: value.decoded.map(const_hex::encode),
 			}
 		}
 	}
@@ -649,7 +649,7 @@ pub mod fetch_extrinsics_v1 {
 				encoded.extend_from_slice(&ext.0);
 
 				let tx_hash = Blake2Hasher::hash(&encoded);
-				(hex::encode(encoded), tx_hash)
+				(const_hex::encode(encoded), tx_hash)
 			};
 
 			let signature = TransactionSignature::from_signature_payload(&signature);

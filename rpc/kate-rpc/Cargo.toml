@@ -16,6 +16,7 @@ hex.workspace = true
 codec = { package = "parity-scale-codec", version = "3" }
 serde_json.workspace = true
 serde.workspace = true
+const-hex.workspace = true
 
 # 3rd party
 jsonrpsee.workspace = true
