@@ -5391,7 +5391,6 @@ dependencies = [
  "frame-support",
  "frame-system",
  "frame-system-rpc-runtime-api",
- "hex",
  "jsonrpsee",
  "kate",
  "kate-recovery",
