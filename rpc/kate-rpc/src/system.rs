@@ -217,6 +217,8 @@ where
 			}
 		}
 
+		cache.promote_block(block_hash);
+
 		Ok(found_extrinsics)
 	}
 }
@@ -579,6 +581,28 @@ pub mod fetch_extrinsics_v1 {
 			Self {
 				blocks: Vec::new(),
 				max_size,
+			}
+		}
+
+		pub fn promote_block(&mut self, block_hash: H256) {
+			if self.blocks.is_empty() {
+				return;
+			}
+
+			if let Some(first) = self.blocks.last() {
+				if first.0 == block_hash {
+					return;
+				}
+			}
+
+			let stop = self.blocks.len() - 1;
+			let mut i = 0;
+			while i < stop {
+				if self.blocks[i].0 == block_hash {
+					self.blocks.swap(i, i + 1);
+				}
+
+				i += 1;
 			}
 		}
 
