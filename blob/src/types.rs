@@ -3,6 +3,7 @@ use std::sync::Arc;
 use codec::{Decode, Encode};
 use sc_network::{PeerId, ProtocolName};
 use sc_service::{Role, TFullClient};
+use scale_info::TypeInfo;
 use sp_authority_discovery::AuthorityId;
 use sp_core::H256;
 
@@ -12,7 +13,7 @@ use once_cell::sync::OnceCell;
 use sc_executor::NativeElseWasmExecutor;
 use sc_network_gossip::{ValidationResult, Validator, ValidatorContext};
 use sp_runtime::traits::Block as BlockT;
-use sp_std::collections::btree_map::BTreeMap;
+use sp_std::collections::{btree_map::BTreeMap, btree_set::BTreeSet};
 
 pub type BlobHash = H256;
 
@@ -116,8 +117,8 @@ pub struct BlobMetadata<Block: BlockT> {
 	pub nb_shards: u16,
 	/// The commitments of the blob.
 	pub commitments: Vec<u8>,
-	/// The ownership data of the blob: shard_id -> (validator address, base58 PeerId).
-	pub ownership: BTreeMap<u16, Vec<(AuthorityId, String)>>,
+	/// The ownership data of the blob: shard_id -> (validator address, base58 PeerId, Signature).
+	pub ownership: BTreeMap<u16, Vec<OwnershipEntry>>,
 	/// This field is used to determine wether we received the BlobReceived notification.
 	/// In some cases, we can receive ShardReceived notification before BlobReceived notification.
 	/// This is expected in P2P protocols, we use this field in case we record shard for a blob we don't have yet.
@@ -132,33 +133,38 @@ pub struct BlobMetadata<Block: BlockT> {
 }
 
 impl<Block: BlockT> BlobMetadata<Block> {
-	pub fn insert_in_ownership(
+	pub fn insert_ownership(
 		&mut self,
 		shard_id: &u16,
 		authority_id: &AuthorityId,
 		encoded_peer_id: &String,
+		signature: Vec<u8>,
 	) -> bool {
-		let mut already_stored = false;
+		let new_entry = OwnershipEntry {
+			address: authority_id.clone(),
+			peer_id_encoded: encoded_peer_id.to_string(),
+			signature,
+		};
+		let mut is_new = true;
 		self.ownership
 			.entry(*shard_id)
 			.and_modify(|existing_ownership| {
-				let new_entry = (authority_id.clone(), encoded_peer_id.clone());
 				if !existing_ownership.contains(&new_entry) {
-					existing_ownership.push(new_entry);
+					existing_ownership.push(new_entry.clone());
 				} else {
-					already_stored = true;
+					is_new = false;
 				}
 			})
-			.or_insert_with(|| vec![(authority_id.clone(), encoded_peer_id.clone())]);
-		already_stored
+			.or_insert_with(|| vec![new_entry]);
+		is_new
 	}
 
-	pub fn merge_ownerships(&mut self, ownerhsip: BTreeMap<u16, Vec<(AuthorityId, String)>>) {
+	pub fn merge_ownerships(&mut self, ownerhsip: BTreeMap<u16, Vec<OwnershipEntry>>) {
 		for (shard_id, mut owners) in ownerhsip {
 			let entry = self.ownership.entry(shard_id).or_default();
 			entry.append(&mut owners);
-			entry.sort_unstable();
-			entry.dedup();
+			let mut seen = BTreeSet::new();
+			entry.retain(|o| seen.insert(o.address.clone()));
 		}
 	}
 }
@@ -189,7 +195,7 @@ pub struct BlobReceived<Block: BlockT> {
 	/// The commitments of the blob
 	pub commitments: Vec<u8>,
 	/// The ownership data of the blob: shard_id -> (validator address, base58 PeerId)
-	pub ownership: BTreeMap<u16, Vec<(AuthorityId, String)>>,
+	pub ownership: BTreeMap<u16, Vec<OwnershipEntry>>,
 	/// The original encoded peerId that received the blob
 	pub original_peer_id: String,
 	/// The finalized block hash for other nodes reference
@@ -229,8 +235,8 @@ pub struct ShardReceived {
 	pub address: AuthorityId,
 	/// The original encode peerId that received the blob
 	pub original_peer_id: String,
-	/// The data the validator signs to prove he received the shard (blob_hash - shard_ids - "received")
-	pub signature_data: BlobSignatureData,
+	/// The data the validator signs to prove he received a shard, for each shard: (blob_hash - shard_id - "received")
+	pub signatures: Vec<Vec<u8>>,
 }
 
 /// Structure used in the Cell request
@@ -283,6 +289,67 @@ pub struct CellResponse {
 pub struct BlobSignatureData {
 	pub signer: Vec<u8>,
 	pub signature: Vec<u8>,
+}
+
+/// Structure to hold data about a node having a shard
+#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, TypeInfo)]
+pub struct OwnershipEntry {
+	/// The address that owns the shard
+	pub address: AuthorityId,
+	/// The corresponding peer encoded
+	pub peer_id_encoded: String,
+	/// The signature of the holder (blob_hash, shard_id, "received")
+	pub signature: Vec<u8>,
+}
+
+/// Helper structure used in the inherent to give a blob status
+#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, TypeInfo)]
+pub struct BlobTxSummary {
+	/// The hash of the blob
+	pub hash: BlobHash,
+	/// Indicates if the blob was successfully uploaded to validators stores
+	pub success: bool,
+	/// In case of failure, this will contain the reason
+	pub reason: Option<String>,
+	/// The mapping of shard index to ownership entries
+	pub ownership: BTreeMap<u16, Vec<OwnershipEntry>>,
+}
+impl BlobTxSummary {
+	pub fn convert_to_primitives(
+		input: Vec<BlobTxSummary>,
+	) -> Vec<(
+		H256,
+		bool,
+		Option<String>,
+		BTreeMap<u16, Vec<(AuthorityId, String, Vec<u8>)>>,
+	)> {
+		input
+			.into_iter()
+			.map(|summary| {
+				let ownership_as_tuples: BTreeMap<u16, Vec<(AuthorityId, String, Vec<u8>)>> =
+					summary
+						.ownership
+						.into_iter()
+						.map(|(key, entries)| {
+							let tuples = entries
+								.into_iter()
+								.map(|entry| {
+									(entry.address, entry.peer_id_encoded, entry.signature)
+								})
+								.collect::<Vec<_>>();
+							(key, tuples)
+						})
+						.collect();
+
+				(
+					summary.hash,
+					summary.success,
+					summary.reason,
+					ownership_as_tuples,
+				)
+			})
+			.collect()
+	}
 }
 
 /***** Enums used for notification / request / response *****/

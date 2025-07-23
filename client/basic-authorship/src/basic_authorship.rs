@@ -23,8 +23,8 @@ use avail_base::{PostInherentsBackend, PostInherentsProvider};
 
 use avail_blob::{
 	store::RocksdbShardStore,
-	types::BlobMetadata,
-	utils::{check_if_wait_next_block, sample_and_get_failed_blobs},
+	types::{BlobMetadata, BlobTxSummary},
+	utils::{check_if_wait_next_block, get_validator_per_shard, sample_and_get_failed_blobs},
 };
 use codec::Encode;
 use futures::{
@@ -33,6 +33,7 @@ use futures::{
 	select,
 };
 use log::{debug, error, info, trace, warn};
+use sc_authority_discovery::AuthorityDiscovery;
 use sc_block_builder::{BlockBuilderApi, BlockBuilderBuilder};
 use sc_keystore::LocalKeystore;
 use sc_network::NetworkService;
@@ -267,6 +268,7 @@ where
 		+ ProvideRuntimeApi<Block>
 		+ CallApiAt<Block>
 		+ PostInherentsBackend
+		+ AuthorityDiscovery<Block>
 		+ Send
 		+ Sync
 		+ 'static,
@@ -314,6 +316,7 @@ where
 		+ ProvideRuntimeApi<Block>
 		+ CallApiAt<Block>
 		+ PostInherentsBackend
+		+ AuthorityDiscovery<Block>
 		+ Send
 		+ Sync
 		+ 'static,
@@ -374,6 +377,7 @@ where
 		+ ProvideRuntimeApi<Block>
 		+ CallApiAt<Block>
 		+ PostInherentsBackend
+		+ AuthorityDiscovery<Block>
 		+ Send
 		+ Sync
 		+ 'static,
@@ -404,11 +408,11 @@ where
 		// TODO call `after_inherents` and check if we should apply extrinsincs here
 		// <https://github.com/paritytech/substrate/pull/14275/>
 
-		let (end_reason, failed_blob_hashes, total_blob_size) = self
+		let (end_reason, blob_txs_summary, total_blob_size) = self
 			.apply_extrinsics(&mut block_builder, deadline, block_size_limit)
 			.await?;
 
-		self.apply_post_inherents(&mut block_builder, failed_blob_hashes, total_blob_size)?;
+		self.apply_post_inherents(&mut block_builder, blob_txs_summary, total_blob_size)?;
 
 		let (block, storage_changes, proof) = block_builder.build()?.into_inner();
 		let block_took = block_timer.elapsed();
@@ -471,17 +475,18 @@ where
 	fn apply_post_inherents(
 		&self,
 		block_builder: &mut sc_block_builder::BlockBuilder<'_, Block, C>,
-		failed_blob_hashes: Vec<(H256, String)>,
+		blob_txs_summary: Vec<BlobTxSummary>,
 		total_blob_size: u64,
 	) -> Result<(), sp_blockchain::Error> {
 		let data = self.client.post_inherent_data();
+		let blob_txs_summary = BlobTxSummary::convert_to_primitives(blob_txs_summary);
 		let post_inherents: Vec<_> = self
 			.client
 			.runtime_api()
 			.create_post_inherent_extrinsics(
 				self.parent_hash,
 				data,
-				failed_blob_hashes,
+				blob_txs_summary,
 				total_blob_size,
 			)
 			.map_err(|api_err| sp_blockchain::Error::RuntimeApiError(api_err))?;
@@ -519,7 +524,7 @@ where
 		block_builder: &mut sc_block_builder::BlockBuilder<'_, Block, C>,
 		deadline: time::Instant,
 		block_size_limit: Option<usize>,
-	) -> Result<(EndProposingReason, Vec<(H256, String)>, u64), sp_blockchain::Error> {
+	) -> Result<(EndProposingReason, Vec<BlobTxSummary>, u64), sp_blockchain::Error> {
 		// proceed with transactions
 		// We calculate soft deadline used only in case we start skipping transactions.
 		let now = (self.now)();
@@ -554,6 +559,16 @@ where
 
 		let mut submit_blob_metadata_calls = Vec::new();
 		let mut blob_metadata: BTreeMap<H256, BlobMetadata<Block>> = BTreeMap::new();
+
+		let finalized_hash = self.client.info().finalized_hash;
+		let nb_validators = match self.client.authorities(finalized_hash).await {
+			Ok(v) => v.len() as u32,
+			Err(e) => {
+				log::error!(target: LOG_TARGET, "Could not get validator from the runtime: {e}");
+				1
+			},
+		};
+		let nb_validators_per_shard = get_validator_per_shard(nb_validators) as usize;
 
 		let end_reason = loop {
 			let pending_tx = if let Some(pending_tx) = pending_iterator.next() {
@@ -617,6 +632,7 @@ where
 				encoded.clone(),
 				&mut submit_blob_metadata_calls,
 				&mut blob_metadata,
+				nb_validators_per_shard,
 			);
 			if should_continue {
 				continue;
@@ -673,7 +689,7 @@ where
 			);
 		}
 
-		let (failed_blob_hashes, total_blob_size) = if submit_blob_metadata_calls.len() > 0 {
+		let (blob_txs_summary, total_blob_size) = if submit_blob_metadata_calls.len() > 0 {
 			sample_and_get_failed_blobs(
 				&submit_blob_metadata_calls,
 				self.network.clone(),
@@ -687,7 +703,7 @@ where
 		};
 
 		self.transaction_pool.remove_invalid(&unqueue_invalid);
-		Ok((end_reason, failed_blob_hashes, total_blob_size))
+		Ok((end_reason, blob_txs_summary, total_blob_size))
 	}
 
 	/// Prints a summary and does telemetry + metrics.

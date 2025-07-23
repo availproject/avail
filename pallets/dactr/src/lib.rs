@@ -14,10 +14,11 @@ use scale_info::prelude::string::String;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_arithmetic::traits::{CheckedAdd, One, SaturatedConversion};
+use sp_authority_discovery::AuthorityId;
 use sp_core::H256;
 use sp_io::hashing::blake2_256;
 use sp_runtime::Perbill;
-use sp_std::{mem::replace, vec, vec::Vec};
+use sp_std::{collections::btree_map::BTreeMap, mem::replace, vec, vec::Vec};
 
 pub use crate::{pallet::*, weights::WeightInfo};
 
@@ -58,6 +59,15 @@ pub mod pallet {
 	}
 
 	pub type AppKeyInfoFor<T> = AppKeyInfo<<T as frame_system::Config>::AccountId>;
+
+	/// Structure used in the inherent to give a blob status
+	#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, RuntimeDebug)]
+	pub struct BlobTxSummaryRuntime {
+		pub hash: H256,
+		pub success: bool,
+		pub reason: Option<String>,
+		pub ownership: BTreeMap<u16, Vec<(AuthorityId, String, Vec<u8>)>>,
+	}
 
 	/// Default implementations of [`DefaultConfig`], which can be used to implement [`Config`].
 	pub mod config_preludes {
@@ -335,7 +345,7 @@ pub mod pallet {
 		))]
 		pub fn submit_blob_txs_summary(
 			origin: OriginFor<T>,
-			_failed_txs: Vec<(H256, String)>,
+			_blob_txs_summary: Vec<BlobTxSummaryRuntime>,
 			_total_blob_size: u64,
 		) -> DispatchResult {
 			ensure_none(origin)?;
@@ -521,5 +531,26 @@ where
 {
 	pub fn new(owner: Acc, id: AppId) -> Self {
 		Self { owner, id }
+	}
+}
+
+impl BlobTxSummaryRuntime {
+	pub fn convert_into(
+		input: Vec<(
+			H256,
+			bool,
+			Option<String>,
+			BTreeMap<u16, Vec<(AuthorityId, String, Vec<u8>)>>,
+		)>,
+	) -> Vec<BlobTxSummaryRuntime> {
+		input
+			.into_iter()
+			.map(|(hash, success, reason, ownership)| BlobTxSummaryRuntime {
+				hash,
+				success,
+				reason,
+				ownership,
+			})
+			.collect()
 	}
 }

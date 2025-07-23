@@ -1,8 +1,9 @@
 use crate::{
 	p2p::BlobHandle,
 	types::{
-		BlobHash, BlobMetadata, BlobReceived, CellRequest, CellResponse, CellUnitResponse, Shard,
-		ShardReceived, ShardResponse,
+		BlobHash, BlobMetadata, BlobNotification, BlobReceived, BlobRequest, BlobResponse,
+		BlobSignatureData, CellRequest, CellResponse, CellUnitResponse, Shard, ShardReceived,
+		ShardRequest, ShardResponse, BLOB_REQ_PROTO,
 	},
 	utils::{
 		build_signature_payload, fetch_shards, get_my_validator_id, get_shards_to_store,
@@ -20,12 +21,12 @@ use sc_network::{
 	PeerId,
 };
 use sp_authority_discovery::AuthorityId;
+use sp_core::sr25519;
 use sp_runtime::{traits::Block as BlockT, Perbill, SaturatedConversion};
 use std::{
 	collections::BTreeMap, future::Future, pin::Pin, str::FromStr, sync::Arc, time::Duration,
 };
 use store::{RocksdbShardStore, ShardStore};
-use types::{BlobNotification, BlobRequest, BlobResponse, ShardRequest, BLOB_REQ_PROTO};
 
 pub mod p2p;
 pub mod rpc;
@@ -231,9 +232,25 @@ async fn handle_blob_received_notification<Block>(
 			let mut shard_already_stored = Vec::new();
 
 			for shard_id in &shards_to_store {
-				let already_stored =
-					blob_meta.insert_in_ownership(shard_id, &my_validator_id, &my_peer_id_base58);
-				if already_stored {
+				let signature_payload = build_signature_payload(
+					blob_received.hash,
+					vec![*shard_id],
+					b"received".to_vec(),
+				);
+				let signature = match sign_blob_data(blob_handle, signature_payload) {
+					Ok(s) => s.signature,
+					Err(e) => {
+						log::error!(target: LOG_TARGET, "An error has occured while trying to sign data, exiting the function: {e}");
+						return;
+					},
+				};
+				let is_new = blob_meta.insert_ownership(
+					shard_id,
+					&my_validator_id,
+					&my_peer_id_base58,
+					signature,
+				);
+				if !is_new {
 					shard_already_stored.push(*shard_id);
 				} else {
 					shard_to_request.push(*shard_id)
@@ -538,28 +555,32 @@ async fn send_shard_received_notification<Block>(
 		return;
 	};
 
-	let shard_ids: Vec<u16> = shard_response
-		.shards
-		.into_iter()
-		.map(|shard| shard.shard_id)
-		.collect();
+	let mut shard_ids: Vec<u16> = Vec::new();
+	let mut signatures: Vec<Vec<u8>> = Vec::new();
 
-	let signature_payload =
-		build_signature_payload(shard_response.hash, shard_ids.clone(), b"received".to_vec());
-	let signature_data = match sign_blob_data(blob_handle, signature_payload) {
-		Ok(s) => s,
-		Err(e) => {
-			log::error!(target: LOG_TARGET, "An error has occured while trying to sign data, exiting the function: {e}");
-			return;
-		},
-	};
+	for shard in shard_response.shards {
+		shard_ids.push(shard.shard_id);
+
+		let sig_payload = build_signature_payload(
+			shard_response.hash,
+			vec![shard.shard_id],
+			b"received".to_vec(),
+		);
+		match sign_blob_data(blob_handle, sig_payload) {
+			Ok(s) => signatures.push(s.signature),
+			Err(e) => {
+				log::error!(target: LOG_TARGET, "An error has occured while trying to sign data, exiting the function: {e}");
+				return;
+			},
+		};
+	}
 
 	let shard_received = ShardReceived {
 		hash: shard_response.hash,
 		shard_ids,
 		address: my_validator_id,
 		original_peer_id: network.local_peer_id().to_base58(),
-		signature_data,
+		signatures,
 	};
 
 	if shard_received.shard_ids.len() > 0 {
@@ -590,24 +611,6 @@ fn handle_shard_received_notification<Block>(
 		return;
 	};
 
-	let expected_payload = build_signature_payload(
-		shard_received.hash,
-		shard_received.shard_ids.clone(),
-		b"received".to_vec(),
-	);
-	match verify_signed_blob_data(shard_received.signature_data.clone(), expected_payload) {
-		Ok(valid) => {
-			if !valid {
-				log::error!(target: LOG_TARGET, "An error has occured in handle_shard_received_notification: Invalid signature");
-				return;
-			}
-		},
-		Err(e) => {
-			log::error!(target: LOG_TARGET, "An error has occured while checking the signature: {e}");
-			return;
-		},
-	}
-
 	let Ok(maybe_meta) = blob_handle
 		.shard_store
 		.get_blob_metadata(&shard_received.hash)
@@ -635,11 +638,37 @@ fn handle_shard_received_notification<Block>(
 		log::info!(target: LOG_TARGET, "A Shard Received notification was received before Blob Received, creating empty blob metadata.");
 	}
 
-	for shard_id in shard_received.shard_ids {
-		blob_metadata.insert_in_ownership(
+	let address: sr25519::Public = shard_received.address.clone().into();
+	let address_vec = address.0.to_vec();
+
+	for (idx, shard_id) in shard_received.shard_ids.iter().enumerate() {
+		let shard_signature = shard_received.signatures[idx].clone();
+		let expected_payload =
+			build_signature_payload(shard_received.hash, vec![*shard_id], b"received".to_vec());
+		match verify_signed_blob_data(
+			BlobSignatureData {
+				signer: address_vec.clone(),
+				signature: shard_signature.clone(),
+			},
+			expected_payload,
+		) {
+			Ok(valid) => {
+				if !valid {
+					log::error!(target: LOG_TARGET, "An error has occured in handle_shard_received_notification: Invalid signature");
+					return;
+				}
+			},
+			Err(e) => {
+				log::error!(target: LOG_TARGET, "An error has occured while checking the signature: {e}");
+				return;
+			},
+		}
+
+		blob_metadata.insert_ownership(
 			&shard_id,
 			&shard_received.address,
 			&shard_received.original_peer_id,
+			shard_signature,
 		);
 	}
 
@@ -774,11 +803,7 @@ pub fn process_cell_request<Block: BlockT>(
 		.iter()
 		.map(|cell_unit| cell_unit.shard_id)
 		.collect();
-	let expected_payload = build_signature_payload(
-		cell_request.hash,
-		shard_ids,
-		b"cell".to_vec(),
-	);
+	let expected_payload = build_signature_payload(cell_request.hash, shard_ids, b"cell".to_vec());
 	match verify_signed_blob_data(cell_request.signature_data.clone(), expected_payload) {
 		Ok(valid) => {
 			if !valid {

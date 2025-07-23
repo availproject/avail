@@ -1,7 +1,11 @@
 use std::{path::Path, sync::Arc};
 
 use crate::{
-	decode_blob_notification, handle_incoming_blob_request, store::{RocksdbShardStore, ShardStore}, types::{BlobGossipValidator, BlobNotification, FullClient, BLOB_GOSSIP_PROTO, BLOB_REQ_PROTO}, BLOB_EXPIRATION_CHECK_PERIOD, CONCURRENT_REQUESTS, LOG_TARGET, NOTIFICATION_MAX_SIZE, REQUEST_MAX_SIZE, REQUEST_TIME_OUT, RESPONSE_MAX_SIZE
+	decode_blob_notification, handle_incoming_blob_request,
+	store::{RocksdbShardStore, ShardStore},
+	types::{BlobGossipValidator, BlobNotification, FullClient, BLOB_GOSSIP_PROTO, BLOB_REQ_PROTO},
+	BLOB_EXPIRATION_CHECK_PERIOD, CONCURRENT_REQUESTS, LOG_TARGET, NOTIFICATION_MAX_SIZE,
+	REQUEST_MAX_SIZE, REQUEST_TIME_OUT, RESPONSE_MAX_SIZE,
 };
 use codec::Encode;
 use futures::{FutureExt, StreamExt};
@@ -122,7 +126,10 @@ where
 		req_receiver: async_channel::Receiver<IncomingRequest>,
 	) {
 		let network_cell = self.network.clone();
-		let network = network_cell.get().expect("Network should be registered").clone();
+		let network = network_cell
+			.get()
+			.expect("Network should be registered")
+			.clone();
 		spawn_handle.spawn("request-listener", None, {
 			let shard_store_clone = self.shard_store.clone();
 			let network_clone = network;

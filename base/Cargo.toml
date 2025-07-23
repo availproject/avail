@@ -21,6 +21,7 @@ sp-api = { workspace = true, default-features = false }
 sp-io = { workspace = true, default-features = false }
 sp-runtime = { workspace = true, default-features = false }
 sp-runtime-interface = { workspace = true, default-features = false }
+sp-authority-discovery = { workspace = true, default-features = false }
 frame-support = { workspace = true, default-features = false }
 binary-merkle-tree = { workspace = true, default-features = false }
 
@@ -44,6 +45,7 @@ std = [
 	"codec/std",
 	"frame-support/std",
 	"once_cell",
+	"sp-authority-discovery/std",
 	"sp-api/std",
 	"sp-core/std",
 	"sp-runtime-interface/std",

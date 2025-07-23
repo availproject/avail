@@ -3,8 +3,8 @@ use crate::{
 	process_cell_request_inner, send_cell_request,
 	store::{RocksdbShardStore, ShardStore},
 	types::{
-		BlobHash, BlobMetadata, BlobSignatureData, CellRequest, CellUnitRequest, Shard,
-		ShardRequest,
+		BlobHash, BlobMetadata, BlobSignatureData, BlobTxSummary, CellRequest, CellUnitRequest,
+		Shard, ShardRequest,
 	},
 	LOG_TARGET, MAX_BLOB_RETRY_BEFORE_DISCARDING, MAX_TRANSACTION_VALIDITY, MIN_SHARD_HOLDER_COUNT,
 	MIN_SHARD_HOLDER_PERCENTAGE, MIN_TRANSACTION_VALIDITY, SHARD_SIZE,
@@ -138,6 +138,7 @@ pub fn check_if_wait_next_block<C, Block>(
 	encoded: Vec<u8>,
 	submit_blob_metadata_calls: &mut Vec<RuntimeCall>,
 	blob_metadata: &mut BTreeMap<BlobHash, BlobMetadata<Block>>,
+	nb_validators_per_shard: usize,
 ) -> (bool, bool)
 where
 	Block: BlockT,
@@ -162,8 +163,11 @@ where
 					blob_metadata.insert(meta.hash, meta.clone());
 					// check if every shard has non-empty ownership
 					let metadata_valid = meta.is_notified
-						&& (0..meta.nb_shards)
-							.all(|i| meta.ownership.get(&i).map_or(false, |v| !v.is_empty()));
+						&& (0..meta.nb_shards).all(|i| {
+							meta.ownership
+								.get(&i)
+								.map_or(false, |v| v.len() >= nb_validators_per_shard)
+						});
 
 					// If ownership is complete, no changes, if not, we whould recheck validity to see if we can wait for ownership data to arrive
 					if !metadata_valid {
@@ -227,7 +231,7 @@ pub async fn sample_and_get_failed_blobs<Block: BlockT>(
 	keystore: &Arc<LocalKeystore>,
 	shard_store: &Arc<RocksdbShardStore<Block>>,
 	blob_metadata: BTreeMap<BlobHash, BlobMetadata<Block>>,
-) -> (Vec<(BlobHash, String)>, u64) {
+) -> (Vec<BlobTxSummary>, u64) {
 	let mut tx_futures = FuturesUnordered::new();
 
 	for tx in submit_blob_metadata_calls.iter().cloned() {
@@ -275,7 +279,7 @@ pub async fn sample_and_get_failed_blobs<Block: BlockT>(
 					};
 					let peer_ids: Vec<PeerId> = peers
 						.into_iter()
-						.filter_map(|(_, base58)| PeerId::from_str(&base58).ok())
+						.filter_map(|o| PeerId::from_str(&o.peer_id_encoded).ok())
 						.collect();
 					if peer_ids.is_empty() {
 						return Err((
@@ -336,23 +340,37 @@ pub async fn sample_and_get_failed_blobs<Block: BlockT>(
 
 				// TODO Blob: Use results to sample
 
-				// If ok, we can also add the size
-				Ok(size)
+				// If ok, we can add the size and the summary
+				let entry = BlobTxSummary {
+					hash: blob_hash,
+					success: true,
+					reason: None,
+					ownership: meta.ownership.clone(),
+				};
+				Ok((entry, size))
 			};
 			tx_futures.push(fut);
 		}
 	}
 
-	let mut failed = Vec::new();
+	let mut blob_txs_summary: Vec<BlobTxSummary> = Vec::new();
 	let mut total_size = 0;
 	while let Some(res) = tx_futures.next().await {
 		match res {
-			Ok(size) => total_size += size,
-			Err((blob_hash, reason)) => failed.push((blob_hash, reason)),
-		}
+			Ok((entry, size)) => {
+				total_size += size;
+				blob_txs_summary.push(entry)
+			},
+			Err((blob_hash, reason)) => blob_txs_summary.push(BlobTxSummary {
+				hash: blob_hash,
+				success: false,
+				reason: Some(reason),
+				ownership: BTreeMap::new(),
+			}),
+		};
 	}
 
-	(failed, total_size)
+	(blob_txs_summary, total_size)
 }
 
 pub fn build_signature_payload(
@@ -378,7 +396,7 @@ pub fn sign_blob_data<Block: BlockT>(
 	sign_blob_data_inner(keystore, payload)
 }
 
-fn sign_blob_data_inner(
+pub fn sign_blob_data_inner(
 	keystore: &Arc<LocalKeystore>,
 	payload: Vec<u8>,
 ) -> Result<BlobSignatureData> {

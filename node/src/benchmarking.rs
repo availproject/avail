@@ -22,8 +22,8 @@
 
 use std::{sync::Arc, time::Duration};
 
-use avail_core::AppId;
 use avail_blob::types::FullClient;
+use avail_core::AppId;
 use codec::Encode;
 use da_runtime::{AccountId, Balance, BalancesCall};
 use frame_system::Call as SystemCall;

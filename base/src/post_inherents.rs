@@ -1,9 +1,9 @@
 use crate::{MemoryTemporaryStorage, StorageMap};
 
 use sp_api::decl_runtime_apis;
+use sp_authority_discovery::AuthorityId;
 use sp_runtime::traits::Block as BlockT;
-use sp_std::vec::Vec;
-use scale_info::prelude::string::String;
+use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
 
 /// A pallet that provides or verifies an inherent extrinsic will implement this trait.
 ///
@@ -62,7 +62,12 @@ decl_runtime_apis! {
 	#[core_trait]
 	#[allow(unused_imports)]
 	pub trait PostInherentsProvider {
-		fn create_post_inherent_extrinsics(data: StorageMap, failed_txs: Vec<(sp_core::H256, String)>, total_blob_size: u64) -> Vec<<Block as BlockT>::Extrinsic>;
+		fn create_post_inherent_extrinsics(data: StorageMap, blob_txs_summary: Vec<(
+			sp_core::H256,
+			bool,
+			Option<String>,
+			BTreeMap<u16, Vec<(AuthorityId, String, Vec<u8>)>>,
+		)>, total_blob_size: u64) -> Vec<<Block as BlockT>::Extrinsic>;
 	}
 }
 

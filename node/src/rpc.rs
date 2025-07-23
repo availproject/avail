@@ -56,8 +56,8 @@ use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use sp_consensus::SelectChain;
 use sp_consensus_babe::BabeApi;
 use sp_keystore::KeystorePtr;
-use sp_transaction_pool::runtime_api::TaggedTransactionQueue;
 use sp_runtime::traits::BlockIdTo;
+use sp_transaction_pool::runtime_api::TaggedTransactionQueue;
 
 /// Extra dependencies for BABE.
 pub struct BabeDeps {

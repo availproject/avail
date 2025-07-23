@@ -37,6 +37,7 @@ sp-std = { workspace = true, default-features = false }
 sp-io = { workspace = true, default-features = false }
 sp-runtime = { workspace = true, default-features = false }
 sp-arithmetic = { workspace = true, default-features = false }
+sp-authority-discovery = { workspace = true, default-features = false }
 frame-support = { workspace = true, default-features = false }
 frame-benchmarking = { workspace = true, default-features = false, optional = true }
 sp-runtime-interface = { workspace = true, default-features = false }

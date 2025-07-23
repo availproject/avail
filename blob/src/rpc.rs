@@ -1,8 +1,11 @@
 use crate::{
 	p2p::BlobHandle,
 	store::ShardStore,
-	types::{BlobMetadata, BlobNotification, BlobReceived, Deps, Shard},
-	utils::{get_my_validator_id, get_nb_shards_from_blob_size, get_shards_to_store},
+	types::{BlobMetadata, BlobNotification, BlobReceived, Deps, OwnershipEntry, Shard},
+	utils::{
+		build_signature_payload, get_my_validator_id, get_nb_shards_from_blob_size,
+		get_shards_to_store, sign_blob_data_inner,
+	},
 	BLOB_TTL, LOG_TARGET, MAX_BLOB_SIZE, MAX_TRANSACTION_VALIDITY, MIN_TRANSACTION_VALIDITY,
 	SHARD_SIZE,
 };
@@ -24,7 +27,6 @@ use sc_network::NetworkStateInfo;
 use sc_service::Role;
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::ProvideRuntimeApi;
-use sp_authority_discovery::AuthorityId;
 use sp_core::{blake2_256, Bytes, H256};
 use sp_runtime::transaction_validity::TransactionSource;
 use sp_runtime::{traits::Block as BlockT, SaturatedConversion};
@@ -315,7 +317,7 @@ async fn get_shards_to_store_rpc<Client, Block>(
 	blob_metadata: BlobMetadata<Block>,
 	finalized_hash: Block::Hash,
 	my_peer_id_encoded: String,
-) -> Result<(Vec<u16>, BTreeMap<u16, Vec<(AuthorityId, String)>>)>
+) -> Result<(Vec<u16>, BTreeMap<u16, Vec<OwnershipEntry>>)>
 where
 	Block: BlockT,
 	Client: HeaderBackend<Block> + ProvideRuntimeApi<Block> + AuthorityDiscovery<Block>,
@@ -353,9 +355,26 @@ where
 	};
 
 	for shard_to_store in &shards_to_store {
+		let signature_payload = build_signature_payload(
+			blob_metadata.hash,
+			vec![*shard_to_store],
+			b"received".to_vec(),
+		);
+		let signature = match sign_blob_data_inner(keystore, signature_payload) {
+			Ok(s) => s.signature,
+			Err(e) => {
+				return Err(anyhow!(
+					"An error has occured while trying to sign data, exiting the function: {e}"
+				));
+			},
+		};
 		ownership.insert(
 			*shard_to_store,
-			vec![(my_validator_id.clone(), my_peer_id_encoded.clone())],
+			vec![OwnershipEntry {
+				address: my_validator_id.clone(),
+				peer_id_encoded: my_peer_id_encoded.clone(),
+				signature,
+			}],
 		);
 	}
 
