@@ -36,11 +36,9 @@ tempfile = { workspace = true }
 jsonrpsee = { workspace = true }
 futures = { workspace = true }
 log = { workspace = true }
-hex = { workspace = true }
 async-channel = { workspace = true }
 once_cell = { workspace = true }
 anyhow = "1.0"
-parking_lot = { workspace = true }
 
 [features]
 default = []

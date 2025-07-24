@@ -17,7 +17,6 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 avail-base = { workspace = true, features = ["std"] }
-da-control = { workspace = true, default-features = false }
 avail-blob = { workspace = true, default-features = false }
 
 codec = { package = "parity-scale-codec", version = "3.6.1" }
@@ -41,7 +40,6 @@ sp-inherents = { workspace = true, features = ["std"] }
 sp-runtime = { workspace = true, features = ["std"] }
 sp-consensus.workspace = true
 sp-transaction-pool = { workspace = true, features = ["std"] }
-da-runtime = { workspace = true, features = ["std"]  }
 
 [dev-dependencies]
 parking_lot.workspace = true
