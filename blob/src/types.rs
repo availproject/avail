@@ -4,6 +4,7 @@ use codec::{Decode, Encode};
 use sc_network::{PeerId, ProtocolName};
 use sc_service::{Role, TFullClient};
 use scale_info::TypeInfo;
+use serde::{Deserialize, Serialize};
 use sp_authority_discovery::AuthorityId;
 use sp_core::H256;
 
@@ -107,7 +108,7 @@ where
 /***** Structs that will go in the shard store *****/
 /// The metadata of a blob and ownership data (who owns what shards)
 /// This will be stored by everyone for now
-#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
+#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, Serialize, Deserialize)]
 pub struct BlobMetadata<Block: BlockT> {
 	/// The Hash of the blob.
 	pub hash: BlobHash,
@@ -170,7 +171,7 @@ impl<Block: BlockT> BlobMetadata<Block> {
 }
 
 /// Shard object that will get store by each validator
-#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
+#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, Serialize, Deserialize)]
 pub struct Shard {
 	/// The hash of the blob this shard is associated to.
 	pub blob_hash: BlobHash,
@@ -292,7 +293,7 @@ pub struct BlobSignatureData {
 }
 
 /// Structure to hold data about a node having a shard
-#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, TypeInfo)]
+#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, TypeInfo, Serialize, Deserialize)]
 pub struct OwnershipEntry {
 	/// The address that owns the shard
 	pub address: AuthorityId,
@@ -352,6 +353,22 @@ impl BlobTxSummary {
 	}
 }
 
+/// Structure for the request when a shard is requested from an RPC
+#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
+pub struct ShardQueryRequest {
+	/// The hash of the blob.
+	pub hash: BlobHash,
+	/// The index of the shard.
+	pub shard_id: u16,
+}
+
+/// Structure for the response when a shard is requested from an RPC
+#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
+pub struct ShardQueryResponse {
+	/// The shard.
+	pub shard: Shard,
+}
+
 /***** Enums used for notification / request / response *****/
 /// Enum for different types of notifications.
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
@@ -365,6 +382,7 @@ pub enum BlobNotification<Block: BlockT> {
 pub enum BlobRequest {
 	ShardRequest(ShardRequest),
 	CellRequest(CellRequest),
+	ShardQueryRequest(ShardQueryRequest),
 }
 
 /// Enum for different types of responses.
@@ -372,4 +390,5 @@ pub enum BlobRequest {
 pub enum BlobResponse {
 	ShardResponse(ShardResponse),
 	CellResponse(CellResponse),
+	ShardQueryResponse(Option<Shard>),
 }

@@ -10,6 +10,7 @@ kate = { workspace = true, default-features = false }
 
 codec = { package = "parity-scale-codec", version = "3", default-features = false }
 scale-info = { workspace = true, default-features = false }
+serde = { workspace = true, default-features = false }
 frame-benchmarking = { workspace = true, default-features = false }
 frame-system = { workspace = true, default-features = false }
 avail-base = { workspace = true, default-features = false }

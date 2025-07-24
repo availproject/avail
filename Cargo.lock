@@ -992,6 +992,7 @@ dependencies = [
  "sc-service",
  "sc-transaction-pool-api",
  "scale-info",
+ "serde",
  "sp-api",
  "sp-authority-discovery",
  "sp-core",

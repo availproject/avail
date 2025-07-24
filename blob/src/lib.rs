@@ -2,8 +2,8 @@ use crate::{
 	p2p::BlobHandle,
 	types::{
 		BlobHash, BlobMetadata, BlobNotification, BlobReceived, BlobRequest, BlobResponse,
-		BlobSignatureData, CellRequest, CellResponse, CellUnitResponse, Shard, ShardReceived,
-		ShardRequest, ShardResponse, BLOB_REQ_PROTO,
+		BlobSignatureData, CellRequest, CellResponse, CellUnitResponse, Shard, ShardQueryRequest,
+		ShardReceived, ShardRequest, ShardResponse, BLOB_REQ_PROTO,
 	},
 	utils::{
 		build_signature_payload, fetch_shards, get_my_validator_id, get_shards_to_store,
@@ -74,6 +74,8 @@ const MAX_TRANSACTION_VALIDITY: u64 = 150; // 50 mn
 const MAX_BLOB_RETRY_BEFORE_DISCARDING: u16 = 1;
 /// The number of block for which a notification is considered valid
 const NOTIFICATION_EXPIRATION_PERIOD: u64 = 180;
+/// The number of retries the RPC is going to make before dropping a user shard request
+const MAX_RPC_RETRIES: u8 = 3;
 
 pub async fn decode_blob_notification<Block>(data: &[u8], blob_handle: &BlobHandle<Block>)
 where
@@ -364,10 +366,10 @@ async fn send_shard_request<Block>(
 								)
 								.await;
 							},
-							BlobResponse::CellResponse(_) => {
+							_ => {
 								log::error!(
 									target: LOG_TARGET,
-									"Invalid response in send shard request, got CellResponse, expected ShardResponse"
+									"Invalid response in send shard request, expected ShardResponse"
 								);
 							},
 						},
@@ -440,6 +442,9 @@ pub fn handle_incoming_blob_request<Block: BlockT>(
 			},
 			BlobRequest::CellRequest(cell_request) => {
 				process_cell_request(cell_request, store, response_tx);
+			},
+			BlobRequest::ShardQueryRequest(shard_query_request) => {
+				process_shard_query_request(shard_query_request, store, response_tx);
 			},
 		},
 		Err(err) => {
@@ -708,16 +713,18 @@ where
 			let mut buf: &[u8] = &data;
 			match BlobResponse::decode(&mut buf) {
 				Ok(response) => match response {
-					BlobResponse::ShardResponse(_) => {
-						Err(anyhow!("Invalid response in send cell request, got ShardResponse, expected CellResponse"))
-					},
 					BlobResponse::CellResponse(cell_response) => {
 						Ok(process_cell_response(cell_response))
 					},
+					_ => Err(anyhow!(
+						"Invalid response in send cell request, expected CellResponse"
+					)),
 				},
-				Err(err) => {
-					Err(anyhow!("Failed to decode Blob response ({} bytes): {:?}", data.len(), err))
-				},
+				Err(err) => Err(anyhow!(
+					"Failed to decode Blob response ({} bytes): {:?}",
+					data.len(),
+					err
+				)),
 			}
 		},
 		Err(e) => {
@@ -803,7 +810,8 @@ pub fn process_cell_request<Block: BlockT>(
 		.iter()
 		.map(|cell_unit| cell_unit.shard_id)
 		.collect();
-	let expected_payload = build_signature_payload(cell_request.hash, shard_ids, b"cell".to_vec());
+	let expected_payload: Vec<u8> =
+		build_signature_payload(cell_request.hash, shard_ids, b"cell".to_vec());
 	match verify_signed_blob_data(cell_request.signature_data.clone(), expected_payload) {
 		Ok(valid) => {
 			if !valid {
@@ -844,4 +852,93 @@ pub fn process_cell_request<Block: BlockT>(
 pub fn process_cell_response(cell_response: CellResponse) -> CellResponse {
 	log::info!(target: LOG_TARGET, "9 - Processing cell response");
 	cell_response
+}
+
+pub async fn send_shard_query_request<Block>(
+	hash: BlobHash,
+	shard_id: u16,
+	target_peer: PeerId,
+	network: &Arc<NetworkService<Block, Block::Hash>>,
+) -> Result<Option<Shard>>
+where
+	Block: BlockT,
+{
+	let req = BlobRequest::ShardQueryRequest(ShardQueryRequest { hash, shard_id });
+
+	let response = network
+		.request(
+			target_peer,
+			BLOB_REQ_PROTO,
+			req.encode(),
+			None,
+			IfDisconnected::TryConnect,
+		)
+		.await;
+
+	match response {
+		Ok((data, _proto)) => {
+			let mut buf: &[u8] = &data;
+			match BlobResponse::decode(&mut buf) {
+				Ok(response) => match response {
+					BlobResponse::ShardQueryResponse(shard_query_response) => {
+						return Ok(shard_query_response);
+					},
+					_ => {
+						return Err(anyhow!("Invalid response in send shard query request, expected ShardQueryResponse"));
+					},
+				},
+				Err(err) => {
+					return Err(anyhow!(
+						"Failed to decode Blob response ({} bytes): {:?}",
+						data.len(),
+						err
+					));
+				},
+			}
+		},
+		Err(e) => {
+			return Err(anyhow!(
+				"An error has occured while trying to send shard request for a chunk: {e}"
+			));
+		},
+	}
+}
+
+pub fn process_shard_query_request<Block: BlockT>(
+	shard_query_request: ShardQueryRequest,
+	store: &RocksdbShardStore<Block>,
+	response_tx: oneshot::Sender<OutgoingResponse>,
+) {
+	let maybe_shard = match store.get_shard(&shard_query_request.hash, shard_query_request.shard_id)
+	{
+		Ok(s) => match s {
+			None => None,
+			Some(s) => Some(Shard {
+				blob_hash: s.blob_hash,
+				shard_id: s.shard_id,
+				size: s.size,
+				data: s.data.iter().cloned().take(5).collect(), // TODO Blob: Should we return all the data ? Seems heavy for the RPC
+			}),
+		},
+		Err(e) => {
+			log::error!("Could not get a shard for the requester RPC: {e}");
+			let res = OutgoingResponse {
+				result: Err(()),
+				reputation_changes: Vec::default(),
+				sent_feedback: None,
+			};
+			let _ = response_tx.send(res);
+			return;
+		},
+	};
+
+	let res = OutgoingResponse {
+		result: Ok(BlobResponse::ShardQueryResponse(maybe_shard).encode()),
+		reputation_changes: Vec::default(),
+		sent_feedback: None,
+	};
+
+	if let Err(e) = response_tx.send(res) {
+		log::error!(target: LOG_TARGET, "An error has occured while trying to return a shard to requester: {e:?}")
+	};
 }

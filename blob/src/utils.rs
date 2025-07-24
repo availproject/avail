@@ -13,7 +13,7 @@ use anyhow::{anyhow, Context, Result};
 use codec::{Decode, Encode};
 use da_control::Call;
 use da_runtime::{RuntimeCall, UncheckedExtrinsic};
-use futures::{future::try_join_all, stream::FuturesUnordered, StreamExt};
+use futures::{future::try_join_all, stream::FuturesOrdered, StreamExt};
 use sc_client_api::HeaderBackend;
 use sc_keystore::{Keystore, LocalKeystore};
 use sc_network::{NetworkService, NetworkStateInfo, PeerId};
@@ -232,7 +232,7 @@ pub async fn sample_and_get_failed_blobs<Block: BlockT>(
 	shard_store: &Arc<RocksdbShardStore<Block>>,
 	blob_metadata: BTreeMap<BlobHash, BlobMetadata<Block>>,
 ) -> (Vec<BlobTxSummary>, u64) {
-	let mut tx_futures = FuturesUnordered::new();
+	let mut tx_futures = FuturesOrdered::new();
 
 	for tx in submit_blob_metadata_calls.iter().cloned() {
 		if let RuntimeCall::DataAvailability(Call::submit_blob_metadata {
@@ -349,7 +349,7 @@ pub async fn sample_and_get_failed_blobs<Block: BlockT>(
 				};
 				Ok((entry, size))
 			};
-			tx_futures.push(fut);
+			tx_futures.push_back(fut);
 		}
 	}
 

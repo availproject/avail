@@ -1,19 +1,21 @@
 use crate::{
 	p2p::BlobHandle,
+	send_shard_query_request,
 	store::ShardStore,
 	types::{BlobMetadata, BlobNotification, BlobReceived, Deps, OwnershipEntry, Shard},
 	utils::{
 		build_signature_payload, get_my_validator_id, get_nb_shards_from_blob_size,
 		get_shards_to_store, sign_blob_data_inner,
 	},
-	BLOB_TTL, LOG_TARGET, MAX_BLOB_SIZE, MAX_TRANSACTION_VALIDITY, MIN_TRANSACTION_VALIDITY,
-	SHARD_SIZE,
+	BLOB_TTL, LOG_TARGET, MAX_BLOB_SIZE, MAX_RPC_RETRIES, MAX_TRANSACTION_VALIDITY,
+	MIN_TRANSACTION_VALIDITY, SHARD_SIZE,
 };
 use anyhow::{anyhow, Result};
-use codec::Decode;
+use codec::{Decode, Encode};
 use da_commitment::build_da_commitments::build_da_commitments;
-use da_control::Call;
+use da_control::{pallet::BlobTxSummaryRuntime, Call};
 use da_runtime::{RuntimeCall, UncheckedExtrinsic};
+use futures::{stream::FuturesUnordered, StreamExt};
 use jsonrpsee::{
 	core::{async_trait, RpcResult},
 	proc_macros::rpc,
@@ -23,7 +25,7 @@ use kate::Seed;
 use sc_authority_discovery::AuthorityDiscovery;
 use sc_client_api::{BlockBackend, HeaderBackend};
 use sc_keystore::LocalKeystore;
-use sc_network::NetworkStateInfo;
+use sc_network::{NetworkStateInfo, PeerId};
 use sc_service::Role;
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::ProvideRuntimeApi;
@@ -35,9 +37,9 @@ use std::{
 	cmp,
 	collections::BTreeMap,
 	marker::{PhantomData, Sync},
+	str::FromStr,
 	sync::Arc,
 };
-
 pub enum Error {
 	BlobError,
 }
@@ -67,6 +69,15 @@ where
 {
 	#[method(name = "blob_submitBlob")]
 	async fn submit_blob(&self, metadata_signed_transaction: Bytes, blob: Bytes) -> RpcResult<()>;
+
+	#[method(name = "blob_getBlob")]
+	async fn get_blob(
+		&self,
+		block_hash: Block::Hash,
+		blob_index: u32,
+		blob_hash: H256,
+		shard_ids: Option<Vec<u16>>,
+	) -> RpcResult<(Vec<Shard>, u16)>;
 }
 
 pub struct BlobRpc<Client, Pool, Block: BlockT> {
@@ -308,6 +319,166 @@ where
 
 		Ok(())
 	}
+
+	async fn get_blob(
+		&self,
+		block_hash: Block::Hash,
+		blob_index: u32,
+		blob_hash: H256,
+		shard_ids: Option<Vec<u16>>,
+	) -> RpcResult<(Vec<Shard>, u16)> {
+		let network = self
+			.blob_handle
+			.network
+			.get()
+			.ok_or_else(|| internal_err!("Could not get network to get my peer id"))
+			.map_err(|e| e)?;
+
+		let Ok(Some(summaries)) = get_blob_tx_summaries_from_block(&self.client, block_hash).await
+		else {
+			return Err(internal_err!(
+				"Blob transactions summaries not found in the given block"
+			));
+		};
+
+		let Some(blob_summary) = summaries.get(blob_index as usize) else {
+			return Err(internal_err!(
+				"Blob transaction summary not found in the given block and blob_index"
+			));
+		};
+
+		if blob_summary.hash != blob_hash {
+			return Err(internal_err!(
+				"Blob hash mismatch - Expected: {:?} - Found: {:?}",
+				blob_hash,
+				blob_summary.hash
+			));
+		}
+
+		if !blob_summary.success {
+			return Err(internal_err!(
+				"Blob update was not successful: {:?}",
+				blob_summary.reason
+			));
+		}
+
+		// Determine which shards to fetch based on the shard_ids parameter
+		let shards_to_fetch: Vec<u16> = if let Some(requested_shard_ids) = &shard_ids {
+			// Safeguard against empty vector
+			if requested_shard_ids.is_empty() {
+				return Err(internal_err!("shard_ids cannot be empty when provided"));
+			}
+
+			// Validate that all requested shard_ids exist in the blob
+			for &shard_id in requested_shard_ids {
+				if !blob_summary.ownership.contains_key(&shard_id) {
+					return Err(internal_err!(
+						"Invalid shard_id {} - shard does not exist in blob. Available shards: {:?}",
+						shard_id,
+						blob_summary.ownership.keys().collect::<Vec<_>>()
+					));
+				}
+			}
+			requested_shard_ids.clone()
+		} else {
+			// If no specific shards requested, fetch all shards
+			blob_summary.ownership.keys().copied().collect()
+		};
+
+		let total_shards_to_fetch = shards_to_fetch.len();
+		let futures = FuturesUnordered::new();
+
+		for shard_id in shards_to_fetch {
+			let Some(entries) = blob_summary.ownership.get(&shard_id) else {
+				// This should not happen due to validation above, but keeping as safety check
+				continue;
+			};
+
+			let fut = async move {
+				let mut maybe_shard: Option<Shard> = None;
+
+				if !entries.is_empty() {
+					let hash_bytes = blob_hash.as_bytes();
+					let Some(truncated) = hash_bytes.get(..8) else {
+						log::warn!("Blob hash is too short, expected at least 8 bytes");
+						return maybe_shard;
+					};
+
+					let array_result: Result<[u8; 8], std::array::TryFromSliceError> =
+						truncated.try_into();
+					let Ok(array) = array_result else {
+						log::warn!("Failed to convert first 8 bytes of blob hash");
+						return maybe_shard;
+					};
+					let seed = u64::from_le_bytes(array).wrapping_add(shard_id.into());
+
+					for attempt in 0..MAX_RPC_RETRIES {
+						let index = ((seed + (attempt as u64)) % (entries.len() as u64)) as usize;
+
+						let Some((_, peer_id_encoded, _)) = entries.get(index) else {
+							log::warn!(
+								"shard {} attempt {}/{}: invalid array index",
+								shard_id,
+								attempt,
+								MAX_RPC_RETRIES
+							);
+							continue;
+						};
+
+						match PeerId::from_str(&peer_id_encoded) {
+							Ok(peer_id) => {
+								match send_shard_query_request(
+									blob_hash, shard_id, peer_id, &network,
+								)
+								.await
+								{
+									Ok(Some(shard)) => {
+										maybe_shard = Some(shard);
+										break;
+									},
+									Ok(None) => {
+										log::warn!(
+											"shard {} attempt {}/{}: no shard returned",
+											shard_id,
+											attempt,
+											MAX_RPC_RETRIES
+										);
+									},
+									Err(e) => {
+										log::warn!(
+											"shard {} attempt {}/{} RPC error: {:?}",
+											shard_id,
+											attempt,
+											MAX_RPC_RETRIES,
+											e
+										);
+									},
+								}
+							},
+							Err(e) => {
+								log::warn!(
+									"shard {} attempt {}: invalid peer_id {:?}",
+									shard_id,
+									attempt,
+									e
+								);
+							},
+						}
+					}
+				}
+
+				maybe_shard
+			};
+
+			futures.push(fut);
+		}
+
+		let results: Vec<Option<Shard>> = futures.collect().await;
+		let shards: Vec<Shard> = results.into_iter().filter_map(|x| x).collect();
+		let missing = (total_shards_to_fetch - shards.len()) as u16;
+
+		Ok((shards, missing))
+	}
 }
 
 async fn get_shards_to_store_rpc<Client, Block>(
@@ -379,4 +550,37 @@ where
 	}
 
 	Ok((shards_to_store, ownership))
+}
+
+async fn get_blob_tx_summaries_from_block<Client, Block>(
+	client: &Arc<Client>,
+	block_hash: Block::Hash,
+) -> RpcResult<Option<Vec<BlobTxSummaryRuntime>>>
+where
+	Block: BlockT,
+	<Block as BlockT>::Extrinsic: Encode,
+	Client: HeaderBackend<Block> + BlockBackend<Block> + Send + Sync + 'static,
+{
+	let block = client
+		.block(block_hash)
+		.map_err(|e| internal_err!("Failed to get block: {e}"))?
+		.ok_or_else(|| internal_err!("Block not found"))?;
+
+	let extrinsics = block.block.extrinsics();
+	if extrinsics.len() < 2 {
+		return Ok(None);
+	}
+
+	let summary_extrinsic_encoded = extrinsics[extrinsics.len() - 2].encode();
+	let summary_extrinsic: UncheckedExtrinsic = Decode::decode(&mut &summary_extrinsic_encoded[..])
+		.map_err(|_| internal_err!("Failed to decode summary extrinsic"))?;
+
+	if let RuntimeCall::DataAvailability(Call::submit_blob_txs_summary {
+		blob_txs_summary, ..
+	}) = summary_extrinsic.function
+	{
+		Ok(Some(blob_txs_summary))
+	} else {
+		Ok(None)
+	}
 }
