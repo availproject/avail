@@ -745,5 +745,9 @@ mod test {
 		assert_eq!(cache.blocks[0].0, hash_04);
 		assert_eq!(cache.blocks[1].0, hash_02);
 		assert_eq!(cache.blocks[2].0, hash_01);
+
+		assert!(cache.block(hash_04).is_some());
+		assert!(cache.block(hash_02).is_some());
+		assert!(cache.block(hash_01).is_some());
 	}
 }
