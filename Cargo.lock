@@ -1941,9 +1941,9 @@ dependencies = [
 
 [[package]]
 name = "const-hex"
-version = "1.14.0"
+version = "1.14.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4b0485bab839b018a8f1723fc5391819fea5f8f0f32288ef8a735fd096b6160c"
+checksum = "83e22e0ed40b96a48d3db274f72fd365bd78f67af39b6bbd47e8a15e1c6207ff"
 dependencies = [
  "cfg-if",
  "cpufeatures",
@@ -5386,11 +5386,11 @@ version = "0.3.0"
 dependencies = [
  "avail-base",
  "avail-core",
+ "const-hex",
  "da-runtime",
  "frame-support",
  "frame-system",
  "frame-system-rpc-runtime-api",
- "hex",
  "jsonrpsee",
  "kate",
  "kate-recovery",

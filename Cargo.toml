@@ -54,6 +54,7 @@ divan = "0.1.11"
 log = "0.4.20"
 test-case = "1.2.3"
 hex = "0.4"
+const-hex = { version = "1.14.1", default-features = false, features = ["alloc"] }
 env_logger = "0.9.1"
 thiserror-no-std = "2.0.2"
 

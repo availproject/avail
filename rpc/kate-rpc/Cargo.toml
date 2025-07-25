@@ -12,10 +12,10 @@ frame-system = { workspace = true, default-features = false }
 avail-core = { workspace = true, default-features = false }
 kate = { workspace = true, default-features = false }
 kate-recovery = { workspace = true, default-features = false }
-hex.workspace = true
 codec = { package = "parity-scale-codec", version = "3" }
 serde_json.workspace = true
 serde.workspace = true
+const-hex.workspace = true
 
 # 3rd party
 jsonrpsee.workspace = true
