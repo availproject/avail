@@ -113,7 +113,7 @@ struct BlockVerificationState {
 	last_attempt: Option<Instant>,
 	retry_count: u32,
 	failed_cells: Vec<CellCoordinate>,
-	cells: Option<Vec<CellCoordinate>>, // <-- Add this field
+	cells: Option<Vec<CellCoordinate>>,
 }
 
 /// Shared state for block's DA verification
@@ -254,7 +254,7 @@ where
 			fallback_names: vec![],
 			max_request_size: MAX_PACKET_SIZE,
 			max_response_size: MAX_PACKET_SIZE,
-			request_timeout: Duration::from_secs(120),
+			request_timeout: PEER_RESPONSE_TIMEOUT,
 			inbound_queue: Some(tx),
 		};
 
