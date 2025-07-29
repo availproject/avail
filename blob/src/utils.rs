@@ -13,7 +13,7 @@ use anyhow::{anyhow, Context, Result};
 use codec::{Decode, Encode};
 use da_control::Call;
 use da_runtime::{RuntimeCall, UncheckedExtrinsic};
-use futures::{future::try_join_all, stream::FuturesOrdered, StreamExt};
+use futures::{future::try_join_all, stream::FuturesUnordered, StreamExt};
 use sc_client_api::HeaderBackend;
 use sc_keystore::{Keystore, LocalKeystore};
 use sc_network::{NetworkService, NetworkStateInfo, PeerId};
@@ -106,8 +106,6 @@ pub fn get_shards_to_store(
 		}
 	}
 
-	log::info!(target: LOG_TARGET, "Validator: {my_id:?} should store shards: {shards_to_store:?}");
-
 	Ok(shards_to_store)
 }
 
@@ -136,9 +134,10 @@ pub fn check_if_wait_next_block<C, Block>(
 	client: &Arc<C>,
 	shard_store: &Arc<RocksdbShardStore<Block>>,
 	encoded: Vec<u8>,
-	submit_blob_metadata_calls: &mut Vec<RuntimeCall>,
+	submit_blob_metadata_calls: &mut Vec<(RuntimeCall, u32)>,
 	blob_metadata: &mut BTreeMap<BlobHash, BlobMetadata<Block>>,
 	nb_validators_per_shard: usize,
+	tx_index: u32,
 ) -> (bool, bool)
 where
 	Block: BlockT,
@@ -179,12 +178,11 @@ where
 				_ => {
 					let tried_count = shard_store.get_blob_retry(blob_hash).unwrap_or(0);
 					if tried_count < MAX_BLOB_RETRY_BEFORE_DISCARDING {
-						log::info!(target: LOG_TARGET, "A transaction will be retried after being tried {tried_count} - blob hash: {blob_hash}");
 						should_check_validity = true;
 						let _ = shard_store.insert_blob_retry(blob_hash, tried_count + 1);
 					} else {
 						// Transaction will be submitted and discarded
-						log::info!(target: LOG_TARGET, "A transaction will be discarded after being tried {tried_count} - blob hash: {blob_hash}");
+						log::warn!(target: LOG_TARGET, "A transaction will be discarded after being tried {tried_count} - blob hash: {blob_hash}");
 					}
 				},
 			};
@@ -215,7 +213,7 @@ where
 			}
 
 			if should_submit {
-				submit_blob_metadata_calls.push(extrinsic_data);
+				submit_blob_metadata_calls.push((extrinsic_data, tx_index));
 				submit_blob_metadata_pushed = true;
 			} else {
 				should_continue = true;
@@ -226,15 +224,15 @@ where
 }
 
 pub async fn sample_and_get_failed_blobs<Block: BlockT>(
-	submit_blob_metadata_calls: &Vec<RuntimeCall>,
+	submit_blob_metadata_calls: &Vec<(RuntimeCall, u32)>,
 	network: Arc<NetworkService<Block, Block::Hash>>,
 	keystore: &Arc<LocalKeystore>,
 	shard_store: &Arc<RocksdbShardStore<Block>>,
 	blob_metadata: BTreeMap<BlobHash, BlobMetadata<Block>>,
 ) -> (Vec<BlobTxSummary>, u64) {
-	let mut tx_futures = FuturesOrdered::new();
+	let mut tx_futures = FuturesUnordered::new();
 
-	for tx in submit_blob_metadata_calls.iter().cloned() {
+	for (tx, tx_index) in submit_blob_metadata_calls.iter().cloned() {
 		if let RuntimeCall::DataAvailability(Call::submit_blob_metadata {
 			size,
 			blob_hash,
@@ -249,6 +247,7 @@ pub async fn sample_and_get_failed_blobs<Block: BlockT>(
 				let Some(meta) = blob_metadata.get(&blob_hash) else {
 					return Err((
 						blob_hash,
+						tx_index,
 						"Blob metadata not found in the store to sample the blob".to_string(),
 					));
 				};
@@ -256,6 +255,7 @@ pub async fn sample_and_get_failed_blobs<Block: BlockT>(
 				if meta.size != size || meta.commitments != commitments {
 					return Err((
 						blob_hash,
+						tx_index,
 						"Blob metadata from the store did not match the one from the transaction"
 							.to_string(),
 					));
@@ -274,6 +274,7 @@ pub async fn sample_and_get_failed_blobs<Block: BlockT>(
 					let Some(peers) = meta.ownership.get(&shard_id) else {
 						return Err((
 							blob_hash,
+							tx_index,
 							format!("No ownership find in the blob_metadata for the shard {shard_id} of blob hash {blob_hash}"),
 						));
 					};
@@ -284,6 +285,7 @@ pub async fn sample_and_get_failed_blobs<Block: BlockT>(
 					if peer_ids.is_empty() {
 						return Err((
 							blob_hash,
+							tx_index,
 							format!("Ownership is empty in the blob_metadata for the shard {shard_id} of blob hash {blob_hash}"),
 						));
 					}
@@ -296,6 +298,7 @@ pub async fn sample_and_get_failed_blobs<Block: BlockT>(
 						Err(e) => {
 							return Err((
 								blob_hash,
+								tx_index,
 								format!(
 									"Could not sign data for cell request {}: {}",
 									blob_hash, e
@@ -331,6 +334,7 @@ pub async fn sample_and_get_failed_blobs<Block: BlockT>(
 					Err(e) => {
 						return Err((
 							blob_hash,
+							tx_index,
 							format!("Cell request error for blob {}: {}", blob_hash, e),
 						));
 					},
@@ -343,13 +347,14 @@ pub async fn sample_and_get_failed_blobs<Block: BlockT>(
 				// If ok, we can add the size and the summary
 				let entry = BlobTxSummary {
 					hash: blob_hash,
+					tx_index,
 					success: true,
 					reason: None,
 					ownership: meta.ownership.clone(),
 				};
 				Ok((entry, size))
 			};
-			tx_futures.push_back(fut);
+			tx_futures.push(fut);
 		}
 	}
 
@@ -361,14 +366,17 @@ pub async fn sample_and_get_failed_blobs<Block: BlockT>(
 				total_size += size;
 				blob_txs_summary.push(entry)
 			},
-			Err((blob_hash, reason)) => blob_txs_summary.push(BlobTxSummary {
+			Err((blob_hash, tx_index, reason)) => blob_txs_summary.push(BlobTxSummary {
 				hash: blob_hash,
+				tx_index,
 				success: false,
 				reason: Some(reason),
 				ownership: BTreeMap::new(),
 			}),
 		};
 	}
+
+	blob_txs_summary.sort_by_key(|summary| summary.tx_index);
 
 	(blob_txs_summary, total_size)
 }

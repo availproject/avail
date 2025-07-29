@@ -355,7 +355,7 @@ pub mod da {
 
 	parameter_types! {
 		pub const MinBlockRows: BlockLengthRows = BlockLengthRows(32);
-		pub const MaxBlockRows: BlockLengthRows = BlockLengthRows(1024);
+		pub const MaxBlockRows: BlockLengthRows = BlockLengthRows(4096);
 		pub const MinBlockCols: BlockLengthColumns = BlockLengthColumns(64);
 		pub const MaxBlockCols: BlockLengthColumns = BlockLengthColumns(1024);
 	}

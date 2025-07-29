@@ -65,6 +65,7 @@ decl_runtime_apis! {
 	pub trait PostInherentsProvider {
 		fn create_post_inherent_extrinsics(data: StorageMap, blob_txs_summary: Vec<(
 			sp_core::H256,
+			u32,
 			bool,
 			Option<String>,
 			BTreeMap<u16, Vec<(AuthorityId, String, Vec<u8>)>>,

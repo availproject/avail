@@ -108,7 +108,7 @@ parameter_types! {
 	pub const MaxAppKeyLength :u32 = 64;
 	pub const MaxAppDataLength :u32 = 512 * 1024; // 512 Kb
 	pub const MinBlockRows: BlockLengthRows = BlockLengthRows(32);
-	pub const MaxBlockRows: BlockLengthRows = BlockLengthRows(1024);
+	pub const MaxBlockRows: BlockLengthRows = frame_system::limits::MAX_BLOCK_ROWS;
 	pub const MinBlockCols: BlockLengthColumns = BlockLengthColumns(32);
 	pub const MaxBlockCols: BlockLengthColumns = frame_system::limits::MAX_BLOCK_COLUMNS;
 }

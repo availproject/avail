@@ -35,27 +35,16 @@ fn build_grid(
 }
 
 fn build_commitment(grid: &EvaluationGrid) -> Result<Vec<u8>, DaCommitmentsError> {
-	// let start = std::time::Instant::now();
 	let pmp = PMP.get_or_init(multiproof_params);
-	// let pmp_time = start.elapsed();
-	// println!("PMP initialization time: {:?}", pmp_time);
 
 	let poly_grid = grid
 		.make_polynomial_grid()
 		.map_err(|e| DaCommitmentsError::MakePolynomialGridFailed(format!("{:?}", e)))?;
 
-	// let poly_grid_time = start.elapsed();
-	// println!("Make polynomial grid time: {:?}", poly_grid_time - pmp_time);
-
 	let extended_grid = poly_grid
 		.commitments(pmp)
 		.map_err(|e| DaCommitmentsError::GridExtensionFailed(format!("{:?}", e)))?;
 
-	// let extended_grid_time = start.elapsed();
-	// println!(
-	// 	" Commitments build time: {:?}",
-	// 	extended_grid_time - poly_grid_time
-	// );
 	let mut commitment = Vec::new();
 	for c in extended_grid.iter() {
 		match c.to_bytes() {
@@ -69,11 +58,6 @@ fn build_commitment(grid: &EvaluationGrid) -> Result<Vec<u8>, DaCommitmentsError
 		}
 	}
 
-	// let commitment_time = start.elapsed();
-	// println!(
-	// 	"Commitment serialization time: {:?}",
-	// 	commitment_time - extended_grid_time
-	// );
 	Ok(commitment)
 }
 
@@ -82,12 +66,22 @@ pub fn build_da_commitments(
 	max_width: usize,
 	max_height: usize,
 	seed: Seed,
-) -> Result<DaCommitments, DaCommitmentsError> {
-	// let start = std::time::Instant::now();
-	let grid = build_grid(data, max_width, max_height, seed)?;
+) -> DaCommitments {
+	let grid = match build_grid(data, max_width, max_height, seed) {
+		Ok(grid) => grid,
+		Err(e) => {
+			log::error!("Grid construction failed: {:?}", e);
+			return DaCommitments::new();
+		},
+	};
 
-	let commitments = build_commitment(&grid)?;
-	// let da_commitments_time = start.elapsed();
-	// println!("DA Commitments time: {:?}", da_commitments_time);
-	Ok(commitments)
+	let commitments = match build_commitment(&grid) {
+		Ok(commitments) => commitments,
+		Err(e) => {
+			log::error!("Commitment generation failed: {:?}", e);
+			return DaCommitments::new();
+		},
+	};
+
+	commitments
 }

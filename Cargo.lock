@@ -1003,7 +1003,7 @@ dependencies = [
 [[package]]
 name = "avail-core"
 version = "0.6.2"
-source = "git+https://github.com/availproject/avail-core.git?branch=ghali/infinity-da-rpc#b12c44903847a437e3f8b1c20429e9e3433bf040"
+source = "git+https://github.com/availproject/avail-core.git?branch=ghali/infinity-da-rpc-header#c468fe3f214eae282f7dba5baec0923b5b48c323"
 dependencies = [
  "binary-merkle-tree",
  "blake2b_simd",
@@ -2442,6 +2442,7 @@ name = "da-commitment"
 version = "0.1.0"
 dependencies = [
  "kate",
+ "log",
  "thiserror-no-std",
 ]
 
@@ -2451,6 +2452,7 @@ version = "1.0.1"
 dependencies = [
  "avail-base",
  "avail-core",
+ "da-commitment",
  "derive_more 0.99.18",
  "frame-benchmarking",
  "frame-support",
@@ -5392,7 +5394,7 @@ dependencies = [
 [[package]]
 name = "kate"
 version = "0.9.2"
-source = "git+https://github.com/availproject/avail-core.git?branch=ghali/infinity-da-rpc#b12c44903847a437e3f8b1c20429e9e3433bf040"
+source = "git+https://github.com/availproject/avail-core.git?branch=ghali/infinity-da-rpc-header#c468fe3f214eae282f7dba5baec0923b5b48c323"
 dependencies = [
  "avail-core",
  "derive_more 0.99.18",
@@ -5400,6 +5402,7 @@ dependencies = [
  "hex-literal",
  "kate-recovery",
  "log",
+ "lru 0.7.8",
  "nalgebra 0.32.6",
  "once_cell",
  "parity-scale-codec",
@@ -5417,7 +5420,7 @@ dependencies = [
 [[package]]
 name = "kate-recovery"
 version = "0.10.0"
-source = "git+https://github.com/availproject/avail-core.git?branch=ghali/infinity-da-rpc#b12c44903847a437e3f8b1c20429e9e3433bf040"
+source = "git+https://github.com/availproject/avail-core.git?branch=ghali/infinity-da-rpc-header#c468fe3f214eae282f7dba5baec0923b5b48c323"
 dependencies = [
  "avail-core",
  "derive_more 0.99.18",
@@ -6115,6 +6118,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "04cbf5b083de1c7e0222a7a51dbfdba1cbe1c6ab0b15e29fff3f6c077fd9cd9f"
 dependencies = [
  "serde",
+]
+
+[[package]]
+name = "lru"
+version = "0.7.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e999beba7b6e8345721bd280141ed958096a2e4abdf74f67ff4ce49b4b54e47a"
+dependencies = [
+ "hashbrown 0.12.3",
 ]
 
 [[package]]

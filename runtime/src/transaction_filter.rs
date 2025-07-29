@@ -8,11 +8,16 @@ use avail_core::{
 	AppExtrinsic, AppId, OpaqueExtrinsic,
 };
 
-use da_control::Call as DACall;
+use da_control::{
+	extensions::native::hosted_commitment_builder::build_da_commitments, Call as DACall,
+};
+use frame_system::limits::BlockLength;
+use kate::Seed;
 use pallet_multisig::Call as MultisigCall;
 use pallet_proxy::Call as ProxyCall;
 use pallet_vector::Call as VectorCall;
 use sp_core::H256;
+use sp_io::hashing::keccak_256;
 use sp_std::vec::Vec;
 
 const MAX_FILTER_ITERATIONS: usize = 3;
@@ -49,27 +54,51 @@ impl HeaderExtensionDataFilter for Runtime {
 				},
 				Call::DataAvailability(call) => {
 					let app_extrinsic = AppExtrinsic::from(unchecked_extrinsic.clone());
-					filter_da_call(app_extrinsic, call, app_id, tx_index)
+					filter_da_call(app_extrinsic, call, app_id, tx_index, failed_transactions)
 				},
 				_ => None,
 			}
 		}
 	}
 
-	fn get_failed_transaction_ids(opaque: &OpaqueExtrinsic) -> Option<Vec<u32>> {
-		let Ok(unchecked_extrinsic) = UncheckedExtrinsic::try_from(opaque.clone()) else {
-			return None;
+	fn get_failed_transaction_ids(opaques: &[OpaqueExtrinsic]) -> Vec<u32> {
+		let mut failed_tx = Vec::new();
+		let len = opaques.len();
+		if len == 0 {
+			return failed_tx;
+		}
+
+		// Vector failed transactions
+		if let Ok(unchecked_extrinsic) = UncheckedExtrinsic::try_from(opaques[len - 1].clone()) {
+			if let Call::Vector(VectorCall::failed_send_message_txs { failed_txs }) =
+				&unchecked_extrinsic.function
+			{
+				let failed_vector_tx = failed_txs.iter().map(|c| c.0).collect::<Vec<_>>();
+				failed_tx.extend(failed_vector_tx);
+			};
 		};
 
-		let Call::Vector(call) = &unchecked_extrinsic.function else {
-			return None;
-		};
+		if len > 1 {
+			// DA submit blob failed transactions
+			if let Ok(unchecked_extrinsic) = UncheckedExtrinsic::try_from(opaques[len - 2].clone())
+			{
+				if let Call::DataAvailability(DACall::submit_blob_txs_summary {
+					blob_txs_summary,
+					total_blob_size: _,
+				}) = &unchecked_extrinsic.function
+				{
+					let failed_tx_da: Vec<u32> = blob_txs_summary
+						.iter()
+						.filter(|summary| !summary.success)
+						.map(|summary| summary.tx_index)
+						.collect();
 
-		let VectorCall::failed_send_message_txs { failed_txs } = call else {
-			return None;
-		};
+					failed_tx.extend(failed_tx_da);
+				};
+			}
+		}
 
-		return Some(failed_txs.iter().map(|c| c.0).collect::<Vec<_>>());
+		failed_tx
 	}
 }
 
@@ -79,21 +108,38 @@ fn filter_da_call(
 	call: &DACall<Runtime>,
 	app_id: AppId,
 	tx_index: usize,
+	failed_transactions: &[u32],
 ) -> Option<ExtractedTxData> {
-	let DACall::submit_data { data } = call else {
-		return None;
-	};
-
-	if data.is_empty() {
+	let tx_index = u32::try_from(tx_index).ok()?;
+	if failed_transactions.contains(&tx_index) {
 		return None;
 	}
 
+	let (blob_hash, commitments) = match call {
+		DACall::submit_blob_metadata {
+			blob_hash,
+			commitments,
+			size: _,
+		} => {
+			if commitments.is_empty() {
+				return None;
+			}
+			(*blob_hash, commitments.clone())
+		},
+		DACall::submit_data { data } => {
+			if data.is_empty() {
+				return None;
+			}
+			let blob_hash = H256(keccak_256(&data));
+			let block_length = BlockLength::default();
+			let commitments = build_da_commitments(data.to_vec(), block_length, Seed::default());
+			(blob_hash, commitments)
+		},
+		_ => return None,
+	};
+
 	let tx_index = u32::try_from(tx_index).ok()?;
-	let submitted_data = Some(SubmittedData::new(
-		app_id,
-		tx_index,
-		data.as_slice().to_vec(),
-	));
+	let submitted_data = Some(SubmittedData::new(app_id, tx_index, blob_hash, commitments));
 
 	Some(ExtractedTxData {
 		submitted_data,

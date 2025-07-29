@@ -114,14 +114,10 @@ pub fn build_extension(
 
 	let app_lookup = grid.lookup().clone();
 
-	match version {
-		HeaderVersion::V3 => {
-			let commitment = kc::v3::KateCommitment::new(rows, cols, data_root, commitment);
-			he::v3::HeaderExtension {
-				app_lookup,
-				commitment,
-			}
-			.into()
-		},
+	let commitment = kc::v3::KateCommitment::new(rows, cols, data_root, commitment);
+	he::v3::HeaderExtension {
+		app_lookup,
+		commitment,
 	}
+	.into()
 }

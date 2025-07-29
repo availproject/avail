@@ -92,7 +92,18 @@ where
 			AllExtrinsicsLen::<T>::put(all_extrinsics_len);
 		}
 
+		if let Some(DACall::<T>::submit_blob_metadata {
+			blob_hash: _,
+			size: _,
+			commitments,
+		}) = call.is_sub_type()
+		{
+			ensure!(!commitments.is_empty(), InvalidTransaction::Custom(0))
+			// TODO Blob, we can maybe do some check on the size here
+		}
+
 		CheckBatchTransactions::<T>::new().do_validate(call, len)?;
+
 		Ok(ValidTransaction::default())
 	}
 
@@ -137,7 +148,7 @@ where
 		let mut iterations = 0;
 
 		while let Some(call) = stack.pop() {
-			if let Some(DACall::<T>::submit_data { .. }) = call.is_sub_type() {
+			if let Some(DACall::<T>::submit_data { .. }) | Some(DACall::<T>::submit_blob_metadata {..}) = call.is_sub_type() {
 				let next_app_id =
 					maybe_next_app_id.get_or_insert_with(<Pallet<T>>::peek_next_application_id);
 				ensure!(

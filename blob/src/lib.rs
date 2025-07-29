@@ -120,8 +120,6 @@ async fn handle_blob_received_notification<Block>(
 ) where
 	Block: BlockT,
 {
-	log::info!(target: LOG_TARGET, "1 - Got a blob notification");
-
 	let Some(client) = blob_handle.client.get() else {
 		log::error!(target: LOG_TARGET, "Client not yet registered");
 		return;
@@ -276,13 +274,7 @@ async fn handle_blob_received_notification<Block>(
 		.shard_store
 		.insert_blob_metadata(&blob_meta.hash, &blob_meta)
 	{
-		Ok(()) => {
-			log::info!(
-				target: LOG_TARGET,
-				"Stored blob metadata {} in the store db",
-				blob_meta.hash
-			)
-		},
+		Ok(()) => {},
 		Err(e) => {
 			log::error!(
 				target: LOG_TARGET,
@@ -341,8 +333,6 @@ async fn send_shard_request<Block>(
 		let network = network.clone();
 
 		let fut = async move {
-			log::info!(target: LOG_TARGET, "2 - Sending a shard request for {} shards", shard_ids_chunk.len());
-
 			let response = network
 				.request(
 					original_peer_id,
@@ -422,7 +412,6 @@ pub fn handle_incoming_blob_request<Block: BlockT>(
 ) where
 	Block: BlockT,
 {
-	log::info!(target: LOG_TARGET, "X - In handle incoming blob request");
 	let data = request.payload;
 	let response_tx = request.pending_response;
 	let peer_id = request.peer;
@@ -468,7 +457,6 @@ fn process_shard_request<Block: BlockT>(
 	store: &RocksdbShardStore<Block>,
 	response_tx: oneshot::Sender<OutgoingResponse>,
 ) {
-	log::info!(target: LOG_TARGET, "3 - processing incoming shard_request");
 	let expected_payload = build_signature_payload(
 		shard_request.hash,
 		shard_request.shard_ids.clone(),
@@ -532,13 +520,11 @@ async fn process_shard_response<Block>(
 ) where
 	Block: BlockT,
 {
-	log::info!(target: LOG_TARGET, "4 - processing shard_response");
 	match blob_handle
 		.shard_store
 		.insert_shards(&shard_response.shards)
 	{
 		Ok(()) => {
-			log::info!(target: LOG_TARGET, "Stored {} shards in the db", shard_response.shards.len());
 			send_shard_received_notification(shard_response, blob_handle, my_validator_id).await;
 		},
 		Err(e) => {
@@ -554,7 +540,6 @@ async fn send_shard_received_notification<Block>(
 ) where
 	Block: BlockT,
 {
-	log::info!(target: LOG_TARGET, "5 - Sending shard received notification");
 	let Some(network) = blob_handle.network.get() else {
 		log::error!(target: LOG_TARGET, "Network not yet registered, could not send shard received notification");
 		return;
@@ -609,8 +594,6 @@ fn handle_shard_received_notification<Block>(
 ) where
 	Block: BlockT,
 {
-	log::info!(target: LOG_TARGET, "6 - Handling incoming shard received notification");
-
 	let Some(client) = blob_handle.client.get() else {
 		log::error!(target: LOG_TARGET, "Client not yet registered");
 		return;
@@ -640,7 +623,7 @@ fn handle_shard_received_notification<Block>(
 			.saturating_add(TEMP_BLOB_TTL),
 	});
 	if !blob_metadata.is_notified {
-		log::info!(target: LOG_TARGET, "A Shard Received notification was received before Blob Received, creating empty blob metadata.");
+		log::warn!(target: LOG_TARGET, "A Shard Received notification was received before Blob Received, creating empty blob metadata.");
 	}
 
 	let address: sr25519::Public = shard_received.address.clone().into();
@@ -696,7 +679,6 @@ async fn send_cell_request<Block>(
 where
 	Block: BlockT,
 {
-	log::info!(target: LOG_TARGET, "7 - Sending cell request");
 	let blob_request = BlobRequest::CellRequest(cell_request);
 	let response = network
 		.request(
@@ -740,7 +722,6 @@ pub fn process_cell_request_inner<Block: BlockT>(
 	cell_request: CellRequest,
 	store: &RocksdbShardStore<Block>,
 ) -> CellResponse {
-	log::info!(target: LOG_TARGET, "8 - Processing cell request");
 	let mut cell_response = CellResponse {
 		hash: cell_request.hash,
 		cell_units_response: Vec::new(),
@@ -850,7 +831,6 @@ pub fn process_cell_request<Block: BlockT>(
 }
 
 pub fn process_cell_response(cell_response: CellResponse) -> CellResponse {
-	log::info!(target: LOG_TARGET, "9 - Processing cell response");
 	cell_response
 }
 

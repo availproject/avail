@@ -37,6 +37,7 @@ impl sc_executor::NativeExecutionDispatch for ExecutorDispatch {
 		frame_system::native::hosted_header_builder::hosted_header_builder::HostFunctions,
 		avail_base::mem_tmp_storage::hosted_mem_tmp_storage::HostFunctions,
 		da_runtime::kate::native::hosted_kate::HostFunctions,
+		da_control::extensions::native::hosted_commitment_builder::HostFunctions,
 	);
 
 	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
@@ -308,6 +309,8 @@ pub struct OwnershipEntry {
 pub struct BlobTxSummary {
 	/// The hash of the blob
 	pub hash: BlobHash,
+	/// The transaction index in the block
+	pub tx_index: u32,
 	/// Indicates if the blob was successfully uploaded to validators stores
 	pub success: bool,
 	/// In case of failure, this will contain the reason
@@ -320,6 +323,7 @@ impl BlobTxSummary {
 		input: Vec<BlobTxSummary>,
 	) -> Vec<(
 		H256,
+		u32,
 		bool,
 		Option<String>,
 		BTreeMap<u16, Vec<(AuthorityId, String, Vec<u8>)>>,
@@ -344,6 +348,7 @@ impl BlobTxSummary {
 
 				(
 					summary.hash,
+					summary.tx_index,
 					summary.success,
 					summary.reason,
 					ownership_as_tuples,

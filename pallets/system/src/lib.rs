@@ -103,6 +103,7 @@ use avail_core::{
 	ensure,
 	header::{Header as DaHeader, HeaderExtension},
 	traits::{ExtendedBlock, ExtendedHeader, GetAppId, MaybeCaller},
+	HeaderVersion,
 };
 
 use codec::{Decode, Encode, EncodeLike, FullCodec, MaxEncodedLen};
@@ -136,7 +137,7 @@ use sp_runtime::{
 	traits::{
 		AtLeast32Bit, BadOrigin, BlakeTwo256, BlockNumberProvider, Bounded, CheckEqual,
 		Dispatchable, Hash, Lookup, LookupError, MaybeDisplay, Member, One, Saturating,
-		SimpleBitOps, StaticLookup, UniqueSaturatedInto, Zero,
+		SimpleBitOps, StaticLookup, Zero,
 	},
 	DispatchError, RuntimeDebug,
 };
@@ -1864,12 +1865,14 @@ impl<T: Config> Pallet<T> {
 
 		let block_length = Self::block_length();
 
-		let extension = native::hosted_header_builder::da::HeaderExtensionBuilder::<T>::build(
-			header_extension_builder_data.to_app_extrinsics(),
-			header_extension_builder_data.data_root(),
-			block_length,
-			number.unique_saturated_into(),
-		);
+		let data_root = header_extension_builder_data.data_root();
+		let extension =
+			native::hosted_header_builder::da::HeaderExtensionBuilder::<T>::build_extension(
+				header_extension_builder_data.data_submissions,
+				data_root,
+				block_length,
+				HeaderVersion::V4,
+			);
 
 		let header = <HeaderFor<T> as ExtendedHeader>::new(
 			number,

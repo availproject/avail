@@ -12,6 +12,7 @@ workspace = true
 [dependencies]
 kate = { workspace = true, default-features = false }
 thiserror-no-std.workspace = true
+log.workspace = true
 
 [features]
 default = ["std"]

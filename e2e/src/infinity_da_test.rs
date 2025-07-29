@@ -73,7 +73,7 @@ pub async fn run() -> Result<(), ClientError> {
 		println!("---------- START Commitment generation {i} ---------- ");
 		let blob: Vec<u8> = repeat(byte).take(len - i).collect::<Vec<u8>>();
 		let blob_hash = H256::from(blake2_256(&blob));
-		let commitments = build_da_commitments(blob.clone(), 1024, 4096, Seed::default()).unwrap();
+		let commitments = build_da_commitments(blob.clone(), 1024, 4096, Seed::default());
 		println!("blob len = {:?}", blob.len());
 		println!("blob_hash = {:?}", blob_hash);
 		println!("commitments len = {:?}", commitments.len());
@@ -81,7 +81,7 @@ pub async fn run() -> Result<(), ClientError> {
 	}
 	for (i, (blob, hash, commitments)) in blobs.into_iter().enumerate() {
 		println!("---------- START Submission {i} ---------- ");
-		let options = Options::new().app_id(0).nonce(nonce + i as u32);
+		let options = Options::new().app_id((i % 5) as u32).nonce(nonce + i as u32);
 		let unsigned_tx = client.tx().data_availability().submit_blob_metadata(
 			hash,
 			blob.len() as u64,
@@ -90,6 +90,7 @@ pub async fn run() -> Result<(), ClientError> {
 
 		let tx = unsigned_tx.sign(&signer, options).await.unwrap().0.encode();
 
+		// println!("TX: {:?}", hex::encode(&tx));
 		if let Err(e) = submit_blob(&client.rpc_client, tx, blob).await {
 			println!("An error has occured: {e}");
 		}
