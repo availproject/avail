@@ -191,9 +191,9 @@ where
 
 			// Check commitments
 			commitments = provided_commitments;
+			// TODO Blob - get values from runtime
 			let generated_commitment =
-				build_da_commitments(blob.to_vec(), 1024, 4096, Seed::default())
-					.map_err(|e| internal_err!("Build commitment error: {e:?}"))?;
+				build_da_commitments(blob.to_vec(), 1024, 4096, Seed::default());
 			if commitments != generated_commitment {
 				return Err(internal_err!("submitted blob commitments: {commitments:?} does not correspond to generated commitments {generated_commitment:?}"));
 			}
@@ -315,7 +315,6 @@ where
 			.await
 			.map_err(|e| internal_err!("tx-pool error: {e}"))?;
 
-		log::info!(target:LOG_TARGET, "0 - Just submitted a TX to the pool after uploading the blob");
 
 		Ok(())
 	}
@@ -496,7 +495,7 @@ where
 	let mut ownership = BTreeMap::new();
 
 	if !role.is_authority() {
-		log::info!(target: LOG_TARGET, "RPC node (me) is not an authority, so I don't have to store shards");
+		log::warn!(target: LOG_TARGET, "RPC node (me) is not an authority, so I don't have to store shards");
 		return Ok((Vec::new(), ownership));
 	}
 

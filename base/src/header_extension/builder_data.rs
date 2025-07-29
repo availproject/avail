@@ -10,7 +10,6 @@ use binary_merkle_tree::{merkle_proof, merkle_root, MerkleProof};
 use codec::{Decode, Encode};
 use derive_more::Constructor;
 use sp_core::H256;
-use sp_io::hashing::keccak_256;
 use sp_runtime_interface::pass_by::PassByCodec;
 use sp_std::{iter::repeat, vec::Vec};
 
@@ -20,11 +19,12 @@ pub struct BridgedData {
 	pub addr_msg: AddressedMessage,
 }
 
-#[derive(Debug, Constructor, Encode, Decode, PartialEq, Eq)]
+#[derive(Debug, Constructor, Encode, Decode, PartialEq, Eq, Clone)]
 pub struct SubmittedData {
 	pub id: AppId,
 	pub tx_index: u32,
-	pub data: Vec<u8>,
+	pub hash: H256,
+	pub commitments: Vec<u8>,
 }
 
 impl GetAppId for SubmittedData {
@@ -64,11 +64,7 @@ impl HeaderExtensionBuilderData {
 		block: u32,
 		opaques: &[OpaqueExtrinsic],
 	) -> Self {
-		let failed_transactions = opaques
-			.iter()
-			.rev()
-			.find_map(|o| F::get_failed_transaction_ids(o));
-		let failed_transactions = failed_transactions.unwrap_or_else(|| Vec::new());
+		let failed_transactions = F::get_failed_transaction_ids(opaques);
 
 		let extracted_tx_datas: Vec<ExtractedTxData> = opaques
 			.into_iter()
@@ -167,7 +163,7 @@ impl HeaderExtensionBuilderData {
 		let balanced_len = next_power_of_two(&self.data_submissions);
 		self.data_submissions
 			.iter()
-			.map(|s| H256(keccak_256(&s.data)))
+			.map(|s| s.hash)
 			.chain(repeat(H256::zero()))
 			.take(balanced_len)
 	}
@@ -203,6 +199,9 @@ impl From<Vec<ExtractedTxData>> for HeaderExtensionBuilderData {
 				app_extrinsics.push(app_extrinsic);
 			}
 		}
+
+		// Sort data_submissions by app_id once
+		data_submissions.sort_by_key(|data| data.id);
 
 		Self {
 			data_submissions,
@@ -240,4 +239,119 @@ where
 		leaf_index: mp.leaf_index,
 		leaf: mp.leaf.as_ref().to_vec(),
 	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	// use sp_core::H256;
+
+	#[test]
+	fn test_from_raw_extrinsics() {
+		let extrinsics: Vec<Vec<u8>> = vec![vec![1, 2, 3], vec![4, 5, 6]];
+		let builder_data = HeaderExtensionBuilderData::from_raw_extrinsics::<()>(1, &extrinsics);
+		assert_eq!(builder_data.app_extrinsics.len(), 0);
+		assert_eq!(builder_data.data_submissions.len(), 0);
+		assert_eq!(builder_data.bridge_messages.len(), 0);
+	}
+
+	// #[test]
+	// fn test_data_root() {
+	// 	let builder_data = HeaderExtensionBuilderData {
+	// 		app_extrinsics: vec![],
+	// 		data_submissions: vec![SubmittedData {
+	// 			id: AppId::default(),
+	// 			tx_index: 0,
+	// 			data: vec![1, 2, 3],
+	// 			commitments: vec![],
+	// 		}],
+	// 		bridge_messages: vec![],
+	// 	};
+	// 	assert_ne!(builder_data.data_root(), H256::zero());
+	// }
+
+	// #[test]
+	// fn test_submitted_proof_of() {
+	// 	let builder_data = HeaderExtensionBuilderData::default();
+	// 	assert!(builder_data.submitted_proof_of(0).is_none());
+
+	// 	let builder_data = HeaderExtensionBuilderData {
+	// 		app_extrinsics: vec![],
+	// 		data_submissions: vec![SubmittedData {
+	// 			id: AppId::default(),
+	// 			tx_index: 0,
+	// 			data: vec![1, 2, 3],
+	// 			commitments: vec![],
+	// 		}],
+	// 		bridge_messages: vec![],
+	// 	};
+	// 	assert!(builder_data.submitted_proof_of(0).is_some());
+	// }
+
+	// #[test]
+	// fn test_leaf_idx() {
+	// 	let builder_data = HeaderExtensionBuilderData::default();
+	// 	assert!(builder_data.leaf_idx(0).is_none());
+
+	// 	let builder_data = HeaderExtensionBuilderData {
+	// 		app_extrinsics: vec![],
+	// 		data_submissions: vec![SubmittedData {
+	// 			id: AppId::default(),
+	// 			tx_index: 0,
+	// 			data: vec![1, 2, 3],
+	// 			commitments: vec![],
+	// 		}],
+	// 		bridge_messages: vec![],
+	// 	};
+	// 	assert_eq!(builder_data.leaf_idx(0), Some((0, SubTrie::DataSubmit)));
+	// }
+
+	// #[test]
+	// fn test_data_submissions_sorted_by_app_id() {
+	// 	let data_submissions = vec![
+	// 		SubmittedData {
+	// 			id: AppId(3),
+	// 			tx_index: 0,
+	// 			data: vec![1, 2, 3],
+	// 			commitments: vec![],
+	// 		},
+	// 		SubmittedData {
+	// 			id: AppId(1),
+	// 			tx_index: 1,
+	// 			data: vec![4, 5, 6],
+	// 			commitments: vec![],
+	// 		},
+	// 		SubmittedData {
+	// 			id: AppId(2),
+	// 			tx_index: 2,
+	// 			data: vec![7, 8, 9],
+	// 			commitments: vec![],
+	// 		},
+	// 		SubmittedData {
+	// 			id: AppId(1),
+	// 			tx_index: 3,
+	// 			data: vec![7, 8, 9],
+	// 			commitments: vec![],
+	// 		},
+	// 	];
+
+	// 	let mut builder_data = HeaderExtensionBuilderData {
+	// 		app_extrinsics: vec![],
+	// 		data_submissions,
+	// 		bridge_messages: vec![],
+	// 	};
+
+	// 	// Sort data_submissions by app_id
+	// 	builder_data.data_submissions.sort_by_key(|data| data.id);
+
+	// 	let sorted_ids: Vec<(AppId, u32)> = builder_data
+	// 		.data_submissions
+	// 		.iter()
+	// 		.map(|d| (d.id, d.tx_index))
+	// 		.collect();
+	// 	assert_eq!(
+	// 		sorted_ids,
+	// 		vec![(AppId(1), 1), (AppId(1), 3), (AppId(2), 2), (AppId(3), 0)]
+	// 	);
+	// }
 }

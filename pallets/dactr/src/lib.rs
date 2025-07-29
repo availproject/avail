@@ -24,7 +24,7 @@ pub use crate::{pallet::*, weights::WeightInfo};
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
-mod extensions;
+pub mod extensions;
 #[cfg(feature = "std")]
 pub mod mock;
 #[cfg(test)]
@@ -64,6 +64,7 @@ pub mod pallet {
 	#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, RuntimeDebug)]
 	pub struct BlobTxSummaryRuntime {
 		pub hash: H256,
+		pub tx_index: u32,
 		pub success: bool,
 		pub reason: Option<String>,
 		pub ownership: BTreeMap<u16, Vec<(AuthorityId, String, Vec<u8>)>>,
@@ -85,7 +86,7 @@ pub mod pallet {
 
 		parameter_types! {
 			pub const MinBlockRows: BlockLengthRows = BlockLengthRows(32);
-			pub const MaxBlockRows: BlockLengthRows = BlockLengthRows(1024);
+			pub const MaxBlockRows: BlockLengthRows = BlockLengthRows(4096);
 			pub const MinBlockCols: BlockLengthColumns = BlockLengthColumns(32);
 			pub const MaxBlockCols: BlockLengthColumns = BlockLengthColumns(1024);
 			pub const MaxAppKeyLength: u32 = 32;
@@ -538,6 +539,7 @@ impl BlobTxSummaryRuntime {
 	pub fn convert_into(
 		input: Vec<(
 			H256,
+			u32,
 			bool,
 			Option<String>,
 			BTreeMap<u16, Vec<(AuthorityId, String, Vec<u8>)>>,
@@ -545,8 +547,9 @@ impl BlobTxSummaryRuntime {
 	) -> Vec<BlobTxSummaryRuntime> {
 		input
 			.into_iter()
-			.map(|(hash, success, reason, ownership)| BlobTxSummaryRuntime {
+			.map(|(hash, tx_index, success, reason, ownership)| BlobTxSummaryRuntime {
 				hash,
+				tx_index,
 				success,
 				reason,
 				ownership,

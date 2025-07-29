@@ -16,6 +16,7 @@ avail-base = { workspace = true, default-features = false }
 avail-core = { workspace = true, default-features = false }
 kate = { workspace = true, default-features = false }
 frame-system = { workspace = true, default-features = false }
+da-commitment = {workspace = true, default-features = false}
 pallet-transaction-payment = { workspace = true, default-features = false }
 pallet-vector = { workspace = true, default-features = false }
 pallet-multisig = { workspace = true, default-features = false }

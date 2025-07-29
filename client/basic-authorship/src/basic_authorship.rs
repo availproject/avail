@@ -558,6 +558,7 @@ where
 		let mut transaction_pushed = false;
 
 		let mut submit_blob_metadata_calls = Vec::new();
+		let mut tx_index = 1; // We start at one to accomodate for timestamp set inherent
 		let mut blob_metadata: BTreeMap<H256, BlobMetadata<Block>> = BTreeMap::new();
 
 		let finalized_hash = self.client.info().finalized_hash;
@@ -570,6 +571,7 @@ where
 		};
 		let nb_validators_per_shard = get_validator_per_shard(nb_validators) as usize;
 
+		let prepare_block_check_wait_timer = time::Instant::now();
 		let end_reason = loop {
 			let pending_tx = if let Some(pending_tx) = pending_iterator.next() {
 				pending_tx
@@ -633,6 +635,7 @@ where
 				&mut submit_blob_metadata_calls,
 				&mut blob_metadata,
 				nb_validators_per_shard,
+				tx_index,
 			);
 			if should_continue {
 				continue;
@@ -642,6 +645,7 @@ where
 			match sc_block_builder::BlockBuilder::push(block_builder, pending_tx_data) {
 				Ok(()) => {
 					transaction_pushed = true;
+					tx_index += 1;
 					debug!(target: LOG_TARGET, "[{:?}] Pushed to the block.", pending_tx_hash);
 				},
 				Err(ApplyExtrinsicFailed(Validity(e))) if e.exhausted_resources() => {
@@ -681,6 +685,11 @@ where
 				},
 			}
 		};
+		log::info!(
+			target: LOG_TARGET,
+			"⏱️ [PERF] Total prepare + check wait next block time: {:?}",
+			prepare_block_check_wait_timer.elapsed()
+		);
 
 		if matches!(end_reason, EndProposingReason::HitBlockSizeLimit) && !transaction_pushed {
 			warn!(
@@ -689,6 +698,7 @@ where
 			);
 		}
 
+		let sampling_timer = time::Instant::now();
 		let (blob_txs_summary, total_blob_size) = if submit_blob_metadata_calls.len() > 0 {
 			sample_and_get_failed_blobs(
 				&submit_blob_metadata_calls,
@@ -701,6 +711,11 @@ where
 		} else {
 			(Vec::new(), 0)
 		};
+		log::info!(
+			target: LOG_TARGET,
+			"⏱️ [PERF] Total blob sampling time: {:?}",
+			sampling_timer.elapsed()
+		);
 
 		self.transaction_pool.remove_invalid(&unqueue_invalid);
 		Ok((end_reason, blob_txs_summary, total_blob_size))

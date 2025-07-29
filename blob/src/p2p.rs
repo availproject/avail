@@ -92,7 +92,6 @@ where
 			role,
 		};
 
-		log::info!(target: LOG_TARGET, "Blob service correctly initialized");
 		(
 			Arc::new(blob_handle),
 			blob_req_res_cfg,
@@ -152,7 +151,6 @@ where
 		spawn_handle: SpawnTaskHandle,
 		notif_service: Box<dyn NotificationService>,
 	) {
-		log::info!(target: LOG_TARGET, "Blob gossip protocol initialized");
 		let network = self.network.get().expect("Network should be registered");
 		let sync_service = self
 			.sync_service

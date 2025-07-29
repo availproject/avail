@@ -26,7 +26,7 @@ use sc_cli::{Result, SubstrateCli};
 use sc_service::PartialComponents;
 #[cfg(feature = "try-runtime")]
 use {
-	crate::service::ExecutorDispatch, da_runtime::constants::time::SLOT_DURATION,
+	avail_blob::types::ExecutorDispatch, da_runtime::constants::time::SLOT_DURATION,
 	try_runtime_cli::block_building_info::substrate_info,
 };
 

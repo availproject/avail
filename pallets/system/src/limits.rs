@@ -41,8 +41,8 @@ use sp_runtime_interface::pass_by::PassByCodec;
 use sp_std::vec::Vec;
 use static_assertions::const_assert;
 
-pub const MAX_BLOCK_COLUMNS: BlockLengthColumns = BlockLengthColumns(512);
-pub const MAX_BLOCK_ROWS: BlockLengthRows = BlockLengthRows(256);
+pub const MAX_BLOCK_ROWS: BlockLengthRows = BlockLengthRows(4096);
+pub const MAX_BLOCK_COLUMNS: BlockLengthColumns = BlockLengthColumns(1024);
 
 /// Block length limit configuration.
 #[derive(RuntimeDebug, PartialEq, Clone, PassByCodec, MaxEncodedLen, Serialize, Deserialize)]

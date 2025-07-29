@@ -57,7 +57,8 @@ decl_runtime_apis! {
 		) -> HeaderExtension;
 
 		fn build_data_root(block: u32, extrinsics: Vec<OpaqueExtrinsic>) -> H256;
-		fn check_if_extrinsic_is_post_inherent(uxt: &<Block as BlockT>::Extrinsic) -> bool;
+		fn check_if_extrinsic_is_vector_post_inherent(uxt: &<Block as BlockT>::Extrinsic) -> bool;
+		fn check_if_extrinsic_is_da_post_inherent(uxt: &<Block as BlockT>::Extrinsic) -> bool;
 	}
 
 	pub trait VectorApi {
@@ -415,7 +416,7 @@ impl_runtime_apis! {
 			HeaderExtensionBuilder::<Runtime>::build(app_extrinsics, data_root, block_length, block_number)
 		}
 
-		fn check_if_extrinsic_is_post_inherent(uxt: &<Block as BlockT>::Extrinsic) -> bool {
+		fn check_if_extrinsic_is_vector_post_inherent(uxt: &<Block as BlockT>::Extrinsic) -> bool {
 			use frame_support::traits::ExtrinsicCall;
 
 			let Ok(xt) =  TryInto::<&RTExtrinsic>::try_into(uxt);
@@ -427,6 +428,20 @@ impl_runtime_apis! {
 
 
 			matches!(vector_pallet_call, pallet_vector::Call::failed_send_message_txs {failed_txs: _})
+		}
+
+		fn check_if_extrinsic_is_da_post_inherent(uxt: &<Block as BlockT>::Extrinsic) -> bool {
+			use frame_support::traits::ExtrinsicCall;
+
+			let Ok(xt) =  TryInto::<&RTExtrinsic>::try_into(uxt);
+
+			let da_pallet_call = match xt.call() {
+				RuntimeCall::DataAvailability(call) => call,
+				_ => return false
+			};
+
+
+			matches!(da_pallet_call, da_control::Call::submit_blob_txs_summary {blob_txs_summary: _, total_blob_size: _})
 		}
 	}
 
@@ -499,6 +514,7 @@ impl_runtime_apis! {
 	impl avail_base::PostInherentsProvider<Block> for Runtime {
 		fn create_post_inherent_extrinsics(data: avail_base::StorageMap, blob_txs_summary: Vec<(
 			H256,
+			u32,
 			bool,
 			Option<String>,
 			BTreeMap<u16, Vec<(AuthorityDiscoveryId, String, Vec<u8>)>>,
