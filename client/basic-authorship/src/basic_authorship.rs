@@ -394,6 +394,7 @@ where
 		deadline: time::Instant,
 		block_size_limit: Option<usize>,
 	) -> Result<Proposal<Block, PR::Proof>, sp_blockchain::Error> {
+		log::info!("-------- START propose_with");
 		let block_timer = time::Instant::now();
 		let mut block_builder = BlockBuilderBuilder::new(&*self.client)
 			.on_parent_block(self.parent_hash)
@@ -421,6 +422,7 @@ where
 			PR::into_proof(proof).map_err(|e| sp_blockchain::Error::Application(Box::new(e)))?;
 
 		self.print_summary(&block, end_reason, block_took, block_timer.elapsed());
+		log::info!("-------- END propose_with");
 		Ok(Proposal {
 			block,
 			proof,
@@ -571,7 +573,6 @@ where
 		};
 		let nb_validators_per_shard = get_validator_per_shard(nb_validators) as usize;
 
-		let prepare_block_check_wait_timer = time::Instant::now();
 		let end_reason = loop {
 			let pending_tx = if let Some(pending_tx) = pending_iterator.next() {
 				pending_tx
@@ -685,11 +686,6 @@ where
 				},
 			}
 		};
-		log::info!(
-			target: LOG_TARGET,
-			"⏱️ [PERF] Total prepare + check wait next block time: {:?}",
-			prepare_block_check_wait_timer.elapsed()
-		);
 
 		if matches!(end_reason, EndProposingReason::HitBlockSizeLimit) && !transaction_pushed {
 			warn!(
@@ -698,24 +694,19 @@ where
 			);
 		}
 
-		let sampling_timer = time::Instant::now();
-		let (blob_txs_summary, total_blob_size) = if submit_blob_metadata_calls.len() > 0 {
-			sample_and_get_failed_blobs(
-				&submit_blob_metadata_calls,
-				self.network.clone(),
-				&self.keystore,
-				&self.shard_store,
-				blob_metadata,
-			)
-			.await
-		} else {
-			(Vec::new(), 0)
-		};
-		log::info!(
-			target: LOG_TARGET,
-			"⏱️ [PERF] Total blob sampling time: {:?}",
-			sampling_timer.elapsed()
-		);
+		// let (blob_txs_summary, total_blob_size) = if submit_blob_metadata_calls.len() > 0 {
+		// 	sample_and_get_failed_blobs(
+		// 		&submit_blob_metadata_calls,
+		// 		self.network.clone(),
+		// 		&self.keystore,
+		// 		&self.shard_store,
+		// 		blob_metadata,
+		// 	)
+		// 	.await
+		// } else {
+		// 	(Vec::new(), 0)
+		// };
+		let (blob_txs_summary, total_blob_size) = (Vec::new(), 0);
 
 		self.transaction_pool.remove_invalid(&unqueue_invalid);
 		Ok((end_reason, blob_txs_summary, total_blob_size))
