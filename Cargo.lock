@@ -1055,6 +1055,7 @@ dependencies = [
  "jsonrpsee",
  "kate",
  "kate-rpc",
+ "log",
  "mmr-rpc",
  "pallet-im-online",
  "pallet-transaction-payment",

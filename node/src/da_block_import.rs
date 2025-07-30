@@ -173,6 +173,8 @@ where
 		&mut self,
 		block: BlockImportParams<B>,
 	) -> Result<ImportResult, Self::Error> {
+		log::info!("IMPORTING BLOCK - Number: {:?} - Hash: {:?}", block.header.number, block.header.hash());
+
 		let _metric_observer = MetricObserver::new(ObserveKind::ImportBlockTotalExecutionTime);
 
 		// We only want to check for blocks that are not from "Own"

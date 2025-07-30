@@ -163,7 +163,7 @@ impl HeaderExtensionBuilderData {
 		let balanced_len = next_power_of_two(&self.data_submissions);
 		self.data_submissions
 			.iter()
-			.map(|s| s.hash)
+			.map(|s| s.hash) // TODO BLOB, we're using blake but this expects keccak, maybe we can use keccak everywhere since blake is not used
 			.chain(repeat(H256::zero()))
 			.take(balanced_len)
 	}
