@@ -1,3 +1,5 @@
+#![cfg(feature = "std")]
+
 use kate::{
 	couscous::multiproof_params,
 	gridgen::core::{AsBytes, EvaluationGrid},

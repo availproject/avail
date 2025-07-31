@@ -61,7 +61,7 @@ use substrate_prometheus_endpoint::Registry as PrometheusRegistry;
 /// Be aware that there is also an upper packet size on what the networking code
 /// will accept. If the block doesn't fit in such a package, it can not be
 /// transferred to other nodes.
-pub const DEFAULT_BLOCK_SIZE_LIMIT: usize = 4 * 1024 * 1024 + 512;
+pub const DEFAULT_BLOCK_SIZE_LIMIT: usize = 512 * 1024 * 1024 + 512;
 
 const DEFAULT_SOFT_DEADLINE_PERCENT: Percent = Percent::from_percent(50);
 
@@ -422,7 +422,8 @@ where
 			PR::into_proof(proof).map_err(|e| sp_blockchain::Error::Application(Box::new(e)))?;
 
 		self.print_summary(&block, end_reason, block_took, block_timer.elapsed());
-		log::info!("-------- END propose_with");
+		let size = block.clone().encode().len();
+		log::info!("-------- END propose_with, block size: {size:?}");
 		Ok(Proposal {
 			block,
 			proof,
