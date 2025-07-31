@@ -394,7 +394,6 @@ where
 		deadline: time::Instant,
 		block_size_limit: Option<usize>,
 	) -> Result<Proposal<Block, PR::Proof>, sp_blockchain::Error> {
-		log::info!("-------- START propose_with");
 		let block_timer = time::Instant::now();
 		let mut block_builder = BlockBuilderBuilder::new(&*self.client)
 			.on_parent_block(self.parent_hash)
@@ -422,8 +421,6 @@ where
 			PR::into_proof(proof).map_err(|e| sp_blockchain::Error::Application(Box::new(e)))?;
 
 		self.print_summary(&block, end_reason, block_took, block_timer.elapsed());
-		let size = block.clone().encode().len();
-		log::info!("-------- END propose_with, block size: {size:?}");
 		Ok(Proposal {
 			block,
 			proof,
