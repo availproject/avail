@@ -36,6 +36,10 @@ where
 		)
 	}
 
+	pub fn is_da_light_call(&self) -> bool {
+		matches!(self.0.is_sub_type(), Some(DACall::<T>::da_light { .. }))
+	}
+
 	pub fn is_send_message_call(&self) -> bool {
 		matches!(
 			self.0.is_sub_type(),
@@ -80,6 +84,8 @@ where
 		_len: usize,
 	) -> TransactionValidity {
 		let call = WrappedCall::<T>(call);
+		// check if the call is da_light & ban it
+		ensure!(!call.is_da_light_call(), InvalidTransaction::Call);
 		let Some(calls) = call.get_batch_call() else {
 			return Ok(ValidTransaction::default());
 		};
@@ -105,6 +111,10 @@ where
 
 			ensure!(
 				!call.is_submit_data_call(),
+				InvalidTransaction::Custom(UnexpectedSubmitDataCall as u8)
+			);
+			ensure!(
+				!call.is_da_light_call(),
 				InvalidTransaction::Custom(UnexpectedSubmitDataCall as u8)
 			);
 			ensure!(
