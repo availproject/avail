@@ -9,6 +9,7 @@ use sp_authority_discovery::AuthorityId;
 use sp_core::H256;
 
 use crate::{p2p::BlobHandle, store::RocksdbShardStore};
+use da_runtime::kate::GDataProof;
 use da_runtime::{apis::RuntimeApi, NodeBlock as Block};
 use once_cell::sync::OnceCell;
 use sc_executor::NativeElseWasmExecutor;
@@ -241,14 +242,10 @@ pub struct ShardReceived {
 }
 
 /// Structure used in the Cell request
-#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
-pub struct CellUnitRequest {
-	/// The shard_id required
-	pub shard_id: u16,
-	/// The start index of the linear piece of data we want
-	pub start: u64,
-	/// The end index of the linear piece of data we want
-	pub end: u64,
+#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, Hash)]
+pub struct CellCoordinate {
+	pub row: u32,
+	pub col: u32,
 }
 
 /// Structure for the request when cells are requested from a validator
@@ -256,8 +253,8 @@ pub struct CellUnitRequest {
 pub struct CellRequest {
 	/// The hash of the blob we required
 	pub hash: BlobHash,
-	/// The specific cell ranges we need
-	pub cell_units: Vec<CellUnitRequest>,
+	/// The specific cell positions we need
+	pub cells: Vec<CellCoordinate>,
 	/// The data the validator signs to prove he received the shard (blob_hash - shard_ids - "cell")
 	pub signature_data: BlobSignatureData,
 }
@@ -281,8 +278,8 @@ pub struct CellUnitResponse {
 pub struct CellResponse {
 	/// The hash of the blob we required
 	pub hash: BlobHash,
-	/// The specific cell ranges data
-	pub cell_units_response: Vec<CellUnitResponse>,
+	/// The specific cell proofs
+	pub cell_proofs: Vec<GDataProof>,
 }
 
 /// Structure for the signature that validator sends when sending notification / requests
