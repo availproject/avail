@@ -1,3 +1,5 @@
+#![cfg(feature = "std")]
+
 use da_commitment::build_da_commitments;
 use frame_system::limits::BlockLength;
 use kate::Seed;
