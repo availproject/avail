@@ -6,8 +6,12 @@ edition = "2021"
 [dependencies]
 da-runtime = { workspace = true, default-features = false }
 da-control = { workspace = true, default-features = false }
+avail-core = { workspace = true, default-features = false }
 kate = { workspace = true, default-features = false }
+kate-recovery = { workspace = true, default-features = false }
 
+rand = { workspace = true }
+rayon = { workspace = true }
 codec = { package = "parity-scale-codec", version = "3", default-features = false }
 scale-info = { workspace = true, default-features = false }
 serde = { workspace = true, default-features = false }

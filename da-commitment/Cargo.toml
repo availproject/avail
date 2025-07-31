@@ -15,4 +15,6 @@ thiserror-no-std.workspace = true
 
 [features]
 default = ["std"]
-std = []
+std = [
+    "kate/std",
+]
