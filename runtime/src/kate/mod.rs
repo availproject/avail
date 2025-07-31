@@ -47,7 +47,7 @@ impl GCellBlock {
 /// # NOTE
 /// `Serde` requires a custom implementation for `GProof` due to the array size (greater than `[T;32]`).
 /// In this case, we transform into a `Vec<u8>` as intermediate step to serialize/deserialize.
-#[derive(Encode, Decode, TypeInfo, PassByInner, Debug, Clone, Copy)]
+#[derive(Encode, Decode, PartialEq, Eq, TypeInfo, PassByInner, Debug, Clone, Copy)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "std", serde(try_from = "Vec<u8>", into = "Vec<u8>"))]
 pub struct GProof([u8; 48]);

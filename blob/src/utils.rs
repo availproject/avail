@@ -3,17 +3,29 @@ use crate::{
 	process_cell_request_inner, send_cell_request,
 	store::{RocksdbShardStore, ShardStore},
 	types::{
-		BlobHash, BlobMetadata, BlobSignatureData, BlobTxSummary, CellRequest, CellUnitRequest,
-		Shard, ShardRequest,
+		BlobHash, BlobMetadata, BlobSignatureData, BlobTxSummary, CellCoordinate, CellRequest,
+		OwnershipEntry, Shard, ShardRequest,
 	},
-	LOG_TARGET, MAX_BLOB_RETRY_BEFORE_DISCARDING, MAX_TRANSACTION_VALIDITY, MIN_SHARD_HOLDER_COUNT,
-	MIN_SHARD_HOLDER_PERCENTAGE, MIN_TRANSACTION_VALIDITY, SHARD_SIZE,
+	CELL_COUNT, LOG_TARGET, MAX_BLOB_RETRY_BEFORE_DISCARDING, MAX_TRANSACTION_VALIDITY,
+	MIN_SHARD_HOLDER_COUNT, MIN_SHARD_HOLDER_PERCENTAGE, MIN_TRANSACTION_VALIDITY, SHARD_SIZE,
 };
 use anyhow::{anyhow, Context, Result};
 use codec::{Decode, Encode};
 use da_control::Call;
-use da_runtime::{RuntimeCall, UncheckedExtrinsic};
-use futures::{future::try_join_all, stream::FuturesUnordered, StreamExt};
+use da_runtime::{kate::GDataProof, RuntimeCall, UncheckedExtrinsic};
+use futures::{stream::FuturesUnordered, StreamExt};
+use kate::{
+	couscous::multiproof_params,
+	gridgen::core::AsBytes,
+	pmp::{ark_bls12_381::Bls12_381, Commitment},
+};
+use kate_recovery::{
+	commons::ArkPublicParams,
+	data::SingleCell,
+	matrix::{Dimensions, Position},
+	proof::verify_v2,
+};
+use rand::{thread_rng, Rng};
 use sc_client_api::HeaderBackend;
 use sc_keystore::{Keystore, LocalKeystore};
 use sc_network::{NetworkService, NetworkStateInfo, PeerId};
@@ -27,7 +39,14 @@ use sp_runtime::{
 	SaturatedConversion,
 };
 use sp_transaction_pool::runtime_api::TaggedTransactionQueue;
-use std::{collections::BTreeMap, str::FromStr, sync::Arc};
+use std::{
+	collections::{BTreeMap, HashSet},
+	str::FromStr,
+	sync::Arc,
+};
+type ArkCommitment = Commitment<Bls12_381>;
+
+static PP: std::sync::OnceLock<ArkPublicParams> = std::sync::OnceLock::new();
 
 /// Get the number of shard for a blob based on its size
 pub fn get_nb_shards_from_blob_size(size: usize) -> u16 {
@@ -239,122 +258,27 @@ pub async fn sample_and_get_failed_blobs<Block: BlockT>(
 			commitments,
 		}) = tx
 		{
-			let network = network.clone();
-			let shard_store = shard_store.clone();
+			let network = Arc::clone(&network);
+			let keystore = Arc::clone(keystore);
 			let blob_metadata = blob_metadata.clone();
-			let fut = async move {
-				// Get blob metadata from storage
-				let Some(meta) = blob_metadata.get(&blob_hash) else {
-					return Err((
-						blob_hash,
-						tx_index,
-						"Blob metadata not found in the store to sample the blob".to_string(),
-					));
-				};
-				// Check that values match
-				if meta.size != size || meta.commitments != commitments {
-					return Err((
-						blob_hash,
-						tx_index,
-						"Blob metadata from the store did not match the one from the transaction"
-							.to_string(),
-					));
-				}
-
-				// TODO Blob GET REAL SHARDS NEEDED FOR SAMPLING, for now we sample first / last, and we take 10% of a shard
-				let shard_ids = if meta.nb_shards > 1 {
-					vec![0, meta.nb_shards - 1]
-				} else {
-					vec![0]
-				};
-
-				let mut cell_futures = Vec::new();
-				let mut own_cell_response = Vec::new();
-				for shard_id in shard_ids {
-					let Some(peers) = meta.ownership.get(&shard_id) else {
-						return Err((
-							blob_hash,
-							tx_index,
-							format!("No ownership find in the blob_metadata for the shard {shard_id} of blob hash {blob_hash}"),
-						));
-					};
-					let peer_ids: Vec<PeerId> = peers
-						.into_iter()
-						.filter_map(|o| PeerId::from_str(&o.peer_id_encoded).ok())
-						.collect();
-					if peer_ids.is_empty() {
-						return Err((
-							blob_hash,
-							tx_index,
-							format!("Ownership is empty in the blob_metadata for the shard {shard_id} of blob hash {blob_hash}"),
-						));
-					}
-					let my_peer_id = network.local_peer_id();
-
-					let signature_payload =
-						build_signature_payload(blob_hash, vec![shard_id], b"cell".to_vec());
-					let signature_data = match sign_blob_data_inner(keystore, signature_payload) {
-						Ok(s) => s,
-						Err(e) => {
-							return Err((
-								blob_hash,
-								tx_index,
-								format!(
-									"Could not sign data for cell request {}: {}",
-									blob_hash, e
-								),
-							));
-						},
-					};
-
-					let req = CellRequest {
-						hash: blob_hash,
-						cell_units: vec![CellUnitRequest {
-							shard_id,
-							start: 0,
-							end: if shard_id == meta.nb_shards - 1 {
-								((meta.size % (meta.nb_shards as u64)) as f64 * 0.1).floor() as u64
-							} else {
-								(SHARD_SIZE as f64 * 0.1).floor() as u64
-							},
-						}],
-						signature_data,
-					};
-					if !peer_ids.contains(&my_peer_id) {
-						// TODO Blob: Actually select correct peer and make retry mechanism with others
-						cell_futures.push(send_cell_request(req, &network, peer_ids[0]));
-					} else {
-						// If i'm supposed to have this shard, might as well get it from myself
-						own_cell_response.push(process_cell_request_inner(req, &shard_store));
-					}
-				}
-
-				let mut results = match try_join_all(cell_futures).await {
-					Ok(r) => r,
-					Err(e) => {
-						return Err((
-							blob_hash,
-							tx_index,
-							format!("Cell request error for blob {}: {}", blob_hash, e),
-						));
-					},
-				};
-
-				results.extend(own_cell_response);
-
-				// TODO Blob: Use results to sample
-
-				// If ok, we can add the size and the summary
-				let entry = BlobTxSummary {
-					hash: blob_hash,
+			log::debug!(
+				target: LOG_TARGET,
+				"Verifying random cell proofs for blob {:?}",
+				blob_hash
+			);
+			tx_futures.push(async move {
+				handle_blob_sample_request(
+					blob_hash,
+					size,
+					commitments,
+					network,
+					keystore,
+					&blob_metadata,
+					shard_store,
 					tx_index,
-					success: true,
-					reason: None,
-					ownership: meta.ownership.clone(),
-				};
-				Ok((entry, size))
-			};
-			tx_futures.push(fut);
+				)
+				.await
+			});
 		}
 	}
 
@@ -364,21 +288,286 @@ pub async fn sample_and_get_failed_blobs<Block: BlockT>(
 		match res {
 			Ok((entry, size)) => {
 				total_size += size;
-				blob_txs_summary.push(entry)
+				blob_txs_summary.push(entry);
 			},
-			Err((blob_hash, tx_index, reason)) => blob_txs_summary.push(BlobTxSummary {
-				hash: blob_hash,
-				tx_index,
-				success: false,
-				reason: Some(reason),
-				ownership: BTreeMap::new(),
-			}),
-		};
+			Err((blob_hash, tx_index, reason)) => {
+				log::error!(
+					target: LOG_TARGET,
+					"Failed to verify cell proofs for {:?}: {:?}",
+					blob_hash, reason
+				);
+				blob_txs_summary.push(BlobTxSummary {
+					hash: blob_hash,
+					success: false,
+					reason: Some(reason),
+					ownership: BTreeMap::new(),
+					tx_index,
+				});
+			},
+		}
 	}
 
 	blob_txs_summary.sort_by_key(|summary| summary.tx_index);
 
 	(blob_txs_summary, total_size)
+}
+
+async fn handle_blob_sample_request<Block: BlockT>(
+	blob_hash: BlobHash,
+	size: u64,
+	commitments: Vec<u8>,
+	network: Arc<NetworkService<Block, Block::Hash>>,
+	keystore: Arc<LocalKeystore>,
+	blob_metadata: &BTreeMap<BlobHash, BlobMetadata<Block>>,
+	shard_store: &Arc<RocksdbShardStore<Block>>,
+	tx_index: u32,
+) -> Result<(BlobTxSummary, u64), (BlobHash, u32, String)> {
+	let meta = match blob_metadata.get(&blob_hash) {
+		Some(m) => m,
+		None => {
+			return Err((
+				blob_hash,
+				tx_index,
+				"Blob metadata not found in the store to sample the blob".into(),
+			));
+		},
+	};
+
+	if meta.size != size || meta.commitments != commitments {
+		return Err((
+			blob_hash,
+			tx_index,
+			"Blob metadata from the store did not match the one from the transaction".into(),
+		));
+	}
+
+	let original_commitments: Vec<ArkCommitment> = commitments
+		.chunks_exact(48)
+		.enumerate()
+		.map(|(i, chunk)| {
+			let chunk_array: [u8; 48] = chunk.try_into().map_err(|_| {
+				(
+					blob_hash,
+					tx_index,
+					format!("Chunk at index {i} is not 48 bytes long"),
+				)
+			})?;
+
+			ArkCommitment::from_bytes(&chunk_array).map_err(|e| {
+				log::error!(target: LOG_TARGET, "Invalid commitment at index {i}: {e}");
+				(blob_hash, tx_index, format!("Invalid commitment at index {i}: {e}"))
+			})
+		})
+		.collect::<Result<_, _>>()?;
+
+	let extended_commitments =
+		ArkCommitment::extend_commitments(&original_commitments, original_commitments.len() * 2)
+			.expect("extending commitments should work if dimensions are valid");
+	let commitments_bytes: Vec<_> = extended_commitments
+		.into_iter()
+		.map(|c| {
+			c.to_bytes()
+				.expect("Valid commitments should be serialisable")
+		})
+		.collect();
+	let rows = original_commitments.len();
+	let cols = 1024;
+
+	let dimension = Dimensions::new(rows as u16, cols)
+		.ok_or_else(|| (blob_hash, tx_index, "Invalid dimension".into()))?;
+
+	let cells = generate_random_cells(dimension, CELL_COUNT);
+
+	let signature_payload = build_cell_signature_payload(blob_hash, cells.clone());
+	let signature_data = sign_blob_data_inner(&keystore, signature_payload)
+		.map_err(|e| (blob_hash, tx_index, format!("Signing failed: {}", e)))?;
+
+	let req = CellRequest {
+		hash: blob_hash,
+		cells,
+		signature_data,
+	};
+
+	let peers = get_blob_owners(meta.ownership.clone());
+	if peers.is_empty() {
+		return Err((blob_hash, tx_index, "No peers available".into()));
+	}
+	let local_peer_id = network.local_peer_id();
+	if peers.contains(&local_peer_id) {
+		log::debug!(target: LOG_TARGET, "Trying to verify cell proofs locally for blob {:?}", blob_hash);
+		match process_cell_request_inner(req.clone(), shard_store) {
+			Ok(response) => {
+				if verify_cell_proofs(
+					response.cell_proofs,
+					commitments_bytes.clone(),
+					req.clone(),
+					dimension,
+				)
+				.is_ok()
+				{
+					let entry = BlobTxSummary {
+						hash: blob_hash,
+						success: true,
+						reason: None,
+						ownership: meta.ownership.clone(),
+						tx_index,
+					};
+					return Ok((entry, size));
+				} else {
+					log::warn!(
+						target: LOG_TARGET,
+						"Invalid cell proof from peer {:?} for blob {:?}",
+						local_peer_id,
+						blob_hash
+					);
+				}
+			},
+			Err(e) => {
+				log::warn!(
+					target: LOG_TARGET,
+					"Failed to get cell proof from peer {:?} for blob {:?}: {}",
+					local_peer_id,
+					blob_hash,
+					e
+				);
+			},
+		};
+	}
+
+	for peer in peers {
+		if peer == local_peer_id {
+			continue; // Already tried local
+		}
+		match send_cell_request(req.clone(), &network, peer).await {
+			Ok(response) => {
+				if verify_cell_proofs(
+					response.cell_proofs,
+					commitments_bytes.clone(),
+					req.clone(),
+					dimension,
+				)
+				.is_ok()
+				{
+					let entry = BlobTxSummary {
+						hash: blob_hash,
+						success: true,
+						reason: None,
+						ownership: meta.ownership.clone(),
+						tx_index,
+					};
+					return Ok((entry, size));
+				} else {
+					log::warn!(
+						target: LOG_TARGET,
+						"Invalid cell proof from peer {:?} for blob {:?}",
+						peer,
+						blob_hash
+					);
+				}
+			},
+			Err(e) => {
+				log::warn!(
+					target: LOG_TARGET,
+					"Failed to get cell proof from peer {:?} for blob {:?}: {}",
+					peer,
+					blob_hash,
+					e
+				);
+			},
+		}
+	}
+
+	// All peers failed or returned invalid/missing proofs
+	Err((
+		blob_hash,
+		tx_index,
+		"All peers failed to return valid cell proof".into(),
+	))
+}
+
+fn verify_cell_proofs(
+	proofs: Vec<GDataProof>,
+	commitments: Vec<[u8; 48]>,
+	request: CellRequest,
+	dimension: Dimensions,
+) -> Result<()> {
+	let pp = PP.get_or_init(multiproof_params);
+
+	for (coord, proof) in request.cells.iter().zip(proofs.iter()) {
+		let mut data_proof = [0u8; 80];
+		data_proof[..48].copy_from_slice(&proof.1.encode());
+		let mut data_bytes = [0u8; 32];
+		proof.0.to_big_endian(&mut data_bytes);
+		data_proof[48..].copy_from_slice(&data_bytes);
+
+		let cell = SingleCell::new(
+			Position {
+				row: coord.row,
+				col: coord.col as u16,
+			},
+			data_proof,
+		);
+
+		let commitment = commitments
+			.get(coord.row as usize)
+			.ok_or_else(|| anyhow::anyhow!("Missing commitment for row {}", coord.row))?;
+
+		if let Err(e) = verify_v2(pp, dimension, commitment, &cell) {
+			log::warn!(
+				target: LOG_TARGET,
+				"Cell proof verification failed for {:?}: {e}",
+				coord
+			);
+			return Err(anyhow::anyhow!(
+				"Cell proof verification failed at row {}, col {}",
+				coord.row,
+				coord.col
+			));
+		}
+	}
+	log::debug!(
+		target: LOG_TARGET,
+		"Verified random cell proofs for blob {:?}",
+		request.hash
+	);
+	Ok(())
+}
+
+fn get_blob_owners(owners: BTreeMap<u16, Vec<OwnershipEntry>>) -> Vec<PeerId> {
+	let mut unique_peers = HashSet::new();
+
+	for entries in owners.values() {
+		for entry in entries {
+			if let Ok(peer_id) = PeerId::from_str(&entry.peer_id_encoded) {
+				unique_peers.insert(peer_id);
+			} else {
+				log::warn!(target: "blob", "Invalid PeerId string: {}", entry.peer_id_encoded);
+			}
+		}
+	}
+
+	unique_peers.into_iter().collect()
+}
+
+fn generate_random_cells(dimensions: Dimensions, cell_count: u32) -> Vec<CellCoordinate> {
+	let (max_cells, row_limit) = (dimensions.extended_size(), dimensions.extended_rows());
+	let count = max_cells.min(cell_count);
+
+	if max_cells < cell_count {
+		log::debug!("Max cells {max_cells} < requested {cell_count}");
+	}
+
+	let mut rng = thread_rng();
+	let mut indices = HashSet::with_capacity(count as usize);
+
+	while indices.len() < count as usize {
+		indices.insert(CellCoordinate {
+			row: rng.gen_range(0..row_limit),
+			col: rng.gen_range(0..dimensions.cols().into()) as u32,
+		});
+	}
+
+	indices.into_iter().collect()
 }
 
 pub fn build_signature_payload(
@@ -390,6 +579,13 @@ pub fn build_signature_payload(
 	payload.extend(blob_hash.encode());
 	payload.extend(shard_ids.encode());
 	payload.extend(additional.encode());
+	payload
+}
+
+pub fn build_cell_signature_payload(blob_hash: BlobHash, cells: Vec<CellCoordinate>) -> Vec<u8> {
+	let mut payload = Vec::new();
+	payload.extend(blob_hash.encode());
+	payload.extend(cells.encode());
 	payload
 }
 
