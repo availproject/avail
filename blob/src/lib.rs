@@ -2,17 +2,27 @@ use crate::{
 	p2p::BlobHandle,
 	types::{
 		BlobHash, BlobMetadata, BlobNotification, BlobReceived, BlobRequest, BlobResponse,
-		BlobSignatureData, CellRequest, CellResponse, CellUnitResponse, Shard, ShardQueryRequest,
-		ShardReceived, ShardRequest, ShardResponse, BLOB_REQ_PROTO,
+		BlobSignatureData, CellRequest, CellResponse, Shard, ShardQueryRequest, ShardReceived,
+		ShardRequest, ShardResponse, BLOB_REQ_PROTO,
 	},
 	utils::{
-		build_signature_payload, fetch_shards, get_my_validator_id, get_shards_to_store,
-		sign_blob_data, verify_signed_blob_data,
+		build_cell_signature_payload, build_signature_payload, fetch_shards, get_my_validator_id,
+		get_shards_to_store, sign_blob_data, verify_signed_blob_data,
 	},
 };
 use anyhow::{anyhow, Result};
+use avail_core::{BlockLengthColumns, BlockLengthRows};
 use codec::{Decode, Encode};
+use da_runtime::kate::{GDataProof, GProof, GRawScalar};
 use futures::{channel::oneshot, stream::FuturesUnordered, StreamExt};
+use kate::{
+	com::Cell,
+	couscous::multiproof_params,
+	gridgen::core::{AsBytes as _, EvaluationGrid as EGrid},
+	Seed,
+};
+use kate_recovery::commons::ArkPublicParams;
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use sc_authority_discovery::AuthorityDiscovery;
 use sc_client_api::HeaderBackend;
 use sc_network::{
@@ -24,7 +34,8 @@ use sp_authority_discovery::AuthorityId;
 use sp_core::sr25519;
 use sp_runtime::{traits::Block as BlockT, Perbill, SaturatedConversion};
 use std::{
-	collections::BTreeMap, future::Future, pin::Pin, str::FromStr, sync::Arc, time::Duration,
+	collections::BTreeMap, future::Future, num::NonZeroU16, pin::Pin, str::FromStr, sync::Arc,
+	time::Duration,
 };
 use store::{RocksdbShardStore, ShardStore};
 
@@ -76,6 +87,10 @@ const MAX_BLOB_RETRY_BEFORE_DISCARDING: u16 = 1;
 const NOTIFICATION_EXPIRATION_PERIOD: u64 = 180;
 /// The number of retries the RPC is going to make before dropping a user shard request
 const MAX_RPC_RETRIES: u8 = 3;
+/// Number of cells required for 99.99% confidence
+const CELL_COUNT: u32 = 14;
+
+static PP: std::sync::OnceLock<ArkPublicParams> = std::sync::OnceLock::new();
 
 pub async fn decode_blob_notification<Block>(data: &[u8], blob_handle: &BlobHandle<Block>)
 where
@@ -718,67 +733,125 @@ where
 	}
 }
 
+// Ideally, only nodes which has entire blob stored in its shard_store can process cell requests
 pub fn process_cell_request_inner<Block: BlockT>(
 	cell_request: CellRequest,
 	store: &RocksdbShardStore<Block>,
-) -> CellResponse {
-	let mut cell_response = CellResponse {
-		hash: cell_request.hash,
-		cell_units_response: Vec::new(),
+) -> Result<CellResponse> {
+	log::info!(target: LOG_TARGET, "8 - Processing cell request");
+	let hash = cell_request.hash;
+	// get blob metadata from the store
+	let blob_metadata = match store.get_blob_metadata(&hash).ok().flatten() {
+		Some(metadata) => metadata,
+		None => {
+			log::error!("Failed to get blob metadata for hash: {:?}", hash);
+			return Err(anyhow!(format!(
+				"Blob metadata not found or retrieval failed"
+			)));
+		},
 	};
-	// Use CellRequest and store to get the required data
-	for cell_unit in cell_request.cell_units {
-		let mut cell_unit_response = CellUnitResponse {
-			shard_id: cell_unit.shard_id,
-			start: cell_unit.start,
-			end: cell_unit.end,
-			data: Vec::new(),
-			failed_reason: None,
+	// get blob from the store which is needed to compute the cell proofs
+	let mut blob: Vec<u8> = Vec::new();
+	for shard_id in 0..blob_metadata.nb_shards {
+		let mut shard = match store.get_shard(&hash, shard_id).ok().flatten() {
+			Some(shard) => shard,
+			None => {
+				log::error!("Failed to get blob shard {shard_id} for hash: {:?}", hash);
+				return Err(anyhow!(format!(
+					"One of the blob shard not found or retrieval failed"
+				)));
+			},
 		};
-
-		if cell_unit.start > cell_unit.end {
-			cell_unit_response.failed_reason = Some(format!(
-				"Invalid cell start and end index: (start:{} - end:{})",
-				cell_unit.start, cell_unit.end
-			));
-			cell_response.cell_units_response.push(cell_unit_response);
-			continue;
-		}
-
-		let Ok(shard_data) = store.get_shard(&cell_request.hash, cell_unit.shard_id) else {
-			cell_unit_response.failed_reason = Some(format!(
-				"Failed to get shard_data from store for shard: {}",
-				cell_unit.shard_id
-			));
-			cell_response.cell_units_response.push(cell_unit_response);
-			continue;
-		};
-
-		let Some(shard_data) = shard_data else {
-			cell_unit_response.failed_reason = Some(format!(
-				"Could not find shard_data in store for shard: {}",
-				cell_unit.shard_id
-			));
-			cell_response.cell_units_response.push(cell_unit_response);
-			continue;
-		};
-
-		if cell_unit.end > shard_data.size {
-			cell_unit_response.failed_reason = Some(format!(
-				"Invalid cell end index: (end:{} - total size:{})",
-				cell_unit.end, shard_data.size
-			));
-			cell_response.cell_units_response.push(cell_unit_response);
-			continue;
-		}
-
-		let data = shard_data.data[cell_unit.start as usize..cell_unit.end as usize].to_vec();
-
-		cell_unit_response.data = data;
-
-		cell_response.cell_units_response.push(cell_unit_response);
+		blob.append(shard.data.as_mut());
 	}
-	cell_response
+	// Fetch the configured tx grid dimension
+	let cols = 1024;
+	let rows = 4096;
+	let pp = PP.get_or_init(multiproof_params);
+	let grid = EGrid::from_data(blob, cols, cols, rows, Seed::default())
+		.expect("Grid construction from data works");
+	let grid = EGrid::merge_with_padding(vec![grid])
+		.expect("merging should work")
+		.extend_columns(NonZeroU16::new(2).expect("2 > 0"))
+		.expect("If dimensions are correct, extension should work");
+	log::debug!(target: LOG_TARGET, "extended grid dims: {:?}", grid.dims());
+	let poly = grid
+		.make_polynomial_grid()
+		.expect("polynomial grid construction works");
+
+	let cell_proofs: Vec<GDataProof> = match cell_request
+		.cells
+		.into_par_iter()
+		.map(|cell_coordinate| {
+			let cell = grid.get(cell_coordinate.row as usize, cell_coordinate.col as usize);
+			if cell.is_none() {
+				log::error!(
+					"Missing cell at row: {}, col: {}",
+					cell_coordinate.row,
+					cell_coordinate.col
+				);
+				return Err(());
+			}
+
+			let scalar = match cell.unwrap().to_bytes().map(GRawScalar::from) {
+				Ok(s) => s,
+				Err(_) => {
+					log::error!("Invalid scalar at row: {}", cell_coordinate.row);
+					return Err(());
+				},
+			};
+
+			let raw_proof = match poly.proof(
+				pp,
+				&Cell::new(
+					BlockLengthRows(cell_coordinate.row),
+					BlockLengthColumns(cell_coordinate.col),
+				),
+			) {
+				Ok(p) => p,
+				Err(e) => {
+					log::error!(
+						"Proof generation failed at ({}, {}): {:?}",
+						cell_coordinate.row,
+						cell_coordinate.col,
+						e
+					);
+					return Err(());
+				},
+			};
+
+			let proof_bytes = match raw_proof.to_bytes() {
+				Ok(b) => b.to_vec(),
+				Err(_) => {
+					log::error!(
+						"Failed to convert proof to bytes at row: {}, col: {}",
+						cell_coordinate.row,
+						cell_coordinate.col
+					);
+					return Err(());
+				},
+			};
+
+			let gproof = match GProof::try_from(proof_bytes) {
+				Ok(p) => p,
+				Err(_) => {
+					log::error!(
+						"Invalid GProof encoding at row: {}, col: {}",
+						cell_coordinate.row,
+						cell_coordinate.col
+					);
+					return Err(());
+				},
+			};
+
+			Ok((scalar, gproof))
+		})
+		.collect::<Result<Vec<_>, _>>()
+	{
+		Ok(proofs) => proofs,
+		Err(_) => return Err(anyhow!("Proof generation failed")),
+	};
+	Ok(CellResponse { hash, cell_proofs })
 }
 
 pub fn process_cell_request<Block: BlockT>(
@@ -786,13 +859,8 @@ pub fn process_cell_request<Block: BlockT>(
 	store: &RocksdbShardStore<Block>,
 	response_tx: oneshot::Sender<OutgoingResponse>,
 ) {
-	let shard_ids: Vec<u16> = cell_request
-		.cell_units
-		.iter()
-		.map(|cell_unit| cell_unit.shard_id)
-		.collect();
 	let expected_payload: Vec<u8> =
-		build_signature_payload(cell_request.hash, shard_ids, b"cell".to_vec());
+		build_cell_signature_payload(cell_request.hash, cell_request.cells.clone());
 	match verify_signed_blob_data(cell_request.signature_data.clone(), expected_payload) {
 		Ok(valid) => {
 			if !valid {
@@ -816,7 +884,18 @@ pub fn process_cell_request<Block: BlockT>(
 		},
 	}
 
-	let cell_response = process_cell_request_inner(cell_request, store);
+	let cell_response = match process_cell_request_inner(cell_request, store) {
+		Ok(cell_response) => cell_response,
+		Err(e) => {
+			log::error!(target: LOG_TARGET, "An error has occured while process the cell request: {e}");
+			let _ = response_tx.send(OutgoingResponse {
+				result: Err(()),
+				reputation_changes: Vec::default(),
+				sent_feedback: None,
+			});
+			return;
+		},
+	};
 
 	// Return the data as a CellResponse
 	let res = OutgoingResponse {

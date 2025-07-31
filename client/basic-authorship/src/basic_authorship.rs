@@ -692,19 +692,20 @@ where
 			);
 		}
 
-		// let (blob_txs_summary, total_blob_size) = if submit_blob_metadata_calls.len() > 0 {
-		// 	sample_and_get_failed_blobs(
-		// 		&submit_blob_metadata_calls,
-		// 		self.network.clone(),
-		// 		&self.keystore,
-		// 		&self.shard_store,
-		// 		blob_metadata,
-		// 	)
-		// 	.await
-		// } else {
-		// 	(Vec::new(), 0)
-		// };
-		let (blob_txs_summary, total_blob_size) = (Vec::new(), 0);
+		let (blob_txs_summary, total_blob_size) = if submit_blob_metadata_calls.len() > 0 {
+			// Since DA sampling involves fetching the proofs over network from peers, this might not be the best place to invoke it.
+			// We can do the sample verfication on a seperate process & store its result in a local store & use that result here.
+			sample_and_get_failed_blobs(
+				&submit_blob_metadata_calls,
+				self.network.clone(),
+				&self.keystore,
+				&self.shard_store,
+				blob_metadata,
+			)
+			.await
+		} else {
+			(Vec::new(), 0)
+		};
 
 		self.transaction_pool.remove_invalid(&unqueue_invalid);
 		Ok((end_reason, blob_txs_summary, total_blob_size))

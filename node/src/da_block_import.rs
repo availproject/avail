@@ -246,17 +246,8 @@ fn build_extension_with_comms(
 	let mut app_rows: Vec<(AppId, usize)> = Vec::with_capacity(app_extrinsics.len());
 
 	for da_call in app_extrinsics.iter() {
-		// TODO Blob - No need to check for commitments as they're checked before ?
-		// For blob submission, the author has marked it as failed
-
-		// let expected_commitments = &da_call.commitments;
-		// let generated_commitments =
-		// 	build_da_commitments(da_call.data.clone(), block_length.clone(), SEED);
-		// // Early return if any of the DA commitments does not match.
-		// ensure!(
-		// 	expected_commitments == &generated_commitments,
-		// 	commitments_mismatch(da_call.tx_index)
-		// );
+		// Commitments from blob submission where checked
+		// Commitments from regular submit data are computed by the node
 		commitment.extend(da_call.commitments.clone());
 		let rows_taken = da_call.commitments.len() / COMMITMENT_SIZE;
 

@@ -16,4 +16,6 @@ log.workspace = true
 
 [features]
 default = ["std"]
-std = ["kate/std"]
+std = [
+    "kate/std",
+]
