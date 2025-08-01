@@ -87,6 +87,8 @@ impl SubstrateCli for Cli {
 /// Parse command line arguments into service configuration.
 pub fn run() -> Result<()> {
 	let cli = Cli::from_args();
+	// By default for all commands, we dont want to skip DA check in the header
+	let should_skip_da = false;
 
 	match &cli.subcommand {
 		None => {
@@ -208,7 +210,7 @@ pub fn run() -> Result<()> {
 					..
 				} = new_partial(
 					&config,
-					cli.unsafe_da_sync,
+					should_skip_da,
 					kate_rpc::Deps::default(),
 					transaction_state::CliDeps::default(),
 				)?;
@@ -224,7 +226,7 @@ pub fn run() -> Result<()> {
 					..
 				} = new_partial(
 					&config,
-					cli.unsafe_da_sync,
+					should_skip_da,
 					kate_rpc::Deps::default(),
 					transaction_state::CliDeps::default(),
 				)?;
@@ -240,7 +242,7 @@ pub fn run() -> Result<()> {
 					..
 				} = new_partial(
 					&config,
-					cli.unsafe_da_sync,
+					should_skip_da,
 					kate_rpc::Deps::default(),
 					transaction_state::CliDeps::default(),
 				)?;
@@ -257,7 +259,7 @@ pub fn run() -> Result<()> {
 					..
 				} = new_partial(
 					&config,
-					cli.unsafe_da_sync,
+					should_skip_da,
 					kate_rpc::Deps::default(),
 					transaction_state::CliDeps::default(),
 				)?;
@@ -278,7 +280,7 @@ pub fn run() -> Result<()> {
 					..
 				} = new_partial(
 					&config,
-					cli.unsafe_da_sync,
+					should_skip_da,
 					kate_rpc::Deps::default(),
 					transaction_state::CliDeps::default(),
 				)?;

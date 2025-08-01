@@ -27,6 +27,7 @@ use sc_consensus::{
 	block_import::{BlockCheckParams, BlockImport as BlockImportT, BlockImportParams},
 	ImportResult,
 };
+use sc_telemetry::log;
 use sp_api::{ApiError, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
 use sp_consensus::{BlockOrigin, Error as ConsensusError};
@@ -40,8 +41,8 @@ type RTExtractor = <Runtime as frame_system::Config>::HeaderExtensionDataFilter;
 pub struct BlockImport<B, C, I> {
 	client: Arc<C>,
 	inner: I,
-	// If true, it skips the DA block import check during sync only.
-	unsafe_da_sync: bool,
+	// If true, it skips the DA block import check
+	skip_da_check: bool,
 	_block: PhantomData<B>,
 }
 
@@ -53,11 +54,11 @@ where
 	C: ProvideRuntimeApi<B> + HeaderBackend<B> + Send + Sync,
 	C::Api: DataAvailApi<B> + ExtensionBuilder<B>,
 {
-	pub fn new(client: Arc<C>, inner: I, unsafe_da_sync: bool) -> Self {
+	pub fn new(client: Arc<C>, inner: I, skip_da_check: bool) -> Self {
 		Self {
 			client,
 			inner,
-			unsafe_da_sync,
+			skip_da_check,
 			_block: PhantomData,
 		}
 	}
@@ -128,6 +129,7 @@ where
 			block.header.extension == extension,
 			extension_mismatch(&block.header.extension, &extension)
 		);
+		log::info!("✅ Verified DA header extension.");
 		Ok(())
 	}
 }
@@ -153,17 +155,10 @@ where
 		// We only want to check for blocks that are not from "Own"
 		let is_own = matches!(block.origin, BlockOrigin::Own);
 
-		// We skip checks if we're syncing and unsafe_da_sync is true
-		let is_sync = matches!(
-			block.origin,
-			BlockOrigin::NetworkInitialSync | BlockOrigin::File
-		);
-		let skip_sync = self.unsafe_da_sync && is_sync;
-		if !is_own && !skip_sync && !block.with_state() {
+		// We skip checks if skip_da_check is set
+		if !is_own && !self.skip_da_check && !block.with_state() {
 			self.ensure_last_extrinsic_is_failed_send_message_txs(&block)?;
-			// TEMP: skip header extension check for now & add it later for supernode role
-			// Also, should handle the data_root calculation using da_light
-			// self.ensure_valid_header_extension(&block)?;
+			self.ensure_valid_header_extension(&block)?;
 		}
 
 		// Next import block stage & metrics
@@ -184,7 +179,7 @@ impl<B, C, I: Clone> Clone for BlockImport<B, C, I> {
 		Self {
 			client: self.client.clone(),
 			inner: self.inner.clone(),
-			unsafe_da_sync: self.unsafe_da_sync,
+			skip_da_check: self.skip_da_check,
 			_block: PhantomData,
 		}
 	}

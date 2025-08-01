@@ -37,10 +37,6 @@ pub struct Cli {
 	#[arg(long)]
 	pub no_hardware_benchmarks: bool,
 
-	/// Disable checking commitment on imported block during sync
-	#[arg(long, conflicts_with_all = &["validator"])]
-	pub unsafe_da_sync: bool,
-
 	/// Provides storage monitoring options on the node
 	#[clap(flatten)]
 	pub storage_monitor: sc_storage_monitor::StorageMonitorParams,
@@ -71,7 +67,7 @@ pub struct Cli {
 	pub tx_state_rpc_enabled: bool,
 
 	/// The maximum number of results the transaction state RPC will return for a transaction hash.
-	/// If a transaction hash appears in multiple blocks, the RPC will return only the top `X` transaction states.  
+	/// If a transaction hash appears in multiple blocks, the RPC will return only the top `X` transaction states.
 	/// In most cases, the transaction hash is unique, so this parameter is usually irrelevant.
 	#[clap(long, default_value_t = 10)]
 	pub tx_state_rpc_max_search_results: usize,

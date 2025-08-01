@@ -33,6 +33,7 @@ use pallet_transaction_payment::ChargeTransactionPayment;
 use sc_client_api::{Backend, BlockBackend, BlockchainEvents};
 use sc_consensus_babe::{self, SlotProportion};
 pub use sc_executor::NativeElseWasmExecutor;
+use sc_network::config::{Role, SyncMode};
 use sc_network::{Event, NetworkEventStream, NetworkService};
 use sc_network_sync::SyncingService;
 use sc_service::{
@@ -174,7 +175,7 @@ pub fn create_extrinsic(
 #[allow(clippy::type_complexity)]
 pub fn new_partial(
 	config: &Configuration,
-	unsafe_da_sync: bool,
+	should_skip_da: bool,
 	kate_rpc_deps: kate_rpc::Deps,
 	tx_state_cli_deps: transaction_state::CliDeps,
 ) -> Result<
@@ -268,7 +269,7 @@ pub fn new_partial(
 		client.clone(),
 	)?;
 
-	let da_block_import = BlockImport::new(client.clone(), block_import, unsafe_da_sync);
+	let da_block_import = BlockImport::new(client.clone(), block_import, should_skip_da);
 
 	let slot_duration = babe_link.config().slot_duration();
 	let (import_queue, babe_worker_handle) =
@@ -404,7 +405,6 @@ pub fn new_full_base(
 	config: Configuration,
 	disable_hardware_benchmarks: bool,
 	with_startup_data: impl FnOnce(&BlockImport, &sc_consensus_babe::BabeLink<Block>),
-	unsafe_da_sync: bool,
 	kate_rpc_deps: kate_rpc::Deps,
 	tx_state_cli_deps: transaction_state::CliDeps,
 ) -> Result<NewFullBase, ServiceError> {
@@ -417,6 +417,13 @@ pub fn new_full_base(
 		None
 	};
 
+	let role = config.role.clone();
+	let should_skip_da = match (&role, config.network.sync_mode) {
+		(Role::Supernode, _) => false,                    // Always validate DA
+		(Role::Authority, SyncMode::FullWithDa) => false, // Validate DA
+		_ => true,                                        // Skip DA check in all other cases
+	};
+
 	let sc_service::PartialComponents {
 		client,
 		backend,
@@ -426,7 +433,7 @@ pub fn new_full_base(
 		select_chain,
 		transaction_pool,
 		other: (rpc_builder, import_setup, rpc_setup, mut telemetry, tx_state_deps),
-	} = new_partial(&config, unsafe_da_sync, kate_rpc_deps, tx_state_cli_deps)?;
+	} = new_partial(&config, should_skip_da, kate_rpc_deps, tx_state_cli_deps)?;
 
 	let shared_voter_state = rpc_setup;
 	let auth_disc_publish_non_global_ips = config.network.allow_non_globals_in_dht;
@@ -436,7 +443,6 @@ pub fn new_full_base(
 		.ok()
 		.flatten()
 		.expect("Genesis block exists; qed");
-	let role = config.role.clone();
 	let grandpa_protocol_name =
 		sc_consensus_grandpa::protocol_standard_name(genesis_hash, &config.chain_spec);
 	let (grandpa_protocol_config, grandpa_notification_service) =
@@ -476,7 +482,8 @@ pub fn new_full_base(
 			keystore: keystore_container.keystore(),
 		})?;
 
-	let grandpa_voting_rules = if role.is_authority() && !role.is_supernode() {
+	// Validators which are downloading light blocks need to verify DA samples as they're not verifying DA extension on import
+	let grandpa_voting_rules = if role.is_authority() && should_skip_da {
 		let tracker = Arc::new(VerificationTracker::new());
 		let sample_downloader = DaSamplesDownloader::new(
 			da_sampling_protocol_name,
@@ -778,7 +785,6 @@ pub fn new_full(config: Configuration, cli: Cli) -> Result<TaskManager, ServiceE
 		config,
 		cli.no_hardware_benchmarks,
 		|_, _| (),
-		cli.unsafe_da_sync,
 		kate_rpc_deps,
 		tx_state_cli_deps,
 	)
