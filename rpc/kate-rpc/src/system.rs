@@ -217,6 +217,8 @@ where
 			}
 		}
 
+		cache.promote_block(block_hash);
+
 		Ok(found_extrinsics)
 	}
 }
@@ -280,8 +282,8 @@ pub mod fetch_events_v1 {
 			Self {
 				index: value.index,
 				emitted_index: value.emitted_index,
-				encoded: value.encoded.map(hex::encode),
-				decoded: value.decoded.map(hex::encode),
+				encoded: value.encoded.map(const_hex::encode),
+				decoded: value.decoded.map(const_hex::encode),
 			}
 		}
 	}
@@ -551,6 +553,7 @@ pub mod fetch_extrinsics_v1 {
 		pub call_start_pos: usize,
 	}
 
+	#[derive(Default)]
 	pub struct CachedBlock {
 		transactions: Vec<CachedTransaction>,
 	}
@@ -570,7 +573,7 @@ pub mod fetch_extrinsics_v1 {
 	}
 
 	pub struct Cache {
-		blocks: Vec<(H256, CachedBlock)>,
+		pub(crate) blocks: Vec<(H256, CachedBlock)>,
 		max_size: u32,
 	}
 
@@ -579,6 +582,28 @@ pub mod fetch_extrinsics_v1 {
 			Self {
 				blocks: Vec::new(),
 				max_size,
+			}
+		}
+
+		pub fn promote_block(&mut self, block_hash: H256) {
+			if self.blocks.is_empty() {
+				return;
+			}
+
+			if let Some(first) = self.blocks.last() {
+				if first.0 == block_hash {
+					return;
+				}
+			}
+
+			let stop = self.blocks.len() - 1;
+			let mut i = 0;
+			while i < stop {
+				if self.blocks[i].0 == block_hash {
+					self.blocks.swap(i, i + 1);
+				}
+
+				i += 1;
 			}
 		}
 
@@ -649,7 +674,7 @@ pub mod fetch_extrinsics_v1 {
 				encoded.extend_from_slice(&ext.0);
 
 				let tx_hash = Blake2Hasher::hash(&encoded);
-				(hex::encode(encoded), tx_hash)
+				(const_hex::encode(encoded), tx_hash)
 			};
 
 			let signature = TransactionSignature::from_signature_payload(&signature);
@@ -667,5 +692,62 @@ pub mod fetch_extrinsics_v1 {
 		}
 
 		Ok(CachedBlock::new(cached_transactions))
+	}
+}
+
+#[cfg(test)]
+mod test {
+	use super::fetch_extrinsics_v1::*;
+	use sp_core::H256;
+
+	#[test]
+	fn cache_test() {
+		let mut cache = Cache::new(3);
+		assert_eq!(cache.blocks.len(), 0);
+
+		let hash_01 = H256::random();
+		let hash_02 = H256::random();
+		let hash_03 = H256::random();
+		cache.insert(hash_01, CachedBlock::default());
+		cache.insert(hash_02, CachedBlock::default());
+		cache.insert(hash_03, CachedBlock::default());
+
+		assert!(cache.block(hash_01).is_some());
+		assert!(cache.block(hash_02).is_some());
+		assert!(cache.block(hash_03).is_some());
+
+		assert_eq!(cache.blocks.len(), 3);
+		assert_eq!(cache.blocks[0].0, hash_01);
+		assert_eq!(cache.blocks[1].0, hash_02);
+		assert_eq!(cache.blocks[2].0, hash_03);
+
+		// Adding one more should remove the first hash
+		let hash_04 = H256::random();
+		cache.insert(hash_04, CachedBlock::default());
+
+		assert_eq!(cache.blocks.len(), 3);
+		assert_eq!(cache.blocks[0].0, hash_02);
+		assert_eq!(cache.blocks[1].0, hash_03);
+		assert_eq!(cache.blocks[2].0, hash_04);
+
+		// The order should change if a block is promoted
+		cache.promote_block(hash_02);
+
+		assert_eq!(cache.blocks.len(), 3);
+		assert_eq!(cache.blocks[0].0, hash_03);
+		assert_eq!(cache.blocks[1].0, hash_04);
+		assert_eq!(cache.blocks[2].0, hash_02);
+
+		// Adding back hash_01 should remove hash_03
+		cache.insert(hash_01, CachedBlock::default());
+
+		assert_eq!(cache.blocks.len(), 3);
+		assert_eq!(cache.blocks[0].0, hash_04);
+		assert_eq!(cache.blocks[1].0, hash_02);
+		assert_eq!(cache.blocks[2].0, hash_01);
+
+		assert!(cache.block(hash_04).is_some());
+		assert!(cache.block(hash_02).is_some());
+		assert!(cache.block(hash_01).is_some());
 	}
 }

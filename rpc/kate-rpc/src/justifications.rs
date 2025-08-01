@@ -7,7 +7,7 @@ use jsonrpsee::{
 };
 use sc_client_api::BlockBackend;
 use sp_core::H256;
-use sp_runtime::traits::Block as BlockT;
+use sp_runtime::{traits::Block as BlockT, AccountId32};
 use std::{marker::PhantomData, sync::Arc};
 
 /// GRANDPA consensus engine_id
@@ -106,7 +106,7 @@ where
 			return Ok(None);
 		};
 
-		Ok(Some(hex::encode(&justification)))
+		Ok(Some(const_hex::encode(&justification)))
 	}
 
 	/// Returns the GRANDPA justification for the given block number, if available.
@@ -149,24 +149,18 @@ impl serde::Serialize for AuthorityId {
 	where
 		S: serde::Serializer,
 	{
-		let encoded = hex::encode(&self.0);
-		serializer.serialize_str(&encoded)
+		let account_id = AccountId32::from(self.0.clone());
+		serializer.serialize_str(&account_id.to_string())
 	}
 }
 
-impl<'a> serde::Deserialize<'a> for AuthorityId {
-	fn deserialize<D>(de: D) -> Result<Self, D::Error>
+impl<'de> serde::Deserialize<'de> for AuthorityId {
+	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
 	where
-		D: serde::Deserializer<'a>,
+		D: serde::Deserializer<'de>,
 	{
-		let r = String::deserialize(de)?;
-		let without_prefix = r.trim_start_matches("0x");
-		let result = hex::decode(without_prefix)
-			.map_err(|e| serde::de::Error::custom(format!("Decode error: {}", e)))?;
-		let result: [u8; 32] = result
-			.try_into()
-			.map_err(|e| serde::de::Error::custom(format!("Decode error: {:?}", e)))?;
-		Ok(AuthorityId(result))
+		let account_id = AccountId32::deserialize(deserializer)?;
+		Ok(Self(account_id.into()))
 	}
 }
 
@@ -178,24 +172,21 @@ impl serde::Serialize for Signature {
 	where
 		S: serde::Serializer,
 	{
-		let encoded = hex::encode(&self.0);
-		serializer.serialize_str(&encoded)
+		serializer.serialize_str(&const_hex::encode(&self.0))
 	}
 }
 
-impl<'a> serde::Deserialize<'a> for Signature {
-	fn deserialize<D>(de: D) -> Result<Self, D::Error>
+impl<'de> serde::Deserialize<'de> for Signature {
+	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
 	where
-		D: serde::Deserializer<'a>,
+		D: serde::Deserializer<'de>,
 	{
-		let r = String::deserialize(de)?;
-		let without_prefix = r.trim_start_matches("0x");
-		let result = hex::decode(without_prefix)
-			.map_err(|e| serde::de::Error::custom(format!("Decode error: {}", e)))?;
-		let result: [u8; 64] = result
+		let signature_hex = const_hex::decode(&String::deserialize(deserializer)?)
+			.map_err(|e| serde::de::Error::custom(format!("{:?}", e)))?;
+		let signature: [u8; 64usize] = signature_hex
 			.try_into()
-			.map_err(|e| serde::de::Error::custom(format!("Decode error: {:?}", e)))?;
-		Ok(Signature(result))
+			.map_err(|e| serde::de::Error::custom(format!("{:?}", e)))?;
+		Ok(Self(signature))
 	}
 }
 
