@@ -8,6 +8,7 @@ use jsonrpsee::{
 };
 use sc_client_api::BlockBackend;
 use sp_api::ProvideRuntimeApi;
+use sp_blockchain::HeaderBackend;
 use sp_core::{Blake2Hasher, Hasher, H256};
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 use std::{
@@ -30,6 +31,9 @@ pub trait Api {
 		block_id: fetch_extrinsics_v1::BlockId,
 		options: Option<fetch_extrinsics_v1::Options>,
 	) -> RpcResult<fetch_extrinsics_v1::ApiResult>;
+
+	#[method(name = "system_latestChainInfo")]
+	async fn fetch_latest_chain_info(&self) -> RpcResult<ChainInfo>;
 }
 
 pub struct Rpc<C, Block>
@@ -45,6 +49,7 @@ where
 impl<C, Block> Rpc<C, Block>
 where
 	C: ProvideRuntimeApi<Block> + Send + Sync + 'static,
+	C: HeaderBackend<Block>,
 	C::Api: frame_system_rpc_runtime_api::SystemEventsApi<Block>,
 	Block: BlockT,
 	<Block as BlockT>::Hash: From<H256>,
@@ -92,10 +97,12 @@ impl<'a, C, Block> ApiServer for Rpc<C, Block>
 where
 	C: ProvideRuntimeApi<Block> + Send + Sync + 'static,
 	C: BlockBackend<Block>,
+	C: HeaderBackend<Block>,
 	C::Api: frame_system_rpc_runtime_api::SystemEventsApi<Block>,
 	Block: BlockT<Extrinsic = OpaqueExtrinsic>,
 	<Block as BlockT>::Hash: From<H256> + Into<H256>,
 	<<Block as BlockT>::Header as HeaderT>::Number: From<u32>,
+	<<Block as BlockT>::Header as HeaderT>::Number: Into<u32>,
 {
 	async fn fetch_events_v1(
 		&self,
@@ -221,6 +228,24 @@ where
 
 		Ok(found_extrinsics)
 	}
+
+	async fn fetch_latest_chain_info(&self) -> RpcResult<ChainInfo> {
+		let info = self.client.info();
+		Ok(ChainInfo {
+			best_hash: info.best_hash.into(),
+			best_height: info.best_number.into(),
+			finalized_hash: info.finalized_hash.into(),
+			finalized_height: info.finalized_number.into(),
+		})
+	}
+}
+
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
+pub struct ChainInfo {
+	pub best_hash: H256,
+	pub best_height: u32,
+	pub finalized_hash: H256,
+	pub finalized_height: u32,
 }
 
 pub mod fetch_events_v1 {
