@@ -34,6 +34,9 @@ pub trait Api {
 
 	#[method(name = "system_latestChainInfo")]
 	async fn fetch_latest_chain_info(&self) -> RpcResult<ChainInfo>;
+
+	#[method(name = "system_blockNumberFromHash")]
+	async fn block_number_from_hash(&self, hash: H256) -> RpcResult<Option<u32>>;
 }
 
 pub struct Rpc<C, Block>
@@ -237,6 +240,14 @@ where
 			finalized_hash: info.finalized_hash.into(),
 			finalized_height: info.finalized_number.into(),
 		})
+	}
+
+	async fn block_number_from_hash(&self, hash: H256) -> RpcResult<Option<u32>> {
+		let result = self
+			.client
+			.block_number_from_id(&sp_runtime::generic::BlockId::Hash(hash.into()))
+			.map_err(|err| Error::Other.into_error_object(err.to_string()))?;
+		Ok(result.map(|x| x.into()))
 	}
 }
 
