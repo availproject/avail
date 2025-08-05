@@ -12,7 +12,6 @@ members = [
 	"runtime",
 	"runtime/fuzz",
 	"node",
-	"rpc/transaction-rpc"
 ]
 
 [workspace.package]
@@ -38,7 +37,6 @@ pallet-vector = { path = "pallets/vector", default-features = false }
 da-runtime = { path = "runtime", default-features = false }
 kate-rpc = { path = "rpc/kate-rpc" }
 testing-rpc = { path = "rpc/testing-rpc" }
-transaction-rpc = { path = "rpc/transaction-rpc", default-features = false }
 patricia-merkle-trie = { path = "patricia-merkle-trie", default-features = false }
 
 da-sampling = { path = "da-sampling", default-features = false }
@@ -55,12 +53,11 @@ iai = "0.1.1"
 iai-callgrind = "0.7.3"
 divan = "0.1.11"
 
-# codspeed-criterion-compat = "2.2.0"
-
 # Logging and testing
 log = "0.4.20"
 test-case = "1.2.3"
 hex = "0.4"
+const-hex = { version = "1.14.1", default-features = false, features = ["alloc"] }
 env_logger = "0.9.1"
 thiserror = "2.0"
 thiserror-no-std = "2.0.2"
@@ -112,6 +109,7 @@ jsonrpsee = { version = "0.22", features = ["server", "client", "macros"] }
 moka = { version = "0.12.1", features = ["future"] }
 lru = "0.7.2"
 tempfile = "3.1.0"
+ts-rs = { version = "11.0.1", default-features = false  }
 
 # Ethereum
 rlp = { git = "https://github.com/paritytech/parity-common.git", tag = "rlp-v0.5.2", default-features = false }

@@ -1,4 +1,4 @@
-FROM fedora:40 AS builder
+FROM fedora:42 AS builder
 
 # This installs all dependencies that we need (besides Rust).
 RUN dnf update -y && \

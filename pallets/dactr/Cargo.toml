@@ -18,6 +18,10 @@ kate = { workspace = true, default-features = false }
 frame-system = { workspace = true, default-features = false }
 pallet-transaction-payment = { workspace = true, default-features = false }
 pallet-vector = { workspace = true, default-features = false }
+pallet-multisig = { workspace = true, default-features = false }
+pallet-proxy = { workspace = true, default-features = false }
+pallet-scheduler = { workspace = true, default-features = false }
+pallet-preimage = { workspace = true, default-features = false }
 
 # Others
 log.workspace = true
@@ -56,6 +60,10 @@ std = [
 	"pallet-transaction-payment/std",
 	"pallet-utility/std",
 	"pallet-vector/std",
+	"pallet-multisig/std",
+	"pallet-proxy/std",
+	"pallet-scheduler/std",
+	"pallet-preimage/std",
 	"scale-info/std",
 	"serde",
 	"sp-arithmetic/std",

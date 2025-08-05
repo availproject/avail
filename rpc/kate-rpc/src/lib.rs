@@ -3,7 +3,7 @@ use avail_core::{
 	data_proof::ProofResponse, header::HeaderExtension, traits::ExtendedHeader, OpaqueExtrinsic,
 };
 use da_runtime::apis::{DataAvailApi, KateApi as RTKateApi};
-use da_runtime::kate::{GDataProof, GRow};
+use da_runtime::kate::{GCellBlock, GDataProof, GMultiProof, GRow};
 use kate::com::Cell;
 
 use frame_support::BoundedVec;
@@ -28,7 +28,9 @@ pub type Rows = BoundedVec<u32, MaxRows>;
 pub type MaxCells = ConstU32<10_000>;
 pub type Cells = BoundedVec<Cell, MaxCells>;
 
+pub mod justifications;
 pub mod metrics;
+pub mod system;
 
 #[derive(Clone, Default)]
 pub struct Deps {
@@ -58,6 +60,13 @@ where
 		cells: Cells,
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<Vec<GDataProof>>;
+
+	#[method(name = "kate_queryMultiProof")]
+	async fn query_multiproof(
+		&self,
+		cells: Cells,
+		at: Option<HashOf<Block>>,
+	) -> RpcResult<Vec<(GMultiProof, GCellBlock)>>;
 
 	#[method(name = "kate_blockLength")]
 	async fn query_block_length(&self, at: Option<HashOf<Block>>) -> RpcResult<BlockLength>;
@@ -256,6 +265,49 @@ where
 			.collect::<Vec<_>>();
 		let proof = api
 			.proof(at, number, extrinsics, block_len, cells)
+			.map_err(|kate_err| internal_err!("KateApi::proof failed: {kate_err:?}"))?
+			.map_err(|api_err| internal_err!("Failed API: {api_err:?}"))?;
+
+		Ok(proof)
+	}
+
+	async fn query_multiproof(
+		&self,
+		cells: Cells,
+		at: Option<HashOf<Block>>,
+	) -> RpcResult<Vec<(GMultiProof, GCellBlock)>> {
+		if cells.len() > self.max_cells_size {
+			return Err(
+				internal_err!(
+					"Cannot query ({}) more than {} amount of cells per request. Either increase the max cells size (--kate-max-cells-size) or query less amount of cells per request.",
+					cells.len(),
+					self.max_cells_size
+				)
+			);
+		}
+
+		let _metric_observer = MetricObserver::new(ObserveKind::KateQueryProof);
+
+		let (api, at, number, block_len, extrinsics, header) = self.scope(at)?;
+		match header.extension() {
+			HeaderExtension::V3(ext) => {
+				if ext.commitment.commitment.is_empty() {
+					return Err(internal_err!("Requested block {at} has empty commitments"));
+				}
+			},
+			HeaderExtension::V4(ext) => {
+				if ext.commitment.commitment.is_empty() {
+					return Err(internal_err!("Requested block {at} has empty commitments"));
+				}
+			},
+		};
+
+		let cells = cells
+			.into_iter()
+			.map(|cell| (cell.row.0, cell.col.0))
+			.collect::<Vec<_>>();
+		let proof = api
+			.multiproof(at, number, extrinsics, block_len, cells)
 			.map_err(|kate_err| internal_err!("KateApi::proof failed: {kate_err:?}"))?
 			.map_err(|api_err| internal_err!("Failed API: {api_err:?}"))?;
 

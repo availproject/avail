@@ -19,7 +19,6 @@
 //! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 #![allow(dead_code)]
 
-use crate::transaction_state;
 use crate::{cli::Cli, rpc as node_rpc};
 use avail_core::AppId;
 use da_runtime::{apis::RuntimeApi, NodeBlock as Block, Runtime};
@@ -28,7 +27,6 @@ use da_sampling::{DaSamplesDownloader, DaSamplesRequestHandler, VerificationTrac
 use codec::Encode;
 use frame_system_rpc_runtime_api::AccountNonceApi;
 use futures::prelude::*;
-use jsonrpsee::tokio::sync::mpsc::channel;
 use pallet_transaction_payment::ChargeTransactionPayment;
 use sc_client_api::{Backend, BlockBackend, BlockchainEvents};
 use sc_consensus_babe::{self, SlotProportion};
@@ -40,7 +38,6 @@ use sc_service::{
 	error::Error as ServiceError, Configuration, RpcHandlers, TaskManager, WarpSyncParams,
 };
 use sc_telemetry::custom_telemetry::external::BlockIntervalFromNode;
-use sc_telemetry::log;
 use sc_telemetry::{custom_telemetry::CustomTelemetryWorker, Telemetry, TelemetryWorker};
 use sc_transaction_pool_api::OffchainTransactionPoolFactory;
 use sp_api::ProvideRuntimeApi;
@@ -72,10 +69,6 @@ impl sc_executor::NativeExecutionDispatch for ExecutorDispatch {
 		da_runtime::native_version()
 	}
 }
-
-/// The minimum period of blocks on which justifications will be
-/// imported and generated.
-const GRANDPA_JUSTIFICATION_PERIOD: u32 = 512;
 
 /// The full client type definition.
 pub type FullClient =
@@ -177,7 +170,7 @@ pub fn new_partial(
 	config: &Configuration,
 	should_skip_da: bool,
 	kate_rpc_deps: kate_rpc::Deps,
-	tx_state_cli_deps: transaction_state::CliDeps,
+	grandpa_justification_period: u32,
 ) -> Result<
 	sc_service::PartialComponents<
 		FullClient,
@@ -197,7 +190,6 @@ pub fn new_partial(
 			),
 			sc_consensus_grandpa::SharedVoterState,
 			Option<Telemetry>,
-			Option<transaction_state::Deps>,
 		),
 	>,
 	ServiceError,
@@ -256,7 +248,7 @@ pub fn new_partial(
 
 	let (grandpa_block_import, grandpa_link) = sc_consensus_grandpa::block_import(
 		client.clone(),
-		GRANDPA_JUSTIFICATION_PERIOD,
+		grandpa_justification_period,
 		&(client.clone() as Arc<_>),
 		select_chain.clone(),
 		telemetry.as_ref().map(|x| x.handle()),
@@ -298,25 +290,6 @@ pub fn new_partial(
 
 	let import_setup = (da_block_import, grandpa_link, babe_link);
 
-	let mut transaction_rpc_deps = None;
-	let mut tx_state_deps = None;
-	if tx_state_cli_deps.enabled {
-		let (search_send, search_recv) = channel::<transaction_rpc::TxStateChannel>(10_000);
-		let (block_send, block_recv) = channel::<transaction_state::BlockDetails>(50_000);
-
-		let deps = transaction_state::Deps {
-			block_receiver: block_recv,
-			block_sender: block_send,
-			search_receiver: search_recv,
-			cli: tx_state_cli_deps,
-		};
-
-		transaction_rpc_deps = Some(transaction_rpc::Deps {
-			sender: search_send,
-		});
-		tx_state_deps = Some(deps);
-	}
-
 	let (rpc_extensions_builder, rpc_setup) = {
 		let (_, grandpa_link, _) = &import_setup;
 
@@ -356,7 +329,6 @@ pub fn new_partial(
 					finality_provider: finality_proof_provider.clone(),
 				},
 				kate_rpc_deps: kate_rpc_deps.clone(),
-				transaction_rpc_deps: transaction_rpc_deps.clone(),
 			};
 
 			node_rpc::create_full(deps, rpc_backend.clone()).map_err(Into::into)
@@ -373,13 +345,7 @@ pub fn new_partial(
 		select_chain,
 		import_queue,
 		transaction_pool,
-		other: (
-			rpc_extensions_builder,
-			import_setup,
-			rpc_setup,
-			telemetry,
-			tx_state_deps,
-		),
+		other: (rpc_extensions_builder, import_setup, rpc_setup, telemetry),
 	})
 }
 
@@ -406,7 +372,7 @@ pub fn new_full_base(
 	disable_hardware_benchmarks: bool,
 	with_startup_data: impl FnOnce(&BlockImport, &sc_consensus_babe::BabeLink<Block>),
 	kate_rpc_deps: kate_rpc::Deps,
-	tx_state_cli_deps: transaction_state::CliDeps,
+	grandpa_justification_period: u32,
 ) -> Result<NewFullBase, ServiceError> {
 	let hwbench = if !disable_hardware_benchmarks {
 		config.database.path().map(|database_path| {
@@ -432,8 +398,8 @@ pub fn new_full_base(
 		keystore_container,
 		select_chain,
 		transaction_pool,
-		other: (rpc_builder, import_setup, rpc_setup, mut telemetry, tx_state_deps),
-	} = new_partial(&config, should_skip_da, kate_rpc_deps, tx_state_cli_deps)?;
+		other: (rpc_builder, import_setup, rpc_setup, mut telemetry),
+	} = new_partial(&config, should_skip_da, kate_rpc_deps, grandpa_justification_period)?;
 
 	let shared_voter_state = rpc_setup;
 	let auth_disc_publish_non_global_ips = config.network.allow_non_globals_in_dht;
@@ -650,7 +616,7 @@ pub fn new_full_base(
 	let grandpa_config = sc_consensus_grandpa::Config {
 		// Considering our block_time of 20 seconds, we may consider increasing this to 2 seconds without introducing delay in finality.
 		gossip_duration: std::time::Duration::from_millis(1000),
-		justification_generation_period: GRANDPA_JUSTIFICATION_PERIOD,
+		justification_generation_period: grandpa_justification_period,
 		name: Some(name),
 		observer_enabled: false,
 		keystore,
@@ -711,52 +677,6 @@ pub fn new_full_base(
 
 	network_starter.start_network();
 
-	// Spawning Transaction Info Workers
-
-	if let Some(deps) = tx_state_deps {
-		log::info!("👾 Transaction State RPC is enabled.");
-		let worker_1 = transaction_state::IncludedWorker {
-			rpc_handlers: rpc_handlers.clone(),
-			client: client.clone(),
-			sender: deps.block_sender.clone(),
-			logger: transaction_state::WorkerLogging::new(
-				"Inclusion Worker".into(),
-				deps.cli.logging_interval,
-			),
-		};
-
-		let worker_2 = transaction_state::FinalizedWorker {
-			rpc_handlers: rpc_handlers.clone(),
-			client: client.clone(),
-			sender: deps.block_sender.clone(),
-			max_stored_block_count: deps.cli.max_stored_block_count,
-			logger: transaction_state::WorkerLogging::new(
-				"Finalization Worker".into(),
-				deps.cli.logging_interval,
-			),
-		};
-
-		let db = transaction_state::Database::new(
-			deps.block_receiver,
-			deps.search_receiver,
-			deps.cli.max_search_results,
-			deps.cli.max_stored_block_count,
-			deps.cli.logging_interval,
-		);
-
-		task_manager
-			.spawn_handle()
-			.spawn("tx-state-worker-i", None, worker_1.run());
-		task_manager
-			.spawn_handle()
-			.spawn("tx-state-worker-f", None, worker_2.run());
-		task_manager
-			.spawn_handle()
-			.spawn("tx-state-db", None, db.run());
-	} else {
-		log::info!("👾 Transaction State RPC is disabled.");
-	}
-
 	Ok(NewFullBase {
 		task_manager,
 		client,
@@ -770,29 +690,24 @@ pub fn new_full_base(
 /// Builds a new service for a full client.
 pub fn new_full(config: Configuration, cli: Cli) -> Result<TaskManager, ServiceError> {
 	let database_path = config.database.path().map(Path::to_path_buf);
+	let storage_param = cli.storage_monitor.clone();
 	let kate_rpc_deps = kate_rpc::Deps {
 		max_cells_size: cli.kate_max_cells_size,
 		rpc_enabled: cli.kate_rpc_enabled,
 		rpc_metrics_enabled: cli.kate_rpc_metrics_enabled,
-	};
-	let tx_state_cli_deps = transaction_state::CliDeps {
-		max_search_results: cli.tx_state_rpc_max_search_results,
-		max_stored_block_count: cli.tx_state_rpc_max_stored_block_count,
-		enabled: cli.tx_state_rpc_enabled,
-		logging_interval: cli.tx_state_logging_interval,
 	};
 	let task_manager = new_full_base(
 		config,
 		cli.no_hardware_benchmarks,
 		|_, _| (),
 		kate_rpc_deps,
-		tx_state_cli_deps,
+		cli.grandpa_justification_period,
 	)
 	.map(|NewFullBase { task_manager, .. }| task_manager)?;
 
 	if let Some(database_path) = database_path {
 		sc_storage_monitor::StorageMonitorService::try_spawn(
-			cli.storage_monitor,
+			storage_param,
 			database_path,
 			&task_manager.spawn_essential_handle(),
 		)

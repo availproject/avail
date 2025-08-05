@@ -1,0 +1,13 @@
+[package]
+name = "e2e"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+
+[dependencies]
+avail-rust = { git = "https://github.com/availproject/avail-rust", tag = "v0.1.4" }
+
+# Other
+serde = { version = "1.0.195", default-features = false, features = [ "derive", "alloc" ] }
+tokio = { version = "1.43.0", features = ["sync", "fs", "macros", "rt-multi-thread"] }

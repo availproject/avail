@@ -17,12 +17,9 @@ jobs:
       matrix:
         include:
           - command: ENGINE=podman SCRIPT_LOC=./scripts/workflows/releaser_wasm.sh ./scripts/workflows/run.sh
-          - command: ENGINE=podman DISTRO=ubuntu-2004 ZIP=1 ./scripts/binaries/build.sh
           - command: ENGINE=podman DISTRO=ubuntu-2204 ZIP=1 ./scripts/binaries/build.sh
           - command: ENGINE=podman DISTRO=ubuntu-2404 ZIP=1 ./scripts/binaries/build.sh
-          - command: ENGINE=podman DISTRO=fedora-39 ZIP=1 ./scripts/binaries/build.sh
-          - command: ENGINE=podman DISTRO=fedora-40 ZIP=1 ./scripts/binaries/build.sh
-          - command: ENGINE=podman DISTRO=debian-11 ZIP=1 ./scripts/binaries/build.sh
+          - command: ENGINE=podman DISTRO=fedora-42 ZIP=1 ./scripts/binaries/build.sh
           - command: ENGINE=podman DISTRO=debian-12 ZIP=1 ./scripts/binaries/build.sh
           - command: ENGINE=podman DISTRO=arch ZIP=1 ./scripts/binaries/build.sh
     steps:
@@ -42,8 +39,8 @@ jobs:
           max_attempts: 2
           command: ${{ matrix.command }}
 
-  arm64_ubuntu_2004:
-    runs-on: ubuntu-20.04
+  arm64_ubuntu_2204:
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
 
@@ -67,5 +64,5 @@ jobs:
           sudo apt-get update && sudo apt-get install -y musl-tools clang gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libc6-dev libc6-dev-arm64-cross
           env  BINDGEN_EXTRA_CLANG_ARGS='--sysroot /usr/aarch64-linux-gnu' CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=/usr/bin/aarch64-linux-gnu-gcc cargo build --release --target=aarch64-unknown-linux-gnu -p avail-node
           pushd target/aarch64-unknown-linux-gnu/release/
-          tar -czf arm64-ubuntu-2004-avail-node.tar.gz avail-node
+          tar -czf arm64-ubuntu-2204-avail-node.tar.gz avail-node
           popd

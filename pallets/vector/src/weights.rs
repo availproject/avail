@@ -69,6 +69,7 @@ pub trait WeightInfo {
 	fn set_sp1_verification_key() -> Weight;
 	fn set_sync_committee_hash() -> Weight;
 	fn fulfill() -> Weight;
+	fn enable_mock() -> Weight;
 }
 
 /// Weights for `pallet_vector` using the Avail node and recommended hardware.
@@ -327,6 +328,16 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(9_u64))
 			.saturating_add(T::DbWeight::get().writes(5_u64))
 	}
+	/// Storage: `Vector::EnableMock` (r:0 w:1)
+	/// Proof: `Vector::EnableMock` (`max_values`: Some(1), `max_size`: Some(1), added: 496, mode: `MaxEncodedLen`)
+	fn enable_mock() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 2_000_000 picoseconds.
+		Weight::from_parts(3_000_000, 0)
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
 }
 
 // For backwards compatibility and tests.
@@ -583,5 +594,15 @@ impl WeightInfo for () {
 		Weight::from_parts(349_841_000_000, 6020)
 			.saturating_add(RocksDbWeight::get().reads(9_u64))
 			.saturating_add(RocksDbWeight::get().writes(5_u64))
+	}
+	/// Storage: `Vector::EnableMock` (r:0 w:1)
+	/// Proof: `Vector::EnableMock` (`max_values`: Some(1), `max_size`: Some(1), added: 496, mode: `MaxEncodedLen`)
+	fn enable_mock() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 2_000_000 picoseconds.
+		Weight::from_parts(3_000_000, 0)
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 }

@@ -17,12 +17,13 @@ targets = ["x86_64-unknown-linux-gnu"]
 avail-base = { workspace = true, default-features = false }
 avail-core = { workspace = true, default-features = false }
 kate = { workspace = true, default-features = false }
+kate-recovery = { workspace = true, default-features = false }
 
 da-control = { workspace = true, default-features = false }
 pallet-mandate = { workspace = true, default-features = false }
 pallet-vector = { workspace = true, default-features = false }
 
-# External 
+# External
 static_assertions.workspace = true
 log.workspace = true
 hex-literal.workspace = true
@@ -115,7 +116,6 @@ pallet-staking-reward-fn = { workspace = true, default-features = false }
 iai.workspace = true
 iai-callgrind.workspace = true
 criterion.workspace = true
-# codspeed-criterion-compat.workspace = true
 divan.workspace = true
 
 [[bench]]
@@ -140,7 +140,6 @@ with-tracing = [ "frame-executive/with-tracing" ]
 fast-runtime = []
 secure_padding_fill = []
 testing-environment = [ "frame-system/testing-environment" ]
-# codspeed = []
 header_commitment_corruption = [ "frame-system/header_commitment_corruption" ]
 std = [
 	"avail-base/std",

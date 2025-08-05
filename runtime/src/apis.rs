@@ -1,6 +1,7 @@
 use super::kate::{Error as RTKateError, GDataProof, GRow};
 use crate::{
-	constants::{self},
+	constants,
+	kate::{GCellBlock, GMultiProof},
 	mmr,
 	version::VERSION,
 	AccountId, AuthorityDiscovery, Babe, Block, BlockNumber, EpochDuration, Executive, Grandpa,
@@ -70,6 +71,7 @@ decl_runtime_apis! {
 		fn rows(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, rows: Vec<u32>) -> Result<Vec<GRow>, RTKateError >;
 		#[api_version(2)]
 		fn proof(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, cells: Vec<(u32,u32)> ) -> Result<Vec<GDataProof>, RTKateError>;
+		fn multiproof(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, cells: Vec<(u32,u32)> ) -> Result<Vec<(GMultiProof, GCellBlock)>, RTKateError>;
 	}
 }
 
@@ -240,36 +242,47 @@ impl_runtime_apis! {
 		}
 	}
 
-
 	impl frame_system_rpc_runtime_api::SystemEventsApi<Block> for Runtime {
-		fn fetch_transaction_success_status() -> Vec<frame_system_rpc_runtime_api::TransactionSuccessStatus> {
-			use frame_system_rpc_runtime_api::TransactionSuccessStatus;
-			use frame_system::Event;
+		fn fetch_events_v1(options: frame_system_rpc_runtime_api::system_events_api::fetch_events_v1::Options) -> frame_system_rpc_runtime_api::system_events_api::fetch_events_v1::ApiResult {
+			use sp_std::vec;
+			use frame_system_rpc_runtime_api::system_events_api::fetch_events_v1::{RuntimeEvent, GroupedRuntimeEvents, ERROR_INVALID_INPUTS};
+			use codec::Encode;
 
-			let mut results: Vec<TransactionSuccessStatus> = Vec::new();
-			let event_records = System::read_events_no_consensus();
-			for event_record in event_records {
-				let id = match &event_record.phase {
-					frame_system::Phase::ApplyExtrinsic(x) => *x,
-					_ => continue
-				};
-
-				let system_event = match &event_record.event {
-					crate::RuntimeEvent::System(x) => x,
-					_ => continue,
-				};
-
-				match system_event {
-					Event::<Runtime>::ExtrinsicSuccess{dispatch_info: _} => results.push(TransactionSuccessStatus {tx_index: id, tx_success: true}),
-					Event::<Runtime>::ExtrinsicFailed{dispatch_error: _, dispatch_info: _} => results.push(TransactionSuccessStatus {tx_index: id, tx_success: false}),
-					_ => continue,
-				}
+			let filter = options.filter.unwrap_or_default();
+			if !filter.is_valid() {
+				return Err(ERROR_INVALID_INPUTS);
 			}
 
-			results
+			let enable_encoding = options.enable_encoding.unwrap_or(false);
+			let enable_decoding = options.enable_decoding.unwrap_or(false);
+
+			let mut result: Vec<GroupedRuntimeEvents> = Vec::new();
+			let all_events = System::read_events_no_consensus();
+			for (position, event) in all_events.enumerate() {
+				if !filter.should_allow(event.phase) {
+					continue
+				}
+
+				let encoded = event.event.encode();
+				if encoded.len() <2 {
+					continue
+				}
+
+				let emitted_index: (u8, u8) = (encoded[0], encoded[1]);
+				let encoded = enable_encoding.then(|| encoded);
+				let decoded = enable_decoding.then(|| decode_runtime_event_v1(&event.event)).flatten();
+
+				let ev = RuntimeEvent::new(position as u32, emitted_index, encoded, decoded);
+				if let Some(entry) = result.iter_mut().find(|x| x.phase == event.phase) {
+					entry.events.push(ev);
+				} else {
+					result.push(GroupedRuntimeEvents {phase: event.phase, events: vec![ev]});
+				};
+			}
+
+			Ok(result)
 		}
 	}
-
 
 	impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<
 		Block,
@@ -476,6 +489,13 @@ impl_runtime_apis! {
 			log::trace!(target: LOG_TARGET, "KateApi::proof: data_proofs={data_proofs:#?}");
 			Ok(data_proofs)
 		}
+
+		fn multiproof(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, cells: Vec<(u32,u32)> ) -> Result<Vec<(GMultiProof, GCellBlock)>, RTKateError> {
+			let app_extrinsics = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block_number, &extrinsics).to_app_extrinsics();
+			let data_proofs = super::kate::multiproof::<Runtime>(app_extrinsics, block_len, cells)?;
+			log::trace!(target: LOG_TARGET, "KateApi::proof: data_proofs={data_proofs:#?}");
+			Ok(data_proofs)
+		}
 	}
 
 	impl avail_base::PostInherentsProvider<Block> for Runtime {
@@ -603,4 +623,74 @@ impl_runtime_apis! {
 			build_config::<RuntimeGenesisConfig>(config)
 		}
 	}
+}
+
+fn decode_runtime_event_v1(event: &super::RuntimeEvent) -> Option<Vec<u8>> {
+	use super::*;
+	use codec::Encode;
+
+	match event {
+		RuntimeEvent::Sudo(e) => match e {
+			pallet_sudo::Event::<Runtime>::Sudid { sudo_result } => {
+				let mut event_data = Vec::<u8>::new();
+				sudo_result.is_ok().encode_to(&mut event_data);
+
+				return Some(event_data);
+			},
+			pallet_sudo::Event::<Runtime>::SudoAsDone { sudo_result } => {
+				let mut event_data = Vec::<u8>::new();
+				sudo_result.is_ok().encode_to(&mut event_data);
+
+				return Some(event_data);
+			},
+			_ => (),
+		},
+		RuntimeEvent::Multisig(e) => match e {
+			pallet_multisig::Event::<Runtime>::MultisigExecuted {
+				multisig,
+				call_hash,
+				result: x,
+				..
+			} => {
+				let mut event_data = Vec::<u8>::new();
+				multisig.encode_to(&mut event_data);
+				call_hash.encode_to(&mut event_data);
+				x.is_ok().encode_to(&mut event_data);
+
+				return Some(event_data);
+			},
+			_ => (),
+		},
+		RuntimeEvent::Proxy(e) => match e {
+			pallet_proxy::Event::<Runtime>::ProxyExecuted { result, .. } => {
+				let mut event_data = Vec::<u8>::new();
+				result.is_ok().encode_to(&mut event_data);
+
+				return Some(event_data);
+			},
+			_ => (),
+		},
+		RuntimeEvent::Scheduler(e) => match e {
+			pallet_scheduler::Event::<Runtime>::Dispatched { result, .. } => {
+				let mut event_data = Vec::<u8>::new();
+				result.is_ok().encode_to(&mut event_data);
+
+				return Some(event_data);
+			},
+			_ => (),
+		},
+		RuntimeEvent::DataAvailability(e) => match e {
+			da_control::Event::<Runtime>::DataSubmitted { who, data_hash } => {
+				let mut event_data = Vec::<u8>::new();
+				who.encode_to(&mut event_data);
+				data_hash.encode_to(&mut event_data);
+
+				return Some(event_data);
+			},
+			_ => (),
+		},
+		_ => (),
+	};
+
+	None
 }

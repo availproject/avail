@@ -32,7 +32,6 @@ use {
 use crate::{
 	cli::{Cli, Subcommand},
 	service::{self, new_partial, FullClient},
-	transaction_state,
 };
 
 use avail_node::NODE_VERSION;
@@ -212,7 +211,7 @@ pub fn run() -> Result<()> {
 					&config,
 					should_skip_da,
 					kate_rpc::Deps::default(),
-					transaction_state::CliDeps::default(),
+					cli.grandpa_justification_period,
 				)?;
 				Ok((cmd.run(client, import_queue), task_manager))
 			})
@@ -228,7 +227,7 @@ pub fn run() -> Result<()> {
 					&config,
 					should_skip_da,
 					kate_rpc::Deps::default(),
-					transaction_state::CliDeps::default(),
+					cli.grandpa_justification_period,
 				)?;
 				Ok((cmd.run(client, config.database), task_manager))
 			})
@@ -244,7 +243,7 @@ pub fn run() -> Result<()> {
 					&config,
 					should_skip_da,
 					kate_rpc::Deps::default(),
-					transaction_state::CliDeps::default(),
+					cli.grandpa_justification_period,
 				)?;
 				Ok((cmd.run(client, config.chain_spec), task_manager))
 			})
@@ -261,7 +260,7 @@ pub fn run() -> Result<()> {
 					&config,
 					should_skip_da,
 					kate_rpc::Deps::default(),
-					transaction_state::CliDeps::default(),
+					cli.grandpa_justification_period,
 				)?;
 				Ok((cmd.run(client, import_queue), task_manager))
 			})
@@ -282,7 +281,7 @@ pub fn run() -> Result<()> {
 					&config,
 					should_skip_da,
 					kate_rpc::Deps::default(),
-					transaction_state::CliDeps::default(),
+					cli.grandpa_justification_period,
 				)?;
 				let aux_revert = Box::new(|client: Arc<FullClient>, backend, blocks| {
 					sc_consensus_babe::revert(client.clone(), backend, blocks)?;

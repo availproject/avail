@@ -3,4 +3,4 @@ pub mod check_batch_transactions;
 pub mod extensions_mock;
 pub mod native;
 
-const MAX_ITERATIONS: usize = 2;
+const MAX_ITERATIONS: usize = 5;

@@ -31,7 +31,6 @@ pallet-vector.workspace = true
 frame-system-rpc-runtime-api.workspace = true
 frame-system = { workspace = true, default-features = false }
 sc-basic-authorship.workspace = true
-transaction-rpc.workspace = true
 
 # 3rd-party
 codec = { package = "parity-scale-codec", version = "3" }

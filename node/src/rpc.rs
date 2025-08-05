@@ -55,6 +55,7 @@ use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use sp_consensus::SelectChain;
 use sp_consensus_babe::BabeApi;
 use sp_keystore::KeystorePtr;
+use sp_runtime::traits::BlockIdTo;
 
 /// Extra dependencies for BABE.
 pub struct BabeDeps {
@@ -101,11 +102,6 @@ pub struct FullDeps<C, P, SC, B> {
 	/// - pub rpc_enabled: bool,
 	/// - pub rpc_metrics_enabled: bool,
 	pub kate_rpc_deps: kate_rpc::Deps,
-	/// Transaction RPC specific dependencies.
-	///
-	/// Available configs:
-	/// - TxStateSender,
-	pub transaction_rpc_deps: Option<transaction_rpc::Deps>,
 }
 
 /// Instantiate all Full RPC extensions.
@@ -116,6 +112,7 @@ pub fn create_full<C, P, SC, B>(
 where
 	C: ProvideRuntimeApi<Block>
 		+ sc_client_api::BlockBackend<Block>
+		+ BlockIdTo<Block>
 		+ HeaderBackend<Block>
 		+ AuxStore
 		+ HeaderMetadata<Block, Error = BlockChainError>
@@ -123,6 +120,7 @@ where
 		+ Send
 		+ 'static,
 	C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>,
+	C::Api: frame_system_rpc_runtime_api::SystemEventsApi<Block>,
 	C::Api: mmr_rpc::MmrRuntimeApi<Block, <Block as sp_runtime::traits::Block>::Hash, BlockNumber>,
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
 	C::Api: BabeApi<Block>,
@@ -133,6 +131,7 @@ where
 	B: sc_client_api::Backend<Block> + Send + Sync + 'static,
 	B::State: sc_client_api::backend::StateBackend<sp_runtime::traits::HashingFor<Block>>,
 {
+	use kate_rpc::justifications::{GrandpaJustifications, GrandpaServer};
 	use kate_rpc::metrics::KateApiMetricsServer;
 	use kate_rpc::{Kate, KateApiServer};
 	use mmr_rpc::{Mmr, MmrApiServer};
@@ -157,7 +156,6 @@ where
 		babe,
 		grandpa,
 		kate_rpc_deps,
-		transaction_rpc_deps,
 	} = deps;
 
 	let BabeDeps {
@@ -238,19 +236,21 @@ where
 
 	if is_dev_chain || kate_rpc_deps.rpc_enabled || kate_rpc_deps.rpc_metrics_enabled {
 		io.merge(KateApiServer::into_rpc(Kate::<C, Block>::new(
-			client,
+			client.clone(),
 			kate_rpc_deps.max_cells_size,
 		)))?;
 	}
 
-	if let Some(deps) = transaction_rpc_deps {
-		io.merge(transaction_rpc::TransactionStateServer::into_rpc(
-			transaction_rpc::System::new(deps),
-		))?;
-	}
-
 	#[cfg(feature = "testing-environment")]
 	io.merge(TestingApiServer::into_rpc(TestingEnv))?;
+
+	io.merge(GrandpaServer::into_rpc(
+		GrandpaJustifications::<C, Block>::new(client.clone()),
+	))?;
+
+	io.merge(kate_rpc::system::ApiServer::into_rpc(
+		kate_rpc::system::Rpc::<C, Block>::new(client),
+	))?;
 
 	Ok(io)
 }

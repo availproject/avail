@@ -1,4 +1,4 @@
-use super::{native::hosted_kate, Error, GDataProof, GRow};
+use super::{native::hosted_kate, Error, GCellBlock, GDataProof, GMultiProof, GRow};
 use avail_base::header_extension::SubmittedData;
 use avail_core::AppExtrinsic;
 use da_control::LOG_TARGET as DALOG_TARGET;
@@ -59,4 +59,13 @@ pub fn proof_v4<T: SystemConfig>(
 ) -> Result<Vec<GDataProof>, Error> {
 	let seed = random_seed::<T>();
 	hosted_kate::proof_v4(da_extrinsics, block_len, seed, cells)
+}
+
+pub fn multiproof<T: SystemConfig>(
+	app_extrinsics: Vec<AppExtrinsic>,
+	block_len: BlockLength,
+	cells: Vec<(u32, u32)>,
+) -> Result<Vec<(GMultiProof, GCellBlock)>, Error> {
+	let seed = random_seed::<T>();
+	hosted_kate::multiproof(app_extrinsics, block_len, seed, cells)
 }
