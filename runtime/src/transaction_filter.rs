@@ -115,16 +115,16 @@ fn filter_da_call(
 		return None;
 	}
 
-	let (blob_hash, commitments) = match call {
+	let (blob_hash, commitment) = match call {
 		DACall::submit_blob_metadata {
 			blob_hash,
-			commitments,
+			commitment,
 			size: _,
 		} => {
-			if commitments.is_empty() {
+			if commitment.is_empty() {
 				return None;
 			}
-			(*blob_hash, commitments.clone())
+			(*blob_hash, commitment.clone())
 		},
 		DACall::submit_data { data } => {
 			if data.is_empty() {
@@ -132,14 +132,14 @@ fn filter_da_call(
 			}
 			let blob_hash = H256(keccak_256(&data));
 			let block_length = BlockLength::default();
-			let commitments = build_da_commitments(data.to_vec(), block_length, Seed::default());
-			(blob_hash, commitments)
+			let commitment = build_da_commitments(data.to_vec(), block_length, Seed::default());
+			(blob_hash, commitment)
 		},
 		_ => return None,
 	};
 
 	let tx_index = u32::try_from(tx_index).ok()?;
-	let submitted_data = Some(SubmittedData::new(app_id, tx_index, blob_hash, commitments));
+	let submitted_data = Some(SubmittedData::new(app_id, tx_index, blob_hash, commitment));
 
 	Some(ExtractedTxData {
 		submitted_data,

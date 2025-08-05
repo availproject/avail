@@ -7,30 +7,26 @@ use std::{marker::PhantomData, path::Path};
 use tempfile::TempDir;
 
 use crate::{
-	types::{BlobHash, BlobMetadata, Shard},
+	types::{Blob, BlobHash, BlobMetadata},
 	LOG_TARGET,
 };
 
 const COL_BLOB_METADATA: u32 = 0;
 const COL_BLOB_RETRY: u32 = 1;
-const COL_SHARDS: u32 = 2;
+const COL_BLOB: u32 = 2;
 
-pub trait ShardStore<Block: BlockT>: Send + Sync + 'static {
+pub trait BlobStore<Block: BlockT>: Send + Sync + 'static {
 	// Blob metadata
-	fn insert_blob_metadata(
-		&self,
-		hash: &BlobHash,
-		blob_metadata: &BlobMetadata<Block>,
-	) -> Result<()>;
+	fn insert_blob_metadata(&self, blob_metadata: &BlobMetadata<Block>) -> Result<()>;
 	fn get_blob_metadata(&self, hash: &BlobHash) -> Result<Option<BlobMetadata<Block>>>;
 
 	// Blob read error retry count
 	fn insert_blob_retry(&self, hash: &BlobHash, count: u16) -> Result<()>;
 	fn get_blob_retry(&self, hash: &BlobHash) -> Result<u16>;
 
-	// Shards
-	fn insert_shards(&self, shards: &Vec<Shard>) -> Result<()>;
-	fn get_shard(&self, hash: &BlobHash, shard_id: u16) -> Result<Option<Shard>>;
+	// Blobs
+	fn insert_blob(&self, blob: &Blob) -> Result<()>;
+	fn get_blob(&self, hash: &BlobHash) -> Result<Option<Blob>>;
 
 	// Cleaning
 	fn clean_blob_data(&self, hash: &BlobHash) -> Result<()>;
@@ -40,65 +36,59 @@ pub trait ShardStore<Block: BlockT>: Send + Sync + 'static {
 	fn log_all_entries(&self) -> Result<()>;
 }
 
-pub struct RocksdbShardStore<Block: BlockT> {
+pub struct RocksdbBlobStore<Block: BlockT> {
 	db: Database,
 	_block: PhantomData<Block>,
 }
 
-impl<Block: BlockT> RocksdbShardStore<Block> {
+impl<Block: BlockT> RocksdbBlobStore<Block> {
 	/// Open (or create) a new DB at `path`, with a single column.
 	pub fn open(path: impl AsRef<Path>) -> Result<Self> {
 		let num_columns = 3;
 		let db_config = DatabaseConfig::with_columns(num_columns);
 		let db = Database::open(&db_config, path.as_ref())?;
-		Ok(RocksdbShardStore::<Block> {
+		Ok(RocksdbBlobStore::<Block> {
 			db,
 			_block: PhantomData,
 		})
 	}
 
-	/// blob key = b"blob:" || hash_bytes
-	fn blob_key(hash: &BlobHash) -> Vec<u8> {
+	/// Blob metadata key
+	fn blob_meta_key(hash: &BlobHash) -> Vec<u8> {
 		hash.0.to_vec()
 	}
 
-	/// blob key = b"blob:" || hash_bytes
+	/// Blob count retry key
 	fn blob_count_key(hash: &BlobHash) -> Vec<u8> {
 		hash.0.to_vec()
 	}
 
-	/// shard key = b"shard:" || hash_bytes || shard_id_be
-	fn shard_key(hash: &BlobHash, shard_id: u16) -> Vec<u8> {
-		let mut key = hash.0.to_vec();
-		key.extend_from_slice(&shard_id.to_be_bytes());
-		key
+	/// Blob key
+	fn blob_key(hash: &BlobHash) -> Vec<u8> {
+		hash.0.to_vec()
 	}
 }
 
-impl<Block: BlockT> Default for RocksdbShardStore<Block> {
+impl<Block: BlockT> Default for RocksdbBlobStore<Block> {
 	fn default() -> Self {
-		let temp_dir = TempDir::new().expect("failed to create temp dir for RocksdbShardStore");
+		let temp_dir = TempDir::new().expect("failed to create temp dir for RocksdbBlobStore");
 		let db_path = temp_dir.path().join("blob_store");
 		let num_columns = 3;
 		let db_config = DatabaseConfig::with_columns(num_columns);
 		let db = Database::open(&db_config, db_path).expect("opening RocksDB blob store failed");
-		RocksdbShardStore::<Block> {
+		RocksdbBlobStore::<Block> {
 			db,
 			_block: PhantomData,
 		}
 	}
 }
 
-impl<Block: BlockT> ShardStore<Block> for RocksdbShardStore<Block> {
-	fn insert_blob_metadata(
-		&self,
-		hash: &BlobHash,
-		blob_metadata: &BlobMetadata<Block>,
-	) -> Result<()> {
+impl<Block: BlockT> BlobStore<Block> for RocksdbBlobStore<Block> {
+	fn insert_blob_metadata(&self, blob_metadata: &BlobMetadata<Block>) -> Result<()> {
 		let mut tx = DBTransaction::new();
 		tx.put(
 			COL_BLOB_METADATA,
-			&Self::blob_key(hash),
+			&Self::blob_meta_key(&blob_metadata.hash),
 			&blob_metadata.encode(),
 		);
 		self.db.write(tx)?;
@@ -107,7 +97,7 @@ impl<Block: BlockT> ShardStore<Block> for RocksdbShardStore<Block> {
 
 	fn get_blob_metadata(&self, hash: &BlobHash) -> Result<Option<BlobMetadata<Block>>> {
 		self.db
-			.get(COL_BLOB_METADATA, &Self::blob_key(hash))?
+			.get(COL_BLOB_METADATA, &Self::blob_meta_key(hash))?
 			.map(|bytes| {
 				let mut slice = bytes.as_slice();
 				BlobMetadata::decode(&mut slice)
@@ -134,47 +124,37 @@ impl<Block: BlockT> ShardStore<Block> for RocksdbShardStore<Block> {
 			.map(|opt| opt.unwrap_or(0))
 	}
 
-	fn insert_shards(&self, shards: &Vec<Shard>) -> Result<()> {
+	fn insert_blob(&self, blob: &Blob) -> Result<()> {
 		let mut tx = DBTransaction::new();
-		for shard in shards {
-			tx.put(
-				COL_SHARDS,
-				&Self::shard_key(&shard.blob_hash, shard.shard_id),
-				&shard.encode(),
-			);
-		}
+		tx.put(COL_BLOB, &Self::blob_key(&blob.blob_hash), &blob.encode());
 		self.db.write(tx)?;
 		Ok(())
 	}
 
-	fn get_shard(&self, hash: &BlobHash, shard_id: u16) -> Result<Option<Shard>> {
+	fn get_blob(&self, hash: &BlobHash) -> Result<Option<Blob>> {
 		self.db
-			.get(COL_SHARDS, &Self::shard_key(hash, shard_id))?
+			.get(COL_BLOB, &Self::blob_key(hash))?
 			.map(|bytes| {
 				let mut slice = bytes.as_slice();
-				Shard::decode(&mut slice)
-					.map_err(|_| anyhow!("failed to decode shard from the store"))
+				Blob::decode(&mut slice)
+					.map_err(|_| anyhow!("failed to decode blob from the store"))
 			})
 			.transpose()
 	}
 
 	fn clean_blob_data(&self, hash: &BlobHash) -> Result<()> {
-		if let Some(blob_metadata) = self.get_blob_metadata(hash)? {
-			let mut tx = DBTransaction::new();
+		let mut tx = DBTransaction::new();
 
-			// remove blob metadata
-			tx.delete(COL_BLOB_METADATA, &Self::blob_key(hash));
+		// remove blob metadata
+		tx.delete(COL_BLOB_METADATA, &Self::blob_meta_key(hash));
 
-			// remove blob retry
-			tx.delete(COL_BLOB_RETRY, &Self::blob_count_key(hash));
+		// remove blob retry
+		tx.delete(COL_BLOB_RETRY, &Self::blob_count_key(hash));
 
-			// remove all shards
-			for shard_id in 0..blob_metadata.nb_shards {
-				tx.delete(COL_SHARDS, &Self::shard_key(hash, shard_id));
-			}
+		// remove blob
+		tx.delete(COL_BLOB, &Self::blob_key(hash));
 
-			self.db.write(tx)?;
-		}
+		self.db.write(tx)?;
 		Ok(())
 	}
 
@@ -211,28 +191,29 @@ impl<Block: BlockT> ShardStore<Block> for RocksdbShardStore<Block> {
 			if let Ok(blob_metadata) = BlobMetadata::<Block>::decode(&mut value.as_slice()) {
 				log::info!(
 					target: LOG_TARGET,
-					"Blob: hash={:?}, size={}, nb_shards={}, commitments_len={}, ownership={:?}, is_notified={}, expires_at={}",
+					"Blob: hash={:?}, size={}, commitments_len={}, ownership_len={:?}, is_notified={}, is_validated={}, nb_val_per_blob={}, expires_at={}, error_reason={:?}",
 					blob_metadata.hash,
 					blob_metadata.size,
-					blob_metadata.nb_shards,
-					blob_metadata.commitments.len(),
-					blob_metadata.ownership,
+					blob_metadata.commitment.len(),
+					blob_metadata.ownership.len(),
 					blob_metadata.is_notified,
-					blob_metadata.expires_at
+					blob_metadata.is_validated,
+					blob_metadata.nb_validators_per_blob,
+					blob_metadata.expires_at,
+					blob_metadata.error_reason,
 				);
 			}
 		}
 
-		// Log Shards
-		log::info!(target: LOG_TARGET, "--- Shards ---");
-		for (_key, value) in self.db.iter(COL_SHARDS).filter_map(Result::ok) {
-			if let Ok(shard) = Shard::decode(&mut value.as_slice()) {
+		// Log Blobs
+		log::info!(target: LOG_TARGET, "--- Blobs ---");
+		for (_key, value) in self.db.iter(COL_BLOB).filter_map(Result::ok) {
+			if let Ok(blob) = Blob::decode(&mut value.as_slice()) {
 				log::info!(
 					target: LOG_TARGET,
-					"Shard: hash={:?}, shard_id={}, size={}",
-					shard.blob_hash,
-					shard.shard_id,
-					shard.size
+					"Blob: hash={:?}, size={}",
+					blob.blob_hash,
+					blob.size
 				);
 			}
 		}

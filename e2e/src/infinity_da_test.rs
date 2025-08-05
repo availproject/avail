@@ -1,14 +1,14 @@
 use avail_rust_client::{avail_rust_core::rpc::blob::submit_blob, prelude::*};
 use da_commitment::build_da_commitments::build_da_commitments;
 use kate::Seed;
-use sp_core::blake2_256;
+use sp_core::keccak_256;
 use sp_std::iter::repeat;
 
 pub async fn run() -> Result<(), ClientError> {
 	// println!("---------- START ---------- ");
 	// let string = "aaaaa";
 	// let blob = string.as_bytes().to_vec();
-	// let blob_hash = H256::from(blake2_256(&blob));
+	// let blob_hash = H256::from(keccak_256(&blob));
 	// let commitments = build_da_commitments(blob.clone(), 1024, 4096, Seed::default()).unwrap();
 	// let commitments_hex = hex::encode(&commitments);
 
@@ -72,7 +72,7 @@ pub async fn run() -> Result<(), ClientError> {
 	for i in 0..50 {
 		println!("---------- START Commitment generation {i} ---------- ");
 		let blob: Vec<u8> = repeat(byte).take(len - i).collect::<Vec<u8>>();
-		let blob_hash = H256::from(blake2_256(&blob));
+		let blob_hash = H256::from(keccak_256(&blob));
 		let commitments = build_da_commitments(blob.clone(), 1024, 4096, Seed::default());
 		println!("blob len = {:?}", blob.len());
 		println!("blob_hash = {:?}", blob_hash);

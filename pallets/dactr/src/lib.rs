@@ -16,9 +16,9 @@ use serde::{Deserialize, Serialize};
 use sp_arithmetic::traits::{CheckedAdd, One, SaturatedConversion};
 use sp_authority_discovery::AuthorityId;
 use sp_core::H256;
-use sp_io::hashing::blake2_256;
+use sp_io::hashing::keccak_256;
 use sp_runtime::Perbill;
-use sp_std::{collections::btree_map::BTreeMap, mem::replace, vec, vec::Vec};
+use sp_std::{mem::replace, vec, vec::Vec};
 
 pub use crate::{pallet::*, weights::WeightInfo};
 
@@ -67,7 +67,7 @@ pub mod pallet {
 		pub tx_index: u32,
 		pub success: bool,
 		pub reason: Option<String>,
-		pub ownership: BTreeMap<u16, Vec<(AuthorityId, String, Vec<u8>)>>,
+		pub ownership: Vec<(AuthorityId, String, Vec<u8>)>,
 	}
 
 	/// Default implementations of [`DefaultConfig`], which can be used to implement [`Config`].
@@ -202,7 +202,7 @@ pub mod pallet {
 			let who = ensure_signed(origin)?;
 			ensure!(!data.is_empty(), Error::<T>::DataCannotBeEmpty);
 
-			let data_hash = blake2_256(&data);
+			let data_hash = keccak_256(&data);
 			Self::deposit_event(Event::DataSubmitted {
 				who,
 				data_hash: H256(data_hash),
@@ -322,18 +322,18 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			blob_hash: H256,
 			size: u64,
-			commitments: Vec<u8>,
+			commitment: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
 			ensure!(size > 0, Error::<T>::DataCannotBeEmpty);
-			ensure!(commitments.len() > 0, Error::<T>::DataCannotBeEmpty);
+			ensure!(commitment.len() > 0, Error::<T>::DataCannotBeEmpty);
 			ensure!(blob_hash.0.len() > 0, Error::<T>::DataCannotBeEmpty);
 
 			Self::deposit_event(Event::SubmitBlobMetadataRequest {
 				who,
 				size,
 				blob_hash,
-				commitments,
+				commitment,
 			});
 
 			Ok(().into())
@@ -383,7 +383,7 @@ pub mod pallet {
 			who: T::AccountId,
 			blob_hash: H256,
 			size: u64,
-			commitments: Vec<u8>,
+			commitment: Vec<u8>,
 		},
 	}
 
@@ -542,18 +542,20 @@ impl BlobTxSummaryRuntime {
 			u32,
 			bool,
 			Option<String>,
-			BTreeMap<u16, Vec<(AuthorityId, String, Vec<u8>)>>,
+			Vec<(AuthorityId, String, Vec<u8>)>,
 		)>,
 	) -> Vec<BlobTxSummaryRuntime> {
 		input
 			.into_iter()
-			.map(|(hash, tx_index, success, reason, ownership)| BlobTxSummaryRuntime {
-				hash,
-				tx_index,
-				success,
-				reason,
-				ownership,
-			})
+			.map(
+				|(hash, tx_index, success, reason, ownership)| BlobTxSummaryRuntime {
+					hash,
+					tx_index,
+					success,
+					reason,
+					ownership,
+				},
+			)
 			.collect()
 	}
 }

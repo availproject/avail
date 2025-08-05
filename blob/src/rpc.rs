@@ -1,21 +1,20 @@
 use crate::{
 	p2p::BlobHandle,
-	send_shard_query_request,
-	store::ShardStore,
-	types::{BlobMetadata, BlobNotification, BlobReceived, Deps, OwnershipEntry, Shard},
+	send_blob_query_request,
+	store::BlobStore,
+	types::{Blob, BlobMetadata, BlobNotification, BlobReceived, Deps, OwnershipEntry},
 	utils::{
-		build_signature_payload, get_my_validator_id, get_nb_shards_from_blob_size,
-		get_shards_to_store, sign_blob_data_inner,
+		build_signature_payload, check_store_blob, generate_base_index, get_my_validator_id,
+		get_validator_per_blob, sign_blob_data_inner,
 	},
 	BLOB_TTL, LOG_TARGET, MAX_BLOB_SIZE, MAX_RPC_RETRIES, MAX_TRANSACTION_VALIDITY,
-	MIN_TRANSACTION_VALIDITY, SHARD_SIZE,
+	MIN_TRANSACTION_VALIDITY, TEMP_BLOB_TTL,
 };
 use anyhow::{anyhow, Result};
 use codec::{Decode, Encode};
 use da_commitment::build_da_commitments::build_da_commitments;
 use da_control::{pallet::BlobTxSummaryRuntime, Call};
 use da_runtime::{RuntimeCall, UncheckedExtrinsic};
-use futures::{stream::FuturesUnordered, StreamExt};
 use jsonrpsee::{
 	core::{async_trait, RpcResult},
 	proc_macros::rpc,
@@ -29,13 +28,11 @@ use sc_network::{NetworkStateInfo, PeerId};
 use sc_service::Role;
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::ProvideRuntimeApi;
-use sp_core::{blake2_256, Bytes, H256};
+use sp_core::{keccak_256, Bytes, H256};
 use sp_runtime::transaction_validity::TransactionSource;
 use sp_runtime::{traits::Block as BlockT, SaturatedConversion};
 use sp_transaction_pool::runtime_api::TaggedTransactionQueue;
 use std::{
-	cmp,
-	collections::BTreeMap,
 	marker::{PhantomData, Sync},
 	str::FromStr,
 	sync::Arc,
@@ -76,8 +73,10 @@ where
 		block_hash: Block::Hash,
 		blob_index: u32,
 		blob_hash: H256,
-		shard_ids: Option<Vec<u16>>,
-	) -> RpcResult<(Vec<Shard>, u16)>;
+	) -> RpcResult<Blob>;
+
+	#[method(name = "blob_logStuff")]
+	async fn log_stuff(&self) -> RpcResult<()>;
 }
 
 pub struct BlobRpc<Client, Pool, Block: BlockT> {
@@ -163,16 +162,16 @@ where
 		}
 
 		// --- 4. Decode to concrete call to read the metadata, Check hash, commitment, ... of the blob compared to the submitted metadata ----------------
-		let blob_hash = H256::from(blake2_256(&blob));
+		let blob_hash = H256::from(keccak_256(&blob));
 		let encoded_metadata_signed_transaction: UncheckedExtrinsic =
 			Decode::decode(&mut &metadata_signed_transaction[..])
 				.map_err(|_| internal_err!("failed to decode concrete metadata call"))?;
 
-		let commitments: Vec<u8>;
+		let commitment: Vec<u8>;
 		if let RuntimeCall::DataAvailability(Call::submit_blob_metadata {
 			size,
 			blob_hash: provided_blob_hash,
-			commitments: provided_commitments,
+			commitment: provided_commitment,
 		}) = encoded_metadata_signed_transaction.function
 		{
 			// Check size
@@ -189,13 +188,13 @@ where
 				return Err(internal_err!("submitted blob: {provided_blob_hash:?} does not correspond to generated blob {blob_hash:?}"));
 			}
 
-			// Check commitments
-			commitments = provided_commitments;
+			// Check commitment
+			commitment = provided_commitment;
 			// TODO Blob - get values from runtime
 			let generated_commitment =
 				build_da_commitments(blob.to_vec(), 1024, 4096, Seed::default());
-			if commitments != generated_commitment {
-				return Err(internal_err!("submitted blob commitments: {commitments:?} does not correspond to generated commitments {generated_commitment:?}"));
+			if commitment != generated_commitment {
+				return Err(internal_err!("submitted blob commitment: {commitment:?} does not correspond to generated commitment {generated_commitment:?}"));
 			}
 		} else {
 			return Err(internal_err!(
@@ -214,85 +213,88 @@ where
 		let my_peer_id = net.local_peer_id();
 		let my_peer_id_base58 = my_peer_id.to_base58();
 
-		// --- 5. Setup blob metadata and split the blob into shard
+		// --- 5. Setup blob metadata and blob
 		// --- Check first in case we already received this exact blob before
 		let finalized_block_number = client_info.finalized_number.saturated_into::<u64>();
 		let finalized_block_hash = client_info.finalized_hash;
 
-		let expiration = finalized_block_number.saturating_add(BLOB_TTL);
 		let mut blob_metadata = self
 			.blob_handle
-			.shard_store
+			.blob_store
 			.get_blob_metadata(&blob_hash)
 			.map_err(|e| internal_err!("Failed to get data from blob storage: {e}"))?
 			.unwrap_or_else(|| {
 				let blob_len = blob.len();
-				let nb_shards = get_nb_shards_from_blob_size(blob_len);
 
 				BlobMetadata {
 					hash: blob_hash,
 					size: blob_len.saturated_into(),
-					nb_shards,
-					commitments,
-					ownership: BTreeMap::new(),
+					commitment,
+					ownership: Vec::new(),
 					is_notified: true,
-					expires_at: expiration,
-					finalized_block_hash,
-					finalized_block_number,
+					expires_at: 0,
+					finalized_block_hash: Block::Hash::default(),
+					finalized_block_number: 0,
+					nb_validators_per_blob: 0,
+					is_validated: false,
+					error_reason: None,
 				}
 			});
 
-		if blob_metadata.expires_at < expiration {
+		// Check if we need to store the blob in case the receiving rpc is also a validator
+		let (maybe_ownership_entry, nb_validators_per_blob) =
+			check_rpc_store_blob::<Client, Block>(
+				&self.blob_handle.role,
+				&self.client,
+				&self.blob_handle.keystore.get().cloned(),
+				blob_metadata.clone(),
+				finalized_block_hash,
+				my_peer_id_base58.clone(),
+			)
+			.await
+			.map_err(|e| internal_err!("could not check if rpc should store blob: {e}"))?;
+
+		// It might be a new blob or an old one being resubmitted, we still updte most of the values
+		let expiration = finalized_block_number.saturating_add(TEMP_BLOB_TTL);
+		blob_metadata.is_notified = true;
+		blob_metadata.expires_at = expiration;
+		blob_metadata.finalized_block_hash = finalized_block_hash;
+		blob_metadata.finalized_block_number = finalized_block_number;
+		blob_metadata.nb_validators_per_blob = nb_validators_per_blob;
+
+		if let Some(ownership_entry) = maybe_ownership_entry {
+			blob_metadata.insert_ownership(
+				&ownership_entry.address,
+				&ownership_entry.peer_id_encoded,
+				ownership_entry.signature,
+			);
+			let expiration = finalized_block_number.saturating_add(BLOB_TTL);
 			blob_metadata.expires_at = expiration;
+			// We put true here cause we validated the comitment above.
+			blob_metadata.is_validated = true;
 		}
 
-		// Get shards that we need to store in case we're a RPC and a validator
-		// TODO Blob - RPC Will anyway store all shards for now, _shards_index_to_store should be used to check what shard we don't need to delete them after
-		let (_shards_index_to_store, ownership) = get_shards_to_store_rpc::<Client, Block>(
-			&self.blob_handle.role,
-			&self.client,
-			&self.blob_handle.keystore.get().cloned(),
-			blob_metadata.clone(),
-			finalized_block_hash,
-			my_peer_id_base58.clone(),
-		)
-		.await
-		.map_err(|e| internal_err!("could not get shards to store: {e}"))?;
+		let blob = Blob {
+			blob_hash,
+			size: blob.len().saturated_into(),
+			data: blob.to_vec(),
+		};
 
-		blob_metadata.merge_ownerships(ownership);
-
-		let mut shards: Vec<Shard> = Vec::new();
-		for shard_id in 0..blob_metadata.nb_shards {
-			let start = shard_id as usize * (SHARD_SIZE as usize);
-			let end = cmp::min(blob.len(), start + SHARD_SIZE as usize);
-			let data = blob[start..end].to_vec();
-
-			let shard = Shard {
-				blob_hash,
-				shard_id,
-				size: data.len().saturated_into(),
-				data,
-			};
-
-			shards.push(shard);
-		}
-
-		// --- 6. Store the blob in the store, temporarily except for shards that I need to keep -------------------
+		// --- 6. Store the blob in the store, temporarily except if i need to store it as a validator -------------------
 		self.blob_handle
-			.shard_store
-			.insert_blob_metadata(&blob_metadata.hash, &blob_metadata)
+			.blob_store
+			.insert_blob_metadata(&blob_metadata)
 			.map_err(|e| internal_err!("failed to insert blob metadata into store: {e}"))?;
 		self.blob_handle
-			.shard_store
-			.insert_shards(&shards)
-			.map_err(|e| internal_err!("failed to insert blob shards into store: {e}"))?;
+			.blob_store
+			.insert_blob(&blob)
+			.map_err(|e| internal_err!("failed to insert blob into store: {e}"))?;
 
 		// --- 7. Announce the blob to the network -------------------
 		let blob_received_notification = BlobNotification::BlobReceived(BlobReceived {
 			hash: blob_metadata.hash,
 			size: blob_metadata.size,
-			nb_shards: blob_metadata.nb_shards,
-			commitments: blob_metadata.commitments,
+			commitment: blob_metadata.commitment,
 			ownership: blob_metadata.ownership,
 			original_peer_id: my_peer_id_base58,
 			finalized_block_hash,
@@ -315,7 +317,6 @@ where
 			.await
 			.map_err(|e| internal_err!("tx-pool error: {e}"))?;
 
-
 		Ok(())
 	}
 
@@ -324,8 +325,7 @@ where
 		block_hash: Block::Hash,
 		blob_index: u32,
 		blob_hash: H256,
-		shard_ids: Option<Vec<u16>>,
-	) -> RpcResult<(Vec<Shard>, u16)> {
+	) -> RpcResult<Blob> {
 		let network = self
 			.blob_handle
 			.network
@@ -361,194 +361,140 @@ where
 			));
 		}
 
-		// Determine which shards to fetch based on the shard_ids parameter
-		let shards_to_fetch: Vec<u16> = if let Some(requested_shard_ids) = &shard_ids {
-			// Safeguard against empty vector
-			if requested_shard_ids.is_empty() {
-				return Err(internal_err!("shard_ids cannot be empty when provided"));
-			}
+		let ownership_len = blob_summary.ownership.len();
+		if ownership_len == 0 {
+			return Err(internal_err!("Blob ownership is empty"));
+		}
 
-			// Validate that all requested shard_ids exist in the blob
-			for &shard_id in requested_shard_ids {
-				if !blob_summary.ownership.contains_key(&shard_id) {
+		let finalized_hash = self.client.info().finalized_hash;
+
+		// Take a random owner index and try to get the blob from him, retry with next ones
+		let base_index =
+			match generate_base_index(blob_hash, &finalized_hash.encode(), ownership_len, None) {
+				Ok(i) => i,
+				Err(e) => {
 					return Err(internal_err!(
-						"Invalid shard_id {} - shard does not exist in blob. Available shards: {:?}",
-						shard_id,
-						blob_summary.ownership.keys().collect::<Vec<_>>()
+						"An error has occured while generating a base index: {e:?}"
 					));
-				}
-			}
-			requested_shard_ids.clone()
-		} else {
-			// If no specific shards requested, fetch all shards
-			blob_summary.ownership.keys().copied().collect()
-		};
+				},
+			};
 
-		let total_shards_to_fetch = shards_to_fetch.len();
-		let futures = FuturesUnordered::new();
-
-		for shard_id in shards_to_fetch {
-			let Some(entries) = blob_summary.ownership.get(&shard_id) else {
-				// This should not happen due to validation above, but keeping as safety check
+		for attempt in 0..(MAX_RPC_RETRIES as usize) {
+			let index = (base_index + attempt) % ownership_len;
+			let Some((_, peer_id_encoded, _)) = blob_summary.ownership.get(index) else {
+				log::warn!(
+					"Attempt {}/{}: invalid array index",
+					attempt + 1,
+					MAX_RPC_RETRIES
+				);
 				continue;
 			};
 
-			let fut = async move {
-				let mut maybe_shard: Option<Shard> = None;
-
-				if !entries.is_empty() {
-					let hash_bytes = blob_hash.as_bytes();
-					let Some(truncated) = hash_bytes.get(..8) else {
-						log::warn!("Blob hash is too short, expected at least 8 bytes");
-						return maybe_shard;
-					};
-
-					let array_result: Result<[u8; 8], std::array::TryFromSliceError> =
-						truncated.try_into();
-					let Ok(array) = array_result else {
-						log::warn!("Failed to convert first 8 bytes of blob hash");
-						return maybe_shard;
-					};
-					let seed = u64::from_le_bytes(array).wrapping_add(shard_id.into());
-
-					for attempt in 0..MAX_RPC_RETRIES {
-						let index = ((seed + (attempt as u64)) % (entries.len() as u64)) as usize;
-
-						let Some((_, peer_id_encoded, _)) = entries.get(index) else {
-							log::warn!(
-								"shard {} attempt {}/{}: invalid array index",
-								shard_id,
-								attempt,
-								MAX_RPC_RETRIES
-							);
-							continue;
-						};
-
-						match PeerId::from_str(&peer_id_encoded) {
-							Ok(peer_id) => {
-								match send_shard_query_request(
-									blob_hash, shard_id, peer_id, &network,
-								)
-								.await
-								{
-									Ok(Some(shard)) => {
-										maybe_shard = Some(shard);
-										break;
-									},
-									Ok(None) => {
-										log::warn!(
-											"shard {} attempt {}/{}: no shard returned",
-											shard_id,
-											attempt,
-											MAX_RPC_RETRIES
-										);
-									},
-									Err(e) => {
-										log::warn!(
-											"shard {} attempt {}/{} RPC error: {:?}",
-											shard_id,
-											attempt,
-											MAX_RPC_RETRIES,
-											e
-										);
-									},
-								}
-							},
-							Err(e) => {
-								log::warn!(
-									"shard {} attempt {}: invalid peer_id {:?}",
-									shard_id,
-									attempt,
-									e
-								);
-							},
-						}
-					}
-				}
-
-				maybe_shard
-			};
-
-			futures.push(fut);
+			match PeerId::from_str(&peer_id_encoded) {
+				Ok(peer_id) => match send_blob_query_request(blob_hash, peer_id, &network).await {
+					Ok(Some(blob)) => {
+						return Ok(blob);
+					},
+					Ok(None) => {
+						log::warn!(
+							"attempt {}/{}: no blob returned",
+							attempt + 1,
+							MAX_RPC_RETRIES
+						);
+					},
+					Err(e) => {
+						log::warn!(
+							"attempt {}/{} RPC error: {:?}",
+							attempt + 1,
+							MAX_RPC_RETRIES,
+							e
+						);
+					},
+				},
+				Err(e) => {
+					log::warn!("Attempt {}: invalid peer_id {:?}", attempt + 1, e);
+				},
+			}
 		}
 
-		let results: Vec<Option<Shard>> = futures.collect().await;
-		let shards: Vec<Shard> = results.into_iter().filter_map(|x| x).collect();
-		let missing = (total_shards_to_fetch - shards.len()) as u16;
+		Err(internal_err!(
+			"All attempts to get the blob from validators failed."
+		))
+	}
 
-		Ok((shards, missing))
+	async fn log_stuff(&self) -> RpcResult<()> {
+		let _ = self.blob_handle.blob_store.log_all_entries();
+		Ok(())
 	}
 }
 
-async fn get_shards_to_store_rpc<Client, Block>(
+async fn check_rpc_store_blob<Client, Block>(
 	role: &Role,
 	client: &Client,
 	keystore: &Option<Arc<LocalKeystore>>,
 	blob_metadata: BlobMetadata<Block>,
 	finalized_hash: Block::Hash,
 	my_peer_id_encoded: String,
-) -> Result<(Vec<u16>, BTreeMap<u16, Vec<OwnershipEntry>>)>
+) -> Result<(Option<OwnershipEntry>, u32)>
 where
 	Block: BlockT,
 	Client: HeaderBackend<Block> + ProvideRuntimeApi<Block> + AuthorityDiscovery<Block>,
 {
-	let mut ownership = BTreeMap::new();
-
-	if !role.is_authority() {
-		log::warn!(target: LOG_TARGET, "RPC node (me) is not an authority, so I don't have to store shards");
-		return Ok((Vec::new(), ownership));
-	}
-
 	let validators = client
 		.authorities(finalized_hash)
 		.await
 		.map_err(|e| anyhow!("failed to get validators from runtime: {e}"))?;
+
+	let nb_validators_per_blob = get_validator_per_blob(validators.len() as u32);
+
+	if !role.is_authority() {
+		log::warn!(target: LOG_TARGET, "RPC node (me) is not an authority, so I don't have to store blobs");
+		return Ok((None, nb_validators_per_blob));
+	}
 
 	let Some(keystore) = keystore else {
 		return Err(anyhow!("failed to get keystore"));
 	};
 
 	let Some(my_validator_id) = get_my_validator_id(&keystore) else {
-		return Ok((Vec::new(), ownership));
+		return Ok((None, nb_validators_per_blob));
 	};
 
-	let shards_to_store = match get_shards_to_store(
+	let should_store_blob = match check_store_blob(
 		blob_metadata.hash,
-		blob_metadata.nb_shards,
 		&validators,
 		&my_validator_id,
+		&finalized_hash.encode(),
+		nb_validators_per_blob,
 	) {
 		Ok(s) => s,
 		Err(e) => {
-			return Err(anyhow!("failed to get shards from the store: {e}"));
+			return Err(anyhow!("failed to check if I should hold a blob: {e}"));
 		},
 	};
 
-	for shard_to_store in &shards_to_store {
-		let signature_payload = build_signature_payload(
-			blob_metadata.hash,
-			vec![*shard_to_store],
-			b"received".to_vec(),
-		);
-		let signature = match sign_blob_data_inner(keystore, signature_payload) {
-			Ok(s) => s.signature,
-			Err(e) => {
-				return Err(anyhow!(
-					"An error has occured while trying to sign data, exiting the function: {e}"
-				));
-			},
-		};
-		ownership.insert(
-			*shard_to_store,
-			vec![OwnershipEntry {
-				address: my_validator_id.clone(),
-				peer_id_encoded: my_peer_id_encoded.clone(),
-				signature,
-			}],
-		);
+	if !should_store_blob {
+		return Ok((None, nb_validators_per_blob));
 	}
 
-	Ok((shards_to_store, ownership))
+	let signature_payload = build_signature_payload(blob_metadata.hash, b"stored".to_vec());
+	let signature = match sign_blob_data_inner(keystore, signature_payload) {
+		Ok(s) => s.signature,
+		Err(e) => {
+			return Err(anyhow!(
+				"An error has occured while trying to sign data, exiting the function: {e}"
+			));
+		},
+	};
+
+	Ok((
+		Some(OwnershipEntry {
+			address: my_validator_id.clone(),
+			peer_id_encoded: my_peer_id_encoded.clone(),
+			signature,
+		}),
+		nb_validators_per_blob,
+	))
 }
 
 async fn get_blob_tx_summaries_from_block<Client, Block>(

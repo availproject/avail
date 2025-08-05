@@ -77,7 +77,8 @@ where
 		let parent_hash = <B as BlockT>::Hash::from(block.header.parent_hash);
 		let api = self.client.runtime_api();
 
-		let Ok(found) = api.check_if_extrinsic_is_vector_post_inherent(parent_hash, last_extrinsic) else {
+		let Ok(found) = api.check_if_extrinsic_is_vector_post_inherent(parent_hash, last_extrinsic)
+		else {
 			return Err(err);
 		};
 
@@ -104,7 +105,9 @@ where
 		let parent_hash = <B as BlockT>::Hash::from(block.header.parent_hash);
 		let api = self.client.runtime_api();
 
-		let Ok(found) = api.check_if_extrinsic_is_da_post_inherent(parent_hash, da_summary_extrinsic) else {
+		let Ok(found) =
+			api.check_if_extrinsic_is_da_post_inherent(parent_hash, da_summary_extrinsic)
+		else {
 			return Err(err);
 		};
 
@@ -187,7 +190,10 @@ where
 		if !is_own && !skip_sync && !block.with_state() {
 			self.ensure_last_extrinsic_is_failed_send_message_txs(&block)?;
 			self.ensure_before_last_extrinsic_is_blob_summary_tx(&block)?;
-			self.ensure_valid_header_extension(&block)?; // TODO Blob do some kind of sampling like in block authorship ?
+			// TODO Blob do some kind of sampling like in block authorship ?
+			// We need to check that every blob tx which is also in the blob tx summary as success is indeed valid by check our metadata
+			// If marked as failed, we can copy the reason to ours if we don't have it
+			self.ensure_valid_header_extension(&block)?;
 		}
 
 		// Next import block stage & metrics

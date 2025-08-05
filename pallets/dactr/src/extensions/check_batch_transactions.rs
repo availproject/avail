@@ -55,7 +55,10 @@ where
 {
 	pub fn is_submit_data_call(&self) -> bool {
 		matches!(self.0.is_sub_type(), Some(DACall::<T>::submit_data { .. }))
-			|| matches!(self.0.is_sub_type(), Some(DACall::<T>::submit_blob_metadata { .. }))
+			|| matches!(
+				self.0.is_sub_type(),
+				Some(DACall::<T>::submit_blob_metadata { .. })
+			)
 	}
 
 	pub fn is_send_message_call(&self) -> bool {

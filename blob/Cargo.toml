@@ -47,7 +47,9 @@ anyhow = "1.0"
 [features]
 default = ["std"]
 std = [
+    "avail-core/std",
     "kate/std",
+    "kate-recovery/std",
     "frame-benchmarking/std",
     "da-runtime/std",
     "da-control/std",

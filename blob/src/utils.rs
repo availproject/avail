@@ -1,23 +1,23 @@
 use crate::{
 	p2p::BlobHandle,
-	process_cell_request_inner, send_cell_request,
-	store::{RocksdbShardStore, ShardStore},
+	send_cell_request,
+	store::{BlobStore, RocksdbBlobStore},
 	types::{
 		BlobHash, BlobMetadata, BlobSignatureData, BlobTxSummary, CellCoordinate, CellRequest,
-		OwnershipEntry, Shard, ShardRequest,
 	},
 	CELL_COUNT, LOG_TARGET, MAX_BLOB_RETRY_BEFORE_DISCARDING, MAX_TRANSACTION_VALIDITY,
-	MIN_SHARD_HOLDER_COUNT, MIN_SHARD_HOLDER_PERCENTAGE, MIN_TRANSACTION_VALIDITY, SHARD_SIZE,
+	MIN_BLOB_HOLDER_COUNT, MIN_BLOB_HOLDER_PERCENTAGE, MIN_TRANSACTION_VALIDITY,
 };
 use anyhow::{anyhow, Context, Result};
 use codec::{Decode, Encode};
+use da_commitment::build_da_commitments::build_da_commitments;
 use da_control::Call;
 use da_runtime::{kate::GDataProof, RuntimeCall, UncheckedExtrinsic};
-use futures::{stream::FuturesUnordered, StreamExt};
 use kate::{
 	couscous::multiproof_params,
 	gridgen::core::AsBytes,
 	pmp::{ark_bls12_381::Bls12_381, Commitment},
+	Seed,
 };
 use kate_recovery::{
 	commons::ArkPublicParams,
@@ -36,6 +36,7 @@ use sp_core::sr25519;
 use sp_runtime::{
 	key_types,
 	traits::{Block as BlockT, Verify},
+	transaction_validity::{InvalidTransaction, TransactionValidityError},
 	SaturatedConversion,
 };
 use sp_transaction_pool::runtime_api::TaggedTransactionQueue;
@@ -47,12 +48,6 @@ use std::{
 type ArkCommitment = Commitment<Bls12_381>;
 
 static PP: std::sync::OnceLock<ArkPublicParams> = std::sync::OnceLock::new();
-
-/// Get the number of shard for a blob based on its size
-pub fn get_nb_shards_from_blob_size(size: usize) -> u16 {
-	let shard_size = SHARD_SIZE as usize;
-	((size + shard_size - 1) / shard_size).saturated_into()
-}
 
 /// Get this node Authority ID
 pub fn get_my_validator_id(keystore: &Arc<LocalKeystore>) -> Option<AuthorityId> {
@@ -69,36 +64,24 @@ pub fn get_my_validator_id(keystore: &Arc<LocalKeystore>) -> Option<AuthorityId>
 	Some(keys[keys.len() - 1].into())
 }
 
-/// Get the number of validator that need to store a single shard.
-pub fn get_validator_per_shard(nb_validators: u32) -> u32 {
-	if nb_validators <= MIN_SHARD_HOLDER_COUNT {
+/// Get the number of validator that need to store a blob.
+pub fn get_validator_per_blob(nb_validators: u32) -> u32 {
+	if nb_validators <= MIN_BLOB_HOLDER_COUNT {
 		return nb_validators;
 	} else {
-		let percentage = MIN_SHARD_HOLDER_PERCENTAGE.mul_ceil(nb_validators);
-		return percentage.max(MIN_SHARD_HOLDER_COUNT);
+		let percentage = MIN_BLOB_HOLDER_PERCENTAGE.mul_ceil(nb_validators);
+		return percentage.max(MIN_BLOB_HOLDER_COUNT);
 	}
 }
 
-/// Decide deterministically whether this node should fetch/store shard `shard_index`
-/// of blob `blob_hash`, given the full sorted list of validators.
-/// Returns `true` if I am one of the `num_replicas` replicas for that shard.
-pub fn get_shards_to_store(
+/// Generate pseudo deterministic index based on given values
+pub fn generate_base_index(
 	blob_hash: BlobHash,
-	nb_shards: u16,
-	validators: &Vec<AuthorityId>,
-	my_id: &AuthorityId,
-) -> Result<Vec<u16>> {
-	let nb_validators = validators.len() as u32;
-	let nb_validators_per_shard = get_validator_per_shard(nb_validators);
-
-	if nb_validators == 0 || nb_validators_per_shard == 0 {
-		return Ok(Vec::new());
-	}
-
-	let my_pos = match validators.iter().position(|v| v == my_id) {
-		Some(p) => p,
-		None => return Ok(Vec::new()), // We're not in the validator set
-	};
+	block_hash_bytes: &[u8],
+	ring_size: usize,
+	additional: Option<Vec<u8>>,
+) -> Result<usize> {
+	let ring_size: u64 = ring_size.saturated_into();
 
 	let hash_bytes = blob_hash.as_bytes();
 	let truncated = hash_bytes
@@ -107,55 +90,79 @@ pub fn get_shards_to_store(
 	let array: [u8; 8] = truncated
 		.try_into()
 		.map_err(|_| anyhow!("Failed to convert first 8 bytes of blob hash"))?;
-	let seed = u64::from_le_bytes(array);
+	let blob_seed = u64::from_le_bytes(array);
+	let blob_index = blob_seed % ring_size;
 
-	let mut shards_to_store = Vec::new();
+	let truncated = block_hash_bytes.get(..8).ok_or(anyhow!(
+		"Block hash is too short, expected at least 8 bytes"
+	))?;
+	let array: [u8; 8] = truncated
+		.try_into()
+		.map_err(|_| anyhow!("Failed to convert first 8 bytes of block hash"))?;
+	let block_seed = u64::from_le_bytes(array);
+	let block_index = block_seed % ring_size;
 
-	let ring_size = nb_validators as u64;
-	for shard_index in 0..nb_shards {
-		let shard_seed = seed.wrapping_add(shard_index as u64);
-		let base_index = (shard_seed % ring_size) as usize;
+	let additional_index = match additional {
+		Some(additional) => {
+			let truncated = additional.get(..8).ok_or(anyhow!(
+				"Additional hash is too short, expected at least 8 bytes"
+			))?;
+			let array: [u8; 8] = truncated
+				.try_into()
+				.map_err(|_| anyhow!("Failed to convert first 8 bytes of blob hash"))?;
+			let additional_seed = u64::from_le_bytes(array);
+			let additional_index = additional_seed % ring_size;
+			additional_index
+		},
+		None => 0,
+	};
 
-		for i in 0..nb_validators_per_shard {
-			let index = ((base_index as u32) + i) % nb_validators;
-			if index as usize == my_pos {
-				shards_to_store.push(shard_index);
-				break;
-			}
+	let index = blob_index
+		.wrapping_add(block_index)
+		.wrapping_add(additional_index)
+		% ring_size;
+
+	Ok(index as usize)
+}
+
+/// Decide deterministically whether this node should fetch/store a blob based on the blob hash
+/// given the full sorted list of validators.
+pub fn check_store_blob(
+	blob_hash: BlobHash,
+	validators: &Vec<AuthorityId>,
+	my_id: &AuthorityId,
+	block_hash_bytes: &[u8],
+	nb_validators_per_blob: u32,
+) -> Result<bool> {
+	let nb_validators = validators.len() as u32;
+
+	if nb_validators == 0 || nb_validators_per_blob == 0 {
+		return Ok(false);
+	}
+
+	let my_pos = match validators.iter().position(|v| v == my_id) {
+		Some(p) => p,
+		None => return Ok(false), // We're not in the validator set
+	};
+
+	let base_index =
+		generate_base_index(blob_hash, block_hash_bytes, nb_validators as usize, None)?;
+	for i in 0..nb_validators_per_blob {
+		let index = ((base_index as u32) + i) % nb_validators;
+		if index as usize == my_pos {
+			return Ok(true);
 		}
 	}
 
-	Ok(shards_to_store)
-}
-
-pub fn fetch_shards<Block: BlockT>(
-	store: &RocksdbShardStore<Block>,
-	shard_request: &ShardRequest,
-) -> Result<Vec<Shard>> {
-	let shards = shard_request
-		.shard_ids
-		.iter()
-		.try_fold(Vec::new(), |mut acc, &shard_id| {
-			match store
-				.get_shard(&shard_request.hash, shard_id)
-				.map_err(|e| anyhow!("Could not decode shard from db: {e}"))?
-			{
-				Some(shard) => acc.push(shard),
-				None => {},
-			}
-			Ok(acc)
-		});
-
-	shards
+	Ok(false)
 }
 
 pub fn check_if_wait_next_block<C, Block>(
 	client: &Arc<C>,
-	shard_store: &Arc<RocksdbShardStore<Block>>,
+	blob_store: &Arc<RocksdbBlobStore<Block>>,
 	encoded: Vec<u8>,
 	submit_blob_metadata_calls: &mut Vec<(RuntimeCall, u32)>,
 	blob_metadata: &mut BTreeMap<BlobHash, BlobMetadata<Block>>,
-	nb_validators_per_shard: usize,
 	tx_index: u32,
 ) -> (bool, bool)
 where
@@ -163,206 +170,229 @@ where
 	C: HeaderBackend<Block> + ProvideRuntimeApi<Block>,
 	C::Api: TaggedTransactionQueue<Block>,
 {
-	let mut should_continue = false;
-	let mut submit_blob_metadata_pushed = false;
-	if let Some(UncheckedExtrinsic {
-		function: extrinsic_data,
-		..
-	}) = Decode::decode(&mut &encoded[..]).ok()
-	{
+	let mut should_submit = true;
+	let mut is_submit_blob_metadata = false;
+
+	// Decode once
+	let extrinsic_data = match Decode::decode(&mut &encoded[..]) {
+		Ok(UncheckedExtrinsic { function, .. }) => function,
+		// If we can't decode, just give up on it
+		Err(_) => return (should_submit, is_submit_blob_metadata),
+	};
+
+	// Only care about submit_blob_metadata calls
+	let blob_hash =
 		if let RuntimeCall::DataAvailability(Call::submit_blob_metadata { blob_hash, .. }) =
 			&extrinsic_data
 		{
-			let mut should_submit = true;
-			let mut should_check_validity = false;
-			match shard_store.get_blob_metadata(blob_hash) {
-				// If we have metadata…
-				Ok(Some(meta)) => {
-					blob_metadata.insert(meta.hash, meta.clone());
-					// check if every shard has non-empty ownership
-					let metadata_valid = meta.is_notified
-						&& (0..meta.nb_shards).all(|i| {
-							meta.ownership
-								.get(&i)
-								.map_or(false, |v| v.len() >= nb_validators_per_shard)
-						});
+			blob_hash
+		} else {
+			return (should_submit, is_submit_blob_metadata);
+		};
 
-					// If ownership is complete, no changes, if not, we whould recheck validity to see if we can wait for ownership data to arrive
-					if !metadata_valid {
-						should_check_validity = true;
-					}
+	is_submit_blob_metadata = true;
+
+	match blob_store.get_blob_metadata(blob_hash) {
+		Ok(Some(meta)) => {
+			// Store it for later
+			blob_metadata.insert(meta.hash, meta.clone());
+
+			if (meta.is_validated
+				&& meta.is_notified
+				&& meta.ownership.len() >= (meta.nb_validators_per_blob as usize))
+				|| meta.error_reason.is_some()
+			{
+				// Fully finalized (either valid or errored) → submit now
+				should_submit = true;
+			} else {
+				let Ok(tx) = codec::Decode::decode(&mut &encoded[..]) else {
+					should_submit = true;
+					submit_blob_metadata_calls.push((extrinsic_data, tx_index));
+					return (should_submit, is_submit_blob_metadata);
+				};
+				let Ok(validity_res) = client.runtime_api().validate_transaction(
+					client.info().best_hash,
+					TransactionSource::External,
+					tx,
+					client.info().best_hash,
+				) else {
+					should_submit = true;
+					submit_blob_metadata_calls.push((extrinsic_data, tx_index));
+					return (should_submit, is_submit_blob_metadata);
+				};
+
+				match validity_res {
+					Ok(v) => {
+						if v.longevity < MIN_TRANSACTION_VALIDITY
+							|| v.longevity > MAX_TRANSACTION_VALIDITY
+						{
+							// longevity out of our acceptable window → submit & drop
+							should_submit = true;
+						} else {
+							// still valid and longevity in-bounds → wait another block
+							// But check the number of retried
+							should_submit = check_retries_for_blob(blob_hash, blob_store);
+						}
+					},
+					Err(e) => match e {
+						TransactionValidityError::Invalid(InvalidTransaction::Future) => {
+							// The transaction is supposed to go in, but it's waiting for a tx with a lower nonce.
+							should_submit = check_retries_for_blob(blob_hash, blob_store);
+						},
+						_ => {
+							// Anything went wrong → submit so it disappears
+							should_submit = true;
+						},
+					},
+				};
+			}
+		},
+
+		// No metadata yet (or DB error) → maybe we just haven't seen the blob announcement
+		_ => {
+			should_submit = check_retries_for_blob(blob_hash, blob_store);
+		},
+	}
+
+	if should_submit {
+		submit_blob_metadata_calls.push((extrinsic_data, tx_index));
+	}
+
+	(should_submit, is_submit_blob_metadata)
+}
+
+pub fn check_retries_for_blob<Block: BlockT>(
+	blob_hash: &BlobHash,
+	blob_store: &Arc<RocksdbBlobStore<Block>>,
+) -> bool {
+	let tried = blob_store.get_blob_retry(blob_hash).unwrap_or(0);
+	if tried <= MAX_BLOB_RETRY_BEFORE_DISCARDING {
+		// bump retry count and wait
+		let _ = blob_store.insert_blob_retry(blob_hash, tried + 1);
+		false
+	} else {
+		// give up: submit to get it dropped quickly
+		true
+	}
+}
+
+pub async fn check_blob_validity<Block: BlockT>(
+	network: &Arc<NetworkService<Block, Block::Hash>>,
+	keystore: &Arc<LocalKeystore>,
+	blob_store: &Arc<RocksdbBlobStore<Block>>,
+	blob_metadata: &mut BlobMetadata<Block>,
+	finalized_hash_bytes: &[u8],
+	my_validator_address: AuthorityId,
+) {
+	if !blob_metadata.is_validated
+		&& blob_metadata.error_reason.is_none()
+		&& blob_metadata.ownership.len() > 0
+	{
+		let i_have_blob = blob_metadata
+			.ownership
+			.iter()
+			.find(|o| o.address == my_validator_address);
+		if let Some(_) = i_have_blob {
+			// I have the blob in my own store, i can check the commitment
+			let (blob_valid, reason) = check_commitment_validity(blob_store, blob_metadata);
+			blob_metadata.is_validated = blob_valid;
+			log::info!(
+				"Hash: {:?}, valid: {:?}: error: {:?}",
+				blob_metadata.hash,
+				blob_valid,
+				reason
+			);
+			blob_metadata.error_reason = reason;
+		} else {
+			// I don't have the blob in my store, i need to sample using the peer list
+			match cell_sample_check_validity(
+				network,
+				keystore,
+				blob_metadata,
+				finalized_hash_bytes,
+				my_validator_address,
+			)
+			.await
+			{
+				Ok(()) => {
+					log::info!("Hash: {} is valid", blob_metadata.hash);
+					blob_metadata.is_validated = true;
+					blob_metadata.error_reason = None;
 				},
-				// Err or Ok(None), definitely submit the tx so it fails and disappear.
-				// We still let a chance in case the transaction was only tried once, valid blob metadata may arrive soon.
-				_ => {
-					let tried_count = shard_store.get_blob_retry(blob_hash).unwrap_or(0);
-					if tried_count < MAX_BLOB_RETRY_BEFORE_DISCARDING {
-						should_check_validity = true;
-						let _ = shard_store.insert_blob_retry(blob_hash, tried_count + 1);
-					} else {
-						// Transaction will be submitted and discarded
-						log::warn!(target: LOG_TARGET, "A transaction will be discarded after being tried {tried_count} - blob hash: {blob_hash}");
-					}
+				Err(e) => {
+					log::info!("Hash: {} is invalid: {}", blob_metadata.hash, e);
+					blob_metadata.is_validated = false;
+					blob_metadata.error_reason = Some(e);
 				},
 			};
-
-			if should_check_validity {
-				// Ownership incomplete or the blob was not notified yet or we don't have the blob yet
-				// Re-check transaction validity to see if we can wait next block
-				let still_valid = codec::Decode::decode(&mut &encoded[..])
-					.ok()
-					.and_then(|tx| {
-						client
-							.runtime_api()
-							.validate_transaction(
-								client.info().best_hash,
-								TransactionSource::External,
-								tx,
-								client.info().best_hash,
-							)
-							.ok()
-							.and_then(Result::ok)
-					});
-
-				// if we failed any step → assume invalid and submit so it disappears;
-				// otherwise only submit if longevity is out of your bounds (to discard the tx)
-				should_submit = still_valid.map_or(true, |v| {
-					v.longevity < MIN_TRANSACTION_VALIDITY || v.longevity > MAX_TRANSACTION_VALIDITY
-				});
-			}
-
-			if should_submit {
-				submit_blob_metadata_calls.push((extrinsic_data, tx_index));
-				submit_blob_metadata_pushed = true;
-			} else {
-				should_continue = true;
-			}
 		}
 	}
-	(should_continue, submit_blob_metadata_pushed)
 }
 
-pub async fn sample_and_get_failed_blobs<Block: BlockT>(
-	submit_blob_metadata_calls: &Vec<(RuntimeCall, u32)>,
-	network: Arc<NetworkService<Block, Block::Hash>>,
-	keystore: &Arc<LocalKeystore>,
-	shard_store: &Arc<RocksdbShardStore<Block>>,
-	blob_metadata: BTreeMap<BlobHash, BlobMetadata<Block>>,
-) -> (Vec<BlobTxSummary>, u64) {
-	let mut tx_futures = FuturesUnordered::new();
-
-	for (tx, tx_index) in submit_blob_metadata_calls.iter().cloned() {
-		if let RuntimeCall::DataAvailability(Call::submit_blob_metadata {
-			size,
-			blob_hash,
-			commitments,
-		}) = tx
-		{
-			let network = Arc::clone(&network);
-			let keystore = Arc::clone(keystore);
-			let blob_metadata = blob_metadata.clone();
-			log::debug!(
-				target: LOG_TARGET,
-				"Verifying random cell proofs for blob {:?}",
-				blob_hash
-			);
-			tx_futures.push(async move {
-				handle_blob_sample_request(
-					blob_hash,
-					size,
-					commitments,
-					network,
-					keystore,
-					&blob_metadata,
-					shard_store,
-					tx_index,
-				)
-				.await
-			});
-		}
-	}
-
-	let mut blob_txs_summary: Vec<BlobTxSummary> = Vec::new();
-	let mut total_size = 0;
-	while let Some(res) = tx_futures.next().await {
-		match res {
-			Ok((entry, size)) => {
-				total_size += size;
-				blob_txs_summary.push(entry);
-			},
-			Err((blob_hash, tx_index, reason)) => {
-				log::error!(
-					target: LOG_TARGET,
-					"Failed to verify cell proofs for {:?}: {:?}",
-					blob_hash, reason
-				);
-				blob_txs_summary.push(BlobTxSummary {
-					hash: blob_hash,
-					success: false,
-					reason: Some(reason),
-					ownership: BTreeMap::new(),
-					tx_index,
-				});
-			},
-		}
-	}
-
-	blob_txs_summary.sort_by_key(|summary| summary.tx_index);
-
-	(blob_txs_summary, total_size)
-}
-
-async fn handle_blob_sample_request<Block: BlockT>(
-	blob_hash: BlobHash,
-	size: u64,
-	commitments: Vec<u8>,
-	network: Arc<NetworkService<Block, Block::Hash>>,
-	keystore: Arc<LocalKeystore>,
-	blob_metadata: &BTreeMap<BlobHash, BlobMetadata<Block>>,
-	shard_store: &Arc<RocksdbShardStore<Block>>,
-	tx_index: u32,
-) -> Result<(BlobTxSummary, u64), (BlobHash, u32, String)> {
-	let meta = match blob_metadata.get(&blob_hash) {
-		Some(m) => m,
-		None => {
-			return Err((
-				blob_hash,
-				tx_index,
-				"Blob metadata not found in the store to sample the blob".into(),
-			));
+pub fn check_commitment_validity<Block: BlockT>(
+	blob_store: &Arc<RocksdbBlobStore<Block>>,
+	blob_metadata: &BlobMetadata<Block>,
+) -> (bool, Option<String>) {
+	let blob = match blob_store.get_blob(&blob_metadata.hash) {
+		Ok(b) => match b {
+			Some(b) => b,
+			None => return (false, Some(format!("Blob not found in the store."))),
+		},
+		Err(e) => {
+			return (
+				false,
+				Some(format!(
+					"An issue occured while trying to get the blob from the store: {e:?}"
+				)),
+			)
 		},
 	};
 
-	if meta.size != size || meta.commitments != commitments {
-		return Err((
-			blob_hash,
-			tx_index,
-			"Blob metadata from the store did not match the one from the transaction".into(),
-		));
+	// TODO Blob - get values from runtime
+	let generated_commitment =
+		build_da_commitments(blob.data.to_vec(), 1024, 4096, Seed::default());
+
+	if blob_metadata.commitment != generated_commitment {
+		return (
+			false,
+			Some(format!(
+				"submitted blob commitment: {:?} does not correspond to generated commitment {:?}",
+				blob_metadata.commitment, generated_commitment
+			)),
+		);
 	}
 
-	let original_commitments: Vec<ArkCommitment> = commitments
+	(true, None)
+}
+
+pub async fn cell_sample_check_validity<Block: BlockT>(
+	network: &Arc<NetworkService<Block, Block::Hash>>,
+	keystore: &Arc<LocalKeystore>,
+	blob_metadata: &BlobMetadata<Block>,
+	finalized_hash_bytes: &[u8],
+	my_validator_address: AuthorityId,
+) -> Result<(), String> {
+	let start_time = std::time::Instant::now();
+	let elapsed = start_time.elapsed();
+	log::info!("cell_sample start {:.2?}", elapsed);
+	let original_commitments: Vec<ArkCommitment> = blob_metadata
+		.commitment
 		.chunks_exact(48)
 		.enumerate()
 		.map(|(i, chunk)| {
-			let chunk_array: [u8; 48] = chunk.try_into().map_err(|_| {
-				(
-					blob_hash,
-					tx_index,
-					format!("Chunk at index {i} is not 48 bytes long"),
-				)
-			})?;
+			let chunk_array: [u8; 48] = chunk
+				.try_into()
+				.map_err(|_| format!("Chunk at index {i} is not 48 bytes long"))?;
 
-			ArkCommitment::from_bytes(&chunk_array).map_err(|e| {
-				log::error!(target: LOG_TARGET, "Invalid commitment at index {i}: {e}");
-				(blob_hash, tx_index, format!("Invalid commitment at index {i}: {e}"))
-			})
+			ArkCommitment::from_bytes(&chunk_array)
+				.map_err(|e| format!("Invalid commitment at index {i}: {e}"))
 		})
 		.collect::<Result<_, _>>()?;
 
 	let extended_commitments =
 		ArkCommitment::extend_commitments(&original_commitments, original_commitments.len() * 2)
 			.expect("extending commitments should work if dimensions are valid");
+
 	let commitments_bytes: Vec<_> = extended_commitments
 		.into_iter()
 		.map(|c| {
@@ -370,119 +400,184 @@ async fn handle_blob_sample_request<Block: BlockT>(
 				.expect("Valid commitments should be serialisable")
 		})
 		.collect();
+
 	let rows = original_commitments.len();
+	// TODO Blobs: Take values from runtime
 	let cols = 1024;
 
-	let dimension = Dimensions::new(rows as u16, cols)
-		.ok_or_else(|| (blob_hash, tx_index, "Invalid dimension".into()))?;
+	let dimension =
+		Dimensions::new(rows as u16, cols).ok_or_else(|| format!("Invalid dimension"))?;
 
 	let cells = generate_random_cells(dimension, CELL_COUNT);
 
-	let signature_payload = build_cell_signature_payload(blob_hash, cells.clone());
+	let signature_payload = build_signature_payload(blob_metadata.hash, cells.clone().encode());
 	let signature_data = sign_blob_data_inner(&keystore, signature_payload)
-		.map_err(|e| (blob_hash, tx_index, format!("Signing failed: {}", e)))?;
+		.map_err(|e| format!("Signing failed: {}", e))?;
 
 	let req = CellRequest {
-		hash: blob_hash,
+		hash: blob_metadata.hash,
 		cells,
 		signature_data,
 	};
 
-	let peers = get_blob_owners(meta.ownership.clone());
+	let peers: Vec<PeerId> = blob_metadata
+		.ownership
+		.clone()
+		.into_iter()
+		.filter_map(|o| PeerId::from_str(&o.peer_id_encoded).ok())
+		.collect();
+
 	if peers.is_empty() {
-		return Err((blob_hash, tx_index, "No peers available".into()));
+		return Err("No peers available".into());
 	}
+
+	let peers_len = peers.len();
 	let local_peer_id = network.local_peer_id();
-	if peers.contains(&local_peer_id) {
-		log::debug!(target: LOG_TARGET, "Trying to verify cell proofs locally for blob {:?}", blob_hash);
-		match process_cell_request_inner(req.clone(), shard_store) {
-			Ok(response) => {
-				if verify_cell_proofs(
-					response.cell_proofs,
-					commitments_bytes.clone(),
-					req.clone(),
-					dimension,
-				)
-				.is_ok()
-				{
-					let entry = BlobTxSummary {
-						hash: blob_hash,
-						success: true,
-						reason: None,
-						ownership: meta.ownership.clone(),
-						tx_index,
-					};
-					return Ok((entry, size));
-				} else {
-					log::warn!(
-						target: LOG_TARGET,
-						"Invalid cell proof from peer {:?} for blob {:?}",
-						local_peer_id,
-						blob_hash
-					);
-				}
-			},
+
+	let base_index = match generate_base_index(
+		blob_metadata.hash,
+		&finalized_hash_bytes,
+		peers_len,
+		Some(my_validator_address.encode()),
+	) {
+		Ok(i) => i,
+		Err(e) => {
+			return Err(format!(
+				"Could not generate pseudo random peer index: {e:?}"
+			));
+		},
+	};
+
+	for i in 0..(MAX_BLOB_RETRY_BEFORE_DISCARDING as usize) {
+		let Some(target_peer) = peers.get((base_index + i) % peers_len).cloned() else {
+			log::warn!("Invalid index for peer list, continuing");
+			continue;
+		};
+
+		if target_peer == local_peer_id {
+			log::warn!(
+				"Invalid peer id: Found this node local peer_id when it should not be the case."
+			);
+			continue;
+		}
+
+		let elapsed = start_time.elapsed();
+		log::info!("cell_sample until request in {:.2?}", elapsed);
+
+		let cell_response = match send_cell_request(req.clone(), &network, target_peer).await {
+			Ok(r) => r,
 			Err(e) => {
 				log::warn!(
 					target: LOG_TARGET,
 					"Failed to get cell proof from peer {:?} for blob {:?}: {}",
-					local_peer_id,
-					blob_hash,
+					target_peer,
+					blob_metadata.hash,
 					e
 				);
+				continue;
 			},
 		};
+		let elapsed = start_time.elapsed();
+		log::info!("cell_sample before verify in {:.2?}", elapsed);
+
+		if verify_cell_proofs(
+			cell_response.cell_proofs,
+			commitments_bytes.clone(),
+			req.clone(),
+			dimension,
+		)
+		.is_ok()
+		{
+			let elapsed = start_time.elapsed();
+			log::info!("cell_sample completed in {:.2?} : ok", elapsed);
+			return Ok(());
+		} else {
+			log::warn!(
+				target: LOG_TARGET,
+				"Invalid cell proof from peer {:?} for blob {:?}",
+				target_peer,
+				blob_metadata.hash
+			);
+			let elapsed = start_time.elapsed();
+			log::info!("cell_sample completed in {:.2?} : Not ok", elapsed);
+		}
 	}
 
-	for peer in peers {
-		if peer == local_peer_id {
-			continue; // Already tried local
-		}
-		match send_cell_request(req.clone(), &network, peer).await {
-			Ok(response) => {
-				if verify_cell_proofs(
-					response.cell_proofs,
-					commitments_bytes.clone(),
-					req.clone(),
-					dimension,
-				)
-				.is_ok()
-				{
-					let entry = BlobTxSummary {
+	Err(format!("All tried peers failed to return valid cell proof"))
+}
+
+pub async fn get_blob_txs_summary<Block: BlockT>(
+	submit_blob_metadata_calls: &Vec<(RuntimeCall, u32)>,
+	blob_metadata: BTreeMap<BlobHash, BlobMetadata<Block>>,
+) -> (Vec<BlobTxSummary>, u64) {
+	let mut blob_txs_summary: Vec<BlobTxSummary> = Vec::new();
+	let mut total_size = 0;
+
+	for (tx, tx_index) in submit_blob_metadata_calls.iter().cloned() {
+		if let RuntimeCall::DataAvailability(Call::submit_blob_metadata {
+			size,
+			blob_hash,
+			commitment,
+		}) = tx
+		{
+			let blob_metadata = blob_metadata.get(&blob_hash);
+			match get_block_tx_summary(blob_hash, size, commitment, blob_metadata, tx_index) {
+				Ok((tx_summary, size)) => {
+					total_size += size;
+					blob_txs_summary.push(tx_summary);
+				},
+				Err(reason) => {
+					blob_txs_summary.push(BlobTxSummary {
 						hash: blob_hash,
-						success: true,
-						reason: None,
-						ownership: meta.ownership.clone(),
+						success: false,
+						reason: Some(reason),
+						ownership: Vec::new(),
 						tx_index,
-					};
-					return Ok((entry, size));
-				} else {
-					log::warn!(
-						target: LOG_TARGET,
-						"Invalid cell proof from peer {:?} for blob {:?}",
-						peer,
-						blob_hash
-					);
-				}
-			},
-			Err(e) => {
-				log::warn!(
-					target: LOG_TARGET,
-					"Failed to get cell proof from peer {:?} for blob {:?}: {}",
-					peer,
-					blob_hash,
-					e
-				);
-			},
+					});
+				},
+			}
 		}
 	}
 
-	// All peers failed or returned invalid/missing proofs
-	Err((
-		blob_hash,
-		tx_index,
-		"All peers failed to return valid cell proof".into(),
-	))
+	(blob_txs_summary, total_size)
+}
+
+fn get_block_tx_summary<Block: BlockT>(
+	blob_hash: BlobHash,
+	size: u64,
+	commitment: Vec<u8>,
+	blob_metadata: Option<&BlobMetadata<Block>>,
+	tx_index: u32,
+) -> Result<(BlobTxSummary, u64), String> {
+	let meta = match blob_metadata {
+		Some(m) => m,
+		None => {
+			return Err("Blob metadata not found in the store to sample the blob".into());
+		},
+	};
+
+	if meta.size != size || meta.commitment != commitment {
+		return Err(
+			"Blob metadata from the store did not match the one from the transaction".into(),
+		);
+	}
+
+	if meta.is_validated {
+		return Ok((
+			BlobTxSummary {
+				hash: blob_hash,
+				tx_index,
+				success: true,
+				reason: None,
+				ownership: meta.ownership.clone(),
+			},
+			meta.size as u64,
+		));
+	} else {
+		return Err(meta.error_reason.clone().unwrap_or(format!(
+			"Blob metadata were not filled before transaction expiry"
+		)));
+	}
 }
 
 fn verify_cell_proofs(
@@ -533,22 +628,6 @@ fn verify_cell_proofs(
 	Ok(())
 }
 
-fn get_blob_owners(owners: BTreeMap<u16, Vec<OwnershipEntry>>) -> Vec<PeerId> {
-	let mut unique_peers = HashSet::new();
-
-	for entries in owners.values() {
-		for entry in entries {
-			if let Ok(peer_id) = PeerId::from_str(&entry.peer_id_encoded) {
-				unique_peers.insert(peer_id);
-			} else {
-				log::warn!(target: "blob", "Invalid PeerId string: {}", entry.peer_id_encoded);
-			}
-		}
-	}
-
-	unique_peers.into_iter().collect()
-}
-
 fn generate_random_cells(dimensions: Dimensions, cell_count: u32) -> Vec<CellCoordinate> {
 	let (max_cells, row_limit) = (dimensions.extended_size(), dimensions.extended_rows());
 	let count = max_cells.min(cell_count);
@@ -570,22 +649,10 @@ fn generate_random_cells(dimensions: Dimensions, cell_count: u32) -> Vec<CellCoo
 	indices.into_iter().collect()
 }
 
-pub fn build_signature_payload(
-	blob_hash: BlobHash,
-	shard_ids: Vec<u16>,
-	additional: Vec<u8>,
-) -> Vec<u8> {
+pub fn build_signature_payload(blob_hash: BlobHash, additional: Vec<u8>) -> Vec<u8> {
 	let mut payload = Vec::new();
 	payload.extend(blob_hash.encode());
-	payload.extend(shard_ids.encode());
 	payload.extend(additional.encode());
-	payload
-}
-
-pub fn build_cell_signature_payload(blob_hash: BlobHash, cells: Vec<CellCoordinate>) -> Vec<u8> {
-	let mut payload = Vec::new();
-	payload.extend(blob_hash.encode());
-	payload.extend(cells.encode());
 	payload
 }
 

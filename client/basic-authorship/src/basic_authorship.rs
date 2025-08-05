@@ -22,9 +22,9 @@
 use avail_base::{PostInherentsBackend, PostInherentsProvider};
 
 use avail_blob::{
-	store::RocksdbShardStore,
+	store::RocksdbBlobStore,
 	types::{BlobMetadata, BlobTxSummary},
-	utils::{check_if_wait_next_block, get_validator_per_shard, sample_and_get_failed_blobs},
+	utils::{check_if_wait_next_block, get_blob_txs_summary},
 };
 use codec::Encode;
 use futures::{
@@ -35,8 +35,6 @@ use futures::{
 use log::{debug, error, info, trace, warn};
 use sc_authority_discovery::AuthorityDiscovery;
 use sc_block_builder::{BlockBuilderApi, BlockBuilderBuilder};
-use sc_keystore::LocalKeystore;
-use sc_network::NetworkService;
 use sc_telemetry::{telemetry, TelemetryHandle, CONSENSUS_INFO};
 use sc_transaction_pool_api::{InPoolTransaction, TransactionPool};
 use sp_api::{ApiExt, CallApiAt, ProvideRuntimeApi};
@@ -92,12 +90,8 @@ pub struct ProposerFactory<A, C, B: BlockT, PR> {
 	telemetry: Option<TelemetryHandle>,
 	/// When estimating the block size, should the proof be included?
 	include_proof_in_block_size_estimation: bool,
-	/// Network service to send and submit request for blob data
-	network: Arc<NetworkService<B, <B as BlockT>::Hash>>,
-	/// Keystore used to sign blob data
-	keystore: Arc<LocalKeystore>,
-	/// Shard store to check what the client already has for blob data
-	shard_store: Arc<RocksdbShardStore<B>>,
+	/// Blob store to check what the client already has for blob data
+	blob_store: Arc<RocksdbBlobStore<B>>,
 	/// phantom member to pin the `ProofRecording` type.
 	_phantom: PhantomData<PR>,
 }
@@ -116,9 +110,7 @@ where
 		transaction_pool: Arc<A>,
 		prometheus: Option<&PrometheusRegistry>,
 		telemetry: Option<TelemetryHandle>,
-		network: Arc<NetworkService<B, <B as BlockT>::Hash>>,
-		keystore: Arc<LocalKeystore>,
-		shard_store: Arc<RocksdbShardStore<B>>,
+		blob_store: Arc<RocksdbBlobStore<B>>,
 	) -> Self {
 		ProposerFactory {
 			spawn_handle: Box::new(spawn_handle),
@@ -129,9 +121,7 @@ where
 			telemetry,
 			client,
 			include_proof_in_block_size_estimation: false,
-			network,
-			keystore,
-			shard_store,
+			blob_store,
 			_phantom: PhantomData,
 		}
 	}
@@ -153,9 +143,7 @@ where
 		transaction_pool: Arc<A>,
 		prometheus: Option<&PrometheusRegistry>,
 		telemetry: Option<TelemetryHandle>,
-		network: Arc<NetworkService<B, <B as BlockT>::Hash>>,
-		keystore: Arc<LocalKeystore>,
-		shard_store: Arc<RocksdbShardStore<B>>,
+		blob_store: Arc<RocksdbBlobStore<B>>,
 	) -> Self {
 		ProposerFactory {
 			client,
@@ -166,9 +154,7 @@ where
 			soft_deadline_percent: DEFAULT_SOFT_DEADLINE_PERCENT,
 			telemetry,
 			include_proof_in_block_size_estimation: true,
-			network,
-			keystore,
-			shard_store,
+			blob_store,
 			_phantom: PhantomData,
 		}
 	}
@@ -249,9 +235,7 @@ where
 			default_block_size_limit: self.default_block_size_limit,
 			soft_deadline_percent: self.soft_deadline_percent,
 			telemetry: self.telemetry.clone(),
-			network: self.network.clone(),
-			keystore: self.keystore.clone(),
-			shard_store: self.shard_store.clone(),
+			blob_store: self.blob_store.clone(),
 			_phantom: PhantomData,
 			include_proof_in_block_size_estimation: self.include_proof_in_block_size_estimation,
 		};
@@ -302,9 +286,7 @@ pub struct Proposer<Block: BlockT, C, A: TransactionPool, PR> {
 	include_proof_in_block_size_estimation: bool,
 	soft_deadline_percent: Percent,
 	telemetry: Option<TelemetryHandle>,
-	network: Arc<NetworkService<Block, <Block as BlockT>::Hash>>,
-	keystore: Arc<LocalKeystore>,
-	shard_store: Arc<RocksdbShardStore<Block>>,
+	blob_store: Arc<RocksdbBlobStore<Block>>,
 	_phantom: PhantomData<PR>,
 }
 
@@ -561,16 +543,6 @@ where
 		let mut tx_index = 1; // We start at one to accomodate for timestamp set inherent
 		let mut blob_metadata: BTreeMap<H256, BlobMetadata<Block>> = BTreeMap::new();
 
-		let finalized_hash = self.client.info().finalized_hash;
-		let nb_validators = match self.client.authorities(finalized_hash).await {
-			Ok(v) => v.len() as u32,
-			Err(e) => {
-				log::error!(target: LOG_TARGET, "Could not get validator from the runtime: {e}");
-				1
-			},
-		};
-		let nb_validators_per_shard = get_validator_per_shard(nb_validators) as usize;
-
 		let end_reason = loop {
 			let pending_tx = if let Some(pending_tx) = pending_iterator.next() {
 				pending_tx
@@ -627,16 +599,15 @@ where
 			}
 
 			let encoded = pending_tx_data.clone().encode();
-			let (should_continue, submit_blob_metadata_pushed) = check_if_wait_next_block(
+			let (should_submit, is_submit_blob_metadata) = check_if_wait_next_block(
 				&self.client,
-				&self.shard_store,
+				&self.blob_store,
 				encoded.clone(),
 				&mut submit_blob_metadata_calls,
 				&mut blob_metadata,
-				nb_validators_per_shard,
 				tx_index,
 			);
-			if should_continue {
+			if !should_submit {
 				continue;
 			}
 
@@ -649,7 +620,7 @@ where
 				},
 				Err(ApplyExtrinsicFailed(Validity(e))) if e.exhausted_resources() => {
 					pending_iterator.report_invalid(&pending_tx);
-					if submit_blob_metadata_pushed {
+					if is_submit_blob_metadata {
 						submit_blob_metadata_calls.pop();
 					}
 					if skipped < MAX_SKIPPED_TRANSACTIONS {
@@ -673,7 +644,7 @@ where
 				},
 				Err(e) => {
 					pending_iterator.report_invalid(&pending_tx);
-					if submit_blob_metadata_pushed {
+					if is_submit_blob_metadata {
 						submit_blob_metadata_calls.pop();
 					}
 					debug!(
@@ -693,16 +664,7 @@ where
 		}
 
 		let (blob_txs_summary, total_blob_size) = if submit_blob_metadata_calls.len() > 0 {
-			// Since DA sampling involves fetching the proofs over network from peers, this might not be the best place to invoke it.
-			// We can do the sample verfication on a seperate process & store its result in a local store & use that result here.
-			sample_and_get_failed_blobs(
-				&submit_blob_metadata_calls,
-				self.network.clone(),
-				&self.keystore,
-				&self.shard_store,
-				blob_metadata,
-			)
-			.await
+			get_blob_txs_summary(&submit_blob_metadata_calls, blob_metadata).await
 		} else {
 			(Vec::new(), 0)
 		};

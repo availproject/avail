@@ -202,7 +202,7 @@ mod benchmarks {
 		let caller = whitelisted_caller::<T::AccountId>();
 		let origin = RawOrigin::Signed(caller.clone());
 		let data = generate_bounded::<AppDataFor<T>>(i);
-		let data_hash = H256(blake2_256(&data));
+		let data_hash = H256(keccak_256(&data));
 
 		#[extrinsic_call]
 		_(origin, data);

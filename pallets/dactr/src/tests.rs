@@ -84,7 +84,7 @@ mod submit_data {
 			let alice: RuntimeOrigin = RawOrigin::Signed(ALICE).into();
 			let max_app_key_length: usize = MaxAppDataLength::get().try_into().unwrap();
 			let data = AppDataFor::<Test>::try_from(vec![b'X'; max_app_key_length]).unwrap();
-			let data_hash = H256(sp_io::hashing::blake2_256(&data));
+			let data_hash = H256(sp_io::hashing::keccak_256(&data));
 
 			assert_ok!(DataAvailability::submit_data(alice, data));
 

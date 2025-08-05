@@ -2,7 +2,7 @@ use std::{path::Path, sync::Arc};
 
 use crate::{
 	decode_blob_notification, handle_incoming_blob_request,
-	store::{RocksdbShardStore, ShardStore},
+	store::{BlobStore, RocksdbBlobStore},
 	types::{BlobGossipValidator, BlobNotification, FullClient, BLOB_GOSSIP_PROTO, BLOB_REQ_PROTO},
 	BLOB_EXPIRATION_CHECK_PERIOD, CONCURRENT_REQUESTS, LOG_TARGET, NOTIFICATION_MAX_SIZE,
 	REQUEST_MAX_SIZE, REQUEST_TIME_OUT, RESPONSE_MAX_SIZE,
@@ -33,7 +33,7 @@ where
 	pub gossip_cmd_sender: Arc<OnceCell<async_channel::Sender<BlobNotification<Block>>>>,
 	pub keystore: Arc<OnceCell<Arc<LocalKeystore>>>,
 	pub client: Arc<OnceCell<Arc<FullClient>>>,
-	pub shard_store: Arc<RocksdbShardStore<Block>>,
+	pub blob_store: Arc<RocksdbBlobStore<Block>>,
 	pub role: Role,
 }
 
@@ -51,12 +51,12 @@ where
 		NonDefaultSetConfig,
 		Box<dyn NotificationService>,
 	) {
-		// Initialize the shard store
+		// Initialize the Blob store
 		let db_path = path.join("blob_store");
-		let shard_store =
-			Arc::new(RocksdbShardStore::open(db_path).expect("opening RocksDB blob store failed"));
+		let blob_store =
+			Arc::new(RocksdbBlobStore::open(db_path).expect("opening RocksDB blob store failed"));
 
-		// Initialize the blob shard req/res protocol config
+		// Initialize the blob Blob req/res protocol config
 		let (blob_req_sender, blob_req_receiver) = async_channel::unbounded();
 		let blob_req_res_cfg = RequestResponseConfig {
 			name: BLOB_REQ_PROTO,
@@ -88,7 +88,7 @@ where
 			client,
 			sync_service,
 			gossip_cmd_sender,
-			shard_store,
+			blob_store,
 			role,
 		};
 
@@ -130,12 +130,12 @@ where
 			.expect("Network should be registered")
 			.clone();
 		spawn_handle.spawn("request-listener", None, {
-			let shard_store_clone = self.shard_store.clone();
+			let blob_store_clone = self.blob_store.clone();
 			let network_clone = network;
 			async move {
 				req_receiver
 					.for_each_concurrent(CONCURRENT_REQUESTS, |request| {
-						let store = shard_store_clone.clone();
+						let store = blob_store_clone.clone();
 						let network = network_clone.clone();
 						async move {
 							handle_incoming_blob_request(request, &store, &network);
@@ -217,7 +217,7 @@ where
 			return;
 		};
 
-		let shard_store = self.shard_store.clone();
+		let blob_store = self.blob_store.clone();
 		let client = client.clone();
 		spawn_handle.spawn("blob-cleanup", None, async move {
 			let mut block_sub = client.finality_notification_stream();
@@ -229,7 +229,7 @@ where
 					.clone()
 					.saturated_into::<u64>();
 				if block_number % BLOB_EXPIRATION_CHECK_PERIOD == 0 {
-					let _ = shard_store.clean_expired_blobs(block_number);
+					let _ = blob_store.clean_expired_blobs(block_number);
 				}
 			}
 		});

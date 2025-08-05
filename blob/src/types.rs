@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::sync::Arc;
 
 use codec::{Decode, Encode};
@@ -8,14 +9,13 @@ use serde::{Deserialize, Serialize};
 use sp_authority_discovery::AuthorityId;
 use sp_core::H256;
 
-use crate::{p2p::BlobHandle, store::RocksdbShardStore};
+use crate::{p2p::BlobHandle, store::RocksdbBlobStore};
 use da_runtime::kate::GDataProof;
 use da_runtime::{apis::RuntimeApi, NodeBlock as Block};
 use once_cell::sync::OnceCell;
 use sc_executor::NativeElseWasmExecutor;
 use sc_network_gossip::{ValidationResult, Validator, ValidatorContext};
 use sp_runtime::traits::Block as BlockT;
-use sp_std::collections::{btree_map::BTreeMap, btree_set::BTreeSet};
 
 pub type BlobHash = H256;
 
@@ -64,7 +64,7 @@ impl<B: BlockT> Validator<B> for BlobGossipValidator {
 	) -> ValidationResult<<B as BlockT>::Hash> {
 		let topic = B::Hash::default();
 
-		// Here we don't use directly ValidationResult::ProcessAndKeep(topic) cause we'll first process and start to ask shards to peers THEN we gossip the notification.
+		// Here we don't use directly ValidationResult::ProcessAndKeep(topic) cause we'll first process and start to ask blobs to peers THEN we gossip the notification.
 		// We prefer to first gossip the notification as the peers just want that piece of information
 		ctx.broadcast_message(topic.clone(), data.to_vec(), false);
 
@@ -87,7 +87,7 @@ where
 	Block: BlockT,
 {
 	fn default() -> Self {
-		let shard_store = Arc::new(RocksdbShardStore::default());
+		let blob_store = Arc::new(RocksdbBlobStore::default());
 		let network = Arc::new(OnceCell::new());
 		let keystore = Arc::new(OnceCell::new());
 		let client = Arc::new(OnceCell::new());
@@ -101,14 +101,14 @@ where
 			sync_service,
 			gossip_cmd_sender,
 			role,
-			shard_store,
+			blob_store,
 		});
 		Deps { blob_handle }
 	}
 }
 
-/***** Structs that will go in the shard store *****/
-/// The metadata of a blob and ownership data (who owns what shards)
+/***** Structs that will go in the blob store *****/
+/// The metadata of a blob and ownership data (who owns what blobs)
 /// This will be stored by everyone for now
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, Serialize, Deserialize)]
 pub struct BlobMetadata<Block: BlockT> {
@@ -116,17 +116,21 @@ pub struct BlobMetadata<Block: BlockT> {
 	pub hash: BlobHash,
 	/// The size of the blob.
 	pub size: u64,
-	/// The number of shards for the blob.
-	pub nb_shards: u16,
-	/// The commitments of the blob.
-	pub commitments: Vec<u8>,
-	/// The ownership data of the blob: shard_id -> (validator address, base58 PeerId, Signature).
-	pub ownership: BTreeMap<u16, Vec<OwnershipEntry>>,
+	/// The commitment of the blob.
+	pub commitment: Vec<u8>,
+	/// The ownership data of the blob: Vec<(validator address, base58 PeerId, Signature)>.
+	pub ownership: Vec<OwnershipEntry>,
+	/// Store the number of validators per blob for this blob metadata
+	pub nb_validators_per_blob: u32,
 	/// This field is used to determine wether we received the BlobReceived notification.
-	/// In some cases, we can receive ShardReceived notification before BlobReceived notification.
-	/// This is expected in P2P protocols, we use this field in case we record shard for a blob we don't have yet.
+	/// In some cases, we can receive BlobStored notification before BlobReceived notification.
+	/// This is expected in P2P protocols, we use this field in case we record blob metadata for blobs we don't have yet.
 	/// In case we are not notified, we'll use a way shorter time to live.
 	pub is_notified: bool,
+	/// Flag to store if the sampling of the blob was successful
+	pub is_validated: bool,
+	/// Store the error in case the blob is not valid
+	pub error_reason: Option<String>,
 	/// Block from which this blob is considered expired
 	pub expires_at: u64,
 	/// The finalized block hash for other nodes reference
@@ -138,7 +142,6 @@ pub struct BlobMetadata<Block: BlockT> {
 impl<Block: BlockT> BlobMetadata<Block> {
 	pub fn insert_ownership(
 		&mut self,
-		shard_id: &u16,
 		authority_id: &AuthorityId,
 		encoded_peer_id: &String,
 		signature: Vec<u8>,
@@ -148,40 +151,46 @@ impl<Block: BlockT> BlobMetadata<Block> {
 			peer_id_encoded: encoded_peer_id.to_string(),
 			signature,
 		};
-		let mut is_new = true;
-		self.ownership
-			.entry(*shard_id)
-			.and_modify(|existing_ownership| {
-				if !existing_ownership.contains(&new_entry) {
-					existing_ownership.push(new_entry.clone());
-				} else {
-					is_new = false;
-				}
-			})
-			.or_insert_with(|| vec![new_entry]);
-		is_new
+
+		if let Some(pos) = self
+			.ownership
+			.iter()
+			.position(|x| x.address == new_entry.address)
+		{
+			self.ownership[pos] = new_entry;
+			false
+		} else {
+			self.ownership.push(new_entry);
+			true
+		}
 	}
 
-	pub fn merge_ownerships(&mut self, ownerhsip: BTreeMap<u16, Vec<OwnershipEntry>>) {
-		for (shard_id, mut owners) in ownerhsip {
-			let entry = self.ownership.entry(shard_id).or_default();
-			entry.append(&mut owners);
-			let mut seen = BTreeSet::new();
-			entry.retain(|o| seen.insert(o.address.clone()));
+	pub fn merge_ownerships(&mut self, ownerhsip: Vec<OwnershipEntry>) {
+		let mut seen = HashSet::new();
+		let mut result = Vec::new();
+
+		for item in self
+			.ownership
+			.clone()
+			.into_iter()
+			.chain(ownerhsip.into_iter())
+		{
+			if seen.insert(item.address.clone()) {
+				result.push(item);
+			}
 		}
+		self.ownership = result;
 	}
 }
 
-/// Shard object that will get store by each validator
+/// Blob object that will get store by each validator
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, Serialize, Deserialize)]
-pub struct Shard {
-	/// The hash of the blob this shard is associated to.
+pub struct Blob {
+	/// The hash of the blob.
 	pub blob_hash: BlobHash,
-	/// The index of the shard.
-	pub shard_id: u16,
-	/// The actual data of this shard (the part of the blob).
+	/// The actual data of this blob.
 	pub data: Vec<u8>,
-	/// The size of the shard
+	/// The size of the blob.
 	pub size: u64,
 }
 
@@ -193,12 +202,10 @@ pub struct BlobReceived<Block: BlockT> {
 	pub hash: BlobHash,
 	/// The size of the blob.
 	pub size: u64,
-	/// The number of shard for the blob.
-	pub nb_shards: u16,
-	/// The commitments of the blob
-	pub commitments: Vec<u8>,
-	/// The ownership data of the blob: shard_id -> (validator address, base58 PeerId)
-	pub ownership: BTreeMap<u16, Vec<OwnershipEntry>>,
+	/// The commitment of the blob
+	pub commitment: Vec<u8>,
+	/// The ownership data of the blob: Vec<(validator address, base58 PeerId)>
+	pub ownership: Vec<OwnershipEntry>,
 	/// The original encoded peerId that received the blob
 	pub original_peer_id: String,
 	/// The finalized block hash for other nodes reference
@@ -207,39 +214,35 @@ pub struct BlobReceived<Block: BlockT> {
 	pub finalized_block_number: u64,
 }
 
-/// Structure for the request when a shard is requested from a validator
+/// Structure for the request when a blob is requested from a validator
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
-pub struct ShardRequest {
+pub struct BlobRequest {
 	/// The hash of the blob.
 	pub hash: BlobHash,
-	/// The index of the shard.
-	pub shard_ids: Vec<u16>,
-	/// The data the validator signs to prove he received the shard (blob_hash - shard_ids - "shard")
+	/// The data the validator signs to prove he sent the blob request (blob_hash - "request")
 	pub signature_data: BlobSignatureData,
 }
 
-/// Structure for the response after a shard is requested from a validator
+/// Structure for the response after a blob is requested from a validator
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
-pub struct ShardResponse {
+pub struct BlobResponse {
 	/// The hash of the blob.
 	pub hash: BlobHash,
-	/// The index of the shard.
-	pub shards: Vec<Shard>,
+	/// The blob data.
+	pub blob: Blob,
 }
 
-/// Structure for the notification a validator sends after receiving a shard
+/// Structure for the notification a validator sends after receiving a blob
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
-pub struct ShardReceived {
+pub struct BlobStored {
 	/// The hash of the blob.
 	pub hash: BlobHash,
-	/// The index of the shard.
-	pub shard_ids: Vec<u16>,
 	/// The validator address
 	pub address: AuthorityId,
 	/// The original encode peerId that received the blob
 	pub original_peer_id: String,
-	/// The data the validator signs to prove he received a shard, for each shard: (blob_hash - shard_id - "received")
-	pub signatures: Vec<Vec<u8>>,
+	/// The data the validator signs to prove he received a blob: (blob_hash - "stored")
+	pub signature: Vec<u8>,
 }
 
 /// Structure used in the Cell request
@@ -256,24 +259,10 @@ pub struct CellRequest {
 	pub hash: BlobHash,
 	/// The specific cell positions we need
 	pub cells: Vec<CellCoordinate>,
-	/// The data the validator signs to prove he received the shard (blob_hash - shard_ids - "cell")
+	/// The data the validator signs to prove he received the cell (blob_hash - "cell")
 	pub signature_data: BlobSignatureData,
 }
 
-/// Structure used in the Cell response
-#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
-pub struct CellUnitResponse {
-	/// The shard_id required
-	pub shard_id: u16,
-	/// The start index of the linear piece of data we want
-	pub start: u64,
-	/// The end index of the linear piece of data we want
-	pub end: u64,
-	/// The actual data corresponding to the request
-	pub data: Vec<u8>,
-	/// In case there's no data found, we'll have here the reason, None means success
-	pub failed_reason: Option<String>,
-}
 /// Structure for the response after cells are requested from a validator
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
 pub struct CellResponse {
@@ -290,14 +279,14 @@ pub struct BlobSignatureData {
 	pub signature: Vec<u8>,
 }
 
-/// Structure to hold data about a node having a shard
+/// Structure to hold data about a node having a blob
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, TypeInfo, Serialize, Deserialize)]
 pub struct OwnershipEntry {
-	/// The address that owns the shard
+	/// The address that owns the blob
 	pub address: AuthorityId,
 	/// The corresponding peer encoded
 	pub peer_id_encoded: String,
-	/// The signature of the holder (blob_hash, shard_id, "received")
+	/// The signature of the holder (blob_hash - "stored")
 	pub signature: Vec<u8>,
 }
 
@@ -312,8 +301,8 @@ pub struct BlobTxSummary {
 	pub success: bool,
 	/// In case of failure, this will contain the reason
 	pub reason: Option<String>,
-	/// The mapping of shard index to ownership entries
-	pub ownership: BTreeMap<u16, Vec<OwnershipEntry>>,
+	/// The vector of ownership entries
+	pub ownership: Vec<OwnershipEntry>,
 }
 impl BlobTxSummary {
 	pub fn convert_to_primitives(
@@ -323,52 +312,41 @@ impl BlobTxSummary {
 		u32,
 		bool,
 		Option<String>,
-		BTreeMap<u16, Vec<(AuthorityId, String, Vec<u8>)>>,
+		Vec<(AuthorityId, String, Vec<u8>)>,
 	)> {
 		input
 			.into_iter()
 			.map(|summary| {
-				let ownership_as_tuples: BTreeMap<u16, Vec<(AuthorityId, String, Vec<u8>)>> =
-					summary
-						.ownership
-						.into_iter()
-						.map(|(key, entries)| {
-							let tuples = entries
-								.into_iter()
-								.map(|entry| {
-									(entry.address, entry.peer_id_encoded, entry.signature)
-								})
-								.collect::<Vec<_>>();
-							(key, tuples)
-						})
-						.collect();
+				let ownership: Vec<(AuthorityId, String, Vec<u8>)> = summary
+					.ownership
+					.into_iter()
+					.map(|entry| (entry.address, entry.peer_id_encoded, entry.signature))
+					.collect();
 
 				(
 					summary.hash,
 					summary.tx_index,
 					summary.success,
 					summary.reason,
-					ownership_as_tuples,
+					ownership,
 				)
 			})
 			.collect()
 	}
 }
 
-/// Structure for the request when a shard is requested from an RPC
+/// Structure for the request when a blob is requested from an RPC
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
-pub struct ShardQueryRequest {
+pub struct BlobQueryRequest {
 	/// The hash of the blob.
 	pub hash: BlobHash,
-	/// The index of the shard.
-	pub shard_id: u16,
 }
 
-/// Structure for the response when a shard is requested from an RPC
+/// Structure for the response when a blob is requested from an RPC
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
-pub struct ShardQueryResponse {
-	/// The shard.
-	pub shard: Shard,
+pub struct BlobQueryResponse {
+	/// The blob.
+	pub blob: Blob,
 }
 
 /***** Enums used for notification / request / response *****/
@@ -376,21 +354,21 @@ pub struct ShardQueryResponse {
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
 pub enum BlobNotification<Block: BlockT> {
 	BlobReceived(BlobReceived<Block>),
-	ShardReceived(ShardReceived),
+	BlobStored(BlobStored),
 }
 
 /// Enum for different types of requests.
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
-pub enum BlobRequest {
-	ShardRequest(ShardRequest),
+pub enum BlobRequestEnum {
+	BlobRequest(BlobRequest),
 	CellRequest(CellRequest),
-	ShardQueryRequest(ShardQueryRequest),
+	BlobQueryRequest(BlobQueryRequest),
 }
 
 /// Enum for different types of responses.
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
-pub enum BlobResponse {
-	ShardResponse(ShardResponse),
+pub enum BlobResponseEnum {
+	BlobResponse(BlobResponse),
 	CellResponse(CellResponse),
-	ShardQueryResponse(Option<Shard>),
+	BlobQueryResponse(Option<Blob>),
 }

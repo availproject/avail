@@ -55,7 +55,6 @@ pub mod da {
 			)
 		}
 
-		
 		#[inline]
 		fn build_extension(
 			submitted: Vec<SubmittedData>,
