@@ -197,11 +197,7 @@ where
 			// Store it for later
 			blob_metadata.insert(meta.hash, meta.clone());
 
-			if (meta.is_validated
-				&& meta.is_notified
-				&& meta.ownership.len() >= (meta.nb_validators_per_blob as usize))
-				|| meta.error_reason.is_some()
-			{
+			if meta.is_validated || meta.error_reason.is_some() {
 				// Fully finalized (either valid or errored) → submit now
 				should_submit = true;
 			} else {
@@ -286,7 +282,9 @@ pub async fn check_blob_validity<Block: BlockT>(
 ) {
 	if !blob_metadata.is_validated
 		&& blob_metadata.error_reason.is_none()
+		&& blob_metadata.is_notified
 		&& blob_metadata.ownership.len() > 0
+		&& blob_metadata.ownership.len() >= (blob_metadata.nb_validators_per_blob as usize)
 	{
 		let i_have_blob = blob_metadata
 			.ownership
