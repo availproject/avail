@@ -67,7 +67,7 @@ pub async fn run() -> Result<(), ClientError> {
 	let nonce = client.nonce(&signer.account_id()).await?;
 	println!("Nonce: {nonce}");
 
-	let mut blobs: Vec<(Vec<u8>, H256, Vec<u8>, Vec<[u8;48]>)> = Vec::new();
+	let mut blobs: Vec<(Vec<u8>, H256, Vec<u8>, Vec<[u8; 48]>)> = Vec::new();
 	println!("---------- START Commitments generation ---------- ");
 	for i in 0..10 {
 		println!("---------- START Commitment generation {i} ---------- ");
@@ -78,12 +78,17 @@ pub async fn run() -> Result<(), ClientError> {
 		println!("blob len = {:?}", blob.len());
 		println!("blob_hash = {:?}", blob_hash);
 		println!("commitments len = {:?}", commitments.len());
-		println!("extended_commitments len = {:?}", extended_commitments.len());
+		println!(
+			"extended_commitments len = {:?}",
+			extended_commitments.len()
+		);
 		blobs.push((blob, blob_hash, commitments, extended_commitments));
 	}
 	for (i, (blob, hash, commitments, extended_commitments)) in blobs.into_iter().enumerate() {
 		println!("---------- START Submission {i} ---------- ");
-		let options = Options::new().app_id((i % 5) as u32).nonce(nonce + i as u32);
+		let options = Options::new()
+			.app_id((i % 5) as u32)
+			.nonce(nonce + i as u32);
 		let unsigned_tx = client.tx().data_availability().submit_blob_metadata(
 			hash,
 			blob.len() as u64,

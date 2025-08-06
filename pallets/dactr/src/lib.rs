@@ -328,10 +328,7 @@ pub mod pallet {
 			let who = ensure_signed(origin)?;
 			ensure!(size > 0, Error::<T>::DataCannotBeEmpty);
 			ensure!(commitment.len() > 0, Error::<T>::DataCannotBeEmpty);
-			ensure!(
-				extended_commitment.len() > 0,
-				Error::<T>::DataCannotBeEmpty
-			);
+			ensure!(extended_commitment.len() > 0, Error::<T>::DataCannotBeEmpty);
 			ensure!(blob_hash.0.len() > 0, Error::<T>::DataCannotBeEmpty);
 
 			Self::deposit_event(Event::SubmitBlobMetadataRequest { who, blob_hash });

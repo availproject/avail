@@ -7,8 +7,8 @@ use crate::{
 		build_signature_payload, check_store_blob, generate_base_index, get_my_validator_id,
 		get_validator_per_blob, sign_blob_data_inner,
 	},
-	LOG_TARGET, MAX_BLOB_SIZE, MAX_RPC_RETRIES, MAX_TRANSACTION_VALIDITY,
-	MIN_TRANSACTION_VALIDITY, TEMP_BLOB_TTL,
+	LOG_TARGET, MAX_BLOB_SIZE, MAX_RPC_RETRIES, MAX_TRANSACTION_VALIDITY, MIN_TRANSACTION_VALIDITY,
+	TEMP_BLOB_TTL,
 };
 use anyhow::{anyhow, Result};
 use codec::{Decode, Encode};
