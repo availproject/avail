@@ -120,8 +120,9 @@ fn filter_da_call(
 			blob_hash,
 			commitment,
 			size: _,
+			extended_commitment,
 		} => {
-			if commitment.is_empty() {
+			if commitment.is_empty() || extended_commitment.is_empty() {
 				return None;
 			}
 			(*blob_hash, commitment.clone())

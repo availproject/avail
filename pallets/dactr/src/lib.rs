@@ -323,18 +323,18 @@ pub mod pallet {
 			blob_hash: H256,
 			size: u64,
 			commitment: Vec<u8>,
+			extended_commitment: Vec<[u8; 48]>,
 		) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
 			ensure!(size > 0, Error::<T>::DataCannotBeEmpty);
 			ensure!(commitment.len() > 0, Error::<T>::DataCannotBeEmpty);
+			ensure!(
+				extended_commitment.len() > 0,
+				Error::<T>::DataCannotBeEmpty
+			);
 			ensure!(blob_hash.0.len() > 0, Error::<T>::DataCannotBeEmpty);
 
-			Self::deposit_event(Event::SubmitBlobMetadataRequest {
-				who,
-				size,
-				blob_hash,
-				commitment,
-			});
+			Self::deposit_event(Event::SubmitBlobMetadataRequest { who, blob_hash });
 
 			Ok(().into())
 		}
@@ -382,8 +382,6 @@ pub mod pallet {
 		SubmitBlobMetadataRequest {
 			who: T::AccountId,
 			blob_hash: H256,
-			size: u64,
-			commitment: Vec<u8>,
 		},
 	}
 

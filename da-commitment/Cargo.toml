@@ -13,6 +13,7 @@ workspace = true
 kate = { workspace = true, default-features = false }
 thiserror-no-std.workspace = true
 log.workspace = true
+anyhow = "1.0"
 
 [features]
 default = ["std"]

@@ -13,12 +13,7 @@ use codec::{Decode, Encode};
 use da_commitment::build_da_commitments::build_da_commitments;
 use da_control::Call;
 use da_runtime::{kate::GDataProof, RuntimeCall, UncheckedExtrinsic};
-use kate::{
-	couscous::multiproof_params,
-	gridgen::core::AsBytes,
-	pmp::{ark_bls12_381::Bls12_381, Commitment},
-	Seed,
-};
+use kate::{couscous::multiproof_params, Seed};
 use kate_recovery::{
 	commons::ArkPublicParams,
 	data::SingleCell,
@@ -45,8 +40,6 @@ use std::{
 	str::FromStr,
 	sync::Arc,
 };
-type ArkCommitment = Commitment<Bls12_381>;
-
 static PP: std::sync::OnceLock<ArkPublicParams> = std::sync::OnceLock::new();
 
 /// Get this node Authority ID
@@ -276,7 +269,7 @@ pub async fn check_blob_validity<Block: BlockT>(
 	network: &Arc<NetworkService<Block, Block::Hash>>,
 	keystore: &Arc<LocalKeystore>,
 	blob_store: &Arc<RocksdbBlobStore<Block>>,
-	blob_metadata: &mut BlobMetadata<Block>,
+	blob_metadata: &BlobMetadata<Block>,
 	finalized_hash_bytes: &[u8],
 	my_validator_address: AuthorityId,
 ) {
@@ -286,13 +279,19 @@ pub async fn check_blob_validity<Block: BlockT>(
 		&& blob_metadata.ownership.len() > 0
 		&& blob_metadata.ownership.len() >= (blob_metadata.nb_validators_per_blob as usize)
 	{
+		let start_time = std::time::Instant::now();
+		let elapsed = start_time.elapsed();
+		log::info!("check_blob_validity start {:.2?}", elapsed);
+
+		let mut blob_metadata = blob_metadata.clone();
+
 		let i_have_blob = blob_metadata
 			.ownership
 			.iter()
 			.find(|o| o.address == my_validator_address);
 		if let Some(_) = i_have_blob {
 			// I have the blob in my own store, i can check the commitment
-			let (blob_valid, reason) = check_commitment_validity(blob_store, blob_metadata);
+			let (blob_valid, reason) = check_commitment_validity(blob_store, &blob_metadata);
 			blob_metadata.is_validated = blob_valid;
 			log::info!(
 				"Hash: {:?}, valid: {:?}: error: {:?}",
@@ -306,7 +305,7 @@ pub async fn check_blob_validity<Block: BlockT>(
 			match cell_sample_check_validity(
 				network,
 				keystore,
-				blob_metadata,
+				&blob_metadata,
 				finalized_hash_bytes,
 				my_validator_address,
 			)
@@ -324,6 +323,16 @@ pub async fn check_blob_validity<Block: BlockT>(
 				},
 			};
 		}
+
+		if let Err(e) = blob_store.insert_blob_metadata(&blob_metadata) {
+			log::error!(
+				target: LOG_TARGET,
+				"An error has occured while trying to save blob_metadata in the store: {e}"
+			);
+		}
+
+		let elapsed = start_time.elapsed();
+		log::info!("check_blob_validity end {:.2?}", elapsed);
 	}
 }
 
@@ -373,39 +382,23 @@ pub async fn cell_sample_check_validity<Block: BlockT>(
 	let start_time = std::time::Instant::now();
 	let elapsed = start_time.elapsed();
 	log::info!("cell_sample start {:.2?}", elapsed);
-	let original_commitments: Vec<ArkCommitment> = blob_metadata
-		.commitment
-		.chunks_exact(48)
-		.enumerate()
-		.map(|(i, chunk)| {
-			let chunk_array: [u8; 48] = chunk
-				.try_into()
-				.map_err(|_| format!("Chunk at index {i} is not 48 bytes long"))?;
 
-			ArkCommitment::from_bytes(&chunk_array)
-				.map_err(|e| format!("Invalid commitment at index {i}: {e}"))
+	let extended_commitment_bytes = blob_metadata.extended_commitment.clone();
+	let commitments_bytes: Vec<[u8; 48]> = extended_commitment_bytes
+		.chunks_exact(48)
+		.map(|c| {
+			c.try_into()
+				.map_err(|_| "Could not convert chunk to [u8; 48]")
 		})
 		.collect::<Result<_, _>>()?;
 
-	let extended_commitments =
-		ArkCommitment::extend_commitments(&original_commitments, original_commitments.len() * 2)
-			.expect("extending commitments should work if dimensions are valid");
+	let elapsed = start_time.elapsed();
+	log::info!("cell_sample after having extended comms {:.2?}", elapsed);
 
-	let commitments_bytes: Vec<_> = extended_commitments
-		.into_iter()
-		.map(|c| {
-			c.to_bytes()
-				.expect("Valid commitments should be serialisable")
-		})
-		.collect();
-
-	let rows = original_commitments.len();
 	// TODO Blobs: Take values from runtime
 	let cols = 1024;
-
-	let dimension =
-		Dimensions::new(rows as u16, cols).ok_or_else(|| format!("Invalid dimension"))?;
-
+	let rows = (blob_metadata.commitment.len() / 48) as u16;
+	let dimension = Dimensions::new(rows, cols).ok_or_else(|| format!("Invalid dimension"))?;
 	let cells = generate_random_cells(dimension, CELL_COUNT);
 
 	let signature_payload = build_signature_payload(blob_metadata.hash, cells.clone().encode());
@@ -516,6 +509,7 @@ pub async fn get_blob_txs_summary<Block: BlockT>(
 			size,
 			blob_hash,
 			commitment,
+			..
 		}) = tx
 		{
 			let blob_metadata = blob_metadata.get(&blob_hash);

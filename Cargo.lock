@@ -1002,6 +1002,7 @@ dependencies = [
  "sp-std",
  "sp-transaction-pool",
  "tempfile",
+ "tokio",
 ]
 
 [[package]]
@@ -2446,6 +2447,7 @@ dependencies = [
 name = "da-commitment"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "kate",
  "log",
  "thiserror-no-std",

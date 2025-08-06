@@ -96,9 +96,11 @@ where
 			blob_hash: _,
 			size: _,
 			commitment,
+			extended_commitment,
 		}) = call.is_sub_type()
 		{
-			ensure!(!commitment.is_empty(), InvalidTransaction::Custom(0))
+			ensure!(!commitment.is_empty(), InvalidTransaction::Custom(0));
+			ensure!(!extended_commitment.is_empty(), InvalidTransaction::Custom(0));
 		}
 
 		CheckBatchTransactions::<T>::new().do_validate(call, len)?;

@@ -118,6 +118,8 @@ pub struct BlobMetadata<Block: BlockT> {
 	pub size: u64,
 	/// The commitment of the blob.
 	pub commitment: Vec<u8>,
+	/// The extended commitment of the blob
+	pub extended_commitment: Vec<u8>,
 	/// The ownership data of the blob: Vec<(validator address, base58 PeerId, Signature)>.
 	pub ownership: Vec<OwnershipEntry>,
 	/// Store the number of validators per blob for this blob metadata
@@ -204,6 +206,8 @@ pub struct BlobReceived<Block: BlockT> {
 	pub size: u64,
 	/// The commitment of the blob
 	pub commitment: Vec<u8>,
+	/// The extended commitment of the blob
+	pub extended_commitment: Vec<u8>,
 	/// The ownership data of the blob: Vec<(validator address, base58 PeerId)>
 	pub ownership: Vec<OwnershipEntry>,
 	/// The original encoded peerId that received the blob

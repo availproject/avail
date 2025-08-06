@@ -7,7 +7,7 @@ use crate::{
 		build_signature_payload, check_store_blob, generate_base_index, get_my_validator_id,
 		get_validator_per_blob, sign_blob_data_inner,
 	},
-	BLOB_TTL, LOG_TARGET, MAX_BLOB_SIZE, MAX_RPC_RETRIES, MAX_TRANSACTION_VALIDITY,
+	LOG_TARGET, MAX_BLOB_SIZE, MAX_RPC_RETRIES, MAX_TRANSACTION_VALIDITY,
 	MIN_TRANSACTION_VALIDITY, TEMP_BLOB_TTL,
 };
 use anyhow::{anyhow, Result};
@@ -168,10 +168,12 @@ where
 				.map_err(|_| internal_err!("failed to decode concrete metadata call"))?;
 
 		let commitment: Vec<u8>;
+		let extended_commitment: Vec<[u8; 48]>;
 		if let RuntimeCall::DataAvailability(Call::submit_blob_metadata {
 			size,
 			blob_hash: provided_blob_hash,
 			commitment: provided_commitment,
+			extended_commitment: provided_extended_commitment, // TODO Blob, should we check it here ? If the extended commitment is not valid, it will be handled later
 		}) = encoded_metadata_signed_transaction.function
 		{
 			// Check size
@@ -196,6 +198,7 @@ where
 			if commitment != generated_commitment {
 				return Err(internal_err!("submitted blob commitment: {commitment:?} does not correspond to generated commitment {generated_commitment:?}"));
 			}
+			extended_commitment = provided_extended_commitment;
 		} else {
 			return Err(internal_err!(
 				"metadata extrinsic must be dataAvailability.submitBlobMetadata"
@@ -230,6 +233,7 @@ where
 					hash: blob_hash,
 					size: blob_len.saturated_into(),
 					commitment,
+					extended_commitment: extended_commitment.into_iter().flatten().collect(),
 					ownership: Vec::new(),
 					is_notified: true,
 					expires_at: 0,
@@ -268,8 +272,6 @@ where
 				&ownership_entry.peer_id_encoded,
 				ownership_entry.signature,
 			);
-			let expiration = finalized_block_number.saturating_add(BLOB_TTL);
-			blob_metadata.expires_at = expiration;
 			// We put true here cause we validated the comitment above.
 			blob_metadata.is_validated = true;
 		}
@@ -295,6 +297,7 @@ where
 			hash: blob_metadata.hash,
 			size: blob_metadata.size,
 			commitment: blob_metadata.commitment,
+			extended_commitment: blob_metadata.extended_commitment,
 			ownership: blob_metadata.ownership,
 			original_peer_id: my_peer_id_base58,
 			finalized_block_hash,

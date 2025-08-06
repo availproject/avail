@@ -1,14 +1,17 @@
 #![cfg(feature = "std")]
 
+use anyhow::{anyhow, Result};
 use kate::{
 	couscous::multiproof_params,
 	gridgen::core::{AsBytes, EvaluationGrid},
+	pmp::{ark_bls12_381::Bls12_381, Commitment},
 	M1NoPrecomp, Seed,
 };
 use std::{sync::OnceLock, vec::Vec};
 use thiserror_no_std::Error;
 
 pub type DaCommitments = Vec<u8>;
+pub type ArkCommitment = Commitment<Bls12_381>;
 
 static PMP: OnceLock<M1NoPrecomp> = OnceLock::new();
 
@@ -86,4 +89,33 @@ pub fn build_da_commitments(
 	};
 
 	commitments
+}
+
+pub fn build_extended_commitments(commitments: Vec<u8>) -> Result<Vec<[u8; 48]>> {
+	let original_commitments: Vec<ArkCommitment> = commitments
+		.chunks_exact(48)
+		.enumerate()
+		.map(|(i, chunk)| {
+			let chunk_array: [u8; 48] = chunk
+				.try_into()
+				.map_err(|_| anyhow!("Chunk at index {i} is not 48 bytes long"))?;
+
+			ArkCommitment::from_bytes(&chunk_array)
+				.map_err(|e| anyhow!("Invalid commitment at index {i}: {e}"))
+		})
+		.collect::<Result<_, _>>()?;
+
+	let extended_commitments =
+		ArkCommitment::extend_commitments(&original_commitments, original_commitments.len() * 2)
+			.expect("extending commitments should work if dimensions are valid");
+
+	let commitments_bytes: Vec<_> = extended_commitments
+		.into_iter()
+		.map(|c| {
+			c.to_bytes()
+				.expect("Valid commitments should be serialisable")
+		})
+		.collect();
+
+	Ok(commitments_bytes)
 }

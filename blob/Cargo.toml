@@ -10,6 +10,12 @@ avail-core = { workspace = true, default-features = false }
 kate = { workspace = true, default-features = false }
 kate-recovery = { workspace = true, default-features = false }
 
+tokio = { version = "1.43.0", features = [
+    "sync",
+    "fs",
+    "macros",
+    "rt-multi-thread",
+] }
 rand = { workspace = true }
 rayon = { workspace = true }
 codec = { package = "parity-scale-codec", version = "3", default-features = false }
@@ -68,5 +74,5 @@ std = [
     "sp-authority-discovery/std",
     "futures/std",
     "log/std",
-    "once_cell/std"
+    "once_cell/std",
 ]

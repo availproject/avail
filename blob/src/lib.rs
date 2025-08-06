@@ -46,13 +46,13 @@ pub(crate) const LOG_TARGET: &str = "avail::blob";
 
 /***** TODO Blob: Make CLI / Runtime args from this, must be compatible with rpc flags *****/
 /// Maximum notification size, 128kb
-const NOTIFICATION_MAX_SIZE: u64 = 1 * 1024 * 1024;
+const NOTIFICATION_MAX_SIZE: u64 = 2 * 1024 * 1024;
 /// Maximum request size, 128kb
 const REQUEST_MAX_SIZE: u64 = 128 * 1024;
 /// Maximum response size, 64mb
 const RESPONSE_MAX_SIZE: u64 = 64 * 1024 * 1024;
 /// Maximum request time
-const REQUEST_TIME_OUT: Duration = Duration::from_secs(5);
+const REQUEST_TIME_OUT: Duration = Duration::from_secs(30);
 /// The maximum number of allowed concurrent request processing or notification processing
 const CONCURRENT_REQUESTS: usize = 2048;
 
@@ -64,7 +64,7 @@ const MIN_BLOB_HOLDER_PERCENTAGE: Perbill = Perbill::from_percent(10);
 /// We take the maximum between this and MIN_BLOB_HOLDER_PERCENTAGE
 const MIN_BLOB_HOLDER_COUNT: u32 = 2;
 /// Amount of block for which we need to store the blob metadata and blob.
-const BLOB_TTL: u64 = 120_960; // 28 days
+const BLOB_TTL: u64 = 120_960; // 28 days // TODO Blob this needs to be use when a validator accepts a block with valid da submissions, we then need to update the ttl for this blob
 /// Amount of block for which we need to store the blob metadata if the blob is not notified yet.
 const TEMP_BLOB_TTL: u64 = 180;
 /// Amount of blocks used to periodically check wether we should remove expired blobs or not.
@@ -188,11 +188,12 @@ async fn handle_blob_received_notification<Block>(
 	};
 
 	// Get the existing blob or create a new one
-	let expires_at = announced_finalized_number.saturating_add(BLOB_TTL);
+	let expires_at = announced_finalized_number.saturating_add(TEMP_BLOB_TTL);
 	let mut blob_meta = maybe_metadata.unwrap_or_else(|| BlobMetadata {
 		hash: blob_received.hash,
 		size: blob_received.size,
 		commitment: blob_received.commitment.clone(),
+		extended_commitment: blob_received.extended_commitment.clone(),
 		ownership: Vec::new(),
 		is_notified: true,
 		expires_at: 0,
@@ -277,16 +278,6 @@ async fn handle_blob_received_notification<Block>(
 			)
 			.await;
 		}
-
-		check_blob_validity(
-			network,
-			keystore,
-			&blob_handle.blob_store,
-			&mut blob_meta,
-			&announced_finalized_hash.encode(),
-			my_validator_id,
-		)
-		.await;
 	}
 
 	match blob_handle.blob_store.insert_blob_metadata(&blob_meta) {
@@ -300,6 +291,22 @@ async fn handle_blob_received_notification<Block>(
 			)
 		},
 	};
+
+	// Spawn a task to check blob validity
+	let network = network.clone();
+	let keystore = keystore.clone();
+	let blob_store = blob_handle.blob_store.clone();
+	tokio::spawn(async move {
+		check_blob_validity(
+			&network,
+			&keystore,
+			&blob_store,
+			&blob_meta,
+			&announced_finalized_hash.encode(),
+			my_validator_id,
+		)
+		.await
+	});
 }
 
 async fn send_blob_request<Block>(
@@ -587,6 +594,7 @@ async fn handle_blob_stored_notification<Block>(
 		hash: blob_stored.hash,
 		size: 0,
 		commitment: Vec::new(),
+		extended_commitment: Vec::new(),
 		ownership: Vec::new(),
 		is_notified: false,
 		finalized_block_hash: Block::Hash::default(),
@@ -632,22 +640,28 @@ async fn handle_blob_stored_notification<Block>(
 		blob_stored.signature,
 	);
 
-	check_blob_validity(
-		network,
-		keystore,
-		&blob_handle.blob_store,
-		&mut blob_metadata,
-		&finalized_hash.encode(),
-		my_validator_id,
-	)
-	.await;
-
 	if let Err(e) = blob_handle.blob_store.insert_blob_metadata(&blob_metadata) {
 		log::error!(
 			target: LOG_TARGET,
 			"An error has occured while trying to save blob_metadata in the store: {e}"
 		);
 	}
+
+	// Spawn a task to check blob validity
+	let network = network.clone();
+	let keystore = keystore.clone();
+	let blob_store = blob_handle.blob_store.clone();
+	tokio::spawn(async move {
+		check_blob_validity(
+			&network,
+			&keystore,
+			&blob_store,
+			&blob_metadata,
+			&finalized_hash.encode(),
+			my_validator_id,
+		)
+		.await
+	});
 }
 
 async fn send_cell_request<Block>(
@@ -754,6 +768,10 @@ pub fn process_cell_request_inner<Block: BlockT>(
 	cell_request: CellRequest,
 	store: &RocksdbBlobStore<Block>,
 ) -> Result<CellResponse> {
+	let start_time = std::time::Instant::now();
+	let elapsed = start_time.elapsed();
+	log::info!("process_cell_request_inner start {:.2?}", elapsed);
+
 	let hash = cell_request.hash;
 	// get blob from the store which is needed to compute the cell proofs
 	let blob = match store.get_blob(&hash).ok().flatten() {
@@ -776,6 +794,9 @@ pub fn process_cell_request_inner<Block: BlockT>(
 	let poly = grid
 		.make_polynomial_grid()
 		.expect("polynomial grid construction works");
+
+	let elapsed = start_time.elapsed();
+	log::info!("process_cell_request_inner grid done {:.2?}", elapsed);
 
 	let cell_proofs: Vec<GDataProof> = match cell_request
 		.cells
@@ -848,6 +869,9 @@ pub fn process_cell_request_inner<Block: BlockT>(
 		Ok(proofs) => proofs,
 		Err(e) => return Err(anyhow!("Proof generation failed: {e:?}")),
 	};
+
+	let elapsed = start_time.elapsed();
+	log::info!("process_cell_request_inner end {:.2?}", elapsed);
 
 	Ok(CellResponse { hash, cell_proofs })
 }
