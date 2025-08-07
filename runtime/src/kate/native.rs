@@ -1,13 +1,17 @@
-use super::{Error, GCellBlock, GDataProof, GMultiProof, GProof, GRawScalar, GRow};
+use super::{Error, GCellBlock, GDataProof, GMultiProof, GProof, GRawScalar, GRow, LOG_TARGET};
 use avail_base::header_extension::SubmittedData;
-use avail_core::{AppExtrinsic, AppId, BlockLengthColumns, BlockLengthRows};
+use avail_core::{
+	header::{extension as he, HeaderExtension},
+	kate::DATA_CHUNK_SIZE,
+	kate_commitment as kc, AppExtrinsic, AppId, BlockLengthColumns, BlockLengthRows, DataLookup,
+};
 use core::num::NonZeroU16;
 use frame_system::{limits::BlockLength, native::hosted_header_builder::MIN_WIDTH};
 #[cfg(feature = "std")]
 use kate::{
 	com::Cell,
 	couscous::multiproof_params,
-	gridgen::core::{AsBytes as _, EvaluationGrid as EGrid},
+	gridgen::core::{AsBytes as _, EvaluationGrid as EGrid, PolynomialGrid},
 	M1NoPrecomp,
 };
 use kate::{ArkScalar, Seed};
@@ -16,11 +20,223 @@ use sp_runtime::SaturatedConversion as _;
 use sp_runtime_interface::runtime_interface;
 use sp_std::vec::Vec;
 
+use lru::LruCache;
+#[cfg(feature = "std")]
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
+use sp_core::H256;
+use sp_std::sync::{Arc, Mutex};
+
+const MAX_CACHED_GRIDS: usize = 5;
+#[cfg(feature = "std")]
+static CACHE: std::sync::OnceLock<BlockGridCache> = std::sync::OnceLock::new();
 #[cfg(feature = "std")]
 static SRS: std::sync::OnceLock<M1NoPrecomp> = std::sync::OnceLock::new();
 
 #[cfg(feature = "std")]
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
+struct GridCache {
+	eval_grid: Arc<EGrid>,
+	polynomial_grid: Arc<PolynomialGrid>,
+}
+
+#[cfg(feature = "std")]
+struct BlockGridCache {
+	cache: Mutex<LruCache<H256, Arc<GridCache>>>,
+}
+
+#[cfg(feature = "std")]
+impl BlockGridCache {
+	fn new() -> Self {
+		Self {
+			cache: Mutex::new(LruCache::new(MAX_CACHED_GRIDS)),
+		}
+	}
+
+	fn get_or_insert(
+		&self,
+		block_hash: H256,
+		create_fn: impl FnOnce() -> Result<(Arc<EGrid>, Arc<PolynomialGrid>), Error>,
+	) -> Result<Arc<GridCache>, Error> {
+		// Try to get existing cache entry
+		if let Some(cached) = self
+			.cache
+			.lock()
+			.map_err(|_| Error::CacheLockPoisoned)?
+			.get(&block_hash)
+		{
+			log::debug!(target: LOG_TARGET, "Using cached grids for block hash: {:?}", block_hash);
+			return Ok(cached.clone());
+		}
+		// Create new grids if not in cache
+		let (eval_grid, polynomial_grid) = create_fn()?;
+		let grid_cache = Arc::new(GridCache {
+			eval_grid,
+			polynomial_grid,
+		});
+
+		// Insert into cache
+		self.cache
+			.lock()
+			.map_err(|_| Error::CacheLockPoisoned)?
+			.put(block_hash, grid_cache.clone());
+
+		Ok(grid_cache)
+	}
+}
+
+#[cfg(feature = "std")]
+pub fn proof_with_cache(
+	block_hash: H256,
+	extrinsics: Vec<Vec<u8>>,
+	block_len: BlockLength,
+	cells: Vec<(u32, u32)>,
+) -> Result<Vec<GDataProof>, Error> {
+	let cache = CACHE.get_or_init(|| BlockGridCache::new());
+
+	let srs = SRS.get_or_init(multiproof_params);
+	let (max_width, max_height) = to_width_height(&block_len);
+
+	let seed = Seed::default();
+	// Get or create grids
+	let cache_entry = cache.get_or_insert(block_hash, || {
+		// Compute fresh grids
+
+		let grids: Vec<EGrid> = extrinsics
+			.iter()
+			.map(|data| EGrid::from_data(data.clone(), max_width, max_width, max_height, seed))
+			.collect::<Result<_, _>>()?;
+
+		let uni_grid = EGrid::merge_with_padding(grids)?
+			.extend_columns(NonZeroU16::new(2).ok_or(Error::ColumnExtension)?)
+			.map_err(|_| Error::ColumnExtension)?;
+
+		let polynomial_grid = Arc::new(uni_grid.make_polynomial_grid()?);
+
+		let eval_grid = Arc::new(uni_grid);
+
+		Ok((eval_grid, polynomial_grid))
+	})?;
+
+	// Use cached or newly created grids
+	let uni_grid = cache_entry.eval_grid.as_ref();
+	let poly = cache_entry.polynomial_grid.as_ref();
+
+	generate_proofs(uni_grid, poly, srs, cells)
+}
+
+/// builds header extension and stores the grids in cache to be used later
+#[cfg(feature = "std")]
+pub fn build_extension(
+	block_hash: H256,
+	submitted_datas: Vec<SubmittedData>,
+	data_root: H256,
+	block_length: BlockLength,
+) -> Result<HeaderExtension, Error> {
+	let cache = CACHE.get_or_init(|| BlockGridCache::new());
+	let srs = SRS.get_or_init(multiproof_params);
+
+	let (max_width, max_height) = to_width_height(&block_length);
+	let data_per_row = max_width * DATA_CHUNK_SIZE;
+	let seed = Seed::default();
+
+	// Compute app_rows: ceil(len / grid_width)
+	let app_rows: Vec<(AppId, usize)> = submitted_datas
+		.iter()
+		.map(|sd| {
+			let len = sd.data.len();
+			let rows = (len + data_per_row - 1) / data_per_row;
+			(sd.id, rows)
+		})
+		.collect();
+
+	// Construct individual EGrids
+	let grids: Vec<EGrid> = submitted_datas
+		.into_iter()
+		.map(|sd| EGrid::from_data(sd.data, max_width, max_width, max_height, seed))
+		.collect::<Result<_, _>>()?;
+
+	// Merge into unified grid and create polynomial grid
+	let uni_grid = EGrid::merge_with_padding(grids)?;
+	let poly_grid = uni_grid.make_polynomial_grid()?;
+
+
+	// Generate commitments and convert to flat Vec<u8>
+	let commitment_bytes: Vec<u8> = poly_grid
+		.commitments(srs)?
+		.into_iter()
+		.map(|c| {
+			c.to_bytes().map_err(|e| {
+				log::error!(target: LOG_TARGET, "Invalid commitment bytes: {e}");
+				Error::InvalidCommitments
+			})
+		})
+		.collect::<Result<Vec<[u8; 48]>, _>>()?
+		.into_iter()
+		.flatten()
+		.collect();
+
+	// Construct DataLookup from app_rows
+	let app_lookup = DataLookup::from_id_and_len_iter(app_rows.into_iter())
+		.map_err(|_| Error::DataLookupFailed)?;
+	let original_rows = app_lookup.len();
+	let padded_rows = original_rows.next_power_of_two();
+
+	let commitment = kc::v3::KateCommitment::new(
+		padded_rows.try_into().unwrap_or_default(),
+		max_width.try_into().unwrap_or_default(),
+		data_root,
+		commitment_bytes,
+	);
+
+	log::debug!(target: LOG_TARGET, "HeaderExtension building finished, caching the grids for future use...");
+
+	// Cache the (eval_grid, poly_grid) for this block_hash
+	let _cache_entry = cache.get_or_insert(block_hash, || {
+		let extended_grid = uni_grid
+			.extend_columns_par(NonZeroU16::new(2).ok_or(Error::ColumnExtension)?)
+			.map_err(|_| Error::ColumnExtension)?;
+
+		let polynomial_grid = Arc::new(extended_grid.make_polynomial_grid()?);
+		let eval_grid = Arc::new(extended_grid);
+
+		Ok((eval_grid, polynomial_grid))
+	})?;
+
+	Ok(he::v4::HeaderExtension {
+		app_lookup,
+		commitment,
+	}
+	.into())
+}
+
+#[cfg(feature = "std")]
+fn generate_proofs(
+	uni_grid: &EGrid,
+	poly: &PolynomialGrid,
+	srs: &M1NoPrecomp,
+	cells: Vec<(u32, u32)>,
+) -> Result<Vec<GDataProof>, Error> {
+	cells
+		.into_par_iter()
+		.map(|(row, col)| {
+			let data = uni_grid
+				.get(row as usize, col as usize)
+				.ok_or(Error::MissingCell { row, col })?
+				.to_bytes()
+				.map(GRawScalar::from)
+				.map_err(|_| Error::InvalidScalarAtRow(row))?;
+			let proof = poly
+				.proof(
+					srs,
+					&Cell::new(BlockLengthRows(row), BlockLengthColumns(col)),
+				)?
+				.to_bytes()
+				.map(GProof)
+				.map_err(|_| Error::Proof)?;
+
+			Ok((data, proof))
+		})
+		.collect::<Result<Vec<_>, _>>()
+}
 
 /// Hosted function to build the header using `kate` commitments.
 #[runtime_interface]

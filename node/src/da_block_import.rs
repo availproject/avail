@@ -19,6 +19,7 @@ use avail_core::{
 use da_control::extensions::native::build_da_commitments::build_da_commitments;
 use da_runtime::{
 	apis::{DataAvailApi, ExtensionBuilder},
+	kate::native::build_extension as build_v4_extension,
 	Header as DaHeader, Runtime,
 };
 use frame_system::limits::BlockLength;
@@ -115,7 +116,8 @@ where
 					block_number,
 				)
 				.map_err(build_ext_fail)?,
-			HeaderVersion::V4 => build_extension_with_comms(
+			HeaderVersion::V4 => build_extension_with_cache(
+				block.post_hash(),
 				extrinsics(),
 				data_root,
 				block_len,
@@ -183,6 +185,34 @@ impl<B, C, I: Clone> Clone for BlockImport<B, C, I> {
 			_block: PhantomData,
 		}
 	}
+}
+
+fn build_extension_with_cache(
+	block_hash: H256,
+	extrinsics: Vec<OpaqueExtrinsic>,
+	data_root: H256,
+	block_length: BlockLength,
+	block_number: u32,
+	version: HeaderVersion,
+) -> Result<HeaderExtension, ConsensusError> {
+	let data_submissions = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(
+		block_number,
+		&extrinsics,
+	)
+	.data_submissions;
+
+	// Blocks with non-DA extrinsics will have empty commitments
+	if data_submissions.is_empty() {
+		return Ok(HeaderExtension::get_empty_header(data_root, version));
+	}
+
+	let max_columns = block_length.cols.0 as usize;
+	if max_columns == 0 {
+		return Ok(HeaderExtension::get_empty_header(data_root, version));
+	}
+
+	build_v4_extension(block_hash, data_submissions, data_root, block_length)
+		.map_err(|_| extension_building_failed())
 }
 
 /// builds header extension by regenerating the commitments for DA txs
@@ -301,6 +331,11 @@ fn data_root_fail(e: ApiError) -> ConsensusError {
 
 fn build_ext_fail(e: ApiError) -> ConsensusError {
 	let msg = format!("Build extension fails due to: {e:?}");
+	ConsensusError::ClientImport(msg)
+}
+
+fn extension_building_failed() -> ConsensusError {
+	let msg = "Failed to build extension".to_string();
 	ConsensusError::ClientImport(msg)
 }
 

@@ -961,7 +961,7 @@ dependencies = [
 [[package]]
 name = "avail-core"
 version = "0.6.2"
-source = "git+https://github.com/availproject/avail-core?rev=1b25be35ed1a479cf1edf23fd1f7db2e235ee5aa#1b25be35ed1a479cf1edf23fd1f7db2e235ee5aa"
+source = "git+https://github.com/availproject/avail-core?rev=9ce77889821280bef045d8ad241167e0244056de#9ce77889821280bef045d8ad241167e0244056de"
 dependencies = [
  "binary-merkle-tree",
  "blake2b_simd",
@@ -2439,6 +2439,7 @@ dependencies = [
  "kate",
  "kate-recovery",
  "log",
+ "lru 0.7.8",
  "pallet-authority-discovery",
  "pallet-authorship",
  "pallet-babe",
@@ -5386,7 +5387,7 @@ dependencies = [
 [[package]]
 name = "kate"
 version = "0.9.2"
-source = "git+https://github.com/availproject/avail-core?rev=1b25be35ed1a479cf1edf23fd1f7db2e235ee5aa#1b25be35ed1a479cf1edf23fd1f7db2e235ee5aa"
+source = "git+https://github.com/availproject/avail-core?rev=9ce77889821280bef045d8ad241167e0244056de#9ce77889821280bef045d8ad241167e0244056de"
 dependencies = [
  "avail-core",
  "derive_more 0.99.18",
@@ -5412,7 +5413,7 @@ dependencies = [
 [[package]]
 name = "kate-recovery"
 version = "0.10.0"
-source = "git+https://github.com/availproject/avail-core?rev=1b25be35ed1a479cf1edf23fd1f7db2e235ee5aa#1b25be35ed1a479cf1edf23fd1f7db2e235ee5aa"
+source = "git+https://github.com/availproject/avail-core?rev=9ce77889821280bef045d8ad241167e0244056de#9ce77889821280bef045d8ad241167e0244056de"
 dependencies = [
  "avail-core",
  "derive_more 0.99.18",

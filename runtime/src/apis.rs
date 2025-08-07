@@ -66,11 +66,16 @@ decl_runtime_apis! {
 	}
 
 	pub trait KateApi {
+		fn data_extrinsics(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>) -> Vec<Vec<u8>>;
+
 		fn data_proof(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, tx_idx: u32) -> Option<ProofResponse>;
+
 		#[api_version(2)]
 		fn rows(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, rows: Vec<u32>) -> Result<Vec<GRow>, RTKateError >;
+
 		#[api_version(2)]
 		fn proof(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, cells: Vec<(u32,u32)> ) -> Result<Vec<GDataProof>, RTKateError>;
+
 		fn multiproof(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, cells: Vec<(u32,u32)> ) -> Result<Vec<(GMultiProof, GCellBlock)>, RTKateError>;
 	}
 }
@@ -447,6 +452,13 @@ impl_runtime_apis! {
 
 	#[api_version(2)]
 	impl crate::apis::KateApi<Block> for Runtime {
+		fn data_extrinsics(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>) -> Vec<Vec<u8>>{
+			let data_submissions = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block_number, &extrinsics).data_submissions;
+			data_submissions.into_iter()
+				.map(|da_ext| da_ext.data)
+				.collect::<Vec<_>>()
+		}
+
 		fn data_proof(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, tx_idx: u32) -> Option<ProofResponse> {
 			let data = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block_number, &extrinsics);
 			let (leaf_idx, sub_trie) = data.leaf_idx(tx_idx)?;

@@ -5,6 +5,7 @@ mod schema;
 use avail_core::{header::HeaderExtension, OpaqueExtrinsic};
 use da_runtime::{
 	apis::{DataAvailApi, KateApi},
+	kate::native::proof_with_cache,
 	Hash, Header as DaHeader,
 };
 use futures::{
@@ -331,7 +332,7 @@ where
 		})?;
 
 		let (header, extrinsics) = block.block.deconstruct();
-		let number: u32 = (*header.number()).try_into().map_err(|_| {
+		let block_number: u32 = (*header.number()).try_into().map_err(|_| {
 			SamplingError::RequestFailure(format!("Invalid block number for {block_hash:?}"))
 		})?;
 
@@ -347,13 +348,15 @@ where
 
 		let cells: Vec<_> = req.cells.iter().map(|c| (c.row, c.col)).collect();
 		let start_time = Instant::now();
-		let proofs = self
+		let da_data = self
 			.client
 			.runtime_api()
-			.proof(block_hash, number, extrinsics, block_len, cells)
-			.map_err(SamplingError::Api)?
-			.map_err(|e| SamplingError::RequestFailure(format!("Proof error: {e}")))?;
-		debug!(target: LOG_TARGET, "Proof generation took: {:?}", start_time.elapsed());
+			.data_extrinsics(block_hash, block_number, extrinsics)
+			.map_err(SamplingError::Api)?;
+		let proofs = proof_with_cache(block_hash, da_data, block_len, cells).map_err(|e| {
+			SamplingError::RequestFailure(format!("Failed to generate proofs: {e}"))
+		})?;
+		debug!(target: LOG_TARGET, "Proof generation took: {:?} for block hash: {:?}", start_time.elapsed(), block_hash);
 		let cell_proofs = proofs
 			.into_iter()
 			.map(|(scalar, proof)| {

@@ -19,6 +19,8 @@ use thiserror_no_std::Error;
 #[cfg(feature = "std")]
 use kate::{com::Error as KateError, gridgen::core::AppRowError as KateAppRowError};
 
+const LOG_TARGET: &str = "runtime::kate";
+
 pub type GRawScalar = U256;
 pub type GRow = Vec<GRawScalar>;
 pub type GDataProof = (GRawScalar, GProof);
@@ -101,6 +103,16 @@ pub enum Error {
 	Proof,
 	#[error("Failed to extend columns")]
 	ColumnExtension,
+	#[error("DataLookup construction faild")]
+	DataLookupFailed,
+	#[error("InvalidCommitments")]
+	InvalidCommitments,
+	#[error("InvalidCacheConfiguration")]
+	InvalidCacheConfiguration,
+	#[error("CacheLockPoisoned")]
+	CacheLockPoisoned,
+	#[error("CacheInitializationFailed")]
+	CacheInitializationFailed,
 }
 
 impl From<TryFromIntError> for Error {
