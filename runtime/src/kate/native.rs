@@ -1,30 +1,36 @@
-use super::{Error, GCellBlock, GDataProof, GMultiProof, GProof, GRawScalar, GRow, LOG_TARGET};
+// === Internal ===
+use super::{Error, GCellBlock, GDataProof, GMultiProof, GRow};
+
+// === Always Included ===
 use avail_base::header_extension::SubmittedData;
-use avail_core::{
-	header::{extension as he, HeaderExtension},
-	kate::DATA_CHUNK_SIZE,
-	kate_commitment as kc, AppExtrinsic, AppId, BlockLengthColumns, BlockLengthRows, DataLookup,
-};
-use core::num::NonZeroU16;
+use avail_core::AppExtrinsic;
 use frame_system::{limits::BlockLength, native::hosted_header_builder::MIN_WIDTH};
-#[cfg(feature = "std")]
-use kate::{
-	com::Cell,
-	couscous::multiproof_params,
-	gridgen::core::{AsBytes as _, EvaluationGrid as EGrid, PolynomialGrid},
-	M1NoPrecomp,
-};
 use kate::{ArkScalar, Seed};
-use kate_recovery::matrix::Dimensions;
 use sp_runtime::SaturatedConversion as _;
 use sp_runtime_interface::runtime_interface;
 use sp_std::vec::Vec;
 
-use lru::LruCache;
 #[cfg(feature = "std")]
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
-use sp_core::H256;
-use sp_std::sync::{Arc, Mutex};
+use {
+	super::{GProof, GRawScalar, LOG_TARGET},
+	avail_core::{
+		header::{extension as he, HeaderExtension},
+		kate::DATA_CHUNK_SIZE,
+		kate_commitment as kc, AppId, BlockLengthColumns, BlockLengthRows, DataLookup,
+	},
+	core::num::NonZeroU16,
+	kate::{
+		com::Cell,
+		couscous::multiproof_params,
+		gridgen::core::{AsBytes as _, EvaluationGrid as EGrid, PolynomialGrid},
+		M1NoPrecomp,
+	},
+	kate_recovery::matrix::Dimensions,
+	lru::LruCache,
+	rayon::iter::{IntoParallelIterator, ParallelIterator},
+	sp_core::H256,
+	sp_std::sync::{Arc, Mutex},
+};
 
 const MAX_CACHED_GRIDS: usize = 5;
 #[cfg(feature = "std")]
@@ -157,7 +163,6 @@ pub fn build_extension(
 	// Merge into unified grid and create polynomial grid
 	let uni_grid = EGrid::merge_with_padding(grids)?;
 	let poly_grid = uni_grid.make_polynomial_grid()?;
-
 
 	// Generate commitments and convert to flat Vec<u8>
 	let commitment_bytes: Vec<u8> = poly_grid
