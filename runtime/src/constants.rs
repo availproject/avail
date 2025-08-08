@@ -69,7 +69,7 @@ pub mod time {
 	/// always be assigned, in which case `MILLISECS_PER_BLOCK` and
 	/// `SLOT_DURATION` should have the same value.
 	///
-	/// <https://research.web3.foundation/en/latest/polkadot/block-production/Babe.html#-6.-practical-results>
+	/// <https://research.web3.foundation/Polkadot/protocols/block-production/Babe#6-practical-results>
 	#[cfg(not(feature = "fast-runtime"))]
 	pub const MILLISECS_PER_BLOCK: Moment = 20_000;
 	#[cfg(feature = "fast-runtime")]
