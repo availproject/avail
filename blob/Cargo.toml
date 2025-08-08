@@ -16,6 +16,7 @@ tokio = { version = "1.43.0", features = [
     "macros",
     "rt-multi-thread",
 ] }
+rand_chacha = { workspace = true }
 rand = { workspace = true }
 rayon = { workspace = true }
 codec = { package = "parity-scale-codec", version = "3", default-features = false }

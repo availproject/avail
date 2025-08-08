@@ -20,14 +20,15 @@ use kate_recovery::{
 	matrix::{Dimensions, Position},
 	proof::verify_v2,
 };
-use rand::{thread_rng, Rng};
+use rand::{thread_rng, Rng, SeedableRng};
+use rand_chacha::ChaCha20Rng;
 use sc_client_api::HeaderBackend;
 use sc_keystore::{Keystore, LocalKeystore};
 use sc_network::{NetworkService, NetworkStateInfo, PeerId};
 use sc_transaction_pool_api::TransactionSource;
 use sp_api::ProvideRuntimeApi;
 use sp_authority_discovery::AuthorityId;
-use sp_core::sr25519;
+use sp_core::{keccak_256, sr25519};
 use sp_runtime::{
 	key_types,
 	traits::{Block as BlockT, Verify},
@@ -639,6 +640,43 @@ fn generate_random_cells(dimensions: Dimensions, cell_count: u32) -> Vec<CellCoo
 	}
 
 	indices.into_iter().collect()
+}
+
+fn generate_pseudo_random_cells(
+	dimensions: Dimensions,
+	cell_count: u32,
+	finalized_hash_encoded: &[u8],
+	blob_hash: BlobHash,
+	validator_address_encoded: &[u8],
+) -> Vec<CellCoordinate> {
+	let (max_cells, cols) = (dimensions.extended_size(), dimensions.cols());
+	let count = max_cells.min(cell_count);
+
+	if max_cells < cell_count {
+		log::debug!("Max cells {max_cells} < requested {cell_count}");
+	}
+
+	let mut seed_input = Vec::new();
+	seed_input.extend_from_slice(finalized_hash_encoded);
+	seed_input.extend_from_slice(blob_hash.as_bytes());
+	seed_input.extend_from_slice(validator_address_encoded);
+	let seed = keccak_256(&seed_input);
+	let mut rng = ChaCha20Rng::from_seed(seed);
+
+	let mut selected_indices = HashSet::with_capacity(count as usize);
+	while selected_indices.len() < count as usize {
+		let idx = rng.gen_range(0..max_cells);
+		selected_indices.insert(idx);
+	}
+
+	let cols = cols.get() as u32;
+	selected_indices
+		.into_iter()
+		.map(|i| CellCoordinate {
+			row: i / cols,
+			col: i % cols,
+		})
+		.collect()
 }
 
 pub fn build_signature_payload(blob_hash: BlobHash, additional: Vec<u8>) -> Vec<u8> {

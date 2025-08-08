@@ -983,6 +983,7 @@ dependencies = [
  "once_cell",
  "parity-scale-codec",
  "rand",
+ "rand_chacha 0.3.1",
  "rayon",
  "sc-authority-discovery",
  "sc-client-api",
