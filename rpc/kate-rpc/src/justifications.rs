@@ -172,7 +172,7 @@ impl serde::Serialize for Signature {
 	where
 		S: serde::Serializer,
 	{
-		serializer.serialize_str(&const_hex::encode(&self.0))
+		serializer.serialize_str(&const_hex::encode_prefixed(&self.0))
 	}
 }
 
@@ -181,8 +181,9 @@ impl<'de> serde::Deserialize<'de> for Signature {
 	where
 		D: serde::Deserializer<'de>,
 	{
-		let signature_hex = const_hex::decode(&String::deserialize(deserializer)?)
-			.map_err(|e| serde::de::Error::custom(format!("{:?}", e)))?;
+		let signature_hex =
+			const_hex::decode(String::deserialize(deserializer)?.trim_start_matches("0x"))
+				.map_err(|e| serde::de::Error::custom(format!("{:?}", e)))?;
 		let signature: [u8; 64usize] = signature_hex
 			.try_into()
 			.map_err(|e| serde::de::Error::custom(format!("{:?}", e)))?;
