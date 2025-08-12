@@ -343,6 +343,27 @@ pub mod types {
 		#[allow(dead_code)]
 		#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
 		#[cfg_attr(feature = "ts", ts(export, export_to = "Types.ts"))]
+		struct RpcRequestBlockNumber {
+			id: u32,
+			jsonrpc: String,
+			method: String,
+			#[cfg_attr(feature = "ts", ts(as = "(String,)"))]
+			params: (H256,),
+		}
+
+		#[allow(dead_code)]
+		#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+		#[cfg_attr(feature = "ts", ts(export, export_to = "Types.ts"))]
+		struct RpcResponseBlockNumber {
+			jsonrpc: String,
+			result: Option<u32>,
+			error: Option<Error>,
+			id: u32,
+		}
+
+		#[allow(dead_code)]
+		#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
+		#[cfg_attr(feature = "ts", ts(export, export_to = "Types.ts"))]
 		pub struct Error {
 			code: i32,
 			message: String,
