@@ -650,7 +650,7 @@ dependencies = [
 [[package]]
 name = "avail-rust-client"
 version = "0.2.0"
-source = "git+https://github.com/availproject/avail-rust?branch=ghali/infinity-da-rpc#478ac5c01c7715bf40129f96360fbd35fdc66f12"
+source = "git+https://github.com/availproject/avail-rust?branch=ghali/infinity-da-rpc#474e4678e0fd2afbd1a7c224cae513429d7ef23e"
 dependencies = [
  "avail-rust-core",
  "bounded-collections",
@@ -671,7 +671,7 @@ dependencies = [
 [[package]]
 name = "avail-rust-core"
 version = "0.2.0"
-source = "git+https://github.com/availproject/avail-rust?branch=ghali/infinity-da-rpc#478ac5c01c7715bf40129f96360fbd35fdc66f12"
+source = "git+https://github.com/availproject/avail-rust?branch=ghali/infinity-da-rpc#474e4678e0fd2afbd1a7c224cae513429d7ef23e"
 dependencies = [
  "bounded-collections",
  "hex",
@@ -1569,6 +1569,7 @@ dependencies = [
  "da-commitment",
  "hex",
  "kate",
+ "parity-scale-codec",
  "serde",
  "sp-core",
  "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
@@ -6712,7 +6713,7 @@ version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf221c93e13a30d793f7645a0e7762c55d169dbb0a49671918a2319d289b10bb"
 dependencies = [
- "windows-sys 0.48.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]

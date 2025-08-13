@@ -91,7 +91,7 @@ pub fn build_da_commitments(
 	commitments
 }
 
-pub fn build_extended_commitments(commitments: Vec<u8>) -> Result<Vec<[u8; 48]>> {
+pub fn build_extended_commitments(commitments: Vec<u8>) -> Result<Vec<u8>> {
 	let original_commitments: Vec<ArkCommitment> = commitments
 		.chunks_exact(48)
 		.enumerate()
@@ -109,11 +109,12 @@ pub fn build_extended_commitments(commitments: Vec<u8>) -> Result<Vec<[u8; 48]>>
 		ArkCommitment::extend_commitments(&original_commitments, original_commitments.len() * 2)
 			.expect("extending commitments should work if dimensions are valid");
 
-	let commitments_bytes: Vec<_> = extended_commitments
+	let commitments_bytes: Vec<u8> = extended_commitments
 		.into_iter()
-		.map(|c| {
+		.flat_map(|c| {
 			c.to_bytes()
 				.expect("Valid commitments should be serialisable")
+				.to_vec()
 		})
 		.collect();
 

@@ -3,26 +3,16 @@ use crate::{
 	types::{
 		Blob, BlobHash, BlobMetadata, BlobNotification, BlobQueryRequest, BlobReceived,
 		BlobRequest, BlobRequestEnum, BlobResponse, BlobResponseEnum, BlobSignatureData,
-		BlobStored, CellRequest, CellResponse, BLOB_REQ_PROTO,
+		BlobStored, OwnershipEntry, BLOB_REQ_PROTO,
 	},
 	utils::{
-		build_signature_payload, check_blob_validity, check_store_blob, get_my_validator_id,
-		get_validator_per_blob, sign_blob_data, verify_signed_blob_data,
+		build_cell_proofs, build_signature_payload, check_store_blob, get_my_validator_id,
+		get_validator_per_blob, sign_blob_data, validate_cell_proofs, verify_signed_blob_data,
 	},
 };
 use anyhow::{anyhow, Result};
-use avail_core::{BlockLengthColumns, BlockLengthRows};
 use codec::{Decode, Encode};
-use da_runtime::kate::{GDataProof, GProof, GRawScalar};
 use futures::channel::oneshot;
-use kate::{
-	com::Cell,
-	couscous::multiproof_params,
-	gridgen::core::{AsBytes as _, EvaluationGrid as EGrid},
-	Seed,
-};
-use kate_recovery::commons::ArkPublicParams;
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use sc_authority_discovery::AuthorityDiscovery;
 use sc_client_api::HeaderBackend;
 use sc_network::{
@@ -30,10 +20,9 @@ use sc_network::{
 	IfDisconnected, NetworkPeers, NetworkRequest, NetworkService, NetworkStateInfo, ObservedRole,
 	PeerId,
 };
-use sp_authority_discovery::AuthorityId;
 use sp_core::sr25519;
 use sp_runtime::{traits::Block as BlockT, Perbill, SaturatedConversion};
-use std::{num::NonZeroU16, str::FromStr, sync::Arc, time::Duration};
+use std::{str::FromStr, sync::Arc, time::Duration};
 use store::{BlobStore, RocksdbBlobStore};
 
 pub mod p2p;
@@ -60,7 +49,7 @@ const CONCURRENT_REQUESTS: usize = 2048;
 /// Maximum size of a blob, need to change the rpc request and response size to handle this
 const MAX_BLOB_SIZE: u64 = 32 * 1024 * 1024;
 /// Minimum amount of validator that needs to store a blob, if we have less than minimum, everyone stores it.
-const MIN_BLOB_HOLDER_PERCENTAGE: Perbill = Perbill::from_percent(10);
+const MIN_BLOB_HOLDER_PERCENTAGE: Perbill = Perbill::from_percent(34);
 /// We take the maximum between this and MIN_BLOB_HOLDER_PERCENTAGE
 const MIN_BLOB_HOLDER_COUNT: u32 = 2;
 /// Amount of block for which we need to store the blob metadata and blob.
@@ -76,15 +65,13 @@ const MIN_TRANSACTION_VALIDITY: u64 = 15; // 5 mn
 /// This value is used so a transaction won't be stuck in the mempool.
 const MAX_TRANSACTION_VALIDITY: u64 = 150; // 50 mn
 /// The number of time we'll allow trying to fetch internal blob metadata or blob data before letting the transaction go through to get discarded
-const MAX_BLOB_RETRY_BEFORE_DISCARDING: u16 = 2;
+const MAX_BLOB_RETRY_BEFORE_DISCARDING: u16 = 25;
 /// The number of block for which a notification is considered valid
 const NOTIFICATION_EXPIRATION_PERIOD: u64 = 180;
 /// The number of retries the RPC is going to make before dropping a user blob request
 const MAX_RPC_RETRIES: u8 = 3;
 /// Number of cells required for 99.99% confidence
 const CELL_COUNT: u32 = 14;
-
-static PP: std::sync::OnceLock<ArkPublicParams> = std::sync::OnceLock::new();
 
 pub async fn decode_blob_notification<Block>(data: &[u8], blob_handle: &BlobHandle<Block>)
 where
@@ -129,6 +116,7 @@ async fn handle_blob_received_notification<Block>(
 ) where
 	Block: BlockT,
 {
+	let mut blob_received = blob_received;
 	let is_authority = blob_handle.role.is_authority();
 	if !is_authority {
 		log::warn!("Received a blob notification but this node is not an authority, ignoring.");
@@ -200,8 +188,6 @@ async fn handle_blob_received_notification<Block>(
 		finalized_block_hash: Block::Hash::default(),
 		finalized_block_number: 0,
 		nb_validators_per_blob: 0,
-		is_validated: false,
-		error_reason: None,
 	});
 
 	// If we already had the blob metadata but incomplete (is notified == false) we fill the missing data.
@@ -214,8 +200,15 @@ async fn handle_blob_received_notification<Block>(
 	// Here, no matter if it's a new blob or a duplicate, we set the new expiration time and update the ownership / block timestamp.
 	blob_meta.finalized_block_hash = announced_finalized_hash;
 	blob_meta.finalized_block_number = announced_finalized_number;
-	blob_meta.expires_at = expires_at;
+	// If we have an existing blob, we keep the bigger ttl. (Either we update it later during import, or it will keep the initial)
+	blob_meta.expires_at = blob_meta.expires_at.max(expires_at);
 	blob_meta.nb_validators_per_blob = nb_validators_per_blob;
+
+	blob_received
+		.ownership
+		.iter_mut()
+		.for_each(|o| o.reset_data_proofs());
+
 	blob_meta.merge_ownerships(blob_received.ownership);
 
 	let Some(keystore) = blob_handle.keystore.get() else {
@@ -259,54 +252,81 @@ async fn handle_blob_received_notification<Block>(
 			},
 		};
 
-		let is_new = blob_meta.insert_ownership(&my_validator_id, &my_peer_id_base58, signature);
+		let is_new = !blob_meta
+			.ownership
+			.iter()
+			.any(|entry| entry.address == my_validator_id);
 
+		let blob: Blob;
 		if is_new {
-			send_blob_request(
-				blob_received.hash,
-				blob_handle,
-				network,
-				original_peer_id,
-				my_validator_id.clone(),
-			)
-			.await;
+			let Some(blob_response) =
+				send_blob_request(blob_received.hash, blob_handle, network, original_peer_id).await
+			else {
+				log::error!(
+					target: LOG_TARGET,
+					"An error occured while trying to request a blob {}",
+					blob_meta.hash,
+				);
+				return;
+			};
+
+			// Insert the blob in the store
+			if let Err(e) = blob_handle.blob_store.insert_blob(&blob_response.blob) {
+				log::error!(
+					target: LOG_TARGET,
+					"An error occured while trying to store blob {}: {}",
+					blob_meta.hash,
+					e
+				);
+				return;
+			}
+			blob = blob_response.blob;
 		} else {
-			send_blob_stored_notification(
-				blob_received.hash,
-				&blob_handle,
-				my_validator_id.clone(),
-			)
-			.await;
+			let Ok(Some(b)) = blob_handle.blob_store.get_blob(&blob_meta.hash) else {
+				log::error!(
+					target: LOG_TARGET,
+					"Blob not found in store {}",
+					blob_meta.hash,
+				);
+				return;
+			};
+			blob = b;
 		}
+
+		let cell_proofs = match build_cell_proofs(&blob_meta, &blob, &my_validator_id) {
+			Ok(cp) => cp,
+			Err(e) => {
+				log::error!(
+					target: LOG_TARGET,
+					"Could not compute cell proofs for blob {}: {}",
+					blob_meta.hash,
+					e
+				);
+				return;
+			},
+		};
+
+		let ownership = blob_meta.insert_ownership(
+			&my_validator_id,
+			&my_peer_id_base58,
+			signature,
+			cell_proofs,
+		);
+
+		send_blob_stored_notification(blob_received.hash, &blob_handle, ownership).await;
 	}
 
-	match blob_handle.blob_store.insert_blob_metadata(&blob_meta) {
-		Ok(()) => {},
-		Err(e) => {
-			log::error!(
-				target: LOG_TARGET,
-				"An error occured while trying to store blob metadata {}: {}",
-				blob_meta.hash,
-				e
-			)
-		},
-	};
+	// Verify existing ownership entries
+	validate_cell_proofs(&mut blob_meta);
 
-	// Spawn a task to check blob validity
-	let network = network.clone();
-	let keystore = keystore.clone();
-	let blob_store = blob_handle.blob_store.clone();
-	tokio::spawn(async move {
-		check_blob_validity(
-			&network,
-			&keystore,
-			&blob_store,
-			&blob_meta,
-			&announced_finalized_hash.encode(),
-			my_validator_id,
+	if let Err(e) = blob_handle.blob_store.insert_blob_metadata(&blob_meta) {
+		log::error!(
+			target: LOG_TARGET,
+			"An error occured while trying to store blob metadata {}: {}",
+			blob_meta.hash,
+			e
 		)
-		.await
-	});
+	}
 }
 
 async fn send_blob_request<Block>(
@@ -314,8 +334,8 @@ async fn send_blob_request<Block>(
 	blob_handle: &BlobHandle<Block>,
 	network: &Arc<NetworkService<Block, Block::Hash>>,
 	original_peer_id: PeerId,
-	my_validator_id: AuthorityId,
-) where
+) -> Option<BlobResponse>
+where
 	Block: BlockT,
 {
 	let signature_payload = build_signature_payload(blob_hash, b"request".to_vec());
@@ -323,7 +343,7 @@ async fn send_blob_request<Block>(
 		Ok(s) => s,
 		Err(e) => {
 			log::error!(target: LOG_TARGET, "An error has occured while trying to sign data, exiting the function: {e}");
-			return;
+			return None;
 		},
 	};
 
@@ -348,7 +368,7 @@ async fn send_blob_request<Block>(
 			match BlobResponseEnum::decode(&mut buf) {
 				Ok(response) => match response {
 					BlobResponseEnum::BlobResponse(blob_response) => {
-						process_blob_response(blob_response, &blob_handle, my_validator_id).await;
+						return Some(blob_response);
 					},
 					_ => {
 						log::error!(
@@ -371,6 +391,7 @@ async fn send_blob_request<Block>(
 			log::error!(target: LOG_TARGET, "An error has occured while trying to send blob request: {e}");
 		},
 	}
+	return None;
 }
 
 pub fn handle_incoming_blob_request<Block: BlockT>(
@@ -396,9 +417,6 @@ pub fn handle_incoming_blob_request<Block: BlockT>(
 		Ok(blob_request) => match blob_request {
 			BlobRequestEnum::BlobRequest(blob_request) => {
 				process_blob_request(blob_request, store, response_tx);
-			},
-			BlobRequestEnum::CellRequest(cell_request) => {
-				process_cell_request(cell_request, store, response_tx);
 			},
 			BlobRequestEnum::BlobQueryRequest(blob_query_request) => {
 				process_blob_query_request(blob_query_request, store, response_tx);
@@ -489,49 +507,16 @@ fn process_blob_request<Block: BlockT>(
 	}
 }
 
-async fn process_blob_response<Block>(
-	blob_response: BlobResponse,
-	blob_handle: &BlobHandle<Block>,
-	my_validator_id: AuthorityId,
-) where
-	Block: BlockT,
-{
-	match blob_handle.blob_store.insert_blob(&blob_response.blob) {
-		Ok(()) => {
-			send_blob_stored_notification(blob_response.hash, blob_handle, my_validator_id).await;
-		},
-		Err(e) => {
-			log::error!(target: LOG_TARGET, "An error occured while trying to store the blob: {e}");
-		},
-	};
-}
-
-async fn send_blob_stored_notification<Block>(
+pub async fn send_blob_stored_notification<Block>(
 	blob_hash: BlobHash,
 	blob_handle: &BlobHandle<Block>,
-	my_validator_id: AuthorityId,
+	ownership_entry: OwnershipEntry,
 ) where
 	Block: BlockT,
 {
-	let Some(network) = blob_handle.network.get() else {
-		log::error!(target: LOG_TARGET, "Network not yet registered, could not send blob stored notification");
-		return;
-	};
-
-	let sig_payload = build_signature_payload(blob_hash, b"stored".to_vec());
-	let signature = match sign_blob_data(blob_handle, sig_payload) {
-		Ok(s) => s.signature,
-		Err(e) => {
-			log::error!(target: LOG_TARGET, "An error has occured while trying to sign data, exiting the function: {e}");
-			return;
-		},
-	};
-
 	let blob_stored = BlobStored {
 		hash: blob_hash,
-		address: my_validator_id,
-		original_peer_id: network.local_peer_id().to_base58(),
-		signature,
+		ownership_entry,
 	};
 
 	let Some(gossip_cmd_sender) = blob_handle.gossip_cmd_sender.get() else {
@@ -553,6 +538,7 @@ async fn handle_blob_stored_notification<Block>(
 ) where
 	Block: BlockT,
 {
+	let mut blob_stored = blob_stored;
 	let is_authority = blob_handle.role.is_authority();
 	if !is_authority {
 		log::warn!("Received a blob notification but this node is not an authority, ignoring.");
@@ -564,32 +550,12 @@ async fn handle_blob_stored_notification<Block>(
 		return;
 	};
 
-	let Some(network) = blob_handle.network.get() else {
-		log::error!(target: LOG_TARGET, "Network not yet registered");
-		return;
-	};
-
 	let Ok(maybe_meta) = blob_handle.blob_store.get_blob_metadata(&blob_stored.hash) else {
 		log::error!(target: LOG_TARGET, "An error has occured while trying to get blob from the store");
 		return;
 	};
 
-	let Some(keystore) = blob_handle.keystore.get() else {
-		log::error!(target: LOG_TARGET, "Keystore not yet registered");
-		return;
-	};
-
-	let my_validator_id = match get_my_validator_id(&keystore) {
-		Some(v) => v,
-		None => {
-			log::error!(target: LOG_TARGET, "No keys found while trying to get this node's id");
-			return;
-		},
-	};
-
 	let client_info = client.info();
-	let finalized_hash = client_info.finalized_hash;
-
 	let mut blob_metadata = maybe_meta.unwrap_or(BlobMetadata {
 		hash: blob_stored.hash,
 		size: 0,
@@ -600,8 +566,6 @@ async fn handle_blob_stored_notification<Block>(
 		finalized_block_hash: Block::Hash::default(),
 		finalized_block_number: 0,
 		nb_validators_per_blob: 0,
-		is_validated: false,
-		error_reason: None,
 		expires_at: client_info
 			.finalized_number
 			.saturated_into::<u64>()
@@ -611,14 +575,14 @@ async fn handle_blob_stored_notification<Block>(
 		log::warn!(target: LOG_TARGET, "A Blob Stored notification was received before Blob Received, creating empty blob metadata.");
 	}
 
-	let address: sr25519::Public = blob_stored.address.clone().into();
+	let address: sr25519::Public = blob_stored.ownership_entry.address.clone().into();
 	let address_vec = address.0.to_vec();
 
 	let expected_payload = build_signature_payload(blob_stored.hash, b"stored".to_vec());
 	match verify_signed_blob_data(
 		BlobSignatureData {
 			signer: address_vec,
-			signature: blob_stored.signature.clone(),
+			signature: blob_stored.ownership_entry.signature.clone(),
 		},
 		expected_payload,
 	) {
@@ -634,11 +598,16 @@ async fn handle_blob_stored_notification<Block>(
 		},
 	}
 
+	blob_stored.ownership_entry.reset_data_proofs();
 	blob_metadata.insert_ownership(
-		&blob_stored.address,
-		&blob_stored.original_peer_id,
-		blob_stored.signature,
+		&blob_stored.ownership_entry.address,
+		&blob_stored.ownership_entry.encoded_peer_id,
+		blob_stored.ownership_entry.signature,
+		blob_stored.ownership_entry.data_proofs,
 	);
+
+	// Verify existing ownership entries
+	validate_cell_proofs(&mut blob_metadata);
 
 	if let Err(e) = blob_handle.blob_store.insert_blob_metadata(&blob_metadata) {
 		log::error!(
@@ -646,234 +615,6 @@ async fn handle_blob_stored_notification<Block>(
 			"An error has occured while trying to save blob_metadata in the store: {e}"
 		);
 	}
-
-	// Spawn a task to check blob validity
-	let network = network.clone();
-	let keystore = keystore.clone();
-	let blob_store = blob_handle.blob_store.clone();
-	tokio::spawn(async move {
-		check_blob_validity(
-			&network,
-			&keystore,
-			&blob_store,
-			&blob_metadata,
-			&finalized_hash.encode(),
-			my_validator_id,
-		)
-		.await
-	});
-}
-
-async fn send_cell_request<Block>(
-	cell_request: CellRequest,
-	network: &Arc<NetworkService<Block, Block::Hash>>,
-	target_peer: PeerId,
-) -> Result<CellResponse>
-where
-	Block: BlockT,
-{
-	let blob_request = BlobRequestEnum::CellRequest(cell_request);
-	let response = network
-		.request(
-			target_peer,
-			BLOB_REQ_PROTO,
-			blob_request.encode(),
-			None,
-			IfDisconnected::TryConnect,
-		)
-		.await;
-
-	match response {
-		Ok((data, _proto)) => {
-			let mut buf: &[u8] = &data;
-			match BlobResponseEnum::decode(&mut buf) {
-				Ok(response) => match response {
-					BlobResponseEnum::CellResponse(cell_response) => Ok(cell_response),
-					_ => Err(anyhow!(
-						"Invalid response in send cell request, expected CellResponse"
-					)),
-				},
-				Err(err) => Err(anyhow!(
-					"Failed to decode Blob response ({} bytes): {:?}",
-					data.len(),
-					err
-				)),
-			}
-		},
-		Err(e) => {
-			log::error!(target: LOG_TARGET, "An error has occured while trying to send cell request: {e}");
-			Err(anyhow!(format!(
-				"An error has occured while trying to send cell request: {e}"
-			)))
-		},
-	}
-}
-
-pub fn process_cell_request<Block: BlockT>(
-	cell_request: CellRequest,
-	store: &RocksdbBlobStore<Block>,
-	response_tx: oneshot::Sender<OutgoingResponse>,
-) {
-	let expected_payload: Vec<u8> =
-		build_signature_payload(cell_request.hash, cell_request.cells.clone().encode());
-	match verify_signed_blob_data(cell_request.signature_data.clone(), expected_payload) {
-		Ok(valid) => {
-			if !valid {
-				log::error!(target: LOG_TARGET, "An error has occured in process_cell_request: Invalid signature");
-				let _ = response_tx.send(OutgoingResponse {
-					result: Err(()),
-					reputation_changes: Vec::default(),
-					sent_feedback: None,
-				});
-				return;
-			}
-		},
-		Err(e) => {
-			log::error!(target: LOG_TARGET, "An error has occured while checking the signature: {e}");
-			let _ = response_tx.send(OutgoingResponse {
-				result: Err(()),
-				reputation_changes: Vec::default(),
-				sent_feedback: None,
-			});
-			return;
-		},
-	}
-
-	let cell_response = match process_cell_request_inner(cell_request, store) {
-		Ok(cell_response) => cell_response,
-		Err(e) => {
-			log::error!(target: LOG_TARGET, "An error has occured while process the cell request: {e}");
-			let _ = response_tx.send(OutgoingResponse {
-				result: Err(()),
-				reputation_changes: Vec::default(),
-				sent_feedback: None,
-			});
-			return;
-		},
-	};
-
-	// Return the data as a CellResponse
-	let res = OutgoingResponse {
-		result: Ok(BlobResponseEnum::CellResponse(cell_response.clone()).encode()),
-		reputation_changes: Vec::default(),
-		sent_feedback: None,
-	};
-
-	if let Err(e) = response_tx.send(res) {
-		log::error!(target: LOG_TARGET, "An error has occured while trying to return cells to requester: {e:?}")
-	};
-}
-
-pub fn process_cell_request_inner<Block: BlockT>(
-	cell_request: CellRequest,
-	store: &RocksdbBlobStore<Block>,
-) -> Result<CellResponse> {
-	let start_time = std::time::Instant::now();
-	let elapsed = start_time.elapsed();
-	log::info!("process_cell_request_inner start {:.2?}", elapsed);
-
-	let hash = cell_request.hash;
-	// get blob from the store which is needed to compute the cell proofs
-	let blob = match store.get_blob(&hash).ok().flatten() {
-		Some(b) => b.data,
-		None => {
-			return Err(anyhow!("Failed to get blob; hash: {:?}", hash));
-		},
-	};
-
-	// TODO Blob: Fetch the configured tx grid dimension
-	let cols = 1024;
-	let rows = 4096;
-	let pp = PP.get_or_init(multiproof_params);
-	let grid = EGrid::from_data(blob, cols, cols, rows, Seed::default())
-		.expect("Grid construction from data works");
-	let grid = EGrid::merge_with_padding(vec![grid])
-		.expect("merging should work")
-		.extend_columns(NonZeroU16::new(2).expect("2 > 0"))
-		.expect("If dimensions are correct, extension should work");
-	let poly = grid
-		.make_polynomial_grid()
-		.expect("polynomial grid construction works");
-
-	let elapsed = start_time.elapsed();
-	log::info!("process_cell_request_inner grid done {:.2?}", elapsed);
-
-	let cell_proofs: Vec<GDataProof> = match cell_request
-		.cells
-		.into_par_iter()
-		.map(|cell_coordinate| {
-			let cell = grid.get(cell_coordinate.row as usize, cell_coordinate.col as usize);
-			if cell.is_none() {
-				return Err(anyhow!(
-					"Missing cell at row: {}, col: {}",
-					cell_coordinate.row,
-					cell_coordinate.col
-				));
-			}
-
-			let scalar = match cell.unwrap().to_bytes().map(GRawScalar::from) {
-				Ok(s) => s,
-				Err(e) => {
-					return Err(anyhow!(
-						"Invalid scalar at row: {}: {}",
-						cell_coordinate.row,
-						e
-					));
-				},
-			};
-
-			let raw_proof = match poly.proof(
-				pp,
-				&Cell::new(
-					BlockLengthRows(cell_coordinate.row),
-					BlockLengthColumns(cell_coordinate.col),
-				),
-			) {
-				Ok(p) => p,
-				Err(e) => {
-					return Err(anyhow!(
-						"Proof generation failed at ({}, {}): {:?}",
-						cell_coordinate.row,
-						cell_coordinate.col,
-						e
-					));
-				},
-			};
-
-			let proof_bytes = match raw_proof.to_bytes() {
-				Ok(b) => b.to_vec(),
-				Err(e) => {
-					return Err(anyhow!(
-						"Failed to convert proof to bytes at row: {}, col: {}: {e}",
-						cell_coordinate.row,
-						cell_coordinate.col
-					));
-				},
-			};
-
-			let gproof = match GProof::try_from(proof_bytes) {
-				Ok(p) => p,
-				Err(e) => {
-					return Err(anyhow!(
-						"Invalid GProof encoding at row: {}, col: {}: {e}",
-						cell_coordinate.row,
-						cell_coordinate.col
-					));
-				},
-			};
-
-			Ok((scalar, gproof))
-		})
-		.collect::<Result<Vec<_>, _>>()
-	{
-		Ok(proofs) => proofs,
-		Err(e) => return Err(anyhow!("Proof generation failed: {e:?}")),
-	};
-
-	let elapsed = start_time.elapsed();
-	log::info!("process_cell_request_inner end {:.2?}", elapsed);
-
-	Ok(CellResponse { hash, cell_proofs })
 }
 
 pub async fn send_blob_query_request<Block>(

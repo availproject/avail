@@ -1,11 +1,11 @@
 use crate::{
 	p2p::BlobHandle,
-	send_blob_query_request,
+	send_blob_query_request, send_blob_stored_notification,
 	store::BlobStore,
 	types::{Blob, BlobMetadata, BlobNotification, BlobReceived, Deps, OwnershipEntry},
 	utils::{
-		build_signature_payload, check_store_blob, generate_base_index, get_my_validator_id,
-		get_validator_per_blob, sign_blob_data_inner,
+		build_cell_proofs, build_signature_payload, check_store_blob, generate_base_index,
+		get_my_validator_id, get_validator_per_blob, sign_blob_data_inner,
 	},
 	LOG_TARGET, MAX_BLOB_SIZE, MAX_RPC_RETRIES, MAX_TRANSACTION_VALIDITY, MIN_TRANSACTION_VALIDITY,
 	TEMP_BLOB_TTL,
@@ -23,11 +23,10 @@ use jsonrpsee::{
 use kate::Seed;
 use sc_authority_discovery::AuthorityDiscovery;
 use sc_client_api::{BlockBackend, HeaderBackend};
-use sc_keystore::LocalKeystore;
 use sc_network::{NetworkStateInfo, PeerId};
-use sc_service::Role;
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::ProvideRuntimeApi;
+use sp_authority_discovery::AuthorityId;
 use sp_core::{keccak_256, Bytes, H256};
 use sp_runtime::transaction_validity::TransactionSource;
 use sp_runtime::{traits::Block as BlockT, SaturatedConversion};
@@ -168,7 +167,7 @@ where
 				.map_err(|_| internal_err!("failed to decode concrete metadata call"))?;
 
 		let commitment: Vec<u8>;
-		let extended_commitment: Vec<[u8; 48]>;
+		let extended_commitment: Vec<u8>;
 		if let RuntimeCall::DataAvailability(Call::submit_blob_metadata {
 			size,
 			blob_hash: provided_blob_hash,
@@ -233,48 +232,29 @@ where
 					hash: blob_hash,
 					size: blob_len.saturated_into(),
 					commitment,
-					extended_commitment: extended_commitment.into_iter().flatten().collect(),
+					extended_commitment,
 					ownership: Vec::new(),
 					is_notified: true,
 					expires_at: 0,
 					finalized_block_hash: Block::Hash::default(),
 					finalized_block_number: 0,
 					nb_validators_per_blob: 0,
-					is_validated: false,
-					error_reason: None,
 				}
 			});
 
-		// Check if we need to store the blob in case the receiving rpc is also a validator
-		let (maybe_ownership_entry, nb_validators_per_blob) =
-			check_rpc_store_blob::<Client, Block>(
-				&self.blob_handle.role,
-				&self.client,
-				&self.blob_handle.keystore.get().cloned(),
-				blob_metadata.clone(),
-				finalized_block_hash,
-				my_peer_id_base58.clone(),
-			)
-			.await
-			.map_err(|e| internal_err!("could not check if rpc should store blob: {e}"))?;
-
-		// It might be a new blob or an old one being resubmitted, we still updte most of the values
+		// It might be a new blob or an old one being resubmitted, we still update most of the values
 		let expiration = finalized_block_number.saturating_add(TEMP_BLOB_TTL);
+		let validators = self
+			.client
+			.authorities(finalized_block_hash)
+			.await
+			.map_err(|e| internal_err!("failed to get validators from runtime: {e}"))?;
+		let nb_validators_per_blob = get_validator_per_blob(validators.len() as u32);
 		blob_metadata.is_notified = true;
 		blob_metadata.expires_at = expiration;
 		blob_metadata.finalized_block_hash = finalized_block_hash;
 		blob_metadata.finalized_block_number = finalized_block_number;
 		blob_metadata.nb_validators_per_blob = nb_validators_per_blob;
-
-		if let Some(ownership_entry) = maybe_ownership_entry {
-			blob_metadata.insert_ownership(
-				&ownership_entry.address,
-				&ownership_entry.peer_id_encoded,
-				ownership_entry.signature,
-			);
-			// We put true here cause we validated the comitment above.
-			blob_metadata.is_validated = true;
-		}
 
 		let blob = Blob {
 			blob_hash,
@@ -282,7 +262,7 @@ where
 			data: blob.to_vec(),
 		};
 
-		// --- 6. Store the blob in the store, temporarily except if i need to store it as a validator -------------------
+		// --- 6. Store the blob in the store (temporarily) -------------------
 		self.blob_handle
 			.blob_store
 			.insert_blob_metadata(&blob_metadata)
@@ -296,10 +276,10 @@ where
 		let blob_received_notification = BlobNotification::BlobReceived(BlobReceived {
 			hash: blob_metadata.hash,
 			size: blob_metadata.size,
-			commitment: blob_metadata.commitment,
-			extended_commitment: blob_metadata.extended_commitment,
-			ownership: blob_metadata.ownership,
-			original_peer_id: my_peer_id_base58,
+			commitment: blob_metadata.commitment.clone(),
+			extended_commitment: blob_metadata.extended_commitment.clone(),
+			ownership: blob_metadata.ownership.clone(),
+			original_peer_id: my_peer_id_base58.clone(),
 			finalized_block_hash,
 			finalized_block_number,
 		});
@@ -319,6 +299,23 @@ where
 			.submit_one(best_hash, TransactionSource::External, opaque_tx)
 			.await
 			.map_err(|e| internal_err!("tx-pool error: {e}"))?;
+
+		// Spawn a task to check if we need to store the blob and compute data proofs, it also frees the rpc for other requests
+		let blob_handle = self.blob_handle.clone();
+		tokio::spawn(async move {
+			if let Err(e) = check_rpc_store_blob::<Client, Block>(
+				&blob_handle,
+				&mut blob_metadata,
+				&blob,
+				my_peer_id_base58.clone(),
+				nb_validators_per_blob,
+				&validators,
+			)
+			.await
+			{
+				log::error!("could not check if rpc should store blob: {e}")
+			}
+		});
 
 		Ok(())
 	}
@@ -384,7 +381,7 @@ where
 
 		for attempt in 0..(MAX_RPC_RETRIES as usize) {
 			let index = (base_index + attempt) % ownership_len;
-			let Some((_, peer_id_encoded, _)) = blob_summary.ownership.get(index) else {
+			let Some((_, encoded_peer_id, _, _)) = blob_summary.ownership.get(index) else {
 				log::warn!(
 					"Attempt {}/{}: invalid array index",
 					attempt + 1,
@@ -393,7 +390,7 @@ where
 				continue;
 			};
 
-			match PeerId::from_str(&peer_id_encoded) {
+			match PeerId::from_str(&encoded_peer_id) {
 				Ok(peer_id) => match send_blob_query_request(blob_hash, peer_id, &network).await {
 					Ok(Some(blob)) => {
 						return Ok(blob);
@@ -432,42 +429,37 @@ where
 }
 
 async fn check_rpc_store_blob<Client, Block>(
-	role: &Role,
-	client: &Client,
-	keystore: &Option<Arc<LocalKeystore>>,
-	blob_metadata: BlobMetadata<Block>,
-	finalized_hash: Block::Hash,
-	my_peer_id_encoded: String,
-) -> Result<(Option<OwnershipEntry>, u32)>
+	blob_handle: &BlobHandle<Block>,
+	blob_metadata: &mut BlobMetadata<Block>,
+	blob: &Blob,
+	my_encoded_peer_id: String,
+	nb_validators_per_blob: u32,
+	validators: &Vec<AuthorityId>,
+) -> Result<()>
 where
 	Block: BlockT,
 	Client: HeaderBackend<Block> + ProvideRuntimeApi<Block> + AuthorityDiscovery<Block>,
 {
-	let validators = client
-		.authorities(finalized_hash)
-		.await
-		.map_err(|e| anyhow!("failed to get validators from runtime: {e}"))?;
-
-	let nb_validators_per_blob = get_validator_per_blob(validators.len() as u32);
-
+	let role = &blob_handle.role;
 	if !role.is_authority() {
 		log::warn!(target: LOG_TARGET, "RPC node (me) is not an authority, so I don't have to store blobs");
-		return Ok((None, nb_validators_per_blob));
+		return Ok(());
 	}
 
+	let keystore = blob_handle.keystore.get();
 	let Some(keystore) = keystore else {
 		return Err(anyhow!("failed to get keystore"));
 	};
 
 	let Some(my_validator_id) = get_my_validator_id(&keystore) else {
-		return Ok((None, nb_validators_per_blob));
+		return Ok(());
 	};
 
 	let should_store_blob = match check_store_blob(
 		blob_metadata.hash,
-		&validators,
+		validators,
 		&my_validator_id,
-		&finalized_hash.encode(),
+		&blob_metadata.finalized_block_hash.encode(),
 		nb_validators_per_blob,
 	) {
 		Ok(s) => s,
@@ -477,7 +469,7 @@ where
 	};
 
 	if !should_store_blob {
-		return Ok((None, nb_validators_per_blob));
+		return Ok(());
 	}
 
 	let signature_payload = build_signature_payload(blob_metadata.hash, b"stored".to_vec());
@@ -490,14 +482,37 @@ where
 		},
 	};
 
-	Ok((
-		Some(OwnershipEntry {
-			address: my_validator_id.clone(),
-			peer_id_encoded: my_peer_id_encoded.clone(),
-			signature,
-		}),
-		nb_validators_per_blob,
-	))
+	let data_proofs = match build_cell_proofs(blob_metadata, blob, &my_validator_id) {
+		Ok(cp) => cp,
+		Err(e) => {
+			return Err(anyhow!(
+				"An error has occured while trying to generate cell proofs: {e}"
+			));
+		},
+	};
+
+	let ownership_entry = OwnershipEntry {
+		address: my_validator_id,
+		encoded_peer_id: my_encoded_peer_id,
+		signature,
+		data_proofs,
+	};
+
+	blob_metadata.insert_ownership(
+		&ownership_entry.address,
+		&ownership_entry.encoded_peer_id,
+		ownership_entry.signature.clone(),
+		ownership_entry.data_proofs.clone(),
+	);
+
+	blob_handle
+		.blob_store
+		.insert_blob_metadata(&blob_metadata)
+		.map_err(|e| internal_err!("failed to insert blob metadata into store: {e}"))?;
+
+	send_blob_stored_notification(blob_metadata.hash, &blob_handle, ownership_entry).await;
+
+	Ok(())
 }
 
 async fn get_blob_tx_summaries_from_block<Client, Block>(

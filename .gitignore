@@ -7,3 +7,4 @@ tests/rust_scripts/target
 .vscode
 output
 ts-interfaces
+e2e/e2e_data

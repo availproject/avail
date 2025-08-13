@@ -15,10 +15,10 @@ use scale_info::prelude::string::String;
 use serde::{Deserialize, Serialize};
 use sp_arithmetic::traits::{CheckedAdd, One, SaturatedConversion};
 use sp_authority_discovery::AuthorityId;
-use sp_core::H256;
+use sp_core::{H256, U256};
 use sp_io::hashing::keccak_256;
 use sp_runtime::Perbill;
-use sp_std::{mem::replace, vec, vec::Vec};
+use sp_std::{collections::btree_map::BTreeMap, mem::replace, vec, vec::Vec};
 
 pub use crate::{pallet::*, weights::WeightInfo};
 
@@ -43,6 +43,7 @@ pub const NORMAL_DISPATCH_RATIO_PERBILL: Perbill =
 pub mod pallet {
 	use frame_support::{pallet_prelude::*, DefaultNoBound};
 	use frame_system::pallet_prelude::*;
+	use sp_core::U256;
 
 	use super::*;
 
@@ -60,14 +61,18 @@ pub mod pallet {
 
 	pub type AppKeyInfoFor<T> = AppKeyInfo<<T as frame_system::Config>::AccountId>;
 
-	/// Structure used in the inherent to give a blob status
 	#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, RuntimeDebug)]
 	pub struct BlobTxSummaryRuntime {
 		pub hash: H256,
 		pub tx_index: u32,
 		pub success: bool,
 		pub reason: Option<String>,
-		pub ownership: Vec<(AuthorityId, String, Vec<u8>)>,
+		pub ownership: Vec<(
+			AuthorityId,
+			String,
+			Vec<u8>,
+			BTreeMap<(u32, u32), ((U256, Vec<u8>), Option<bool>)>,
+		)>,
 	}
 
 	/// Default implementations of [`DefaultConfig`], which can be used to implement [`Config`].
@@ -323,7 +328,7 @@ pub mod pallet {
 			blob_hash: H256,
 			size: u64,
 			commitment: Vec<u8>,
-			extended_commitment: Vec<[u8; 48]>,
+			extended_commitment: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
 			ensure!(size > 0, Error::<T>::DataCannotBeEmpty);
@@ -537,7 +542,12 @@ impl BlobTxSummaryRuntime {
 			u32,
 			bool,
 			Option<String>,
-			Vec<(AuthorityId, String, Vec<u8>)>,
+			Vec<(
+				AuthorityId,
+				String,
+				Vec<u8>,
+				BTreeMap<(u32, u32), ((U256, Vec<u8>), Option<bool>)>,
+			)>,
 		)>,
 	) -> Vec<BlobTxSummaryRuntime> {
 		input

@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use codec::{Decode, Encode};
@@ -7,7 +7,7 @@ use sc_service::{Role, TFullClient};
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_authority_discovery::AuthorityId;
-use sp_core::H256;
+use sp_core::{H256, U256};
 
 use crate::{p2p::BlobHandle, store::RocksdbBlobStore};
 use da_runtime::kate::GDataProof;
@@ -120,7 +120,7 @@ pub struct BlobMetadata<Block: BlockT> {
 	pub commitment: Vec<u8>,
 	/// The extended commitment of the blob
 	pub extended_commitment: Vec<u8>,
-	/// The ownership data of the blob: Vec<(validator address, base58 PeerId, Signature)>.
+	/// The ownership data of the blob.
 	pub ownership: Vec<OwnershipEntry>,
 	/// Store the number of validators per blob for this blob metadata
 	pub nb_validators_per_blob: u32,
@@ -129,10 +129,6 @@ pub struct BlobMetadata<Block: BlockT> {
 	/// This is expected in P2P protocols, we use this field in case we record blob metadata for blobs we don't have yet.
 	/// In case we are not notified, we'll use a way shorter time to live.
 	pub is_notified: bool,
-	/// Flag to store if the sampling of the blob was successful
-	pub is_validated: bool,
-	/// Store the error in case the blob is not valid
-	pub error_reason: Option<String>,
 	/// Block from which this blob is considered expired
 	pub expires_at: u64,
 	/// The finalized block hash for other nodes reference
@@ -147,41 +143,41 @@ impl<Block: BlockT> BlobMetadata<Block> {
 		authority_id: &AuthorityId,
 		encoded_peer_id: &String,
 		signature: Vec<u8>,
-	) -> bool {
-		let new_entry = OwnershipEntry {
-			address: authority_id.clone(),
-			peer_id_encoded: encoded_peer_id.to_string(),
-			signature,
-		};
-
-		if let Some(pos) = self
+		data_proofs: BTreeMap<CellCoordinate, (GDataProof, Option<bool>)>,
+	) -> OwnershipEntry {
+		if let Some(existing) = self
 			.ownership
-			.iter()
-			.position(|x| x.address == new_entry.address)
+			.iter_mut()
+			.find(|e| &e.address == authority_id)
 		{
-			self.ownership[pos] = new_entry;
-			false
+			existing.encoded_peer_id = encoded_peer_id.to_string();
+			existing.data_proofs.extend(data_proofs);
+			existing.clone()
 		} else {
-			self.ownership.push(new_entry);
-			true
+			let new_entry = OwnershipEntry {
+				address: authority_id.clone(),
+				encoded_peer_id: encoded_peer_id.to_string(),
+				signature,
+				data_proofs,
+			};
+			self.ownership.push(new_entry.clone());
+			new_entry
 		}
 	}
 
 	pub fn merge_ownerships(&mut self, ownerhsip: Vec<OwnershipEntry>) {
-		let mut seen = HashSet::new();
-		let mut result = Vec::new();
-
-		for item in self
-			.ownership
-			.clone()
-			.into_iter()
-			.chain(ownerhsip.into_iter())
-		{
-			if seen.insert(item.address.clone()) {
-				result.push(item);
+		for new_entry in ownerhsip {
+			if let Some(existing) = self
+				.ownership
+				.iter_mut()
+				.find(|e| e.address == new_entry.address)
+			{
+				existing.encoded_peer_id = new_entry.encoded_peer_id;
+				existing.data_proofs.extend(new_entry.data_proofs);
+			} else {
+				self.ownership.push(new_entry);
 			}
 		}
-		self.ownership = result;
 	}
 }
 
@@ -241,39 +237,28 @@ pub struct BlobResponse {
 pub struct BlobStored {
 	/// The hash of the blob.
 	pub hash: BlobHash,
-	/// The validator address
-	pub address: AuthorityId,
-	/// The original encode peerId that received the blob
-	pub original_peer_id: String,
-	/// The data the validator signs to prove he received a blob: (blob_hash - "stored")
-	pub signature: Vec<u8>,
+	/// The ownership entry for this validator
+	pub ownership_entry: OwnershipEntry,
 }
 
 /// Structure used in the Cell request
-#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, Hash)]
+#[derive(
+	Debug,
+	Clone,
+	PartialEq,
+	Eq,
+	Encode,
+	Decode,
+	Hash,
+	Serialize,
+	Deserialize,
+	PartialOrd,
+	Ord,
+	TypeInfo,
+)]
 pub struct CellCoordinate {
 	pub row: u32,
 	pub col: u32,
-}
-
-/// Structure for the request when cells are requested from a validator
-#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
-pub struct CellRequest {
-	/// The hash of the blob we required
-	pub hash: BlobHash,
-	/// The specific cell positions we need
-	pub cells: Vec<CellCoordinate>,
-	/// The data the validator signs to prove he received the cell (blob_hash - "cell")
-	pub signature_data: BlobSignatureData,
-}
-
-/// Structure for the response after cells are requested from a validator
-#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
-pub struct CellResponse {
-	/// The hash of the blob we required
-	pub hash: BlobHash,
-	/// The specific cell proofs
-	pub cell_proofs: Vec<GDataProof>,
 }
 
 /// Structure for the signature that validator sends when sending notification / requests
@@ -289,9 +274,20 @@ pub struct OwnershipEntry {
 	/// The address that owns the blob
 	pub address: AuthorityId,
 	/// The corresponding peer encoded
-	pub peer_id_encoded: String,
+	pub encoded_peer_id: String,
 	/// The signature of the holder (blob_hash - "stored")
 	pub signature: Vec<u8>,
+	/// A BTreeMap holding the data proof for the expected cells for this validator
+	/// Vec<(validator address, base58 PeerId, Signature, BTreeMap row/col -> (GDataProof, Option<valid>))>
+	pub data_proofs: BTreeMap<CellCoordinate, (GDataProof, Option<bool>)>,
+}
+
+impl OwnershipEntry {
+	pub fn reset_data_proofs(&mut self) {
+		for (_, (_, valid_opt)) in self.data_proofs.iter_mut() {
+			*valid_opt = None;
+		}
+	}
 }
 
 /// Helper structure used in the inherent to give a blob status
@@ -312,19 +308,44 @@ impl BlobTxSummary {
 	pub fn convert_to_primitives(
 		input: Vec<BlobTxSummary>,
 	) -> Vec<(
-		H256,
-		u32,
-		bool,
-		Option<String>,
-		Vec<(AuthorityId, String, Vec<u8>)>,
+		H256,           // Blob hash
+		u32,            // Tx Index
+		bool,           // Success
+		Option<String>, // Error reason
+		Vec<(
+			AuthorityId,                                           // Validator address
+			String,                                                // Encoded Peer id
+			Vec<u8>,                                               // Signature
+			BTreeMap<(u32, u32), ((U256, Vec<u8>), Option<bool>)>, // Data Proofs
+		)>,
 	)> {
 		input
 			.into_iter()
 			.map(|summary| {
-				let ownership: Vec<(AuthorityId, String, Vec<u8>)> = summary
+				let ownership: Vec<(
+					AuthorityId,
+					String,
+					Vec<u8>,
+					BTreeMap<(u32, u32), ((U256, Vec<u8>), Option<bool>)>,
+				)> = summary
 					.ownership
 					.into_iter()
-					.map(|entry| (entry.address, entry.peer_id_encoded, entry.signature))
+					.map(|entry| {
+						let data_proofs: BTreeMap<(u32, u32), ((U256, Vec<u8>), Option<bool>)> =
+							entry
+								.data_proofs
+								.into_iter()
+								.map(|(c, ((scalar, gproof), valid))| {
+									((c.row, c.col), ((scalar, gproof.encode()), valid))
+								})
+								.collect();
+						(
+							entry.address,
+							entry.encoded_peer_id,
+							entry.signature,
+							data_proofs,
+						)
+					})
 					.collect();
 
 				(
@@ -365,7 +386,6 @@ pub enum BlobNotification<Block: BlockT> {
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
 pub enum BlobRequestEnum {
 	BlobRequest(BlobRequest),
-	CellRequest(CellRequest),
 	BlobQueryRequest(BlobQueryRequest),
 }
 
@@ -373,6 +393,5 @@ pub enum BlobRequestEnum {
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
 pub enum BlobResponseEnum {
 	BlobResponse(BlobResponse),
-	CellResponse(CellResponse),
 	BlobQueryResponse(Option<Blob>),
 }

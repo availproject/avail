@@ -35,7 +35,7 @@ use sp_runtime::{
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult,
 };
-use sp_std::{borrow::Cow, vec::Vec};
+use sp_std::{borrow::Cow, collections::btree_map::BTreeMap, vec::Vec};
 use sp_version::RuntimeVersion;
 
 type RTExtractor = <Runtime as frame_system::Config>::HeaderExtensionDataFilter;
@@ -517,7 +517,7 @@ impl_runtime_apis! {
 			u32,
 			bool,
 			Option<String>,
-			Vec<(AuthorityDiscoveryId, String, Vec<u8>)>,
+			Vec<(AuthorityDiscoveryId, String, Vec<u8>, BTreeMap<(u32, u32), ((U256, Vec<u8>), Option<bool>)>)>,
 		)>, total_blob_size: u64) -> Vec<<Block as BlockT>::Extrinsic> {
 			let mut post_inherent_extrinsics: Vec<<Block as BlockT>::Extrinsic> = pallet_vector::Pallet::<Runtime>::create_inherent(&data)
 				.into_iter()

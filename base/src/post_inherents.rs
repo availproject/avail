@@ -4,8 +4,7 @@ use scale_info::prelude::string::String;
 use sp_api::decl_runtime_apis;
 use sp_authority_discovery::AuthorityId;
 use sp_runtime::traits::Block as BlockT;
-use sp_std::vec::Vec;
-
+use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
 /// A pallet that provides or verifies an inherent extrinsic will implement this trait.
 ///
 /// The pallet may provide an inherent, verify an inherent, or both provide and verify.
@@ -68,7 +67,7 @@ decl_runtime_apis! {
 			u32,
 			bool,
 			Option<String>,
-			Vec<(AuthorityId, String, Vec<u8>)>,
+			Vec<(AuthorityId, String, Vec<u8>, BTreeMap<(u32, u32), ((sp_core::U256, Vec<u8>), Option<bool>)>)>,
 		)>, total_blob_size: u64) -> Vec<<Block as BlockT>::Extrinsic>;
 	}
 }

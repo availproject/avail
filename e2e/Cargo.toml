@@ -12,6 +12,7 @@ sp-core = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "
 sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "ghali/infinity-da-rpc", default-features = false, features = ["std"] }
 kate = { git = "https://github.com/availproject/avail-core", branch = "ghali/infinity-da-rpc", default-features = false, features = ["std"] }
 hex = "0.4"
+codec = { package = "parity-scale-codec", version = "3", default-features = false }
 
 # Other
 serde = { version = "1.0.195", default-features = false, features = [ "derive", "alloc" ] }
