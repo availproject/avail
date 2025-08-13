@@ -33,13 +33,13 @@ pub trait Api {
 	) -> RpcResult<fetch_extrinsics_v1::ApiResult>;
 
 	#[method(name = "system_latestBlockInfo")]
-	async fn latest_block_info(&self, use_best_block: bool) -> RpcResult<types::BlockInfo>;
+	async fn latest_block_info(&self, use_best_block: Option<bool>) -> RpcResult<types::BlockInfo>;
 
 	#[method(name = "system_latestChainInfo")]
 	async fn latest_chain_info(&self) -> RpcResult<types::ChainInfo>;
 
-	#[method(name = "system_blockNumberFromHash")]
-	async fn block_number_from_hash(&self, hash: H256) -> RpcResult<Option<u32>>;
+	#[method(name = "system_getBlockNumber")]
+	async fn block_get_block_number(&self, hash: H256) -> RpcResult<Option<u32>>;
 }
 
 pub struct Rpc<C, Block>
@@ -235,8 +235,9 @@ where
 		Ok(found_extrinsics)
 	}
 
-	async fn latest_block_info(&self, use_best_block: bool) -> RpcResult<types::BlockInfo> {
+	async fn latest_block_info(&self, use_best_block: Option<bool>) -> RpcResult<types::BlockInfo> {
 		let info = self.client.info();
+		let use_best_block = use_best_block.unwrap_or(true);
 		if use_best_block {
 			return Ok(types::BlockInfo {
 				hash: info.best_hash.into(),
@@ -261,7 +262,7 @@ where
 		});
 	}
 
-	async fn block_number_from_hash(&self, hash: H256) -> RpcResult<Option<u32>> {
+	async fn block_get_block_number(&self, hash: H256) -> RpcResult<Option<u32>> {
 		let result = self
 			.client
 			.block_number_from_id(&sp_runtime::generic::BlockId::Hash(hash.into()))
