@@ -110,7 +110,6 @@ impl<Block: BlockT> Default for RocksdbBlobStore<Block> {
 
 impl<Block: BlockT> BlobStore<Block> for RocksdbBlobStore<Block> {
 	fn insert_blob_metadata(&self, blob_metadata: &BlobMetadata<Block>) -> Result<()> {
-		let timer = std::time::Instant::now();
 		if let Some(existing) = self.get_blob_metadata(&blob_metadata.hash).ok().flatten() {
 			if existing.is_notified {
 				return Ok(());
@@ -135,7 +134,7 @@ impl<Block: BlockT> BlobStore<Block> for RocksdbBlobStore<Block> {
 				BlobMetadata::decode(&mut slice)
 					.map_err(|_| anyhow!("failed to decode blob metadata from the store"))
 			})
-			.transpose();
+			.transpose()
 	}
 
 	fn insert_blob_retry(&self, hash: &BlobHash, count: u16) -> Result<()> {
