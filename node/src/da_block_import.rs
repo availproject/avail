@@ -190,10 +190,6 @@ where
 		if !is_own && !skip_sync && !block.with_state() {
 			self.ensure_last_extrinsic_is_failed_send_message_txs(&block)?;
 			self.ensure_before_last_extrinsic_is_blob_summary_tx(&block)?;
-			// TODO Blob do some kind of sampling like in block authorship ?
-			// We need to check that every blob tx which is also in the blob tx summary as success is indeed valid by check our metadata
-			// If marked as failed, we can copy the reason to ours if we don't have it
-			// Also we need to extend the blob ttl here to 28 days from like 30 or 15mn temp ttl
 			self.ensure_valid_header_extension(&block)?;
 		}
 

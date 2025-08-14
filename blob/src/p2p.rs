@@ -8,7 +8,7 @@ use crate::{
 	REQUEST_MAX_SIZE, REQUEST_TIME_OUT, RESPONSE_MAX_SIZE,
 };
 use codec::Encode;
-use futures::{FutureExt, StreamExt};
+use futures::{future, FutureExt, StreamExt};
 use once_cell::sync::OnceCell;
 use sc_client_api::BlockchainEvents;
 use sc_keystore::LocalKeystore;
@@ -34,6 +34,7 @@ where
 	pub keystore: Arc<OnceCell<Arc<LocalKeystore>>>,
 	pub client: Arc<OnceCell<Arc<FullClient>>>,
 	pub blob_store: Arc<RocksdbBlobStore<Block>>,
+	pub blob_data_store: Arc<RocksdbBlobStore<Block>>,
 	pub role: Role,
 }
 
@@ -55,6 +56,12 @@ where
 		let db_path = path.join("blob_store");
 		let blob_store =
 			Arc::new(RocksdbBlobStore::open(db_path).expect("opening RocksDB blob store failed"));
+
+		// Initialize the Blob data store
+		let db_path = path.join("blob_data_store");
+		let blob_data_store = Arc::new(
+			RocksdbBlobStore::open(db_path).expect("opening RocksDB blob data store failed"),
+		);
 
 		// Initialize the blob Blob req/res protocol config
 		let (blob_req_sender, blob_req_receiver) = async_channel::unbounded();
@@ -89,6 +96,7 @@ where
 			sync_service,
 			gossip_cmd_sender,
 			blob_store,
+			blob_data_store,
 			role,
 		};
 
@@ -130,16 +138,17 @@ where
 			.expect("Network should be registered")
 			.clone();
 		spawn_handle.spawn("request-listener", None, {
-			let blob_store_clone = self.blob_store.clone();
-			let network_clone = network;
+			let blob_data_store = self.blob_data_store.clone();
+			let network = network.clone();
 			async move {
 				req_receiver
-					.for_each_concurrent(CONCURRENT_REQUESTS, |request| {
-						let store = blob_store_clone.clone();
-						let network = network_clone.clone();
-						async move {
-							handle_incoming_blob_request(request, &store, &network);
-						}
+					.for_each_concurrent(CONCURRENT_REQUESTS, move |request| {
+						let blob_data_store = blob_data_store.clone();
+						let net = network.clone();
+						tokio::task::spawn_blocking(move || {
+							handle_incoming_blob_request(request, &blob_data_store, &net);
+						});
+						future::ready(())
 					})
 					.await;
 			}
@@ -196,8 +205,16 @@ where
 					.for_each_concurrent(CONCURRENT_REQUESTS, |notification| {
 						let blob_handle = blob_handle.clone();
 						async move {
-							if let Some(_peer) = notification.sender {
-								decode_blob_notification(&notification.message, &blob_handle).await;
+							if notification.sender.is_some() {
+								tokio::spawn({
+									async move {
+										decode_blob_notification(
+											&notification.message,
+											&blob_handle,
+										)
+										.await;
+									}
+								});
 							}
 						}
 					})
@@ -218,6 +235,7 @@ where
 		};
 
 		let blob_store = self.blob_store.clone();
+		let blob_data_store = self.blob_data_store.clone();
 		let client = client.clone();
 		spawn_handle.spawn("blob-cleanup", None, async move {
 			let mut block_sub = client.finality_notification_stream();
@@ -229,7 +247,18 @@ where
 					.clone()
 					.saturated_into::<u64>();
 				if block_number % BLOB_EXPIRATION_CHECK_PERIOD == 0 {
-					let _ = blob_store.clean_expired_blobs(block_number);
+					let blob_store = blob_store.clone();
+					let blob_data_store = blob_data_store.clone();
+					if let Err(e) = tokio::task::spawn_blocking(move || {
+						match blob_store.clean_expired_blobs_info(block_number) {
+							Ok(hashes) => blob_data_store.clean_blobs_info(&hashes),
+							Err(e) => Err(e),
+						}
+					})
+					.await
+					{
+						log::warn!(target: LOG_TARGET, "cleanup join error: {e}");
+					}
 				}
 			}
 		});

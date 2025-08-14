@@ -6,8 +6,8 @@ use crate::{
 		BlobStored, OwnershipEntry, BLOB_REQ_PROTO,
 	},
 	utils::{
-		build_cell_proofs, build_signature_payload, check_store_blob, get_my_validator_id,
-		get_validator_per_blob, sign_blob_data, validate_cell_proofs, verify_signed_blob_data,
+		build_signature_payload, check_store_blob, get_my_validator_id, get_validator_per_blob,
+		sign_blob_data, verify_signed_blob_data,
 	},
 };
 use anyhow::{anyhow, Result};
@@ -34,26 +34,26 @@ pub mod utils;
 pub(crate) const LOG_TARGET: &str = "avail::blob";
 
 /***** TODO Blob: Make CLI / Runtime args from this, must be compatible with rpc flags *****/
-/// Maximum notification size, 128kb
+/// Maximum notification size
 const NOTIFICATION_MAX_SIZE: u64 = 2 * 1024 * 1024;
-/// Maximum request size, 128kb
+/// Maximum request size
 const REQUEST_MAX_SIZE: u64 = 128 * 1024;
-/// Maximum response size, 64mb
+/// Maximum response size
 const RESPONSE_MAX_SIZE: u64 = 64 * 1024 * 1024;
 /// Maximum request time
 const REQUEST_TIME_OUT: Duration = Duration::from_secs(30);
-/// The maximum number of allowed concurrent request processing or notification processing
-const CONCURRENT_REQUESTS: usize = 2048;
+/// The maximum number of allowed parallel request processing or notification processing
+const CONCURRENT_REQUESTS: usize = 256;
 
 // Business logic
 /// Maximum size of a blob, need to change the rpc request and response size to handle this
 const MAX_BLOB_SIZE: u64 = 32 * 1024 * 1024;
 /// Minimum amount of validator that needs to store a blob, if we have less than minimum, everyone stores it.
-const MIN_BLOB_HOLDER_PERCENTAGE: Perbill = Perbill::from_percent(34);
+const MIN_BLOB_HOLDER_PERCENTAGE: Perbill = Perbill::from_percent(10);
 /// We take the maximum between this and MIN_BLOB_HOLDER_PERCENTAGE
 const MIN_BLOB_HOLDER_COUNT: u32 = 2;
 /// Amount of block for which we need to store the blob metadata and blob.
-const BLOB_TTL: u64 = 120_960; // 28 days // TODO Blob this needs to be use when a validator accepts a block with valid da submissions, we then need to update the ttl for this blob
+const BLOB_TTL: u64 = 120_960; // 28 days
 /// Amount of block for which we need to store the blob metadata if the blob is not notified yet.
 const TEMP_BLOB_TTL: u64 = 180;
 /// Amount of blocks used to periodically check wether we should remove expired blobs or not.
@@ -65,13 +65,11 @@ const MIN_TRANSACTION_VALIDITY: u64 = 15; // 5 mn
 /// This value is used so a transaction won't be stuck in the mempool.
 const MAX_TRANSACTION_VALIDITY: u64 = 150; // 50 mn
 /// The number of time we'll allow trying to fetch internal blob metadata or blob data before letting the transaction go through to get discarded
-const MAX_BLOB_RETRY_BEFORE_DISCARDING: u16 = 25;
+const MAX_BLOB_RETRY_BEFORE_DISCARDING: u16 = 3;
 /// The number of block for which a notification is considered valid
 const NOTIFICATION_EXPIRATION_PERIOD: u64 = 180;
 /// The number of retries the RPC is going to make before dropping a user blob request
 const MAX_RPC_RETRIES: u8 = 3;
-/// Number of cells required for 99.99% confidence
-const CELL_COUNT: u32 = 14;
 
 pub async fn decode_blob_notification<Block>(data: &[u8], blob_handle: &BlobHandle<Block>)
 where
@@ -116,10 +114,9 @@ async fn handle_blob_received_notification<Block>(
 ) where
 	Block: BlockT,
 {
-	let mut blob_received = blob_received;
 	let is_authority = blob_handle.role.is_authority();
 	if !is_authority {
-		log::warn!("Received a blob notification but this node is not an authority, ignoring.");
+		// Received a blob notification but this node is not an authority, ignoring.
 		return;
 	}
 
@@ -176,13 +173,10 @@ async fn handle_blob_received_notification<Block>(
 	};
 
 	// Get the existing blob or create a new one
-	let expires_at = announced_finalized_number.saturating_add(TEMP_BLOB_TTL);
 	let mut blob_meta = maybe_metadata.unwrap_or_else(|| BlobMetadata {
 		hash: blob_received.hash,
 		size: blob_received.size,
 		commitment: blob_received.commitment.clone(),
-		extended_commitment: blob_received.extended_commitment.clone(),
-		ownership: Vec::new(),
 		is_notified: true,
 		expires_at: 0,
 		finalized_block_hash: Block::Hash::default(),
@@ -200,16 +194,34 @@ async fn handle_blob_received_notification<Block>(
 	// Here, no matter if it's a new blob or a duplicate, we set the new expiration time and update the ownership / block timestamp.
 	blob_meta.finalized_block_hash = announced_finalized_hash;
 	blob_meta.finalized_block_number = announced_finalized_number;
-	// If we have an existing blob, we keep the bigger ttl. (Either we update it later during import, or it will keep the initial)
-	blob_meta.expires_at = blob_meta.expires_at.max(expires_at);
+	blob_meta.expires_at = announced_finalized_number.saturating_add(BLOB_TTL);
 	blob_meta.nb_validators_per_blob = nb_validators_per_blob;
 
-	blob_received
-		.ownership
-		.iter_mut()
-		.for_each(|o| o.reset_data_proofs());
-
-	blob_meta.merge_ownerships(blob_received.ownership);
+	// Check signatures in case blob ownership is filled
+	let mut ownerships_to_record: Vec<OwnershipEntry> = Vec::new();
+	if let Some(ownership) = blob_received.ownership {
+		let expected_payload = build_signature_payload(blob_received.hash, b"stored".to_vec());
+		let address: sr25519::Public = ownership.address.clone().into();
+		let signer = address.0.to_vec();
+		match verify_signed_blob_data(
+			BlobSignatureData {
+				signer,
+				signature: ownership.signature.clone(),
+			},
+			expected_payload.clone(),
+		) {
+			Ok(true) => {},
+			Ok(false) => {
+				log::error!("invalid signature");
+				return;
+			},
+			Err(err) => {
+				log::error!("verify error signature error {err}");
+				return;
+			},
+		}
+		ownerships_to_record.push(ownership);
+	}
 
 	let Some(keystore) = blob_handle.keystore.get() else {
 		log::error!(target: LOG_TARGET, "Keystore not yet registered");
@@ -252,13 +264,19 @@ async fn handle_blob_received_notification<Block>(
 			},
 		};
 
-		let is_new = !blob_meta
-			.ownership
-			.iter()
-			.any(|entry| entry.address == my_validator_id);
+		let Ok(existing_ownership) = blob_handle
+			.blob_store
+			.get_blob_ownership(&blob_received.hash, &my_validator_id.encode())
+		else {
+			log::error!(
+				target: LOG_TARGET,
+				"Could not read the db for ownership for hash {}",
+				blob_meta.hash,
+			);
+			return;
+		};
 
-		let blob: Blob;
-		if is_new {
+		if existing_ownership.is_none() {
 			let Some(blob_response) =
 				send_blob_request(blob_received.hash, blob_handle, network, original_peer_id).await
 			else {
@@ -271,7 +289,7 @@ async fn handle_blob_received_notification<Block>(
 			};
 
 			// Insert the blob in the store
-			if let Err(e) = blob_handle.blob_store.insert_blob(&blob_response.blob) {
+			if let Err(e) = blob_handle.blob_data_store.insert_blob(&blob_response.blob) {
 				log::error!(
 					target: LOG_TARGET,
 					"An error occured while trying to store blob {}: {}",
@@ -280,44 +298,17 @@ async fn handle_blob_received_notification<Block>(
 				);
 				return;
 			}
-			blob = blob_response.blob;
-		} else {
-			let Ok(Some(b)) = blob_handle.blob_store.get_blob(&blob_meta.hash) else {
-				log::error!(
-					target: LOG_TARGET,
-					"Blob not found in store {}",
-					blob_meta.hash,
-				);
-				return;
-			};
-			blob = b;
 		}
 
-		let cell_proofs = match build_cell_proofs(&blob_meta, &blob, &my_validator_id) {
-			Ok(cp) => cp,
-			Err(e) => {
-				log::error!(
-					target: LOG_TARGET,
-					"Could not compute cell proofs for blob {}: {}",
-					blob_meta.hash,
-					e
-				);
-				return;
-			},
-		};
-
-		let ownership = blob_meta.insert_ownership(
-			&my_validator_id,
-			&my_peer_id_base58,
+		let ownership = OwnershipEntry {
+			address: my_validator_id,
+			encoded_peer_id: my_peer_id_base58,
 			signature,
-			cell_proofs,
-		);
+		};
+		ownerships_to_record.push(ownership.clone());
 
 		send_blob_stored_notification(blob_received.hash, &blob_handle, ownership).await;
 	}
-
-	// Verify existing ownership entries
-	validate_cell_proofs(&mut blob_meta);
 
 	if let Err(e) = blob_handle.blob_store.insert_blob_metadata(&blob_meta) {
 		log::error!(
@@ -326,6 +317,20 @@ async fn handle_blob_received_notification<Block>(
 			blob_meta.hash,
 			e
 		)
+	}
+
+	for o in ownerships_to_record {
+		if let Err(e) = blob_handle
+			.blob_store
+			.insert_blob_ownership(&blob_received.hash, &o)
+		{
+			log::error!(
+				target: LOG_TARGET,
+				"An error occured while trying to store blob metadata {}: {}",
+				blob_meta.hash,
+				e
+			)
+		}
 	}
 }
 
@@ -366,16 +371,14 @@ where
 		Ok((data, _proto)) => {
 			let mut buf: &[u8] = &data;
 			match BlobResponseEnum::decode(&mut buf) {
-				Ok(response) => match response {
-					BlobResponseEnum::BlobResponse(blob_response) => {
-						return Some(blob_response);
-					},
-					_ => {
-						log::error!(
-							target: LOG_TARGET,
-							"Invalid response in send blob request, expected BlobResponse"
-						);
-					},
+				Ok(BlobResponseEnum::BlobResponse(blob_response)) => {
+					return Some(blob_response);
+				},
+				Ok(_other) => {
+					log::error!(
+						target: LOG_TARGET,
+						"Invalid response in send blob request, expected BlobResponse"
+					);
 				},
 				Err(err) => {
 					log::error!(
@@ -388,15 +391,18 @@ where
 			}
 		},
 		Err(e) => {
-			log::error!(target: LOG_TARGET, "An error has occured while trying to send blob request: {e}");
+			log::error!(
+				target: LOG_TARGET,
+				"An error has occured while trying to send blob request: {e}"
+			);
 		},
 	}
-	return None;
+	None
 }
 
 pub fn handle_incoming_blob_request<Block: BlockT>(
 	request: IncomingRequest,
-	store: &RocksdbBlobStore<Block>,
+	blob_data_store: &RocksdbBlobStore<Block>,
 	network: &Arc<NetworkService<Block, Block::Hash>>,
 ) where
 	Block: BlockT,
@@ -416,10 +422,10 @@ pub fn handle_incoming_blob_request<Block: BlockT>(
 	match BlobRequestEnum::decode(&mut buf) {
 		Ok(blob_request) => match blob_request {
 			BlobRequestEnum::BlobRequest(blob_request) => {
-				process_blob_request(blob_request, store, response_tx);
+				process_blob_request(blob_request, blob_data_store, response_tx);
 			},
 			BlobRequestEnum::BlobQueryRequest(blob_query_request) => {
-				process_blob_query_request(blob_query_request, store, response_tx);
+				process_blob_query_request(blob_query_request, blob_data_store, response_tx);
 			},
 		},
 		Err(err) => {
@@ -440,7 +446,7 @@ pub fn handle_incoming_blob_request<Block: BlockT>(
 
 fn process_blob_request<Block: BlockT>(
 	blob_request: BlobRequest,
-	store: &RocksdbBlobStore<Block>,
+	blob_data_store: &RocksdbBlobStore<Block>,
 	response_tx: oneshot::Sender<OutgoingResponse>,
 ) {
 	let expected_payload = build_signature_payload(blob_request.hash, b"request".to_vec());
@@ -467,7 +473,7 @@ fn process_blob_request<Block: BlockT>(
 		},
 	}
 
-	let blob = match store.get_blob(&blob_request.hash) {
+	let blob = match blob_data_store.get_blob(&blob_request.hash) {
 		Ok(b) => match b {
 			Some(b) => b,
 			None => {
@@ -538,41 +544,10 @@ async fn handle_blob_stored_notification<Block>(
 ) where
 	Block: BlockT,
 {
-	let mut blob_stored = blob_stored;
 	let is_authority = blob_handle.role.is_authority();
 	if !is_authority {
-		log::warn!("Received a blob notification but this node is not an authority, ignoring.");
+		// Received a blob notification but this node is not an authority, ignoring
 		return;
-	}
-
-	let Some(client) = blob_handle.client.get() else {
-		log::error!(target: LOG_TARGET, "Client not yet registered");
-		return;
-	};
-
-	let Ok(maybe_meta) = blob_handle.blob_store.get_blob_metadata(&blob_stored.hash) else {
-		log::error!(target: LOG_TARGET, "An error has occured while trying to get blob from the store");
-		return;
-	};
-
-	let client_info = client.info();
-	let mut blob_metadata = maybe_meta.unwrap_or(BlobMetadata {
-		hash: blob_stored.hash,
-		size: 0,
-		commitment: Vec::new(),
-		extended_commitment: Vec::new(),
-		ownership: Vec::new(),
-		is_notified: false,
-		finalized_block_hash: Block::Hash::default(),
-		finalized_block_number: 0,
-		nb_validators_per_blob: 0,
-		expires_at: client_info
-			.finalized_number
-			.saturated_into::<u64>()
-			.saturating_add(TEMP_BLOB_TTL),
-	});
-	if !blob_metadata.is_notified {
-		log::warn!(target: LOG_TARGET, "A Blob Stored notification was received before Blob Received, creating empty blob metadata.");
 	}
 
 	let address: sr25519::Public = blob_stored.ownership_entry.address.clone().into();
@@ -598,21 +573,13 @@ async fn handle_blob_stored_notification<Block>(
 		},
 	}
 
-	blob_stored.ownership_entry.reset_data_proofs();
-	blob_metadata.insert_ownership(
-		&blob_stored.ownership_entry.address,
-		&blob_stored.ownership_entry.encoded_peer_id,
-		blob_stored.ownership_entry.signature,
-		blob_stored.ownership_entry.data_proofs,
-	);
-
-	// Verify existing ownership entries
-	validate_cell_proofs(&mut blob_metadata);
-
-	if let Err(e) = blob_handle.blob_store.insert_blob_metadata(&blob_metadata) {
+	if let Err(e) = blob_handle
+		.blob_store
+		.insert_blob_ownership(&blob_stored.hash, &blob_stored.ownership_entry)
+	{
 		log::error!(
 			target: LOG_TARGET,
-			"An error has occured while trying to save blob_metadata in the store: {e}"
+			"An error has occured while trying to save blob ownership in the store: {e}"
 		);
 	}
 }
@@ -668,10 +635,10 @@ where
 
 pub fn process_blob_query_request<Block: BlockT>(
 	blob_query_request: BlobQueryRequest,
-	store: &RocksdbBlobStore<Block>,
+	blob_data_store: &RocksdbBlobStore<Block>,
 	response_tx: oneshot::Sender<OutgoingResponse>,
 ) {
-	let maybe_blob = match store.get_blob(&blob_query_request.hash) {
+	let maybe_blob = match blob_data_store.get_blob(&blob_query_request.hash) {
 		Ok(s) => match s {
 			None => None,
 			Some(s) => Some(Blob {

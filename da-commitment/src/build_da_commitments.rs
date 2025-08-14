@@ -1,6 +1,6 @@
 #![cfg(feature = "std")]
 
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use kate::{
 	couscous::multiproof_params,
 	gridgen::core::{AsBytes, EvaluationGrid},
@@ -89,34 +89,4 @@ pub fn build_da_commitments(
 	};
 
 	commitments
-}
-
-pub fn build_extended_commitments(commitments: Vec<u8>) -> Result<Vec<u8>> {
-	let original_commitments: Vec<ArkCommitment> = commitments
-		.chunks_exact(48)
-		.enumerate()
-		.map(|(i, chunk)| {
-			let chunk_array: [u8; 48] = chunk
-				.try_into()
-				.map_err(|_| anyhow!("Chunk at index {i} is not 48 bytes long"))?;
-
-			ArkCommitment::from_bytes(&chunk_array)
-				.map_err(|e| anyhow!("Invalid commitment at index {i}: {e}"))
-		})
-		.collect::<Result<_, _>>()?;
-
-	let extended_commitments =
-		ArkCommitment::extend_commitments(&original_commitments, original_commitments.len() * 2)
-			.expect("extending commitments should work if dimensions are valid");
-
-	let commitments_bytes: Vec<u8> = extended_commitments
-		.into_iter()
-		.flat_map(|c| {
-			c.to_bytes()
-				.expect("Valid commitments should be serialisable")
-				.to_vec()
-		})
-		.collect();
-
-	Ok(commitments_bytes)
 }

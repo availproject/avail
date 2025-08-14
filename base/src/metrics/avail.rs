@@ -21,11 +21,6 @@ impl AvailMetrics {
 		let header_extension = HeaderExtensionBuilderMetrics::new(registry)?;
 		let kate_rpc = KateRpcMetrics::new(registry)?;
 
-		log::info!(
-			target: LOG_TARGET,
-			"Prometheus metrics extended with avail metrics"
-		);
-
 		Ok(Self {
 			import_block,
 			header_extension,

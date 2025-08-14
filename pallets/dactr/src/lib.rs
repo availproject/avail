@@ -15,10 +15,10 @@ use scale_info::prelude::string::String;
 use serde::{Deserialize, Serialize};
 use sp_arithmetic::traits::{CheckedAdd, One, SaturatedConversion};
 use sp_authority_discovery::AuthorityId;
-use sp_core::{H256, U256};
+use sp_core::H256;
 use sp_io::hashing::keccak_256;
 use sp_runtime::Perbill;
-use sp_std::{collections::btree_map::BTreeMap, mem::replace, vec, vec::Vec};
+use sp_std::{mem::replace, vec, vec::Vec};
 
 pub use crate::{pallet::*, weights::WeightInfo};
 
@@ -43,7 +43,6 @@ pub const NORMAL_DISPATCH_RATIO_PERBILL: Perbill =
 pub mod pallet {
 	use frame_support::{pallet_prelude::*, DefaultNoBound};
 	use frame_system::pallet_prelude::*;
-	use sp_core::U256;
 
 	use super::*;
 
@@ -67,12 +66,7 @@ pub mod pallet {
 		pub tx_index: u32,
 		pub success: bool,
 		pub reason: Option<String>,
-		pub ownership: Vec<(
-			AuthorityId,
-			String,
-			Vec<u8>,
-			BTreeMap<(u32, u32), ((U256, Vec<u8>), Option<bool>)>,
-		)>,
+		pub ownership: Vec<(AuthorityId, String, Vec<u8>)>,
 	}
 
 	/// Default implementations of [`DefaultConfig`], which can be used to implement [`Config`].
@@ -328,12 +322,10 @@ pub mod pallet {
 			blob_hash: H256,
 			size: u64,
 			commitment: Vec<u8>,
-			extended_commitment: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
 			ensure!(size > 0, Error::<T>::DataCannotBeEmpty);
 			ensure!(commitment.len() > 0, Error::<T>::DataCannotBeEmpty);
-			ensure!(extended_commitment.len() > 0, Error::<T>::DataCannotBeEmpty);
 			ensure!(blob_hash.0.len() > 0, Error::<T>::DataCannotBeEmpty);
 
 			Self::deposit_event(Event::SubmitBlobMetadataRequest { who, blob_hash });
@@ -542,12 +534,7 @@ impl BlobTxSummaryRuntime {
 			u32,
 			bool,
 			Option<String>,
-			Vec<(
-				AuthorityId,
-				String,
-				Vec<u8>,
-				BTreeMap<(u32, u32), ((U256, Vec<u8>), Option<bool>)>,
-			)>,
+			Vec<(AuthorityId, String, Vec<u8>)>,
 		)>,
 	) -> Vec<BlobTxSummaryRuntime> {
 		input

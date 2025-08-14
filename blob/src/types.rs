@@ -1,21 +1,17 @@
-use std::collections::BTreeMap;
-use std::sync::Arc;
-
+use crate::{p2p::BlobHandle, store::RocksdbBlobStore};
 use codec::{Decode, Encode};
+use da_runtime::{apis::RuntimeApi, NodeBlock as Block};
+use once_cell::sync::OnceCell;
+use sc_executor::NativeElseWasmExecutor;
 use sc_network::{PeerId, ProtocolName};
+use sc_network_gossip::{ValidationResult, Validator, ValidatorContext};
 use sc_service::{Role, TFullClient};
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_authority_discovery::AuthorityId;
-use sp_core::{H256, U256};
-
-use crate::{p2p::BlobHandle, store::RocksdbBlobStore};
-use da_runtime::kate::GDataProof;
-use da_runtime::{apis::RuntimeApi, NodeBlock as Block};
-use once_cell::sync::OnceCell;
-use sc_executor::NativeElseWasmExecutor;
-use sc_network_gossip::{ValidationResult, Validator, ValidatorContext};
+use sp_core::H256;
 use sp_runtime::traits::Block as BlockT;
+use std::sync::Arc;
 
 pub type BlobHash = H256;
 
@@ -88,6 +84,7 @@ where
 {
 	fn default() -> Self {
 		let blob_store = Arc::new(RocksdbBlobStore::default());
+		let blob_data_store = Arc::new(RocksdbBlobStore::default()); // TODO BLOB Actually use a different type of db for blob_data store and separate functions
 		let network = Arc::new(OnceCell::new());
 		let keystore = Arc::new(OnceCell::new());
 		let client = Arc::new(OnceCell::new());
@@ -102,6 +99,7 @@ where
 			gossip_cmd_sender,
 			role,
 			blob_store,
+			blob_data_store,
 		});
 		Deps { blob_handle }
 	}
@@ -118,10 +116,6 @@ pub struct BlobMetadata<Block: BlockT> {
 	pub size: u64,
 	/// The commitment of the blob.
 	pub commitment: Vec<u8>,
-	/// The extended commitment of the blob
-	pub extended_commitment: Vec<u8>,
-	/// The ownership data of the blob.
-	pub ownership: Vec<OwnershipEntry>,
 	/// Store the number of validators per blob for this blob metadata
 	pub nb_validators_per_blob: u32,
 	/// This field is used to determine wether we received the BlobReceived notification.
@@ -135,50 +129,6 @@ pub struct BlobMetadata<Block: BlockT> {
 	pub finalized_block_hash: Block::Hash,
 	/// The finalized block number for other nodes reference
 	pub finalized_block_number: u64,
-}
-
-impl<Block: BlockT> BlobMetadata<Block> {
-	pub fn insert_ownership(
-		&mut self,
-		authority_id: &AuthorityId,
-		encoded_peer_id: &String,
-		signature: Vec<u8>,
-		data_proofs: BTreeMap<CellCoordinate, (GDataProof, Option<bool>)>,
-	) -> OwnershipEntry {
-		if let Some(existing) = self
-			.ownership
-			.iter_mut()
-			.find(|e| &e.address == authority_id)
-		{
-			existing.encoded_peer_id = encoded_peer_id.to_string();
-			existing.data_proofs.extend(data_proofs);
-			existing.clone()
-		} else {
-			let new_entry = OwnershipEntry {
-				address: authority_id.clone(),
-				encoded_peer_id: encoded_peer_id.to_string(),
-				signature,
-				data_proofs,
-			};
-			self.ownership.push(new_entry.clone());
-			new_entry
-		}
-	}
-
-	pub fn merge_ownerships(&mut self, ownerhsip: Vec<OwnershipEntry>) {
-		for new_entry in ownerhsip {
-			if let Some(existing) = self
-				.ownership
-				.iter_mut()
-				.find(|e| e.address == new_entry.address)
-			{
-				existing.encoded_peer_id = new_entry.encoded_peer_id;
-				existing.data_proofs.extend(new_entry.data_proofs);
-			} else {
-				self.ownership.push(new_entry);
-			}
-		}
-	}
 }
 
 /// Blob object that will get store by each validator
@@ -202,10 +152,8 @@ pub struct BlobReceived<Block: BlockT> {
 	pub size: u64,
 	/// The commitment of the blob
 	pub commitment: Vec<u8>,
-	/// The extended commitment of the blob
-	pub extended_commitment: Vec<u8>,
-	/// The ownership data of the blob: Vec<(validator address, base58 PeerId)>
-	pub ownership: Vec<OwnershipEntry>,
+	/// The optional ownership entry of the sending rpc
+	pub ownership: Option<OwnershipEntry>,
 	/// The original encoded peerId that received the blob
 	pub original_peer_id: String,
 	/// The finalized block hash for other nodes reference
@@ -241,26 +189,6 @@ pub struct BlobStored {
 	pub ownership_entry: OwnershipEntry,
 }
 
-/// Structure used in the Cell request
-#[derive(
-	Debug,
-	Clone,
-	PartialEq,
-	Eq,
-	Encode,
-	Decode,
-	Hash,
-	Serialize,
-	Deserialize,
-	PartialOrd,
-	Ord,
-	TypeInfo,
-)]
-pub struct CellCoordinate {
-	pub row: u32,
-	pub col: u32,
-}
-
 /// Structure for the signature that validator sends when sending notification / requests
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
 pub struct BlobSignatureData {
@@ -277,17 +205,6 @@ pub struct OwnershipEntry {
 	pub encoded_peer_id: String,
 	/// The signature of the holder (blob_hash - "stored")
 	pub signature: Vec<u8>,
-	/// A BTreeMap holding the data proof for the expected cells for this validator
-	/// Vec<(validator address, base58 PeerId, Signature, BTreeMap row/col -> (GDataProof, Option<valid>))>
-	pub data_proofs: BTreeMap<CellCoordinate, (GDataProof, Option<bool>)>,
-}
-
-impl OwnershipEntry {
-	pub fn reset_data_proofs(&mut self) {
-		for (_, (_, valid_opt)) in self.data_proofs.iter_mut() {
-			*valid_opt = None;
-		}
-	}
 }
 
 /// Helper structure used in the inherent to give a blob status
@@ -313,41 +230,19 @@ impl BlobTxSummary {
 		bool,           // Success
 		Option<String>, // Error reason
 		Vec<(
-			AuthorityId,                                           // Validator address
-			String,                                                // Encoded Peer id
-			Vec<u8>,                                               // Signature
-			BTreeMap<(u32, u32), ((U256, Vec<u8>), Option<bool>)>, // Data Proofs
+			AuthorityId, // Validator address
+			String,      // Encoded Peer id
+			Vec<u8>,     // Signature
 		)>,
 	)> {
 		input
 			.into_iter()
 			.map(|summary| {
-				let ownership: Vec<(
-					AuthorityId,
-					String,
-					Vec<u8>,
-					BTreeMap<(u32, u32), ((U256, Vec<u8>), Option<bool>)>,
-				)> = summary
+				let ownership: Vec<(AuthorityId, String, Vec<u8>)> = summary
 					.ownership
 					.into_iter()
-					.map(|entry| {
-						let data_proofs: BTreeMap<(u32, u32), ((U256, Vec<u8>), Option<bool>)> =
-							entry
-								.data_proofs
-								.into_iter()
-								.map(|(c, ((scalar, gproof), valid))| {
-									((c.row, c.col), ((scalar, gproof.encode()), valid))
-								})
-								.collect();
-						(
-							entry.address,
-							entry.encoded_peer_id,
-							entry.signature,
-							data_proofs,
-						)
-					})
+					.map(|entry| (entry.address, entry.encoded_peer_id, entry.signature))
 					.collect();
-
 				(
 					summary.hash,
 					summary.tx_index,

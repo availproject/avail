@@ -23,7 +23,7 @@ use avail_base::{PostInherentsBackend, PostInherentsProvider};
 
 use avail_blob::{
 	store::RocksdbBlobStore,
-	types::{BlobMetadata, BlobTxSummary},
+	types::{BlobMetadata, BlobTxSummary, OwnershipEntry},
 	utils::{check_if_wait_next_block, get_blob_txs_summary},
 };
 use codec::Encode;
@@ -541,7 +541,8 @@ where
 
 		let mut submit_blob_metadata_calls = Vec::new();
 		let mut tx_index = 1; // We start at one to accomodate for timestamp set inherent
-		let mut blob_metadata: BTreeMap<H256, BlobMetadata<Block>> = BTreeMap::new();
+		let mut blob_metadata: BTreeMap<H256, (BlobMetadata<Block>, Vec<OwnershipEntry>)> =
+			BTreeMap::new();
 
 		let end_reason = loop {
 			let pending_tx = if let Some(pending_tx) = pending_iterator.next() {

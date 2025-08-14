@@ -120,9 +120,8 @@ fn filter_da_call(
 			blob_hash,
 			commitment,
 			size: _,
-			extended_commitment,
 		} => {
-			if commitment.is_empty() || extended_commitment.is_empty() {
+			if commitment.is_empty() {
 				return None;
 			}
 			(*blob_hash, commitment.clone())
@@ -132,6 +131,7 @@ fn filter_da_call(
 				return None;
 			}
 			let blob_hash = H256(keccak_256(&data));
+			// TODO Blob take values from the runtime
 			let block_length = BlockLength::default();
 			let commitment = build_da_commitments(data.to_vec(), block_length, Seed::default());
 			(blob_hash, commitment)
