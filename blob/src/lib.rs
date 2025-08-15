@@ -114,6 +114,12 @@ async fn handle_blob_received_notification<Block>(
 ) where
 	Block: BlockT,
 {
+	let timer = std::time::Instant::now();
+	log::info!(
+		"BLOB - handle_blob_received_notification - START - {:?} - {:?}",
+		blob_received.hash,
+		timer.elapsed()
+	);
 	let is_authority = blob_handle.role.is_authority();
 	if !is_authority {
 		// Received a blob notification but this node is not an authority, ignoring.
@@ -332,6 +338,11 @@ async fn handle_blob_received_notification<Block>(
 			)
 		}
 	}
+	log::info!(
+		"BLOB - handle_blob_received_notification - END - {:?} - {:?}",
+		blob_received.hash,
+		timer.elapsed()
+	);
 }
 
 async fn send_blob_request<Block>(
@@ -343,6 +354,12 @@ async fn send_blob_request<Block>(
 where
 	Block: BlockT,
 {
+	let timer = std::time::Instant::now();
+	log::info!(
+		"BLOB - send_blob_request - START - {:?} - {:?}",
+		blob_hash,
+		timer.elapsed()
+	);
 	let signature_payload = build_signature_payload(blob_hash, b"request".to_vec());
 	let signature_data = match sign_blob_data(blob_handle, signature_payload) {
 		Ok(s) => s,
@@ -372,6 +389,11 @@ where
 			let mut buf: &[u8] = &data;
 			match BlobResponseEnum::decode(&mut buf) {
 				Ok(BlobResponseEnum::BlobResponse(blob_response)) => {
+					log::info!(
+						"BLOB - send_blob_request - END - {:?} - {:?}",
+						blob_hash,
+						timer.elapsed()
+					);
 					return Some(blob_response);
 				},
 				Ok(_other) => {
@@ -397,6 +419,11 @@ where
 			);
 		},
 	}
+	log::info!(
+		"BLOB - send_blob_request - END with errors - {:?} - {:?}",
+		blob_hash,
+		timer.elapsed()
+	);
 	None
 }
 
@@ -449,6 +476,12 @@ fn process_blob_request<Block: BlockT>(
 	blob_data_store: &RocksdbBlobStore<Block>,
 	response_tx: oneshot::Sender<OutgoingResponse>,
 ) {
+	let timer = std::time::Instant::now();
+	log::info!(
+		"BLOB - process_blob_request - START - {:?} - {:?}",
+		blob_request.hash,
+		timer.elapsed()
+	);
 	let expected_payload = build_signature_payload(blob_request.hash, b"request".to_vec());
 	match verify_signed_blob_data(blob_request.signature_data.clone(), expected_payload) {
 		Ok(valid) => {
@@ -511,6 +544,11 @@ fn process_blob_request<Block: BlockT>(
 	if let Err(e) = response_tx.send(res) {
 		log::error!(target: LOG_TARGET, "An error has occured in process_blob_request: {e:?}");
 	}
+	log::info!(
+		"BLOB - process_blob_request - END - {:?} - {:?}",
+		blob_request.hash,
+		timer.elapsed()
+	);
 }
 
 pub async fn send_blob_stored_notification<Block>(
@@ -520,6 +558,12 @@ pub async fn send_blob_stored_notification<Block>(
 ) where
 	Block: BlockT,
 {
+	let timer = std::time::Instant::now();
+	log::info!(
+		"BLOB - send_blob_stored_notification - START - {:?} - {:?}",
+		blob_hash,
+		timer.elapsed()
+	);
 	let blob_stored = BlobStored {
 		hash: blob_hash,
 		ownership_entry,
@@ -536,6 +580,11 @@ pub async fn send_blob_stored_notification<Block>(
 	{
 		log::error!(target: LOG_TARGET, "Could not send BlobStored notification: {e}")
 	}
+	log::info!(
+		"BLOB - send_blob_stored_notification - END - {:?} - {:?}",
+		blob_hash,
+		timer.elapsed()
+	);
 }
 
 async fn handle_blob_stored_notification<Block>(
@@ -544,6 +593,12 @@ async fn handle_blob_stored_notification<Block>(
 ) where
 	Block: BlockT,
 {
+	let timer = std::time::Instant::now();
+	log::info!(
+		"BLOB - handle_blob_stored_notification - START - {:?} - {:?}",
+		blob_stored.hash,
+		timer.elapsed()
+	);
 	let is_authority = blob_handle.role.is_authority();
 	if !is_authority {
 		// Received a blob notification but this node is not an authority, ignoring
@@ -582,6 +637,11 @@ async fn handle_blob_stored_notification<Block>(
 			"An error has occured while trying to save blob ownership in the store: {e}"
 		);
 	}
+	log::info!(
+		"BLOB - handle_blob_stored_notification - END - {:?} - {:?}",
+		blob_stored.hash,
+		timer.elapsed()
+	);
 }
 
 pub async fn send_blob_query_request<Block>(
@@ -592,6 +652,12 @@ pub async fn send_blob_query_request<Block>(
 where
 	Block: BlockT,
 {
+	let timer = std::time::Instant::now();
+	log::info!(
+		"BLOB - send_blob_query_request - START - {:?} - {:?}",
+		hash,
+		timer.elapsed()
+	);
 	let req = BlobRequestEnum::BlobQueryRequest(BlobQueryRequest { hash });
 
 	let response = network
@@ -610,6 +676,11 @@ where
 			match BlobResponseEnum::decode(&mut buf) {
 				Ok(response) => match response {
 					BlobResponseEnum::BlobQueryResponse(blob_query_response) => {
+						log::info!(
+							"BLOB - send_blob_query_request - END - {:?} - {:?}",
+							hash,
+							timer.elapsed()
+						);
 						return Ok(blob_query_response);
 					},
 					_ => {
@@ -638,6 +709,12 @@ pub fn process_blob_query_request<Block: BlockT>(
 	blob_data_store: &RocksdbBlobStore<Block>,
 	response_tx: oneshot::Sender<OutgoingResponse>,
 ) {
+	let timer = std::time::Instant::now();
+	log::info!(
+		"BLOB - process_blob_query_request - START - {:?} - {:?}",
+		blob_query_request.hash,
+		timer.elapsed()
+	);
 	let maybe_blob = match blob_data_store.get_blob(&blob_query_request.hash) {
 		Ok(s) => match s {
 			None => None,
@@ -668,4 +745,9 @@ pub fn process_blob_query_request<Block: BlockT>(
 	if let Err(e) = response_tx.send(res) {
 		log::error!(target: LOG_TARGET, "An error has occured while trying to return a blob to requester: {e:?}")
 	};
+	log::info!(
+		"BLOB - process_blob_query_request - END - {:?} - {:?}",
+		blob_query_request.hash,
+		timer.elapsed()
+	);
 }

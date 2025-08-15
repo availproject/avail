@@ -145,6 +145,11 @@ where
 	C: HeaderBackend<Block> + ProvideRuntimeApi<Block>,
 	C::Api: TaggedTransactionQueue<Block>,
 {
+	let timer = std::time::Instant::now();
+	log::info!(
+		"BLOB - RPC check_if_wait_next_block - START - {:?}",
+		timer.elapsed()
+	);
 	let mut should_submit = true;
 	let mut is_submit_blob_metadata = false;
 
@@ -233,6 +238,10 @@ where
 	if should_submit {
 		submit_blob_metadata_calls.push((extrinsic_data, tx_index));
 	}
+	log::info!(
+		"BLOB - RPC check_if_wait_next_block - END - {:?}",
+		timer.elapsed()
+	);
 
 	(should_submit, is_submit_blob_metadata)
 }
@@ -245,9 +254,17 @@ pub fn check_retries_for_blob<Block: BlockT>(
 	if tried <= MAX_BLOB_RETRY_BEFORE_DISCARDING {
 		// bump retry count and wait
 		let _ = blob_store.insert_blob_retry(blob_hash, tried + 1);
+		log::info!(
+			"BLOB - RPC check_retries_for_blob - it lives - {:?}",
+			blob_hash
+		);
 		false
 	} else {
 		// give up: submit to get it dropped quickly
+		log::info!(
+			"BLOB - RPC check_retries_for_blob - it lives - {:?}",
+			blob_hash
+		);
 		true
 	}
 }
@@ -256,6 +273,11 @@ pub async fn get_blob_txs_summary<Block: BlockT>(
 	submit_blob_metadata_calls: &Vec<(RuntimeCall, u32)>,
 	blob_metadata: BTreeMap<BlobHash, (BlobMetadata<Block>, Vec<OwnershipEntry>)>,
 ) -> (Vec<BlobTxSummary>, u64) {
+	let timer = std::time::Instant::now();
+	log::info!(
+		"BLOB - get_blob_txs_summary - START - {:?}",
+		timer.elapsed()
+	);
 	let mut blob_txs_summary: Vec<BlobTxSummary> = Vec::new();
 	let mut total_size = 0;
 
@@ -285,6 +307,7 @@ pub async fn get_blob_txs_summary<Block: BlockT>(
 			}
 		}
 	}
+	log::info!("BLOB - get_blob_txs_summary - END - {:?}", timer.elapsed());
 
 	(blob_txs_summary, total_size)
 }

@@ -460,6 +460,11 @@ where
 		blob_txs_summary: Vec<BlobTxSummary>,
 		total_blob_size: u64,
 	) -> Result<(), sp_blockchain::Error> {
+		let timer = std::time::Instant::now();
+		log::info!(
+			"BLOB - apply_post_inherents - START - {:?}",
+			timer.elapsed()
+		);
 		let data = self.client.post_inherent_data();
 		let blob_txs_summary = BlobTxSummary::convert_to_primitives(blob_txs_summary);
 		let post_inherents: Vec<_> = self
@@ -496,6 +501,7 @@ where
 				Ok(_) => {},
 			}
 		}
+		log::info!("BLOB - apply_post_inherents - END - {:?}", timer.elapsed());
 
 		Ok(())
 	}

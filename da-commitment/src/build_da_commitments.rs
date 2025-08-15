@@ -72,6 +72,11 @@ pub fn build_da_commitments(
 	max_height: usize,
 	seed: Seed,
 ) -> DaCommitments {
+	let timer = std::time::Instant::now();
+	log::info!(
+		"BLOB - build_da_commitments - START - {:?}",
+		timer.elapsed()
+	);
 	let grid = match build_grid(data, max_width, max_height, seed) {
 		Ok(grid) => grid,
 		Err(e) => {
@@ -87,6 +92,7 @@ pub fn build_da_commitments(
 			return DaCommitments::new();
 		},
 	};
+	log::info!("BLOB - build_da_commitments - END - {:?}", timer.elapsed());
 
 	commitments
 }

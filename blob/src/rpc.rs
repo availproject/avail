@@ -112,6 +112,8 @@ where
 	Pool: TransactionPool<Block = Block> + 'static,
 {
 	async fn submit_blob(&self, metadata_signed_transaction: Bytes, blob: Bytes) -> RpcResult<()> {
+		let timer = std::time::Instant::now();
+		log::info!("BLOB - RPC submit_blob - START - {:?}", timer.elapsed());
 		// --- 0. Quick checks -------------------------------------------------
 		if blob.0.is_empty() {
 			return Err(internal_err!("blob cannot be empty"));
@@ -155,6 +157,12 @@ where
 		if provided_blob_hash != blob_hash {
 			return Err(internal_err!("submitted blob: {provided_blob_hash:?} does not correspond to generated blob {blob_hash:?}"));
 		}
+
+		log::info!(
+			"BLOB - RPC submit_blob - After decoding and checks - {:?} - {:?}",
+			blob_hash,
+			timer.elapsed()
+		);
 
 		// Prepare generated commitment
 		let blob_vec: Vec<u8> = blob.to_vec();
@@ -209,6 +217,12 @@ where
 			return Err(internal_err!("submitted blob commitment mismatch"));
 		}
 
+		log::info!(
+			"BLOB - RPC submit_blob - checking validity and commitment verification - {:?} - {:?}",
+			blob_hash,
+			timer.elapsed()
+		);
+
 		// From this point, the transaction should not fail as the user has done everything correctly
 		// We will spawn a task to finish the work and instantly return to the user.
 		let blob_handle = self.blob_handle.clone();
@@ -216,6 +230,13 @@ where
 		let pool = self.pool.clone();
 		let network = self.blob_handle.network.get().cloned();
 		task::spawn(async move {
+			let timer = std::time::Instant::now();
+			log::info!(
+				"BLOB - RPC submit_blob - bg:task - START - {:?} - {:?}",
+				blob_hash,
+				timer.elapsed()
+			);
+
 			// Get my own peer id data
 			let Some(net) = network else {
 				log::error!("submit_blob(bg): network not initialized");
@@ -289,6 +310,11 @@ where
 			};
 
 			if let Some(o) = &maybe_ownership {
+				log::info!(
+					"BLOB - RPC submit_blob - bg:task - I Should store - {:?} - {:?}",
+					blob_hash,
+					timer.elapsed()
+				);
 				if let Err(e) = blob_handle.blob_store.insert_blob_ownership(&blob_hash, o) {
 					log::error!("failed to insert blob ownership into store: {e}");
 				}
@@ -299,10 +325,20 @@ where
 			if let Err(e) = blob_handle.blob_store.insert_blob_metadata(&blob_metadata) {
 				log::error!("failed to insert blob metadata into store: {e}");
 			}
+			log::info!(
+				"BLOB - RPC submit_blob - bg:task - After inserting metadata - {:?} - {:?}",
+				blob_hash,
+				timer.elapsed()
+			);
 
 			if let Err(e) = blob_handle.blob_data_store.insert_blob(&blob) {
 				log::error!("failed to insert blob into store: {e}");
 			}
+			log::info!(
+				"BLOB - RPC submit_blob - bg:task - After inserting blob - {:?} - {:?}",
+				blob_hash,
+				timer.elapsed()
+			);
 
 			// Announce the blob to the network -------------------
 			let blob_received_notification: BlobNotification<Block> =
@@ -325,6 +361,11 @@ where
 				log::error!("internal channel closed: {e}");
 				return;
 			}
+			log::info!(
+				"BLOB - RPC submit_blob - bg:task - After gossiping blob notif - {:?} - {:?}",
+				blob_hash,
+				timer.elapsed()
+			);
 
 			// Push the clean extrinsic to the tx pool ---------------------
 			// Get the best hash once more, to submit the tx
@@ -335,7 +376,18 @@ where
 			{
 				log::error!("tx-pool error: {e}")
 			}
+			log::info!(
+				"BLOB - RPC submit_blob - bg:task - After Submitting to pool - {:?} - {:?}",
+				blob_hash,
+				timer.elapsed()
+			);
 		});
+
+		log::info!(
+			"BLOB - RPC submit_blob - END - {:?} - {:?}",
+			blob_hash,
+			timer.elapsed()
+		);
 
 		Ok(())
 	}
