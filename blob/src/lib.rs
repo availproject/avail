@@ -68,6 +68,8 @@ const MAX_TRANSACTION_VALIDITY: u64 = 150; // 50 mn
 const MAX_BLOB_RETRY_BEFORE_DISCARDING: u16 = 3;
 /// The number of block for which a notification is considered valid
 const NOTIFICATION_EXPIRATION_PERIOD: u64 = 180;
+/// The number of retries the validator is going to make before stopping a blob request
+const MAX_REQUEST_RETRIES: u8 = 3;
 /// The number of retries the RPC is going to make before dropping a user blob request
 const MAX_RPC_RETRIES: u8 = 3;
 
@@ -374,51 +376,62 @@ where
 		signature_data,
 	});
 
-	let response = network
-		.request(
-			original_peer_id,
-			BLOB_REQ_PROTO,
-			blob_request.encode(),
-			None,
-			IfDisconnected::TryConnect,
-		)
-		.await;
+	for attempt in 0..MAX_REQUEST_RETRIES {
+		let response = network
+			.request(
+				original_peer_id,
+				BLOB_REQ_PROTO,
+				blob_request.encode(),
+				None,
+				IfDisconnected::TryConnect,
+			)
+			.await;
 
-	match response {
-		Ok((data, _proto)) => {
-			let mut buf: &[u8] = &data;
-			match BlobResponseEnum::decode(&mut buf) {
-				Ok(BlobResponseEnum::BlobResponse(blob_response)) => {
+		match response {
+			Ok((data, _proto)) => {
+				let mut buf: &[u8] = &data;
+				match BlobResponseEnum::decode(&mut buf) {
+					Ok(BlobResponseEnum::BlobResponse(blob_response)) => {
+						log::info!(
+							"BLOB - send_blob_request - END - {:?} - {:?}",
+							blob_hash,
+							timer.elapsed()
+						);
+						return Some(blob_response);
+					},
+					Ok(_other) => {
+						log::error!(target: LOG_TARGET,
+							"Invalid response in send blob request, expected BlobResponse");
+						break;
+					},
+					Err(err) => {
+						log::error!(target: LOG_TARGET,
+							"Failed to decode Blob response ({} bytes): {:?}", data.len(), err);
+						break;
+					},
+				}
+			},
+			Err(e) => {
+				log::error!(target: LOG_TARGET,
+					"An error has occured while trying to send blob request {blob_hash:?} (attempt {}/{}): {e}",
+					attempt + 1,
+					MAX_REQUEST_RETRIES
+				);
+
+				if attempt + 1 < MAX_REQUEST_RETRIES {
+					let sleep_timer = tokio::time::Instant::now();
+					let backoff_secs = 2;
+					tokio::time::sleep(Duration::from_secs(backoff_secs)).await;
 					log::info!(
-						"BLOB - send_blob_request - END - {:?} - {:?}",
-						blob_hash,
-						timer.elapsed()
+						"Finished sleeping for next blob request {blob_hash:?}: sleep time: {:?}",
+						sleep_timer.elapsed()
 					);
-					return Some(blob_response);
-				},
-				Ok(_other) => {
-					log::error!(
-						target: LOG_TARGET,
-						"Invalid response in send blob request, expected BlobResponse"
-					);
-				},
-				Err(err) => {
-					log::error!(
-						target: LOG_TARGET,
-						"Failed to decode Blob response ({} bytes): {:?}",
-						data.len(),
-						err
-					);
-				},
-			}
-		},
-		Err(e) => {
-			log::error!(
-				target: LOG_TARGET,
-				"An error has occured while trying to send blob request: {e}"
-			);
-		},
+					continue;
+				}
+			},
+		}
 	}
+
 	log::info!(
 		"BLOB - send_blob_request - END with errors - {:?} - {:?}",
 		blob_hash,

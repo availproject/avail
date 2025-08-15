@@ -75,7 +75,7 @@ pub async fn run() -> Result<(), ClientError> {
 
 	let mut blobs: Vec<(Vec<u8>, H256, Vec<u8>)> = Vec::new();
 	println!("---------- START Commitments generation ---------- ");
-	for i in 0..100 {
+	for i in 0..50 {
 		println!("---------- START Commitment generation {i} ---------- ");
 		let blob: Vec<u8> = repeat(byte).take(len - i).collect::<Vec<u8>>();
 		let blob_hash = H256::from(keccak_256(&blob));
