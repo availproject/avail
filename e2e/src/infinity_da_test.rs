@@ -36,31 +36,20 @@ pub async fn run() -> Result<(), ClientError> {
 	// commitments = [142, 209, 13, 238, 213, 85, 180, 162, 122, 102, 82, 148, 209, 225, 154, 151, 54, 42, 215, 48, 56, 11, 52, 118, 103, 150, 25, 207, 1, 38, 104, 208, 27, 43, 213, 192, 160, 236, 107, 149, 141, 223, 177, 63, 142, 227, 8, 241]
 	// commitments_hex = "0xa423bb984e0361893d6146d567c4a690a0d13704a1d5aac25a123970d7935646df63e518a709e0fe69ee7ca8617aebd6"
 
-	println!("---------- START process ---------- ");
-	let len = 5 * 1024 * 1024 - 1;
+	println!("---------- START Submission ---------- ");
+	let len = 32 * 1024 * 1024;
 	let mode = 1;
 
-	// let local_endpoint: &str = if mode == 1 {
-	// 	"http://127.0.0.1:9944"
-	// } else if mode == 2 {
-	// 	"http://127.0.0.1:9945"
-	// } else if mode == 3 {
-	// 	"http://127.0.0.1:9946"
-	// } else {
-	// 	"http://127.0.0.1:9947"
-	// };
-
 	let local_endpoint: &str = if mode == 1 {
-		"http://167.99.54.199:8546"
+		"http://127.0.0.1:9944"
 	} else if mode == 2 {
-		"https://infinity-devnet2-rpc.avail.tools/rpc"
+		"http://127.0.0.1:9945"
 	} else if mode == 3 {
-		"https://infinity-devnet3-rpc.avail.tools/rpc"
+		"http://127.0.0.1:9946"
 	} else {
-		"https://infinity-devnet4-rpc.avail.tools/rpc"
+		"http://127.0.0.1:9947"
 	};
 
-	
 	let client = Client::new(local_endpoint).await?;
 	let signer = if mode == 1 {
 		alice()
@@ -72,7 +61,7 @@ pub async fn run() -> Result<(), ClientError> {
 		dave()
 	};
 	let byte = if mode == 1 {
-		b'1'
+		b'A'
 	} else if mode == 2 {
 		b'B'
 	} else if mode == 3 {
@@ -86,7 +75,7 @@ pub async fn run() -> Result<(), ClientError> {
 
 	let mut blobs: Vec<(Vec<u8>, H256, Vec<u8>)> = Vec::new();
 	println!("---------- START Commitments generation ---------- ");
-	for i in 0..1 {
+	for i in 0..50 {
 		println!("---------- START Commitment generation {i} ---------- ");
 		let blob: Vec<u8> = repeat(byte).take(len - i).collect::<Vec<u8>>();
 		let blob_hash = H256::from(keccak_256(&blob));
