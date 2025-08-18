@@ -110,6 +110,7 @@ pub fn check_store_blob(
 	nb_validators_per_blob: u32,
 ) -> Result<bool> {
 	let nb_validators = validators.len() as u32;
+	log::info!("Check store blob start - nb_validators:{nb_validators:?} - nb_validators_per_blob: {nb_validators_per_blob:?}");
 
 	if nb_validators == 0 || nb_validators_per_blob == 0 {
 		return Ok(false);
@@ -117,17 +118,36 @@ pub fn check_store_blob(
 
 	let my_pos = match validators.iter().position(|v| v == my_id) {
 		Some(p) => p,
-		None => return Ok(false), // We're not in the validator set
+		None => {
+			// We're not in the validator set
+			log::info!(
+				"Check store blob - Could not find my pos. Validators:{:?}. Me: {:?}",
+				validators.clone(),
+				my_id.clone()
+			);
+			return Ok(false);
+		},
 	};
+
+	log::info!("Check store blob - My Pos in the validator set:{my_pos:?}");
 
 	let base_index =
 		generate_base_index(blob_hash, block_hash_bytes, nb_validators as usize, None)?;
+
+	log::info!("Check store blob - base_index:{base_index:?}");
 	for i in 0..nb_validators_per_blob {
 		let index = ((base_index as u32) + i) % nb_validators;
+		log::info!(
+			"Validator: {:?}, should store blob: {:?}",
+			validators.get(i as usize),
+			blob_hash
+		);
 		if index as usize == my_pos {
+			log::info!("I should store blob: {:?}", blob_hash);
 			return Ok(true);
 		}
 	}
+	log::info!("Check store blob end");
 
 	Ok(false)
 }
