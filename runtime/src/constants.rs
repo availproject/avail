@@ -87,7 +87,7 @@ pub mod time {
 	// NOTE: Currently it is not possible to change the epoch duration after the chain has started.
 	//       Attempting to do so will brick block production.
 	#[cfg(not(feature = "fast-runtime"))]
-	pub const EPOCH_DURATION_IN_SLOTS: BlockNumber = 4 * HOURS;
+	pub const EPOCH_DURATION_IN_SLOTS: BlockNumber = 5 * MINUTES;//TODO BLOB put back 4 * HOURS;
 	#[cfg(feature = "fast-runtime")]
 	pub const EPOCH_DURATION_IN_SLOTS: BlockNumber = 5 * MINUTES;
 
@@ -244,7 +244,7 @@ pub mod staking {
 
 	#[cfg(not(feature = "fast-runtime"))]
 	parameter_types! {
-		pub const SessionsPerEra: sp_staking::SessionIndex = 6;
+		pub const SessionsPerEra: sp_staking::SessionIndex = 1;// TODO BLOB put back 6;
 		pub const BondingDuration: sp_staking::EraIndex = 28; // 28 days
 		pub const SlashDeferDuration: sp_staking::EraIndex = BondingDuration::get() - 1; // 27 Days
 	}
