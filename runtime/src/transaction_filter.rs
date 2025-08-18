@@ -62,11 +62,6 @@ impl HeaderExtensionDataFilter for Runtime {
 	}
 
 	fn get_failed_transaction_ids(opaques: &[OpaqueExtrinsic]) -> Vec<u32> {
-		let timer = std::time::Instant::now();
-		log::info!(
-			"BLOB - get_failed_transaction_ids - START - {:?}",
-			timer.elapsed()
-		);
 		let mut failed_tx = Vec::new();
 		let len = opaques.len();
 		if len == 0 {
@@ -102,10 +97,6 @@ impl HeaderExtensionDataFilter for Runtime {
 				};
 			}
 		}
-		log::info!(
-			"BLOB - get_failed_transaction_ids - END - {:?}",
-			timer.elapsed()
-		);
 
 		failed_tx
 	}
