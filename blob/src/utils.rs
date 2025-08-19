@@ -198,7 +198,7 @@ pub fn check_store_blob(
 		let index = ((base_index as u32) + i) % nb_validators;
 		log::info!(
 			"Validator: {:?}, should store blob: {:?}",
-			validators.get(i as usize),
+			validators.get(index as usize),
 			blob_hash
 		);
 		if index as usize == my_pos {
