@@ -68,7 +68,7 @@ pub(crate) mod native {
 	pub static MEM_TMP_STORAGE: RwLock<StorageMap> = RwLock::new(StorageMap::new());
 }
 
-/// The memory temporal storage will be cleared at the begining of each block building.
+/// The memory temporal storage will be cleared at the beginning of each block building.
 ///
 /// This is a simple global database not aware of forks. Can be used for storing auxiliary information like/// the failed `Vector::SendMessage` transaction indexers.
 ///
