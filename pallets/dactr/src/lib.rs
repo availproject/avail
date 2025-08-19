@@ -17,6 +17,7 @@ use sp_arithmetic::traits::{CheckedAdd, One, SaturatedConversion};
 use sp_authority_discovery::AuthorityId;
 use sp_core::H256;
 use sp_io::hashing::keccak_256;
+use sp_runtime::AccountId32;
 use sp_runtime::Perbill;
 use sp_std::{mem::replace, vec, vec::Vec};
 
@@ -43,6 +44,7 @@ pub const NORMAL_DISPATCH_RATIO_PERBILL: Perbill =
 pub mod pallet {
 	use frame_support::{pallet_prelude::*, DefaultNoBound};
 	use frame_system::pallet_prelude::*;
+	use sp_runtime::AccountId32;
 
 	use super::*;
 
@@ -66,7 +68,7 @@ pub mod pallet {
 		pub tx_index: u32,
 		pub success: bool,
 		pub reason: Option<String>,
-		pub ownership: Vec<(AuthorityId, String, Vec<u8>)>,
+		pub ownership: Vec<(AccountId32, AuthorityId, String, Vec<u8>)>,
 	}
 
 	/// Default implementations of [`DefaultConfig`], which can be used to implement [`Config`].
@@ -534,7 +536,7 @@ impl BlobTxSummaryRuntime {
 			u32,
 			bool,
 			Option<String>,
-			Vec<(AuthorityId, String, Vec<u8>)>,
+			Vec<(AccountId32, AuthorityId, String, Vec<u8>)>,
 		)>,
 	) -> Vec<BlobTxSummaryRuntime> {
 		input

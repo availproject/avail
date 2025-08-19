@@ -37,7 +37,7 @@
 use std::sync::Arc;
 
 use da_runtime::{
-	apis::{DataAvailApi, KateApi, VectorApi},
+	apis::{BlobApi, DataAvailApi, KateApi, VectorApi},
 	AccountId, Balance, BlockNumber, Hash, Index, NodeBlock as Block,
 };
 use jsonrpsee::RpcModule;
@@ -130,7 +130,7 @@ where
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
 	C::Api: BabeApi<Block>,
 	C::Api: BlockBuilder<Block>,
-	C::Api: DataAvailApi<Block> + KateApi<Block> + VectorApi<Block>,
+	C::Api: DataAvailApi<Block> + KateApi<Block> + VectorApi<Block> + BlobApi<Block>,
 	C::Api: TaggedTransactionQueue<Block>,
 	P: TransactionPool<Block = Block> + 'static,
 	SC: SelectChain<Block> + 'static,

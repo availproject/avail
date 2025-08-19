@@ -8,7 +8,7 @@ use crate::{
 use anyhow::{anyhow, Context, Result};
 use codec::{Decode, Encode};
 use da_control::Call;
-use da_runtime::{RuntimeCall, UncheckedExtrinsic};
+use da_runtime::{apis::BlobApi, RuntimeCall, UncheckedExtrinsic};
 use sc_client_api::HeaderBackend;
 use sc_keystore::{Keystore, LocalKeystore};
 use sc_transaction_pool_api::TransactionSource;
@@ -19,13 +19,22 @@ use sp_runtime::{
 	key_types,
 	traits::{Block as BlockT, Verify},
 	transaction_validity::{InvalidTransaction, TransactionValidityError},
-	SaturatedConversion,
+	AccountId32, SaturatedConversion,
 };
 use sp_transaction_pool::runtime_api::TaggedTransactionQueue;
 use std::{collections::BTreeMap, sync::Arc};
 
-/// Get this node Authority ID
-pub fn get_my_validator_id(keystore: &Arc<LocalKeystore>) -> Option<AuthorityId> {
+/// Get this node's Address
+pub fn get_my_validator_id<Block, Client>(
+	keystore: &Arc<LocalKeystore>,
+	client: &Arc<Client>,
+	at: &[u8],
+) -> Option<(AccountId32, AuthorityId)>
+where
+	Block: BlockT,
+	Client: ProvideRuntimeApi<Block>,
+	Client::Api: BlobApi<Block>,
+{
 	let key_type = key_types::BABE;
 
 	// Get keys from the keystore
@@ -35,8 +44,58 @@ pub fn get_my_validator_id(keystore: &Arc<LocalKeystore>) -> Option<AuthorityId>
 	if keys.len() == 0 {
 		return None;
 	}
+	let k = keys[keys.len() - 1];
 
-	Some(keys[keys.len() - 1].into())
+	get_validator_id_from_key(&k.into(), client, at)
+}
+
+pub fn get_validator_id_from_key<Block, Client>(
+	key: &AuthorityId,
+	client: &Arc<Client>,
+	at: &[u8],
+) -> Option<(AccountId32, AuthorityId)>
+where
+	Block: BlockT,
+	Client: ProvideRuntimeApi<Block>,
+	Client::Api: BlobApi<Block>,
+{
+	let key_type = key_types::BABE;
+
+	let Some(at) = Block::Hash::decode(&mut &*at).ok() else {
+		log::error!("Could not convert bytes to at hash");
+		return None;
+	};
+	if let Ok(owner_opt) =
+		client
+			.runtime_api()
+			.get_validator_from_key(at.clone(), key_type, key.encode())
+	{
+		if let Some(owner) = owner_opt {
+			return Some((owner, key.clone()));
+		}
+	}
+
+	None
+}
+
+/// Get active validator addresses
+pub fn get_active_validators<Block, Client>(client: &Arc<Client>, at: &[u8]) -> Vec<AccountId32>
+where
+	Block: BlockT,
+	Client: ProvideRuntimeApi<Block>,
+	Client::Api: BlobApi<Block>,
+{
+	let Some(at) = Block::Hash::decode(&mut &*at).ok() else {
+		log::error!("Could not convert bytes to 'at' hash");
+		return Vec::new();
+	};
+	match client.runtime_api().get_active_validators(at.clone()) {
+		Ok(validators) => validators,
+		Err(e) => {
+			log::error!("Failed to fetch active validators at {:?}: {:?}", at, e);
+			Vec::new()
+		},
+	}
 }
 
 /// Get the number of validator that need to store a blob.
@@ -104,8 +163,8 @@ pub fn generate_base_index(
 /// given the full sorted list of validators.
 pub fn check_store_blob(
 	blob_hash: BlobHash,
-	validators: &Vec<AuthorityId>,
-	my_id: &AuthorityId,
+	validators: &Vec<AccountId32>,
+	my_id: &AccountId32,
 	block_hash_bytes: &[u8],
 	nb_validators_per_blob: u32,
 ) -> Result<bool> {

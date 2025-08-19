@@ -4,8 +4,8 @@ use crate::{
 	store::BlobStore,
 	types::{Blob, BlobMetadata, BlobNotification, BlobReceived, Deps, OwnershipEntry},
 	utils::{
-		build_signature_payload, check_store_blob, generate_base_index, get_my_validator_id,
-		get_validator_per_blob, sign_blob_data_inner,
+		build_signature_payload, check_store_blob, generate_base_index, get_active_validators,
+		get_my_validator_id, get_validator_per_blob, sign_blob_data_inner,
 	},
 	BLOB_TTL, MAX_BLOB_SIZE, MAX_RPC_RETRIES, MAX_TRANSACTION_VALIDITY, MIN_TRANSACTION_VALIDITY,
 	TEMP_BLOB_TTL,
@@ -14,22 +14,20 @@ use anyhow::{anyhow, Result};
 use codec::{Decode, Encode};
 use da_commitment::build_da_commitments::build_da_commitments;
 use da_control::{pallet::BlobTxSummaryRuntime, Call};
-use da_runtime::{RuntimeCall, UncheckedExtrinsic};
+use da_runtime::{apis::BlobApi, RuntimeCall, UncheckedExtrinsic};
 use jsonrpsee::{
 	core::{async_trait, RpcResult},
 	proc_macros::rpc,
 	types::error::ErrorObject,
 };
 use kate::Seed;
-use sc_authority_discovery::AuthorityDiscovery;
 use sc_client_api::{BlockBackend, HeaderBackend};
 use sc_network::{NetworkStateInfo, PeerId};
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::ProvideRuntimeApi;
-use sp_authority_discovery::AuthorityId;
 use sp_core::{keccak_256, Bytes, H256};
-use sp_runtime::transaction_validity::TransactionSource;
 use sp_runtime::{traits::Block as BlockT, SaturatedConversion};
+use sp_runtime::{transaction_validity::TransactionSource, AccountId32};
 use sp_transaction_pool::runtime_api::TaggedTransactionQueue;
 use std::{
 	marker::{PhantomData, Sync},
@@ -104,11 +102,10 @@ where
 	Client: HeaderBackend<Block>
 		+ ProvideRuntimeApi<Block>
 		+ BlockBackend<Block>
-		+ AuthorityDiscovery<Block>
 		+ Send
 		+ Sync
 		+ 'static,
-	Client::Api: TaggedTransactionQueue<Block>,
+	Client::Api: TaggedTransactionQueue<Block> + BlobApi<Block>,
 	Pool: TransactionPool<Block = Block> + 'static,
 {
 	async fn submit_blob(&self, metadata_signed_transaction: Bytes, blob: Bytes) -> RpcResult<()> {
@@ -273,13 +270,10 @@ where
 			});
 
 			// It might be a new blob or an old one being resubmitted, we still update most of the values
-			let validators = match client.authorities(finalized_block_hash).await {
-				Ok(v) => v,
-				Err(e) => {
-					log::error!("failed to get validators from runtime: {e}");
-					return;
-				},
-			};
+			let validators = get_active_validators(&client, &finalized_block_hash.encode());
+			if validators.is_empty() {
+				return;
+			}
 			let nb_validators_per_blob = get_validator_per_blob(validators.len() as u32);
 			blob_metadata.is_notified = true;
 			blob_metadata.expires_at = finalized_block_number.saturating_add(TEMP_BLOB_TTL);
@@ -288,11 +282,13 @@ where
 			blob_metadata.nb_validators_per_blob = nb_validators_per_blob;
 			let maybe_ownership: Option<OwnershipEntry> =
 				match check_rpc_store_blob::<Client, Block>(
+					&client,
 					&blob_handle,
 					&blob_metadata,
 					my_peer_id_base58.clone(),
 					nb_validators_per_blob,
 					&validators,
+					&finalized_block_hash,
 				)
 				.await
 				{
@@ -453,7 +449,7 @@ where
 
 		for attempt in 0..(MAX_RPC_RETRIES as usize) {
 			let index = (base_index + attempt) % ownership_len;
-			let Some((_, encoded_peer_id, _)) = blob_summary.ownership.get(index) else {
+			let Some((_, _, encoded_peer_id, _)) = blob_summary.ownership.get(index) else {
 				log::warn!(
 					"Attempt {}/{}: invalid array index",
 					attempt + 1,
@@ -501,15 +497,18 @@ where
 }
 
 async fn check_rpc_store_blob<Client, Block>(
+	client: &Arc<Client>,
 	blob_handle: &BlobHandle<Block>,
 	blob_metadata: &BlobMetadata<Block>,
 	my_encoded_peer_id: String,
 	nb_validators_per_blob: u32,
-	validators: &Vec<AuthorityId>,
+	validators: &Vec<AccountId32>,
+	finalized_block_hash: &Block::Hash,
 ) -> Result<Option<OwnershipEntry>>
 where
 	Block: BlockT,
-	Client: HeaderBackend<Block> + ProvideRuntimeApi<Block> + AuthorityDiscovery<Block>,
+	Client: HeaderBackend<Block> + ProvideRuntimeApi<Block>,
+	Client::Api: BlobApi<Block>,
 {
 	let role = &blob_handle.role;
 	if !role.is_authority() {
@@ -522,7 +521,9 @@ where
 		return Err(anyhow!("failed to get keystore"));
 	};
 
-	let Some(my_validator_id) = get_my_validator_id(&keystore) else {
+	let Some((my_validator_id, babe_key)) =
+		get_my_validator_id(keystore, client, &finalized_block_hash.encode())
+	else {
 		return Ok(None);
 	};
 
@@ -543,7 +544,10 @@ where
 		return Ok(None);
 	}
 
-	let signature_payload = build_signature_payload(blob_metadata.hash, b"stored".to_vec());
+	let signature_payload = build_signature_payload(
+		blob_metadata.hash,
+		[my_validator_id.encode(), b"stored".to_vec()].concat(),
+	);
 	let signature = match sign_blob_data_inner(keystore, signature_payload) {
 		Ok(s) => s.signature,
 		Err(e) => {
@@ -555,6 +559,7 @@ where
 
 	Ok(Some(OwnershipEntry {
 		address: my_validator_id,
+		babe_key,
 		encoded_peer_id: my_encoded_peer_id,
 		signature,
 	}))

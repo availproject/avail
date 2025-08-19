@@ -10,7 +10,7 @@ use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_authority_discovery::AuthorityId;
 use sp_core::H256;
-use sp_runtime::traits::Block as BlockT;
+use sp_runtime::{traits::Block as BlockT, AccountId32};
 use std::sync::Arc;
 
 pub type BlobHash = H256;
@@ -200,10 +200,12 @@ pub struct BlobSignatureData {
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, TypeInfo, Serialize, Deserialize)]
 pub struct OwnershipEntry {
 	/// The address that owns the blob
-	pub address: AuthorityId,
+	pub address: AccountId32,
+	/// The babe key of the validator
+	pub babe_key: AuthorityId,
 	/// The corresponding peer encoded
 	pub encoded_peer_id: String,
-	/// The signature of the holder (blob_hash - "stored")
+	/// The signature of the holder (blob_hash - address(AccountId32) - "stored")
 	pub signature: Vec<u8>,
 }
 
@@ -230,7 +232,8 @@ impl BlobTxSummary {
 		bool,           // Success
 		Option<String>, // Error reason
 		Vec<(
-			AuthorityId, // Validator address
+			AccountId32, // Validator address
+			AuthorityId, // Babe key
 			String,      // Encoded Peer id
 			Vec<u8>,     // Signature
 		)>,
@@ -238,10 +241,10 @@ impl BlobTxSummary {
 		input
 			.into_iter()
 			.map(|summary| {
-				let ownership: Vec<(AuthorityId, String, Vec<u8>)> = summary
+				let ownership: Vec<(AccountId32, AuthorityId, String, Vec<u8>)> = summary
 					.ownership
 					.into_iter()
-					.map(|entry| (entry.address, entry.encoded_peer_id, entry.signature))
+					.map(|entry| (entry.address, entry.babe_key, entry.encoded_peer_id, entry.signature))
 					.collect();
 				(
 					summary.hash,

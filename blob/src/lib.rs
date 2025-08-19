@@ -6,21 +6,19 @@ use crate::{
 		BlobStored, OwnershipEntry, BLOB_REQ_PROTO,
 	},
 	utils::{
-		build_signature_payload, check_store_blob, get_my_validator_id, get_validator_per_blob,
-		sign_blob_data, verify_signed_blob_data,
+		build_signature_payload, check_store_blob, get_active_validators, get_my_validator_id,
+		get_validator_id_from_key, get_validator_per_blob, sign_blob_data, verify_signed_blob_data,
 	},
 };
 use anyhow::{anyhow, Result};
 use codec::{Decode, Encode};
 use futures::channel::oneshot;
-use sc_authority_discovery::AuthorityDiscovery;
 use sc_client_api::HeaderBackend;
 use sc_network::{
 	config::{IncomingRequest, OutgoingResponse},
 	IfDisconnected, NetworkPeers, NetworkRequest, NetworkService, NetworkStateInfo, ObservedRole,
 	PeerId,
 };
-use sp_core::sr25519;
 use sp_runtime::{traits::Block as BlockT, Perbill, SaturatedConversion};
 use std::{str::FromStr, sync::Arc, time::Duration};
 use store::{BlobStore, RocksdbBlobStore};
@@ -160,13 +158,7 @@ async fn handle_blob_received_notification<Block>(
 		return;
 	}
 
-	let validators = match client.authorities(finalized_hash).await {
-		Ok(v) => v,
-		Err(e) => {
-			log::error!(target: LOG_TARGET, "Could not get validator from the runtime: {e}");
-			return;
-		},
-	};
+	let validators = get_active_validators(&client, &announced_finalized_hash.encode());
 	let nb_validators_per_blob = get_validator_per_blob(validators.len() as u32);
 
 	let maybe_metadata = match blob_handle
@@ -208,9 +200,17 @@ async fn handle_blob_received_notification<Block>(
 	// Check signatures in case blob ownership is filled
 	let mut ownerships_to_record: Vec<OwnershipEntry> = Vec::new();
 	if let Some(ownership) = blob_received.ownership {
-		let expected_payload = build_signature_payload(blob_received.hash, b"stored".to_vec());
-		let address: sr25519::Public = ownership.address.clone().into();
-		let signer = address.0.to_vec();
+		let Some((expected_address, _)) =
+			get_validator_id_from_key(&ownership.babe_key, client, &announced_finalized_hash.encode())
+		else {
+			log::error!("Could not get expected address from signer");
+			return;
+		};
+		let expected_payload = build_signature_payload(
+			blob_received.hash,
+			[expected_address.encode(), b"stored".to_vec()].concat(),
+		);
+		let signer = ownership.babe_key.encode();
 		match verify_signed_blob_data(
 			BlobSignatureData {
 				signer,
@@ -236,13 +236,14 @@ async fn handle_blob_received_notification<Block>(
 		return;
 	};
 
-	let my_validator_id = match get_my_validator_id(&keystore) {
-		Some(v) => v,
-		None => {
-			log::error!(target: LOG_TARGET, "No keys found while trying to get this node's id");
-			return;
-		},
-	};
+	let (my_validator_id, babe_key) =
+		match get_my_validator_id(&keystore, &client, &announced_finalized_hash.encode()) {
+			Some(v) => v,
+			None => {
+				log::error!(target: LOG_TARGET, "No keys found while trying to get this node's id");
+				return;
+			},
+		};
 
 	let should_store_blob = match check_store_blob(
 		blob_received.hash,
@@ -262,7 +263,10 @@ async fn handle_blob_received_notification<Block>(
 		let my_peer_id = network.local_peer_id();
 		let my_peer_id_base58 = my_peer_id.to_base58();
 
-		let signature_payload = build_signature_payload(blob_received.hash, b"stored".to_vec());
+		let signature_payload = build_signature_payload(
+			blob_received.hash,
+			[my_validator_id.encode(), b"stored".to_vec()].concat(),
+		);
 
 		let signature = match sign_blob_data(blob_handle, signature_payload) {
 			Ok(s) => s.signature,
@@ -310,6 +314,7 @@ async fn handle_blob_received_notification<Block>(
 
 		let ownership = OwnershipEntry {
 			address: my_validator_id,
+			babe_key,
 			encoded_peer_id: my_peer_id_base58,
 			signature,
 		};
@@ -618,13 +623,30 @@ async fn handle_blob_stored_notification<Block>(
 		return;
 	}
 
-	let address: sr25519::Public = blob_stored.ownership_entry.address.clone().into();
-	let address_vec = address.0.to_vec();
+	let Some(client) = blob_handle.client.get() else {
+		log::error!(target: LOG_TARGET, "Client not yet registered");
+		return;
+	};
 
-	let expected_payload = build_signature_payload(blob_stored.hash, b"stored".to_vec());
+	let Some(blob_meta) = blob_handle
+		.blob_store
+		.get_blob_metadata(&blob_stored.hash)
+		.ok()
+		.flatten()
+	else {
+		log::error!("Could not get blob metadata from store");
+		return;
+	};
+
+	let finalized_hash = blob_meta.finalized_block_hash;
+	let Some((address, _)) = get_validator_id_from_key(&blob_stored.ownership_entry.babe_key, client, &finalized_hash.encode()) else {
+		log::error!("Could not find address associated to babe key");
+		return;
+	};
+	let expected_payload = build_signature_payload(blob_stored.hash, [address.encode(), b"stored".to_vec()].concat());
 	match verify_signed_blob_data(
 		BlobSignatureData {
-			signer: address_vec,
+			signer: blob_stored.ownership_entry.babe_key.encode(),
 			signature: blob_stored.ownership_entry.signature.clone(),
 		},
 		expected_payload,

@@ -31,9 +31,7 @@ use sp_consensus_grandpa::AuthorityId as GrandpaId;
 use sp_core::{crypto::KeyTypeId, H256, U256};
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
-	traits::{Block as BlockT, Extrinsic as ExtrinsicT, NumberFor},
-	transaction_validity::{TransactionSource, TransactionValidity},
-	ApplyExtrinsicResult,
+	traits::{Block as BlockT, Extrinsic as ExtrinsicT, NumberFor}, transaction_validity::{TransactionSource, TransactionValidity}, AccountId32, ApplyExtrinsicResult
 };
 use sp_std::{borrow::Cow, vec::Vec};
 use sp_version::RuntimeVersion;
@@ -72,6 +70,14 @@ decl_runtime_apis! {
 		fn rows(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, rows: Vec<u32>) -> Result<Vec<GRow>, RTKateError >;
 		fn proof(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, cells: Vec<(u32,u32)> ) -> Result<Vec<GDataProof>, RTKateError>;
 		fn multiproof(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, cells: Vec<(u32,u32)> ) -> Result<Vec<(GMultiProof, GCellBlock)>, RTKateError>;
+	}
+
+	pub trait BlobApi {
+		/// Map (key_type, raw key bytes) -> owner AccountId (if registered in Session)
+		fn get_validator_from_key(id: KeyTypeId, key_data: Vec<u8>) -> Option<AccountId>;
+
+		/// Return the ACTIVE validators for the current session (AccountIds).
+		fn get_active_validators() -> Vec<AccountId>;
 	}
 }
 
@@ -459,6 +465,16 @@ impl_runtime_apis! {
 		}
 	}
 
+	impl crate::apis::BlobApi<Block> for Runtime {
+		fn get_validator_from_key(id: KeyTypeId, key_data: Vec<u8>) -> Option<AccountId> {
+			pallet_session::Pallet::<Runtime>::key_owner(id, &key_data)
+		}
+
+		fn get_active_validators() -> Vec<AccountId> {
+			pallet_session::Pallet::<Runtime>::validators()
+		}
+	}
+
 	impl crate::apis::KateApi<Block> for Runtime {
 		fn data_proof(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, tx_idx: u32) -> Option<ProofResponse> {
 			let data = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block_number, &extrinsics);
@@ -517,7 +533,7 @@ impl_runtime_apis! {
 			u32,
 			bool,
 			Option<String>,
-			Vec<(AuthorityDiscoveryId, String, Vec<u8>)>,
+			Vec<(AccountId32, AuthorityDiscoveryId, String, Vec<u8>)>,
 		)>, total_blob_size: u64) -> Vec<<Block as BlockT>::Extrinsic> {
 			let mut post_inherent_extrinsics: Vec<<Block as BlockT>::Extrinsic> = pallet_vector::Pallet::<Runtime>::create_inherent(&data)
 				.into_iter()

@@ -244,7 +244,7 @@ pub mod staking {
 
 	#[cfg(not(feature = "fast-runtime"))]
 	parameter_types! {
-		pub const SessionsPerEra: sp_staking::SessionIndex = 1;// TODO BLOB put back 6;
+		pub const SessionsPerEra: sp_staking::SessionIndex = 2;// TODO BLOB put back 6;
 		pub const BondingDuration: sp_staking::EraIndex = 28; // 28 days
 		pub const SlashDeferDuration: sp_staking::EraIndex = BondingDuration::get() - 1; // 27 Days
 	}
