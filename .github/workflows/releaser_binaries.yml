@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Import GPG key
         id: import_gpg
@@ -61,7 +61,7 @@ jobs:
           - command: ENGINE=podman DISTRO=arch ZIP=1 ./scripts/binaries/build.sh
             output_file: output/zips/x86_64-arch-avail-node.tar.gz
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
@@ -142,7 +142,7 @@ jobs:
     runs-on: ubuntu-22.04
     needs: setup_gpg
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
