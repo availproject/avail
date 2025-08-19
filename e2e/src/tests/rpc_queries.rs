@@ -307,7 +307,7 @@ pub async fn rpc_query_data_proof_test() -> Result<()> {
 	let mut params = RpcParams::new();
 	params.push(1)?;
 	params.push(block_hash)?;
-	let actual_proof: ProofResponse = client.rpc().request("kate_queryDataProof", params).await?;
+	let actual_proof: ProofResponse = client.rpc().request("kate_queryDataProofV2", params).await?;
 	// root is calculated keccak256(blob_root, bridge_root)
 	let mut root_data = vec![];
 	root_data.extend(expected_proof_root.root.as_bytes());
