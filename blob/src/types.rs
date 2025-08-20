@@ -2,16 +2,24 @@ use crate::{p2p::BlobHandle, store::RocksdbBlobStore};
 use codec::{Decode, Encode};
 use da_runtime::{apis::RuntimeApi, NodeBlock as Block};
 use once_cell::sync::OnceCell;
+use parking_lot::Mutex;
 use sc_executor::NativeElseWasmExecutor;
 use sc_network::{PeerId, ProtocolName};
-use sc_network_gossip::{ValidationResult, Validator, ValidatorContext};
+use sc_network_gossip::{MessageIntent, ValidationResult, Validator, ValidatorContext};
 use sc_service::{Role, TFullClient};
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_authority_discovery::AuthorityId;
-use sp_core::H256;
-use sp_runtime::{traits::Block as BlockT, AccountId32};
-use std::sync::Arc;
+use sp_core::{blake2_256, H256};
+use sp_runtime::{
+	traits::{Block as BlockT, Hash as HashT, HashingFor},
+	AccountId32,
+};
+use std::{
+	collections::HashMap,
+	sync::Arc,
+	time::{Duration, Instant},
+};
 
 pub type BlobHash = H256;
 
@@ -50,21 +58,57 @@ impl sc_executor::NativeExecutionDispatch for ExecutorDispatch {
 pub type FullClient = TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<ExecutorDispatch>>;
 
 /// The network gossip validator for blob service
-pub struct BlobGossipValidator;
+pub struct BlobGossipValidator {
+	live: Mutex<HashMap<H256, Instant>>, // message hash -> expire_at
+	ttl: Duration,                       // must be > PERIODIC_MAINTENANCE_INTERVAL
+}
+impl Default for BlobGossipValidator {
+	fn default() -> Self {
+		Self {
+			ttl: Duration::from_millis(1500),
+			live: Mutex::new(HashMap::new()),
+		}
+	}
+}
 impl<B: BlockT> Validator<B> for BlobGossipValidator {
 	fn validate(
 		&self,
-		ctx: &mut dyn ValidatorContext<B>,
+		_ctx: &mut dyn ValidatorContext<B>,
 		_sender: &PeerId,
 		data: &[u8],
 	) -> ValidationResult<<B as BlockT>::Hash> {
-		let topic = B::Hash::default();
+		let h = H256::from(blake2_256(data));
+		self.live.lock().insert(h, Instant::now() + self.ttl);
 
-		// Here we don't use directly ValidationResult::ProcessAndKeep(topic) cause we'll first process and start to ask blobs to peers THEN we gossip the notification.
-		// We prefer to first gossip the notification as the peers just want that piece of information
-		ctx.broadcast_message(topic.clone(), data.to_vec(), false);
+		let topic: B::Hash = HashingFor::<B>::hash(b"blob_topic");
 
-		ValidationResult::ProcessAndDiscard(topic)
+		ValidationResult::ProcessAndKeep(topic)
+	}
+
+	// Allow everything to be sent, EXCEPT periodic rebroadcasts.
+	fn message_allowed<'a>(
+		&'a self,
+	) -> Box<dyn FnMut(&PeerId, MessageIntent, &B::Hash, &[u8]) -> bool + 'a> {
+		Box::new(|_who, intent, _topic, _data| {
+			// Initial/forced broadcasts are fine; periodic rebroadcasts are blocked.
+			intent != MessageIntent::PeriodicRebroadcast
+		})
+	}
+
+	// Expire at the next maintenance.
+	fn message_expired<'a>(&'a self) -> Box<dyn FnMut(B::Hash, &[u8]) -> bool + 'a> {
+		Box::new(move |_topic, msg| {
+			let h = H256::from(blake2_256(msg));
+			let now = Instant::now();
+			let mut live = self.live.lock();
+			match live.get(&h).copied() {
+				Some(deadline) if deadline > now => false, // keep until first periodic happens
+				_ => {
+					live.remove(&h);
+					true
+				}, // expire after that
+			}
+		})
 	}
 }
 
@@ -182,11 +226,13 @@ pub struct BlobResponse {
 
 /// Structure for the notification a validator sends after receiving a blob
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
-pub struct BlobStored {
+pub struct BlobStored<Block: BlockT> {
 	/// The hash of the blob.
 	pub hash: BlobHash,
 	/// The ownership entry for this validator
 	pub ownership_entry: OwnershipEntry,
+	/// The finalized block hash for other nodes reference
+	pub finalized_block_hash: Block::Hash,
 }
 
 /// Structure for the signature that validator sends when sending notification / requests
@@ -244,7 +290,14 @@ impl BlobTxSummary {
 				let ownership: Vec<(AccountId32, AuthorityId, String, Vec<u8>)> = summary
 					.ownership
 					.into_iter()
-					.map(|entry| (entry.address, entry.babe_key, entry.encoded_peer_id, entry.signature))
+					.map(|entry| {
+						(
+							entry.address,
+							entry.babe_key,
+							entry.encoded_peer_id,
+							entry.signature,
+						)
+					})
 					.collect();
 				(
 					summary.hash,
@@ -277,7 +330,7 @@ pub struct BlobQueryResponse {
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
 pub enum BlobNotification<Block: BlockT> {
 	BlobReceived(BlobReceived<Block>),
-	BlobStored(BlobStored),
+	BlobStored(BlobStored<Block>),
 }
 
 /// Enum for different types of requests.

@@ -320,7 +320,7 @@ async fn handle_blob_received_notification<Block>(
 		};
 		ownerships_to_record.push(ownership.clone());
 
-		send_blob_stored_notification(blob_received.hash, &blob_handle, ownership).await;
+		send_blob_stored_notification(blob_received.hash, &blob_handle, ownership, announced_finalized_hash).await;
 	}
 
 	if let Err(e) = blob_handle.blob_store.insert_blob_metadata(&blob_meta) {
@@ -573,6 +573,7 @@ pub async fn send_blob_stored_notification<Block>(
 	blob_hash: BlobHash,
 	blob_handle: &BlobHandle<Block>,
 	ownership_entry: OwnershipEntry,
+	finalized_block_hash: Block::Hash,
 ) where
 	Block: BlockT,
 {
@@ -585,6 +586,7 @@ pub async fn send_blob_stored_notification<Block>(
 	let blob_stored = BlobStored {
 		hash: blob_hash,
 		ownership_entry,
+		finalized_block_hash,
 	};
 
 	let Some(gossip_cmd_sender) = blob_handle.gossip_cmd_sender.get() else {
@@ -606,7 +608,7 @@ pub async fn send_blob_stored_notification<Block>(
 }
 
 async fn handle_blob_stored_notification<Block>(
-	blob_stored: BlobStored,
+	blob_stored: BlobStored<Block>,
 	blob_handle: &BlobHandle<Block>,
 ) where
 	Block: BlockT,
@@ -628,17 +630,7 @@ async fn handle_blob_stored_notification<Block>(
 		return;
 	};
 
-	let Some(blob_meta) = blob_handle
-		.blob_store
-		.get_blob_metadata(&blob_stored.hash)
-		.ok()
-		.flatten()
-	else {
-		log::error!("Could not get blob metadata from store");
-		return;
-	};
-
-	let finalized_hash = blob_meta.finalized_block_hash;
+	let finalized_hash = blob_stored.finalized_block_hash;
 	let Some((address, _)) = get_validator_id_from_key(&blob_stored.ownership_entry.babe_key, client, &finalized_hash.encode()) else {
 		log::error!("Could not find address associated to babe key");
 		return;

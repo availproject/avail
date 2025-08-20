@@ -19,9 +19,10 @@ use sc_network::{
 use sc_network_gossip::GossipEngine;
 use sc_network_sync::SyncingService;
 use sc_service::SpawnTaskHandle;
-use sp_runtime::traits::Block as BlockT;
-use sp_runtime::traits::Header;
-use sp_runtime::SaturatedConversion;
+use sp_runtime::{
+	traits::{Block as BlockT, Hash as HashT, Header as HeaderT},
+	SaturatedConversion,
+};
 
 #[derive(Clone)]
 pub struct BlobHandle<Block>
@@ -165,7 +166,7 @@ where
 			.sync_service
 			.get()
 			.expect("Syncing service should be registered");
-		let validator: Arc<BlobGossipValidator> = Arc::new(BlobGossipValidator);
+		let validator: Arc<BlobGossipValidator> = Arc::new(BlobGossipValidator::default());
 
 		let mut gossip_engine = GossipEngine::<Block>::new(
 			network.clone(),
@@ -176,7 +177,7 @@ where
 			None,
 		);
 
-		let topic = Block::Hash::default();
+		let topic = <<Block::Header as HeaderT>::Hashing as HashT>::hash("blob_topic".as_bytes());
 		let incoming_receiver = gossip_engine.messages_for(topic);
 
 		let (gossip_cmd_sender, gossip_cmd_receiver) =

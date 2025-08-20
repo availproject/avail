@@ -20,6 +20,7 @@ rand_chacha = { workspace = true }
 rand = { workspace = true }
 rayon = { workspace = true }
 codec = { package = "parity-scale-codec", version = "3", default-features = false }
+parking_lot = { workspace = true }
 scale-info = { workspace = true, default-features = false }
 serde = { workspace = true, default-features = false }
 frame-benchmarking = { workspace = true, default-features = false }

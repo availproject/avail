@@ -982,6 +982,7 @@ dependencies = [
  "log",
  "once_cell",
  "parity-scale-codec",
+ "parking_lot 0.12.3",
  "rand",
  "rand_chacha 0.3.1",
  "rayon",
