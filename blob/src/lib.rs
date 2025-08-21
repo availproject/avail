@@ -95,6 +95,11 @@ where
 			BlobNotification::BlobStored(blob_stored) => {
 				handle_blob_stored_notification(blob_stored, &blob_handle).await;
 			},
+			BlobNotification::ClearBlob => {
+				let _ = blob_handle.blob_store.clear_blob_storage();
+				let _ = blob_handle.blob_data_store.clear_blob_storage();
+				log::info!(target: LOG_TARGET, "Everything was deleted from storage");
+			},
 		},
 		Err(err) => {
 			log::error!(
@@ -200,9 +205,11 @@ async fn handle_blob_received_notification<Block>(
 	// Check signatures in case blob ownership is filled
 	let mut ownerships_to_record: Vec<OwnershipEntry> = Vec::new();
 	if let Some(ownership) = blob_received.ownership {
-		let Some((expected_address, _)) =
-			get_validator_id_from_key(&ownership.babe_key, client, &announced_finalized_hash.encode())
-		else {
+		let Some((expected_address, _)) = get_validator_id_from_key(
+			&ownership.babe_key,
+			client,
+			&announced_finalized_hash.encode(),
+		) else {
 			log::error!("Could not get expected address from signer");
 			return;
 		};
@@ -320,7 +327,13 @@ async fn handle_blob_received_notification<Block>(
 		};
 		ownerships_to_record.push(ownership.clone());
 
-		send_blob_stored_notification(blob_received.hash, &blob_handle, ownership, announced_finalized_hash).await;
+		send_blob_stored_notification(
+			blob_received.hash,
+			&blob_handle,
+			ownership,
+			announced_finalized_hash,
+		)
+		.await;
 	}
 
 	if let Err(e) = blob_handle.blob_store.insert_blob_metadata(&blob_meta) {
@@ -631,11 +644,18 @@ async fn handle_blob_stored_notification<Block>(
 	};
 
 	let finalized_hash = blob_stored.finalized_block_hash;
-	let Some((address, _)) = get_validator_id_from_key(&blob_stored.ownership_entry.babe_key, client, &finalized_hash.encode()) else {
+	let Some((address, _)) = get_validator_id_from_key(
+		&blob_stored.ownership_entry.babe_key,
+		client,
+		&finalized_hash.encode(),
+	) else {
 		log::error!("Could not find address associated to babe key");
 		return;
 	};
-	let expected_payload = build_signature_payload(blob_stored.hash, [address.encode(), b"stored".to_vec()].concat());
+	let expected_payload = build_signature_payload(
+		blob_stored.hash,
+		[address.encode(), b"stored".to_vec()].concat(),
+	);
 	match verify_signed_blob_data(
 		BlobSignatureData {
 			signer: blob_stored.ownership_entry.babe_key.encode(),

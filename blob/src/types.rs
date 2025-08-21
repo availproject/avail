@@ -331,6 +331,7 @@ pub struct BlobQueryResponse {
 pub enum BlobNotification<Block: BlockT> {
 	BlobReceived(BlobReceived<Block>),
 	BlobStored(BlobStored<Block>),
+	ClearBlob,
 }
 
 /// Enum for different types of requests.
