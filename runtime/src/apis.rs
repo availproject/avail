@@ -31,7 +31,9 @@ use sp_consensus_grandpa::AuthorityId as GrandpaId;
 use sp_core::{crypto::KeyTypeId, H256, U256};
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
-	traits::{Block as BlockT, Extrinsic as ExtrinsicT, NumberFor}, transaction_validity::{TransactionSource, TransactionValidity}, AccountId32, ApplyExtrinsicResult
+	traits::{Block as BlockT, Extrinsic as ExtrinsicT, NumberFor},
+	transaction_validity::{TransactionSource, TransactionValidity},
+	AccountId32, ApplyExtrinsicResult,
 };
 use sp_std::{borrow::Cow, vec::Vec};
 use sp_version::RuntimeVersion;
@@ -78,6 +80,9 @@ decl_runtime_apis! {
 
 		/// Return the ACTIVE validators for the current session (AccountIds).
 		fn get_active_validators() -> Vec<AccountId>;
+
+		/// Return blob runtime parameters.
+		fn get_blob_runtime_parameters() -> da_control::BlobRuntimeParameters;
 	}
 }
 
@@ -472,6 +477,10 @@ impl_runtime_apis! {
 
 		fn get_active_validators() -> Vec<AccountId> {
 			pallet_session::Pallet::<Runtime>::validators()
+		}
+
+		fn get_blob_runtime_parameters() -> da_control::BlobRuntimeParameters {
+			da_control::Pallet::<Runtime>::blob_runtime_parameters()
 		}
 	}
 

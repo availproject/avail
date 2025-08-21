@@ -71,6 +71,26 @@ pub mod pallet {
 		pub ownership: Vec<(AccountId32, AuthorityId, String, Vec<u8>)>,
 	}
 
+	/// Structure for blob runtime parameters
+	#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, MaxEncodedLen, TypeInfo)]
+	pub struct BlobRuntimeParameters {
+		/// Maximum size of a blob, need to change the rpc request and response size to handle this // TODO Blob handle size change based on max blob response size
+		pub max_blob_size: u64,
+		/// Minimum amount of validator that needs to store a blob, if we have less than minimum, everyone stores it.
+		pub min_blob_holder_percentage: Perbill,
+		/// We take the maximum between this and MIN_BLOB_HOLDER_PERCENTAGE
+		pub min_blob_holder_count: u32,
+	}
+	impl Default for BlobRuntimeParameters {
+		fn default() -> Self {
+			Self {
+				max_blob_size: 32 * 1024 * 1024,
+				min_blob_holder_percentage: Perbill::from_percent(10),
+				min_blob_holder_count: 2,
+			}
+		}
+	}
+
 	/// Default implementations of [`DefaultConfig`], which can be used to implement [`Config`].
 	pub mod config_preludes {
 		use super::*;
@@ -162,6 +182,10 @@ pub mod pallet {
 	/// Store data fee modifier for submit_data call.
 	#[pallet::storage]
 	pub type SubmitDataFeeModifier<T: Config> = StorageValue<_, DispatchFeeModifier, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn blob_runtime_parameters)]
+	pub type BlobRuntimeParams<T: Config> = StorageValue<_, BlobRuntimeParameters, ValueQuery>;
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
@@ -348,6 +372,36 @@ pub mod pallet {
 			ensure_none(origin)?;
 			Ok(())
 		}
+
+		#[pallet::call_index(7)]
+		#[pallet::weight(T::WeightInfo::set_submit_data_fee_modifier())]
+		pub fn set_blob_runtime_parameters(
+			origin: OriginFor<T>,
+			max_blob_size: Option<u64>,
+			min_blob_holder_percentage: Option<Perbill>,
+			min_blob_holder_count: Option<u32>,
+		) -> DispatchResultWithPostInfo {
+			ensure_signed(origin)?;
+
+			BlobRuntimeParams::<T>::mutate(|params| {
+				if let Some(v) = max_blob_size {
+					params.max_blob_size = v;
+				}
+				if let Some(v) = min_blob_holder_percentage {
+					params.min_blob_holder_percentage = v;
+				}
+				if let Some(v) = min_blob_holder_count {
+					params.min_blob_holder_count = v;
+				}
+			});
+
+			let updated = BlobRuntimeParams::<T>::get();
+			Self::deposit_event(Event::SubmitBlobRuntimeParametersSet {
+				new_params: updated,
+			});
+
+			Ok(().into())
+		}
 	}
 
 	/// Event for the pallet.
@@ -378,6 +432,9 @@ pub mod pallet {
 		SubmitBlobMetadataRequest {
 			who: T::AccountId,
 			blob_hash: H256,
+		},
+		SubmitBlobRuntimeParametersSet {
+			new_params: BlobRuntimeParameters,
 		},
 	}
 

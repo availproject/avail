@@ -2,12 +2,11 @@ use crate::{
 	p2p::BlobHandle,
 	store::{BlobStore, RocksdbBlobStore},
 	types::{BlobHash, BlobMetadata, BlobSignatureData, BlobTxSummary, OwnershipEntry},
-	MAX_BLOB_RETRY_BEFORE_DISCARDING, MAX_TRANSACTION_VALIDITY, MIN_BLOB_HOLDER_COUNT,
-	MIN_BLOB_HOLDER_PERCENTAGE, MIN_TRANSACTION_VALIDITY,
+	MAX_BLOB_RETRY_BEFORE_DISCARDING, MAX_TRANSACTION_VALIDITY, MIN_TRANSACTION_VALIDITY,
 };
 use anyhow::{anyhow, Context, Result};
 use codec::{Decode, Encode};
-use da_control::Call;
+use da_control::{BlobRuntimeParameters, Call};
 use da_runtime::{apis::BlobApi, RuntimeCall, UncheckedExtrinsic};
 use sc_client_api::HeaderBackend;
 use sc_keystore::{Keystore, LocalKeystore};
@@ -99,12 +98,38 @@ where
 }
 
 /// Get the number of validator that need to store a blob.
-pub fn get_validator_per_blob(nb_validators: u32) -> u32 {
-	if nb_validators <= MIN_BLOB_HOLDER_COUNT {
+pub fn get_validator_per_blob<Block, Client>(
+	client: &Arc<Client>,
+	at: &[u8],
+	nb_validators: u32,
+) -> u32
+where
+	Block: BlockT,
+	Client: ProvideRuntimeApi<Block>,
+	Client::Api: BlobApi<Block>,
+{
+	let Some(at) = Block::Hash::decode(&mut &*at).ok() else {
+		log::error!("Could not convert bytes to 'at' hash");
+		return nb_validators;
+	};
+	let blob_params = match client.runtime_api().get_blob_runtime_parameters(at) {
+		Ok(p) => p,
+		Err(e) => {
+			log::error!("Could get blob runtime params: {e:?}");
+			return nb_validators;
+		},
+	};
+	get_validator_per_blob_inner(blob_params, nb_validators)
+}
+
+pub fn get_validator_per_blob_inner(blob_params: BlobRuntimeParameters, nb_validators: u32) -> u32 {
+	if nb_validators <= blob_params.min_blob_holder_count {
 		return nb_validators;
 	} else {
-		let percentage = MIN_BLOB_HOLDER_PERCENTAGE.mul_ceil(nb_validators);
-		return percentage.max(MIN_BLOB_HOLDER_COUNT);
+		let percentage = blob_params
+			.min_blob_holder_percentage
+			.mul_ceil(nb_validators);
+		return percentage.max(blob_params.min_blob_holder_count);
 	}
 }
 

@@ -19,7 +19,7 @@ use sc_network::{
 	IfDisconnected, NetworkPeers, NetworkRequest, NetworkService, NetworkStateInfo, ObservedRole,
 	PeerId,
 };
-use sp_runtime::{traits::Block as BlockT, Perbill, SaturatedConversion};
+use sp_runtime::{traits::Block as BlockT, SaturatedConversion};
 use std::{str::FromStr, sync::Arc, time::Duration};
 use store::{BlobStore, RocksdbBlobStore};
 
@@ -44,12 +44,6 @@ const REQUEST_TIME_OUT: Duration = Duration::from_secs(30);
 const CONCURRENT_REQUESTS: usize = 256;
 
 // Business logic
-/// Maximum size of a blob, need to change the rpc request and response size to handle this
-const MAX_BLOB_SIZE: u64 = 32 * 1024 * 1024;
-/// Minimum amount of validator that needs to store a blob, if we have less than minimum, everyone stores it.
-const MIN_BLOB_HOLDER_PERCENTAGE: Perbill = Perbill::from_percent(10);
-/// We take the maximum between this and MIN_BLOB_HOLDER_PERCENTAGE
-const MIN_BLOB_HOLDER_COUNT: u32 = 2;
 /// Amount of block for which we need to store the blob metadata and blob.
 const BLOB_TTL: u64 = 120_960; // 28 days
 /// Amount of block for which we need to store the blob metadata if the blob is not notified yet.
@@ -164,7 +158,11 @@ async fn handle_blob_received_notification<Block>(
 	}
 
 	let validators = get_active_validators(&client, &announced_finalized_hash.encode());
-	let nb_validators_per_blob = get_validator_per_blob(validators.len() as u32);
+	let nb_validators_per_blob = get_validator_per_blob(
+		&client,
+		&announced_finalized_hash.encode(),
+		validators.len() as u32,
+	);
 
 	let maybe_metadata = match blob_handle
 		.blob_store

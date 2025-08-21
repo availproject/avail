@@ -5,10 +5,10 @@ use crate::{
 	types::{Blob, BlobMetadata, BlobNotification, BlobReceived, Deps, OwnershipEntry},
 	utils::{
 		build_signature_payload, check_store_blob, generate_base_index, get_active_validators,
-		get_my_validator_id, get_validator_per_blob, sign_blob_data_inner,
+		get_my_validator_id, get_validator_per_blob_inner,
+		sign_blob_data_inner,
 	},
-	BLOB_TTL, MAX_BLOB_SIZE, MAX_RPC_RETRIES, MAX_TRANSACTION_VALIDITY, MIN_TRANSACTION_VALIDITY,
-	TEMP_BLOB_TTL,
+	BLOB_TTL, MAX_RPC_RETRIES, MAX_TRANSACTION_VALIDITY, MIN_TRANSACTION_VALIDITY, TEMP_BLOB_TTL,
 };
 use anyhow::{anyhow, Result};
 use codec::{Decode, Encode};
@@ -118,11 +118,28 @@ where
 		if blob.0.is_empty() {
 			return Err(internal_err!("blob cannot be empty"));
 		}
-		if blob.0.len() as u64 > MAX_BLOB_SIZE {
-			return Err(internal_err!("blob is too big"));
-		}
 		if metadata_signed_transaction.0.is_empty() {
 			return Err(internal_err!("metadata tx cannot be empty"));
+		}
+
+		// Get client info
+		let client_info = self.client.info();
+		let best_hash = client_info.best_hash;
+		let finalized_block_number = client_info.finalized_number.saturated_into::<u64>();
+		let finalized_block_hash = client_info.finalized_hash;
+
+		let blob_params = match self
+			.client
+			.runtime_api()
+			.get_blob_runtime_parameters(finalized_block_hash)
+		{
+			Ok(p) => p,
+			Err(e) => {
+				return Err(internal_err!("Could not get blob_params: {e:?}"));
+			},
+		};
+		if blob.0.len() as u64 > blob_params.max_blob_size {
+			return Err(internal_err!("blob is too big"));
 		}
 
 		// Decode to concrete call to read the metadata, Check hash, commitment, ... of the blob compared to the submitted metadata ----------------
@@ -177,8 +194,7 @@ where
 		};
 
 		// Check tx validity
-		let client_info = self.client.info();
-		let best_hash = client_info.best_hash;
+
 		let pre_validate_fut = async {
 			// --- a. Decode the opaque extrinsic ---------------------------------
 			let opaque_tx: Block::Extrinsic =
@@ -244,10 +260,6 @@ where
 			};
 			let my_peer_id_base58 = net.local_peer_id().to_base58();
 
-			// Get client info
-			let finalized_block_number = client_info.finalized_number.saturated_into::<u64>();
-			let finalized_block_hash = client_info.finalized_hash;
-
 			// Setup blob metadata and blob and check first in case we already received this exact blob before
 			let maybe_blob_metadata = match blob_handle.blob_store.get_blob_metadata(&blob_hash) {
 				Ok(m) => m,
@@ -277,7 +289,8 @@ where
 			if validators.is_empty() {
 				return;
 			}
-			let nb_validators_per_blob = get_validator_per_blob(validators.len() as u32);
+			let nb_validators_per_blob =
+				get_validator_per_blob_inner(blob_params, validators.len() as u32);
 			blob_metadata.is_notified = true;
 			blob_metadata.expires_at = finalized_block_number.saturating_add(TEMP_BLOB_TTL);
 			blob_metadata.finalized_block_hash = finalized_block_hash;
@@ -501,8 +514,7 @@ where
 	async fn clear_blob_storage(&self) -> RpcResult<()> {
 		let _ = self.blob_handle.blob_store.clear_blob_storage();
 		let _ = self.blob_handle.blob_data_store.clear_blob_storage();
-		let clear_blob_notification: BlobNotification<Block> =
-			BlobNotification::ClearBlob;
+		let clear_blob_notification: BlobNotification<Block> = BlobNotification::ClearBlob;
 
 		let Some(gossip_cmd_sender) = self.blob_handle.gossip_cmd_sender.get() else {
 			return Err(internal_err!("gossip_cmd_sender was not initialized"));
