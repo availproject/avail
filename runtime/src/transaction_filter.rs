@@ -83,8 +83,9 @@ impl HeaderExtensionDataFilter for Runtime {
 			if let Ok(unchecked_extrinsic) = UncheckedExtrinsic::try_from(opaques[len - 2].clone())
 			{
 				if let Call::DataAvailability(DACall::submit_blob_txs_summary {
-					blob_txs_summary,
 					total_blob_size: _,
+					nb_blobs: _,
+					blob_txs_summary,
 				}) = &unchecked_extrinsic.function
 				{
 					let failed_tx_da: Vec<u32> = blob_txs_summary

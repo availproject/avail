@@ -366,8 +366,9 @@ pub mod pallet {
 		))]
 		pub fn submit_blob_txs_summary(
 			origin: OriginFor<T>,
-			_blob_txs_summary: Vec<BlobTxSummaryRuntime>,
 			_total_blob_size: u64,
+			_nb_blobs: u32,
+			_blob_txs_summary: Vec<BlobTxSummaryRuntime>,
 		) -> DispatchResult {
 			ensure_none(origin)?;
 			Ok(())

@@ -7,7 +7,7 @@ use sp_std::iter::repeat;
 pub async fn run() -> Result<(), ClientError> {
 	println!("---------- START Submission ---------- ");
 	let len = 32 * 1024 * 1024;
-	let mode = 3;
+	let mode = 1;
 
 	let local_endpoint: &str = if mode == 1 {
 		"http://127.0.0.1:9944"

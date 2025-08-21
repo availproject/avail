@@ -33,7 +33,7 @@ use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
 	traits::{Block as BlockT, Extrinsic as ExtrinsicT, NumberFor},
 	transaction_validity::{TransactionSource, TransactionValidity},
-	AccountId32, ApplyExtrinsicResult,
+	AccountId32, ApplyExtrinsicResult, SaturatedConversion,
 };
 use sp_std::{borrow::Cow, vec::Vec};
 use sp_version::RuntimeVersion;
@@ -452,7 +452,7 @@ impl_runtime_apis! {
 			};
 
 
-			matches!(da_pallet_call, da_control::Call::submit_blob_txs_summary {blob_txs_summary: _, total_blob_size: _})
+			matches!(da_pallet_call, da_control::Call::submit_blob_txs_summary { total_blob_size: _, nb_blobs: _, blob_txs_summary: _})
 		}
 	}
 
@@ -552,7 +552,7 @@ impl_runtime_apis! {
 				.collect();
 
 			let blob_txs_summary = da_control::BlobTxSummaryRuntime::convert_into(blob_txs_summary);
-			let da_inherent_call: da_control::Call<Runtime> = da_control::Call::submit_blob_txs_summary { blob_txs_summary, total_blob_size };
+			let da_inherent_call: da_control::Call<Runtime> = da_control::Call::submit_blob_txs_summary { total_blob_size, nb_blobs:blob_txs_summary.len().saturated_into(),  blob_txs_summary };
 			if let Some(da_inherent_extrinsic) = <Block as BlockT>::Extrinsic::new(da_inherent_call.into(), None) {
 				post_inherent_extrinsics.insert(0, da_inherent_extrinsic);
 			};
