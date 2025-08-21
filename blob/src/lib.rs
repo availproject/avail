@@ -6,8 +6,9 @@ use crate::{
 		BlobStored, OwnershipEntry, BLOB_REQ_PROTO,
 	},
 	utils::{
-		build_signature_payload, check_store_blob, get_active_validators, get_my_validator_id,
-		get_validator_id_from_key, get_validator_per_blob, sign_blob_data, verify_signed_blob_data,
+		build_signature_payload, check_store_blob, generate_base_index, get_active_validators,
+		get_my_validator_id, get_validator_id_from_key, get_validator_per_blob, sign_blob_data,
+		verify_signed_blob_data,
 	},
 };
 use anyhow::{anyhow, Result};
@@ -294,8 +295,41 @@ async fn handle_blob_received_notification<Block>(
 		};
 
 		if existing_ownership.is_none() {
-			let Some(blob_response) =
-				send_blob_request(blob_received.hash, blob_handle, network, original_peer_id).await
+			// Get maybe already existing ownership so we can target those validators instead of the busy rpc
+			let mut stored_ownerships = blob_handle
+				.blob_store
+				.get_blob_ownerships(&blob_received.hash)
+				.unwrap_or(Vec::new());
+			stored_ownerships.extend(ownerships_to_record.clone());
+			
+			let target_peer_id = if !stored_ownerships.is_empty() {
+				let base_index = generate_base_index(
+					blob_received.hash,
+					&announced_finalized_hash.encode(),
+					stored_ownerships.len(),
+					Some(my_validator_id.encode()),
+				)
+				.unwrap_or(0);
+
+				match stored_ownerships.get(base_index) {
+					Some(o) => {
+						let peer = PeerId::from_str(&o.encoded_peer_id).unwrap_or(original_peer_id);
+						peer
+					},
+					None => original_peer_id,
+				}
+			} else {
+				original_peer_id
+			};
+
+			let Some(blob_response) = send_blob_request(
+				blob_received.hash,
+				blob_handle,
+				network,
+				target_peer_id,
+				original_peer_id,
+			)
+			.await
 			else {
 				log::error!(
 					target: LOG_TARGET,
@@ -367,6 +401,7 @@ async fn send_blob_request<Block>(
 	blob_hash: BlobHash,
 	blob_handle: &BlobHandle<Block>,
 	network: &Arc<NetworkService<Block, Block::Hash>>,
+	target_peer_id: PeerId,
 	original_peer_id: PeerId,
 ) -> Option<BlobResponse>
 where
@@ -393,9 +428,14 @@ where
 	});
 
 	for attempt in 0..MAX_REQUEST_RETRIES {
+		let target_peer = if attempt == 0 {
+			target_peer_id
+		} else {
+			original_peer_id
+		};
 		let response = network
 			.request(
-				original_peer_id,
+				target_peer,
 				BLOB_REQ_PROTO,
 				blob_request.encode(),
 				None,
