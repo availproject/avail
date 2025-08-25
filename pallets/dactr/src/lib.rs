@@ -84,7 +84,7 @@ pub mod pallet {
 	impl Default for BlobRuntimeParameters {
 		fn default() -> Self {
 			Self {
-				max_blob_size: 32 * 1024 * 1024,
+				max_blob_size: 64 * 1024 * 1024,
 				min_blob_holder_percentage: Perbill::from_percent(10),
 				min_blob_holder_count: 2,
 			}

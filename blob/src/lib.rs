@@ -38,7 +38,7 @@ const NOTIFICATION_MAX_SIZE: u64 = 2 * 1024 * 1024;
 /// Maximum request size
 const REQUEST_MAX_SIZE: u64 = 128 * 1024;
 /// Maximum response size
-const RESPONSE_MAX_SIZE: u64 = 64 * 1024 * 1024;
+const RESPONSE_MAX_SIZE: u64 = 65 * 1024 * 1024;
 /// Maximum request time
 const REQUEST_TIME_OUT: Duration = Duration::from_secs(30);
 /// The maximum number of allowed parallel request processing or notification processing

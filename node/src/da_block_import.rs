@@ -30,7 +30,7 @@ use sp_blockchain::HeaderBackend;
 use sp_consensus::{BlockOrigin, Error as ConsensusError};
 use sp_core::H256;
 use sp_runtime::traits::Block as BlockT;
-use std::{marker::PhantomData, sync::Arc};
+use std::{marker::PhantomData, sync::Arc, time::Instant};
 
 type RTExtractor = <Runtime as frame_system::Config>::HeaderExtensionDataFilter;
 
@@ -225,21 +225,37 @@ fn build_extension_with_comms(
 	block_number: u32,
 	version: HeaderVersion,
 ) -> Result<HeaderExtension, ConsensusError> {
+	let timer_total = Instant::now();
+	let timer_app_ext = Instant::now();
 	let app_extrinsics = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(
 		block_number,
 		&extrinsics,
 	)
 	.data_submissions;
+	log::info!(
+		"⏱️ Extracting app extrinsics took {:?}",
+		timer_app_ext.elapsed()
+	);
 
 	// Blocks with non-DA extrinsics will have empty commitments
 	if app_extrinsics.is_empty() {
+		log::info!(
+			"✅ No DA extrinsics, returning empty header. Total time: {:?}",
+			timer_total.elapsed()
+		);
 		return Ok(HeaderExtension::get_empty_header(data_root, version));
 	}
 
 	let max_columns = block_length.cols.0 as usize;
 	if max_columns == 0 {
+		log::info!(
+			"⚠️ Max columns = 0, returning empty header. Total time: {:?}",
+			timer_total.elapsed()
+		);
 		return Ok(HeaderExtension::get_empty_header(data_root, version));
 	}
+
+	let timer_commitment_prep = Instant::now();
 	let total_commitments_len: usize = app_extrinsics
 		.iter()
 		.map(|da_call| da_call.commitments.len())
@@ -257,9 +273,17 @@ fn build_extension_with_comms(
 		// Update app_rows
 		app_rows.push((da_call.id, rows_taken));
 	}
+	log::info!(
+		"⏱️ Collecting commitments + app_rows took {:?}",
+		timer_commitment_prep.elapsed()
+	);
 
+	let timer_lookup = Instant::now();
 	let app_lookup = DataLookup::from_id_and_len_iter(app_rows.clone().into_iter())
 		.map_err(|_| data_lookup_failed())?;
+	log::info!("⏱️ Building DataLookup took {:?}", timer_lookup.elapsed());
+
+	let timer_padding = Instant::now();
 	let original_rows = app_lookup.len();
 	let padded_rows = original_rows.next_power_of_two();
 	if padded_rows > original_rows {
@@ -275,12 +299,22 @@ fn build_extension_with_comms(
 			)
 			.collect();
 	}
+	log::info!("⏱️ Padding commitments took {:?}", timer_padding.elapsed());
+
+	let timer_kate = Instant::now();
 	let commitment = kc::v3::KateCommitment::new(
 		padded_rows.try_into().unwrap_or_default(),
 		max_columns.try_into().unwrap_or_default(),
 		data_root,
 		commitment,
 	);
+	log::info!("⏱️ Building KateCommitment took {:?}", timer_kate.elapsed());
+
+	log::info!(
+		"✅ Finished build_extension_with_comms in {:?}",
+		timer_total.elapsed()
+	);
+
 	Ok(he::v4::HeaderExtension {
 		app_lookup,
 		commitment,
