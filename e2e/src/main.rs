@@ -104,7 +104,7 @@ mod tests {
 		permit
 	}
 
-	/// Global Concurency controller.
+	/// Global Concurrency controller.
 	fn concurrent_controller() -> Arc<Semaphore> {
 		static CTC: OnceLock<Arc<Semaphore>> = OnceLock::new();
 		Arc::clone(CTC.get_or_init(|| Arc::new(Semaphore::const_new(MAX_PERMITS))))
