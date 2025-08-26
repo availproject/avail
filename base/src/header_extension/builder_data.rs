@@ -231,7 +231,7 @@ where
 {
 	let leaves = leaf_iter.collect::<Vec<_>>();
 	let mp = merkle_proof::<Keccak256, _, T>(leaves, leaf_idx);
-	// NOTE: As we are using refrences for the leaves, like `&'a [u8]`, we need to
+	// NOTE: As we are using references for the leaves, like `&'a [u8]`, we need to
 	// convert them to `Vec<u8>`.
 	MerkleProof {
 		root: mp.root,

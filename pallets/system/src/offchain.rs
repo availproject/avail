@@ -22,7 +22,7 @@
 //! This module provides transaction related helpers to:
 //! - Submit a raw unsigned transaction
 //! - Submit an unsigned transaction with a signed payload
-//! - Submit a signed transction.
+//! - Submit a signed transaction.
 //!
 //! ## Usage
 //!
