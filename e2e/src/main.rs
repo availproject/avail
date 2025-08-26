@@ -80,7 +80,7 @@ mod tests {
 		let ctc = concurrent_controller();
 		let available_permits = ctc.available_permits();
 		let permit = ctc.clone().acquire_owned().await.unwrap();
-		trace!(target: "CTC", "Acquired single permit on `{name}`, it was {available_permits} availabled permits");
+		trace!(target: "CTC", "Acquired single permit on `{name}`, it was {available_permits} available permits");
 		permit
 	}
 
