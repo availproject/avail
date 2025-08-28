@@ -26,7 +26,7 @@ pub type Header = avail_core::header::Header<BlockNumber, BlakeTwo256>;
 pub type Signature = sp_runtime::testing::sr25519::Signature;
 pub type TestXt = test_xt::TestXt<RuntimeCall, SignedExtra>;
 pub type UncheckedExtrinsic = TestXt;
-type Block = frame_system::mocking::MockDaBlock<Test>;
+type Block = frame_system::mocking::MockDaBlock<Runtime>;
 pub type SignedExtra = (
 	CheckEra<Runtime>,
 	CheckNonce<Runtime>,
