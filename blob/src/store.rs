@@ -67,7 +67,7 @@ pub struct RocksdbBlobStore<Block: BlockT> {
 impl<Block: BlockT> RocksdbBlobStore<Block> {
 	/// Open (or create) a new DB at `path`, with a single column.
 	pub fn open(path: impl AsRef<Path>) -> Result<Self> {
-		let num_columns = 4;
+		let num_columns = 5;
 		let db_config = DatabaseConfig::with_columns(num_columns);
 		let db = Database::open(&db_config, path.as_ref())?;
 		Ok(RocksdbBlobStore::<Block> {
