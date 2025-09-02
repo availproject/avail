@@ -16,11 +16,13 @@ const COL_BLOB_METADATA: u32 = 0;
 const COL_BLOB_RETRY: u32 = 1;
 const COL_BLOB: u32 = 2;
 const COL_BLOB_OWNERSHIP: u32 = 3;
+const COL_BLOB_OWNERSHIP_EXPIRY: u32 = 4;
 
 pub trait BlobStore<Block: BlockT>: Send + Sync + 'static {
 	// Blob metadata
 	fn insert_blob_metadata(&self, blob_metadata: &BlobMetadata<Block>) -> Result<()>;
 	fn get_blob_metadata(&self, hash: &BlobHash) -> Result<Option<BlobMetadata<Block>>>;
+	fn blob_metadata_exists(&self, hash: &BlobHash) -> Result<bool>;
 
 	// Blobs
 	fn insert_blob(&self, blob: &Blob) -> Result<()>;
@@ -39,9 +41,15 @@ pub trait BlobStore<Block: BlockT>: Send + Sync + 'static {
 	fn insert_blob_retry(&self, hash: &BlobHash, count: u16) -> Result<()>;
 	fn get_blob_retry(&self, hash: &BlobHash) -> Result<u16>;
 
+	// Blob ownership expiry -> In case an ownership is recorded without ever seeing the metadata
+	fn insert_blob_ownership_expiry(&self, hash: &BlobHash, expires_at: u64) -> Result<()>;
+	fn get_blob_ownership_expiry(&self, hash: &BlobHash) -> Result<Option<u64>>;
+	fn remove_blob_ownership_expiry(&self, hash: &BlobHash) -> Result<()>;
+
 	// Cleaning
 	fn clean_blobs_info(&self, hashes: &Vec<BlobHash>) -> Result<()>;
-	fn clean_expired_blobs_info(&self, current_block: u64) -> Result<Vec<BlobHash>>;
+	fn clean_expired_ownerships_without_metadata(&self, hashes: &Vec<BlobHash>) -> Result<()>;
+	fn clean_expired_blobs_info(&self, current_block: u64) -> Result<(Vec<BlobHash>, Vec<BlobHash>)>;
 
 	// Testing stuff
 	fn log_all_entries(&self) -> Result<()>;
@@ -82,6 +90,11 @@ impl<Block: BlockT> RocksdbBlobStore<Block> {
 
 	/// Blob ownership key prefix
 	fn blob_ownership_key_prefix(hash: &BlobHash) -> Vec<u8> {
+		hash.0.to_vec()
+	}
+
+	/// Blob ownership expiry key prefix
+	fn blob_ownership_expiry_key(hash: &BlobHash) -> Vec<u8> {
 		hash.0.to_vec()
 	}
 
@@ -136,6 +149,10 @@ impl<Block: BlockT> BlobStore<Block> for RocksdbBlobStore<Block> {
 					.map_err(|_| anyhow!("failed to decode blob metadata from the store"))
 			})
 			.transpose()
+	}
+
+	fn blob_metadata_exists(&self, hash: &BlobHash) -> Result<bool> {
+		Ok(self.db.get(COL_BLOB_METADATA, &Self::blob_meta_key(hash))?.is_some())
 	}
 
 	fn insert_blob_retry(&self, hash: &BlobHash, count: u16) -> Result<()> {
@@ -215,6 +232,44 @@ impl<Block: BlockT> BlobStore<Block> for RocksdbBlobStore<Block> {
 		Ok(out)
 	}
 
+	fn insert_blob_ownership_expiry(&self, hash: &BlobHash, expires_at: u64) -> Result<()> {
+		let mut tx = DBTransaction::new();
+		tx.put(
+			COL_BLOB_OWNERSHIP_EXPIRY,
+			&Self::blob_ownership_expiry_key(hash),
+			&expires_at.encode(),
+		);
+		self.db.write(tx)?;
+		Ok(())
+	}
+
+	fn get_blob_ownership_expiry(&self, hash: &BlobHash) -> Result<Option<u64>> {
+		self.db
+			.get(
+				COL_BLOB_OWNERSHIP_EXPIRY,
+				&Self::blob_ownership_expiry_key(hash),
+			)?
+			.map(|bytes| {
+				let mut slice = bytes.as_slice();
+				u64::decode(&mut slice).map_err(|_| {
+					anyhow!("failed to decode blob ownership expiry value from the store")
+				})
+			})
+			.transpose()
+	}
+
+	fn remove_blob_ownership_expiry(&self, hash: &BlobHash) -> Result<()> {
+		let mut tx = DBTransaction::new();
+
+		tx.delete(
+			COL_BLOB_OWNERSHIP_EXPIRY,
+			&Self::blob_ownership_expiry_key(hash),
+		);
+		
+		self.db.write(tx)?;
+		Ok(())
+	}
+
 	fn clean_blobs_info(&self, hashes: &Vec<BlobHash>) -> Result<()> {
 		let mut tx = DBTransaction::new();
 
@@ -230,13 +285,37 @@ impl<Block: BlockT> BlobStore<Block> for RocksdbBlobStore<Block> {
 
 			// remove blob ownership
 			tx.delete_prefix(COL_BLOB_OWNERSHIP, &Self::blob_ownership_key_prefix(hash));
+
+			// remove blob ownership expiry
+			tx.delete(
+				COL_BLOB_OWNERSHIP_EXPIRY,
+				&Self::blob_ownership_expiry_key(hash),
+			);
 		}
 
 		self.db.write(tx)?;
 		Ok(())
 	}
 
-	fn clean_expired_blobs_info(&self, current_block: u64) -> Result<Vec<BlobHash>> {
+	fn clean_expired_ownerships_without_metadata(&self, hashes: &Vec<BlobHash>) -> Result<()> {
+		let mut tx = DBTransaction::new();
+
+		for hash in hashes {
+			// remove blob ownership
+			tx.delete_prefix(COL_BLOB_OWNERSHIP, &Self::blob_ownership_key_prefix(hash));
+
+			// remove blob ownership expiry
+			tx.delete(
+				COL_BLOB_OWNERSHIP_EXPIRY,
+				&Self::blob_ownership_expiry_key(hash),
+			);
+		}
+
+		self.db.write(tx)?;
+		Ok(())
+	}
+
+	fn clean_expired_blobs_info(&self, current_block: u64) -> Result<(Vec<BlobHash>, Vec<BlobHash>)> {
 		let mut expired_blobs = Vec::new();
 		for (key, value) in self.db.iter(COL_BLOB_METADATA).filter_map(Result::ok) {
 			if let Ok(blob_metadata) = BlobMetadata::<Block>::decode(&mut value.as_slice()) {
@@ -253,9 +332,34 @@ impl<Block: BlockT> BlobStore<Block> for RocksdbBlobStore<Block> {
 			}
 		}
 
-		self.clean_blobs_info(&expired_blobs)?;
+		if !expired_blobs.is_empty() {
+			self.clean_blobs_info(&expired_blobs)?;
+		}
 
-		Ok(expired_blobs)
+		let mut expired_ownerships = Vec::new();
+		for (key, value) in self
+			.db
+			.iter(COL_BLOB_OWNERSHIP_EXPIRY)
+			.filter_map(Result::ok)
+		{
+			if let Ok(expiry) = u64::decode(&mut value.as_slice()) {
+				if expiry <= current_block {
+					let hash = BlobHash::from_slice(&key);
+					expired_ownerships.push(hash);
+				}
+			} else {
+				log::warn!(
+					target: LOG_TARGET,
+					"Failed to decode blob ownership expiry for key {:?}",
+					key
+				);
+			}
+		}
+		if !expired_ownerships.is_empty() {
+			self.clean_expired_ownerships_without_metadata(&expired_ownerships)?;
+		}
+
+		Ok((expired_blobs, expired_ownerships))
 	}
 
 	fn log_all_entries(&self) -> Result<()> {

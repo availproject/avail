@@ -252,7 +252,10 @@ where
 					let blob_data_store = blob_data_store.clone();
 					if let Err(e) = tokio::task::spawn_blocking(move || {
 						match blob_store.clean_expired_blobs_info(block_number) {
-							Ok(hashes) => blob_data_store.clean_blobs_info(&hashes),
+							Ok((hashes, _orphan_ownerships)) => {
+								// We have two stores, so we clear blobs from here
+								blob_data_store.clean_blobs_info(&hashes)
+							},
 							Err(e) => Err(e),
 						}
 					})

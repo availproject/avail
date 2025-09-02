@@ -6,7 +6,7 @@ use sp_std::iter::repeat;
 
 pub async fn run() -> Result<(), ClientError> {
 	println!("---------- START Submission ---------- ");
-	let len = 64 * 1024 * 1024;
+	let len = 32 * 1024 * 1024;
 	let mode = 1;
 
 	let local_endpoint: &str = if mode == 1 {

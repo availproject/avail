@@ -390,6 +390,20 @@ async fn handle_blob_received_notification<Block>(
 			)
 		}
 	}
+
+	// If we received a blob ownership before metadata, we created an expiry for the ownership to avoid orphans, we delete it here
+	if let Err(e) = blob_handle
+		.blob_store
+		.remove_blob_ownership_expiry(&blob_meta.hash)
+	{
+		log::error!(
+			target: LOG_TARGET,
+			"An error occured while trying to remove blob ownership expiry {}: {}",
+			blob_meta.hash,
+			e
+		)
+	}
+
 	log::info!(
 		"BLOB - handle_blob_received_notification - END - {:?} - {:?}",
 		blob_received.hash,
@@ -722,6 +736,47 @@ async fn handle_blob_stored_notification<Block>(
 			"An error has occured while trying to save blob ownership in the store: {e}"
 		);
 	}
+
+	let metadata_exists = match blob_handle
+		.blob_store
+		.blob_metadata_exists(&blob_stored.hash)
+	{
+		Ok(v) => v,
+		Err(e) => {
+			log::error!(
+				target: LOG_TARGET,
+				"An error has occured while trying to check metadata existence in the store: {e}"
+			);
+			false
+		},
+	};
+
+	// If we receive the stored notification without receiving the metadata, we add an expiry for all ownerships while waiting for the metadata
+	if !metadata_exists {
+		let existing_expiry = blob_handle
+			.blob_store
+			.get_blob_ownership_expiry(&blob_stored.hash)
+			.ok()
+			.flatten();
+		if existing_expiry.is_none() {
+			let block_number = match client.header(blob_stored.hash) {
+				Ok(Some(h)) => h.number,
+				_ => client.info().finalized_number,
+			};
+			let block_number: u64 = block_number.saturated_into();
+			let expires_at = block_number.saturating_add(TEMP_BLOB_TTL);
+			if let Err(e) = blob_handle
+				.blob_store
+				.insert_blob_ownership_expiry(&blob_stored.hash, expires_at)
+			{
+				log::error!(
+					target: LOG_TARGET,
+					"An error has occured while trying to store ownership expiry in the store: {e}"
+				);
+			};
+		}
+	}
+
 	log::info!(
 		"BLOB - handle_blob_stored_notification - END - {:?} - {:?}",
 		blob_stored.hash,
