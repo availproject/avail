@@ -38,7 +38,7 @@ You have now verified that the binary is signed by Avail and that its checksum i
 
 > To manually run the Avail Node, you'll need to have the following dependencies installed:
 > - [Rust](https://www.rust-lang.org/learn/get-started)
-> - [Substrate dependencies](https://docs.substrate.io/install/)
+> - [Substrate dependencies](https://docs.polkadot.com/develop/parachains/install-polkadot-sdk/)
 
 
 After ensuring you have the dependencies installed, you can run the Avail Node using the following command:
