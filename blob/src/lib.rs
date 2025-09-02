@@ -301,7 +301,7 @@ async fn handle_blob_received_notification<Block>(
 				.get_blob_ownerships(&blob_received.hash)
 				.unwrap_or(Vec::new());
 			stored_ownerships.extend(ownerships_to_record.clone());
-			
+
 			let target_peer_id = if !stored_ownerships.is_empty() {
 				let base_index = generate_base_index(
 					blob_received.hash,

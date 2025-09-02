@@ -5,8 +5,7 @@ use crate::{
 	types::{Blob, BlobMetadata, BlobNotification, BlobReceived, Deps, OwnershipEntry},
 	utils::{
 		build_signature_payload, check_store_blob, generate_base_index, get_active_validators,
-		get_my_validator_id, get_validator_per_blob_inner,
-		sign_blob_data_inner,
+		get_my_validator_id, get_validator_per_blob_inner, sign_blob_data_inner,
 	},
 	BLOB_TTL, MAX_RPC_RETRIES, MAX_TRANSACTION_VALIDITY, MIN_TRANSACTION_VALIDITY, TEMP_BLOB_TTL,
 };

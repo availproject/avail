@@ -49,7 +49,10 @@ pub trait BlobStore<Block: BlockT>: Send + Sync + 'static {
 	// Cleaning
 	fn clean_blobs_info(&self, hashes: &Vec<BlobHash>) -> Result<()>;
 	fn clean_expired_ownerships_without_metadata(&self, hashes: &Vec<BlobHash>) -> Result<()>;
-	fn clean_expired_blobs_info(&self, current_block: u64) -> Result<(Vec<BlobHash>, Vec<BlobHash>)>;
+	fn clean_expired_blobs_info(
+		&self,
+		current_block: u64,
+	) -> Result<(Vec<BlobHash>, Vec<BlobHash>)>;
 
 	// Testing stuff
 	fn log_all_entries(&self) -> Result<()>;
@@ -152,7 +155,10 @@ impl<Block: BlockT> BlobStore<Block> for RocksdbBlobStore<Block> {
 	}
 
 	fn blob_metadata_exists(&self, hash: &BlobHash) -> Result<bool> {
-		Ok(self.db.get(COL_BLOB_METADATA, &Self::blob_meta_key(hash))?.is_some())
+		Ok(self
+			.db
+			.get(COL_BLOB_METADATA, &Self::blob_meta_key(hash))?
+			.is_some())
 	}
 
 	fn insert_blob_retry(&self, hash: &BlobHash, count: u16) -> Result<()> {
@@ -265,7 +271,7 @@ impl<Block: BlockT> BlobStore<Block> for RocksdbBlobStore<Block> {
 			COL_BLOB_OWNERSHIP_EXPIRY,
 			&Self::blob_ownership_expiry_key(hash),
 		);
-		
+
 		self.db.write(tx)?;
 		Ok(())
 	}
@@ -315,7 +321,10 @@ impl<Block: BlockT> BlobStore<Block> for RocksdbBlobStore<Block> {
 		Ok(())
 	}
 
-	fn clean_expired_blobs_info(&self, current_block: u64) -> Result<(Vec<BlobHash>, Vec<BlobHash>)> {
+	fn clean_expired_blobs_info(
+		&self,
+		current_block: u64,
+	) -> Result<(Vec<BlobHash>, Vec<BlobHash>)> {
 		let mut expired_blobs = Vec::new();
 		for (key, value) in self.db.iter(COL_BLOB_METADATA).filter_map(Result::ok) {
 			if let Ok(blob_metadata) = BlobMetadata::<Block>::decode(&mut value.as_slice()) {
