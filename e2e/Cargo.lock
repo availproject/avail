@@ -618,14 +618,13 @@ checksum = "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26"
 [[package]]
 name = "avail-core"
 version = "0.6.2"
-source = "git+https://github.com/availproject/avail-core?branch=ghali/infinity-da-rpc#645aedece0b86bcfe40ca8a8d131022529460cd0"
 dependencies = [
- "binary-merkle-tree",
+ "binary-merkle-tree 13.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
  "blake2b_simd",
  "bounded-collections",
  "derive_more 0.99.19",
  "ethabi-decode",
- "frame-support",
+ "frame-support 28.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
  "hash-db",
  "hash256-std-hasher",
  "hex",
@@ -638,10 +637,42 @@ dependencies = [
  "serde",
  "sha2 0.10.8",
  "sha3",
- "sp-runtime",
+ "sp-runtime 31.0.1 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-runtime-interface 24.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-trie 29.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "static_assertions",
+ "thiserror-no-std",
+ "tiny-keccak",
+]
+
+[[package]]
+name = "avail-core"
+version = "0.6.2"
+source = "git+https://github.com/availproject/avail-core?branch=ghali/infinity-da-rpc#645aedece0b86bcfe40ca8a8d131022529460cd0"
+dependencies = [
+ "binary-merkle-tree 13.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
+ "blake2b_simd",
+ "bounded-collections",
+ "derive_more 0.99.19",
+ "ethabi-decode",
+ "frame-support 28.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
+ "hash-db",
+ "hash256-std-hasher",
+ "hex",
+ "impl-serde 0.5.0",
+ "log",
+ "num-traits",
+ "parity-scale-codec",
+ "primitive-types 0.12.2",
+ "scale-info",
+ "serde",
+ "sha2 0.10.8",
+ "sha3",
+ "sp-runtime 31.0.1 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
  "sp-runtime-interface 24.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
  "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
- "sp-trie",
+ "sp-trie 29.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
  "static_assertions",
  "thiserror-no-std",
  "tiny-keccak",
@@ -760,6 +791,15 @@ checksum = "8c3c1a368f70d6cf7302d78f8f7093da241fb8e8807c05cc9e51a125895a6d5b"
 name = "binary-merkle-tree"
 version = "13.0.0"
 source = "git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc#0d795488614416ed08d88d8163cff82bd28cc870"
+dependencies = [
+ "hash-db",
+ "log",
+]
+
+[[package]]
+name = "binary-merkle-tree"
+version = "13.0.0"
+source = "git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic#f5b6fe73e8857fb13d1e688abf0cc1c8274b12ee"
 dependencies = [
  "hash-db",
  "log",
@@ -1317,7 +1357,7 @@ name = "da-commitment"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "kate",
+ "kate 0.9.2",
  "log",
  "thiserror-no-std",
 ]
@@ -1568,10 +1608,10 @@ dependencies = [
  "avail-rust-client",
  "da-commitment",
  "hex",
- "kate",
+ "kate 0.9.2 (git+https://github.com/availproject/avail-core?branch=ghali/infinity-da-rpc)",
  "parity-scale-codec",
  "serde",
- "sp-core",
+ "sp-core 28.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
  "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
  "tokio",
 ]
@@ -1903,7 +1943,7 @@ dependencies = [
  "docify",
  "environmental",
  "frame-metadata 16.0.0",
- "frame-support-procedural",
+ "frame-support-procedural 23.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
  "impl-trait-for-tuples",
  "k256",
  "log",
@@ -1914,21 +1954,62 @@ dependencies = [
  "serde",
  "serde_json",
  "smallvec",
- "sp-api",
- "sp-arithmetic",
- "sp-core",
- "sp-crypto-hashing-proc-macro",
+ "sp-api 26.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
+ "sp-arithmetic 23.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
+ "sp-core 28.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
+ "sp-crypto-hashing-proc-macro 0.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
  "sp-debug-derive 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
- "sp-genesis-builder",
- "sp-inherents",
- "sp-io",
- "sp-metadata-ir",
- "sp-runtime",
- "sp-staking",
- "sp-state-machine",
+ "sp-genesis-builder 0.7.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
+ "sp-inherents 26.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
+ "sp-io 30.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
+ "sp-metadata-ir 0.6.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
+ "sp-runtime 31.0.1 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
+ "sp-staking 26.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
+ "sp-state-machine 0.35.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
  "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
  "sp-tracing 16.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
- "sp-weights",
+ "sp-weights 27.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
+ "static_assertions",
+ "tt-call",
+]
+
+[[package]]
+name = "frame-support"
+version = "28.0.0"
+source = "git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic#f5b6fe73e8857fb13d1e688abf0cc1c8274b12ee"
+dependencies = [
+ "aquamarine",
+ "array-bytes",
+ "bitflags 1.3.2",
+ "docify",
+ "environmental",
+ "frame-metadata 16.0.0",
+ "frame-support-procedural 23.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "impl-trait-for-tuples",
+ "k256",
+ "log",
+ "macro_magic",
+ "parity-scale-codec",
+ "paste",
+ "scale-info",
+ "serde",
+ "serde_json",
+ "smallvec",
+ "sp-api 26.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-arithmetic 23.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-core 28.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-crypto-hashing-proc-macro 0.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-debug-derive 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-genesis-builder 0.7.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-inherents 26.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-io 30.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-metadata-ir 0.6.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-runtime 31.0.1 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-staking 26.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-state-machine 0.35.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-tracing 16.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-weights 27.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
  "static_assertions",
  "tt-call",
 ]
@@ -1942,13 +2023,32 @@ dependencies = [
  "cfg-expr",
  "derive-syn-parse 0.1.5",
  "expander",
- "frame-support-procedural-tools",
+ "frame-support-procedural-tools 10.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
  "itertools 0.10.5",
  "macro_magic",
  "proc-macro-warning",
  "proc-macro2",
  "quote",
- "sp-crypto-hashing 0.0.0",
+ "sp-crypto-hashing 0.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
+ "syn 2.0.99",
+]
+
+[[package]]
+name = "frame-support-procedural"
+version = "23.0.0"
+source = "git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic#f5b6fe73e8857fb13d1e688abf0cc1c8274b12ee"
+dependencies = [
+ "Inflector",
+ "cfg-expr",
+ "derive-syn-parse 0.1.5",
+ "expander",
+ "frame-support-procedural-tools 10.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "itertools 0.10.5",
+ "macro_magic",
+ "proc-macro-warning",
+ "proc-macro2",
+ "quote",
+ "sp-crypto-hashing 0.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
  "syn 2.0.99",
 ]
 
@@ -1957,7 +2057,19 @@ name = "frame-support-procedural-tools"
 version = "10.0.0"
 source = "git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc#0d795488614416ed08d88d8163cff82bd28cc870"
 dependencies = [
- "frame-support-procedural-tools-derive",
+ "frame-support-procedural-tools-derive 11.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
+ "proc-macro-crate",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.99",
+]
+
+[[package]]
+name = "frame-support-procedural-tools"
+version = "10.0.0"
+source = "git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic#f5b6fe73e8857fb13d1e688abf0cc1c8274b12ee"
+dependencies = [
+ "frame-support-procedural-tools-derive 11.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
  "proc-macro-crate",
  "proc-macro2",
  "quote",
@@ -1968,6 +2080,16 @@ dependencies = [
 name = "frame-support-procedural-tools-derive"
 version = "11.0.0"
 source = "git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc#0d795488614416ed08d88d8163cff82bd28cc870"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.99",
+]
+
+[[package]]
+name = "frame-support-procedural-tools-derive"
+version = "11.0.0"
+source = "git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic#f5b6fe73e8857fb13d1e688abf0cc1c8274b12ee"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2875,13 +2997,38 @@ dependencies = [
 [[package]]
 name = "kate"
 version = "0.9.2"
-source = "git+https://github.com/availproject/avail-core?branch=ghali/infinity-da-rpc#645aedece0b86bcfe40ca8a8d131022529460cd0"
 dependencies = [
- "avail-core",
+ "avail-core 0.6.2",
  "derive_more 0.99.19",
  "hex",
  "hex-literal",
- "kate-recovery",
+ "kate-recovery 0.10.0",
+ "log",
+ "lru 0.7.8",
+ "nalgebra",
+ "once_cell",
+ "parity-scale-codec",
+ "poly-multiproof",
+ "rand",
+ "rand_chacha",
+ "rayon",
+ "serde",
+ "serde_json",
+ "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "static_assertions",
+ "thiserror-no-std",
+]
+
+[[package]]
+name = "kate"
+version = "0.9.2"
+source = "git+https://github.com/availproject/avail-core?branch=ghali/infinity-da-rpc#645aedece0b86bcfe40ca8a8d131022529460cd0"
+dependencies = [
+ "avail-core 0.6.2 (git+https://github.com/availproject/avail-core?branch=ghali/infinity-da-rpc)",
+ "derive_more 0.99.19",
+ "hex",
+ "hex-literal",
+ "kate-recovery 0.10.0 (git+https://github.com/availproject/avail-core?branch=ghali/infinity-da-rpc)",
  "log",
  "lru 0.7.8",
  "nalgebra",
@@ -2901,9 +3048,29 @@ dependencies = [
 [[package]]
 name = "kate-recovery"
 version = "0.10.0"
+dependencies = [
+ "avail-core 0.6.2",
+ "derive_more 0.99.19",
+ "hex-literal",
+ "log",
+ "num-traits",
+ "once_cell",
+ "parity-scale-codec",
+ "poly-multiproof",
+ "rand",
+ "rand_chacha",
+ "serde",
+ "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "static_assertions",
+ "thiserror-no-std",
+]
+
+[[package]]
+name = "kate-recovery"
+version = "0.10.0"
 source = "git+https://github.com/availproject/avail-core?branch=ghali/infinity-da-rpc#645aedece0b86bcfe40ca8a8d131022529460cd0"
 dependencies = [
- "avail-core",
+ "avail-core 0.6.2 (git+https://github.com/availproject/avail-core?branch=ghali/infinity-da-rpc)",
  "derive_more 0.99.19",
  "hex-literal",
  "log",
@@ -4851,15 +5018,36 @@ dependencies = [
  "log",
  "parity-scale-codec",
  "scale-info",
- "sp-api-proc-macro",
- "sp-core",
+ "sp-api-proc-macro 15.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
+ "sp-core 28.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
  "sp-externalities 0.25.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
- "sp-metadata-ir",
- "sp-runtime",
- "sp-state-machine",
+ "sp-metadata-ir 0.6.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
+ "sp-runtime 31.0.1 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
+ "sp-state-machine 0.35.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
  "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
- "sp-trie",
- "sp-version",
+ "sp-trie 29.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
+ "sp-version 29.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
+ "thiserror 1.0.69",
+]
+
+[[package]]
+name = "sp-api"
+version = "26.0.0"
+source = "git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic#f5b6fe73e8857fb13d1e688abf0cc1c8274b12ee"
+dependencies = [
+ "hash-db",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-api-proc-macro 15.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-core 28.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-externalities 0.25.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-metadata-ir 0.6.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-runtime 31.0.1 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-state-machine 0.35.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-trie 29.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-version 29.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
  "thiserror 1.0.69",
 ]
 
@@ -4878,6 +5066,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "sp-api-proc-macro"
+version = "15.0.0"
+source = "git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic#f5b6fe73e8857fb13d1e688abf0cc1c8274b12ee"
+dependencies = [
+ "Inflector",
+ "blake2",
+ "expander",
+ "proc-macro-crate",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.99",
+]
+
+[[package]]
 name = "sp-application-crypto"
 version = "30.0.0"
 source = "git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc#0d795488614416ed08d88d8163cff82bd28cc870"
@@ -4885,9 +5087,22 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "serde",
- "sp-core",
- "sp-io",
+ "sp-core 28.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
+ "sp-io 30.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
  "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
+]
+
+[[package]]
+name = "sp-application-crypto"
+version = "30.0.0"
+source = "git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic#f5b6fe73e8857fb13d1e688abf0cc1c8274b12ee"
+dependencies = [
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core 28.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-io 30.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
 ]
 
 [[package]]
@@ -4901,6 +5116,20 @@ dependencies = [
  "scale-info",
  "serde",
  "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
+ "static_assertions",
+]
+
+[[package]]
+name = "sp-arithmetic"
+version = "23.0.0"
+source = "git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic#f5b6fe73e8857fb13d1e688abf0cc1c8274b12ee"
+dependencies = [
+ "integer-sqrt",
+ "num-traits",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
  "static_assertions",
 ]
 
@@ -4954,12 +5183,58 @@ dependencies = [
  "secp256k1 0.28.2",
  "secrecy 0.8.0",
  "serde",
- "sp-crypto-hashing 0.0.0",
+ "sp-crypto-hashing 0.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
  "sp-debug-derive 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
  "sp-externalities 0.25.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
  "sp-runtime-interface 24.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
  "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
  "sp-storage 19.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
+ "ss58-registry",
+ "substrate-bip39",
+ "thiserror 1.0.69",
+ "tracing",
+ "w3f-bls",
+ "zeroize",
+]
+
+[[package]]
+name = "sp-core"
+version = "28.0.0"
+source = "git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic#f5b6fe73e8857fb13d1e688abf0cc1c8274b12ee"
+dependencies = [
+ "array-bytes",
+ "bandersnatch_vrfs",
+ "bip39",
+ "bitflags 1.3.2",
+ "blake2",
+ "bounded-collections",
+ "bs58",
+ "dyn-clonable",
+ "ed25519-zebra",
+ "futures",
+ "hash-db",
+ "hash256-std-hasher",
+ "impl-serde 0.4.0",
+ "itertools 0.10.5",
+ "libsecp256k1",
+ "log",
+ "merlin",
+ "parity-scale-codec",
+ "parking_lot",
+ "paste",
+ "primitive-types 0.12.2",
+ "rand",
+ "scale-info",
+ "schnorrkel",
+ "secp256k1 0.28.2",
+ "secrecy 0.8.0",
+ "serde",
+ "sp-crypto-hashing 0.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-debug-derive 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-externalities 0.25.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-runtime-interface 24.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-storage 19.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
  "ss58-registry",
  "substrate-bip39",
  "thiserror 1.0.69",
@@ -5003,6 +5278,19 @@ dependencies = [
 
 [[package]]
 name = "sp-crypto-hashing"
+version = "0.0.0"
+source = "git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic#f5b6fe73e8857fb13d1e688abf0cc1c8274b12ee"
+dependencies = [
+ "blake2b_simd",
+ "byteorder",
+ "digest 0.10.7",
+ "sha2 0.10.8",
+ "sha3",
+ "twox-hash",
+]
+
+[[package]]
+name = "sp-crypto-hashing"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bc9927a7f81334ed5b8a98a4a978c81324d12bd9713ec76b5c68fd410174c5eb"
@@ -5021,7 +5309,17 @@ version = "0.0.0"
 source = "git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc#0d795488614416ed08d88d8163cff82bd28cc870"
 dependencies = [
  "quote",
- "sp-crypto-hashing 0.0.0",
+ "sp-crypto-hashing 0.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
+ "syn 2.0.99",
+]
+
+[[package]]
+name = "sp-crypto-hashing-proc-macro"
+version = "0.0.0"
+source = "git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic#f5b6fe73e8857fb13d1e688abf0cc1c8274b12ee"
+dependencies = [
+ "quote",
+ "sp-crypto-hashing 0.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
  "syn 2.0.99",
 ]
 
@@ -5029,6 +5327,16 @@ dependencies = [
 name = "sp-debug-derive"
 version = "14.0.0"
 source = "git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc#a5ce7c5376168084d43582eb1c915057d5910c4a"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.99",
+]
+
+[[package]]
+name = "sp-debug-derive"
+version = "14.0.0"
+source = "git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic#f5b6fe73e8857fb13d1e688abf0cc1c8274b12ee"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -5059,6 +5367,17 @@ dependencies = [
 [[package]]
 name = "sp-externalities"
 version = "0.25.0"
+source = "git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic#f5b6fe73e8857fb13d1e688abf0cc1c8274b12ee"
+dependencies = [
+ "environmental",
+ "parity-scale-codec",
+ "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-storage 19.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+]
+
+[[package]]
+name = "sp-externalities"
+version = "0.25.0"
 source = "git+https://github.com/paritytech/polkadot-sdk#13bc266c3f3cb337a36998cfdc5940ca559051c9"
 dependencies = [
  "environmental",
@@ -5072,9 +5391,20 @@ version = "0.7.0"
 source = "git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc#0d795488614416ed08d88d8163cff82bd28cc870"
 dependencies = [
  "serde_json",
- "sp-api",
- "sp-runtime",
+ "sp-api 26.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
+ "sp-runtime 31.0.1 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
  "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
+]
+
+[[package]]
+name = "sp-genesis-builder"
+version = "0.7.0"
+source = "git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic#f5b6fe73e8857fb13d1e688abf0cc1c8274b12ee"
+dependencies = [
+ "serde_json",
+ "sp-api 26.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-runtime 31.0.1 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
 ]
 
 [[package]]
@@ -5086,8 +5416,22 @@ dependencies = [
  "impl-trait-for-tuples",
  "parity-scale-codec",
  "scale-info",
- "sp-runtime",
+ "sp-runtime 31.0.1 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
  "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
+ "thiserror 1.0.69",
+]
+
+[[package]]
+name = "sp-inherents"
+version = "26.0.0"
+source = "git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic#f5b6fe73e8857fb13d1e688abf0cc1c8274b12ee"
+dependencies = [
+ "async-trait",
+ "impl-trait-for-tuples",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-runtime 31.0.1 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
  "thiserror 1.0.69",
 ]
 
@@ -5103,15 +5447,40 @@ dependencies = [
  "parity-scale-codec",
  "rustversion",
  "secp256k1 0.28.2",
- "sp-core",
- "sp-crypto-hashing 0.0.0",
+ "sp-core 28.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
+ "sp-crypto-hashing 0.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
  "sp-externalities 0.25.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
- "sp-keystore",
+ "sp-keystore 0.34.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
  "sp-runtime-interface 24.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
- "sp-state-machine",
+ "sp-state-machine 0.35.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
  "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
  "sp-tracing 16.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
- "sp-trie",
+ "sp-trie 29.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
+ "tracing",
+ "tracing-core",
+]
+
+[[package]]
+name = "sp-io"
+version = "30.0.0"
+source = "git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic#f5b6fe73e8857fb13d1e688abf0cc1c8274b12ee"
+dependencies = [
+ "bytes",
+ "ed25519-dalek",
+ "libsecp256k1",
+ "log",
+ "parity-scale-codec",
+ "rustversion",
+ "secp256k1 0.28.2",
+ "sp-core 28.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-crypto-hashing 0.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-externalities 0.25.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-keystore 0.34.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-runtime-interface 24.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-state-machine 0.35.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-tracing 16.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-trie 29.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
  "tracing",
  "tracing-core",
 ]
@@ -5123,8 +5492,20 @@ source = "git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infi
 dependencies = [
  "parity-scale-codec",
  "parking_lot",
- "sp-core",
+ "sp-core 28.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
  "sp-externalities 0.25.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
+ "thiserror 1.0.69",
+]
+
+[[package]]
+name = "sp-keystore"
+version = "0.34.0"
+source = "git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic#f5b6fe73e8857fb13d1e688abf0cc1c8274b12ee"
+dependencies = [
+ "parity-scale-codec",
+ "parking_lot",
+ "sp-core 28.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-externalities 0.25.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
  "thiserror 1.0.69",
 ]
 
@@ -5140,9 +5521,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "sp-metadata-ir"
+version = "0.6.0"
+source = "git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic#f5b6fe73e8857fb13d1e688abf0cc1c8274b12ee"
+dependencies = [
+ "frame-metadata 16.0.0",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+]
+
+[[package]]
 name = "sp-panic-handler"
 version = "13.0.0"
 source = "git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc#0d795488614416ed08d88d8163cff82bd28cc870"
+dependencies = [
+ "backtrace",
+ "lazy_static",
+ "regex",
+]
+
+[[package]]
+name = "sp-panic-handler"
+version = "13.0.0"
+source = "git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic#f5b6fe73e8857fb13d1e688abf0cc1c8274b12ee"
 dependencies = [
  "backtrace",
  "lazy_static",
@@ -5165,12 +5567,36 @@ dependencies = [
  "scale-info",
  "serde",
  "simple-mermaid",
- "sp-application-crypto",
- "sp-arithmetic",
- "sp-core",
- "sp-io",
+ "sp-application-crypto 30.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
+ "sp-arithmetic 23.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
+ "sp-core 28.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
+ "sp-io 30.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
  "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
- "sp-weights",
+ "sp-weights 27.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
+]
+
+[[package]]
+name = "sp-runtime"
+version = "31.0.1"
+source = "git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic#f5b6fe73e8857fb13d1e688abf0cc1c8274b12ee"
+dependencies = [
+ "docify",
+ "either",
+ "hash256-std-hasher",
+ "impl-trait-for-tuples",
+ "log",
+ "parity-scale-codec",
+ "paste",
+ "rand",
+ "scale-info",
+ "serde",
+ "simple-mermaid",
+ "sp-application-crypto 30.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-arithmetic 23.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-core 28.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-io 30.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-weights 27.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
 ]
 
 [[package]]
@@ -5188,6 +5614,24 @@ dependencies = [
  "sp-storage 19.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
  "sp-tracing 16.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
  "sp-wasm-interface 20.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
+ "static_assertions",
+]
+
+[[package]]
+name = "sp-runtime-interface"
+version = "24.0.0"
+source = "git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic#f5b6fe73e8857fb13d1e688abf0cc1c8274b12ee"
+dependencies = [
+ "bytes",
+ "impl-trait-for-tuples",
+ "parity-scale-codec",
+ "primitive-types 0.12.2",
+ "sp-externalities 0.25.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-runtime-interface-proc-macro 17.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-storage 19.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-tracing 16.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-wasm-interface 20.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
  "static_assertions",
 ]
 
@@ -5225,6 +5669,19 @@ dependencies = [
 [[package]]
 name = "sp-runtime-interface-proc-macro"
 version = "17.0.0"
+source = "git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic#f5b6fe73e8857fb13d1e688abf0cc1c8274b12ee"
+dependencies = [
+ "Inflector",
+ "expander",
+ "proc-macro-crate",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.99",
+]
+
+[[package]]
+name = "sp-runtime-interface-proc-macro"
+version = "17.0.0"
 source = "git+https://github.com/paritytech/polkadot-sdk#13bc266c3f3cb337a36998cfdc5940ca559051c9"
 dependencies = [
  "Inflector",
@@ -5244,9 +5701,23 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "serde",
- "sp-core",
- "sp-runtime",
+ "sp-core 28.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
+ "sp-runtime 31.0.1 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
  "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
+]
+
+[[package]]
+name = "sp-staking"
+version = "26.0.0"
+source = "git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic#f5b6fe73e8857fb13d1e688abf0cc1c8274b12ee"
+dependencies = [
+ "impl-trait-for-tuples",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core 28.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-runtime 31.0.1 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
 ]
 
 [[package]]
@@ -5260,11 +5731,32 @@ dependencies = [
  "parking_lot",
  "rand",
  "smallvec",
- "sp-core",
+ "sp-core 28.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
  "sp-externalities 0.25.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
- "sp-panic-handler",
+ "sp-panic-handler 13.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
  "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
- "sp-trie",
+ "sp-trie 29.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
+ "thiserror 1.0.69",
+ "tracing",
+ "trie-db",
+]
+
+[[package]]
+name = "sp-state-machine"
+version = "0.35.0"
+source = "git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic#f5b6fe73e8857fb13d1e688abf0cc1c8274b12ee"
+dependencies = [
+ "hash-db",
+ "log",
+ "parity-scale-codec",
+ "parking_lot",
+ "rand",
+ "smallvec",
+ "sp-core 28.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-externalities 0.25.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-panic-handler 13.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-trie 29.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
  "thiserror 1.0.69",
  "tracing",
  "trie-db",
@@ -5274,6 +5766,11 @@ dependencies = [
 name = "sp-std"
 version = "14.0.0"
 source = "git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc#a5ce7c5376168084d43582eb1c915057d5910c4a"
+
+[[package]]
+name = "sp-std"
+version = "14.0.0"
+source = "git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic#f5b6fe73e8857fb13d1e688abf0cc1c8274b12ee"
 
 [[package]]
 name = "sp-std"
@@ -5296,6 +5793,19 @@ dependencies = [
 [[package]]
 name = "sp-storage"
 version = "19.0.0"
+source = "git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic#f5b6fe73e8857fb13d1e688abf0cc1c8274b12ee"
+dependencies = [
+ "impl-serde 0.4.0",
+ "parity-scale-codec",
+ "ref-cast",
+ "serde",
+ "sp-debug-derive 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+]
+
+[[package]]
+name = "sp-storage"
+version = "19.0.0"
 source = "git+https://github.com/paritytech/polkadot-sdk#13bc266c3f3cb337a36998cfdc5940ca559051c9"
 dependencies = [
  "impl-serde 0.5.0",
@@ -5312,6 +5822,18 @@ source = "git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infi
 dependencies = [
  "parity-scale-codec",
  "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
+ "tracing",
+ "tracing-core",
+ "tracing-subscriber 0.2.25",
+]
+
+[[package]]
+name = "sp-tracing"
+version = "16.0.0"
+source = "git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic#f5b6fe73e8857fb13d1e688abf0cc1c8274b12ee"
+dependencies = [
+ "parity-scale-codec",
+ "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
  "tracing",
  "tracing-core",
  "tracing-subscriber 0.2.25",
@@ -5344,9 +5866,33 @@ dependencies = [
  "rand",
  "scale-info",
  "schnellru",
- "sp-core",
+ "sp-core 28.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
  "sp-externalities 0.25.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
  "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
+ "thiserror 1.0.69",
+ "tracing",
+ "trie-db",
+ "trie-root",
+]
+
+[[package]]
+name = "sp-trie"
+version = "29.0.0"
+source = "git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic#f5b6fe73e8857fb13d1e688abf0cc1c8274b12ee"
+dependencies = [
+ "ahash 0.8.11",
+ "hash-db",
+ "lazy_static",
+ "memory-db",
+ "nohash-hasher",
+ "parity-scale-codec",
+ "parking_lot",
+ "rand",
+ "scale-info",
+ "schnellru",
+ "sp-core 28.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-externalities 0.25.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
  "thiserror 1.0.69",
  "tracing",
  "trie-db",
@@ -5363,10 +5909,27 @@ dependencies = [
  "parity-wasm",
  "scale-info",
  "serde",
- "sp-crypto-hashing-proc-macro",
- "sp-runtime",
+ "sp-crypto-hashing-proc-macro 0.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
+ "sp-runtime 31.0.1 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
  "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
- "sp-version-proc-macro",
+ "sp-version-proc-macro 13.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
+ "thiserror 1.0.69",
+]
+
+[[package]]
+name = "sp-version"
+version = "29.0.0"
+source = "git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic#f5b6fe73e8857fb13d1e688abf0cc1c8274b12ee"
+dependencies = [
+ "impl-serde 0.4.0",
+ "parity-scale-codec",
+ "parity-wasm",
+ "scale-info",
+ "serde",
+ "sp-crypto-hashing-proc-macro 0.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-runtime 31.0.1 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-version-proc-macro 13.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
  "thiserror 1.0.69",
 ]
 
@@ -5374,6 +5937,17 @@ dependencies = [
 name = "sp-version-proc-macro"
 version = "13.0.0"
 source = "git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc#0d795488614416ed08d88d8163cff82bd28cc870"
+dependencies = [
+ "parity-scale-codec",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.99",
+]
+
+[[package]]
+name = "sp-version-proc-macro"
+version = "13.0.0"
+source = "git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic#f5b6fe73e8857fb13d1e688abf0cc1c8274b12ee"
 dependencies = [
  "parity-scale-codec",
  "proc-macro2",
@@ -5391,6 +5965,19 @@ dependencies = [
  "log",
  "parity-scale-codec",
  "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
+ "wasmtime",
+]
+
+[[package]]
+name = "sp-wasm-interface"
+version = "20.0.0"
+source = "git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic#f5b6fe73e8857fb13d1e688abf0cc1c8274b12ee"
+dependencies = [
+ "anyhow",
+ "impl-trait-for-tuples",
+ "log",
+ "parity-scale-codec",
+ "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
  "wasmtime",
 ]
 
@@ -5415,9 +6002,24 @@ dependencies = [
  "scale-info",
  "serde",
  "smallvec",
- "sp-arithmetic",
+ "sp-arithmetic 23.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
  "sp-debug-derive 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
  "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali/infinity-da-rpc)",
+]
+
+[[package]]
+name = "sp-weights"
+version = "27.0.0"
+source = "git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic#f5b6fe73e8857fb13d1e688abf0cc1c8274b12ee"
+dependencies = [
+ "bounded-collections",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "smallvec",
+ "sp-arithmetic 23.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-debug-derive 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
+ "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=toufeeq/infinity-da-rpc-with-quic)",
 ]
 
 [[package]]
