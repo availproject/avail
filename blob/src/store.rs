@@ -4,12 +4,14 @@ use kvdb::DBTransaction;
 use kvdb::KeyValueDB;
 use kvdb_rocksdb::{Database, DatabaseConfig};
 use sp_runtime::traits::Block as BlockT;
+use std::sync::Mutex;
 use std::{marker::PhantomData, path::Path};
 use tempfile::TempDir;
+use ttl_cache::TtlCache;
 
 use crate::{
 	types::{Blob, BlobHash, BlobMetadata, OwnershipEntry},
-	LOG_TARGET,
+	BLOB_CACHE_DURATION, LOG_TARGET, MAX_BLOBS_IN_CACHE,
 };
 
 const COL_BLOB_METADATA: u32 = 0;
@@ -25,8 +27,9 @@ pub trait BlobStore<Block: BlockT>: Send + Sync + 'static {
 	fn blob_metadata_exists(&self, hash: &BlobHash) -> Result<bool>;
 
 	// Blobs
-	fn insert_blob(&self, blob: &Blob) -> Result<()>;
+	fn insert_blob(&self, blob_hash: &BlobHash, blob: &[u8]) -> Result<()>;
 	fn get_blob(&self, hash: &BlobHash) -> Result<Option<Blob>>;
+	fn get_raw_blob(&self, hash: &BlobHash) -> Result<Option<Vec<u8>>>;
 
 	// Blobs ownership
 	fn insert_blob_ownership(&self, hash: &BlobHash, o: &OwnershipEntry) -> Result<()>;
@@ -62,6 +65,7 @@ pub trait BlobStore<Block: BlockT>: Send + Sync + 'static {
 pub struct RocksdbBlobStore<Block: BlockT> {
 	db: Database,
 	_block: PhantomData<Block>,
+	cache: Mutex<TtlCache<BlobHash, Vec<u8>>>,
 }
 
 impl<Block: BlockT> RocksdbBlobStore<Block> {
@@ -73,6 +77,7 @@ impl<Block: BlockT> RocksdbBlobStore<Block> {
 		Ok(RocksdbBlobStore::<Block> {
 			db,
 			_block: PhantomData,
+			cache: Mutex::new(TtlCache::new(MAX_BLOBS_IN_CACHE as usize)), // keep ~128 blobs
 		})
 	}
 
@@ -121,6 +126,7 @@ impl<Block: BlockT> Default for RocksdbBlobStore<Block> {
 		RocksdbBlobStore::<Block> {
 			db,
 			_block: PhantomData,
+			cache: Mutex::new(TtlCache::new(MAX_BLOBS_IN_CACHE as usize)),
 		}
 	}
 }
@@ -179,22 +185,68 @@ impl<Block: BlockT> BlobStore<Block> for RocksdbBlobStore<Block> {
 			.map(|opt| opt.unwrap_or(0))
 	}
 
-	fn insert_blob(&self, blob: &Blob) -> Result<()> {
+	fn insert_blob(&self, blob_hash: &BlobHash, blob: &[u8]) -> Result<()> {
+		// Write to db
 		let mut tx = DBTransaction::new();
-		tx.put(COL_BLOB, &Self::blob_key(&blob.blob_hash), &blob.encode());
+		tx.put(COL_BLOB, &Self::blob_key(&blob_hash), blob);
 		self.db.write(tx)?;
+
+		// Write to cache
+		if let Ok(mut cache) = self.cache.lock() {
+			cache.insert(blob_hash.clone(), blob.to_vec(), BLOB_CACHE_DURATION);
+		}
 		Ok(())
 	}
 
 	fn get_blob(&self, hash: &BlobHash) -> Result<Option<Blob>> {
-		self.db
-			.get(COL_BLOB, &Self::blob_key(hash))?
-			.map(|bytes| {
+		match self.get_raw_blob(hash)? {
+			Some(bytes) => {
+				let timer = std::time::Instant::now();
 				let mut slice = bytes.as_slice();
-				Blob::decode(&mut slice)
-					.map_err(|_| anyhow!("failed to decode blob from the store"))
-			})
-			.transpose()
+				let decoded = Blob::decode(&mut slice)
+					.map_err(|_| anyhow!("failed to decode blob from the store"))?;
+				log::info!(
+					"GET_BLOB - Decoding took - {:?} - hash: {:?}",
+					timer.elapsed(),
+					hash
+				);
+				Ok(Some(decoded))
+			},
+			None => Ok(None),
+		}
+	}
+
+	fn get_raw_blob(&self, hash: &BlobHash) -> Result<Option<Vec<u8>>> {
+		let timer = std::time::Instant::now();
+		// Try to read from cache
+		if let Ok(cache) = self.cache.lock() {
+			if let Some(cached) = cache.get(hash).cloned() {
+				log::info!(
+					"GET_RAW_BLOB - CACHE HIT - {:?} - hash: {:?}",
+					timer.elapsed(),
+					hash
+				);
+				return Ok(Some(cached));
+			}
+		}
+
+		// Fallback to db
+		let data = self.db.get(COL_BLOB, &Self::blob_key(hash))?;
+
+		// Write to cache
+		if let Some(ref v) = data {
+			if let Ok(mut cache) = self.cache.lock() {
+				cache.insert(hash.clone(), v.clone(), BLOB_CACHE_DURATION);
+			}
+		}
+
+		log::info!(
+			"GET_RAW_BLOB - CACHE MISS - {:?} - hash: {:?}",
+			timer.elapsed(),
+			hash
+		);
+
+		Ok(data)
 	}
 
 	fn insert_blob_ownership(&self, hash: &BlobHash, o: &OwnershipEntry) -> Result<()> {

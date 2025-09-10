@@ -342,7 +342,10 @@ where
 				timer.elapsed()
 			);
 
-			if let Err(e) = blob_handle.blob_data_store.insert_blob(&blob) {
+			if let Err(e) = blob_handle
+				.blob_data_store
+				.insert_blob(&blob.blob_hash, &blob.encode())
+			{
 				log::error!("failed to insert blob into store: {e}");
 			}
 			log::info!(

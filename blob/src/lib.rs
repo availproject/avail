@@ -65,6 +65,10 @@ const NOTIFICATION_EXPIRATION_PERIOD: u64 = 180;
 const MAX_REQUEST_RETRIES: u8 = 3;
 /// The number of retries the RPC is going to make before dropping a user blob request
 const MAX_RPC_RETRIES: u8 = 3;
+/// Maximum number of raw blobs kept in the cache
+const MAX_BLOBS_IN_CACHE: u8 = 128;
+/// Time for blobs in the cache
+const BLOB_CACHE_DURATION: Duration = Duration::from_secs(120);
 
 pub async fn decode_blob_notification<Block>(data: &[u8], blob_handle: &BlobHandle<Block>)
 where
@@ -340,7 +344,10 @@ async fn handle_blob_received_notification<Block>(
 			};
 
 			// Insert the blob in the store
-			if let Err(e) = blob_handle.blob_data_store.insert_blob(&blob_response.blob) {
+			if let Err(e) = blob_handle
+				.blob_data_store
+				.insert_blob(&blob_response.hash, &blob_response.blob)
+			{
 				log::error!(
 					target: LOG_TARGET,
 					"An error occured while trying to store blob {}: {}",
@@ -589,7 +596,7 @@ fn process_blob_request<Block: BlockT>(
 		},
 	}
 
-	let blob = match blob_data_store.get_blob(&blob_request.hash) {
+	let blob = match blob_data_store.get_raw_blob(&blob_request.hash) {
 		Ok(b) => match b {
 			Some(b) => b,
 			None => {
@@ -614,7 +621,7 @@ fn process_blob_request<Block: BlockT>(
 	};
 
 	let blob_response = BlobResponseEnum::BlobResponse(BlobResponse {
-		hash: blob.blob_hash,
+		hash: blob_request.hash,
 		blob,
 	});
 

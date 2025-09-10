@@ -220,8 +220,8 @@ pub struct BlobRequest {
 pub struct BlobResponse {
 	/// The hash of the blob.
 	pub hash: BlobHash,
-	/// The blob data.
-	pub blob: Blob,
+	/// The encoded blob data, must be decoded to Blob type.
+	pub blob: Vec<u8>,
 }
 
 /// Structure for the notification a validator sends after receiving a blob

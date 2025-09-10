@@ -51,6 +51,7 @@ log = { workspace = true }
 async-channel = { workspace = true }
 once_cell = { workspace = true }
 anyhow = "1.0"
+ttl_cache = "0.5.1"
 
 [features]
 default = ["std"]
