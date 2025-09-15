@@ -968,6 +968,7 @@ dependencies = [
  "async-channel",
  "avail-base",
  "avail-core",
+ "clap 4.5.26",
  "da-commitment",
  "da-control",
  "da-runtime",
@@ -9581,6 +9582,7 @@ version = "0.10.0-dev"
 dependencies = [
  "avail-base",
  "avail-blob",
+ "da-runtime",
  "futures",
  "futures-timer",
  "log",

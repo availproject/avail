@@ -1,11 +1,11 @@
-use std::{path::Path, sync::Arc};
+use std::{path::Path, sync::Arc, time::Duration};
 
 use crate::{
 	decode_blob_notification, handle_incoming_blob_request,
 	store::{BlobStore, RocksdbBlobStore},
 	types::{BlobGossipValidator, BlobNotification, FullClient, BLOB_GOSSIP_PROTO, BLOB_REQ_PROTO},
-	BLOB_EXPIRATION_CHECK_PERIOD, CONCURRENT_REQUESTS, LOG_TARGET, NOTIFICATION_MAX_SIZE,
-	NOTIF_QUEUE_SIZE, REQUEST_MAX_SIZE, REQUEST_TIME_OUT, REQ_RES_QUEUE_SIZE, RESPONSE_MAX_SIZE,
+	BlobCliArgs, BLOB_EXPIRATION_CHECK_PERIOD, CONCURRENT_REQUESTS, LOG_TARGET, NOTIF_QUEUE_SIZE,
+	REQ_RES_QUEUE_SIZE,
 };
 use codec::Encode;
 use futures::{future, FutureExt, StreamExt};
@@ -46,6 +46,7 @@ where
 	pub fn new_blob_service(
 		path: &Path,
 		role: Role,
+		blob_args: BlobCliArgs,
 	) -> (
 		Arc<Self>,
 		RequestResponseConfig,
@@ -70,9 +71,9 @@ where
 		let blob_req_res_cfg = RequestResponseConfig {
 			name: BLOB_REQ_PROTO,
 			fallback_names: vec![],
-			max_request_size: REQUEST_MAX_SIZE,
-			max_response_size: RESPONSE_MAX_SIZE,
-			request_timeout: REQUEST_TIME_OUT,
+			max_request_size: blob_args.request_max_size,
+			max_response_size: blob_args.response_max_size,
+			request_timeout: Duration::from_secs(blob_args.request_timeout_seconds),
 			inbound_queue: Some(blob_req_sender),
 		};
 
@@ -80,7 +81,7 @@ where
 		let (blob_gossip_cfg, blob_gossip_service) = NonDefaultSetConfig::new(
 			BLOB_GOSSIP_PROTO,
 			Vec::default(),
-			NOTIFICATION_MAX_SIZE,
+			blob_args.notification_max_size,
 			None,
 			Default::default(),
 		);

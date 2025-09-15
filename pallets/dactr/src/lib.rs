@@ -80,6 +80,18 @@ pub mod pallet {
 		pub min_blob_holder_percentage: Perbill,
 		/// We take the maximum between this and MIN_BLOB_HOLDER_PERCENTAGE
 		pub min_blob_holder_count: u32,
+		/// Amount of block for which we need to store the blob metadata and blob.
+		pub blob_ttl: u64,
+		/// Amount of block for which we need to store the blob metadata if the blob is not notified yet.
+		pub temp_blob_ttl: u64,
+		/// Min Amount of block for which the transaction submitted through RPC is valid.
+		/// This value needs to handle the time to upload the blob to the store
+		pub min_transaction_validity: u64,
+		/// Max Amount of block for which the transaction submitted through RPC is valid.
+		/// This value is used so a transaction won't be stuck in the mempool.
+		pub max_transaction_validity: u64,
+		/// The number of time we'll allow trying to fetch internal blob metadata or blob data before letting the transaction go through to get discarded
+		pub max_blob_retry_before_discarding: u16,
 	}
 	impl Default for BlobRuntimeParameters {
 		fn default() -> Self {
@@ -87,6 +99,11 @@ pub mod pallet {
 				max_blob_size: 64 * 1024 * 1024,
 				min_blob_holder_percentage: Perbill::from_percent(10),
 				min_blob_holder_count: 2,
+				blob_ttl: 120_960,                    // 20sec block -> 28d - 6sec block -> 8.4d
+				temp_blob_ttl: 180,                   // 20sec block -> 1h - 6sec block -> 18mn
+				min_transaction_validity: 15,         // In blocks
+				max_transaction_validity: 150,        // In blocks
+				max_blob_retry_before_discarding: 10, // In blocks
 			}
 		}
 	}
@@ -375,14 +392,19 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(7)]
-		#[pallet::weight(T::WeightInfo::set_submit_data_fee_modifier())]
+		#[pallet::weight(T::WeightInfo::set_submit_data_fee_modifier())] // TODO Blob real weights
 		pub fn set_blob_runtime_parameters(
 			origin: OriginFor<T>,
 			max_blob_size: Option<u64>,
 			min_blob_holder_percentage: Option<Perbill>,
 			min_blob_holder_count: Option<u32>,
+			blob_ttl: Option<u64>,
+			temp_blob_ttl: Option<u64>,
+			min_transaction_validity: Option<u64>,
+			max_transaction_validity: Option<u64>,
+			max_blob_retry_before_discarding: Option<u16>,
 		) -> DispatchResultWithPostInfo {
-			ensure_signed(origin)?;
+			ensure_root(origin)?;
 
 			BlobRuntimeParams::<T>::mutate(|params| {
 				if let Some(v) = max_blob_size {
@@ -393,6 +415,21 @@ pub mod pallet {
 				}
 				if let Some(v) = min_blob_holder_count {
 					params.min_blob_holder_count = v;
+				}
+				if let Some(v) = blob_ttl {
+					params.blob_ttl = v;
+				}
+				if let Some(v) = temp_blob_ttl {
+					params.temp_blob_ttl = v;
+				}
+				if let Some(v) = min_transaction_validity {
+					params.min_transaction_validity = v;
+				}
+				if let Some(v) = max_transaction_validity {
+					params.max_transaction_validity = v;
+				}
+				if let Some(v) = max_blob_retry_before_discarding {
+					params.max_blob_retry_before_discarding = v;
 				}
 			});
 

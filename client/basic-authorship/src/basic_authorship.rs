@@ -27,6 +27,7 @@ use avail_blob::{
 	utils::{check_if_wait_next_block, get_blob_txs_summary},
 };
 use codec::Encode;
+use da_runtime::apis::BlobApi;
 use futures::{
 	channel::oneshot,
 	future::{self, Future, FutureExt},
@@ -259,7 +260,8 @@ where
 	C::Api: ApiExt<Block>
 		+ BlockBuilderApi<Block>
 		+ PostInherentsProvider<Block>
-		+ TaggedTransactionQueue<Block>,
+		+ TaggedTransactionQueue<Block>
+		+ BlobApi<Block>,
 	PR: ProofRecording,
 {
 	type CreateProposer = future::Ready<Result<Self::Proposer, Self::Error>>;
@@ -305,7 +307,8 @@ where
 	C::Api: ApiExt<Block>
 		+ BlockBuilderApi<Block>
 		+ PostInherentsProvider<Block>
-		+ TaggedTransactionQueue<Block>,
+		+ TaggedTransactionQueue<Block>
+		+ BlobApi<Block>,
 	PR: ProofRecording,
 {
 	type Proposal =
@@ -366,7 +369,8 @@ where
 	C::Api: ApiExt<Block>
 		+ BlockBuilderApi<Block>
 		+ PostInherentsProvider<Block>
-		+ TaggedTransactionQueue<Block>,
+		+ TaggedTransactionQueue<Block>
+		+ BlobApi<Block>,
 	PR: ProofRecording,
 {
 	async fn propose_with(

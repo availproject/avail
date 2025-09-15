@@ -13,6 +13,8 @@ use crate::{
 };
 use anyhow::{anyhow, Result};
 use codec::{Decode, Encode};
+use da_control::BlobRuntimeParameters;
+use da_runtime::apis::BlobApi;
 use futures::channel::oneshot;
 use sc_client_api::HeaderBackend;
 use sc_network::{
@@ -20,6 +22,7 @@ use sc_network::{
 	IfDisconnected, NetworkPeers, NetworkRequest, NetworkService, NetworkStateInfo, ObservedRole,
 	PeerId,
 };
+use sp_api::ProvideRuntimeApi;
 use sp_runtime::{traits::Block as BlockT, SaturatedConversion};
 use std::{str::FromStr, sync::Arc, time::Duration};
 use store::{BlobStore, RocksdbBlobStore};
@@ -32,33 +35,17 @@ pub mod utils;
 
 pub(crate) const LOG_TARGET: &str = "avail::blob";
 
-/***** TODO Blob: Make CLI / Runtime args from this, must be compatible with rpc flags *****/
+/*** CLI Arguments defaults ***/
 /// Maximum notification size
 const NOTIFICATION_MAX_SIZE: u64 = 2 * 1024 * 1024;
 /// Maximum request size
 const REQUEST_MAX_SIZE: u64 = 128 * 1024;
 /// Maximum response size
 const RESPONSE_MAX_SIZE: u64 = 65 * 1024 * 1024;
-/// Maximum request time
-const REQUEST_TIME_OUT: Duration = Duration::from_secs(30);
-/// The maximum number of allowed parallel request processing or notification processing
-const CONCURRENT_REQUESTS: usize = 256;
+/// Maximum request time in seconds
+const REQUEST_TIMEOUT_SECONDS: u64 = 30;
 
-// Business logic
-/// Amount of block for which we need to store the blob metadata and blob.
-const BLOB_TTL: u64 = 120_960; // 28 days
-/// Amount of block for which we need to store the blob metadata if the blob is not notified yet.
-const TEMP_BLOB_TTL: u64 = 180;
-/// Amount of blocks used to periodically check wether we should remove expired blobs or not.
-const BLOB_EXPIRATION_CHECK_PERIOD: u64 = 180; // 1 hour
-/// Min Amount of block for which the transaction submitted through RPC is valid.
-/// This value needs to handle the time to upload the blob to the store
-const MIN_TRANSACTION_VALIDITY: u64 = 15; // 5 mn
-/// Max Amount of block for which the transaction submitted through RPC is valid.
-/// This value is used so a transaction won't be stuck in the mempool.
-const MAX_TRANSACTION_VALIDITY: u64 = 150; // 50 mn
-/// The number of time we'll allow trying to fetch internal blob metadata or blob data before letting the transaction go through to get discarded
-const MAX_BLOB_RETRY_BEFORE_DISCARDING: u16 = 10; // Keep one minute, for for 20sec blocktime -> 3, for 6sec blocktime -> 10
+/*** Constant values ***/
 /// The number of block for which a notification is considered valid
 const NOTIFICATION_EXPIRATION_PERIOD: u64 = 180;
 /// The number of retries the validator is going to make before stopping a blob request
@@ -73,6 +60,23 @@ const BLOB_CACHE_DURATION: Duration = Duration::from_secs(120);
 const NOTIF_QUEUE_SIZE: u8 = 255;
 /// The number to bound the request / response queue
 const REQ_RES_QUEUE_SIZE: u8 = 255;
+/// The maximum number of allowed parallel request processing or notification processing
+const CONCURRENT_REQUESTS: usize = 255;
+/// Amount of blocks used to periodically check wether we should remove expired blobs or not.
+const BLOB_EXPIRATION_CHECK_PERIOD: u64 = 180;
+
+// CLI Arguments
+#[derive(Debug, clap::Parser)]
+pub struct BlobCliArgs {
+	#[clap(long = "blob-notification-max-size", default_value_t = NOTIFICATION_MAX_SIZE)]
+	pub notification_max_size: u64,
+	#[clap(long = "blob-request-max-size", default_value_t = REQUEST_MAX_SIZE)]
+	pub request_max_size: u64,
+	#[clap(long = "blob-response-max-size", default_value_t = RESPONSE_MAX_SIZE)]
+	pub response_max_size: u64,
+	#[clap(long = "blob-request-timeout-seconds", default_value_t = REQUEST_TIMEOUT_SECONDS)]
+	pub request_timeout_seconds: u64,
+}
 
 pub async fn decode_blob_notification<Block>(data: &[u8], blob_handle: &BlobHandle<Block>)
 where
@@ -83,7 +87,7 @@ where
 			BlobNotification::BlobReceived(blob_received) => {
 				match PeerId::from_str(&blob_received.original_peer_id.clone()) {
 					Ok(original_peer_id) => {
-						handle_blob_received_notification::<Block>(
+						handle_blob_received_notification(
 							blob_received,
 							blob_handle,
 							original_peer_id,
@@ -166,6 +170,17 @@ async fn handle_blob_received_notification<Block>(
 		return;
 	}
 
+	let blob_runtime_params = match client
+		.runtime_api()
+		.get_blob_runtime_parameters(finalized_hash)
+	{
+		Ok(p) => p,
+		Err(e) => {
+			log::error!("Could not get blob_params: {e:?}");
+			BlobRuntimeParameters::default()
+		},
+	};
+
 	let validators = get_active_validators(&client, &announced_finalized_hash.encode());
 	let nb_validators_per_blob = get_validator_per_blob(
 		&client,
@@ -206,7 +221,7 @@ async fn handle_blob_received_notification<Block>(
 	// Here, no matter if it's a new blob or a duplicate, we set the new expiration time and update the ownership / block timestamp.
 	blob_meta.finalized_block_hash = announced_finalized_hash;
 	blob_meta.finalized_block_number = announced_finalized_number;
-	blob_meta.expires_at = announced_finalized_number.saturating_add(BLOB_TTL);
+	blob_meta.expires_at = announced_finalized_number.saturating_add(blob_runtime_params.blob_ttl);
 	blob_meta.nb_validators_per_blob = nb_validators_per_blob;
 
 	// Check signatures in case blob ownership is filled
@@ -770,12 +785,21 @@ async fn handle_blob_stored_notification<Block>(
 			.ok()
 			.flatten();
 		if existing_expiry.is_none() {
-			let block_number = match client.header(blob_stored.hash) {
-				Ok(Some(h)) => h.number,
-				_ => client.info().finalized_number,
+			let (block_number, block_hash) = match client.header(blob_stored.hash) {
+				Ok(Some(h)) => (h.number, h.hash()),
+				_ => (client.info().finalized_number, client.info().finalized_hash),
 			};
 			let block_number: u64 = block_number.saturated_into();
-			let expires_at = block_number.saturating_add(TEMP_BLOB_TTL);
+
+			let blob_runtime_params =
+				match client.runtime_api().get_blob_runtime_parameters(block_hash) {
+					Ok(p) => p,
+					Err(e) => {
+						log::error!("Could not get blob_params: {e:?}");
+						BlobRuntimeParameters::default()
+					},
+				};
+			let expires_at = block_number.saturating_add(blob_runtime_params.temp_blob_ttl);
 			if let Err(e) = blob_handle
 				.blob_store
 				.insert_blob_ownership_expiry(&blob_stored.hash, expires_at)

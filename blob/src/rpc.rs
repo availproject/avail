@@ -7,12 +7,12 @@ use crate::{
 		build_signature_payload, check_store_blob, generate_base_index, get_active_validators,
 		get_my_validator_id, get_validator_per_blob_inner, sign_blob_data_inner,
 	},
-	BLOB_TTL, MAX_RPC_RETRIES, MAX_TRANSACTION_VALIDITY, MIN_TRANSACTION_VALIDITY, TEMP_BLOB_TTL,
+	MAX_RPC_RETRIES,
 };
 use anyhow::{anyhow, Result};
 use codec::{Decode, Encode};
 use da_commitment::build_da_commitments::build_da_commitments;
-use da_control::{pallet::BlobTxSummaryRuntime, Call};
+use da_control::{pallet::BlobTxSummaryRuntime, BlobRuntimeParameters, Call};
 use da_runtime::{apis::BlobApi, RuntimeCall, UncheckedExtrinsic};
 use jsonrpsee::{
 	core::{async_trait, RpcResult},
@@ -134,7 +134,8 @@ where
 		{
 			Ok(p) => p,
 			Err(e) => {
-				return Err(internal_err!("Could not get blob_params: {e:?}"));
+				log::error!("Could not get blob_params: {e:?}");
+				BlobRuntimeParameters::default()
 			},
 		};
 		if blob.0.len() as u64 > blob_params.max_blob_size {
@@ -214,12 +215,12 @@ where
 				return Err(internal_err!("metadata extrinsic rejected by runtime"));
 			};
 			// --- c. Check also that transaction lifetime is above minimum tx lifetime so it does not expire. If validity is not correct, we reject the tx
-			if validity.longevity < MIN_TRANSACTION_VALIDITY {
+			if validity.longevity < blob_params.min_transaction_validity {
 				return Err(internal_err!(
 					"signed transaction does not live for enough time"
 				));
 			}
-			if validity.longevity > MAX_TRANSACTION_VALIDITY {
+			if validity.longevity > blob_params.max_transaction_validity {
 				return Err(internal_err!("signed transaction lifetime is too long"));
 			}
 			Ok(opaque_tx)
@@ -289,9 +290,10 @@ where
 				return;
 			}
 			let nb_validators_per_blob =
-				get_validator_per_blob_inner(blob_params, validators.len() as u32);
+				get_validator_per_blob_inner(blob_params.clone(), validators.len() as u32);
 			blob_metadata.is_notified = true;
-			blob_metadata.expires_at = finalized_block_number.saturating_add(TEMP_BLOB_TTL);
+			blob_metadata.expires_at =
+				finalized_block_number.saturating_add(blob_params.temp_blob_ttl);
 			blob_metadata.finalized_block_hash = finalized_block_hash;
 			blob_metadata.finalized_block_number = finalized_block_number;
 			blob_metadata.nb_validators_per_blob = nb_validators_per_blob;
@@ -329,7 +331,8 @@ where
 				if let Err(e) = blob_handle.blob_store.insert_blob_ownership(&blob_hash, o) {
 					log::error!("failed to insert blob ownership into store: {e}");
 				}
-				blob_metadata.expires_at = finalized_block_number.saturating_add(BLOB_TTL);
+				blob_metadata.expires_at =
+					finalized_block_number.saturating_add(blob_params.blob_ttl);
 			}
 
 			// Store the blob in the store -------------------

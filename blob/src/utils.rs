@@ -2,7 +2,6 @@ use crate::{
 	p2p::BlobHandle,
 	store::{BlobStore, RocksdbBlobStore},
 	types::{BlobHash, BlobMetadata, BlobSignatureData, BlobTxSummary, OwnershipEntry},
-	MAX_BLOB_RETRY_BEFORE_DISCARDING, MAX_TRANSACTION_VALIDITY, MIN_TRANSACTION_VALIDITY,
 };
 use anyhow::{anyhow, Context, Result};
 use codec::{Decode, Encode};
@@ -247,7 +246,7 @@ pub fn check_if_wait_next_block<C, Block>(
 where
 	Block: BlockT,
 	C: HeaderBackend<Block> + ProvideRuntimeApi<Block>,
-	C::Api: TaggedTransactionQueue<Block>,
+	C::Api: TaggedTransactionQueue<Block> + BlobApi<Block>,
 {
 	let timer = std::time::Instant::now();
 	log::info!(
@@ -280,7 +279,7 @@ where
 		Ok(Some(meta)) => {
 			let Ok(ownerships) = blob_store.get_blob_ownerships(&blob_hash) else {
 				log::error!("Failed to read from db");
-				should_submit = check_retries_for_blob(blob_hash, blob_store);
+				should_submit = check_retries_for_blob(client, blob_hash, blob_store);
 				return (should_submit, is_submit_blob_metadata);
 			};
 			// Store it for later
@@ -306,23 +305,34 @@ where
 					return (should_submit, is_submit_blob_metadata);
 				};
 
+				let blob_runtime_params = match client
+					.runtime_api()
+					.get_blob_runtime_parameters(meta.finalized_block_hash)
+				{
+					Ok(p) => p,
+					Err(e) => {
+						log::error!("Could not get blob_params: {e:?}");
+						BlobRuntimeParameters::default()
+					},
+				};
+
 				match validity_res {
 					Ok(v) => {
-						if v.longevity < MIN_TRANSACTION_VALIDITY
-							|| v.longevity > MAX_TRANSACTION_VALIDITY
+						if v.longevity < blob_runtime_params.min_transaction_validity
+							|| v.longevity > blob_runtime_params.max_transaction_validity
 						{
 							// longevity out of our acceptable window → submit & drop
 							should_submit = true;
 						} else {
 							// still valid and longevity in-bounds → wait another block
 							// But check the number of retried
-							should_submit = check_retries_for_blob(blob_hash, blob_store);
+							should_submit = check_retries_for_blob(client, blob_hash, blob_store);
 						}
 					},
 					Err(e) => match e {
 						TransactionValidityError::Invalid(InvalidTransaction::Future) => {
 							// The transaction is supposed to go in, but it's waiting for a tx with a lower nonce.
-							should_submit = check_retries_for_blob(blob_hash, blob_store);
+							should_submit = check_retries_for_blob(client, blob_hash, blob_store);
 						},
 						_ => {
 							// Anything went wrong → submit so it disappears
@@ -335,7 +345,7 @@ where
 
 		// No metadata yet (or DB error) → maybe we just haven't seen the blob announcement
 		_ => {
-			should_submit = check_retries_for_blob(blob_hash, blob_store);
+			should_submit = check_retries_for_blob(client, blob_hash, blob_store);
 		},
 	}
 
@@ -350,12 +360,29 @@ where
 	(should_submit, is_submit_blob_metadata)
 }
 
-pub fn check_retries_for_blob<Block: BlockT>(
+pub fn check_retries_for_blob<Block, C>(
+	client: &Arc<C>,
 	blob_hash: &BlobHash,
 	blob_store: &Arc<RocksdbBlobStore<Block>>,
-) -> bool {
+) -> bool
+where
+	Block: BlockT,
+	C: HeaderBackend<Block> + ProvideRuntimeApi<Block>,
+	C::Api: BlobApi<Block>,
+{
+	let finalized_hash = client.info().finalized_hash;
+	let blob_runtime_params = match client
+		.runtime_api()
+		.get_blob_runtime_parameters(finalized_hash)
+	{
+		Ok(p) => p,
+		Err(e) => {
+			log::error!("Could not get blob_params: {e:?}");
+			BlobRuntimeParameters::default()
+		},
+	};
 	let tried = blob_store.get_blob_retry(blob_hash).unwrap_or(0);
-	if tried <= MAX_BLOB_RETRY_BEFORE_DISCARDING {
+	if tried <= blob_runtime_params.max_blob_retry_before_discarding {
 		// bump retry count and wait
 		let _ = blob_store.insert_blob_retry(blob_hash, tried + 1);
 		log::info!(
