@@ -58,7 +58,7 @@ const MIN_TRANSACTION_VALIDITY: u64 = 15; // 5 mn
 /// This value is used so a transaction won't be stuck in the mempool.
 const MAX_TRANSACTION_VALIDITY: u64 = 150; // 50 mn
 /// The number of time we'll allow trying to fetch internal blob metadata or blob data before letting the transaction go through to get discarded
-const MAX_BLOB_RETRY_BEFORE_DISCARDING: u16 = 3;
+const MAX_BLOB_RETRY_BEFORE_DISCARDING: u16 = 10; // Keep one minute, for for 20sec blocktime -> 3, for 6sec blocktime -> 10
 /// The number of block for which a notification is considered valid
 const NOTIFICATION_EXPIRATION_PERIOD: u64 = 180;
 /// The number of retries the validator is going to make before stopping a blob request
@@ -69,6 +69,10 @@ const MAX_RPC_RETRIES: u8 = 3;
 const MAX_BLOBS_IN_CACHE: u8 = 128;
 /// Time for blobs in the cache
 const BLOB_CACHE_DURATION: Duration = Duration::from_secs(120);
+/// The number to bound the notification queue
+const NOTIF_QUEUE_SIZE: u8 = 255;
+/// The number to bound the request / response queue
+const REQ_RES_QUEUE_SIZE: u8 = 255;
 
 pub async fn decode_blob_notification<Block>(data: &[u8], blob_handle: &BlobHandle<Block>)
 where

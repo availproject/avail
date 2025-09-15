@@ -5,7 +5,7 @@ use crate::{
 	store::{BlobStore, RocksdbBlobStore},
 	types::{BlobGossipValidator, BlobNotification, FullClient, BLOB_GOSSIP_PROTO, BLOB_REQ_PROTO},
 	BLOB_EXPIRATION_CHECK_PERIOD, CONCURRENT_REQUESTS, LOG_TARGET, NOTIFICATION_MAX_SIZE,
-	REQUEST_MAX_SIZE, REQUEST_TIME_OUT, RESPONSE_MAX_SIZE,
+	NOTIF_QUEUE_SIZE, REQUEST_MAX_SIZE, REQUEST_TIME_OUT, REQ_RES_QUEUE_SIZE, RESPONSE_MAX_SIZE,
 };
 use codec::Encode;
 use futures::{future, FutureExt, StreamExt};
@@ -65,7 +65,8 @@ where
 		);
 
 		// Initialize the blob Blob req/res protocol config
-		let (blob_req_sender, blob_req_receiver) = async_channel::unbounded();
+		let (blob_req_sender, blob_req_receiver) =
+			async_channel::bounded(REQ_RES_QUEUE_SIZE as usize);
 		let blob_req_res_cfg = RequestResponseConfig {
 			name: BLOB_REQ_PROTO,
 			fallback_names: vec![],
@@ -181,7 +182,7 @@ where
 		let incoming_receiver = gossip_engine.messages_for(topic);
 
 		let (gossip_cmd_sender, gossip_cmd_receiver) =
-			async_channel::unbounded::<BlobNotification<Block>>();
+			async_channel::bounded::<BlobNotification<Block>>(NOTIF_QUEUE_SIZE as usize);
 
 		spawn_handle.spawn("gossip-sender", None, async move {
 			loop {
