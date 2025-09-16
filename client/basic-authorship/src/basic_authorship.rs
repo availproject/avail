@@ -389,13 +389,13 @@ where
 			.build()?;
 
 		self.client.init_post_inherent_data();
-		self.apply_inherents(&mut block_builder, inherent_data)?;
+		let inherent_len = self.apply_inherents(&mut block_builder, inherent_data)?;
 
 		// TODO call `after_inherents` and check if we should apply extrinsincs here
 		// <https://github.com/paritytech/substrate/pull/14275/>
 
 		let (end_reason, blob_txs_summary, total_blob_size) = self
-			.apply_extrinsics(&mut block_builder, deadline, block_size_limit)
+			.apply_extrinsics(&mut block_builder, deadline, block_size_limit, inherent_len)
 			.await?;
 
 		self.apply_post_inherents(&mut block_builder, blob_txs_summary, total_blob_size)?;
@@ -419,9 +419,10 @@ where
 		&self,
 		block_builder: &mut sc_block_builder::BlockBuilder<'_, Block, C>,
 		inherent_data: InherentData,
-	) -> Result<(), sp_blockchain::Error> {
+	) -> Result<usize, sp_blockchain::Error> {
 		let create_inherents_start = time::Instant::now();
 		let inherents = block_builder.create_inherents(inherent_data)?;
+		let inherents_len = inherents.len();
 		let create_inherents_end = time::Instant::now();
 
 		self.metrics.report(|metrics| {
@@ -455,7 +456,7 @@ where
 				Ok(_) => {},
 			}
 		}
-		Ok(())
+		Ok(inherents_len)
 	}
 
 	fn apply_post_inherents(
@@ -516,6 +517,7 @@ where
 		block_builder: &mut sc_block_builder::BlockBuilder<'_, Block, C>,
 		deadline: time::Instant,
 		block_size_limit: Option<usize>,
+		inherent_len: usize,
 	) -> Result<(EndProposingReason, Vec<BlobTxSummary>, u64), sp_blockchain::Error> {
 		// proceed with transactions
 		// We calculate soft deadline used only in case we start skipping transactions.
@@ -550,7 +552,7 @@ where
 		let mut transaction_pushed = false;
 
 		let mut submit_blob_metadata_calls = Vec::new();
-		let mut tx_index = 1; // We start at one to accomodate for timestamp set inherent
+		let mut tx_index: u32 = inherent_len.saturated_into();
 		let mut blob_metadata: BTreeMap<H256, (BlobMetadata<Block>, Vec<OwnershipEntry>)> =
 			BTreeMap::new();
 

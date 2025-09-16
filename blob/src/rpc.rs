@@ -5,7 +5,8 @@ use crate::{
 	types::{Blob, BlobMetadata, BlobNotification, BlobReceived, Deps, OwnershipEntry},
 	utils::{
 		build_signature_payload, check_store_blob, generate_base_index, get_active_validators,
-		get_my_validator_id, get_validator_per_blob_inner, sign_blob_data_inner,
+		get_dynamic_blocklength_key, get_my_validator_id, get_validator_per_blob_inner,
+		sign_blob_data_inner,
 	},
 	MAX_RPC_RETRIES,
 };
@@ -14,18 +15,22 @@ use codec::{Decode, Encode};
 use da_commitment::build_da_commitments::build_da_commitments;
 use da_control::{pallet::BlobTxSummaryRuntime, BlobRuntimeParameters, Call};
 use da_runtime::{apis::BlobApi, RuntimeCall, UncheckedExtrinsic};
+use frame_system::limits::BlockLength;
 use jsonrpsee::{
 	core::{async_trait, RpcResult},
 	proc_macros::rpc,
 	types::error::ErrorObject,
 };
 use kate::Seed;
-use sc_client_api::{BlockBackend, HeaderBackend};
+use sc_client_api::{BlockBackend, HeaderBackend, StateBackend};
 use sc_network::{NetworkStateInfo, PeerId};
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::ProvideRuntimeApi;
 use sp_core::{keccak_256, Bytes, H256};
-use sp_runtime::{traits::Block as BlockT, SaturatedConversion};
+use sp_runtime::{
+	traits::{Block as BlockT, HashingFor},
+	SaturatedConversion,
+};
 use sp_runtime::{transaction_validity::TransactionSource, AccountId32};
 use sp_transaction_pool::runtime_api::TaggedTransactionQueue;
 use std::{
@@ -34,6 +39,7 @@ use std::{
 	sync::Arc,
 };
 use tokio::{task, try_join};
+
 pub enum Error {
 	BlobError,
 }
@@ -79,26 +85,33 @@ where
 	async fn clear_blob_storage(&self) -> RpcResult<()>;
 }
 
-pub struct BlobRpc<Client, Pool, Block: BlockT> {
+pub struct BlobRpc<Client, Pool, Block: BlockT, Backend> {
 	client: Arc<Client>,
 	pool: Arc<Pool>,
 	blob_handle: Arc<BlobHandle<Block>>,
+	backend: Arc<Backend>,
 	_block: PhantomData<Block>,
 }
 
-impl<Client, Pool, Block: BlockT> BlobRpc<Client, Pool, Block> {
-	pub fn new(client: Arc<Client>, pool: Arc<Pool>, deps: Deps<Block>) -> Self {
+impl<Client, Pool, Block: BlockT, Backend> BlobRpc<Client, Pool, Block, Backend> {
+	pub fn new(
+		client: Arc<Client>,
+		pool: Arc<Pool>,
+		deps: Deps<Block>,
+		backend: Arc<Backend>,
+	) -> Self {
 		Self {
 			client,
 			pool,
 			blob_handle: deps.blob_handle,
+			backend,
 			_block: PhantomData,
 		}
 	}
 }
 
 #[async_trait]
-impl<Client, Pool, Block> BlobApiServer<Block> for BlobRpc<Client, Pool, Block>
+impl<Client, Pool, Block, Backend> BlobApiServer<Block> for BlobRpc<Client, Pool, Block, Backend>
 where
 	Block: BlockT,
 	Client: HeaderBackend<Block>
@@ -109,6 +122,8 @@ where
 		+ 'static,
 	Client::Api: TaggedTransactionQueue<Block> + BlobApi<Block>,
 	Pool: TransactionPool<Block = Block> + 'static,
+	Backend: sc_client_api::Backend<Block> + Send + Sync + 'static,
+	Backend::State: StateBackend<HashingFor<Block>>,
 {
 	async fn submit_blob(&self, metadata_signed_transaction: Bytes, blob: Bytes) -> RpcResult<()> {
 		let timer = std::time::Instant::now();
@@ -183,18 +198,17 @@ where
 
 		// Prepare generated commitment
 		let blob_vec: Vec<u8> = blob.to_vec();
+		let (cols, rows) = get_dynamic_block_length(&self.backend, finalized_block_hash)?;
 		let commitment_fut = async {
 			task::spawn_blocking({
 				let blob_vec = blob_vec.clone();
-				// TODO Blob take values from the runtime
-				move || build_da_commitments(blob_vec, 1024, 4096, Seed::default())
+				move || build_da_commitments(blob_vec, cols, rows, Seed::default())
 			})
 			.await
 			.map_err(|e| internal_err!("Join error: {e}"))
 		};
 
 		// Check tx validity
-
 		let pre_validate_fut = async {
 			// --- a. Decode the opaque extrinsic ---------------------------------
 			let opaque_tx: Block::Extrinsic =
@@ -633,4 +647,29 @@ where
 	} else {
 		Ok(None)
 	}
+}
+
+fn get_dynamic_block_length<Block, Backend>(
+	backend: &Arc<Backend>,
+	finalized_block_hash: Block::Hash,
+) -> RpcResult<(usize, usize)>
+where
+	Block: BlockT,
+	Backend: sc_client_api::Backend<Block> + Send + Sync + 'static,
+	Backend::State: StateBackend<HashingFor<Block>>,
+{
+	let storage_key = get_dynamic_blocklength_key();
+	let state = backend
+		.state_at(finalized_block_hash)
+		.map_err(|e| internal_err!("State backend error: {e:?}"))?;
+	let maybe_raw = state
+		.storage(&storage_key.0)
+		.map_err(|e| internal_err!("Storage query error: {e:?}"))?;
+	let raw = maybe_raw.ok_or(internal_err!("DynamicBlockLength not found"))?;
+	let block_length =
+		BlockLength::decode(&mut &raw[..]).map_err(|e| internal_err!("Decode error: {e:?}"))?;
+	let cols = block_length.cols.0 as usize;
+	let rows = block_length.rows.0 as usize;
+
+	Ok((cols, rows))
 }

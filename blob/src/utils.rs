@@ -7,12 +7,12 @@ use anyhow::{anyhow, Context, Result};
 use codec::{Decode, Encode};
 use da_control::{BlobRuntimeParameters, Call};
 use da_runtime::{apis::BlobApi, RuntimeCall, UncheckedExtrinsic};
-use sc_client_api::HeaderBackend;
+use sc_client_api::{HeaderBackend, StorageKey};
 use sc_keystore::{Keystore, LocalKeystore};
 use sc_transaction_pool_api::TransactionSource;
 use sp_api::ProvideRuntimeApi;
 use sp_authority_discovery::AuthorityId;
-use sp_core::sr25519;
+use sp_core::{sr25519, twox_128};
 use sp_runtime::{
 	key_types,
 	traits::{Block as BlockT, Verify},
@@ -393,7 +393,7 @@ where
 	} else {
 		// give up: submit to get it dropped quickly
 		log::info!(
-			"BLOB - RPC check_retries_for_blob - it lives - {:?}",
+			"BLOB - RPC check_retries_for_blob - it dies - {:?}",
 			blob_hash
 		);
 		true
@@ -453,7 +453,7 @@ fn get_block_tx_summary<Block: BlockT>(
 	let (meta, ownerships) = match blob_metadata {
 		Some(m) => m,
 		None => {
-			return Err("Blob metadata not found in the store to sample the blob".into());
+			return Err("Blob metadata not found in the store to check for ownerships".into());
 		},
 	};
 
@@ -566,4 +566,12 @@ pub fn verify_signed_blob_data(
 
 	let valid = signature.verify(payload.as_slice(), &public);
 	Ok(valid)
+}
+
+pub fn get_dynamic_blocklength_key() -> StorageKey {
+	let mut key = Vec::new();
+	key.extend(&twox_128(b"System"));
+	key.extend(&twox_128(b"BlockLength"));
+	let storage_key = StorageKey(key);
+	storage_key
 }

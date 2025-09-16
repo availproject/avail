@@ -71,7 +71,7 @@ pub mod time {
 	///
 	/// <https://research.web3.foundation/en/latest/polkadot/block-production/Babe.html#-6.-practical-results>
 	#[cfg(not(feature = "fast-runtime"))]
-	pub const MILLISECS_PER_BLOCK: Moment = 6_000; // TODO Blob 20
+	pub const MILLISECS_PER_BLOCK: Moment = 6_000;
 	#[cfg(feature = "fast-runtime")]
 	pub const MILLISECS_PER_BLOCK: Moment = 6_000;
 

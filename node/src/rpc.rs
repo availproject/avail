@@ -233,12 +233,13 @@ where
 		.into_rpc(),
 	)?;
 
-	io.merge(StateMigration::new(client.clone(), backend, deny_unsafe).into_rpc())?;
+	io.merge(StateMigration::new(client.clone(), backend.clone(), deny_unsafe).into_rpc())?;
 
-	io.merge(BlobApiServer::into_rpc(BlobRpc::<C, P, Block>::new(
+	io.merge(BlobApiServer::into_rpc(BlobRpc::<C, P, Block, B>::new(
 		client.clone(),
 		pool,
 		blob_rpc_deps,
+		backend,
 	)))?;
 
 	if is_dev_chain || kate_rpc_deps.rpc_metrics_enabled {

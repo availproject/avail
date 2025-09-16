@@ -11,7 +11,6 @@ use avail_core::{
 use da_control::{
 	extensions::native::hosted_commitment_builder::build_da_commitments, Call as DACall,
 };
-use frame_system::limits::BlockLength;
 use kate::Seed;
 use pallet_multisig::Call as MultisigCall;
 use pallet_proxy::Call as ProxyCall;
@@ -132,8 +131,7 @@ fn filter_da_call(
 				return None;
 			}
 			let blob_hash = H256(keccak_256(&data));
-			// TODO Blob take values from the runtime
-			let block_length = BlockLength::default();
+			let block_length = frame_system::Pallet::<Runtime>::block_length();
 			let commitment = build_da_commitments(data.to_vec(), block_length, Seed::default());
 			(blob_hash, commitment)
 		},

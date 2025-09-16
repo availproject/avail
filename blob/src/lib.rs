@@ -896,7 +896,7 @@ pub fn process_blob_query_request<Block: BlockT>(
 			Some(s) => Some(Blob {
 				blob_hash: s.blob_hash,
 				size: s.size,
-				data: s.data.iter().cloned().take(5).collect(), // TODO Blob: Should we return all the data ? Seems heavy for the RPC
+				data: s.data.iter().cloned().take(5).collect(),
 			}),
 		},
 		Err(e) => {

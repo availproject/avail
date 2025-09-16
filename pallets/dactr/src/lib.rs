@@ -74,7 +74,7 @@ pub mod pallet {
 	/// Structure for blob runtime parameters
 	#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, MaxEncodedLen, TypeInfo)]
 	pub struct BlobRuntimeParameters {
-		/// Maximum size of a blob, need to change the rpc request and response size to handle this // TODO Blob handle size change based on max blob response size
+		/// Maximum size of a blob, need to change the rpc request and response size to handle this
 		pub max_blob_size: u64,
 		/// Minimum amount of validator that needs to store a blob, if we have less than minimum, everyone stores it.
 		pub min_blob_holder_percentage: Perbill,
@@ -357,7 +357,7 @@ pub mod pallet {
 
 		#[pallet::call_index(5)]
 		#[pallet::weight((
-			T::WeightInfo::set_submit_data_fee_modifier(),
+			T::WeightInfo::set_submit_data_fee_modifier(), // TODO Blob real weights
 			DispatchClass::Normal
 		))]
 		pub fn submit_blob_metadata(
@@ -378,7 +378,7 @@ pub mod pallet {
 
 		#[pallet::call_index(6)]
 		#[pallet::weight((
-			T::WeightInfo::set_submit_data_fee_modifier(),
+			T::WeightInfo::set_submit_data_fee_modifier(), // TODO Blob real weights
 			DispatchClass::Mandatory
 		))]
 		pub fn submit_blob_txs_summary(

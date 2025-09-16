@@ -128,7 +128,7 @@ where
 {
 	fn default() -> Self {
 		let blob_store = Arc::new(RocksdbBlobStore::default());
-		let blob_data_store = Arc::new(RocksdbBlobStore::default()); // TODO BLOB Actually use a different type of db for blob_data store and separate functions
+		let blob_data_store = Arc::new(RocksdbBlobStore::default());
 		let network = Arc::new(OnceCell::new());
 		let keystore = Arc::new(OnceCell::new());
 		let client = Arc::new(OnceCell::new());
