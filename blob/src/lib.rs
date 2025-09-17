@@ -352,8 +352,21 @@ async fn handle_blob_received_notification<Block>(
 				return;
 			};
 
+			// TODO Store uncompresssed blob size in the struct
+			let blob_data_len = match  blob_response.blob.data()  {
+				Ok(x) => x.len(),
+				Err(_) => {
+						log::error!(
+						target: LOG_TARGET,
+						"Failed to decompress blob. Hash: blob {}",
+						blob_meta.hash,
+					);
+					return;
+				}
+			};
+
 			// Actually check the real blob size
-			if blob_response.blob.len() > blob_runtime_params.max_blob_size as usize {
+			if blob_data_len > blob_runtime_params.max_blob_size as usize {
 				log::error!(target: LOG_TARGET, "Invalid blob size");
 				return;
 			}
