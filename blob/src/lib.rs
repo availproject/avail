@@ -166,6 +166,11 @@ async fn handle_blob_received_notification<Block>(
 		},
 	};
 
+	if blob_received.size > blob_runtime_params.max_blob_size {
+		log::error!(target: LOG_TARGET, "Invalid blob size");
+		return;
+	}
+
 	let validators = get_active_validators(&client, &announced_finalized_hash.encode());
 	let nb_validators_per_blob = get_validator_per_blob(
 		&client,
@@ -346,6 +351,12 @@ async fn handle_blob_received_notification<Block>(
 				);
 				return;
 			};
+
+			// Actually check the real blob size
+			if blob_response.blob.len() > blob_runtime_params.max_blob_size as usize {
+				log::error!(target: LOG_TARGET, "Invalid blob size");
+				return;
+			}
 
 			// Insert the blob in the store
 			if let Err(e) = blob_handle

@@ -48,7 +48,7 @@ pub async fn run() -> Result<(), ClientError> {
 		println!("---------- START Commitment generation {i} ---------- ");
 		let blob: Vec<u8> = repeat(byte).take(len - i).collect::<Vec<u8>>();
 		let blob_hash = H256::from(keccak_256(&blob));
-		let commitments = build_da_commitments(blob.clone(), 1024, 4096, Seed::default());
+		let commitments = build_da_commitments(&blob, 1024, 4096, Seed::default());
 		println!("blob len = {:?}", blob.len());
 		println!("blob_hash = {:?}", blob_hash);
 		println!("commitments len = {:?}", commitments.len());
