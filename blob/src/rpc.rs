@@ -660,18 +660,20 @@ where
 	Backend: sc_client_api::Backend<Block> + Send + Sync + 'static,
 	Backend::State: StateBackend<HashingFor<Block>>,
 {
-	let storage_key = get_dynamic_blocklength_key();
-	let state = backend
-		.state_at(finalized_block_hash)
-		.map_err(|e| internal_err!("State backend error: {e:?}"))?;
-	let maybe_raw = state
-		.storage(&storage_key.0)
-		.map_err(|e| internal_err!("Storage query error: {e:?}"))?;
-	let raw = maybe_raw.ok_or(internal_err!("DynamicBlockLength not found"))?;
-	let block_length =
-		BlockLength::decode(&mut &raw[..]).map_err(|e| internal_err!("Decode error: {e:?}"))?;
-	let cols = block_length.cols.0 as usize;
-	let rows = block_length.rows.0 as usize;
+	return Ok((1024, 4096));
 
-	Ok((cols, rows))
+	// let storage_key = get_dynamic_blocklength_key();
+	// let state = backend
+	// 	.state_at(finalized_block_hash)
+	// 	.map_err(|e| internal_err!("State backend error: {e:?}"))?;
+	// let maybe_raw = state
+	// 	.storage(&storage_key.0)
+	// 	.map_err(|e| internal_err!("Storage query error: {e:?}"))?;
+	// let raw = maybe_raw.ok_or(internal_err!("DynamicBlockLength not found"))?;
+	// let block_length =
+	// 	BlockLength::decode(&mut &raw[..]).map_err(|e| internal_err!("Decode error: {e:?}"))?;
+	// let cols = block_length.cols.0 as usize;
+	// let rows = block_length.rows.0 as usize;
+
+	// Ok((cols, rows))
 }
