@@ -35,7 +35,7 @@ pub mod utils;
 
 pub(crate) const LOG_TARGET: &str = "avail::blob";
 
-/*** CLI Arguments defaults ***/
+/*** Constant values, changing them requires a binary/client update ***/
 /// Maximum notification size
 const NOTIFICATION_MAX_SIZE: u64 = 2 * 1024 * 1024;
 /// Maximum request size
@@ -44,8 +44,6 @@ const REQUEST_MAX_SIZE: u64 = 128 * 1024;
 const RESPONSE_MAX_SIZE: u64 = 65 * 1024 * 1024;
 /// Maximum request time in seconds
 const REQUEST_TIMEOUT_SECONDS: u64 = 30;
-
-/*** Constant values ***/
 /// The number of block for which a notification is considered valid
 const NOTIFICATION_EXPIRATION_PERIOD: u64 = 180;
 /// The number of retries the validator is going to make before stopping a blob request
@@ -64,19 +62,6 @@ const REQ_RES_QUEUE_SIZE: u8 = 255;
 const CONCURRENT_REQUESTS: usize = 255;
 /// Amount of blocks used to periodically check wether we should remove expired blobs or not.
 const BLOB_EXPIRATION_CHECK_PERIOD: u64 = 180;
-
-// CLI Arguments
-#[derive(Debug, clap::Parser)]
-pub struct BlobCliArgs {
-	#[clap(long = "blob-notification-max-size", default_value_t = NOTIFICATION_MAX_SIZE)]
-	pub notification_max_size: u64,
-	#[clap(long = "blob-request-max-size", default_value_t = REQUEST_MAX_SIZE)]
-	pub request_max_size: u64,
-	#[clap(long = "blob-response-max-size", default_value_t = RESPONSE_MAX_SIZE)]
-	pub response_max_size: u64,
-	#[clap(long = "blob-request-timeout-seconds", default_value_t = REQUEST_TIMEOUT_SECONDS)]
-	pub request_timeout_seconds: u64,
-}
 
 pub async fn decode_blob_notification<Block>(data: &[u8], blob_handle: &BlobHandle<Block>)
 where

@@ -22,7 +22,6 @@
 use crate::{cli::Cli, rpc as node_rpc};
 use avail_blob::p2p::BlobHandle;
 use avail_blob::types::{Deps, FullClient};
-use avail_blob::BlobCliArgs;
 use avail_core::AppId;
 use da_runtime::{apis::RuntimeApi, NodeBlock as Block, Runtime};
 
@@ -350,7 +349,6 @@ pub fn new_full_base(
 	unsafe_da_sync: bool,
 	kate_rpc_deps: kate_rpc::Deps,
 	grandpa_justification_period: u32,
-	blob_args: BlobCliArgs,
 ) -> Result<NewFullBase, ServiceError> {
 	let hwbench = if !disable_hardware_benchmarks {
 		config.database.path().map(|database_path| {
@@ -363,7 +361,7 @@ pub fn new_full_base(
 
 	// Blob protocols setup
 	let (blob_handle, blob_req_res_cfg, blob_req_receiver, blob_gossip_cfg, blob_gossip_service) =
-		BlobHandle::new_blob_service(config.base_path.path(), config.role.clone(), blob_args);
+		BlobHandle::new_blob_service(config.base_path.path(), config.role.clone());
 
 	let sc_service::PartialComponents {
 		client,
@@ -666,7 +664,6 @@ pub fn new_full(config: Configuration, cli: Cli) -> Result<TaskManager, ServiceE
 		cli.unsafe_da_sync,
 		kate_rpc_deps,
 		cli.grandpa_justification_period,
-		cli.blob,
 	)
 	.map(|NewFullBase { task_manager, .. }| task_manager)?;
 

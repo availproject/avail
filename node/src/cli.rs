@@ -67,10 +67,6 @@ pub struct Cli {
 	/// This parameter can be used to update the network name and id of the `dev` and `dev_tri` chains.
 	#[arg(long)]
 	pub network_name: Option<String>,
-
-	/// Blob arguments
-	#[clap(flatten)]
-	pub blob: avail_blob::BlobCliArgs,
 }
 
 fn kate_max_cells_size_upper_bound(s: &str) -> Result<usize, String> {
