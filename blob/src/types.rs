@@ -20,6 +20,9 @@ use std::{
 	sync::Arc,
 	time::{Duration, Instant},
 };
+use std::borrow::Cow;
+use crate::LOG_TARGET;
+use std::io::Write;
 
 pub type BlobHash = H256;
 
@@ -221,7 +224,7 @@ pub struct BlobResponse {
 	/// The hash of the blob.
 	pub hash: BlobHash,
 	/// The encoded blob data, must be decoded to Blob type.
-	pub blob: Vec<u8>,
+	pub blob: CompressedBlob,
 }
 
 /// Structure for the notification a validator sends after receiving a blob
@@ -346,4 +349,136 @@ pub enum BlobRequestEnum {
 pub enum BlobResponseEnum {
 	BlobResponse(BlobResponse),
 	BlobQueryResponse(Option<Blob>),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
+#[repr(u8)]
+pub enum CompressedBlob {
+	Nocompression(Vec<u8>) = 0,
+	Zstd(Vec<u8>) = 1,
+}
+
+impl CompressedBlob {
+	pub fn new_nocompression(blob: Vec<u8>) -> Self {
+		Self::Nocompression(blob)
+	}
+
+	// Level 1, 3, 4, 8 and 9 are fine. Going above 9 is not recommended as
+	// the compression benefits are not that great but the time it takes
+	// to compress goes up sopmewhat exponentially
+	//
+	// Level 3 is ultra fast but still provides pretty good compression rate
+	pub fn new_zstd_compressed(blob: &[u8], level: i32) -> Result<Self, std::io::Error> {
+		let mut out = Vec::with_capacity(blob.len() / 3);
+		let mut encoder = zstd::Encoder::new(&mut out, level)?;
+		// Improves performance
+		encoder.set_pledged_src_size(Some(blob.len() as u64))?;
+
+		encoder.write_all(blob)?;
+        encoder.finish()?;
+
+		Ok(Self::Zstd(out))
+	}
+
+	pub fn new_zstd_compress_timed_with_fallback(blob: &[u8], hash: H256) -> CompressedBlob {
+		// The code is quite simple but is clogged by a lot of misc stuff like logging and
+		// measuing time.
+		let blob_org_len = blob.len();
+		const BLOB_SIZE_THRESHOLD_1: usize = 100_000; // 100kB
+		if blob_org_len < BLOB_SIZE_THRESHOLD_1 {
+			return CompressedBlob::new_nocompression(blob.to_vec());
+		}
+
+		let compression_level = 3;
+		// const BLOB_SIZE_THRESHOLD_2: usize = 50_000_000; // 50MB
+		// if blob_org_len > BLOB_SIZE_THRESHOLD_2 {
+		// 	compression_level = 1
+		// }
+
+		let now = std::time::Instant::now();
+		match CompressedBlob::new_zstd_compressed(blob, compression_level) {
+			Ok(zstd_compressed) => {
+				let duration = now.elapsed();
+				let compression_size = zstd_compressed.raw_data().len();
+				let ratio = blob_org_len as f32 / compression_size as f32;
+				log::info!(target: LOG_TARGET, "🈵🈵🈵 Blob was compressed. Ratio: {}, Duration: {} ms, Blob Hash: {:?}, CL: {}", ratio, duration.as_millis(), hash, compression_level);
+				zstd_compressed
+			},
+			Err(_) => {
+				log::warn!(target: LOG_TARGET, "🈵🈵🈵 Failed to compress data. Fallbacking to non-compression");
+				CompressedBlob::new_nocompression(blob.to_vec())
+			},
+		}
+	}
+
+	// If Nocompression variant, returns non-compressed data
+	// If Zstd variant, decompresses the data and returns it
+	// The decompresion could fail but most likely this will never be the case
+	//
+	// It's Cow becuase we don't want to clone data in case the data is already non-compressed
+	pub fn data(&self) -> Result<Cow<Vec<u8>>, std::io::Error> {
+		match self {
+			Self::Nocompression(blob) => Ok(Cow::Borrowed(blob)),
+			Self::Zstd(c_blob) => zstd::decode_all(c_blob.as_slice()).map(Cow::Owned)
+		}
+	}
+
+	// If Nocompression variant, returns non-compressed data
+	// If Zstd variant, returns compressed data
+	pub fn raw_data(&self) -> &[u8] {
+		match self {
+			Self::Nocompression(blob) => blob,
+			Self::Zstd(c_blob) => c_blob,
+		}
+	}
+
+	pub fn is_compressed(&self) -> bool {
+		match self {
+			Self::Nocompression(_) => false,
+			Self::Zstd(_) => true,
+		}
+	}
+
+	pub fn variant(&self) -> u8 {
+		match self {
+			Self::Nocompression(_) => 0,
+			Self::Zstd(_) => 1,
+		}
+	}
+
+	// TODO
+	// Discriminant + Data = faster
+	// Data + Discriminant = smaller memory footprint
+	pub fn encode(&self) -> Vec<u8> {
+		let now = std::time::Instant::now();
+		let mut encoded = vec![0u8; self.raw_data().len() + 1];
+		encoded[0] = self.variant();
+		encoded[1..].copy_from_slice(&self.raw_data());
+		let duration = now.elapsed();
+		log::info!(target: LOG_TARGET, "🈵🈵 Blob was encoded. Duration: {} ms", duration.as_millis());
+
+		encoded
+	}
+
+		// TODO
+	// Discriminant + Data = faster
+	// Data + Discriminant = smaller memory footprint
+	pub fn decode(mut data: Vec<u8>) -> Result<CompressedBlob, ()> {
+		let now = std::time::Instant::now();
+		if data.len() < 1 {
+			return Err(())
+		}
+
+		let variant = data[0];
+		data.remove(0);
+		let res = match variant {
+			0 => Ok(Self::Nocompression(data)),
+			1 => Ok(Self::Zstd(data)),
+			_ => Err(())
+		};
+		let duration = now.elapsed();
+		log::info!(target: LOG_TARGET, "🈵🈵 Blob was decoded. Duration: {} ms", duration.as_millis());
+
+		res
+	}
 }

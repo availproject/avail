@@ -39,6 +39,7 @@ use std::{
 	sync::Arc,
 };
 use tokio::{task, try_join};
+use crate::types::CompressedBlob;
 
 pub enum Error {
 	BlobError,
@@ -331,13 +332,6 @@ where
 					},
 				};
 
-			// Arc::unwrap_or_clone will correctly unwrap as this is the only instance 
-			let blob = Blob {
-				blob_hash,
-				size: blob_vec.len().saturated_into(),
-				data: Arc::unwrap_or_clone(blob_vec),
-			};
-
 			if let Some(o) = &maybe_ownership {
 				log::info!(
 					"BLOB - RPC submit_blob - bg:task - I Should store - {:?} - {:?}",
@@ -361,9 +355,11 @@ where
 				timer.elapsed()
 			);
 
+			// Arc::unwrap_or_clone will correctly unwrap as this is the only instance 
+			let compressed_blob = CompressedBlob::new_zstd_compress_timed_with_fallback(&*blob_vec, blob_hash);
 			if let Err(e) = blob_handle
 				.blob_data_store
-				.insert_blob(&blob.blob_hash, &blob.encode())
+				.insert_blob(&blob_hash, &compressed_blob)
 			{
 				log::error!("failed to insert blob into store: {e}");
 			}
@@ -372,6 +368,10 @@ where
 				blob_hash,
 				timer.elapsed()
 			);
+
+			// We don't need the data anymore. Dropping it before the end of function should 
+			// decrease pressure on memory
+			drop(blob_vec);
 
 			// Announce the blob to the network -------------------
 			let blob_received_notification: BlobNotification<Block> =

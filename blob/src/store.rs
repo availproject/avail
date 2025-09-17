@@ -8,6 +8,7 @@ use std::sync::Mutex;
 use std::{marker::PhantomData, path::Path};
 use tempfile::TempDir;
 use ttl_cache::TtlCache;
+use crate::types::CompressedBlob;
 
 use crate::{
 	types::{Blob, BlobHash, BlobMetadata, OwnershipEntry},
@@ -27,9 +28,9 @@ pub trait BlobStore<Block: BlockT>: Send + Sync + 'static {
 	fn blob_metadata_exists(&self, hash: &BlobHash) -> Result<bool>;
 
 	// Blobs
-	fn insert_blob(&self, blob_hash: &BlobHash, blob: &[u8]) -> Result<()>;
+	fn insert_blob(&self, blob_hash: &BlobHash, blob: &CompressedBlob) -> Result<()>;
 	fn get_blob(&self, hash: &BlobHash) -> Result<Option<Blob>>;
-	fn get_raw_blob(&self, hash: &BlobHash) -> Result<Option<Vec<u8>>>;
+	fn get_raw_blob(&self, hash: &BlobHash) -> Result<Option<CompressedBlob>>;
 
 	// Blobs ownership
 	fn insert_blob_ownership(&self, hash: &BlobHash, o: &OwnershipEntry) -> Result<()>;
@@ -185,24 +186,28 @@ impl<Block: BlockT> BlobStore<Block> for RocksdbBlobStore<Block> {
 			.map(|opt| opt.unwrap_or(0))
 	}
 
-	fn insert_blob(&self, blob_hash: &BlobHash, blob: &[u8]) -> Result<()> {
+	fn insert_blob(&self, blob_hash: &BlobHash, blob: &CompressedBlob) -> Result<()> {
+		let blob_encoded = blob.encode();
+		
 		// Write to db
 		let mut tx = DBTransaction::new();
-		tx.put(COL_BLOB, &Self::blob_key(&blob_hash), blob);
+		tx.put(COL_BLOB, &Self::blob_key(&blob_hash), &blob_encoded);
 		self.db.write(tx)?;
 
 		// Write to cache
 		if let Ok(mut cache) = self.cache.lock() {
-			cache.insert(blob_hash.clone(), blob.to_vec(), BLOB_CACHE_DURATION);
+			cache.insert(blob_hash.clone(), blob_encoded, BLOB_CACHE_DURATION);
 		}
+
 		Ok(())
 	}
 
 	fn get_blob(&self, hash: &BlobHash) -> Result<Option<Blob>> {
 		match self.get_raw_blob(hash)? {
-			Some(bytes) => {
+			Some(compressed_blob) => {
 				let timer = std::time::Instant::now();
-				let mut slice = bytes.as_slice();
+				let data = compressed_blob.data()?;
+				let mut slice = data.as_slice();
 				let decoded = Blob::decode(&mut slice)
 					.map_err(|_| anyhow!("failed to decode blob from the store"))?;
 				log::info!(
@@ -216,7 +221,7 @@ impl<Block: BlockT> BlobStore<Block> for RocksdbBlobStore<Block> {
 		}
 	}
 
-	fn get_raw_blob(&self, hash: &BlobHash) -> Result<Option<Vec<u8>>> {
+	fn get_raw_blob(&self, hash: &BlobHash) -> Result<Option<CompressedBlob>> {
 		let timer = std::time::Instant::now();
 		// Try to read from cache
 		if let Ok(cache) = self.cache.lock() {
@@ -226,6 +231,8 @@ impl<Block: BlockT> BlobStore<Block> for RocksdbBlobStore<Block> {
 					timer.elapsed(),
 					hash
 				);
+
+				let cached = CompressedBlob::decode(cached).unwrap();
 				return Ok(Some(cached));
 			}
 		}
@@ -246,7 +253,12 @@ impl<Block: BlockT> BlobStore<Block> for RocksdbBlobStore<Block> {
 			hash
 		);
 
-		Ok(data)
+		let Some(data) = data else {
+			return Ok(None);
+		};
+		
+		let data = CompressedBlob::decode(data).unwrap();
+		Ok(Some(data))
 	}
 
 	fn insert_blob_ownership(&self, hash: &BlobHash, o: &OwnershipEntry) -> Result<()> {
