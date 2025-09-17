@@ -197,12 +197,13 @@ where
 		);
 
 		// Prepare generated commitment
-		let blob_vec: Vec<u8> = blob.to_vec();
+		// Moving stack vec to heap vec is a NOOP
+		let blob_vec = Arc::new(blob.0);
 		let (cols, rows) = get_dynamic_block_length(&self.backend, finalized_block_hash)?;
 		let commitment_fut = async {
+			let blob_vec = blob_vec.clone();
 			task::spawn_blocking({
-				let blob_vec = blob_vec.clone();
-				move || build_da_commitments(blob_vec, cols, rows, Seed::default())
+				move || build_da_commitments(&*blob_vec, cols, rows, Seed::default())
 			})
 			.await
 			.map_err(|e| internal_err!("Join error: {e}"))
@@ -284,7 +285,7 @@ where
 			};
 
 			let mut blob_metadata = maybe_blob_metadata.unwrap_or_else(|| {
-				let blob_len = blob.len();
+				let blob_len = blob_vec.len();
 
 				BlobMetadata {
 					hash: blob_hash,
@@ -330,10 +331,11 @@ where
 					},
 				};
 
+			// Arc::unwrap_or_clone will correctly unwrap as this is the only instance 
 			let blob = Blob {
 				blob_hash,
-				size: blob.len().saturated_into(),
-				data: blob_vec,
+				size: blob_vec.len().saturated_into(),
+				data: Arc::unwrap_or_clone(blob_vec),
 			};
 
 			if let Some(o) = &maybe_ownership {

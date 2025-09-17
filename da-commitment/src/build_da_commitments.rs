@@ -28,7 +28,7 @@ pub enum DaCommitmentsError {
 }
 
 fn build_grid(
-	data: Vec<u8>,
+	data:&[u8],
 	max_width: usize,
 	max_height: usize,
 	seed: Seed,
@@ -39,11 +39,11 @@ fn build_grid(
 	Ok(grid)
 }
 
-fn build_commitment(grid: &EvaluationGrid) -> Result<Vec<u8>, DaCommitmentsError> {
+fn build_commitment(grid: EvaluationGrid) -> Result<Vec<u8>, DaCommitmentsError> {
 	let pmp = PMP.get_or_init(multiproof_params);
 
 	let poly_grid = grid
-		.make_polynomial_grid()
+		.into_polynomial_grid()
 		.map_err(|e| DaCommitmentsError::MakePolynomialGridFailed(format!("{:?}", e)))?;
 
 	let extended_grid = poly_grid
@@ -67,7 +67,7 @@ fn build_commitment(grid: &EvaluationGrid) -> Result<Vec<u8>, DaCommitmentsError
 }
 
 pub fn build_da_commitments(
-	data: Vec<u8>,
+	data: &[u8],
 	max_width: usize,
 	max_height: usize,
 	seed: Seed,
@@ -85,7 +85,7 @@ pub fn build_da_commitments(
 		},
 	};
 
-	let commitments = match build_commitment(&grid) {
+	let commitments = match build_commitment(grid) {
 		Ok(commitments) => commitments,
 		Err(e) => {
 			log::error!("Commitment generation failed: {:?}", e);
