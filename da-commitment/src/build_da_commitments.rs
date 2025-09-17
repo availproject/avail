@@ -28,7 +28,7 @@ pub enum DaCommitmentsError {
 }
 
 fn build_grid(
-	data:&[u8],
+	data: &[u8],
 	max_width: usize,
 	max_height: usize,
 	seed: Seed,

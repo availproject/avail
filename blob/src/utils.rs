@@ -101,7 +101,7 @@ pub fn get_validator_per_blob<Block, Client>(
 	client: &Arc<Client>,
 	at: &[u8],
 	nb_validators: u32,
-) -> u32
+) -> (u32, u32)
 where
 	Block: BlockT,
 	Client: ProvideRuntimeApi<Block>,
@@ -109,27 +109,39 @@ where
 {
 	let Some(at) = Block::Hash::decode(&mut &*at).ok() else {
 		log::error!("Could not convert bytes to 'at' hash");
-		return nb_validators;
+		return (nb_validators, nb_validators);
 	};
 	let blob_params = match client.runtime_api().get_blob_runtime_parameters(at) {
 		Ok(p) => p,
 		Err(e) => {
 			log::error!("Could get blob runtime params: {e:?}");
-			return nb_validators;
+			return (nb_validators, nb_validators);
 		},
 	};
 	get_validator_per_blob_inner(blob_params, nb_validators)
 }
 
-pub fn get_validator_per_blob_inner(blob_params: BlobRuntimeParameters, nb_validators: u32) -> u32 {
+pub fn get_validator_per_blob_inner(
+	blob_params: BlobRuntimeParameters,
+	nb_validators: u32,
+) -> (u32, u32) {
 	if nb_validators <= blob_params.min_blob_holder_count {
-		return nb_validators;
-	} else {
-		let percentage = blob_params
-			.min_blob_holder_percentage
-			.mul_ceil(nb_validators);
-		return percentage.max(blob_params.min_blob_holder_count);
+		return (nb_validators, nb_validators);
 	}
+
+	let threshold = blob_params
+		.min_blob_holder_percentage
+		.mul_ceil(nb_validators)
+		.max(blob_params.min_blob_holder_count);
+
+	let diff = nb_validators.saturating_sub(threshold);
+
+	// Add up to 10% of the diff, capped
+	let margin = (diff / 10).min(3);
+
+	let nb_validators_per_blob = threshold + margin;
+
+	(nb_validators_per_blob, threshold)
 }
 
 /// Generate pseudo deterministic index based on given values
@@ -571,7 +583,7 @@ pub fn verify_signed_blob_data(
 pub fn get_dynamic_blocklength_key() -> StorageKey {
 	let mut key = Vec::new();
 	key.extend(&twox_128(b"System"));
-	key.extend(&twox_128(b"BlockLength"));
+	key.extend(&twox_128(b"DynamicBlockLength"));
 	let storage_key = StorageKey(key);
 	storage_key
 }

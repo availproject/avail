@@ -296,6 +296,7 @@ where
 					finalized_block_hash: Block::Hash::default(),
 					finalized_block_number: 0,
 					nb_validators_per_blob: 0,
+					nb_validators_per_blob_threshold: 0,
 				}
 			});
 
@@ -304,7 +305,7 @@ where
 			if validators.is_empty() {
 				return;
 			}
-			let nb_validators_per_blob =
+			let (nb_validators_per_blob, threshold) =
 				get_validator_per_blob_inner(blob_params.clone(), validators.len() as u32);
 			blob_metadata.is_notified = true;
 			blob_metadata.expires_at =
@@ -312,6 +313,7 @@ where
 			blob_metadata.finalized_block_hash = finalized_block_hash;
 			blob_metadata.finalized_block_number = finalized_block_number;
 			blob_metadata.nb_validators_per_blob = nb_validators_per_blob;
+			blob_metadata.nb_validators_per_blob_threshold = threshold;
 			let maybe_ownership: Option<OwnershipEntry> =
 				match check_rpc_store_blob::<Client, Block>(
 					&client,
@@ -331,7 +333,7 @@ where
 					},
 				};
 
-			// Arc::unwrap_or_clone will correctly unwrap as this is the only instance 
+			// Arc::unwrap_or_clone will correctly unwrap as this is the only instance
 			let blob = Blob {
 				blob_hash,
 				size: blob_vec.len().saturated_into(),

@@ -162,6 +162,8 @@ pub struct BlobMetadata<Block: BlockT> {
 	pub commitment: Vec<u8>,
 	/// Store the number of validators per blob for this blob metadata
 	pub nb_validators_per_blob: u32,
+	/// Store the actual threshold number of validator for this blob to be considered valid, threshold<=nb_validators_per_blob
+	pub nb_validators_per_blob_threshold: u32,
 	/// This field is used to determine wether we received the BlobReceived notification.
 	/// In some cases, we can receive BlobStored notification before BlobReceived notification.
 	/// This is expected in P2P protocols, we use this field in case we record blob metadata for blobs we don't have yet.

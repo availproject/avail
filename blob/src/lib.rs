@@ -172,7 +172,7 @@ async fn handle_blob_received_notification<Block>(
 	}
 
 	let validators = get_active_validators(&client, &announced_finalized_hash.encode());
-	let nb_validators_per_blob = get_validator_per_blob(
+	let (nb_validators_per_blob, threshold) = get_validator_per_blob(
 		&client,
 		&announced_finalized_hash.encode(),
 		validators.len() as u32,
@@ -199,6 +199,7 @@ async fn handle_blob_received_notification<Block>(
 		finalized_block_hash: Block::Hash::default(),
 		finalized_block_number: 0,
 		nb_validators_per_blob: 0,
+		nb_validators_per_blob_threshold: 0,
 	});
 
 	// If we already had the blob metadata but incomplete (is notified == false) we fill the missing data.
@@ -213,6 +214,7 @@ async fn handle_blob_received_notification<Block>(
 	blob_meta.finalized_block_number = announced_finalized_number;
 	blob_meta.expires_at = announced_finalized_number.saturating_add(blob_runtime_params.blob_ttl);
 	blob_meta.nb_validators_per_blob = nb_validators_per_blob;
+	blob_meta.nb_validators_per_blob_threshold = threshold;
 
 	// Check signatures in case blob ownership is filled
 	let mut ownerships_to_record: Vec<OwnershipEntry> = Vec::new();
