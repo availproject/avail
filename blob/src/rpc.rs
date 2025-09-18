@@ -40,6 +40,9 @@ use std::{
 };
 use tokio::{task, try_join};
 use crate::types::CompressedBlob;
+use base64::Engine;
+use base64::alphabet;
+use crate::types::B64Param;
 
 pub enum Error {
 	BlobError,
@@ -69,7 +72,7 @@ where
 	Block: BlockT,
 {
 	#[method(name = "blob_submitBlob")]
-	async fn submit_blob(&self, metadata_signed_transaction: Bytes, blob: Bytes) -> RpcResult<()>;
+	async fn submit_blob(&self, metadata_signed_transaction: B64Param, blob: B64Param) -> RpcResult<()>;
 
 	#[method(name = "blob_getBlob")]
 	async fn get_blob(
@@ -126,14 +129,36 @@ where
 	Backend: sc_client_api::Backend<Block> + Send + Sync + 'static,
 	Backend::State: StateBackend<HashingFor<Block>>,
 {
-	async fn submit_blob(&self, metadata_signed_transaction: Bytes, blob: Bytes) -> RpcResult<()> {
+	async fn submit_blob(&self, metadata_signed_transaction: B64Param, blob: B64Param) -> RpcResult<()> {
 		let timer = std::time::Instant::now();
 		log::info!("BLOB - RPC submit_blob - START - {:?}", timer.elapsed());
+
+		let metadata_signed_transaction = metadata_signed_transaction.0;
+		let blob  =blob.0;
+
+		// --- -1. Decoding -------------------------------------------------
+
+		// let metadata_signed_transaction = self.b64_engine.decode(metadata_signed_transaction_b64).unwrap();
+		// let blob = self.b64_engine.decode(blob_b64).unwrap();
+
+		// let metadata_signed_transaction = rbase64::decode(&metadata_signed_transaction_b64).unwrap();
+		// let blob = rbase64::decode(&blob_b64).unwrap();
+
+/* 		let (metadata_signed_transaction, blob) ={
+			let scale_encoded = self.b64_engine.decode(data_b64).unwrap();
+			let mut slice = scale_encoded.as_slice();
+			let scale_decoded: (Vec<u8>, Vec<u8>) = codec::Decode::decode(&mut slice).unwrap();
+			scale_decoded
+		}; */
+		// let elapsed = timer2.elapsed();
+		// log::info!("🈵 Base64 decoding duration: {} ms", elapsed.as_millis());
+
+
 		// --- 0. Quick checks -------------------------------------------------
-		if blob.0.is_empty() {
+		if blob.is_empty() {
 			return Err(internal_err!("blob cannot be empty"));
 		}
-		if metadata_signed_transaction.0.is_empty() {
+		if metadata_signed_transaction.is_empty() {
 			return Err(internal_err!("metadata tx cannot be empty"));
 		}
 
@@ -154,7 +179,7 @@ where
 				BlobRuntimeParameters::default()
 			},
 		};
-		if blob.0.len() as u64 > blob_params.max_blob_size {
+		if blob.len() as u64 > blob_params.max_blob_size {
 			return Err(internal_err!("blob is too big"));
 		}
 
@@ -199,7 +224,7 @@ where
 
 		// Prepare generated commitment
 		// Moving stack vec to heap vec is a NOOP
-		let blob_vec = Arc::new(blob.0);
+		let blob_vec = Arc::new(blob);
 		let (cols, rows) = get_dynamic_block_length(&self.backend, finalized_block_hash)?;
 		let commitment_fut = async {
 			let blob_vec = blob_vec.clone();

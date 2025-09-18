@@ -968,6 +968,7 @@ dependencies = [
  "async-channel",
  "avail-base",
  "avail-core",
+ "base64 0.22.1",
  "clap 4.5.26",
  "da-commitment",
  "da-control",
@@ -987,6 +988,7 @@ dependencies = [
  "rand",
  "rand_chacha 0.3.1",
  "rayon",
+ "rbase64",
  "sc-authority-discovery",
  "sc-client-api",
  "sc-executor",
@@ -5573,6 +5575,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8355be11b20d696c8f18f6cc018c4e372165b1fa8126cef092399c9951984ffa"
 
 [[package]]
+name = "libmimalloc-sys"
+version = "0.1.44"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "667f4fec20f29dfc6bc7357c582d91796c169ad7e2fce709468aefeb2c099870"
+dependencies = [
+ "cc",
+ "libc",
+]
+
+[[package]]
 name = "libp2p"
 version = "0.51.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6374,6 +6386,15 @@ dependencies = [
  "keccak",
  "rand_core 0.6.4",
  "zeroize",
+]
+
+[[package]]
+name = "mimalloc"
+version = "0.1.48"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e1ee66a4b64c74f4ef288bcbb9192ad9c3feaad75193129ac8509af543894fd8"
+dependencies = [
+ "libmimalloc-sys",
 ]
 
 [[package]]
@@ -8942,6 +8963,16 @@ version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3f87cc11a0140b4b0da0ffc889885760c61b13672d80a908920b2c0df078fa14"
 dependencies = [
+ "rayon",
+]
+
+[[package]]
+name = "rbase64"
+version = "2.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5b133fdd52a7cbb7619c86d93c8a34ea6e056462f901e08f6cbb6c9baf138b13"
+dependencies = [
+ "mimalloc",
  "rayon",
 ]
 
