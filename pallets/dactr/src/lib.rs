@@ -368,7 +368,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
 			ensure!(size > 0, Error::<T>::DataCannotBeEmpty);
-			ensure!(commitment.len() > 0, Error::<T>::DataCannotBeEmpty);
+			ensure!(commitment.len() > 0, Error::<T>::CommitmentCannotBeEmpty);
 			ensure!(blob_hash.0.len() > 0, Error::<T>::DataCannotBeEmpty);
 
 			Self::deposit_event(Event::SubmitBlobMetadataRequest { who, blob_hash });
@@ -406,32 +406,45 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
 
-			BlobRuntimeParams::<T>::mutate(|params| {
+			BlobRuntimeParams::<T>::try_mutate(|params| -> Result<(), Error<T>> {
 				if let Some(v) = max_blob_size {
+					ensure!(v <= 32 * 1024 * 1024, Error::<T>::BlobSizeTooLarge);
 					params.max_blob_size = v;
 				}
 				if let Some(v) = min_blob_holder_percentage {
+					ensure!(
+						v > Perbill::from_percent(0),
+						Error::<T>::MinBlobHolderPercentageInvalid
+					);
 					params.min_blob_holder_percentage = v;
 				}
 				if let Some(v) = min_blob_holder_count {
+					ensure!(v > 0, Error::<T>::MinBlobHolderCountInvalid);
 					params.min_blob_holder_count = v;
 				}
 				if let Some(v) = blob_ttl {
+					ensure!(v >= 1440, Error::<T>::BlobTtlTooShort); // ~1 day for 6 seconds
 					params.blob_ttl = v;
 				}
 				if let Some(v) = temp_blob_ttl {
+					ensure!(v >= 50, Error::<T>::TempBlobTtlTooShort); // ~5 mn for 6 seconds
 					params.temp_blob_ttl = v;
 				}
 				if let Some(v) = min_transaction_validity {
+					ensure!(v > 3, Error::<T>::MinTransactionValidityTooLow);
 					params.min_transaction_validity = v;
 				}
 				if let Some(v) = max_transaction_validity {
+					ensure!(v < 150, Error::<T>::MaxTransactionValidityTooHigh);
 					params.max_transaction_validity = v;
 				}
 				if let Some(v) = max_blob_retry_before_discarding {
+					ensure!(v > 2, Error::<T>::MaxBlobRetryTooLow);
 					params.max_blob_retry_before_discarding = v;
 				}
-			});
+
+				Ok(())
+			})?;
 
 			let updated = BlobRuntimeParams::<T>::get();
 			Self::deposit_event(Event::SubmitBlobRuntimeParametersSet {
@@ -501,6 +514,24 @@ pub mod pallet {
 		UnknownAppKey,
 		/// Submit block length proposal was made with values not power of 2
 		NotPowerOfTwo,
+		/// The commitment is empty
+		CommitmentCannotBeEmpty,
+		/// The blob size exceeds the allowed maximum (e.g., > 32 MB).
+		BlobSizeTooLarge,
+		/// The minimum percentage of validators required to hold a blob is invalid (must be > 0).
+		MinBlobHolderPercentageInvalid,
+		/// The minimum number of validators required to hold a blob is invalid (must be > 0).
+		MinBlobHolderCountInvalid,
+		/// The blob TTL (time-to-live) is too short (must be at least ~1 day = 1440 blocks).
+		BlobTtlTooShort,
+		/// The temporary blob TTL is too short (must be at least 50 blocks).
+		TempBlobTtlTooShort,
+		/// The minimum transaction validity period is too low (must be > 3 blocks).
+		MinTransactionValidityTooLow,
+		/// The maximum transaction validity period is too high (must be < 150 blocks).
+		MaxTransactionValidityTooHigh,
+		/// The maximum retry count before discarding a blob is too low (must be > 2).
+		MaxBlobRetryTooLow,
 	}
 
 	#[pallet::genesis_config]
