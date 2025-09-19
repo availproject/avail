@@ -80,9 +80,6 @@ where
 
 	#[method(name = "blob_logStuff")]
 	async fn log_stuff(&self) -> RpcResult<()>;
-
-	#[method(name = "blob_clearBlobStorage")]
-	async fn clear_blob_storage(&self) -> RpcResult<()>;
 }
 
 pub struct BlobRpc<Client, Pool, Block: BlockT, Backend> {
@@ -531,22 +528,6 @@ where
 
 	async fn log_stuff(&self) -> RpcResult<()> {
 		let _ = self.blob_handle.blob_store.log_all_entries();
-		Ok(())
-	}
-
-	async fn clear_blob_storage(&self) -> RpcResult<()> {
-		let _ = self.blob_handle.blob_store.clear_blob_storage();
-		let _ = self.blob_handle.blob_data_store.clear_blob_storage();
-		let clear_blob_notification: BlobNotification<Block> = BlobNotification::ClearBlob;
-
-		let Some(gossip_cmd_sender) = self.blob_handle.gossip_cmd_sender.get() else {
-			return Err(internal_err!("gossip_cmd_sender was not initialized"));
-		};
-
-		if let Err(e) = gossip_cmd_sender.send(clear_blob_notification).await {
-			return Err(internal_err!("internal channel closed: {e}"));
-		}
-
 		Ok(())
 	}
 }

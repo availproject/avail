@@ -4,7 +4,7 @@ use da_runtime::{apis::RuntimeApi, NodeBlock as Block};
 use once_cell::sync::OnceCell;
 use parking_lot::Mutex;
 use sc_executor::NativeElseWasmExecutor;
-use sc_network::{PeerId, ProtocolName};
+use sc_network::{NetworkPeers, NetworkService, PeerId, ProtocolName, ReputationChange};
 use sc_network_gossip::{MessageIntent, ValidationResult, Validator, ValidatorContext};
 use sc_service::{Role, TFullClient};
 use scale_info::TypeInfo;
@@ -77,9 +77,18 @@ impl<B: BlockT> Validator<B> for BlobGossipValidator {
 		_sender: &PeerId,
 		data: &[u8],
 	) -> ValidationResult<<B as BlockT>::Hash> {
+		// Some pre-checks that will avoid flooding the network with bad information
+		// This means the peer won't get penalize "officially", but it keeps the network light
+		let mut input = &data[..];
+		match BlobNotification::<B>::decode(&mut input) {
+			Ok(_) => { /* We can process it*/ },
+			Err(_) => {
+				return ValidationResult::Discard;
+			},
+		};
+
 		let h = H256::from(blake2_256(data));
 		self.live.lock().insert(h, Instant::now() + self.ttl);
-
 		let topic: B::Hash = HashingFor::<B>::hash(b"blob_topic");
 
 		ValidationResult::ProcessAndKeep(topic)
@@ -109,6 +118,50 @@ impl<B: BlockT> Validator<B> for BlobGossipValidator {
 				}, // expire after that
 			}
 		})
+	}
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum BlobReputationChange {
+	MalformedRequest,
+	MalformedResponse,
+	InvalidSignature,
+	InvalidRole,
+}
+impl BlobReputationChange {
+	pub fn penalty(self) -> i32 {
+		match self {
+			BlobReputationChange::MalformedRequest => -200,
+			BlobReputationChange::MalformedResponse => -200,
+			BlobReputationChange::InvalidSignature => -1000,
+			BlobReputationChange::InvalidRole => -1000,
+		}
+	}
+
+	pub fn reason_str(self) -> &'static str {
+		match self {
+			BlobReputationChange::MalformedRequest => "blob-request-malformed",
+			BlobReputationChange::MalformedResponse => "blob-response-malformed",
+			BlobReputationChange::InvalidSignature => "blob-invalid-signature",
+			BlobReputationChange::InvalidRole => "blob-invalid-role",
+		}
+	}
+
+	pub fn reputation_change(self) -> ReputationChange {
+		log::warn!("Issuing reputation change: {}", self.reason_str());
+		ReputationChange::new(self.penalty(), self.reason_str())
+	}
+
+	pub fn no_change() -> Vec<ReputationChange> {
+		Vec::default()
+	}
+
+	pub fn report<Block: BlockT>(
+		self,
+		network: &NetworkService<Block, Block::Hash>,
+		peer: &PeerId,
+	) {
+		network.report_peer(peer.clone(), self.reputation_change());
 	}
 }
 
@@ -333,7 +386,6 @@ pub struct BlobQueryResponse {
 pub enum BlobNotification<Block: BlockT> {
 	BlobReceived(BlobReceived<Block>),
 	BlobStored(BlobStored<Block>),
-	ClearBlob,
 }
 
 /// Enum for different types of requests.

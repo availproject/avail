@@ -208,7 +208,7 @@ where
 					.for_each_concurrent(CONCURRENT_REQUESTS, |notification| {
 						let blob_handle = blob_handle.clone();
 						async move {
-							if notification.sender.is_some() {
+							if let Some(_notification_sender) = notification.sender {
 								tokio::spawn({
 									async move {
 										decode_blob_notification(

@@ -2,8 +2,8 @@ use crate::{
 	p2p::BlobHandle,
 	types::{
 		Blob, BlobHash, BlobMetadata, BlobNotification, BlobQueryRequest, BlobReceived,
-		BlobRequest, BlobRequestEnum, BlobResponse, BlobResponseEnum, BlobSignatureData,
-		BlobStored, OwnershipEntry, BLOB_REQ_PROTO,
+		BlobReputationChange, BlobRequest, BlobRequestEnum, BlobResponse, BlobResponseEnum,
+		BlobSignatureData, BlobStored, OwnershipEntry, BLOB_REQ_PROTO,
 	},
 	utils::{
 		build_signature_payload, check_store_blob, generate_base_index, get_active_validators,
@@ -86,11 +86,6 @@ where
 			},
 			BlobNotification::BlobStored(blob_stored) => {
 				handle_blob_stored_notification(blob_stored, &blob_handle).await;
-			},
-			BlobNotification::ClearBlob => {
-				let _ = blob_handle.blob_store.clear_blob_storage();
-				let _ = blob_handle.blob_data_store.clear_blob_storage();
-				log::info!(target: LOG_TARGET, "Everything was deleted from storage");
 			},
 		},
 		Err(err) => {
@@ -496,11 +491,13 @@ where
 					Ok(_other) => {
 						log::error!(target: LOG_TARGET,
 							"Invalid response in send blob request, expected BlobResponse");
+						BlobReputationChange::MalformedResponse.report(&network, &target_peer);
 						break;
 					},
 					Err(err) => {
 						log::error!(target: LOG_TARGET,
 							"Failed to decode Blob response ({} bytes): {:?}", data.len(), err);
+						BlobReputationChange::MalformedResponse.report(&network, &target_peer);
 						break;
 					},
 				}
@@ -550,6 +547,12 @@ pub fn handle_incoming_blob_request<Block: BlockT>(
 			target: LOG_TARGET,
 			"Not answering to {peer_id:?} as it's not an authority.",
 		);
+		let _ = response_tx.send(OutgoingResponse {
+			result: Err(()),
+			reputation_changes: vec![BlobReputationChange::InvalidRole.reputation_change()],
+			sent_feedback: None,
+		});
+		return;
 	}
 
 	let mut buf: &[u8] = &data;
@@ -571,7 +574,7 @@ pub fn handle_incoming_blob_request<Block: BlockT>(
 			);
 			let _ = response_tx.send(OutgoingResponse {
 				result: Err(()),
-				reputation_changes: Vec::default(),
+				reputation_changes: vec![BlobReputationChange::MalformedRequest.reputation_change()], // Might be malicious but light
 				sent_feedback: None,
 			});
 		},
@@ -596,7 +599,9 @@ fn process_blob_request<Block: BlockT>(
 				log::error!(target: LOG_TARGET, "An error has occured in process_blob_request: Invalid signature");
 				let _ = response_tx.send(OutgoingResponse {
 					result: Err(()),
-					reputation_changes: Vec::default(),
+					reputation_changes: vec![
+						BlobReputationChange::InvalidSignature.reputation_change(), // Malicious
+					],
 					sent_feedback: None,
 				});
 				return;
@@ -606,7 +611,7 @@ fn process_blob_request<Block: BlockT>(
 			log::error!(target: LOG_TARGET, "An error has occured while checking the signature: {e}");
 			let _ = response_tx.send(OutgoingResponse {
 				result: Err(()),
-				reputation_changes: Vec::default(),
+				reputation_changes: BlobReputationChange::no_change(), // Might be our fault
 				sent_feedback: None,
 			});
 			return;
@@ -620,7 +625,7 @@ fn process_blob_request<Block: BlockT>(
 				log::error!(target: LOG_TARGET, "Blob not found in store");
 				let _ = response_tx.send(OutgoingResponse {
 					result: Err(()),
-					reputation_changes: Vec::default(),
+					reputation_changes: BlobReputationChange::no_change(), // Might be our fault
 					sent_feedback: None,
 				});
 				return;
@@ -630,7 +635,7 @@ fn process_blob_request<Block: BlockT>(
 			log::error!(target: LOG_TARGET, "Could not get blob from store: {e}");
 			let _ = response_tx.send(OutgoingResponse {
 				result: Err(()),
-				reputation_changes: Vec::default(),
+				reputation_changes: BlobReputationChange::no_change(), // Might be our fault
 				sent_feedback: None,
 			});
 			return;
@@ -644,7 +649,7 @@ fn process_blob_request<Block: BlockT>(
 
 	let res = OutgoingResponse {
 		result: Ok(blob_response.encode()),
-		reputation_changes: Vec::default(),
+		reputation_changes: BlobReputationChange::no_change(),
 		sent_feedback: None,
 	};
 
@@ -901,7 +906,7 @@ pub fn process_blob_query_request<Block: BlockT>(
 			log::error!("Could not get a blob for the requester RPC: {e}");
 			let res = OutgoingResponse {
 				result: Err(()),
-				reputation_changes: Vec::default(),
+				reputation_changes: BlobReputationChange::no_change(),
 				sent_feedback: None,
 			};
 			let _ = response_tx.send(res);
@@ -911,7 +916,7 @@ pub fn process_blob_query_request<Block: BlockT>(
 
 	let res = OutgoingResponse {
 		result: Ok(BlobResponseEnum::BlobQueryResponse(maybe_blob).encode()),
-		reputation_changes: Vec::default(),
+		reputation_changes: BlobReputationChange::no_change(),
 		sent_feedback: None,
 	};
 

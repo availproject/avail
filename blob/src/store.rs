@@ -59,7 +59,6 @@ pub trait BlobStore<Block: BlockT>: Send + Sync + 'static {
 
 	// Testing stuff
 	fn log_all_entries(&self) -> Result<()>;
-	fn clear_blob_storage(&self) -> Result<()>;
 }
 
 pub struct RocksdbBlobStore<Block: BlockT> {
@@ -466,17 +465,6 @@ impl<Block: BlockT> BlobStore<Block> for RocksdbBlobStore<Block> {
 		}
 
 		log::info!(target: LOG_TARGET, "--- End of blob store log ---");
-		Ok(())
-	}
-
-	fn clear_blob_storage(&self) -> Result<()> {
-		let mut tx = DBTransaction::new();
-
-		for col in 0..self.db.num_columns() {
-			tx.delete_prefix(col, &[]);
-		}
-
-		self.db.write(tx)?;
 		Ok(())
 	}
 }
