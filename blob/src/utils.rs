@@ -575,6 +575,8 @@ pub fn get_dynamic_blocklength_key() -> StorageKey {
 
 pub struct SmartStopwatch {
 	span: String,
+	extra_information: String,
+	created: std::time::Instant,
 	tracking: Vec<(String, std::time::Instant)>,
 	finished: Vec<(String, std::time::Duration, String)>,
 }
@@ -585,7 +587,13 @@ impl SmartStopwatch {
 			span: span.into(),
 			tracking: Vec::with_capacity(20),
 			finished: Vec::with_capacity(20),
+			created: std::time::Instant::now(),
+			extra_information: String::new(),
 		}
+	}
+
+	pub fn add_extra_information(&mut self, value: impl Into<String>) {
+		self.extra_information = value.into();
 	}
 
 	pub fn start_tracking(&mut self, name: impl Into<String>) {
@@ -620,6 +628,14 @@ impl Drop for SmartStopwatch {
 		let mut msg = String::with_capacity(500);
 		msg.push_str(self.span.as_str());
 		msg.push_str(" -- ");
+		if !self.extra_information.is_empty() {
+			let _ = write!(msg, "{}. ", self.extra_information);
+		}
+		let _ = write!(
+			msg,
+			"Total duration: {} ms. ",
+			now.duration_since(self.created).as_millis()
+		);
 		for f in finished {
 			if f.2.is_empty() {
 				let _ = write!(msg, "{}: {} ms. ", f.0, f.1.as_millis());

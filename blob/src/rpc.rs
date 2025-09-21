@@ -123,12 +123,11 @@ where
 	Backend::State: StateBackend<HashingFor<Block>>,
 {
 	async fn submit_blob(&self, metadata_signed_transaction: Bytes, blob: Bytes) -> RpcResult<()> {
-		const TOTAL_DURATION: &str = "Total Duration";
 		const DECODING_AND_CHECKS: &str = "Decoding and checks";
 		const VALIDATION_AND_COMMITMENT: &str = "Validation and commitment";
+		const HASHING: &str = "Hashing Keccak";
 
 		let mut stop_watch = SmartStopwatch::new("😍 SUBMIT BLOB RPC");
-		stop_watch.start_tracking(TOTAL_DURATION);
 		stop_watch.start_tracking(DECODING_AND_CHECKS);
 
 		// --- 0. Quick checks -------------------------------------------------
@@ -188,10 +187,13 @@ where
 		}
 
 		// Check blob_hash
+		stop_watch.start_tracking(HASHING);
 		let blob_hash = H256::from(keccak_256(&blob));
 		if provided_blob_hash != blob_hash {
 			return Err(internal_err!("submitted blob: {provided_blob_hash:?} does not correspond to generated blob {blob_hash:?}"));
 		}
+		stop_watch.stop_tracking(HASHING, "");
+		stop_watch.add_extra_information(std::format!("Blob Hash: {:?}", blob_hash));
 
 		stop_watch.stop_tracking(DECODING_AND_CHECKS, "");
 		stop_watch.start_tracking(VALIDATION_AND_COMMITMENT);
@@ -257,11 +259,10 @@ where
 		let pool = self.pool.clone();
 		let network = self.blob_handle.network.get().cloned();
 		task::spawn(async move {
-			const TOTAL_DURATION: &str = "Total Duration";
 			const STORAGE: &str = "STORAGE";
 			const GOSSIPING: &str = "GOSSIPING";
 			let mut stop_watch = SmartStopwatch::new("😍😍 SUBMIT BLOB RPC TASK");
-			stop_watch.start_tracking(TOTAL_DURATION);
+			stop_watch.add_extra_information(std::format!("Blob Hash: {:?}", blob_hash));
 
 			// Get my own peer id data
 			let Some(net) = network else {
@@ -397,6 +398,7 @@ where
 				"BLOB - RPC submit_blob - bg:task - After gossiping blob notif - {:?}",
 				blob_hash,
 			);
+			stop_watch.stop_tracking(GOSSIPING, "");
 
 			// Push the clean extrinsic to the tx pool ---------------------
 			// Get the best hash once more, to submit the tx
@@ -411,13 +413,7 @@ where
 				"BLOB - RPC submit_blob - bg:task - After Submitting to pool - {:?}",
 				blob_hash,
 			);
-
-			// This is not needed but watahel
-			stop_watch.stop_tracking(GOSSIPING, "");
-			stop_watch.stop_tracking(TOTAL_DURATION, std::format!("Blob Hash: {:?}", blob_hash));
 		});
-
-		stop_watch.stop_tracking(TOTAL_DURATION, std::format!("Blob Hash: {:?}", blob_hash));
 
 		Ok(())
 	}

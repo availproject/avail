@@ -519,9 +519,7 @@ where
 		block_size_limit: Option<usize>,
 		inherent_len: usize,
 	) -> Result<(EndProposingReason, Vec<BlobTxSummary>, u64), sp_blockchain::Error> {
-		const TOTAL_DURATION: &str = "Total Duration";
 		let mut stop_watch = SmartStopwatch::new("😍 APPLY EXTRINSICS");
-		stop_watch.start_tracking(TOTAL_DURATION);
 
 		// proceed with transactions
 		// We calculate soft deadline used only in case we start skipping transactions.
