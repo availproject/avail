@@ -260,11 +260,6 @@ where
 	C: HeaderBackend<Block> + ProvideRuntimeApi<Block>,
 	C::Api: TaggedTransactionQueue<Block> + BlobApi<Block>,
 {
-	let timer = std::time::Instant::now();
-	log::info!(
-		"BLOB - RPC check_if_wait_next_block - START - {:?}",
-		timer.elapsed()
-	);
 	let mut should_submit = true;
 	let mut is_submit_blob_metadata = false;
 
@@ -364,10 +359,6 @@ where
 	if should_submit {
 		submit_blob_metadata_calls.push((extrinsic_data, tx_index));
 	}
-	log::info!(
-		"BLOB - RPC check_if_wait_next_block - END - {:?}",
-		timer.elapsed()
-	);
 
 	(should_submit, is_submit_blob_metadata)
 }
@@ -416,11 +407,6 @@ pub async fn get_blob_txs_summary<Block: BlockT>(
 	submit_blob_metadata_calls: &Vec<(RuntimeCall, u32)>,
 	blob_metadata: BTreeMap<BlobHash, (BlobMetadata<Block>, Vec<OwnershipEntry>)>,
 ) -> (Vec<BlobTxSummary>, u64) {
-	let timer = std::time::Instant::now();
-	log::info!(
-		"BLOB - get_blob_txs_summary - START - {:?}",
-		timer.elapsed()
-	);
 	let mut blob_txs_summary: Vec<BlobTxSummary> = Vec::new();
 	let mut total_size = 0;
 
@@ -450,7 +436,6 @@ pub async fn get_blob_txs_summary<Block: BlockT>(
 			}
 		}
 	}
-	log::info!("BLOB - get_blob_txs_summary - END - {:?}", timer.elapsed());
 
 	(blob_txs_summary, total_size)
 }
@@ -586,4 +571,63 @@ pub fn get_dynamic_blocklength_key() -> StorageKey {
 	key.extend(&twox_128(b"DynamicBlockLength"));
 	let storage_key = StorageKey(key);
 	storage_key
+}
+
+pub struct SmartStopwatch {
+	span: String,
+	tracking: Vec<(String, std::time::Instant)>,
+	finished: Vec<(String, std::time::Duration, String)>,
+}
+
+impl SmartStopwatch {
+	pub fn new(span: impl Into<String>) -> Self {
+		Self {
+			span: span.into(),
+			tracking: Vec::with_capacity(20),
+			finished: Vec::with_capacity(20),
+		}
+	}
+
+	pub fn start_tracking(&mut self, name: impl Into<String>) {
+		self.tracking.push((name.into(), std::time::Instant::now()));
+	}
+
+	pub fn stop_tracking(&mut self, name: &str, additional_info: impl Into<String>) {
+		let Some(index) = self.tracking.iter().position(|x| x.0 == name) else {
+			return;
+		};
+		let value = self.tracking.swap_remove(index);
+		self.finished
+			.push((value.0, value.1.elapsed(), additional_info.into()));
+	}
+}
+
+impl Drop for SmartStopwatch {
+	fn drop(&mut self) {
+		use std::fmt::Write;
+		use std::mem::take;
+
+		let now = std::time::Instant::now();
+
+		let still_active = take(&mut self.tracking);
+		let mut finished = take(&mut self.finished);
+		for sa in still_active {
+			finished.push((sa.0, now.duration_since(sa.1), String::new()));
+		}
+
+		finished.sort_by(|x, y| y.1.cmp(&x.1));
+
+		let mut msg = String::with_capacity(500);
+		msg.push_str(self.span.as_str());
+		msg.push_str(" -- ");
+		for f in finished {
+			if f.2.is_empty() {
+				let _ = write!(msg, "{}: {} ms. ", f.0, f.1.as_millis());
+			} else {
+				let _ = write!(msg, "{}: {} ms, {}. ", f.0, f.1.as_millis(), f.2);
+			}
+		}
+
+		log::info!("{}", msg)
+	}
 }

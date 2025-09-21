@@ -24,7 +24,7 @@ use avail_base::{PostInherentsBackend, PostInherentsProvider};
 use avail_blob::{
 	store::RocksdbBlobStore,
 	types::{BlobMetadata, BlobTxSummary, OwnershipEntry},
-	utils::{check_if_wait_next_block, get_blob_txs_summary},
+	utils::{check_if_wait_next_block, get_blob_txs_summary, SmartStopwatch},
 };
 use codec::Encode;
 use da_runtime::apis::BlobApi;
@@ -519,6 +519,10 @@ where
 		block_size_limit: Option<usize>,
 		inherent_len: usize,
 	) -> Result<(EndProposingReason, Vec<BlobTxSummary>, u64), sp_blockchain::Error> {
+		const TOTAL_DURATION: &str = "Total Duration";
+		let mut stop_watch = SmartStopwatch::new("😍 APPLY EXTRINSICS");
+		stop_watch.start_tracking(TOTAL_DURATION);
+
 		// proceed with transactions
 		// We calculate soft deadline used only in case we start skipping transactions.
 		let now = (self.now)();
@@ -612,6 +616,7 @@ where
 			}
 
 			let encoded = pending_tx_data.clone().encode();
+			stop_watch.start_tracking("Check if wait next block");
 			let (should_submit, is_submit_blob_metadata) = check_if_wait_next_block(
 				&self.client,
 				&self.blob_store,
@@ -620,6 +625,7 @@ where
 				&mut blob_metadata,
 				tx_index,
 			);
+			stop_watch.stop_tracking("Check if wait next block", "");
 			if !should_submit {
 				continue;
 			}
@@ -676,11 +682,13 @@ where
 			);
 		}
 
+		stop_watch.start_tracking("Get blob txs summary");
 		let (blob_txs_summary, total_blob_size) = if submit_blob_metadata_calls.len() > 0 {
 			get_blob_txs_summary(&submit_blob_metadata_calls, blob_metadata).await
 		} else {
 			(Vec::new(), 0)
 		};
+		stop_watch.stop_tracking("Get blob txs summary", "");
 
 		self.transaction_pool.remove_invalid(&unqueue_invalid);
 		Ok((end_reason, blob_txs_summary, total_blob_size))

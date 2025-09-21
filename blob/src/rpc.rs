@@ -6,7 +6,7 @@ use crate::{
 	utils::{
 		build_signature_payload, check_store_blob, generate_base_index, get_active_validators,
 		get_dynamic_blocklength_key, get_my_validator_id, get_validator_per_blob_inner,
-		sign_blob_data_inner,
+		sign_blob_data_inner, SmartStopwatch,
 	},
 	MAX_RPC_RETRIES,
 };
@@ -123,8 +123,14 @@ where
 	Backend::State: StateBackend<HashingFor<Block>>,
 {
 	async fn submit_blob(&self, metadata_signed_transaction: Bytes, blob: Bytes) -> RpcResult<()> {
-		let timer = std::time::Instant::now();
-		log::info!("BLOB - RPC submit_blob - START - {:?}", timer.elapsed());
+		const TOTAL_DURATION: &str = "Total Duration";
+		const DECODING_AND_CHECKS: &str = "Decoding and checks";
+		const VALIDATION_AND_COMMITMENT: &str = "Validation and commitment";
+
+		let mut stop_watch = SmartStopwatch::new("😍 SUBMIT BLOB RPC");
+		stop_watch.start_tracking(TOTAL_DURATION);
+		stop_watch.start_tracking(DECODING_AND_CHECKS);
+
 		// --- 0. Quick checks -------------------------------------------------
 		if blob.0.is_empty() {
 			return Err(internal_err!("blob cannot be empty"));
@@ -187,11 +193,8 @@ where
 			return Err(internal_err!("submitted blob: {provided_blob_hash:?} does not correspond to generated blob {blob_hash:?}"));
 		}
 
-		log::info!(
-			"BLOB - RPC submit_blob - After decoding and checks - {:?} - {:?}",
-			blob_hash,
-			timer.elapsed()
-		);
+		stop_watch.stop_tracking(DECODING_AND_CHECKS, "");
+		stop_watch.start_tracking(VALIDATION_AND_COMMITMENT);
 
 		// Prepare generated commitment
 		// Moving stack vec to heap vec is a NOOP
@@ -245,11 +248,7 @@ where
 			return Err(internal_err!("submitted blob commitment mismatch"));
 		}
 
-		log::info!(
-			"BLOB - RPC submit_blob - checking validity and commitment verification - {:?} - {:?}",
-			blob_hash,
-			timer.elapsed()
-		);
+		stop_watch.stop_tracking(VALIDATION_AND_COMMITMENT, "");
 
 		// From this point, the transaction should not fail as the user has done everything correctly
 		// We will spawn a task to finish the work and instantly return to the user.
@@ -258,12 +257,11 @@ where
 		let pool = self.pool.clone();
 		let network = self.blob_handle.network.get().cloned();
 		task::spawn(async move {
-			let timer = std::time::Instant::now();
-			log::info!(
-				"BLOB - RPC submit_blob - bg:task - START - {:?} - {:?}",
-				blob_hash,
-				timer.elapsed()
-			);
+			const TOTAL_DURATION: &str = "Total Duration";
+			const STORAGE: &str = "STORAGE";
+			const GOSSIPING: &str = "GOSSIPING";
+			let mut stop_watch = SmartStopwatch::new("😍😍 SUBMIT BLOB RPC TASK");
+			stop_watch.start_tracking(TOTAL_DURATION);
 
 			// Get my own peer id data
 			let Some(net) = network else {
@@ -330,6 +328,8 @@ where
 					},
 				};
 
+			stop_watch.start_tracking(STORAGE);
+
 			// Arc::unwrap_or_clone will correctly unwrap as this is the only instance
 			let blob = Blob {
 				blob_hash,
@@ -339,9 +339,8 @@ where
 
 			if let Some(o) = &maybe_ownership {
 				log::info!(
-					"BLOB - RPC submit_blob - bg:task - I Should store - {:?} - {:?}",
+					"BLOB - RPC submit_blob - bg:task - I Should store - {:?}",
 					blob_hash,
-					timer.elapsed()
 				);
 				if let Err(e) = blob_handle.blob_store.insert_blob_ownership(&blob_hash, o) {
 					log::error!("failed to insert blob ownership into store: {e}");
@@ -355,9 +354,8 @@ where
 				log::error!("failed to insert blob metadata into store: {e}");
 			}
 			log::info!(
-				"BLOB - RPC submit_blob - bg:task - After inserting metadata - {:?} - {:?}",
+				"BLOB - RPC submit_blob - bg:task - After inserting metadata - {:?}",
 				blob_hash,
-				timer.elapsed()
 			);
 
 			if let Err(e) = blob_handle
@@ -367,10 +365,12 @@ where
 				log::error!("failed to insert blob into store: {e}");
 			}
 			log::info!(
-				"BLOB - RPC submit_blob - bg:task - After inserting blob - {:?} - {:?}",
+				"BLOB - RPC submit_blob - bg:task - After inserting blob - {:?}",
 				blob_hash,
-				timer.elapsed()
 			);
+
+			stop_watch.stop_tracking(STORAGE, "");
+			stop_watch.start_tracking(GOSSIPING);
 
 			// Announce the blob to the network -------------------
 			let blob_received_notification: BlobNotification<Block> =
@@ -394,9 +394,8 @@ where
 				return;
 			}
 			log::info!(
-				"BLOB - RPC submit_blob - bg:task - After gossiping blob notif - {:?} - {:?}",
+				"BLOB - RPC submit_blob - bg:task - After gossiping blob notif - {:?}",
 				blob_hash,
-				timer.elapsed()
 			);
 
 			// Push the clean extrinsic to the tx pool ---------------------
@@ -409,17 +408,16 @@ where
 				log::error!("tx-pool error: {e}")
 			}
 			log::info!(
-				"BLOB - RPC submit_blob - bg:task - After Submitting to pool - {:?} - {:?}",
+				"BLOB - RPC submit_blob - bg:task - After Submitting to pool - {:?}",
 				blob_hash,
-				timer.elapsed()
 			);
+
+			// This is not needed but watahel
+			stop_watch.stop_tracking(GOSSIPING, "");
+			stop_watch.stop_tracking(TOTAL_DURATION, std::format!("Blob Hash: {:?}", blob_hash));
 		});
 
-		log::info!(
-			"BLOB - RPC submit_blob - END - {:?} - {:?}",
-			blob_hash,
-			timer.elapsed()
-		);
+		stop_watch.stop_tracking(TOTAL_DURATION, std::format!("Blob Hash: {:?}", blob_hash));
 
 		Ok(())
 	}
