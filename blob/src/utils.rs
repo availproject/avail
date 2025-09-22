@@ -5,8 +5,10 @@ use crate::{
 };
 use anyhow::{anyhow, Context, Result};
 use codec::{Decode, Encode};
+use da_commitment::build_da_commitments::build_da_commitments;
 use da_control::{BlobRuntimeParameters, Call};
 use da_runtime::{apis::BlobApi, RuntimeCall, UncheckedExtrinsic};
+use kate::Seed;
 use sc_client_api::{HeaderBackend, StorageKey};
 use sc_keystore::{Keystore, LocalKeystore};
 use sc_transaction_pool_api::TransactionSource;
@@ -21,6 +23,8 @@ use sp_runtime::{
 };
 use sp_transaction_pool::runtime_api::TaggedTransactionQueue;
 use std::{collections::BTreeMap, sync::Arc};
+use tokio::sync::mpsc;
+use tokio::sync::oneshot;
 
 /// Get this node's Address
 pub fn get_my_validator_id<Block, Client>(
@@ -645,5 +649,48 @@ impl Drop for SmartStopwatch {
 		}
 
 		log::info!("{}", msg)
+	}
+}
+
+pub struct CommitmentQueueMessage {
+	blob: Arc<Vec<u8>>,
+	cols: usize,
+	rows: usize,
+	request: oneshot::Sender<Vec<u8>>,
+}
+
+impl CommitmentQueueMessage {
+	pub fn new(blob: Arc<Vec<u8>>, cols: usize, rows: usize) -> (Self, oneshot::Receiver<Vec<u8>>) {
+		let (tx, rx) = oneshot::channel();
+		let s = Self {
+			blob,
+			cols,
+			rows,
+			request: tx,
+		};
+		(s, rx)
+	}
+}
+
+pub struct CommitmentQueue {
+	tx: mpsc::Sender<CommitmentQueueMessage>,
+}
+
+impl CommitmentQueue {
+	pub fn new(channel_size: usize) -> Self {
+		let (tx, rx) = mpsc::channel(channel_size);
+		tokio::spawn(async move { Self::run_task(rx).await });
+		Self { tx }
+	}
+
+	pub async fn run_task(mut rx: mpsc::Receiver<CommitmentQueueMessage>) {
+		while let Some(msg) = rx.recv().await {
+			let commtment = build_da_commitments(&*msg.blob, msg.cols, msg.rows, Seed::default());
+			_ = msg.request.send(commtment);
+		}
+	}
+
+	pub fn send(&self, value: CommitmentQueueMessage) -> bool {
+		self.tx.try_send(value).is_ok()
 	}
 }

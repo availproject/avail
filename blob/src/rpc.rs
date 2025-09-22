@@ -6,13 +6,12 @@ use crate::{
 	utils::{
 		build_signature_payload, check_store_blob, generate_base_index, get_active_validators,
 		get_dynamic_blocklength_key, get_my_validator_id, get_validator_per_blob_inner,
-		sign_blob_data_inner, SmartStopwatch,
+		sign_blob_data_inner, CommitmentQueue, CommitmentQueueMessage, SmartStopwatch,
 	},
 	MAX_RPC_RETRIES,
 };
 use anyhow::{anyhow, Result};
 use codec::{Decode, Encode};
-use da_commitment::build_da_commitments::build_da_commitments;
 use da_control::{pallet::BlobTxSummaryRuntime, BlobRuntimeParameters, Call};
 use da_runtime::{apis::BlobApi, RuntimeCall, UncheckedExtrinsic};
 use frame_system::limits::BlockLength;
@@ -21,7 +20,6 @@ use jsonrpsee::{
 	proc_macros::rpc,
 	types::error::ErrorObject,
 };
-use kate::Seed;
 use sc_client_api::{BlockBackend, HeaderBackend, StateBackend};
 use sc_network::{NetworkStateInfo, PeerId};
 use sc_transaction_pool_api::TransactionPool;
@@ -38,7 +36,7 @@ use std::{
 	str::FromStr,
 	sync::Arc,
 };
-use tokio::{task, try_join};
+use tokio::task;
 
 pub enum Error {
 	BlobError,
@@ -87,6 +85,7 @@ pub struct BlobRpc<Client, Pool, Block: BlockT, Backend> {
 	pool: Arc<Pool>,
 	blob_handle: Arc<BlobHandle<Block>>,
 	backend: Arc<Backend>,
+	commitment_queue: Arc<CommitmentQueue>,
 	_block: PhantomData<Block>,
 }
 
@@ -102,6 +101,7 @@ impl<Client, Pool, Block: BlockT, Backend> BlobRpc<Client, Pool, Block, Backend>
 			pool,
 			blob_handle: deps.blob_handle,
 			backend,
+			commitment_queue: Arc::new(CommitmentQueue::new(50)),
 			_block: PhantomData,
 		}
 	}
@@ -124,7 +124,8 @@ where
 {
 	async fn submit_blob(&self, metadata_signed_transaction: Bytes, blob: Bytes) -> RpcResult<()> {
 		const DECODING_AND_CHECKS: &str = "Decoding and checks";
-		const VALIDATION_AND_COMMITMENT: &str = "Validation and commitment";
+		const VALIDATION: &str = "Validation";
+		const COMMITMENT: &str = "Commitment";
 		const HASHING: &str = "Hashing Keccak";
 
 		let mut stop_watch = SmartStopwatch::new("😍 SUBMIT BLOB RPC");
@@ -196,23 +197,21 @@ where
 		stop_watch.add_extra_information(std::format!("Blob Hash: {:?}", blob_hash));
 
 		stop_watch.stop_tracking(DECODING_AND_CHECKS, "");
-		stop_watch.start_tracking(VALIDATION_AND_COMMITMENT);
 
 		// Prepare generated commitment
 		// Moving stack vec to heap vec is a NOOP
 		let blob_vec = Arc::new(blob.0);
 		let (cols, rows) = get_dynamic_block_length(&self.backend, finalized_block_hash)?;
-		let commitment_fut = async {
-			let blob_vec = blob_vec.clone();
-			task::spawn_blocking({
-				move || build_da_commitments(&*blob_vec, cols, rows, Seed::default())
-			})
-			.await
-			.map_err(|e| internal_err!("Join error: {e}"))
-		};
+		let (message, rx_comm) = CommitmentQueueMessage::new(blob_vec.clone(), cols, rows);
+		if !self.commitment_queue.send(message) {
+			// Need better error handling
+			return Err(internal_err!("Commitment queue is full"));
+		}
 
+		stop_watch.start_tracking(VALIDATION);
+		stop_watch.start_tracking(COMMITMENT);
 		// Check tx validity
-		let pre_validate_fut = async {
+		let opaque_tx = async {
 			// --- a. Decode the opaque extrinsic ---------------------------------
 			let opaque_tx: Block::Extrinsic =
 				codec::Decode::decode(&mut &metadata_signed_transaction[..])
@@ -240,17 +239,26 @@ where
 			if validity.longevity > blob_params.max_transaction_validity {
 				return Err(internal_err!("signed transaction lifetime is too long"));
 			}
-			Ok(opaque_tx)
-		};
 
-		let (opaque_tx, commitment) = try_join!(pre_validate_fut, commitment_fut)?;
+			Ok(opaque_tx)
+		}
+		.await?;
+		stop_watch.stop_tracking(VALIDATION, "");
+
+		let commitment = match rx_comm.await {
+			Ok(x) => x,
+			Err(_) => {
+				return Err(internal_err!(
+					"Cannot compute commitment. :(  Channel is down"
+				));
+			},
+		};
+		stop_watch.stop_tracking(COMMITMENT, "");
 
 		// Check comitment
 		if provided_commitment != commitment {
 			return Err(internal_err!("submitted blob commitment mismatch"));
 		}
-
-		stop_watch.stop_tracking(VALIDATION_AND_COMMITMENT, "");
 
 		// From this point, the transaction should not fail as the user has done everything correctly
 		// We will spawn a task to finish the work and instantly return to the user.
