@@ -12,6 +12,7 @@ use crate::{
 };
 use anyhow::{anyhow, Result};
 use codec::{Decode, Encode};
+use da_commitment::build_da_commitments::build_polynomal_grid;
 use da_control::{pallet::BlobTxSummaryRuntime, BlobRuntimeParameters, Call};
 use da_runtime::{apis::BlobApi, RuntimeCall, UncheckedExtrinsic};
 use frame_system::limits::BlockLength;
@@ -40,6 +41,7 @@ use std::{
 	sync::Arc,
 };
 use tokio::task;
+use kate::Seed;
 
 pub enum Error {
 	BlobError,
@@ -104,7 +106,7 @@ impl<Client, Pool, Block: BlockT, Backend> BlobRpc<Client, Pool, Block, Backend>
 			pool,
 			blob_handle: deps.blob_handle,
 			backend,
-			commitment_queue: Arc::new(CommitmentQueue::new(50)),
+			commitment_queue: Arc::new(CommitmentQueue::new(100)),
 			_block: PhantomData,
 		}
 	}
@@ -185,7 +187,7 @@ where
 		stop_watch.stop_tracking("TX validation", "");
 
 		// Commitment Validation can take a long time.
-		stop_watch.start_tracking("Commitment");
+		stop_watch.start_tracking("Commitment Validation");
 		let (cols, rows) = get_dynamic_block_length(&self.backend, finalized_block_hash)?;
 		let blob = Arc::new(blob.0);
 		commitment_validation(
@@ -194,9 +196,10 @@ where
 			cols,
 			rows,
 			&self.commitment_queue,
+			&mut stop_watch,
 		)
 		.await?;
-		stop_watch.stop_tracking("Commitment", "");
+		stop_watch.stop_tracking("Commitment Validation", "");
 
 		// Because Commitment Validation can take a long time
 		// the moment it is done minutes can pass.
@@ -561,13 +564,17 @@ async fn commitment_validation(
 	cols: usize,
 	rows: usize,
 	queue: &CommitmentQueue,
+	stop_watch: &mut SmartStopwatch,
 ) -> RpcResult<()> {
-	let (message, rx_comm) = CommitmentQueueMessage::new(blob, cols, rows);
+	stop_watch.start_tracking("Build Poly Grid");
+	let grid = build_polynomal_grid(&*blob, cols, rows, Seed::default());
+	stop_watch.stop_tracking("Build Poly Grid", "");
+
+	let (message, rx_comm) = CommitmentQueueMessage::new(grid);
 	if !queue.send(message) {
 		// Need better error handling
 		return Err(internal_err!("Commitment queue is full"));
 	}
-
 	let commitment = match rx_comm.await {
 		Ok(x) => x,
 		Err(_) => {
@@ -607,7 +614,6 @@ pub async fn store_and_gossip_blob<Block, Client, Pool>(
 	<Block as BlockT>::Hash: From<H256>,
 	Pool: TransactionPool<Block = Block> + 'static,
 {
-	const STORAGE: &str = "STORAGE";
 	const GOSSIPING: &str = "GOSSIPING";
 	let mut stop_watch = SmartStopwatch::new("😍😍 STORE AND GOSSIP BLOB");
 	stop_watch.add_extra_information(std::format!("Blob Hash: {:?}", blob_hash));
@@ -681,7 +687,7 @@ pub async fn store_and_gossip_blob<Block, Client, Pool>(
 		},
 	};
 
-	stop_watch.start_tracking(STORAGE);
+	stop_watch.start_tracking("STORAGE");
 
 	// Arc::unwrap_or_clone will correctly unwrap as this is the only instance
 	let blob = Blob {
@@ -721,7 +727,7 @@ pub async fn store_and_gossip_blob<Block, Client, Pool>(
 		blob_hash,
 	);
 
-	stop_watch.stop_tracking(STORAGE, "");
+	stop_watch.stop_tracking("STORAGE", "");
 	stop_watch.start_tracking(GOSSIPING);
 
 	// Announce the blob to the network -------------------
@@ -753,6 +759,7 @@ pub async fn store_and_gossip_blob<Block, Client, Pool>(
 
 	// Push the clean extrinsic to the tx pool ---------------------
 	// Get the best hash once more, to submit the tx
+	stop_watch.start_tracking("Submit One");
 	let best_hash = client.info().best_hash;
 	if let Err(e) = pool
 		.submit_one(best_hash, TransactionSource::External, opaque_tx)
@@ -764,4 +771,5 @@ pub async fn store_and_gossip_blob<Block, Client, Pool>(
 		"BLOB - RPC submit_blob - bg:task - After Submitting to pool - {:?}",
 		blob_hash,
 	);
+	stop_watch.stop_tracking("Submit One", "");
 }

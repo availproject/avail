@@ -236,6 +236,7 @@ fn build_extension_with_comms(
 		"⏱️ Extracting app extrinsics took {:?}",
 		timer_app_ext.elapsed()
 	);
+	log::info!("Ext length: {}", extrinsics.len());
 
 	// Blocks with non-DA extrinsics will have empty commitments
 	if app_extrinsics.is_empty() {

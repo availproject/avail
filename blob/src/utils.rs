@@ -5,10 +5,10 @@ use crate::{
 };
 use anyhow::{anyhow, Context, Result};
 use codec::{Decode, Encode};
-use da_commitment::build_da_commitments::build_da_commitments;
+use da_commitment::build_da_commitments::build_commitments_from_polynomal_grid;
 use da_control::{BlobRuntimeParameters, Call};
 use da_runtime::{apis::BlobApi, RuntimeCall, UncheckedExtrinsic};
-use kate::Seed;
+use kate::gridgen::core::PolynomialGrid;
 use sc_client_api::{HeaderBackend, StorageKey};
 use sc_keystore::{Keystore, LocalKeystore};
 use sc_transaction_pool_api::TransactionSource;
@@ -653,44 +653,50 @@ impl Drop for SmartStopwatch {
 }
 
 pub struct CommitmentQueueMessage {
-	blob: Arc<Vec<u8>>,
-	cols: usize,
-	rows: usize,
+	grid: PolynomialGrid,
 	request: oneshot::Sender<Vec<u8>>,
 }
 
 impl CommitmentQueueMessage {
-	pub fn new(blob: Arc<Vec<u8>>, cols: usize, rows: usize) -> (Self, oneshot::Receiver<Vec<u8>>) {
+	pub fn new(grid: PolynomialGrid) -> (Self, oneshot::Receiver<Vec<u8>>) {
 		let (tx, rx) = oneshot::channel();
-		let s = Self {
-			blob,
-			cols,
-			rows,
-			request: tx,
-		};
+		let s = Self { grid, request: tx };
 		(s, rx)
 	}
 }
 
 pub struct CommitmentQueue {
-	tx: mpsc::Sender<CommitmentQueueMessage>,
+	tx1: mpsc::Sender<CommitmentQueueMessage>,
+	tx2: mpsc::Sender<CommitmentQueueMessage>,
+	channel_picker: std::sync::atomic::AtomicBool,
 }
 
 impl CommitmentQueue {
 	pub fn new(channel_size: usize) -> Self {
-		let (tx, rx) = mpsc::channel(channel_size);
+		let (tx1, rx) = mpsc::channel(channel_size);
 		tokio::spawn(async move { Self::run_task(rx).await });
-		Self { tx }
+		let (tx2, rx) = mpsc::channel(channel_size);
+		tokio::spawn(async move { Self::run_task(rx).await });
+		Self { tx1, tx2, channel_picker: std::sync::atomic::AtomicBool::new(false) }
 	}
 
 	pub async fn run_task(mut rx: mpsc::Receiver<CommitmentQueueMessage>) {
 		while let Some(msg) = rx.recv().await {
-			let commtment = build_da_commitments(&*msg.blob, msg.cols, msg.rows, Seed::default());
+			let commtment = build_commitments_from_polynomal_grid(msg.grid);
 			_ = msg.request.send(commtment);
 		}
 	}
 
 	pub fn send(&self, value: CommitmentQueueMessage) -> bool {
-		self.tx.try_send(value).is_ok()
+		let thread = self.channel_picker.fetch_not(std::sync::atomic::Ordering::Relaxed);
+		match thread {
+			false => {
+				self.tx1.try_send(value).is_ok()
+			},
+			true => {
+				self.tx2.try_send(value).is_ok()
+			}
+		}
+		
 	}
 }

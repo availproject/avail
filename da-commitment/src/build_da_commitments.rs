@@ -1,6 +1,7 @@
 #![cfg(feature = "std")]
 
 use anyhow::Result;
+use kate::gridgen::core::PolynomialGrid;
 use kate::{
 	couscous::multiproof_params,
 	gridgen::core::{AsBytes, EvaluationGrid},
@@ -39,6 +40,51 @@ fn build_grid(
 	Ok(grid)
 }
 
+pub fn build_polynomal_grid(
+	data: &[u8],
+	max_width: usize,
+	max_height: usize,
+	seed: Seed,
+) -> PolynomialGrid {
+	let grid = match build_grid(data, max_width, max_height, seed) {
+		Ok(grid) => grid,
+		Err(e) => {
+			log::error!("Grid construction failed: {:?}", e);
+			panic!("Failed to build grild");
+		},
+	};
+
+	let Ok(poly_grid) = grid.into_polynomial_grid() else {
+		panic!("Failed to build polynominal grid")
+	};
+
+	poly_grid
+}
+
+pub fn build_commitments_from_polynomal_grid(grid: PolynomialGrid) -> Vec<u8> {
+	let timer = std::time::Instant::now();
+	log::info!("Build Commitments From Polynominal Grid Start");
+	let pmp = PMP.get_or_init(multiproof_params);
+
+	let Ok(extended_grid) = grid.commitments(pmp) else {
+		panic!("Failed to build commitments");
+	};
+
+	let mut commitment = Vec::new();
+	for c in extended_grid.iter() {
+		match c.to_bytes() {
+			Ok(bytes) => commitment.extend(bytes),
+			Err(_) => {
+				panic!("Failed to get bytes from comitment");
+			},
+		}
+	}
+
+	log::info!("Build Commitments From Polynominal Grid - END - {:?}", timer.elapsed());
+
+	commitment
+}
+
 fn build_commitment(grid: EvaluationGrid) -> Result<Vec<u8>, DaCommitmentsError> {
 	let pmp = PMP.get_or_init(multiproof_params);
 
@@ -73,10 +119,8 @@ pub fn build_da_commitments(
 	seed: Seed,
 ) -> DaCommitments {
 	let timer = std::time::Instant::now();
-	log::info!(
-		"BLOB - build_da_commitments - START - {:?}",
-		timer.elapsed()
-	);
+	log::info!("BLOB - build_da_commitments - START");
+
 	let grid = match build_grid(data, max_width, max_height, seed) {
 		Ok(grid) => grid,
 		Err(e) => {
@@ -92,6 +136,7 @@ pub fn build_da_commitments(
 			return DaCommitments::new();
 		},
 	};
+
 	log::info!("BLOB - build_da_commitments - END - {:?}", timer.elapsed());
 
 	commitments
