@@ -3,3 +3,4 @@
 ./target/release/avail-node --chain dev.tri --charlie --tmp --listen-addr /ip4/0.0.0.0/tcp/30335 --listen-addr /ip6/::/tcp/30335 --rpc-max-request-size 500 --rpc-max-response-size 500
 
 ./target/release/da-spammer --account bob   --endpoint http://127.0.0.1:9944 --count 1 --fetch-data-from-mainnet --fetch-data-from-mainnet-concat --size-mb 1
+./target/release/da-spammer --account bob   --endpoint http://127.0.0.1:9944 --count 1

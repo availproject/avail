@@ -23,8 +23,11 @@ use jsonrpsee::{
 use sc_client_api::{BlockBackend, HeaderBackend, StateBackend};
 use sc_network::{NetworkStateInfo, PeerId};
 use sc_transaction_pool_api::TransactionPool;
+use sp_api::ApiError;
 use sp_api::ProvideRuntimeApi;
 use sp_core::{keccak_256, Bytes, H256};
+use sp_runtime::transaction_validity::TransactionValidityError;
+use sp_runtime::transaction_validity::ValidTransaction;
 use sp_runtime::{
 	traits::{Block as BlockT, HashingFor},
 	SaturatedConversion,
@@ -121,15 +124,11 @@ where
 	Pool: TransactionPool<Block = Block> + 'static,
 	Backend: sc_client_api::Backend<Block> + Send + Sync + 'static,
 	Backend::State: StateBackend<HashingFor<Block>>,
+	H256: From<<Block as BlockT>::Hash>,
+	<Block as BlockT>::Hash: From<H256>,
 {
 	async fn submit_blob(&self, metadata_signed_transaction: Bytes, blob: Bytes) -> RpcResult<()> {
-		const DECODING_AND_CHECKS: &str = "Decoding and checks";
-		const VALIDATION: &str = "Validation";
-		const COMMITMENT: &str = "Commitment";
-		const HASHING: &str = "Hashing Keccak";
-
 		let mut stop_watch = SmartStopwatch::new("😍 SUBMIT BLOB RPC");
-		stop_watch.start_tracking(DECODING_AND_CHECKS);
 
 		// --- 0. Quick checks -------------------------------------------------
 		if blob.0.is_empty() {
@@ -142,7 +141,6 @@ where
 		// Get client info
 		let client_info = self.client.info();
 		let best_hash = client_info.best_hash;
-		let finalized_block_number = client_info.finalized_number.saturated_into::<u64>();
 		let finalized_block_hash = client_info.finalized_hash;
 
 		let blob_params = match self
@@ -156,272 +154,92 @@ where
 				BlobRuntimeParameters::default()
 			},
 		};
-		if blob.0.len() as u64 > blob_params.max_blob_size {
-			return Err(internal_err!("blob is too big"));
-		}
+		let max_blob_size = blob_params.max_blob_size as usize;
 
-		// Decode to concrete call to read the metadata, Check hash, commitment, ... of the blob compared to the submitted metadata ----------------
-		let encoded_metadata_signed_transaction: UncheckedExtrinsic =
-			Decode::decode(&mut &metadata_signed_transaction[..])
-				.map_err(|_| internal_err!("failed to decode concrete metadata call"))?;
-		let (provided_size, provided_blob_hash, provided_commitment) =
-			match encoded_metadata_signed_transaction.function {
-				RuntimeCall::DataAvailability(Call::submit_blob_metadata {
-					size,
-					blob_hash,
-					commitment,
-				}) => (size as usize, blob_hash, commitment),
-				_ => {
-					return Err(internal_err!(
-						"metadata extrinsic must be dataAvailability.submitBlobMetadata"
-					))
-				},
-			};
-
-		// Check size
-		if provided_size != blob.len() {
-			return Err(internal_err!(
-				"submit data length ({}) != blob length ({})",
-				provided_size,
-				blob.len()
-			));
-		}
-
-		// Check blob_hash
-		stop_watch.start_tracking(HASHING);
-		let blob_hash = H256::from(keccak_256(&blob));
-		if provided_blob_hash != blob_hash {
-			return Err(internal_err!("submitted blob: {provided_blob_hash:?} does not correspond to generated blob {blob_hash:?}"));
-		}
-		stop_watch.stop_tracking(HASHING, "");
+		stop_watch.start_tracking("Initial Validation");
+		let (blob_hash, provided_commitment) = initial_validation(
+			max_blob_size as usize,
+			&blob.0,
+			&metadata_signed_transaction.0,
+		)?;
+		stop_watch.stop_tracking("Initial Validation", "");
 		stop_watch.add_extra_information(std::format!("Blob Hash: {:?}", blob_hash));
 
-		stop_watch.stop_tracking(DECODING_AND_CHECKS, "");
-
-		// Prepare generated commitment
-		// Moving stack vec to heap vec is a NOOP
-		let blob_vec = Arc::new(blob.0);
-		let (cols, rows) = get_dynamic_block_length(&self.backend, finalized_block_hash)?;
-		let (message, rx_comm) = CommitmentQueueMessage::new(blob_vec.clone(), cols, rows);
-		if !self.commitment_queue.send(message) {
-			// Need better error handling
-			return Err(internal_err!("Commitment queue is full"));
-		}
-
-		stop_watch.start_tracking(VALIDATION);
-		stop_watch.start_tracking(COMMITMENT);
-		// Check tx validity
-		let opaque_tx = async {
-			// --- a. Decode the opaque extrinsic ---------------------------------
-			let opaque_tx: Block::Extrinsic =
-				codec::Decode::decode(&mut &metadata_signed_transaction[..])
-					.map_err(|_| internal_err!("failed to decode metadata extrinsic"))?;
-			// --- b. Let the runtime validate it (signature, nonce, weight) ------
-			let validity = self
-				.client
-				.runtime_api()
-				.validate_transaction(
-					best_hash,
-					TransactionSource::External,
-					opaque_tx.clone(),
-					best_hash,
-				)
-				.map_err(|e| internal_err!("runtime validate_transaction error: {e}"))?;
-			let Ok(validity) = validity else {
-				return Err(internal_err!("metadata extrinsic rejected by runtime"));
-			};
-			// --- c. Check also that transaction lifetime is above minimum tx lifetime so it does not expire. If validity is not correct, we reject the tx
-			if validity.longevity < blob_params.min_transaction_validity {
-				return Err(internal_err!(
-					"signed transaction does not live for enough time"
-				));
-			}
-			if validity.longevity > blob_params.max_transaction_validity {
-				return Err(internal_err!("signed transaction lifetime is too long"));
-			}
-
-			Ok(opaque_tx)
-		}
-		.await?;
-		stop_watch.stop_tracking(VALIDATION, "");
-
-		let commitment = match rx_comm.await {
-			Ok(x) => x,
-			Err(_) => {
-				return Err(internal_err!(
-					"Cannot compute commitment. :(  Channel is down"
-				));
-			},
+		let c = self.client.clone();
+		let validity_op = move |tx: Block::Extrinsic| {
+			c.runtime_api().validate_transaction(
+				best_hash,
+				TransactionSource::External,
+				tx,
+				best_hash,
+			)
 		};
-		stop_watch.stop_tracking(COMMITMENT, "");
 
-		// Check comitment
-		if provided_commitment != commitment {
-			return Err(internal_err!("submitted blob commitment mismatch"));
-		}
+		stop_watch.start_tracking("TX validation");
+		let opaque_tx = tx_validation::<Block>(
+			&metadata_signed_transaction.0,
+			blob_params.min_transaction_validity,
+			blob_params.max_transaction_validity,
+			validity_op,
+		)?;
+		stop_watch.stop_tracking("TX validation", "");
+
+		// Commitment Validation can take a long time.
+		stop_watch.start_tracking("Commitment");
+		let (cols, rows) = get_dynamic_block_length(&self.backend, finalized_block_hash)?;
+		let blob = Arc::new(blob.0);
+		commitment_validation(
+			&provided_commitment,
+			blob.clone(),
+			cols,
+			rows,
+			&self.commitment_queue,
+		)
+		.await?;
+		stop_watch.stop_tracking("Commitment", "");
+
+		// Because Commitment Validation can take a long time
+		// the moment it is done minutes can pass.
+		// Let's check once more to see if the transactions is still valid
+		//
+		// TODO we might remove this
+		let client_info = self.client.info();
+		let best_hash = client_info.best_hash;
+		let c = self.client.clone();
+		let validity_op = move |tx: Block::Extrinsic| {
+			c.runtime_api().validate_transaction(
+				best_hash,
+				TransactionSource::External,
+				tx,
+				best_hash,
+			)
+		};
+		let _ = tx_validation::<Block>(
+			&metadata_signed_transaction.0,
+			blob_params.min_transaction_validity,
+			blob_params.max_transaction_validity,
+			validity_op,
+		)?;
 
 		// From this point, the transaction should not fail as the user has done everything correctly
 		// We will spawn a task to finish the work and instantly return to the user.
-		let blob_handle = self.blob_handle.clone();
-		let client = self.client.clone();
-		let pool = self.pool.clone();
-		let network = self.blob_handle.network.get().cloned();
-		task::spawn(async move {
-			const STORAGE: &str = "STORAGE";
-			const GOSSIPING: &str = "GOSSIPING";
-			let mut stop_watch = SmartStopwatch::new("😍😍 SUBMIT BLOB RPC TASK");
-			stop_watch.add_extra_information(std::format!("Blob Hash: {:?}", blob_hash));
-
-			// Get my own peer id data
-			let Some(net) = network else {
-				log::error!("submit_blob(bg): network not initialized");
-				return;
-			};
-			let my_peer_id_base58 = net.local_peer_id().to_base58();
-
-			// Setup blob metadata and blob and check first in case we already received this exact blob before
-			let maybe_blob_metadata = match blob_handle.blob_store.get_blob_metadata(&blob_hash) {
-				Ok(m) => m,
-				Err(e) => {
-					log::error!("Failed to get data from blob storage: {e}");
-					return;
-				},
-			};
-
-			let mut blob_metadata = maybe_blob_metadata.unwrap_or_else(|| {
-				let blob_len = blob_vec.len();
-
-				BlobMetadata {
-					hash: blob_hash,
-					size: blob_len.saturated_into(),
-					commitment,
-					is_notified: true,
-					expires_at: 0,
-					finalized_block_hash: Block::Hash::default(),
-					finalized_block_number: 0,
-					nb_validators_per_blob: 0,
-					nb_validators_per_blob_threshold: 0,
-				}
-			});
-
-			// It might be a new blob or an old one being resubmitted, we still update most of the values
-			let validators = get_active_validators(&client, &finalized_block_hash.encode());
-			if validators.is_empty() {
-				return;
-			}
-			let (nb_validators_per_blob, threshold) =
-				get_validator_per_blob_inner(blob_params.clone(), validators.len() as u32);
-			blob_metadata.is_notified = true;
-			blob_metadata.expires_at =
-				finalized_block_number.saturating_add(blob_params.temp_blob_ttl);
-			blob_metadata.finalized_block_hash = finalized_block_hash;
-			blob_metadata.finalized_block_number = finalized_block_number;
-			blob_metadata.nb_validators_per_blob = nb_validators_per_blob;
-			blob_metadata.nb_validators_per_blob_threshold = threshold;
-			let maybe_ownership: Option<OwnershipEntry> =
-				match check_rpc_store_blob::<Client, Block>(
-					&client,
-					&blob_handle,
-					&blob_metadata,
-					my_peer_id_base58.clone(),
-					nb_validators_per_blob,
-					&validators,
-					&finalized_block_hash,
+		{
+			let (client, pool) = (self.client.clone(), self.pool.clone());
+			let blob_handle = self.blob_handle.clone();
+			task::spawn(async move {
+				store_and_gossip_blob(
+					client,
+					pool,
+					opaque_tx,
+					blob_hash,
+					blob_handle,
+					blob,
+					blob_params,
+					provided_commitment,
 				)
 				.await
-				{
-					Ok(o) => o,
-					Err(e) => {
-						log::error!("could not check if rpc should store blob: {e}");
-						return;
-					},
-				};
-
-			stop_watch.start_tracking(STORAGE);
-
-			// Arc::unwrap_or_clone will correctly unwrap as this is the only instance
-			let blob = Blob {
-				blob_hash,
-				size: blob_vec.len().saturated_into(),
-				data: Arc::unwrap_or_clone(blob_vec),
-			};
-
-			if let Some(o) = &maybe_ownership {
-				log::info!(
-					"BLOB - RPC submit_blob - bg:task - I Should store - {:?}",
-					blob_hash,
-				);
-				if let Err(e) = blob_handle.blob_store.insert_blob_ownership(&blob_hash, o) {
-					log::error!("failed to insert blob ownership into store: {e}");
-				}
-				blob_metadata.expires_at =
-					finalized_block_number.saturating_add(blob_params.blob_ttl);
-			}
-
-			// Store the blob in the store -------------------
-			if let Err(e) = blob_handle.blob_store.insert_blob_metadata(&blob_metadata) {
-				log::error!("failed to insert blob metadata into store: {e}");
-			}
-			log::info!(
-				"BLOB - RPC submit_blob - bg:task - After inserting metadata - {:?}",
-				blob_hash,
-			);
-
-			if let Err(e) = blob_handle
-				.blob_data_store
-				.insert_blob(&blob.blob_hash, &blob.encode())
-			{
-				log::error!("failed to insert blob into store: {e}");
-			}
-			log::info!(
-				"BLOB - RPC submit_blob - bg:task - After inserting blob - {:?}",
-				blob_hash,
-			);
-
-			stop_watch.stop_tracking(STORAGE, "");
-			stop_watch.start_tracking(GOSSIPING);
-
-			// Announce the blob to the network -------------------
-			let blob_received_notification: BlobNotification<Block> =
-				BlobNotification::BlobReceived(BlobReceived {
-					hash: blob_metadata.hash,
-					size: blob_metadata.size,
-					commitment: blob_metadata.commitment.clone(),
-					ownership: maybe_ownership,
-					original_peer_id: my_peer_id_base58.clone(),
-					finalized_block_hash,
-					finalized_block_number,
-				});
-
-			let Some(gossip_cmd_sender) = blob_handle.gossip_cmd_sender.get() else {
-				log::error!("gossip_cmd_sender was not initialized");
-				return;
-			};
-
-			if let Err(e) = gossip_cmd_sender.send(blob_received_notification).await {
-				log::error!("internal channel closed: {e}");
-				return;
-			}
-			log::info!(
-				"BLOB - RPC submit_blob - bg:task - After gossiping blob notif - {:?}",
-				blob_hash,
-			);
-			stop_watch.stop_tracking(GOSSIPING, "");
-
-			// Push the clean extrinsic to the tx pool ---------------------
-			// Get the best hash once more, to submit the tx
-			let best_hash = client.info().best_hash;
-			if let Err(e) = pool
-				.submit_one(best_hash, TransactionSource::External, opaque_tx)
-				.await
-			{
-				log::error!("tx-pool error: {e}")
-			}
-			log::info!(
-				"BLOB - RPC submit_blob - bg:task - After Submitting to pool - {:?}",
-				blob_hash,
-			);
-		});
+			});
+		}
 
 		Ok(())
 	}
@@ -659,4 +477,291 @@ where
 	let rows = block_length.rows.0 as usize;
 
 	Ok((cols, rows))
+}
+
+fn initial_validation(
+	max_blob_size: usize,
+	blob: &[u8],
+	metadata: &[u8],
+) -> RpcResult<(H256, Vec<u8>)> {
+	if blob.len() > max_blob_size {
+		return Err(internal_err!("blob is too big"));
+	}
+
+	let mut metadata = metadata;
+	let encoded_metadata_signed_transaction: UncheckedExtrinsic = Decode::decode(&mut metadata)
+		.map_err(|_| internal_err!("failed to decode concrete metadata call"))?;
+	let (provided_size, provided_blob_hash, provided_commitment) =
+		match encoded_metadata_signed_transaction.function {
+			RuntimeCall::DataAvailability(Call::submit_blob_metadata {
+				size,
+				blob_hash,
+				commitment,
+			}) => (size as usize, blob_hash, commitment),
+			_ => {
+				return Err(internal_err!(
+					"metadata extrinsic must be dataAvailability.submitBlobMetadata"
+				))
+			},
+		};
+
+	// Check size
+	if provided_size != blob.len() {
+		return Err(internal_err!(
+			"submit data length ({}) != blob length ({})",
+			provided_size,
+			blob.len()
+		));
+	}
+
+	let blob_hash = H256::from(keccak_256(&blob));
+	if provided_blob_hash != blob_hash {
+		return Err(internal_err!("submitted blob: {provided_blob_hash:?} does not correspond to generated blob {blob_hash:?}"));
+	}
+
+	Ok((blob_hash, provided_commitment))
+}
+
+fn tx_validation<Block: BlockT>(
+	metadata: &[u8],
+	min_transaction_validity: u64,
+	max_transaction_validity: u64,
+	validity_op: impl Fn(
+		Block::Extrinsic,
+	) -> Result<Result<ValidTransaction, TransactionValidityError>, ApiError>,
+) -> RpcResult<Block::Extrinsic> {
+	let mut metadata = metadata;
+
+	// --- a. Decode the opaque extrinsic ---------------------------------
+	let opaque_tx: Block::Extrinsic = codec::Decode::decode(&mut metadata)
+		.map_err(|_| internal_err!("failed to decode metadata extrinsic"))?;
+	// --- b. Let the runtime validate it (signature, nonce, weight) ------
+	let opaque_tx_clone = opaque_tx.clone();
+	let validity = validity_op(opaque_tx_clone)
+		.map_err(|e| internal_err!("runtime validate_transaction error: {e}"))?;
+	let Ok(validity) = validity else {
+		return Err(internal_err!("metadata extrinsic rejected by runtime"));
+	};
+	// --- c. Check also that transaction lifetime is above minimum tx lifetime so it does not expire. If validity is not correct, we reject the tx
+	if validity.longevity < min_transaction_validity {
+		return Err(internal_err!(
+			"signed transaction does not live for enough time"
+		));
+	}
+	if validity.longevity > max_transaction_validity {
+		return Err(internal_err!("signed transaction lifetime is too long"));
+	}
+
+	Ok(opaque_tx)
+}
+
+async fn commitment_validation(
+	provided_commitment: &Vec<u8>,
+	blob: Arc<Vec<u8>>,
+	cols: usize,
+	rows: usize,
+	queue: &CommitmentQueue,
+) -> RpcResult<()> {
+	let (message, rx_comm) = CommitmentQueueMessage::new(blob, cols, rows);
+	if !queue.send(message) {
+		// Need better error handling
+		return Err(internal_err!("Commitment queue is full"));
+	}
+
+	let commitment = match rx_comm.await {
+		Ok(x) => x,
+		Err(_) => {
+			return Err(internal_err!(
+				"Cannot compute commitment. :(  Channel is down"
+			));
+		},
+	};
+
+	// Check comitment
+	if !provided_commitment.eq(&commitment) {
+		return Err(internal_err!("submitted blob commitment mismatch"));
+	}
+
+	Ok(())
+}
+
+pub async fn store_and_gossip_blob<Block, Client, Pool>(
+	client: Arc<Client>,
+	pool: Arc<Pool>,
+	opaque_tx: Block::Extrinsic,
+	blob_hash: H256,
+	blob_handle: Arc<BlobHandle<Block>>,
+	blob: Arc<Vec<u8>>,
+	blob_params: BlobRuntimeParameters,
+	commitment: Vec<u8>,
+) where
+	Client: HeaderBackend<Block>
+		+ ProvideRuntimeApi<Block>
+		+ BlockBackend<Block>
+		+ Send
+		+ Sync
+		+ 'static,
+	Client::Api: TaggedTransactionQueue<Block> + BlobApi<Block>,
+	Block: BlockT,
+	H256: From<<Block as BlockT>::Hash>,
+	<Block as BlockT>::Hash: From<H256>,
+	Pool: TransactionPool<Block = Block> + 'static,
+{
+	const STORAGE: &str = "STORAGE";
+	const GOSSIPING: &str = "GOSSIPING";
+	let mut stop_watch = SmartStopwatch::new("😍😍 STORE AND GOSSIP BLOB");
+	stop_watch.add_extra_information(std::format!("Blob Hash: {:?}", blob_hash));
+
+	let client_info = client.info();
+	let finalized_block_hash: H256 = client_info.finalized_hash.into();
+	let finalized_block_number = client_info.finalized_number.saturated_into::<u64>();
+
+	// Get my own peer id data
+	let network = blob_handle.network.get().cloned();
+	let Some(net) = network else {
+		log::error!("submit_blob(bg): network not initialized");
+		return;
+	};
+	let my_peer_id_base58 = net.local_peer_id().to_base58();
+
+	// Setup blob metadata and blob and check first in case we already received this exact blob before
+	let maybe_blob_metadata = match blob_handle.blob_store.get_blob_metadata(&blob_hash) {
+		Ok(m) => m,
+		Err(e) => {
+			log::error!("Failed to get data from blob storage: {e}");
+			return;
+		},
+	};
+
+	let mut blob_metadata = maybe_blob_metadata.unwrap_or_else(|| {
+		let blob_len = blob.len();
+
+		BlobMetadata {
+			hash: blob_hash,
+			size: blob_len.saturated_into(),
+			commitment,
+			is_notified: true,
+			expires_at: 0,
+			finalized_block_hash: Block::Hash::default(),
+			finalized_block_number: 0,
+			nb_validators_per_blob: 0,
+			nb_validators_per_blob_threshold: 0,
+		}
+	});
+
+	// It might be a new blob or an old one being resubmitted, we still update most of the values
+	let validators = get_active_validators(&client, &finalized_block_hash.encode());
+	if validators.is_empty() {
+		return;
+	}
+	let (nb_validators_per_blob, threshold) =
+		get_validator_per_blob_inner(blob_params.clone(), validators.len() as u32);
+	blob_metadata.is_notified = true;
+	blob_metadata.expires_at = finalized_block_number.saturating_add(blob_params.temp_blob_ttl);
+	blob_metadata.finalized_block_hash = finalized_block_hash.into();
+	blob_metadata.finalized_block_number = finalized_block_number;
+	blob_metadata.nb_validators_per_blob = nb_validators_per_blob;
+	blob_metadata.nb_validators_per_blob_threshold = threshold;
+	let block_hash = finalized_block_hash.into();
+	let maybe_ownership: Option<OwnershipEntry> = match check_rpc_store_blob::<Client, Block>(
+		&client,
+		&blob_handle,
+		&blob_metadata,
+		my_peer_id_base58.clone(),
+		nb_validators_per_blob,
+		&validators,
+		&block_hash,
+	)
+	.await
+	{
+		Ok(o) => o,
+		Err(e) => {
+			log::error!("could not check if rpc should store blob: {e}");
+			return;
+		},
+	};
+
+	stop_watch.start_tracking(STORAGE);
+
+	// Arc::unwrap_or_clone will correctly unwrap as this is the only instance
+	let blob = Blob {
+		blob_hash,
+		size: blob.len().saturated_into(),
+		data: Arc::unwrap_or_clone(blob),
+	};
+
+	if let Some(o) = &maybe_ownership {
+		log::info!(
+			"BLOB - RPC submit_blob - bg:task - I Should store - {:?}",
+			blob_hash,
+		);
+		if let Err(e) = blob_handle.blob_store.insert_blob_ownership(&blob_hash, o) {
+			log::error!("failed to insert blob ownership into store: {e}");
+		}
+		blob_metadata.expires_at = finalized_block_number.saturating_add(blob_params.blob_ttl);
+	}
+
+	// Store the blob in the store -------------------
+	if let Err(e) = blob_handle.blob_store.insert_blob_metadata(&blob_metadata) {
+		log::error!("failed to insert blob metadata into store: {e}");
+	}
+	log::info!(
+		"BLOB - RPC submit_blob - bg:task - After inserting metadata - {:?}",
+		blob_hash,
+	);
+
+	if let Err(e) = blob_handle
+		.blob_data_store
+		.insert_blob(&blob.blob_hash, &blob.encode())
+	{
+		log::error!("failed to insert blob into store: {e}");
+	}
+	log::info!(
+		"BLOB - RPC submit_blob - bg:task - After inserting blob - {:?}",
+		blob_hash,
+	);
+
+	stop_watch.stop_tracking(STORAGE, "");
+	stop_watch.start_tracking(GOSSIPING);
+
+	// Announce the blob to the network -------------------
+	let blob_received_notification: BlobNotification<Block> =
+		BlobNotification::BlobReceived(BlobReceived {
+			hash: blob_metadata.hash,
+			size: blob_metadata.size,
+			commitment: blob_metadata.commitment.clone(),
+			ownership: maybe_ownership,
+			original_peer_id: my_peer_id_base58.clone(),
+			finalized_block_hash: finalized_block_hash.into(),
+			finalized_block_number,
+		});
+
+	let Some(gossip_cmd_sender) = blob_handle.gossip_cmd_sender.get() else {
+		log::error!("gossip_cmd_sender was not initialized");
+		return;
+	};
+
+	if let Err(e) = gossip_cmd_sender.send(blob_received_notification).await {
+		log::error!("internal channel closed: {e}");
+		return;
+	}
+	log::info!(
+		"BLOB - RPC submit_blob - bg:task - After gossiping blob notif - {:?}",
+		blob_hash,
+	);
+	stop_watch.stop_tracking(GOSSIPING, "");
+
+	// Push the clean extrinsic to the tx pool ---------------------
+	// Get the best hash once more, to submit the tx
+	let best_hash = client.info().best_hash;
+	if let Err(e) = pool
+		.submit_one(best_hash, TransactionSource::External, opaque_tx)
+		.await
+	{
+		log::error!("tx-pool error: {e}")
+	}
+	log::info!(
+		"BLOB - RPC submit_blob - bg:task - After Submitting to pool - {:?}",
+		blob_hash,
+	);
 }
