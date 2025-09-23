@@ -161,7 +161,7 @@ async fn handle_blob_received_notification<Block>(
 		},
 	};
 
-	if blob_received.size > blob_runtime_params.max_blob_size {
+	if blob_received.size > (blob_runtime_params.max_blob_size + 1024) {
 		log::error!(target: LOG_TARGET, "Invalid blob size");
 		return;
 	}
@@ -350,7 +350,7 @@ async fn handle_blob_received_notification<Block>(
 			};
 
 			// Actually check the real blob size
-			if blob_response.blob.len() > blob_runtime_params.max_blob_size as usize {
+			if blob_response.blob.len() > (blob_runtime_params.max_blob_size + 1024) as usize {
 				log::error!(target: LOG_TARGET, "Invalid blob size");
 				return;
 			}

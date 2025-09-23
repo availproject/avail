@@ -468,7 +468,7 @@ fn get_block_tx_summary<Block: BlockT>(
 		return Err("Blob metadata from the store is not notified, discarding it".into());
 	}
 
-	if ownerships.len() < meta.nb_validators_per_blob as usize {
+	if ownerships.len() < meta.nb_validators_per_blob_threshold as usize {
 		return Err("Not enough validators vouched for this block".into());
 	}
 
