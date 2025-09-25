@@ -1,6 +1,11 @@
 #![allow(dead_code)]
 
-use avail_rust_client::{avail_rust_core::rpc::blob::submit_blob, prelude::*};
+use avail_rust_client::{
+	avail_rust_core::rpc::blob::submit_blob,
+	block::{BlockExtOptionsExpanded, BlockWithRawExt},
+	prelude::*,
+	subscription::SubBuilder,
+};
 use avail_rust_core::rpc::Error as RpcError;
 use da_commitment::build_da_commitments::build_da_commitments;
 use kate::Seed;
@@ -9,45 +14,16 @@ use sp_std::iter::repeat;
 
 pub async fn run() -> Result<(), RpcError> {
 	println!("---------- START Submission ---------- ");
-	let len = 32 * 1024 * 1024;
-	let mode = 1;
-
-	let local_endpoint: &str = if mode == 1 {
-		"http://127.0.0.1:9944"
-	} else if mode == 2 {
-		"http://127.0.0.1:9945"
-	} else if mode == 3 {
-		"http://127.0.0.1:9946"
-	} else {
-		"http://127.0.0.1:9947"
-	};
-
-	let client = Client::new(local_endpoint).await?;
-	let signer = if mode == 1 {
-		alice()
-	} else if mode == 2 {
-		bob()
-	} else if mode == 3 {
-		charlie()
-	} else {
-		dave()
-	};
-	let byte = if mode == 1 {
-		b'A'
-	} else if mode == 2 {
-		b'B'
-	} else if mode == 3 {
-		b'C'
-	} else {
-		b'D'
-	};
-
+	let len = 1 * 1024 * 1024;
+	let client = Client::new(LOCAL_ENDPOINT).await?;
+	let signer = alice();
+	let byte = b'A';
 	let nonce = client.rpc().account_nonce(&signer.account_id()).await?;
-	println!("Nonce: {nonce}");
 
 	let mut blobs: Vec<(Vec<u8>, H256, Vec<u8>)> = Vec::new();
+	let nb_tx: u32 = 10;
 	println!("---------- START Commitments generation ---------- ");
-	for i in 0..50 {
+	for i in 0..(nb_tx as usize) {
 		println!("---------- START Commitment generation {i} ---------- ");
 		let blob: Vec<u8> = repeat(byte).take(len - i).collect::<Vec<u8>>();
 		let blob_hash = H256::from(keccak_256(&blob));
@@ -57,6 +33,14 @@ pub async fn run() -> Result<(), RpcError> {
 		println!("commitments len = {:?}", commitments.len());
 		blobs.push((blob, blob_hash, commitments));
 	}
+
+	let block_height_before = client.finalized().block_header().await?.number;
+	let mut sub = SubBuilder::default()
+		.follow(true)
+		.block_height(block_height_before)
+		.build(&client)
+		.await?;
+
 	for (i, (blob, hash, commitments)) in blobs.into_iter().enumerate() {
 		println!("---------- START Submission {i} ---------- ");
 		let options = Options::new((i % 5) as u32).nonce(nonce + i as u32);
@@ -72,6 +56,33 @@ pub async fn run() -> Result<(), RpcError> {
 			println!("An error has occured: {e}");
 		}
 		println!("---------- END Submission {i} ---------- ");
+	}
+
+	let mut found_blob_count = 0;
+	let mut block_searched = 0;
+
+	loop {
+		let block_ref = sub.next(&client).await?;
+		let block = BlockWithRawExt::new(client.clone(), block_ref.height);
+		let regular_count = block
+			.count(BlockExtOptionsExpanded::default())
+			.await
+			.unwrap();
+		let count = (regular_count - 3).max(0);
+		println!(
+			"Searched in block {}, found {} blobs",
+			block_ref.height, count
+		);
+		found_blob_count += count;
+		block_searched += 1;
+		if found_blob_count >= nb_tx as usize {
+			println!("Successfully found all blobs");
+			break;
+		}
+		if block_searched > 10 {
+			println!("Failed to find blobs, stopped at {found_blob_count} blob(s)");
+			break;
+		}
 	}
 
 	Ok(())

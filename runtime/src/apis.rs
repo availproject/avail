@@ -411,7 +411,10 @@ impl_runtime_apis! {
 	#[api_version(4)]
 	impl crate::apis::ExtensionBuilder<Block> for Runtime {
 		fn build_data_root(block: u32, extrinsics: Vec<OpaqueExtrinsic>) -> H256  {
-			HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block, &extrinsics).data_root()
+			let bl = frame_system::Pallet::<Runtime>::block_length();
+			let cols = bl.cols.0;
+			let rows = bl.rows.0;
+			HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block, &extrinsics, cols, rows).data_root()
 		}
 
 		fn build_extension(
@@ -423,7 +426,10 @@ impl_runtime_apis! {
 			use frame_system::native::hosted_header_builder::da::HeaderExtensionBuilder;
 			use frame_system::HeaderExtensionBuilder as _;
 
-			let app_extrinsics = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block_number, &extrinsics).to_app_extrinsics();
+			let bl = frame_system::Pallet::<Runtime>::block_length();
+			let cols = bl.cols.0;
+			let rows = bl.rows.0;
+			let app_extrinsics = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block_number, &extrinsics, cols, rows).to_app_extrinsics();
 			HeaderExtensionBuilder::<Runtime>::build(app_extrinsics, data_root, block_length, block_number)
 		}
 
@@ -486,7 +492,10 @@ impl_runtime_apis! {
 
 	impl crate::apis::KateApi<Block> for Runtime {
 		fn data_proof(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, tx_idx: u32) -> Option<ProofResponse> {
-			let data = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block_number, &extrinsics);
+			let bl = frame_system::Pallet::<Runtime>::block_length();
+			let cols = bl.cols.0;
+			let rows = bl.rows.0;
+			let data = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block_number, &extrinsics, cols, rows);
 			let (leaf_idx, sub_trie) = data.leaf_idx(tx_idx)?;
 			log::trace!(
 				target: LOG_TARGET,
@@ -515,21 +524,27 @@ impl_runtime_apis! {
 		}
 
 		fn rows(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, rows: Vec<u32>) -> Result<Vec<GRow>, RTKateError> {
-			let app_extrinsics = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block_number, &extrinsics).to_app_extrinsics();
+			let bl = frame_system::Pallet::<Runtime>::block_length();
+			let cols = bl.cols.0;
+			let rows2 = bl.rows.0;
+			let app_extrinsics = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block_number, &extrinsics, cols, rows2).to_app_extrinsics();
 			let grid_rows = super::kate::grid::<Runtime>(app_extrinsics, block_len, rows)?;
 			log::trace!(target: LOG_TARGET, "KateApi::rows: rows={grid_rows:#?}");
 			Ok(grid_rows)
 		}
 
 		fn proof(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, cells: Vec<(u32,u32)> ) -> Result<Vec<GDataProof>, RTKateError> {
-			let app_extrinsics = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block_number, &extrinsics).to_app_extrinsics();
+			let bl = frame_system::Pallet::<Runtime>::block_length();
+			let cols = bl.cols.0;
+			let rows = bl.rows.0;
+			let app_extrinsics = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block_number, &extrinsics, cols, rows).to_app_extrinsics();
 			let data_proofs = super::kate::proof::<Runtime>(app_extrinsics, block_len, cells)?;
 			log::trace!(target: LOG_TARGET, "KateApi::proof: data_proofs={data_proofs:#?}");
 			Ok(data_proofs)
 		}
 
 		fn multiproof(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, cells: Vec<(u32,u32)> ) -> Result<Vec<(GMultiProof, GCellBlock)>, RTKateError> {
-			let app_extrinsics = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block_number, &extrinsics).to_app_extrinsics();
+			let app_extrinsics = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block_number, &extrinsics, block_len.cols.0, block_len.rows.0).to_app_extrinsics();
 			let data_proofs = super::kate::multiproof::<Runtime>(app_extrinsics, block_len, cells)?;
 			log::trace!(target: LOG_TARGET, "KateApi::proof: data_proofs={data_proofs:#?}");
 			Ok(data_proofs)

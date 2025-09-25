@@ -21,6 +21,7 @@ use jsonrpsee::{
 	proc_macros::rpc,
 	types::error::ErrorObject,
 };
+use kate::Seed;
 use sc_client_api::{BlockBackend, HeaderBackend, StateBackend};
 use sc_network::{NetworkStateInfo, PeerId};
 use sc_transaction_pool_api::TransactionPool;
@@ -41,7 +42,6 @@ use std::{
 	sync::Arc,
 };
 use tokio::task;
-use kate::Seed;
 
 pub enum Error {
 	BlobError,

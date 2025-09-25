@@ -73,6 +73,7 @@ pub trait WeightInfo {
 }
 
 /// Weights for `pallet_vector` using the Avail node and recommended hardware.
+#[allow(dead_code)]
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Storage: `Vector::WhitelistedDomains` (r:1 w:0)

@@ -230,6 +230,8 @@ fn build_extension_with_comms(
 	let app_extrinsics = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(
 		block_number,
 		&extrinsics,
+		block_length.cols.0,
+		block_length.rows.0,
 	)
 	.data_submissions;
 	log::info!(

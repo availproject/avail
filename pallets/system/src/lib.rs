@@ -1858,12 +1858,16 @@ impl<T: Config> Pallet<T> {
 		// Code beyond is custom added code for computing the extension.
 		//
 
-		let header_extension_builder_data = HeaderExtensionBuilderData::from_raw_extrinsics::<
-			T::HeaderExtensionDataFilter,
-		>(block_number, &extrinsics);
-		let extrinsics_root = extrinsics_data_root::<T::Hashing>(extrinsics);
-
 		let block_length = Self::block_length();
+
+		let header_extension_builder_data =
+			HeaderExtensionBuilderData::from_raw_extrinsics::<T::HeaderExtensionDataFilter>(
+				block_number,
+				&extrinsics,
+				block_length.cols.0,
+				block_length.rows.0,
+			);
+		let extrinsics_root = extrinsics_data_root::<T::Hashing>(extrinsics);
 
 		let data_root = header_extension_builder_data.data_root();
 		let extension =

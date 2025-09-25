@@ -92,11 +92,21 @@ pub mod pallet {
 		pub max_transaction_validity: u64,
 		/// The number of time we'll allow trying to fetch internal blob metadata or blob data before letting the transaction go through to get discarded
 		pub max_blob_retry_before_discarding: u16,
+		/// The maximum size of data that can go in a block
+		/// Before this value came from the matrix size as we stored data in the block header but now we store only commitments
+		/// Theoritically with a matrix size of 4096 / 1024 we can store up to 132 mb of commitments which represents a huge block
+		/// Hence we need to bound it with a value
+		pub max_block_size: u64,
+		/// Tha mximum size allowed for old data submission
+		/// We use this value to bound old data submission now that the matrix size is increased
+		pub max_total_old_submission_size: u64,
+		/// Flag to disable / enable old DA submission
+		pub disable_old_da_submission: bool,
 	}
 	impl Default for BlobRuntimeParameters {
 		fn default() -> Self {
 			Self {
-				max_blob_size: 64 * 1024 * 1024,
+				max_blob_size: 32 * 1024 * 1024,
 				min_blob_holder_percentage: Perbill::from_percent(10),
 				min_blob_holder_count: 2,
 				blob_ttl: 120_960,                    // 20sec block -> 28d - 6sec block -> 8.4d
@@ -104,6 +114,9 @@ pub mod pallet {
 				min_transaction_validity: 15,         // In blocks
 				max_transaction_validity: 150,        // In blocks
 				max_blob_retry_before_discarding: 10, // In blocks
+				max_block_size: 2 * 1024 * 1024 * 1024, // 2gb
+				max_total_old_submission_size: 4 * 1024 * 1024,
+				disable_old_da_submission: false,
 			}
 		}
 	}
@@ -200,6 +213,12 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type SubmitDataFeeModifier<T: Config> = StorageValue<_, DispatchFeeModifier, ValueQuery>;
 
+	/// Store data fee modifier for submit_blob_metadata call.
+	#[pallet::storage]
+	pub type SubmitBlobMetadataFeeModifier<T: Config> =
+		StorageValue<_, DispatchFeeModifier, ValueQuery>;
+
+	/// Store the runtime parameter for the blob module
 	#[pallet::storage]
 	#[pallet::getter(fn blob_runtime_parameters)]
 	pub type BlobRuntimeParams<T: Config> = StorageValue<_, BlobRuntimeParameters, ValueQuery>;
@@ -243,6 +262,10 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
 			ensure!(!data.is_empty(), Error::<T>::DataCannotBeEmpty);
+			ensure!(
+				!BlobRuntimeParams::<T>::get().disable_old_da_submission,
+				Error::<T>::OldDaSubmissionDisabled
+			);
 
 			let data_hash = keccak_256(&data);
 			Self::deposit_event(Event::DataSubmitted {
@@ -357,8 +380,9 @@ pub mod pallet {
 
 		#[pallet::call_index(5)]
 		#[pallet::weight((
-			T::WeightInfo::set_submit_data_fee_modifier(), // TODO Blob real weights
-			DispatchClass::Normal
+			weight_helper::submit_blob_metadata::<T>(*size),
+			DispatchClass::Normal,
+			SubmitBlobMetadataFeeModifier::<T>::get(),
 		))]
 		pub fn submit_blob_metadata(
 			origin: OriginFor<T>,
@@ -369,7 +393,7 @@ pub mod pallet {
 			let who = ensure_signed(origin)?;
 			ensure!(size > 0, Error::<T>::DataCannotBeEmpty);
 			ensure!(commitment.len() > 0, Error::<T>::CommitmentCannotBeEmpty);
-			ensure!(blob_hash.0.len() > 0, Error::<T>::DataCannotBeEmpty);
+			ensure!(blob_hash != H256::zero(), Error::<T>::DataCannotBeEmpty);
 
 			Self::deposit_event(Event::SubmitBlobMetadataRequest { who, blob_hash });
 
@@ -378,13 +402,13 @@ pub mod pallet {
 
 		#[pallet::call_index(6)]
 		#[pallet::weight((
-			T::WeightInfo::set_submit_data_fee_modifier(), // TODO Blob real weights
+			T::WeightInfo::submit_blob_txs_summary(*nb_blobs),
 			DispatchClass::Mandatory
 		))]
 		pub fn submit_blob_txs_summary(
 			origin: OriginFor<T>,
 			_total_blob_size: u64,
-			_nb_blobs: u32,
+			#[allow(unused_variables)] nb_blobs: u32,
 			_blob_txs_summary: Vec<BlobTxSummaryRuntime>,
 		) -> DispatchResult {
 			ensure_none(origin)?;
@@ -392,7 +416,7 @@ pub mod pallet {
 		}
 
 		#[pallet::call_index(7)]
-		#[pallet::weight(T::WeightInfo::set_submit_data_fee_modifier())] // TODO Blob real weights
+		#[pallet::weight(T::WeightInfo::set_blob_runtime_parameters())]
 		pub fn set_blob_runtime_parameters(
 			origin: OriginFor<T>,
 			max_blob_size: Option<u64>,
@@ -403,6 +427,9 @@ pub mod pallet {
 			min_transaction_validity: Option<u64>,
 			max_transaction_validity: Option<u64>,
 			max_blob_retry_before_discarding: Option<u16>,
+			max_block_size: Option<u64>,
+			max_total_old_submission_size: Option<u64>,
+			disable_old_da_submission: Option<bool>,
 		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
 
@@ -423,11 +450,11 @@ pub mod pallet {
 					params.min_blob_holder_count = v;
 				}
 				if let Some(v) = blob_ttl {
-					ensure!(v >= 1440, Error::<T>::BlobTtlTooShort); // ~1 day for 6 seconds
+					ensure!(v >= 1440, Error::<T>::BlobTtlTooShort);
 					params.blob_ttl = v;
 				}
 				if let Some(v) = temp_blob_ttl {
-					ensure!(v >= 50, Error::<T>::TempBlobTtlTooShort); // ~5 mn for 6 seconds
+					ensure!(v >= 50, Error::<T>::TempBlobTtlTooShort);
 					params.temp_blob_ttl = v;
 				}
 				if let Some(v) = min_transaction_validity {
@@ -442,6 +469,20 @@ pub mod pallet {
 					ensure!(v > 2, Error::<T>::MaxBlobRetryTooLow);
 					params.max_blob_retry_before_discarding = v;
 				}
+				if let Some(v) = max_block_size {
+					ensure!(
+						v <= 5 * 1024 * 1024 * 1024,
+						Error::<T>::MaxBlockSizeTooLarge
+					);
+					params.max_block_size = v;
+				}
+				if let Some(v) = max_total_old_submission_size {
+					ensure!(v <= 4 * 1024 * 1024, Error::<T>::MaxOldSubmissionTooLarge);
+					params.max_total_old_submission_size = v;
+				}
+				if let Some(v) = disable_old_da_submission {
+					params.disable_old_da_submission = v;
+				}
 
 				Ok(())
 			})?;
@@ -450,6 +491,21 @@ pub mod pallet {
 			Self::deposit_event(Event::SubmitBlobRuntimeParametersSet {
 				new_params: updated,
 			});
+
+			Ok(().into())
+		}
+
+		#[pallet::call_index(8)]
+		#[pallet::weight(T::WeightInfo::set_submit_blob_metadata_fee_modifier())]
+		pub fn set_submit_blob_metadata_fee_modifier(
+			origin: OriginFor<T>,
+			modifier: DispatchFeeModifier,
+		) -> DispatchResultWithPostInfo {
+			ensure_root(origin)?;
+
+			SubmitBlobMetadataFeeModifier::<T>::put(modifier);
+
+			Self::deposit_event(Event::SubmitBlobMetadataFeeModifierSet { value: modifier });
 
 			Ok(().into())
 		}
@@ -486,6 +542,9 @@ pub mod pallet {
 		},
 		SubmitBlobRuntimeParametersSet {
 			new_params: BlobRuntimeParameters,
+		},
+		SubmitBlobMetadataFeeModifierSet {
+			value: DispatchFeeModifier,
 		},
 	}
 
@@ -532,6 +591,12 @@ pub mod pallet {
 		MaxTransactionValidityTooHigh,
 		/// The maximum retry count before discarding a blob is too low (must be > 2).
 		MaxBlobRetryTooLow,
+		/// The maximum block size is too big.
+		MaxBlockSizeTooLarge,
+		/// The maximum old submissions in a block is too large.
+		MaxOldSubmissionTooLarge,
+		/// Old data submission are disabled
+		OldDaSubmissionDisabled,
 	}
 
 	#[pallet::genesis_config]
@@ -612,13 +677,17 @@ pub mod weight_helper {
 
 		/* Compute weight based on size taken in the matrix and hence computation. */
 		// We get the current settings for matrix columns, rows and chunk_size.
-		let current_block_dimension = DynamicBlockLength::<T>::get();
-		let cols: u32 = current_block_dimension.cols.0;
-		let rows: u32 = current_block_dimension.rows.0;
+		// Before, we got this value from the runtime, now that the matric size is increased for blobs,
+		// We take raw value corresponding to 4mb of data when multiplied by the chunk size
+		let blob_runtime_params = BlobRuntimeParams::<T>::get();
+		let max_total_old_submission_size: u32 = blob_runtime_params
+			.max_total_old_submission_size
+			.saturated_into();
 		let chunk_size: u32 = 32;
+		let max_scalar = max_total_old_submission_size.div_ceil(chunk_size);
 
 		// We compute the maximum numbers of scalars in the matrix and multiply with the DA dispatch ratio.
-		let max_scalar_da_ratio = DA_DISPATCH_RATIO_PERBILL * cols.saturating_mul(rows);
+		let max_scalar_da_ratio = DA_DISPATCH_RATIO_PERBILL * max_scalar;
 
 		// We get the current maximum weight in a block and multiply with normal dispatch ratio.
 		let block_weights = <T as frame_system::Config>::BlockWeights::get();
@@ -643,6 +712,39 @@ pub mod weight_helper {
 	fn compact_len(value: &u32) -> Option<u32> {
 		let len = Compact::<u32>::compact_len(value);
 		u32::try_from(len).ok()
+	}
+
+	/// Weight for `dataAvailability::submit_blob_metadata`.
+	pub fn submit_blob_metadata<T: Config>(data_len: u64) -> Weight {
+		/* Compute regular substrate weight. */
+		let data_len_u32: u32 = data_len.saturated_into();
+		let basic_weight = T::WeightInfo::submit_blob_metadata(data_len_u32);
+		let data_root_weight = T::WeightInfo::data_root(data_len_u32);
+		let regular_weight = basic_weight.saturating_add(data_root_weight);
+
+		/* Compute weight based on size taken compared to the maximum in a block. */
+		// Before we used to compare to the matrix total size, but with new values for blob crate
+		// We could store data up to 128mb worth of commitment which is huge
+		// Hence we use tha maximum allowed in a block
+		let blob_runtime_params = BlobRuntimeParams::<T>::get();
+		let max_total_old_submission_size = blob_runtime_params.max_block_size;
+
+		// We compute the maximum numbers of scalars in the matrix and multiply with the DA dispatch ratio.
+		let max_da_ratio = DA_DISPATCH_RATIO_PERBILL * max_total_old_submission_size;
+
+		// We get the current maximum weight in a block and multiply with normal dispatch ratio.
+		let block_weights = <T as frame_system::Config>::BlockWeights::get();
+		let max_weight_normal_ratio: u64 =
+			NORMAL_DISPATCH_RATIO_PERBILL * block_weights.max_block.ref_time();
+
+		// We compute the ratio of data size / max_da_ratio multiply with the maximum weight.
+		let data_ratio = Perbill::from_rational(data_len, max_da_ratio);
+		let ref_time = data_ratio * max_weight_normal_ratio;
+		let da_weight = Weight::from_parts(ref_time, regular_weight.proof_size());
+
+		// We return the biggest value between the regular weight and da weight.
+		// I cannot think of a case where regular weight > da weight.
+		da_weight.max(regular_weight)
 	}
 }
 

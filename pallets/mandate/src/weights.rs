@@ -54,6 +54,7 @@ pub trait WeightInfo {
 }
 
 /// Weights for `pallet_mandate` using the Avail node and recommended hardware.
+#[allow(dead_code)]
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	fn mandate() -> Weight {

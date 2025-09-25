@@ -57,6 +57,10 @@ pub trait WeightInfo {
 	fn data_root(i: u32, ) -> Weight;
 	fn data_root_batch(i: u32, ) -> Weight;
 	fn set_submit_data_fee_modifier() -> Weight;
+	fn set_blob_runtime_parameters() -> Weight;
+	fn submit_blob_txs_summary(n: u32, ) -> Weight;
+	fn submit_blob_metadata(s: u32, ) -> Weight;
+	fn set_submit_blob_metadata_fee_modifier() -> Weight;
 }
 
 /// Weights for `da_control` using the Avail node and recommended hardware.
@@ -137,6 +141,45 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		Weight::from_parts(3_921_000, 0)
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
+	/// Storage: `DataAvailability::BlobRuntimeParams` (r:1 w:1)
+	/// Proof: `DataAvailability::BlobRuntimeParams` (`max_values`: Some(1), `max_size`: Some(50), added: 545, mode: `MaxEncodedLen`)
+	fn set_blob_runtime_parameters() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `63`
+		//  Estimated: `1535`
+		// Minimum execution time: 8_546_000 picoseconds.
+		Weight::from_parts(8_987_000, 1535)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
+	/// The range of component `n` is `[1, 1000]`.
+	fn submit_blob_txs_summary(n: u32, ) -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 2_956_000 picoseconds.
+		Weight::from_parts(3_149_162, 0)
+			// Standard Error: 221
+			.saturating_add(Weight::from_parts(75_267, 0).saturating_mul(n.into()))
+	}
+	/// The range of component `s` is `[1, 33554432]`.
+	fn submit_blob_metadata(_s: u32, ) -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 12_323_000 picoseconds.
+		Weight::from_parts(24_207_524, 0)
+	}
+	/// Storage: `DataAvailability::SubmitBlobMetadataFeeModifier` (r:0 w:1)
+	/// Proof: `DataAvailability::SubmitBlobMetadataFeeModifier` (`max_values`: Some(1), `max_size`: Some(27), added: 522, mode: `MaxEncodedLen`)
+	fn set_submit_blob_metadata_fee_modifier() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 3_537_000 picoseconds.
+		Weight::from_parts(3_921_000, 0)
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
 }
 
 // For backwards compatibility and tests.
@@ -209,6 +252,45 @@ impl WeightInfo for () {
 	/// Storage: `DataAvailability::SubmitDataFeeModifier` (r:0 w:1)
 	/// Proof: `DataAvailability::SubmitDataFeeModifier` (`max_values`: Some(1), `max_size`: Some(27), added: 522, mode: `MaxEncodedLen`)
 	fn set_submit_data_fee_modifier() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 3_537_000 picoseconds.
+		Weight::from_parts(3_921_000, 0)
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
+	}
+	/// Storage: `DataAvailability::BlobRuntimeParams` (r:1 w:1)
+	/// Proof: `DataAvailability::BlobRuntimeParams` (`max_values`: Some(1), `max_size`: Some(50), added: 545, mode: `MaxEncodedLen`)
+	fn set_blob_runtime_parameters() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `63`
+		//  Estimated: `1535`
+		// Minimum execution time: 8_546_000 picoseconds.
+		Weight::from_parts(8_987_000, 1535)
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
+	}
+	/// The range of component `n` is `[1, 1000]`.
+	fn submit_blob_txs_summary(n: u32, ) -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 2_956_000 picoseconds.
+		Weight::from_parts(3_149_162, 0)
+			// Standard Error: 221
+			.saturating_add(Weight::from_parts(75_267, 0).saturating_mul(n.into()))
+	}
+	/// The range of component `s` is `[1, 33554432]`.
+	fn submit_blob_metadata(_s: u32, ) -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 12_323_000 picoseconds.
+		Weight::from_parts(24_207_524, 0)
+	}
+	/// Storage: `DataAvailability::SubmitBlobMetadataFeeModifier` (r:0 w:1)
+	/// Proof: `DataAvailability::SubmitBlobMetadataFeeModifier` (`max_values`: Some(1), `max_size`: Some(27), added: 522, mode: `MaxEncodedLen`)
+	fn set_submit_blob_metadata_fee_modifier() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`

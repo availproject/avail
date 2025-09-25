@@ -15,11 +15,13 @@ use frame_support::traits::Get;
 use frame_system::{
 	limits::BlockLength, native::hosted_header_builder::hosted_header_builder, RawOrigin,
 };
+use kate::Seed;
 use scale_info::{StaticTypeInfo, TypeInfo};
 use sp_core::H256;
 use sp_runtime::{
 	traits::{DispatchInfoOf, Dispatchable, SignedExtension},
 	transaction_validity::{TransactionValidity, TransactionValidityError},
+	Perbill,
 };
 use sp_std::{fmt::Debug, iter::repeat, vec, vec::Vec};
 
@@ -242,6 +244,8 @@ mod benchmarks {
 			HeaderExtensionBuilderData::from_raw_extrinsics::<T::HeaderExtensionDataFilter>(
 				1u32,
 				&vec![opaque],
+				1024,
+				4069,
 			)
 			.data_root();
 		}
@@ -275,7 +279,7 @@ mod benchmarks {
 		#[block]
 		{
 			HeaderExtensionBuilderData::from_raw_extrinsics::<T::HeaderExtensionDataFilter>(
-				1u32, &calls,
+				1u32, &calls, 1024, 4069,
 			)
 			.data_root();
 		}
@@ -294,6 +298,119 @@ mod benchmarks {
 
 		#[extrinsic_call]
 		_(origin, value);
+
+		Ok(())
+	}
+
+	#[benchmark]
+	fn submit_blob_metadata(s: Linear<1, { 32 * 1024 * 1024 }>) -> Result<(), BenchmarkError> {
+		let caller = whitelisted_caller::<T::AccountId>();
+		let origin = RawOrigin::Signed(caller.clone());
+
+		let blob_hash = H256::repeat_byte((s + 1) as u8);
+
+		let block_length = frame_system::Pallet::<T>::block_length();
+		let data = vec![0u8; s as usize];
+		let commitment = crate::extensions::native::hosted_commitment_builder::build_da_commitments(
+			&data,
+			block_length.cols.0,
+			block_length.rows.0,
+			Seed::default(),
+		);
+		debug_assert!(!commitment.is_empty());
+
+		#[extrinsic_call]
+		_(origin, blob_hash, s.into(), commitment);
+
+		assert_last_event::<T>(
+			Event::SubmitBlobMetadataRequest {
+				who: caller,
+				blob_hash,
+			}
+			.into(),
+		);
+
+		Ok(())
+	}
+
+	#[benchmark]
+	fn submit_blob_txs_summary(n: Linear<1, 1_000>) -> Result<(), BenchmarkError> {
+		let origin = RawOrigin::None;
+
+		let summaries: Vec<crate::pallet::BlobTxSummaryRuntime> = (0..n)
+			.map(|i| crate::pallet::BlobTxSummaryRuntime {
+				hash: H256::repeat_byte((i + 1) as u8),
+				tx_index: i as u32,
+				success: i % 2 == 0,
+				reason: if i % 3 == 0 {
+					Some("bench".into())
+				} else {
+					None
+				},
+				ownership: Vec::new(),
+			})
+			.collect();
+
+		let total_blob_size: u64 = (n as u64) * 1024;
+		let nb_blobs: u32 = n as u32;
+
+		#[extrinsic_call]
+		_(origin, total_blob_size, nb_blobs, summaries);
+
+		Ok(())
+	}
+
+	#[benchmark]
+	fn set_blob_runtime_parameters() -> Result<(), BenchmarkError> {
+		let origin = RawOrigin::Root;
+
+		let max_blob_size = Some(10 * 1024 * 1024);
+		let min_blob_holder_percentage = Some(Perbill::from_percent(5));
+		let min_blob_holder_count = Some(3);
+		let blob_ttl = Some(2_000);
+		let temp_blob_ttl = Some(60);
+		let min_tx_validity = Some(10);
+		let max_tx_validity = Some(120);
+		let max_retry = Some(5);
+		let max_block_size = Some(1 * 1024 * 1024 * 1024);
+		let max_total_old_submission_size = Some(2 * 1024 * 1024);
+		let disable_old_da_submission = Some(true);
+
+		#[extrinsic_call]
+		_(
+			origin,
+			max_blob_size,
+			min_blob_holder_percentage,
+			min_blob_holder_count,
+			blob_ttl,
+			temp_blob_ttl,
+			min_tx_validity,
+			max_tx_validity,
+			max_retry,
+			max_block_size,
+			max_total_old_submission_size,
+			disable_old_da_submission,
+		);
+
+		let expected = crate::pallet::BlobRuntimeParameters {
+			max_blob_size: max_blob_size.unwrap(),
+			min_blob_holder_percentage: min_blob_holder_percentage.unwrap(),
+			min_blob_holder_count: min_blob_holder_count.unwrap(),
+			blob_ttl: blob_ttl.unwrap(),
+			temp_blob_ttl: temp_blob_ttl.unwrap(),
+			min_transaction_validity: min_tx_validity.unwrap(),
+			max_transaction_validity: max_tx_validity.unwrap(),
+			max_blob_retry_before_discarding: max_retry.unwrap(),
+			max_block_size: max_block_size.unwrap(),
+			max_total_old_submission_size: max_total_old_submission_size.unwrap(),
+			disable_old_da_submission: disable_old_da_submission.unwrap(),
+		};
+		assert_last_event::<T>(
+			Event::SubmitBlobRuntimeParametersSet {
+				new_params: expected,
+			}
+			.into(),
+		);
 
 		Ok(())
 	}

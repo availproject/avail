@@ -80,7 +80,10 @@ pub fn build_commitments_from_polynomal_grid(grid: PolynomialGrid) -> Vec<u8> {
 		}
 	}
 
-	log::info!("Build Commitments From Polynominal Grid - END - {:?}", timer.elapsed());
+	log::info!(
+		"Build Commitments From Polynominal Grid - END - {:?}",
+		timer.elapsed()
+	);
 
 	commitment
 }

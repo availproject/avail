@@ -381,3 +381,447 @@ mod set_submit_data_fee_modifier {
 		})
 	}
 }
+
+mod submit_blob_metadata {
+	use super::*;
+
+	#[test]
+	fn submit_blob_metadata() {
+		new_test_ext().execute_with(|| {
+			let alice: RuntimeOrigin = RawOrigin::Signed(ALICE).into();
+			let blob_hash = H256::random();
+			let size: u64 = 1;
+			let commitment = vec![1u8];
+
+			assert_ok!(DataAvailability::submit_blob_metadata(
+				alice, blob_hash, size, commitment
+			));
+
+			let event = RuntimeEvent::DataAvailability(Event::SubmitBlobMetadataRequest {
+				who: ALICE,
+				blob_hash,
+			});
+			System::assert_last_event(event);
+		})
+	}
+
+	#[test]
+	fn commitment_cannot_be_empty() {
+		new_test_ext().execute_with(|| {
+			let alice: RuntimeOrigin = RawOrigin::Signed(ALICE).into();
+			let blob_hash = H256::random();
+			let size: u64 = 1;
+			let commitment = Vec::<u8>::new();
+
+			let err = DataAvailability::submit_blob_metadata(alice, blob_hash, size, commitment);
+			assert_noop!(err, Error::CommitmentCannotBeEmpty);
+		})
+	}
+
+	#[test]
+	fn data_cannot_be_empty_1() {
+		new_test_ext().execute_with(|| {
+			let alice: RuntimeOrigin = RawOrigin::Signed(ALICE).into();
+			let blob_hash = H256::random();
+			let size: u64 = 0;
+			let commitment = vec![1u8];
+
+			let err = DataAvailability::submit_blob_metadata(alice, blob_hash, size, commitment);
+			assert_noop!(err, Error::DataCannotBeEmpty);
+		})
+	}
+
+	#[test]
+	fn data_cannot_be_empty_2() {
+		new_test_ext().execute_with(|| {
+			let alice: RuntimeOrigin = RawOrigin::Signed(ALICE).into();
+			let blob_hash = H256::zero();
+			let size: u64 = 1;
+			let commitment = vec![1u8];
+
+			let err = DataAvailability::submit_blob_metadata(alice, blob_hash, size, commitment);
+			assert_noop!(err, Error::DataCannotBeEmpty);
+		})
+	}
+}
+
+mod submit_blob_txs_summary {
+	use super::*;
+
+	#[test]
+	fn submit_blob_txs_summary() {
+		new_test_ext().execute_with(|| {
+			let none: RuntimeOrigin = RawOrigin::None.into();
+
+			let s1 = crate::pallet::BlobTxSummaryRuntime {
+				hash: H256::random(),
+				tx_index: 0,
+				success: true,
+				reason: None,
+				ownership: Vec::new(),
+			};
+			let s2 = crate::pallet::BlobTxSummaryRuntime {
+				hash: H256::random(),
+				tx_index: 1,
+				success: false,
+				reason: Some("example".into()),
+				ownership: Vec::new(),
+			};
+
+			let total_blob_size: u64 = (2 * H256::random().0.len()) as u64;
+			let nb_blobs: u32 = 2;
+
+			assert_ok!(DataAvailability::submit_blob_txs_summary(
+				none,
+				total_blob_size,
+				nb_blobs,
+				vec![s1, s2],
+			));
+		})
+	}
+}
+
+mod set_blob_runtime_parameters {
+	use crate::BlobRuntimeParams;
+	use sp_runtime::Perbill;
+
+	use super::*;
+
+	#[test]
+	fn set_blob_runtime_parameters() {
+		new_test_ext().execute_with(|| {
+			let before = BlobRuntimeParams::<Test>::get();
+
+			let root: RuntimeOrigin = RawOrigin::Root.into();
+
+			let max_blob_size = Some(10 * 1024 * 1024);
+			let min_blob_holder_percentage = Some(Perbill::from_percent(5));
+			let min_blob_holder_count = Some(3);
+			let blob_ttl = Some(2_000);
+			let temp_blob_ttl = Some(60);
+			let min_tx_validity = Some(10);
+			let max_tx_validity = Some(120);
+			let max_retry = Some(5);
+			let max_block_size = Some(1 * 1024 * 1024 * 1024);
+			let max_total_old_submission_size = Some(2 * 1024 * 1024);
+			let disable_old_da_submission = Some(true);
+
+			assert_ok!(DataAvailability::set_blob_runtime_parameters(
+				root,
+				max_blob_size,
+				min_blob_holder_percentage,
+				min_blob_holder_count,
+				blob_ttl,
+				temp_blob_ttl,
+				min_tx_validity,
+				max_tx_validity,
+				max_retry,
+				max_block_size,
+				max_total_old_submission_size,
+				disable_old_da_submission,
+			));
+
+			let after = BlobRuntimeParams::<Test>::get();
+			let expected = crate::pallet::BlobRuntimeParameters {
+				max_blob_size: max_blob_size.unwrap(),
+				min_blob_holder_percentage: min_blob_holder_percentage.unwrap(),
+				min_blob_holder_count: min_blob_holder_count.unwrap(),
+				blob_ttl: blob_ttl.unwrap(),
+				temp_blob_ttl: temp_blob_ttl.unwrap(),
+				min_transaction_validity: min_tx_validity.unwrap(),
+				max_transaction_validity: max_tx_validity.unwrap(),
+				max_blob_retry_before_discarding: max_retry.unwrap(),
+				max_block_size: max_block_size.unwrap(),
+				max_total_old_submission_size: max_total_old_submission_size.unwrap(),
+				disable_old_da_submission: disable_old_da_submission.unwrap(),
+			};
+
+			assert_ne!(before, after);
+			assert_eq!(after, expected);
+
+			let event = RuntimeEvent::DataAvailability(Event::SubmitBlobRuntimeParametersSet {
+				new_params: expected,
+			});
+			System::assert_last_event(event);
+		})
+	}
+
+	#[test]
+	fn set_blob_runtime_parameters_noop() {
+		new_test_ext().execute_with(|| {
+			let root: RuntimeOrigin = RawOrigin::Root.into();
+
+			let before = BlobRuntimeParams::<Test>::get();
+
+			assert_ok!(DataAvailability::set_blob_runtime_parameters(
+				root, None, None, None, None, None, None, None, None, None, None, None
+			));
+
+			let after = BlobRuntimeParams::<Test>::get();
+			assert_eq!(after, before);
+
+			let event = RuntimeEvent::DataAvailability(Event::SubmitBlobRuntimeParametersSet {
+				new_params: after,
+			});
+			System::assert_last_event(event);
+		})
+	}
+
+	#[test]
+	fn set_blob_runtime_parameters_errors() {
+		new_test_ext().execute_with(|| {
+			let baseline = BlobRuntimeParams::<Test>::get();
+
+			let assert_unchanged = || {
+				let now = BlobRuntimeParams::<Test>::get();
+				assert_eq!(now, baseline);
+			};
+
+			{
+				let root: RuntimeOrigin = RawOrigin::Root.into();
+				let err = DataAvailability::set_blob_runtime_parameters(
+					root,
+					Some(32 * 1024 * 1024 + 1),
+					None,
+					None,
+					None,
+					None,
+					None,
+					None,
+					None,
+					None,
+					None,
+					None,
+				);
+				assert_noop!(err, Error::BlobSizeTooLarge);
+				assert_unchanged();
+			}
+
+			{
+				let root: RuntimeOrigin = RawOrigin::Root.into();
+				let err = DataAvailability::set_blob_runtime_parameters(
+					root,
+					None,
+					Some(Perbill::from_percent(0)),
+					None,
+					None,
+					None,
+					None,
+					None,
+					None,
+					None,
+					None,
+					None,
+				);
+				assert_noop!(err, Error::MinBlobHolderPercentageInvalid);
+				assert_unchanged();
+			}
+
+			{
+				let root: RuntimeOrigin = RawOrigin::Root.into();
+				let err = DataAvailability::set_blob_runtime_parameters(
+					root,
+					None,
+					None,
+					Some(0),
+					None,
+					None,
+					None,
+					None,
+					None,
+					None,
+					None,
+					None,
+				);
+				assert_noop!(err, Error::MinBlobHolderCountInvalid);
+				assert_unchanged();
+			}
+
+			{
+				let root: RuntimeOrigin = RawOrigin::Root.into();
+				let err = DataAvailability::set_blob_runtime_parameters(
+					root,
+					None,
+					None,
+					None,
+					Some(1_000),
+					None,
+					None,
+					None,
+					None,
+					None,
+					None,
+					None,
+				);
+				assert_noop!(err, Error::BlobTtlTooShort);
+				assert_unchanged();
+			}
+
+			{
+				let root: RuntimeOrigin = RawOrigin::Root.into();
+				let err = DataAvailability::set_blob_runtime_parameters(
+					root,
+					None,
+					None,
+					None,
+					None,
+					Some(10),
+					None,
+					None,
+					None,
+					None,
+					None,
+					None,
+				);
+				assert_noop!(err, Error::TempBlobTtlTooShort);
+				assert_unchanged();
+			}
+
+			{
+				let root: RuntimeOrigin = RawOrigin::Root.into();
+				let err = DataAvailability::set_blob_runtime_parameters(
+					root,
+					None,
+					None,
+					None,
+					None,
+					None,
+					Some(3),
+					None,
+					None,
+					None,
+					None,
+					None,
+				);
+				assert_noop!(err, Error::MinTransactionValidityTooLow);
+				assert_unchanged();
+			}
+
+			{
+				let root: RuntimeOrigin = RawOrigin::Root.into();
+				let err = DataAvailability::set_blob_runtime_parameters(
+					root,
+					None,
+					None,
+					None,
+					None,
+					None,
+					None,
+					Some(150),
+					None,
+					None,
+					None,
+					None,
+				);
+				assert_noop!(err, Error::MaxTransactionValidityTooHigh);
+				assert_unchanged();
+			}
+
+			{
+				let root: RuntimeOrigin = RawOrigin::Root.into();
+				let err = DataAvailability::set_blob_runtime_parameters(
+					root,
+					None,
+					None,
+					None,
+					None,
+					None,
+					None,
+					None,
+					Some(2),
+					None,
+					None,
+					None,
+				);
+				assert_noop!(err, Error::MaxBlobRetryTooLow);
+				assert_unchanged();
+			}
+
+			{
+				let root: RuntimeOrigin = RawOrigin::Root.into();
+				let err = DataAvailability::set_blob_runtime_parameters(
+					root,
+					None,
+					None,
+					None,
+					None,
+					None,
+					None,
+					None,
+					None,
+					Some(10 * 1024 * 1024 * 1024),
+					None,
+					None,
+				);
+				assert_noop!(err, Error::MaxBlockSizeTooLarge);
+				assert_unchanged();
+			}
+
+			{
+				let root: RuntimeOrigin = RawOrigin::Root.into();
+				let err = DataAvailability::set_blob_runtime_parameters(
+					root,
+					None,
+					None,
+					None,
+					None,
+					None,
+					None,
+					None,
+					None,
+					None,
+					Some(5 * 1024 * 1024),
+					None,
+				);
+				assert_noop!(err, Error::MaxOldSubmissionTooLarge);
+				assert_unchanged();
+			}
+		})
+	}
+}
+
+mod set_submit_blob_metadata_fee_modifier {
+	use super::*;
+	use crate::SubmitBlobMetadataFeeModifier;
+	use frame_support::dispatch::DispatchFeeModifier;
+
+	#[test]
+	fn default_value() {
+		new_test_ext().execute_with(|| {
+			let value = SubmitBlobMetadataFeeModifier::<Test>::get();
+			assert_eq!(value.weight_maximum_fee, None);
+			assert_eq!(value.weight_fee_divider, None);
+			assert_eq!(value.weight_fee_multiplier, None);
+		})
+	}
+
+	#[test]
+	fn only_sudo_can_call_this() {
+		new_test_ext().execute_with(|| {
+			let alice: RuntimeOrigin = RawOrigin::Signed(ALICE).into();
+			let value = SubmitBlobMetadataFeeModifier::<Test>::get();
+			assert!(DataAvailability::set_submit_blob_metadata_fee_modifier(alice, value).is_err());
+		})
+	}
+
+	#[test]
+	fn set_submit_blob_metadata_fee_modifier() {
+		new_test_ext().execute_with(|| {
+			let root: RuntimeOrigin = RawOrigin::Root.into();
+
+			let old_value = SubmitBlobMetadataFeeModifier::<Test>::get();
+			let new_value = DispatchFeeModifier {
+				weight_maximum_fee: Some(100),
+				weight_fee_divider: Some(100),
+				weight_fee_multiplier: Some(100),
+			};
+
+			assert_ne!(old_value, new_value);
+
+			assert_ok!(DataAvailability::set_submit_blob_metadata_fee_modifier(
+				root, new_value
+			));
+			assert_eq!(new_value, SubmitBlobMetadataFeeModifier::<Test>::get());
+		})
+	}
+}

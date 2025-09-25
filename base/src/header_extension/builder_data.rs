@@ -51,25 +51,31 @@ impl HeaderExtensionBuilderData {
 	pub fn from_raw_extrinsics<F: HeaderExtensionDataFilter>(
 		block: u32,
 		extrinsics: &[Vec<u8>],
+		cols: u32,
+		rows: u32,
 	) -> Self {
 		let opaques: Vec<OpaqueExtrinsic> = extrinsics
 			.iter()
 			.filter_map(|e| OpaqueExtrinsic::from_bytes(e).ok())
 			.collect();
 
-		Self::from_opaque_extrinsics::<F>(block, &opaques)
+		Self::from_opaque_extrinsics::<F>(block, &opaques, cols, rows)
 	}
 
 	pub fn from_opaque_extrinsics<F: HeaderExtensionDataFilter>(
 		block: u32,
 		opaques: &[OpaqueExtrinsic],
+		cols: u32,
+		rows: u32,
 	) -> Self {
 		let failed_transactions = F::get_failed_transaction_ids(opaques);
 
 		let extracted_tx_datas: Vec<ExtractedTxData> = opaques
 			.into_iter()
 			.enumerate()
-			.filter_map(|(idx, opaque)| F::filter(&failed_transactions, opaque.clone(), block, idx))
+			.filter_map(|(idx, opaque)| {
+				F::filter(&failed_transactions, opaque.clone(), block, idx, cols, rows)
+			})
 			.collect();
 
 		HeaderExtensionBuilderData::from(extracted_tx_datas)
@@ -243,115 +249,118 @@ where
 
 #[cfg(test)]
 mod tests {
+	use avail_core::from_substrate::keccak_256;
+
 	use super::*;
 	// use sp_core::H256;
 
 	#[test]
 	fn test_from_raw_extrinsics() {
 		let extrinsics: Vec<Vec<u8>> = vec![vec![1, 2, 3], vec![4, 5, 6]];
-		let builder_data = HeaderExtensionBuilderData::from_raw_extrinsics::<()>(1, &extrinsics);
+		let builder_data =
+			HeaderExtensionBuilderData::from_raw_extrinsics::<()>(1, &extrinsics, 1024, 4096);
 		assert_eq!(builder_data.app_extrinsics.len(), 0);
 		assert_eq!(builder_data.data_submissions.len(), 0);
 		assert_eq!(builder_data.bridge_messages.len(), 0);
 	}
 
-	// #[test]
-	// fn test_data_root() {
-	// 	let builder_data = HeaderExtensionBuilderData {
-	// 		app_extrinsics: vec![],
-	// 		data_submissions: vec![SubmittedData {
-	// 			id: AppId::default(),
-	// 			tx_index: 0,
-	// 			data: vec![1, 2, 3],
-	// 			commitments: vec![],
-	// 		}],
-	// 		bridge_messages: vec![],
-	// 	};
-	// 	assert_ne!(builder_data.data_root(), H256::zero());
-	// }
+	#[test]
+	fn test_data_root() {
+		let builder_data = HeaderExtensionBuilderData {
+			app_extrinsics: vec![],
+			data_submissions: vec![SubmittedData {
+				id: AppId::default(),
+				tx_index: 0,
+				commitments: vec![],
+				hash: H256::from(keccak_256(&vec![1, 2, 3])),
+			}],
+			bridge_messages: vec![],
+		};
+		assert_ne!(builder_data.data_root(), H256::zero());
+	}
 
-	// #[test]
-	// fn test_submitted_proof_of() {
-	// 	let builder_data = HeaderExtensionBuilderData::default();
-	// 	assert!(builder_data.submitted_proof_of(0).is_none());
+	#[test]
+	fn test_submitted_proof_of() {
+		let builder_data = HeaderExtensionBuilderData::default();
+		assert!(builder_data.submitted_proof_of(0).is_none());
 
-	// 	let builder_data = HeaderExtensionBuilderData {
-	// 		app_extrinsics: vec![],
-	// 		data_submissions: vec![SubmittedData {
-	// 			id: AppId::default(),
-	// 			tx_index: 0,
-	// 			data: vec![1, 2, 3],
-	// 			commitments: vec![],
-	// 		}],
-	// 		bridge_messages: vec![],
-	// 	};
-	// 	assert!(builder_data.submitted_proof_of(0).is_some());
-	// }
+		let builder_data = HeaderExtensionBuilderData {
+			app_extrinsics: vec![],
+			data_submissions: vec![SubmittedData {
+				id: AppId::default(),
+				tx_index: 0,
+				hash: H256::from(keccak_256(&vec![1, 2, 3])),
+				commitments: vec![],
+			}],
+			bridge_messages: vec![],
+		};
+		assert!(builder_data.submitted_proof_of(0).is_some());
+	}
 
-	// #[test]
-	// fn test_leaf_idx() {
-	// 	let builder_data = HeaderExtensionBuilderData::default();
-	// 	assert!(builder_data.leaf_idx(0).is_none());
+	#[test]
+	fn test_leaf_idx() {
+		let builder_data = HeaderExtensionBuilderData::default();
+		assert!(builder_data.leaf_idx(0).is_none());
 
-	// 	let builder_data = HeaderExtensionBuilderData {
-	// 		app_extrinsics: vec![],
-	// 		data_submissions: vec![SubmittedData {
-	// 			id: AppId::default(),
-	// 			tx_index: 0,
-	// 			data: vec![1, 2, 3],
-	// 			commitments: vec![],
-	// 		}],
-	// 		bridge_messages: vec![],
-	// 	};
-	// 	assert_eq!(builder_data.leaf_idx(0), Some((0, SubTrie::DataSubmit)));
-	// }
+		let builder_data = HeaderExtensionBuilderData {
+			app_extrinsics: vec![],
+			data_submissions: vec![SubmittedData {
+				id: AppId::default(),
+				tx_index: 0,
+				hash: H256::from(keccak_256(&vec![1, 2, 3])),
+				commitments: vec![],
+			}],
+			bridge_messages: vec![],
+		};
+		assert_eq!(builder_data.leaf_idx(0), Some((0, SubTrie::DataSubmit)));
+	}
 
-	// #[test]
-	// fn test_data_submissions_sorted_by_app_id() {
-	// 	let data_submissions = vec![
-	// 		SubmittedData {
-	// 			id: AppId(3),
-	// 			tx_index: 0,
-	// 			data: vec![1, 2, 3],
-	// 			commitments: vec![],
-	// 		},
-	// 		SubmittedData {
-	// 			id: AppId(1),
-	// 			tx_index: 1,
-	// 			data: vec![4, 5, 6],
-	// 			commitments: vec![],
-	// 		},
-	// 		SubmittedData {
-	// 			id: AppId(2),
-	// 			tx_index: 2,
-	// 			data: vec![7, 8, 9],
-	// 			commitments: vec![],
-	// 		},
-	// 		SubmittedData {
-	// 			id: AppId(1),
-	// 			tx_index: 3,
-	// 			data: vec![7, 8, 9],
-	// 			commitments: vec![],
-	// 		},
-	// 	];
+	#[test]
+	fn test_data_submissions_sorted_by_app_id() {
+		let data_submissions = vec![
+			SubmittedData {
+				id: AppId(3),
+				tx_index: 0,
+				hash: H256::from(keccak_256(&vec![1, 2, 3])),
+				commitments: vec![],
+			},
+			SubmittedData {
+				id: AppId(1),
+				tx_index: 1,
+				hash: H256::from(keccak_256(&vec![4, 5, 6])),
+				commitments: vec![],
+			},
+			SubmittedData {
+				id: AppId(2),
+				tx_index: 2,
+				hash: H256::from(keccak_256(&vec![7, 8, 9])),
+				commitments: vec![],
+			},
+			SubmittedData {
+				id: AppId(1),
+				tx_index: 3,
+				hash: H256::from(keccak_256(&vec![7, 8, 9])),
+				commitments: vec![],
+			},
+		];
 
-	// 	let mut builder_data = HeaderExtensionBuilderData {
-	// 		app_extrinsics: vec![],
-	// 		data_submissions,
-	// 		bridge_messages: vec![],
-	// 	};
+		let mut builder_data = HeaderExtensionBuilderData {
+			app_extrinsics: vec![],
+			data_submissions,
+			bridge_messages: vec![],
+		};
 
-	// 	// Sort data_submissions by app_id
-	// 	builder_data.data_submissions.sort_by_key(|data| data.id);
+		// Sort data_submissions by app_id
+		builder_data.data_submissions.sort_by_key(|data| data.id);
 
-	// 	let sorted_ids: Vec<(AppId, u32)> = builder_data
-	// 		.data_submissions
-	// 		.iter()
-	// 		.map(|d| (d.id, d.tx_index))
-	// 		.collect();
-	// 	assert_eq!(
-	// 		sorted_ids,
-	// 		vec![(AppId(1), 1), (AppId(1), 3), (AppId(2), 2), (AppId(3), 0)]
-	// 	);
-	// }
+		let sorted_ids: Vec<(AppId, u32)> = builder_data
+			.data_submissions
+			.iter()
+			.map(|d| (d.id, d.tx_index))
+			.collect();
+		assert_eq!(
+			sorted_ids,
+			vec![(AppId(1), 1), (AppId(1), 3), (AppId(2), 2), (AppId(3), 0)]
+		);
+	}
 }

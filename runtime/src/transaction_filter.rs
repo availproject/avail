@@ -8,9 +8,7 @@ use avail_core::{
 	AppExtrinsic, AppId, OpaqueExtrinsic,
 };
 
-use da_control::{
-	extensions::native::hosted_commitment_builder::build_da_commitments, Call as DACall,
-};
+use da_control::Call as DACall;
 use kate::Seed;
 use pallet_multisig::Call as MultisigCall;
 use pallet_proxy::Call as ProxyCall;
@@ -29,6 +27,8 @@ impl HeaderExtensionDataFilter for Runtime {
 		opaque: OpaqueExtrinsic,
 		block: u32,
 		tx_index: usize,
+		cols: u32,
+		rows: u32,
 	) -> Option<ExtractedTxData> {
 		let Ok(unchecked_extrinsic) = UncheckedExtrinsic::try_from(opaque) else {
 			return None;
@@ -53,7 +53,15 @@ impl HeaderExtensionDataFilter for Runtime {
 				},
 				Call::DataAvailability(call) => {
 					let app_extrinsic = AppExtrinsic::from(unchecked_extrinsic.clone());
-					filter_da_call(app_extrinsic, call, app_id, tx_index, failed_transactions)
+					filter_da_call(
+						app_extrinsic,
+						call,
+						app_id,
+						tx_index,
+						failed_transactions,
+						cols,
+						rows,
+					)
 				},
 				_ => None,
 			}
@@ -109,6 +117,8 @@ fn filter_da_call(
 	app_id: AppId,
 	tx_index: usize,
 	failed_transactions: &[u32],
+	cols: u32,
+	rows: u32,
 ) -> Option<ExtractedTxData> {
 	let tx_index = u32::try_from(tx_index).ok()?;
 	if failed_transactions.contains(&tx_index) {
@@ -131,8 +141,13 @@ fn filter_da_call(
 				return None;
 			}
 			let blob_hash = H256(keccak_256(&data));
-			let block_length = frame_system::Pallet::<Runtime>::block_length();
-			let commitment = build_da_commitments(data.to_vec(), block_length, Seed::default());
+			let commitment =
+				da_control::extensions::native::hosted_commitment_builder::build_da_commitments(
+					data,
+					cols,
+					rows,
+					Seed::default(),
+				);
 			(blob_hash, commitment)
 		},
 		_ => return None,

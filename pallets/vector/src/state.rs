@@ -20,6 +20,7 @@ pub enum ParseError {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Encode, Decode, TypeInfo)]
+#[allow(dead_code)]
 pub struct Groth16Proof {
 	pub a: Vec<String>,
 	pub b: Vec<Vec<String>>,
