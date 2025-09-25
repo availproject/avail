@@ -14,9 +14,14 @@ kate = { workspace = true, default-features = false }
 thiserror-no-std.workspace = true
 log.workspace = true
 anyhow = "1.0"
+divan = { version = "0.1"}
 
 [features]
 default = ["std"]
 std = [
     "kate/std",
 ]
+
+[[bench]]
+name = "commitment"
+harness = false
