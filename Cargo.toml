@@ -16,7 +16,8 @@ members = [
 ]
 
 exclude = [
-	"utils/compression_and_decoding"
+	"utils/compression_and_decoding",
+	"utils/da_spammer",
 ]
 
 [workspace.package]

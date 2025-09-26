@@ -1,0 +1,27 @@
+[package]
+name = "da-spammer"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+# CLI
+clap = { version = "4.5", features = ["derive"] }
+
+# Async runtime
+tokio = { version = "1.45.1", features = ["macros", "rt-multi-thread"] }
+
+# Avail SDK (same branch you used)
+avail-rust = { package = "avail-rust-client", git = "https://github.com/availproject/avail-rust", branch = "ghali/infinity-da-rpc" }
+
+# Substrate core bits needed for hashing / types
+sp-crypto-hashing = { version = "0.1.0", default-features = false }
+
+# Kate/KZG + the tiny wrapper you already use to build commitments
+da-commitment = { git = "https://github.com/availproject/avail", branch = "ghali/infinity-da", package = "da-commitment", default-features = false, features = ["std"] }
+
+# SCALE Encode for signed extrinsic bytes
+codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["std"] }
+
+# Optional: only used in logs if you want to hex something; safe to keep
+hex = "0.4"
+base64 = { version = "0.22.1" }
