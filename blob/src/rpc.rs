@@ -1,3 +1,9 @@
+use crate::traits::BackendApiT;
+use crate::traits::BackendClient;
+use crate::traits::RuntimeApiT;
+use crate::traits::RuntimeClient;
+use crate::traits::TransactionPoolApiT;
+use crate::traits::TransactionPoolClient;
 use crate::traits::{ExternalitiesT, RealExternalities};
 use crate::types::CompressedBlob;
 use crate::utils::get_my_validator_public_account;
@@ -5,7 +11,7 @@ use crate::utils::B64Param;
 use crate::{
 	p2p::BlobHandle,
 	send_blob_query_request,
-	store::BlobStore,
+	store::StorageApiT,
 	types::{Blob, BlobMetadata, BlobNotification, BlobReceived, Deps, OwnershipEntry},
 	utils::{
 		build_signature_payload, check_store_blob, generate_base_index,
@@ -155,18 +161,16 @@ where
 			return Err(internal_err!("metadata tx cannot be empty"));
 		}
 
-		let externalities = RealExternalities::new(
-			self.client.clone(),
-			self.pool.clone(),
-			self.blob_handle.clone(),
-			self.backend.clone(),
-		);
+		let externalities = RealExternalities::new(self.client.clone(), self.blob_handle.clone());
 
 		submit_blob_inner(
 			self.commitment_queue.clone(),
 			metadata_signed_transaction.0,
 			blob.0,
 			Arc::new(externalities),
+			Arc::new(RuntimeClient::new(self.client.clone())),
+			Arc::new(BackendClient::new(self.backend.clone())),
+			Arc::new(TransactionPoolClient::new(self.pool.clone())),
 		)
 		.await
 	}
@@ -286,6 +290,7 @@ async fn check_rpc_store_blob(
 	validators: &Vec<AccountId32>,
 	finalized_block_hash: H256,
 	externalities: &Arc<dyn ExternalitiesT>,
+	runtime_client: &Arc<dyn RuntimeApiT>,
 ) -> Result<Option<OwnershipEntry>> {
 	let role = externalities.role();
 	if !role.is_authority() {
@@ -302,7 +307,7 @@ async fn check_rpc_store_blob(
 		return Ok(None);
 	};
 
-	let Ok(owner_opt) = externalities.get_validator_from_key(
+	let Ok(owner_opt) = runtime_client.get_validator_from_key(
 		finalized_block_hash,
 		key_type_id,
 		authority_id.encode(),
@@ -386,11 +391,11 @@ where
 }
 
 fn get_dynamic_block_length(
-	externalities: &Arc<dyn ExternalitiesT>,
+	backend_client: &Arc<dyn BackendApiT>,
 	finalized_block_hash: H256,
 ) -> RpcResult<(usize, usize)> {
 	let storage_key = get_dynamic_blocklength_key();
-	let maybe_raw = externalities
+	let maybe_raw = backend_client
 		.storage(finalized_block_hash, &storage_key.0)
 		.map_err(|e| internal_err!("Storage query error: {e:?}"))?;
 	let raw = maybe_raw.ok_or(internal_err!("DynamicBlockLength not found"))?;
@@ -519,6 +524,8 @@ pub async fn store_and_gossip_blob(
 	blob_params: BlobRuntimeParameters,
 	commitment: Vec<u8>,
 	externalities: Arc<dyn ExternalitiesT>,
+	runtime_client: Arc<dyn RuntimeApiT>,
+	tx_pool_client: Arc<dyn TransactionPoolApiT>,
 ) {
 	const GOSSIPING: &str = "GOSSIPING";
 	let mut stop_watch = SmartStopwatch::new("😍😍 STORE AND GOSSIP BLOB");
@@ -565,7 +572,7 @@ pub async fn store_and_gossip_blob(
 	});
 
 	// It might be a new blob or an old one being resubmitted, we still update most of the values
-	let validators = match externalities.get_active_validators(finalized_block_hash) {
+	let validators = match runtime_client.get_active_validators(finalized_block_hash) {
 		Ok(validators) => validators,
 		Err(e) => {
 			log::error!(
@@ -595,6 +602,7 @@ pub async fn store_and_gossip_blob(
 		&validators,
 		finalized_block_hash,
 		&externalities,
+		&runtime_client,
 	)
 	.await
 	{
@@ -678,7 +686,7 @@ pub async fn store_and_gossip_blob(
 	// Get the best hash once more, to submit the tx
 	stop_watch.start_tracking("Submit One");
 	let best_hash = externalities.client_info().best_hash;
-	if let Err(e) = externalities
+	if let Err(e) = tx_pool_client
 		.submit_one(best_hash, TransactionSource::External, opaque_tx)
 		.await
 	{
@@ -696,6 +704,9 @@ pub async fn submit_blob_inner(
 	metadata_signed_transaction: Vec<u8>,
 	blob: Vec<u8>,
 	externalities: Arc<dyn ExternalitiesT>,
+	runtime_client: Arc<dyn RuntimeApiT>,
+	backend_client: Arc<dyn BackendApiT>,
+	tx_pool_client: Arc<dyn TransactionPoolApiT>,
 ) -> RpcResult<()> {
 	let mut stop_watch = SmartStopwatch::new("😍 SUBMIT BLOB Inner");
 
@@ -704,7 +715,7 @@ pub async fn submit_blob_inner(
 	let best_hash = client_info.best_hash;
 	let finalized_block_hash = client_info.finalized_hash;
 
-	let blob_params = match externalities.get_blob_runtime_parameters(finalized_block_hash) {
+	let blob_params = match runtime_client.get_blob_runtime_parameters(finalized_block_hash) {
 		Ok(p) => p,
 		Err(e) => {
 			log::error!("Could not get blob_params: {e:?}");
@@ -719,9 +730,9 @@ pub async fn submit_blob_inner(
 	stop_watch.stop_tracking("Initial Validation", "");
 	stop_watch.add_extra_information(std::format!("Blob Hash: {:?}", blob_hash));
 
-	let e = externalities.clone();
+	let r = runtime_client.clone();
 	let validity_op = move |uxt: UncheckedExtrinsic| {
-		e.validate_transaction(best_hash, TransactionSource::External, uxt, best_hash)
+		r.validate_transaction(best_hash, TransactionSource::External, uxt, best_hash)
 	};
 
 	stop_watch.start_tracking("TX validation");
@@ -735,7 +746,7 @@ pub async fn submit_blob_inner(
 
 	// Commitment Validation can take a long time.
 	stop_watch.start_tracking("Commitment Validation");
-	let (cols, rows) = get_dynamic_block_length(&externalities, finalized_block_hash)?;
+	let (cols, rows) = get_dynamic_block_length(&backend_client, finalized_block_hash)?;
 	let blob = Arc::new(blob);
 	commitment_validation(
 		&provided_commitment,
@@ -755,9 +766,9 @@ pub async fn submit_blob_inner(
 	// TODO we might remove this
 	let client_info = externalities.client_info();
 	let best_hash = client_info.best_hash;
-	let e = externalities.clone();
+	let r = runtime_client.clone();
 	let validity_op = move |uxt: UncheckedExtrinsic| {
-		e.validate_transaction(best_hash, TransactionSource::External, uxt, best_hash)
+		r.validate_transaction(best_hash, TransactionSource::External, uxt, best_hash)
 	};
 	let _ = tx_validation(
 		&metadata_signed_transaction,
@@ -777,6 +788,8 @@ pub async fn submit_blob_inner(
 				blob_params,
 				provided_commitment,
 				externalities,
+				runtime_client,
+				tx_pool_client,
 			)
 			.await
 		});

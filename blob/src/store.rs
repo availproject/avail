@@ -20,7 +20,7 @@ const COL_BLOB: u32 = 2;
 const COL_BLOB_OWNERSHIP: u32 = 3;
 const COL_BLOB_OWNERSHIP_EXPIRY: u32 = 4;
 
-pub trait BlobStore: Send + Sync {
+pub trait StorageApiT: Send + Sync {
 	// Blob metadata
 	fn insert_blob_metadata(&self, blob_metadata: &BlobMetadata) -> Result<()>;
 	fn get_blob_metadata(&self, hash: &BlobHash) -> Result<Option<BlobMetadata>>;
@@ -127,7 +127,7 @@ impl Default for RocksdbBlobStore {
 	}
 }
 
-impl BlobStore for RocksdbBlobStore {
+impl StorageApiT for RocksdbBlobStore {
 	fn insert_blob_metadata(&self, blob_metadata: &BlobMetadata) -> Result<()> {
 		if let Some(existing) = self.get_blob_metadata(&blob_metadata.hash).ok().flatten() {
 			if existing.is_notified {

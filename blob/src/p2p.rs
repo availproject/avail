@@ -2,7 +2,7 @@ use std::{path::Path, sync::Arc, time::Duration};
 
 use crate::{
 	decode_blob_notification, handle_incoming_blob_request,
-	store::{BlobStore, RocksdbBlobStore},
+	store::{RocksdbBlobStore, StorageApiT},
 	types::{BlobGossipValidator, BlobNotification, FullClient, BLOB_GOSSIP_PROTO, BLOB_REQ_PROTO},
 	BLOB_EXPIRATION_CHECK_PERIOD, CONCURRENT_REQUESTS, LOG_TARGET, NOTIFICATION_MAX_SIZE,
 	NOTIF_QUEUE_SIZE, REQUEST_MAX_SIZE, REQUEST_TIMEOUT_SECONDS, REQ_RES_QUEUE_SIZE,

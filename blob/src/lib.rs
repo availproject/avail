@@ -26,7 +26,7 @@ use sp_api::ProvideRuntimeApi;
 use sp_core::H256;
 use sp_runtime::{traits::Block as BlockT, SaturatedConversion};
 use std::{str::FromStr, sync::Arc, time::Duration};
-use store::{BlobStore, RocksdbBlobStore};
+use store::{RocksdbBlobStore, StorageApiT};
 
 pub mod p2p;
 pub mod rpc;

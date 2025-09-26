@@ -1,6 +1,6 @@
 use crate::{
 	p2p::BlobHandle,
-	store::{BlobStore, RocksdbBlobStore},
+	store::{RocksdbBlobStore, StorageApiT},
 	types::{BlobHash, BlobMetadata, BlobSignatureData, BlobTxSummary, OwnershipEntry},
 };
 use anyhow::{anyhow, Context, Result};
