@@ -20,7 +20,7 @@ const COL_BLOB: u32 = 2;
 const COL_BLOB_OWNERSHIP: u32 = 3;
 const COL_BLOB_OWNERSHIP_EXPIRY: u32 = 4;
 
-pub trait BlobStore: Send + Sync + 'static {
+pub trait BlobStore: Send + Sync {
 	// Blob metadata
 	fn insert_blob_metadata(&self, blob_metadata: &BlobMetadata) -> Result<()>;
 	fn get_blob_metadata(&self, hash: &BlobHash) -> Result<Option<BlobMetadata>>;

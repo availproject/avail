@@ -1,5 +1,6 @@
 use crate::traits::{ExternalitiesT, RealExternalities};
 use crate::types::CompressedBlob;
+use crate::utils::get_my_validator_public_account;
 use crate::utils::B64Param;
 use crate::{
 	p2p::BlobHandle,
@@ -8,8 +9,8 @@ use crate::{
 	types::{Blob, BlobMetadata, BlobNotification, BlobReceived, Deps, OwnershipEntry},
 	utils::{
 		build_signature_payload, check_store_blob, generate_base_index,
-		get_dynamic_blocklength_key, get_my_validator_id, get_validator_per_blob_inner,
-		sign_blob_data_inner, CommitmentQueue, CommitmentQueueMessage, SmartStopwatch,
+		get_dynamic_blocklength_key, get_validator_per_blob_inner, sign_blob_data_inner,
+		CommitmentQueue, CommitmentQueueMessage, SmartStopwatch,
 	},
 	MAX_RPC_RETRIES,
 };
@@ -162,8 +163,6 @@ where
 		);
 
 		submit_blob_inner(
-			self.client.clone(),
-			self.blob_handle.clone(),
 			self.commitment_queue.clone(),
 			metadata_signed_transaction.0,
 			blob.0,
@@ -280,34 +279,38 @@ where
 	}
 }
 
-async fn check_rpc_store_blob<Client, Block>(
-	client: &Arc<Client>,
-	blob_handle: &BlobHandle<Block>,
+async fn check_rpc_store_blob(
 	blob_metadata: &BlobMetadata,
 	my_encoded_peer_id: String,
 	nb_validators_per_blob: u32,
 	validators: &Vec<AccountId32>,
-	finalized_block_hash: &Block::Hash,
-) -> Result<Option<OwnershipEntry>>
-where
-	Block: BlockT,
-	Client: HeaderBackend<Block> + ProvideRuntimeApi<Block>,
-	Client::Api: BlobApi<Block>,
-{
-	let role = &blob_handle.role;
+	finalized_block_hash: H256,
+	externalities: &Arc<dyn ExternalitiesT>,
+) -> Result<Option<OwnershipEntry>> {
+	let role = externalities.role();
 	if !role.is_authority() {
 		// RPC node (me) is not an authority, so I don't have to store blobs
 		return Ok(None);
 	}
 
-	let keystore = blob_handle.keystore.get();
+	let keystore = externalities.keystore();
 	let Some(keystore) = keystore else {
 		return Err(anyhow!("failed to get keystore"));
 	};
 
-	let Some((my_validator_id, babe_key)) =
-		get_my_validator_id(keystore, client, &finalized_block_hash.encode())
-	else {
+	let Some((authority_id, key_type_id)) = get_my_validator_public_account(keystore) else {
+		return Ok(None);
+	};
+
+	let Ok(owner_opt) = externalities.get_validator_from_key(
+		finalized_block_hash,
+		key_type_id,
+		authority_id.encode(),
+	) else {
+		return Ok(None);
+	};
+
+	let Some(my_validator_id) = owner_opt else {
 		return Ok(None);
 	};
 
@@ -343,7 +346,7 @@ where
 
 	Ok(Some(OwnershipEntry {
 		address: my_validator_id,
-		babe_key,
+		babe_key: authority_id,
 		encoded_peer_id: my_encoded_peer_id,
 		signature,
 	}))
@@ -442,7 +445,7 @@ fn initial_validation(
 	Ok((blob_hash, provided_commitment))
 }
 
-fn tx_validation<Block: BlockT>(
+fn tx_validation(
 	metadata: &[u8],
 	min_transaction_validity: u64,
 	max_transaction_validity: u64,
@@ -509,31 +512,20 @@ async fn commitment_validation(
 	Ok(())
 }
 
-pub async fn store_and_gossip_blob<Block, Client>(
-	client: Arc<Client>,
+pub async fn store_and_gossip_blob(
 	opaque_tx: UncheckedExtrinsic,
 	blob_hash: H256,
-	blob_handle: Arc<BlobHandle<Block>>,
 	blob: Arc<Vec<u8>>,
 	blob_params: BlobRuntimeParameters,
 	commitment: Vec<u8>,
 	externalities: Arc<dyn ExternalitiesT>,
-) where
-	Client: HeaderBackend<Block>
-		+ ProvideRuntimeApi<Block>
-		+ BlockBackend<Block>
-		+ Send
-		+ Sync
-		+ 'static,
-	Client::Api: TaggedTransactionQueue<Block> + BlobApi<Block>,
-	Block: BlockT,
-	H256: From<<Block as BlockT>::Hash>,
-	<Block as BlockT>::Hash: From<H256>,
-	<Block as BlockT>::Extrinsic: From<UncheckedExtrinsic>,
-{
+) {
 	const GOSSIPING: &str = "GOSSIPING";
 	let mut stop_watch = SmartStopwatch::new("😍😍 STORE AND GOSSIP BLOB");
 	stop_watch.add_extra_information(std::format!("Blob Hash: {:?}", blob_hash));
+
+	let blob_store = externalities.blob_store();
+	let blob_data_store = externalities.blob_data_store();
 
 	let client_info = externalities.client_info();
 	let finalized_block_hash = client_info.finalized_hash;
@@ -548,7 +540,7 @@ pub async fn store_and_gossip_blob<Block, Client>(
 	let my_peer_id_base58 = my_peer_id.to_base58();
 
 	// Setup blob metadata and blob and check first in case we already received this exact blob before
-	let maybe_blob_metadata = match blob_handle.blob_store.get_blob_metadata(&blob_hash) {
+	let maybe_blob_metadata = match blob_store.get_blob_metadata(&blob_hash) {
 		Ok(m) => m,
 		Err(e) => {
 			log::error!("Failed to get data from blob storage: {e}");
@@ -596,15 +588,13 @@ pub async fn store_and_gossip_blob<Block, Client>(
 	blob_metadata.finalized_block_number = finalized_block_number;
 	blob_metadata.nb_validators_per_blob = nb_validators_per_blob;
 	blob_metadata.nb_validators_per_blob_threshold = threshold;
-	let block_hash = finalized_block_hash.into();
-	let maybe_ownership: Option<OwnershipEntry> = match check_rpc_store_blob::<Client, Block>(
-		&client,
-		&blob_handle,
+	let maybe_ownership: Option<OwnershipEntry> = match check_rpc_store_blob(
 		&blob_metadata,
 		my_peer_id_base58.clone(),
 		nb_validators_per_blob,
 		&validators,
-		&block_hash,
+		finalized_block_hash,
+		&externalities,
 	)
 	.await
 	{
@@ -629,14 +619,14 @@ pub async fn store_and_gossip_blob<Block, Client>(
 			"BLOB - RPC submit_blob - bg:task - I Should store - {:?}",
 			blob_hash,
 		);
-		if let Err(e) = blob_handle.blob_store.insert_blob_ownership(&blob_hash, o) {
+		if let Err(e) = blob_store.insert_blob_ownership(&blob_hash, o) {
 			log::error!("failed to insert blob ownership into store: {e}");
 		}
 		blob_metadata.expires_at = finalized_block_number.saturating_add(blob_params.blob_ttl);
 	}
 
 	// Store the blob in the store -------------------
-	if let Err(e) = blob_handle.blob_store.insert_blob_metadata(&blob_metadata) {
+	if let Err(e) = blob_store.insert_blob_metadata(&blob_metadata) {
 		log::error!("failed to insert blob metadata into store: {e}");
 	}
 	log::info!(
@@ -646,10 +636,7 @@ pub async fn store_and_gossip_blob<Block, Client>(
 
 	let compressed_blob = CompressedBlob::new_zstd_compress_with_fallback(&blob.data);
 
-	if let Err(e) = blob_handle
-		.blob_data_store
-		.insert_blob(&blob.blob_hash, &compressed_blob)
-	{
+	if let Err(e) = blob_data_store.insert_blob(&blob.blob_hash, &compressed_blob) {
 		log::error!("failed to insert blob into store: {e}");
 	}
 	log::info!(
@@ -661,7 +648,7 @@ pub async fn store_and_gossip_blob<Block, Client>(
 	stop_watch.start_tracking(GOSSIPING);
 
 	// Announce the blob to the network -------------------
-	let blob_received_notification: BlobNotification<Block> =
+	let blob_received_notification: BlobNotification =
 		BlobNotification::BlobReceived(BlobReceived {
 			hash: blob_metadata.hash,
 			size: blob_metadata.size,
@@ -672,7 +659,7 @@ pub async fn store_and_gossip_blob<Block, Client>(
 			finalized_block_number,
 		});
 
-	let Some(gossip_cmd_sender) = blob_handle.gossip_cmd_sender.get() else {
+	let Some(gossip_cmd_sender) = externalities.gossip_cmd_sender() else {
 		log::error!("gossip_cmd_sender was not initialized");
 		return;
 	};
@@ -704,27 +691,12 @@ pub async fn store_and_gossip_blob<Block, Client>(
 	stop_watch.stop_tracking("Submit One", "");
 }
 
-pub async fn submit_blob_inner<Client, Block>(
-	client: Arc<Client>,
-	blob_handle: Arc<BlobHandle<Block>>,
+pub async fn submit_blob_inner(
 	commitment_queue: Arc<CommitmentQueue>,
 	metadata_signed_transaction: Vec<u8>,
 	blob: Vec<u8>,
 	externalities: Arc<dyn ExternalitiesT>,
-) -> RpcResult<()>
-where
-	Block: BlockT,
-	Client: HeaderBackend<Block>
-		+ ProvideRuntimeApi<Block>
-		+ BlockBackend<Block>
-		+ Send
-		+ Sync
-		+ 'static,
-	Client::Api: TaggedTransactionQueue<Block> + BlobApi<Block>,
-	H256: From<<Block as BlockT>::Hash>,
-	<Block as BlockT>::Hash: From<H256>,
-	<Block as BlockT>::Extrinsic: From<UncheckedExtrinsic>,
-{
+) -> RpcResult<()> {
 	let mut stop_watch = SmartStopwatch::new("😍 SUBMIT BLOB Inner");
 
 	// Get client info
@@ -753,7 +725,7 @@ where
 	};
 
 	stop_watch.start_tracking("TX validation");
-	let opaque_tx = tx_validation::<Block>(
+	let opaque_tx = tx_validation(
 		&metadata_signed_transaction,
 		blob_params.min_transaction_validity,
 		blob_params.max_transaction_validity,
@@ -787,7 +759,7 @@ where
 	let validity_op = move |uxt: UncheckedExtrinsic| {
 		e.validate_transaction(best_hash, TransactionSource::External, uxt, best_hash)
 	};
-	let _ = tx_validation::<Block>(
+	let _ = tx_validation(
 		&metadata_signed_transaction,
 		blob_params.min_transaction_validity,
 		blob_params.max_transaction_validity,
@@ -799,10 +771,8 @@ where
 	{
 		task::spawn(async move {
 			store_and_gossip_blob(
-				client,
 				opaque_tx,
 				blob_hash,
-				blob_handle,
 				blob,
 				blob_params,
 				provided_commitment,

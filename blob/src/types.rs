@@ -83,7 +83,7 @@ impl<B: BlockT> Validator<B> for BlobGossipValidator {
 		// Some pre-checks that will avoid flooding the network with bad information
 		// This means the peer won't get penalize "officially", but it keeps the network light
 		let mut input = &data[..];
-		match BlobNotification::<B>::decode(&mut input) {
+		match BlobNotification::decode(&mut input) {
 			Ok(_) => { /* We can process it*/ },
 			Err(_) => {
 				return ValidationResult::Discard;
@@ -247,7 +247,7 @@ pub struct Blob {
 /***** Structs used for notification / request / response *****/
 /// Structure for the notification when a blob is received from the RPC
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
-pub struct BlobReceived<Block: BlockT> {
+pub struct BlobReceived {
 	/// The hash of the blob
 	pub hash: BlobHash,
 	/// The size of the blob.
@@ -259,7 +259,7 @@ pub struct BlobReceived<Block: BlockT> {
 	/// The original encoded peerId that received the blob
 	pub original_peer_id: String,
 	/// The finalized block hash for other nodes reference
-	pub finalized_block_hash: <Block as BlockT>::Hash,
+	pub finalized_block_hash: H256,
 	/// The finalized block number for other nodes reference
 	pub finalized_block_number: u64,
 }
@@ -284,13 +284,13 @@ pub struct BlobResponse {
 
 /// Structure for the notification a validator sends after receiving a blob
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
-pub struct BlobStored<Block: BlockT> {
+pub struct BlobStored {
 	/// The hash of the blob.
 	pub hash: BlobHash,
 	/// The ownership entry for this validator
 	pub ownership_entry: OwnershipEntry,
 	/// The finalized block hash for other nodes reference
-	pub finalized_block_hash: Block::Hash,
+	pub finalized_block_hash: H256,
 }
 
 /// Structure for the signature that validator sends when sending notification / requests
@@ -386,9 +386,9 @@ pub struct BlobQueryResponse {
 /***** Enums used for notification / request / response *****/
 /// Enum for different types of notifications.
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
-pub enum BlobNotification<Block: BlockT> {
-	BlobReceived(BlobReceived<Block>),
-	BlobStored(BlobStored<Block>),
+pub enum BlobNotification {
+	BlobReceived(BlobReceived),
+	BlobStored(BlobStored),
 }
 
 /// Enum for different types of requests.

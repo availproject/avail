@@ -32,7 +32,7 @@ where
 {
 	pub network: Arc<OnceCell<Arc<NetworkService<Block, Block::Hash>>>>,
 	pub sync_service: Arc<OnceCell<Arc<SyncingService<Block>>>>,
-	pub gossip_cmd_sender: Arc<OnceCell<async_channel::Sender<BlobNotification<Block>>>>,
+	pub gossip_cmd_sender: Arc<OnceCell<async_channel::Sender<BlobNotification>>>,
 	pub keystore: Arc<OnceCell<Arc<LocalKeystore>>>,
 	pub client: Arc<OnceCell<Arc<FullClient>>>,
 	pub blob_store: Arc<RocksdbBlobStore>,
@@ -183,7 +183,7 @@ where
 		let incoming_receiver = gossip_engine.messages_for(topic);
 
 		let (gossip_cmd_sender, gossip_cmd_receiver) =
-			async_channel::bounded::<BlobNotification<Block>>(NOTIF_QUEUE_SIZE as usize);
+			async_channel::bounded::<BlobNotification>(NOTIF_QUEUE_SIZE as usize);
 
 		spawn_handle.spawn("gossip-sender", None, async move {
 			loop {

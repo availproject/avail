@@ -15,6 +15,7 @@ use sc_keystore::{Keystore, LocalKeystore};
 use sc_transaction_pool_api::TransactionSource;
 use sp_api::ProvideRuntimeApi;
 use sp_authority_discovery::AuthorityId;
+use sp_core::crypto::KeyTypeId;
 use sp_core::{sr25519, twox_128};
 use sp_runtime::{
 	key_types,
@@ -27,6 +28,23 @@ use std::io::Write;
 use std::{collections::BTreeMap, sync::Arc};
 use tokio::sync::mpsc;
 use tokio::sync::oneshot;
+
+pub fn get_my_validator_public_account(
+	keystore: &Arc<LocalKeystore>,
+) -> std::option::Option<(AuthorityId, KeyTypeId)> {
+	let key_type = key_types::BABE;
+
+	// Get keys from the keystore
+	let keys = keystore.sr25519_public_keys(key_type);
+
+	// Return None if no keys are in the keystore
+	if keys.len() == 0 {
+		return None;
+	}
+	let k = keys[keys.len() - 1];
+
+	Some((k.into(), key_type))
+}
 
 /// Get this node's Address
 pub fn get_my_validator_id<Block, Client>(

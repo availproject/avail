@@ -1,14 +1,19 @@
 use crate::BlobHandle;
+use crate::BlobNotification;
+use crate::BlobStore;
 use da_runtime::apis::BlobApi;
 use da_runtime::AccountId;
 use da_runtime::UncheckedExtrinsic;
 use jsonrpsee::core::async_trait;
 use sc_client_api::{BlockBackend, HeaderBackend, StateBackend};
+use sc_keystore::LocalKeystore;
 use sc_network::NetworkStateInfo;
 use sc_network::PeerId;
+use sc_service::Role;
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::ApiError;
 use sp_api::ProvideRuntimeApi;
+use sp_core::crypto::KeyTypeId;
 use sp_core::H256;
 use sp_runtime::traits::{Block as BlockT, HashingFor, Header as HeaderT};
 use sp_runtime::transaction_validity::TransactionSource;
@@ -48,6 +53,23 @@ pub trait ExternalitiesT: Send + Sync {
 	fn storage(&self, at: H256, key: &[u8]) -> Result<Option<Vec<u8>>, String>;
 
 	fn local_peer_id(&self) -> Result<PeerId, ()>;
+
+	fn get_validator_from_key(
+		&self,
+		at: H256,
+		id: KeyTypeId,
+		key_data: Vec<u8>,
+	) -> Result<Option<AccountId>, ApiError>;
+
+	fn role(&self) -> Role;
+
+	fn keystore(&self) -> std::option::Option<&Arc<LocalKeystore>>;
+
+	fn gossip_cmd_sender(&self) -> std::option::Option<&async_channel::Sender<BlobNotification>>;
+
+	fn blob_store(&self) -> Arc<dyn BlobStore>;
+
+	fn blob_data_store(&self) -> Arc<dyn BlobStore>;
 }
 
 #[derive(Debug, Default, Clone)]
@@ -101,6 +123,35 @@ impl ExternalitiesT for DummyExternalities {
 	}
 
 	fn local_peer_id(&self) -> Result<PeerId, ()> {
+		todo!()
+	}
+
+	fn get_validator_from_key(
+		&self,
+		_at: H256,
+		_id: KeyTypeId,
+		_key_data: Vec<u8>,
+	) -> Result<Option<AccountId>, ApiError> {
+		todo!()
+	}
+
+	fn role(&self) -> Role {
+		todo!()
+	}
+
+	fn keystore(&self) -> std::option::Option<&Arc<LocalKeystore>> {
+		todo!()
+	}
+
+	fn gossip_cmd_sender(&self) -> std::option::Option<&async_channel::Sender<BlobNotification>> {
+		todo!()
+	}
+
+	fn blob_store(&self) -> Arc<dyn BlobStore> {
+		todo!()
+	}
+
+	fn blob_data_store(&self) -> Arc<dyn BlobStore> {
 		todo!()
 	}
 }
@@ -239,5 +290,36 @@ where
 			return Err(());
 		};
 		Ok(net.local_peer_id())
+	}
+
+	fn get_validator_from_key(
+		&self,
+		at: H256,
+		id: KeyTypeId,
+		key_data: Vec<u8>,
+	) -> Result<Option<AccountId>, ApiError> {
+		self.client
+			.runtime_api()
+			.get_validator_from_key(at.into(), id, key_data)
+	}
+
+	fn role(&self) -> Role {
+		self.blob_handle.role.clone()
+	}
+
+	fn keystore(&self) -> std::option::Option<&Arc<LocalKeystore>> {
+		self.blob_handle.keystore.get()
+	}
+
+	fn gossip_cmd_sender(&self) -> std::option::Option<&async_channel::Sender<BlobNotification>> {
+		self.blob_handle.gossip_cmd_sender.get()
+	}
+
+	fn blob_store(&self) -> Arc<dyn BlobStore> {
+		self.blob_handle.blob_store.clone()
+	}
+
+	fn blob_data_store(&self) -> Arc<dyn BlobStore> {
+		self.blob_handle.blob_data_store.clone()
 	}
 }

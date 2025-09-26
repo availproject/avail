@@ -102,7 +102,7 @@ where
 }
 
 async fn handle_blob_received_notification<Block>(
-	blob_received: BlobReceived<Block>,
+	blob_received: BlobReceived,
 	blob_handle: &BlobHandle<Block>,
 	original_peer_id: PeerId,
 ) where
@@ -690,7 +690,7 @@ pub async fn send_blob_stored_notification<Block>(
 	blob_hash: BlobHash,
 	blob_handle: &BlobHandle<Block>,
 	ownership_entry: OwnershipEntry,
-	finalized_block_hash: Block::Hash,
+	finalized_block_hash: H256,
 ) where
 	Block: BlockT,
 {
@@ -725,7 +725,7 @@ pub async fn send_blob_stored_notification<Block>(
 }
 
 async fn handle_blob_stored_notification<Block>(
-	blob_stored: BlobStored<Block>,
+	blob_stored: BlobStored,
 	blob_handle: &BlobHandle<Block>,
 ) where
 	Block: BlockT,
