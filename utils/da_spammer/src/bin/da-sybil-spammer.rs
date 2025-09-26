@@ -80,7 +80,7 @@ fn dev_keypair(name: &str) -> Keypair {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), ClientError> {
+async fn main() -> Result<(), avail_rust::error::Error> {
 	let args = Args::parse();
 	if !(1..=64).contains(&args.size_mb) {
 		panic!("--size-mb must be within 1..=64");
@@ -120,7 +120,7 @@ async fn main() -> Result<(), ClientError> {
 
 	// 2) Fund via utility.batchAll(transfers)
 	let funder = dev_keypair(&args.funder);
-	let mut funder_nonce = client.nonce(&funder.account_id()).await?;
+	let mut funder_nonce = client.rpc().account_nonce(&funder.account_id()).await?;
 	println!("---- Funding accounts with batchAll (nonce starts at {funder_nonce}) ...");
 
 	// Build calls in chunks
@@ -137,7 +137,7 @@ async fn main() -> Result<(), ClientError> {
 		}
 		let batch = client.tx().utility().batch_all(calls);
 		batch
-			.sign_and_submit(&funder, Options::new().nonce(funder_nonce))
+			.sign_and_submit(&funder, Options::default().nonce(funder_nonce))
 			.await?;
 		println!(
 			"  → batch #{chunk_idx} with {} transfers, nonce={}",
@@ -159,7 +159,7 @@ async fn main() -> Result<(), ClientError> {
 	println!("---- Fetching starting nonces for each account ...");
 	let mut nonces: Vec<u32> = Vec::with_capacity(accts.len());
 	for (kp, _) in accts.iter() {
-		let n = client.nonce(&kp.account_id()).await?;
+		let n = client.rpc().account_nonce(&kp.account_id()).await?;
 		nonces.push(n);
 	}
 	println!("✓ Nonces fetched");
@@ -187,7 +187,7 @@ async fn main() -> Result<(), ClientError> {
 
 		// app_id rotation as before
 		let app_id = (i % 5) as u32;
-		let options = Options::new().app_id(app_id).nonce(nonce);
+		let options = Options::new(app_id).nonce(nonce);
 
 		let unsigned = client.tx().data_availability().submit_blob_metadata(
 			hash,
@@ -195,7 +195,7 @@ async fn main() -> Result<(), ClientError> {
 			commitments,
 		);
 
-		let tx_bytes = unsigned.sign(signer, options).await.unwrap().0.encode();
+		let tx_bytes = unsigned.sign(signer, options).await.unwrap().encode();
 
 		println!(
 			"  → [{}] acct#{} ({}) nonce={} app_id={} tx_bytes={}B ...",
@@ -207,7 +207,7 @@ async fn main() -> Result<(), ClientError> {
 			tx_bytes.len()
 		);
 
-		match submit_blob(&client.rpc_client, tx_bytes, blob).await {
+		match submit_blob(&client.rpc_client, &tx_bytes, &blob).await {
 			Ok(_) => {
 				println!("    ✓ [{}] submitted", i);
 				nonces[idx] += 1;

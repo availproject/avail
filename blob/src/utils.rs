@@ -603,7 +603,7 @@ pub fn get_dynamic_blocklength_key() -> StorageKey {
 
 pub struct SmartStopwatch {
 	span: String,
-	extra_information: String,
+	extra_information: Vec<String>,
 	created: std::time::Instant,
 	tracking: Vec<(String, std::time::Instant)>,
 	finished: Vec<(String, std::time::Duration, String)>,
@@ -616,25 +616,24 @@ impl SmartStopwatch {
 			tracking: Vec::with_capacity(20),
 			finished: Vec::with_capacity(20),
 			created: std::time::Instant::now(),
-			extra_information: String::new(),
+			extra_information: Vec::with_capacity(3),
 		}
 	}
 
 	pub fn add_extra_information(&mut self, value: impl Into<String>) {
-		self.extra_information = value.into();
+		self.extra_information.push(value.into());
 	}
 
-	pub fn start_tracking(&mut self, name: impl Into<String>) {
+	pub fn start(&mut self, name: impl Into<String>) {
 		self.tracking.push((name.into(), std::time::Instant::now()));
 	}
 
-	pub fn stop_tracking(&mut self, name: &str, additional_info: impl Into<String>) {
+	pub fn stop(&mut self, name: &str) {
 		let Some(index) = self.tracking.iter().position(|x| x.0 == name) else {
 			return;
 		};
 		let value = self.tracking.swap_remove(index);
-		self.finished
-			.push((value.0, value.1.elapsed(), additional_info.into()));
+		self.finished.push((value.0, value.1.elapsed(), "".into()));
 	}
 }
 
@@ -655,8 +654,10 @@ impl Drop for SmartStopwatch {
 		let mut msg = String::with_capacity(500);
 		msg.push_str(self.span.as_str());
 		msg.push_str(" -- ");
-		if !self.extra_information.is_empty() {
-			let _ = write!(msg, "{}. ", self.extra_information);
+
+		let extra_information = take(&mut self.extra_information);
+		for ei in extra_information {
+			let _ = write!(msg, "{}. ", ei);
 		}
 		let _ = write!(
 			msg,
@@ -743,29 +744,16 @@ where
 
 		// This path borrows the incoming &str directly; no intermediate String allocation.
 		fn visit_borrowed_str<E: serde::de::Error>(self, v: &'de str) -> Result<Self::Value, E> {
-			let timer = std::time::Instant::now();
-			let a = base64::engine::general_purpose::STANDARD
+			base64::engine::general_purpose::STANDARD
 				.decode(v)
-				.map_err(E::custom);
-
-			log::info!(
-				"🈵 Base64 decoding duration: {} ms",
-				timer.elapsed().as_millis()
-			);
-			a
+				.map_err(E::custom)
 		}
 
 		// Fallback if the JSON parser doesn’t give us a borrowed str.
 		fn visit_str<E: serde::de::Error>(self, v: &str) -> Result<Self::Value, E> {
-			let timer = std::time::Instant::now();
-			let a = base64::engine::general_purpose::STANDARD
+			base64::engine::general_purpose::STANDARD
 				.decode(v)
-				.map_err(E::custom);
-			log::info!(
-				"🈵 Base64 decoding duration: {} ms",
-				timer.elapsed().as_millis()
-			);
-			a
+				.map_err(E::custom)
 		}
 	}
 

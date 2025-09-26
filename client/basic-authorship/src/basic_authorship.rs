@@ -605,7 +605,7 @@ where
 			}
 
 			let encoded = pending_tx_data.clone().encode();
-			stop_watch.start_tracking("Check if wait next block");
+			stop_watch.start("Check if wait next block");
 			let (should_submit, is_submit_blob_metadata) = check_if_wait_next_block(
 				&self.client,
 				&self.blob_store,
@@ -614,7 +614,7 @@ where
 				&mut blob_metadata,
 				tx_index,
 			);
-			stop_watch.stop_tracking("Check if wait next block", "");
+			stop_watch.stop("Check if wait next block");
 			if !should_submit {
 				continue;
 			}
@@ -671,13 +671,13 @@ where
 			);
 		}
 
-		stop_watch.start_tracking("Get blob txs summary");
+		stop_watch.start("Get blob txs summary");
 		let (blob_txs_summary, total_blob_size) = if submit_blob_metadata_calls.len() > 0 {
 			get_blob_txs_summary(&submit_blob_metadata_calls, blob_metadata).await
 		} else {
 			(Vec::new(), 0)
 		};
-		stop_watch.stop_tracking("Get blob txs summary", "");
+		stop_watch.stop("Get blob txs summary");
 
 		self.transaction_pool.remove_invalid(&unqueue_invalid);
 		Ok((end_reason, blob_txs_summary, total_blob_size))

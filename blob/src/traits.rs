@@ -1,4 +1,4 @@
-use crate::{BlobHandle, BlobNotification, StorageApiT};
+use crate::{BlobHandle, BlobNotification};
 use da_runtime::{apis::BlobApi, AccountId, UncheckedExtrinsic};
 use jsonrpsee::core::async_trait;
 use sc_client_api::{BlockBackend, HeaderBackend, StateBackend};
@@ -174,16 +174,11 @@ pub trait ExternalitiesT: Send + Sync {
 	fn keystore(&self) -> std::option::Option<&Arc<LocalKeystore>>;
 
 	fn gossip_cmd_sender(&self) -> std::option::Option<&async_channel::Sender<BlobNotification>>;
-
-	fn blob_store(&self) -> Arc<dyn StorageApiT>;
-
-	fn blob_data_store(&self) -> Arc<dyn StorageApiT>;
 }
 
 #[derive(Debug, Default, Clone)]
 pub struct ClientInfo {
 	pub best_hash: H256,
-	pub best_height: u32,
 	pub finalized_hash: H256,
 	pub finalized_height: u32,
 }
@@ -241,7 +236,6 @@ where
 		let client_info = self.client.info();
 		ClientInfo {
 			best_hash: client_info.best_hash.into(),
-			best_height: u32::from(client_info.best_number),
 			finalized_hash: client_info.finalized_hash.into(),
 			finalized_height: u32::from(client_info.finalized_number),
 		}
@@ -265,14 +259,6 @@ where
 
 	fn gossip_cmd_sender(&self) -> std::option::Option<&async_channel::Sender<BlobNotification>> {
 		self.blob_handle.gossip_cmd_sender.get()
-	}
-
-	fn blob_store(&self) -> Arc<dyn StorageApiT> {
-		self.blob_handle.blob_store.clone()
-	}
-
-	fn blob_data_store(&self) -> Arc<dyn StorageApiT> {
-		self.blob_handle.blob_data_store.clone()
 	}
 }
 
@@ -298,14 +284,6 @@ impl ExternalitiesT for DummyExternalities {
 	}
 
 	fn gossip_cmd_sender(&self) -> std::option::Option<&async_channel::Sender<BlobNotification>> {
-		todo!()
-	}
-
-	fn blob_store(&self) -> Arc<dyn StorageApiT> {
-		todo!()
-	}
-
-	fn blob_data_store(&self) -> Arc<dyn StorageApiT> {
 		todo!()
 	}
 }
