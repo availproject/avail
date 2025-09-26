@@ -4,9 +4,8 @@ use codec::{Decode, Encode};
 use kvdb::DBTransaction;
 use kvdb::KeyValueDB;
 use kvdb_rocksdb::{Database, DatabaseConfig};
-use sp_runtime::traits::Block as BlockT;
+use std::path::Path;
 use std::sync::Mutex;
-use std::{marker::PhantomData, path::Path};
 use tempfile::TempDir;
 use ttl_cache::TtlCache;
 
@@ -21,10 +20,10 @@ const COL_BLOB: u32 = 2;
 const COL_BLOB_OWNERSHIP: u32 = 3;
 const COL_BLOB_OWNERSHIP_EXPIRY: u32 = 4;
 
-pub trait BlobStore<Block: BlockT>: Send + Sync + 'static {
+pub trait BlobStore: Send + Sync + 'static {
 	// Blob metadata
-	fn insert_blob_metadata(&self, blob_metadata: &BlobMetadata<Block>) -> Result<()>;
-	fn get_blob_metadata(&self, hash: &BlobHash) -> Result<Option<BlobMetadata<Block>>>;
+	fn insert_blob_metadata(&self, blob_metadata: &BlobMetadata) -> Result<()>;
+	fn get_blob_metadata(&self, hash: &BlobHash) -> Result<Option<BlobMetadata>>;
 	fn blob_metadata_exists(&self, hash: &BlobHash) -> Result<bool>;
 
 	// Blobs
@@ -62,21 +61,19 @@ pub trait BlobStore<Block: BlockT>: Send + Sync + 'static {
 	fn log_all_entries(&self) -> Result<()>;
 }
 
-pub struct RocksdbBlobStore<Block: BlockT> {
+pub struct RocksdbBlobStore {
 	db: Database,
-	_block: PhantomData<Block>,
 	cache: Mutex<TtlCache<BlobHash, Vec<u8>>>,
 }
 
-impl<Block: BlockT> RocksdbBlobStore<Block> {
+impl RocksdbBlobStore {
 	/// Open (or create) a new DB at `path`, with a single column.
 	pub fn open(path: impl AsRef<Path>) -> Result<Self> {
 		let num_columns = 5;
 		let db_config = DatabaseConfig::with_columns(num_columns);
 		let db = Database::open(&db_config, path.as_ref())?;
-		Ok(RocksdbBlobStore::<Block> {
+		Ok(RocksdbBlobStore {
 			db,
-			_block: PhantomData,
 			cache: Mutex::new(TtlCache::new(MAX_BLOBS_IN_CACHE as usize)), // keep ~128 blobs
 		})
 	}
@@ -116,23 +113,22 @@ impl<Block: BlockT> RocksdbBlobStore<Block> {
 	}
 }
 
-impl<Block: BlockT> Default for RocksdbBlobStore<Block> {
+impl Default for RocksdbBlobStore {
 	fn default() -> Self {
 		let temp_dir = TempDir::new().expect("failed to create temp dir for RocksdbBlobStore");
 		let db_path = temp_dir.path().join("blob_store");
 		let num_columns = 4;
 		let db_config = DatabaseConfig::with_columns(num_columns);
 		let db = Database::open(&db_config, db_path).expect("opening RocksDB blob store failed");
-		RocksdbBlobStore::<Block> {
+		RocksdbBlobStore {
 			db,
-			_block: PhantomData,
 			cache: Mutex::new(TtlCache::new(MAX_BLOBS_IN_CACHE as usize)),
 		}
 	}
 }
 
-impl<Block: BlockT> BlobStore<Block> for RocksdbBlobStore<Block> {
-	fn insert_blob_metadata(&self, blob_metadata: &BlobMetadata<Block>) -> Result<()> {
+impl BlobStore for RocksdbBlobStore {
+	fn insert_blob_metadata(&self, blob_metadata: &BlobMetadata) -> Result<()> {
 		if let Some(existing) = self.get_blob_metadata(&blob_metadata.hash).ok().flatten() {
 			if existing.is_notified {
 				return Ok(());
@@ -149,7 +145,7 @@ impl<Block: BlockT> BlobStore<Block> for RocksdbBlobStore<Block> {
 		Ok(())
 	}
 
-	fn get_blob_metadata(&self, hash: &BlobHash) -> Result<Option<BlobMetadata<Block>>> {
+	fn get_blob_metadata(&self, hash: &BlobHash) -> Result<Option<BlobMetadata>> {
 		self.db
 			.get(COL_BLOB_METADATA, &Self::blob_meta_key(hash))?
 			.map(|bytes| {
@@ -395,7 +391,7 @@ impl<Block: BlockT> BlobStore<Block> for RocksdbBlobStore<Block> {
 	) -> Result<(Vec<BlobHash>, Vec<BlobHash>)> {
 		let mut expired_blobs = Vec::new();
 		for (key, value) in self.db.iter(COL_BLOB_METADATA).filter_map(Result::ok) {
-			if let Ok(blob_metadata) = BlobMetadata::<Block>::decode(&mut value.as_slice()) {
+			if let Ok(blob_metadata) = BlobMetadata::decode(&mut value.as_slice()) {
 				if blob_metadata.expires_at <= current_block {
 					let hash = BlobHash::from_slice(&key);
 					expired_blobs.push(hash);
@@ -445,7 +441,7 @@ impl<Block: BlockT> BlobStore<Block> for RocksdbBlobStore<Block> {
 		// Log Blob Metadata
 		log::info!(target: LOG_TARGET, "--- Blob Metadatas ---");
 		for (_key, value) in self.db.iter(COL_BLOB_METADATA).filter_map(Result::ok) {
-			if let Ok(blob_metadata) = BlobMetadata::<Block>::decode(&mut value.as_slice()) {
+			if let Ok(blob_metadata) = BlobMetadata::decode(&mut value.as_slice()) {
 				log::info!(
 					target: LOG_TARGET,
 					"Blob: hash={:?}, size={}, commitments_len={}, is_notified={}, nb_val_per_blob={}, expires_at={}",

@@ -283,7 +283,7 @@ where
 async fn check_rpc_store_blob<Client, Block>(
 	client: &Arc<Client>,
 	blob_handle: &BlobHandle<Block>,
-	blob_metadata: &BlobMetadata<Block>,
+	blob_metadata: &BlobMetadata,
 	my_encoded_peer_id: String,
 	nb_validators_per_blob: u32,
 	validators: &Vec<AccountId32>,
@@ -565,7 +565,7 @@ pub async fn store_and_gossip_blob<Block, Client>(
 			commitment,
 			is_notified: true,
 			expires_at: 0,
-			finalized_block_hash: Block::Hash::default(),
+			finalized_block_hash: Default::default(),
 			finalized_block_number: 0,
 			nb_validators_per_blob: 0,
 			nb_validators_per_blob_threshold: 0,

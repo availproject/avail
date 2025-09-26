@@ -22,6 +22,7 @@ use std::{
 #[async_trait]
 pub trait ExternalitiesT: Send + Sync {
 	fn client_info(&self) -> ClientInfo;
+
 	fn get_blob_runtime_parameters(
 		&self,
 		block_hash: H256,

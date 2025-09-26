@@ -67,7 +67,7 @@ const DEFAULT_SOFT_DEADLINE_PERCENT: Percent = Percent::from_percent(50);
 const LOG_TARGET: &'static str = "basic-authorship";
 
 /// [`Proposer`] factory.
-pub struct ProposerFactory<A, C, B: BlockT, PR> {
+pub struct ProposerFactory<A, C, PR> {
 	spawn_handle: Box<dyn SpawnNamed>,
 	/// The client instance.
 	client: Arc<C>,
@@ -92,15 +92,12 @@ pub struct ProposerFactory<A, C, B: BlockT, PR> {
 	/// When estimating the block size, should the proof be included?
 	include_proof_in_block_size_estimation: bool,
 	/// Blob store to check what the client already has for blob data
-	blob_store: Arc<RocksdbBlobStore<B>>,
+	blob_store: Arc<RocksdbBlobStore>,
 	/// phantom member to pin the `ProofRecording` type.
 	_phantom: PhantomData<PR>,
 }
 
-impl<A, C, B> ProposerFactory<A, C, B, DisableProofRecording>
-where
-	B: BlockT,
-{
+impl<A, C> ProposerFactory<A, C, DisableProofRecording> {
 	/// Create a new proposer factory.
 	///
 	/// Proof recording will be disabled when using proposers built by this instance to build
@@ -111,7 +108,7 @@ where
 		transaction_pool: Arc<A>,
 		prometheus: Option<&PrometheusRegistry>,
 		telemetry: Option<TelemetryHandle>,
-		blob_store: Arc<RocksdbBlobStore<B>>,
+		blob_store: Arc<RocksdbBlobStore>,
 	) -> Self {
 		ProposerFactory {
 			spawn_handle: Box::new(spawn_handle),
@@ -128,10 +125,7 @@ where
 	}
 }
 
-impl<A, C, B> ProposerFactory<A, C, B, EnableProofRecording>
-where
-	B: BlockT,
-{
+impl<A, C> ProposerFactory<A, C, EnableProofRecording> {
 	/// Create a new proposer factory with proof recording enabled.
 	///
 	/// Each proposer created by this instance will record a proof while building a block.
@@ -144,7 +138,7 @@ where
 		transaction_pool: Arc<A>,
 		prometheus: Option<&PrometheusRegistry>,
 		telemetry: Option<TelemetryHandle>,
-		blob_store: Arc<RocksdbBlobStore<B>>,
+		blob_store: Arc<RocksdbBlobStore>,
 	) -> Self {
 		ProposerFactory {
 			client,
@@ -166,10 +160,7 @@ where
 	}
 }
 
-impl<A, C, B, PR> ProposerFactory<A, C, B, PR>
-where
-	B: BlockT,
-{
+impl<A, C, PR> ProposerFactory<A, C, PR> {
 	/// Set the default block size limit in bytes.
 	///
 	/// The default value for the block size limit is:
@@ -198,7 +189,7 @@ where
 	}
 }
 
-impl<Block, C, A, PR> ProposerFactory<A, C, Block, PR>
+impl<Block, C, A, PR> ProposerFactory<A, C, PR>
 where
 	A: TransactionPool<Block = Block> + 'static,
 	Block: BlockT,
@@ -245,7 +236,7 @@ where
 	}
 }
 
-impl<A, Block, C, PR> sp_consensus::Environment<Block> for ProposerFactory<A, C, Block, PR>
+impl<A, Block, C, PR> sp_consensus::Environment<Block> for ProposerFactory<A, C, PR>
 where
 	A: TransactionPool<Block = Block> + 'static,
 	Block: BlockT,
@@ -288,7 +279,7 @@ pub struct Proposer<Block: BlockT, C, A: TransactionPool, PR> {
 	include_proof_in_block_size_estimation: bool,
 	soft_deadline_percent: Percent,
 	telemetry: Option<TelemetryHandle>,
-	blob_store: Arc<RocksdbBlobStore<Block>>,
+	blob_store: Arc<RocksdbBlobStore>,
 	_phantom: PhantomData<PR>,
 }
 
@@ -555,7 +546,7 @@ where
 
 		let mut submit_blob_metadata_calls = Vec::new();
 		let mut tx_index: u32 = inherent_len.saturated_into();
-		let mut blob_metadata: BTreeMap<H256, (BlobMetadata<Block>, Vec<OwnershipEntry>)> =
+		let mut blob_metadata: BTreeMap<H256, (BlobMetadata, Vec<OwnershipEntry>)> =
 			BTreeMap::new();
 
 		let end_reason = loop {

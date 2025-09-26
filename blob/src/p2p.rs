@@ -35,8 +35,8 @@ where
 	pub gossip_cmd_sender: Arc<OnceCell<async_channel::Sender<BlobNotification<Block>>>>,
 	pub keystore: Arc<OnceCell<Arc<LocalKeystore>>>,
 	pub client: Arc<OnceCell<Arc<FullClient>>>,
-	pub blob_store: Arc<RocksdbBlobStore<Block>>,
-	pub blob_data_store: Arc<RocksdbBlobStore<Block>>,
+	pub blob_store: Arc<RocksdbBlobStore>,
+	pub blob_data_store: Arc<RocksdbBlobStore>,
 	pub role: Role,
 }
 

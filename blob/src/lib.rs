@@ -23,6 +23,7 @@ use sc_network::{
 	PeerId,
 };
 use sp_api::ProvideRuntimeApi;
+use sp_core::H256;
 use sp_runtime::{traits::Block as BlockT, SaturatedConversion};
 use std::{str::FromStr, sync::Arc, time::Duration};
 use store::{BlobStore, RocksdbBlobStore};
@@ -192,7 +193,7 @@ async fn handle_blob_received_notification<Block>(
 		commitment: blob_received.commitment.clone(),
 		is_notified: true,
 		expires_at: 0,
-		finalized_block_hash: Block::Hash::default(),
+		finalized_block_hash: Default::default(),
 		finalized_block_number: 0,
 		nb_validators_per_blob: 0,
 		nb_validators_per_blob_threshold: 0,
@@ -205,8 +206,16 @@ async fn handle_blob_received_notification<Block>(
 		blob_meta.is_notified = true;
 	}
 
+	// TODO hack
+	let h: [u8; 32] = match announced_finalized_hash.encode().try_into() {
+		Ok(x) => x,
+		Err(_) => {
+			panic!("Failed to convert announced_finalized_hash to H256");
+		},
+	};
+
 	// Here, no matter if it's a new blob or a duplicate, we set the new expiration time and update the ownership / block timestamp.
-	blob_meta.finalized_block_hash = announced_finalized_hash;
+	blob_meta.finalized_block_hash = H256::from(h);
 	blob_meta.finalized_block_number = announced_finalized_number;
 	blob_meta.expires_at = announced_finalized_number.saturating_add(blob_runtime_params.blob_ttl);
 	blob_meta.nb_validators_per_blob = nb_validators_per_blob;
@@ -547,7 +556,7 @@ where
 
 pub fn handle_incoming_blob_request<Block: BlockT>(
 	request: IncomingRequest,
-	blob_data_store: &RocksdbBlobStore<Block>,
+	blob_data_store: &RocksdbBlobStore,
 	network: &Arc<NetworkService<Block, Block::Hash>>,
 ) where
 	Block: BlockT,
@@ -595,9 +604,9 @@ pub fn handle_incoming_blob_request<Block: BlockT>(
 	}
 }
 
-fn process_blob_request<Block: BlockT>(
+fn process_blob_request(
 	blob_request: BlobRequest,
-	blob_data_store: &RocksdbBlobStore<Block>,
+	blob_data_store: &RocksdbBlobStore,
 	response_tx: oneshot::Sender<OutgoingResponse>,
 ) {
 	let timer = std::time::Instant::now();
@@ -896,9 +905,9 @@ where
 	}
 }
 
-pub fn process_blob_query_request<Block: BlockT>(
+pub fn process_blob_query_request(
 	blob_query_request: BlobQueryRequest,
-	blob_data_store: &RocksdbBlobStore<Block>,
+	blob_data_store: &RocksdbBlobStore,
 	response_tx: oneshot::Sender<OutgoingResponse>,
 ) {
 	let timer = std::time::Instant::now();

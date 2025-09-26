@@ -255,10 +255,10 @@ pub fn check_store_blob(
 
 pub fn check_if_wait_next_block<C, Block>(
 	client: &Arc<C>,
-	blob_store: &Arc<RocksdbBlobStore<Block>>,
+	blob_store: &Arc<RocksdbBlobStore>,
 	encoded: Vec<u8>,
 	submit_blob_metadata_calls: &mut Vec<(RuntimeCall, u32)>,
-	blob_metadata: &mut BTreeMap<BlobHash, (BlobMetadata<Block>, Vec<OwnershipEntry>)>,
+	blob_metadata: &mut BTreeMap<BlobHash, (BlobMetadata, Vec<OwnershipEntry>)>,
 	tx_index: u32,
 ) -> (bool, bool)
 where
@@ -318,9 +318,16 @@ where
 					return (should_submit, is_submit_blob_metadata);
 				};
 
+				// TODO hack
+				let encoded_h256 = meta.finalized_block_hash.encode();
+				let mut slice = encoded_h256.as_slice();
+				// TODO handle panic
+				let generic_h256 = <Block as BlockT>::Hash::decode(&mut slice)
+					.expect("Should not fail. h256 to h256");
+
 				let blob_runtime_params = match client
 					.runtime_api()
-					.get_blob_runtime_parameters(meta.finalized_block_hash)
+					.get_blob_runtime_parameters(generic_h256)
 				{
 					Ok(p) => p,
 					Err(e) => {
@@ -372,7 +379,7 @@ where
 pub fn check_retries_for_blob<Block, C>(
 	client: &Arc<C>,
 	blob_hash: &BlobHash,
-	blob_store: &Arc<RocksdbBlobStore<Block>>,
+	blob_store: &Arc<RocksdbBlobStore>,
 ) -> bool
 where
 	Block: BlockT,
@@ -409,9 +416,9 @@ where
 	}
 }
 
-pub async fn get_blob_txs_summary<Block: BlockT>(
+pub async fn get_blob_txs_summary(
 	submit_blob_metadata_calls: &Vec<(RuntimeCall, u32)>,
-	blob_metadata: BTreeMap<BlobHash, (BlobMetadata<Block>, Vec<OwnershipEntry>)>,
+	blob_metadata: BTreeMap<BlobHash, (BlobMetadata, Vec<OwnershipEntry>)>,
 ) -> (Vec<BlobTxSummary>, u64) {
 	let mut blob_txs_summary: Vec<BlobTxSummary> = Vec::new();
 	let mut total_size = 0;
@@ -446,11 +453,11 @@ pub async fn get_blob_txs_summary<Block: BlockT>(
 	(blob_txs_summary, total_size)
 }
 
-fn get_block_tx_summary<Block: BlockT>(
+fn get_block_tx_summary(
 	blob_hash: BlobHash,
 	size: u64,
 	commitment: Vec<u8>,
-	blob_metadata: Option<&(BlobMetadata<Block>, Vec<OwnershipEntry>)>,
+	blob_metadata: Option<&(BlobMetadata, Vec<OwnershipEntry>)>,
 	tx_index: u32,
 ) -> Result<(BlobTxSummary, u64), String> {
 	let (meta, ownerships) = match blob_metadata {

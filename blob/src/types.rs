@@ -209,7 +209,7 @@ where
 /// The metadata of a blob and ownership data (who owns what blobs)
 /// This will be stored by everyone for now
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, Serialize, Deserialize)]
-pub struct BlobMetadata<Block: BlockT> {
+pub struct BlobMetadata {
 	/// The Hash of the blob.
 	pub hash: BlobHash,
 	/// The size of the blob.
@@ -228,7 +228,7 @@ pub struct BlobMetadata<Block: BlockT> {
 	/// Block from which this blob is considered expired
 	pub expires_at: u64,
 	/// The finalized block hash for other nodes reference
-	pub finalized_block_hash: Block::Hash,
+	pub finalized_block_hash: H256,
 	/// The finalized block number for other nodes reference
 	pub finalized_block_number: u64,
 }
