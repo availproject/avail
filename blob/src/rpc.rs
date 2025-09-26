@@ -1,3 +1,4 @@
+use crate::types::CompressedBlob;
 use crate::utils::B64Param;
 use crate::{
 	p2p::BlobHandle,
@@ -725,9 +726,11 @@ pub async fn store_and_gossip_blob<Block, Client, Pool>(
 		blob_hash,
 	);
 
+	let compressed_blob = CompressedBlob::new_zstd_compress_with_fallback(&blob.data);
+
 	if let Err(e) = blob_handle
 		.blob_data_store
-		.insert_blob(&blob.blob_hash, &blob.encode())
+		.insert_blob(&blob.blob_hash, &compressed_blob)
 	{
 		log::error!("failed to insert blob into store: {e}");
 	}

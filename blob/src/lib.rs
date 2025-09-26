@@ -349,8 +349,21 @@ async fn handle_blob_received_notification<Block>(
 				return;
 			};
 
+			// TODO write something smarter incase the data is compressed
+			let blob_data = match blob_response.blob.data() {
+				Ok(x) => x,
+				Err(_) => {
+					log::error!(
+						target: LOG_TARGET,
+						"Failed to decompress blob. Hash: blob {}",
+						blob_meta.hash,
+					);
+					return;
+				},
+			};
+
 			// Actually check the real blob size
-			if blob_response.blob.len() > (blob_runtime_params.max_blob_size + 1024) as usize {
+			if blob_data.len() > (blob_runtime_params.max_blob_size + 1024) as usize {
 				log::error!(target: LOG_TARGET, "Invalid blob size");
 				return;
 			}

@@ -54,6 +54,7 @@ clap = { workspace = true }
 anyhow = "1.0"
 ttl_cache = "0.5.1"
 base64 = { workspace = true }
+zstd = { workspace = true }
 
 [features]
 default = ["std"]

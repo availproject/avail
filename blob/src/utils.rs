@@ -23,6 +23,7 @@ use sp_runtime::{
 	AccountId32, SaturatedConversion,
 };
 use sp_transaction_pool::runtime_api::TaggedTransactionQueue;
+use std::io::Write;
 use std::{collections::BTreeMap, sync::Arc};
 use tokio::sync::mpsc;
 use tokio::sync::oneshot;
@@ -748,4 +749,19 @@ where
 	}
 
 	d.deserialize_str(B64Visitor)
+}
+
+pub fn zstd_compress(data: &[u8], level: i32) -> Result<Vec<u8>, std::io::Error> {
+	let mut out = Vec::with_capacity(data.len() / 3);
+	let mut encoder = zstd::Encoder::new(&mut out, level)?;
+	// Improves performance
+	encoder.set_pledged_src_size(Some(data.len() as u64))?;
+	encoder.write_all(data)?;
+	encoder.finish()?;
+
+	Ok(out)
+}
+
+pub fn zstd_decompress(data: &[u8]) -> Result<Vec<u8>, std::io::Error> {
+	zstd::decode_all(data)
 }

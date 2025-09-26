@@ -100,6 +100,7 @@ ark-snark = "0.4.0"
 rand = "0.8"
 rand_chacha = "0.3"
 base64 = { version = "0.22.1" }
+zstd = {version = "0.13.3"}
 
 # Misc
 parity-util-mem = { version = "0.12.0", features = ["primitive-types"], default-features = false }

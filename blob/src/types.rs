@@ -1,3 +1,5 @@
+use crate::utils::{zstd_compress, zstd_decompress};
+use crate::LOG_TARGET;
 use crate::{p2p::BlobHandle, store::RocksdbBlobStore};
 use codec::{Decode, Encode};
 use da_runtime::{apis::RuntimeApi, NodeBlock as Block};
@@ -15,6 +17,7 @@ use sp_runtime::{
 	traits::{Block as BlockT, Hash as HashT, HashingFor},
 	AccountId32,
 };
+use std::borrow::Cow;
 use std::{
 	collections::HashMap,
 	sync::Arc,
@@ -275,8 +278,8 @@ pub struct BlobRequest {
 pub struct BlobResponse {
 	/// The hash of the blob.
 	pub hash: BlobHash,
-	/// The encoded blob data, must be decoded to Blob type.
-	pub blob: Vec<u8>,
+	/// The encoded and most likely compressed blob data,
+	pub blob: CompressedBlob,
 }
 
 /// Structure for the notification a validator sends after receiving a blob
@@ -400,4 +403,95 @@ pub enum BlobRequestEnum {
 pub enum BlobResponseEnum {
 	BlobResponse(BlobResponse),
 	BlobQueryResponse(Option<Blob>),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
+#[repr(u8)]
+pub enum CompressedBlob {
+	Nocompression(Vec<u8>) = 0,
+	Zstd(Vec<u8>) = 1,
+}
+
+impl CompressedBlob {
+	pub fn new_nocompression(blob: Vec<u8>) -> Self {
+		Self::Nocompression(blob)
+	}
+
+	// Level 1, 3, 4, 8 and 9 are fine. Going above 9 is not recommended as
+	// the compression benefits are not that great but the time it takes
+	// to compress goes up sopmewhat exponentially
+	//
+	// Level 3 is ultra fast but still provides pretty good compression rate
+	pub fn new_zstd_compressed(blob: &[u8], level: i32) -> Result<Self, std::io::Error> {
+		let out = zstd_compress(blob, level)?;
+		Ok(Self::Zstd(out))
+	}
+
+	pub fn new_zstd_compress_with_fallback(blob: &[u8]) -> CompressedBlob {
+		match CompressedBlob::new_zstd_compressed(blob, 3) {
+			Ok(zstd_compressed) => zstd_compressed,
+			Err(_) => {
+				log::warn!(target: LOG_TARGET, "🈵 Failed to compress data. Fallbacking to non-compression");
+				CompressedBlob::new_nocompression(blob.to_vec())
+			},
+		}
+	}
+
+	pub fn data<'a>(&'a self) -> Result<Cow<'a, Vec<u8>>, std::io::Error> {
+		match self {
+			Self::Nocompression(b) => Ok(Cow::Borrowed(b)),
+			Self::Zstd(c) => zstd_decompress(c).map(Cow::Owned),
+		}
+	}
+
+	pub fn raw_data(&self) -> &[u8] {
+		match self {
+			Self::Nocompression(blob) => blob,
+			Self::Zstd(c_blob) => c_blob,
+		}
+	}
+
+	pub fn is_compressed(&self) -> bool {
+		match self {
+			Self::Nocompression(_) => false,
+			Self::Zstd(_) => true,
+		}
+	}
+
+	pub fn variant(&self) -> u8 {
+		match self {
+			Self::Nocompression(_) => 0,
+			Self::Zstd(_) => 1,
+		}
+	}
+
+	// TODO
+	// Discriminant + Data = faster
+	// Data + Discriminant = smaller memory footprint
+	pub fn encode(&self) -> Vec<u8> {
+		let mut encoded = vec![0u8; self.raw_data().len() + 1];
+		encoded[0] = self.variant();
+		encoded[1..].copy_from_slice(&self.raw_data());
+
+		encoded
+	}
+
+	// TODO
+	// Discriminant + Data = faster
+	// Data + Discriminant = smaller memory footprint
+	pub fn decode(mut data: Vec<u8>) -> Result<CompressedBlob, ()> {
+		if data.len() < 1 {
+			return Err(());
+		}
+
+		let variant = data[0];
+		data.remove(0);
+		let res = match variant {
+			0 => Ok(Self::Nocompression(data)),
+			1 => Ok(Self::Zstd(data)),
+			_ => Err(()),
+		};
+
+		res
+	}
 }
