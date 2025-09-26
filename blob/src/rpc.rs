@@ -26,7 +26,7 @@ use jsonrpsee::{
 };
 use kate::Seed;
 use sc_client_api::{BlockBackend, HeaderBackend, StateBackend};
-use sc_network::{NetworkStateInfo, PeerId};
+use sc_network::PeerId;
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::ApiError;
 use sp_api::ProvideRuntimeApi;
@@ -144,7 +144,7 @@ where
 		metadata_signed_transaction: B64Param,
 		blob: B64Param,
 	) -> RpcResult<()> {
-		let mut stop_watch = SmartStopwatch::new("😍 SUBMIT BLOB RPC");
+		let _stop_watch = SmartStopwatch::new("😍 SUBMIT BLOB RPC");
 
 		// --- 0. Quick checks -------------------------------------------------
 		if blob.0.is_empty() {
@@ -163,7 +163,6 @@ where
 
 		submit_blob_inner(
 			self.client.clone(),
-			self.backend.clone(),
 			self.blob_handle.clone(),
 			self.commitment_queue.clone(),
 			metadata_signed_transaction.0,
@@ -383,22 +382,13 @@ where
 	}
 }
 
-fn get_dynamic_block_length<Block, Backend>(
-	backend: &Arc<Backend>,
+fn get_dynamic_block_length(
+	externalities: &Arc<dyn ExternalitiesT>,
 	finalized_block_hash: H256,
-) -> RpcResult<(usize, usize)>
-where
-	Block: BlockT,
-	Backend: sc_client_api::Backend<Block> + Send + Sync + 'static,
-	Backend::State: StateBackend<HashingFor<Block>>,
-	<Block as BlockT>::Hash: From<H256>,
-{
+) -> RpcResult<(usize, usize)> {
 	let storage_key = get_dynamic_blocklength_key();
-	let state = backend
-		.state_at(finalized_block_hash.into())
-		.map_err(|e| internal_err!("State backend error: {e:?}"))?;
-	let maybe_raw = state
-		.storage(&storage_key.0)
+	let maybe_raw = externalities
+		.storage(finalized_block_hash, &storage_key.0)
 		.map_err(|e| internal_err!("Storage query error: {e:?}"))?;
 	let raw = maybe_raw.ok_or(internal_err!("DynamicBlockLength not found"))?;
 	let block_length =
@@ -550,12 +540,12 @@ pub async fn store_and_gossip_blob<Block, Client>(
 	let finalized_block_number = client_info.finalized_height as u64;
 
 	// Get my own peer id data
-	let network = blob_handle.network.get().cloned();
-	let Some(net) = network else {
+	let Ok(my_peer_id) = externalities.local_peer_id() else {
 		log::error!("submit_blob(bg): network not initialized");
 		return;
 	};
-	let my_peer_id_base58 = net.local_peer_id().to_base58();
+
+	let my_peer_id_base58 = my_peer_id.to_base58();
 
 	// Setup blob metadata and blob and check first in case we already received this exact blob before
 	let maybe_blob_metadata = match blob_handle.blob_store.get_blob_metadata(&blob_hash) {
@@ -714,9 +704,8 @@ pub async fn store_and_gossip_blob<Block, Client>(
 	stop_watch.stop_tracking("Submit One", "");
 }
 
-pub async fn submit_blob_inner<Client, Block, Backend>(
+pub async fn submit_blob_inner<Client, Block>(
 	client: Arc<Client>,
-	backend: Arc<Backend>,
 	blob_handle: Arc<BlobHandle<Block>>,
 	commitment_queue: Arc<CommitmentQueue>,
 	metadata_signed_transaction: Vec<u8>,
@@ -732,8 +721,6 @@ where
 		+ Sync
 		+ 'static,
 	Client::Api: TaggedTransactionQueue<Block> + BlobApi<Block>,
-	Backend: sc_client_api::Backend<Block> + Send + Sync + 'static,
-	Backend::State: StateBackend<HashingFor<Block>>,
 	H256: From<<Block as BlockT>::Hash>,
 	<Block as BlockT>::Hash: From<H256>,
 	<Block as BlockT>::Extrinsic: From<UncheckedExtrinsic>,
@@ -776,7 +763,7 @@ where
 
 	// Commitment Validation can take a long time.
 	stop_watch.start_tracking("Commitment Validation");
-	let (cols, rows) = get_dynamic_block_length(&backend, finalized_block_hash)?;
+	let (cols, rows) = get_dynamic_block_length(&externalities, finalized_block_hash)?;
 	let blob = Arc::new(blob);
 	commitment_validation(
 		&provided_commitment,

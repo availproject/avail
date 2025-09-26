@@ -4,6 +4,8 @@ use da_runtime::AccountId;
 use da_runtime::UncheckedExtrinsic;
 use jsonrpsee::core::async_trait;
 use sc_client_api::{BlockBackend, HeaderBackend, StateBackend};
+use sc_network::NetworkStateInfo;
+use sc_network::PeerId;
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::ApiError;
 use sp_api::ProvideRuntimeApi;
@@ -41,6 +43,10 @@ pub trait ExternalitiesT: Send + Sync {
 	) -> Result<H256, String>;
 
 	fn get_active_validators(&self, block_hash: H256) -> Result<Vec<AccountId>, ApiError>;
+
+	fn storage(&self, at: H256, key: &[u8]) -> Result<Option<Vec<u8>>, String>;
+
+	fn local_peer_id(&self) -> Result<PeerId, ()>;
 }
 
 #[derive(Debug, Default, Clone)]
@@ -58,32 +64,42 @@ impl ExternalitiesT for DummyExternalities {
 	fn client_info(&self) -> ClientInfo {
 		todo!()
 	}
+
 	fn get_blob_runtime_parameters(
 		&self,
-		block_hash: H256,
+		_block_hash: H256,
 	) -> Result<da_control::BlobRuntimeParameters, ApiError> {
 		todo!()
 	}
+
 	fn validate_transaction(
 		&self,
-		at: H256,
-		source: TransactionSource,
-		uxt: UncheckedExtrinsic,
-		block_hash: H256,
+		_at: H256,
+		_source: TransactionSource,
+		_uxt: UncheckedExtrinsic,
+		_block_hash: H256,
 	) -> Result<TransactionValidity, ApiError> {
 		todo!()
 	}
 
 	async fn submit_one(
 		&self,
-		block_hash: H256,
-		source: TransactionSource,
-		uxt: UncheckedExtrinsic,
+		_block_hash: H256,
+		_source: TransactionSource,
+		_uxt: UncheckedExtrinsic,
 	) -> Result<H256, String> {
 		todo!()
 	}
 
-	fn get_active_validators(&self, block_hash: H256) -> Result<Vec<AccountId>, ApiError> {
+	fn get_active_validators(&self, _block_hash: H256) -> Result<Vec<AccountId>, ApiError> {
+		todo!()
+	}
+
+	fn storage(&self, _at: H256, _key: &[u8]) -> Result<Option<Vec<u8>>, String> {
+		todo!()
+	}
+
+	fn local_peer_id(&self) -> Result<PeerId, ()> {
 		todo!()
 	}
 }
@@ -182,7 +198,7 @@ where
 	) -> Result<TransactionValidity, ApiError> {
 		self.client.runtime_api().validate_transaction(
 			at.into(),
-			TransactionSource::External,
+			source,
 			uxt.into(),
 			block_hash.into(),
 		)
@@ -206,5 +222,21 @@ where
 		self.client
 			.runtime_api()
 			.get_active_validators(block_hash.into())
+	}
+
+	fn storage(&self, at: H256, key: &[u8]) -> Result<Option<Vec<u8>>, String> {
+		let state = self
+			.backend
+			.state_at(at.into())
+			.map_err(|e| e.to_string())?;
+		state.storage(key).map_err(|e| e.to_string())
+	}
+
+	fn local_peer_id(&self) -> Result<PeerId, ()> {
+		let network = self.blob_handle.network.get().cloned();
+		let Some(net) = network else {
+			return Err(());
+		};
+		Ok(net.local_peer_id())
 	}
 }
