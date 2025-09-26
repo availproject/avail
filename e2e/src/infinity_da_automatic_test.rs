@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-use avail_rust_client::{
+use avail_rust::{
 	avail_rust_core::rpc::blob::submit_blob,
 	block::{BlockExtOptionsExpanded, BlockWithRawExt},
 	prelude::*,
@@ -9,7 +9,7 @@ use avail_rust_client::{
 use avail_rust_core::rpc::Error as RpcError;
 use da_commitment::build_da_commitments::build_da_commitments;
 use kate::Seed;
-use sp_core::keccak_256;
+use sp_crypto_hashing::keccak_256;
 use sp_std::iter::repeat;
 
 pub async fn run() -> Result<(), RpcError> {
@@ -52,7 +52,7 @@ pub async fn run() -> Result<(), RpcError> {
 
 		let tx = unsigned_tx.sign(&signer, options).await.unwrap().encode();
 
-		if let Err(e) = submit_blob(&client.rpc_client, tx, blob).await {
+		if let Err(e) = submit_blob(&client.rpc_client, &tx, &blob).await {
 			println!("An error has occured: {e}");
 		}
 		println!("---------- END Submission {i} ---------- ");

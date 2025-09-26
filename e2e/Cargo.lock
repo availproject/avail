@@ -656,7 +656,7 @@ dependencies = [
 [[package]]
 name = "avail-rust-client"
 version = "0.3.0"
-source = "git+https://github.com/availproject/avail-rust?branch=ghali%2Finfinity-da-rpc#119516f61f8858f64fae81cc95ddc6060fa81fbd"
+source = "git+https://github.com/availproject/avail-rust?branch=ghali%2Finfinity-da-rpc#9a579dd4bbdfef4bff87f8431ceae2848d1b6500"
 dependencies = [
  "avail-rust-core",
  "const-hex",
@@ -677,8 +677,9 @@ dependencies = [
 [[package]]
 name = "avail-rust-core"
 version = "0.3.0"
-source = "git+https://github.com/availproject/avail-rust?branch=ghali%2Finfinity-da-rpc#119516f61f8858f64fae81cc95ddc6060fa81fbd"
+source = "git+https://github.com/availproject/avail-rust?branch=ghali%2Finfinity-da-rpc#9a579dd4bbdfef4bff87f8431ceae2848d1b6500"
 dependencies = [
+ "base64 0.22.1",
  "const-hex",
  "impl-serde 0.5.0",
  "parity-scale-codec",
@@ -1646,7 +1647,7 @@ dependencies = [
  "kate",
  "parity-scale-codec",
  "serde",
- "sp-core",
+ "sp-crypto-hashing 0.1.0",
  "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali%2Finfinity-da-rpc)",
  "tokio",
 ]
@@ -4225,7 +4226,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys 0.11.0",
- "windows-sys 0.59.0",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]

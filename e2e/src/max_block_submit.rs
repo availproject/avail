@@ -2,7 +2,7 @@
 
 use std::time::Duration;
 
-use avail_rust_client::prelude::*;
+use avail_rust::prelude::*;
 use avail_rust_core::rpc::Error as RpcError;
 
 use crate::wait_for_new_block;

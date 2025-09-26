@@ -4,7 +4,7 @@ mod max_block_submit;
 
 use std::time::Duration;
 
-use avail_rust_client::prelude::*;
+use avail_rust::prelude::*;
 use avail_rust_core::rpc::Error as RpcError;
 
 #[tokio::main]
