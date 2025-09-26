@@ -15,8 +15,7 @@ use sc_keystore::{Keystore, LocalKeystore};
 use sc_transaction_pool_api::TransactionSource;
 use sp_api::ProvideRuntimeApi;
 use sp_authority_discovery::AuthorityId;
-use sp_core::crypto::KeyTypeId;
-use sp_core::{sr25519, twox_128};
+use sp_core::{crypto::KeyTypeId, sr25519, twox_128};
 use sp_runtime::{
 	key_types,
 	traits::{Block as BlockT, Verify},
@@ -24,10 +23,8 @@ use sp_runtime::{
 	AccountId32, SaturatedConversion,
 };
 use sp_transaction_pool::runtime_api::TaggedTransactionQueue;
-use std::io::Write;
-use std::{collections::BTreeMap, sync::Arc};
-use tokio::sync::mpsc;
-use tokio::sync::oneshot;
+use std::{collections::BTreeMap, io::Write, sync::Arc};
+use tokio::sync::{mpsc, oneshot};
 
 pub fn get_my_validator_public_account(
 	keystore: &Arc<LocalKeystore>,
@@ -643,8 +640,7 @@ impl SmartStopwatch {
 
 impl Drop for SmartStopwatch {
 	fn drop(&mut self) {
-		use std::fmt::Write;
-		use std::mem::take;
+		use std::{fmt::Write, mem::take};
 
 		let now = std::time::Instant::now();
 

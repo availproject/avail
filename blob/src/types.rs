@@ -1,6 +1,9 @@
-use crate::utils::{zstd_compress, zstd_decompress};
-use crate::LOG_TARGET;
-use crate::{p2p::BlobHandle, store::RocksdbBlobStore};
+use crate::{
+	p2p::BlobHandle,
+	store::RocksdbBlobStore,
+	utils::{zstd_compress, zstd_decompress},
+	LOG_TARGET,
+};
 use codec::{Decode, Encode};
 use da_runtime::{apis::RuntimeApi, NodeBlock as Block};
 use once_cell::sync::OnceCell;
@@ -17,8 +20,8 @@ use sp_runtime::{
 	traits::{Block as BlockT, Hash as HashT, HashingFor},
 	AccountId32,
 };
-use std::borrow::Cow;
 use std::{
+	borrow::Cow,
 	collections::HashMap,
 	sync::Arc,
 	time::{Duration, Instant},

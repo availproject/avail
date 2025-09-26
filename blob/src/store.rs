@@ -1,11 +1,9 @@
 use crate::types::CompressedBlob;
 use anyhow::{anyhow, Result};
 use codec::{Decode, Encode};
-use kvdb::DBTransaction;
-use kvdb::KeyValueDB;
+use kvdb::{DBTransaction, KeyValueDB};
 use kvdb_rocksdb::{Database, DatabaseConfig};
-use std::path::Path;
-use std::sync::Mutex;
+use std::{path::Path, sync::Mutex};
 use tempfile::TempDir;
 use ttl_cache::TtlCache;
 

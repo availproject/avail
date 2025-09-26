@@ -1,22 +1,18 @@
-use crate::traits::BackendApiT;
-use crate::traits::BackendClient;
-use crate::traits::RuntimeApiT;
-use crate::traits::RuntimeClient;
-use crate::traits::TransactionPoolApiT;
-use crate::traits::TransactionPoolClient;
-use crate::traits::{ExternalitiesT, RealExternalities};
-use crate::types::CompressedBlob;
-use crate::utils::get_my_validator_public_account;
-use crate::utils::B64Param;
 use crate::{
 	p2p::BlobHandle,
 	send_blob_query_request,
 	store::StorageApiT,
-	types::{Blob, BlobMetadata, BlobNotification, BlobReceived, Deps, OwnershipEntry},
+	traits::{
+		BackendApiT, BackendClient, ExternalitiesT, RealExternalities, RuntimeApiT, RuntimeClient,
+		TransactionPoolApiT, TransactionPoolClient,
+	},
+	types::{
+		Blob, BlobMetadata, BlobNotification, BlobReceived, CompressedBlob, Deps, OwnershipEntry,
+	},
 	utils::{
 		build_signature_payload, check_store_blob, generate_base_index,
-		get_dynamic_blocklength_key, get_validator_per_blob_inner, sign_blob_data_inner,
-		CommitmentQueue, CommitmentQueueMessage, SmartStopwatch,
+		get_dynamic_blocklength_key, get_my_validator_public_account, get_validator_per_blob_inner,
+		sign_blob_data_inner, B64Param, CommitmentQueue, CommitmentQueueMessage, SmartStopwatch,
 	},
 	MAX_RPC_RETRIES,
 };
@@ -35,16 +31,13 @@ use kate::Seed;
 use sc_client_api::{BlockBackend, HeaderBackend, StateBackend};
 use sc_network::PeerId;
 use sc_transaction_pool_api::TransactionPool;
-use sp_api::ApiError;
-use sp_api::ProvideRuntimeApi;
+use sp_api::{ApiError, ProvideRuntimeApi};
 use sp_core::{keccak_256, H256};
-use sp_runtime::transaction_validity::TransactionValidityError;
-use sp_runtime::transaction_validity::ValidTransaction;
 use sp_runtime::{
 	traits::{Block as BlockT, HashingFor, Header as HeaderT},
-	SaturatedConversion,
+	transaction_validity::{TransactionSource, TransactionValidityError, ValidTransaction},
+	AccountId32, SaturatedConversion,
 };
-use sp_runtime::{transaction_validity::TransactionSource, AccountId32};
 use sp_transaction_pool::runtime_api::TaggedTransactionQueue;
 use std::{
 	marker::{PhantomData, Sync},
