@@ -142,119 +142,24 @@ where
 	) -> RpcResult<()> {
 		let mut stop_watch = SmartStopwatch::new("😍 SUBMIT BLOB RPC");
 
-		let metadata_signed_transaction = metadata_signed_transaction.0;
-		let blob = blob.0;
-
 		// --- 0. Quick checks -------------------------------------------------
-		if blob.is_empty() {
+		if blob.0.is_empty() {
 			return Err(internal_err!("blob cannot be empty"));
 		}
-		if metadata_signed_transaction.is_empty() {
+		if metadata_signed_transaction.0.is_empty() {
 			return Err(internal_err!("metadata tx cannot be empty"));
 		}
 
-		// Get client info
-		let client_info = self.client.info();
-		let best_hash = client_info.best_hash;
-		let finalized_block_hash = client_info.finalized_hash;
-
-		let blob_params = match self
-			.client
-			.runtime_api()
-			.get_blob_runtime_parameters(finalized_block_hash)
-		{
-			Ok(p) => p,
-			Err(e) => {
-				log::error!("Could not get blob_params: {e:?}");
-				BlobRuntimeParameters::default()
-			},
-		};
-		let max_blob_size = blob_params.max_blob_size as usize;
-
-		stop_watch.start_tracking("Initial Validation");
-		let (blob_hash, provided_commitment) =
-			initial_validation(max_blob_size as usize, &blob, &metadata_signed_transaction)?;
-		stop_watch.stop_tracking("Initial Validation", "");
-		stop_watch.add_extra_information(std::format!("Blob Hash: {:?}", blob_hash));
-
-		let c = self.client.clone();
-		let validity_op = move |tx: Block::Extrinsic| {
-			c.runtime_api().validate_transaction(
-				best_hash,
-				TransactionSource::External,
-				tx,
-				best_hash,
-			)
-		};
-
-		stop_watch.start_tracking("TX validation");
-		let opaque_tx = tx_validation::<Block>(
-			&metadata_signed_transaction,
-			blob_params.min_transaction_validity,
-			blob_params.max_transaction_validity,
-			validity_op,
-		)?;
-		stop_watch.stop_tracking("TX validation", "");
-
-		// Commitment Validation can take a long time.
-		stop_watch.start_tracking("Commitment Validation");
-		let (cols, rows) = get_dynamic_block_length(&self.backend, finalized_block_hash)?;
-		let blob = Arc::new(blob);
-		commitment_validation(
-			&provided_commitment,
-			blob.clone(),
-			cols,
-			rows,
-			&self.commitment_queue,
-			&mut stop_watch,
+		submit_blob_inner(
+			self.client.clone(),
+			self.pool.clone(),
+			self.backend.clone(),
+			self.blob_handle.clone(),
+			self.commitment_queue.clone(),
+			metadata_signed_transaction.0,
+			blob.0,
 		)
-		.await?;
-		stop_watch.stop_tracking("Commitment Validation", "");
-
-		// Because Commitment Validation can take a long time
-		// the moment it is done minutes can pass.
-		// Let's check once more to see if the transactions is still valid
-		//
-		// TODO we might remove this
-		let client_info = self.client.info();
-		let best_hash = client_info.best_hash;
-		let c = self.client.clone();
-		let validity_op = move |tx: Block::Extrinsic| {
-			c.runtime_api().validate_transaction(
-				best_hash,
-				TransactionSource::External,
-				tx,
-				best_hash,
-			)
-		};
-		let _ = tx_validation::<Block>(
-			&metadata_signed_transaction,
-			blob_params.min_transaction_validity,
-			blob_params.max_transaction_validity,
-			validity_op,
-		)?;
-
-		// From this point, the transaction should not fail as the user has done everything correctly
-		// We will spawn a task to finish the work and instantly return to the user.
-		{
-			let (client, pool) = (self.client.clone(), self.pool.clone());
-			let blob_handle = self.blob_handle.clone();
-			task::spawn(async move {
-				store_and_gossip_blob(
-					client,
-					pool,
-					opaque_tx,
-					blob_hash,
-					blob_handle,
-					blob,
-					blob_params,
-					provided_commitment,
-				)
-				.await
-			});
-		}
-
-		Ok(())
+		.await
 	}
 
 	async fn get_blob(
@@ -784,4 +689,123 @@ pub async fn store_and_gossip_blob<Block, Client, Pool>(
 		blob_hash,
 	);
 	stop_watch.stop_tracking("Submit One", "");
+}
+
+pub async fn submit_blob_inner<Client, Pool, Block, Backend>(
+	client: Arc<Client>,
+	pool: Arc<Pool>,
+	backend: Arc<Backend>,
+	blob_handle: Arc<BlobHandle<Block>>,
+	commitment_queue: Arc<CommitmentQueue>,
+	metadata_signed_transaction: Vec<u8>,
+	blob: Vec<u8>,
+) -> RpcResult<()>
+where
+	Block: BlockT,
+	Client: HeaderBackend<Block>
+		+ ProvideRuntimeApi<Block>
+		+ BlockBackend<Block>
+		+ Send
+		+ Sync
+		+ 'static,
+	Client::Api: TaggedTransactionQueue<Block> + BlobApi<Block>,
+	Pool: TransactionPool<Block = Block> + 'static,
+	Backend: sc_client_api::Backend<Block> + Send + Sync + 'static,
+	Backend::State: StateBackend<HashingFor<Block>>,
+	H256: From<<Block as BlockT>::Hash>,
+	<Block as BlockT>::Hash: From<H256>,
+{
+	let mut stop_watch = SmartStopwatch::new("😍 SUBMIT BLOB Inner");
+
+	// Get client info
+	let client_info = client.info();
+	let best_hash = client_info.best_hash;
+	let finalized_block_hash = client_info.finalized_hash;
+
+	let blob_params = match client
+		.runtime_api()
+		.get_blob_runtime_parameters(finalized_block_hash)
+	{
+		Ok(p) => p,
+		Err(e) => {
+			log::error!("Could not get blob_params: {e:?}");
+			BlobRuntimeParameters::default()
+		},
+	};
+	let max_blob_size = blob_params.max_blob_size as usize;
+
+	stop_watch.start_tracking("Initial Validation");
+	let (blob_hash, provided_commitment) =
+		initial_validation(max_blob_size as usize, &blob, &metadata_signed_transaction)?;
+	stop_watch.stop_tracking("Initial Validation", "");
+	stop_watch.add_extra_information(std::format!("Blob Hash: {:?}", blob_hash));
+
+	let c = client.clone();
+	let validity_op = move |tx: Block::Extrinsic| {
+		c.runtime_api()
+			.validate_transaction(best_hash, TransactionSource::External, tx, best_hash)
+	};
+
+	stop_watch.start_tracking("TX validation");
+	let opaque_tx = tx_validation::<Block>(
+		&metadata_signed_transaction,
+		blob_params.min_transaction_validity,
+		blob_params.max_transaction_validity,
+		validity_op,
+	)?;
+	stop_watch.stop_tracking("TX validation", "");
+
+	// Commitment Validation can take a long time.
+	stop_watch.start_tracking("Commitment Validation");
+	let (cols, rows) = get_dynamic_block_length(&backend, finalized_block_hash)?;
+	let blob = Arc::new(blob);
+	commitment_validation(
+		&provided_commitment,
+		blob.clone(),
+		cols,
+		rows,
+		&commitment_queue,
+		&mut stop_watch,
+	)
+	.await?;
+	stop_watch.stop_tracking("Commitment Validation", "");
+
+	// Because Commitment Validation can take a long time
+	// the moment it is done minutes can pass.
+	// Let's check once more to see if the transactions is still valid
+	//
+	// TODO we might remove this
+	let client_info = client.info();
+	let best_hash = client_info.best_hash;
+	let c = client.clone();
+	let validity_op = move |tx: Block::Extrinsic| {
+		c.runtime_api()
+			.validate_transaction(best_hash, TransactionSource::External, tx, best_hash)
+	};
+	let _ = tx_validation::<Block>(
+		&metadata_signed_transaction,
+		blob_params.min_transaction_validity,
+		blob_params.max_transaction_validity,
+		validity_op,
+	)?;
+
+	// From this point, the transaction should not fail as the user has done everything correctly
+	// We will spawn a task to finish the work and instantly return to the user.
+	{
+		task::spawn(async move {
+			store_and_gossip_blob(
+				client,
+				pool,
+				opaque_tx,
+				blob_hash,
+				blob_handle,
+				blob,
+				blob_params,
+				provided_commitment,
+			)
+			.await
+		});
+	}
+
+	Ok(())
 }
