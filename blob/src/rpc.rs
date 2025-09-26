@@ -1,3 +1,4 @@
+use crate::utils::B64Param;
 use crate::{
 	p2p::BlobHandle,
 	send_blob_query_request,
@@ -27,7 +28,7 @@ use sc_network::{NetworkStateInfo, PeerId};
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::ApiError;
 use sp_api::ProvideRuntimeApi;
-use sp_core::{keccak_256, Bytes, H256};
+use sp_core::{keccak_256, H256};
 use sp_runtime::transaction_validity::TransactionValidityError;
 use sp_runtime::transaction_validity::ValidTransaction;
 use sp_runtime::{
@@ -71,7 +72,11 @@ where
 	Block: BlockT,
 {
 	#[method(name = "blob_submitBlob")]
-	async fn submit_blob(&self, metadata_signed_transaction: Bytes, blob: Bytes) -> RpcResult<()>;
+	async fn submit_blob(
+		&self,
+		metadata_signed_transaction: B64Param,
+		blob: B64Param,
+	) -> RpcResult<()>;
 
 	#[method(name = "blob_getBlob")]
 	async fn get_blob(
@@ -129,14 +134,21 @@ where
 	H256: From<<Block as BlockT>::Hash>,
 	<Block as BlockT>::Hash: From<H256>,
 {
-	async fn submit_blob(&self, metadata_signed_transaction: Bytes, blob: Bytes) -> RpcResult<()> {
+	async fn submit_blob(
+		&self,
+		metadata_signed_transaction: B64Param,
+		blob: B64Param,
+	) -> RpcResult<()> {
 		let mut stop_watch = SmartStopwatch::new("😍 SUBMIT BLOB RPC");
 
+		let metadata_signed_transaction = metadata_signed_transaction.0;
+		let blob = blob.0;
+
 		// --- 0. Quick checks -------------------------------------------------
-		if blob.0.is_empty() {
+		if blob.is_empty() {
 			return Err(internal_err!("blob cannot be empty"));
 		}
-		if metadata_signed_transaction.0.is_empty() {
+		if metadata_signed_transaction.is_empty() {
 			return Err(internal_err!("metadata tx cannot be empty"));
 		}
 
@@ -159,11 +171,8 @@ where
 		let max_blob_size = blob_params.max_blob_size as usize;
 
 		stop_watch.start_tracking("Initial Validation");
-		let (blob_hash, provided_commitment) = initial_validation(
-			max_blob_size as usize,
-			&blob.0,
-			&metadata_signed_transaction.0,
-		)?;
+		let (blob_hash, provided_commitment) =
+			initial_validation(max_blob_size as usize, &blob, &metadata_signed_transaction)?;
 		stop_watch.stop_tracking("Initial Validation", "");
 		stop_watch.add_extra_information(std::format!("Blob Hash: {:?}", blob_hash));
 
@@ -179,7 +188,7 @@ where
 
 		stop_watch.start_tracking("TX validation");
 		let opaque_tx = tx_validation::<Block>(
-			&metadata_signed_transaction.0,
+			&metadata_signed_transaction,
 			blob_params.min_transaction_validity,
 			blob_params.max_transaction_validity,
 			validity_op,
@@ -189,7 +198,7 @@ where
 		// Commitment Validation can take a long time.
 		stop_watch.start_tracking("Commitment Validation");
 		let (cols, rows) = get_dynamic_block_length(&self.backend, finalized_block_hash)?;
-		let blob = Arc::new(blob.0);
+		let blob = Arc::new(blob);
 		commitment_validation(
 			&provided_commitment,
 			blob.clone(),
@@ -218,7 +227,7 @@ where
 			)
 		};
 		let _ = tx_validation::<Block>(
-			&metadata_signed_transaction.0,
+			&metadata_signed_transaction,
 			blob_params.min_transaction_validity,
 			blob_params.max_transaction_validity,
 			validity_op,

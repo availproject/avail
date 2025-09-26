@@ -4,6 +4,7 @@ use crate::{
 	types::{BlobHash, BlobMetadata, BlobSignatureData, BlobTxSummary, OwnershipEntry},
 };
 use anyhow::{anyhow, Context, Result};
+use base64::Engine;
 use codec::{Decode, Encode};
 use da_commitment::build_da_commitments::build_commitments_from_polynomal_grid;
 use da_control::{BlobRuntimeParameters, Call};
@@ -700,4 +701,51 @@ impl CommitmentQueue {
 			true => self.tx2.try_send(value).is_ok(),
 		}
 	}
+}
+
+#[derive(serde::Deserialize, serde::Serialize)]
+pub struct B64Param(#[serde(deserialize_with = "deserialize_base64_to_vec")] pub Vec<u8>);
+
+fn deserialize_base64_to_vec<'de, D>(d: D) -> Result<Vec<u8>, D::Error>
+where
+	D: serde::Deserializer<'de>,
+{
+	struct B64Visitor;
+
+	impl<'de> serde::de::Visitor<'de> for B64Visitor {
+		type Value = Vec<u8>;
+
+		fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+			f.write_str("a base64-encoded string")
+		}
+
+		// This path borrows the incoming &str directly; no intermediate String allocation.
+		fn visit_borrowed_str<E: serde::de::Error>(self, v: &'de str) -> Result<Self::Value, E> {
+			let timer = std::time::Instant::now();
+			let a = base64::engine::general_purpose::STANDARD
+				.decode(v)
+				.map_err(E::custom);
+
+			log::info!(
+				"🈵 Base64 decoding duration: {} ms",
+				timer.elapsed().as_millis()
+			);
+			a
+		}
+
+		// Fallback if the JSON parser doesn’t give us a borrowed str.
+		fn visit_str<E: serde::de::Error>(self, v: &str) -> Result<Self::Value, E> {
+			let timer = std::time::Instant::now();
+			let a = base64::engine::general_purpose::STANDARD
+				.decode(v)
+				.map_err(E::custom);
+			log::info!(
+				"🈵 Base64 decoding duration: {} ms",
+				timer.elapsed().as_millis()
+			);
+			a
+		}
+	}
+
+	d.deserialize_str(B64Visitor)
 }

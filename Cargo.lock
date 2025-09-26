@@ -968,6 +968,7 @@ dependencies = [
  "async-channel",
  "avail-base",
  "avail-core",
+ "base64 0.22.1",
  "clap 4.5.26",
  "da-commitment",
  "da-control",
