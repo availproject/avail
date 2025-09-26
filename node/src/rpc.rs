@@ -55,6 +55,7 @@ use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use sp_consensus::SelectChain;
 use sp_consensus_babe::BabeApi;
+use sp_core::H256;
 use sp_keystore::KeystorePtr;
 use sp_runtime::traits::BlockIdTo;
 use sp_transaction_pool::runtime_api::TaggedTransactionQueue;
@@ -136,6 +137,7 @@ where
 	SC: SelectChain<Block> + 'static,
 	B: sc_client_api::Backend<Block> + Send + Sync + 'static,
 	B::State: sc_client_api::backend::StateBackend<sp_runtime::traits::HashingFor<Block>>,
+	H256: From<<P as sc_transaction_pool_api::TransactionPool>::Hash>,
 {
 	use avail_blob::rpc::{BlobApiServer, BlobRpc};
 	use kate_rpc::justifications::{GrandpaJustifications, GrandpaServer};

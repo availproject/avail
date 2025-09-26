@@ -1,3 +1,4 @@
+use crate::traits::{ExternalitiesT, RealExternalities};
 use crate::types::CompressedBlob;
 use crate::utils::B64Param;
 use crate::{
@@ -6,7 +7,7 @@ use crate::{
 	store::BlobStore,
 	types::{Blob, BlobMetadata, BlobNotification, BlobReceived, Deps, OwnershipEntry},
 	utils::{
-		build_signature_payload, check_store_blob, generate_base_index, get_active_validators,
+		build_signature_payload, check_store_blob, generate_base_index,
 		get_dynamic_blocklength_key, get_my_validator_id, get_validator_per_blob_inner,
 		sign_blob_data_inner, CommitmentQueue, CommitmentQueueMessage, SmartStopwatch,
 	},
@@ -33,7 +34,7 @@ use sp_core::{keccak_256, H256};
 use sp_runtime::transaction_validity::TransactionValidityError;
 use sp_runtime::transaction_validity::ValidTransaction;
 use sp_runtime::{
-	traits::{Block as BlockT, HashingFor},
+	traits::{Block as BlockT, HashingFor, Header as HeaderT},
 	SaturatedConversion,
 };
 use sp_runtime::{transaction_validity::TransactionSource, AccountId32};
@@ -134,6 +135,9 @@ where
 	Backend::State: StateBackend<HashingFor<Block>>,
 	H256: From<<Block as BlockT>::Hash>,
 	<Block as BlockT>::Hash: From<H256>,
+	u32: From<<<Block as BlockT>::Header as HeaderT>::Number>,
+	<Block as BlockT>::Extrinsic: From<UncheckedExtrinsic>,
+	H256: From<<Pool as sc_transaction_pool_api::TransactionPool>::Hash>,
 {
 	async fn submit_blob(
 		&self,
@@ -150,14 +154,21 @@ where
 			return Err(internal_err!("metadata tx cannot be empty"));
 		}
 
-		submit_blob_inner(
+		let externalities = RealExternalities::new(
 			self.client.clone(),
 			self.pool.clone(),
+			self.blob_handle.clone(),
+			self.backend.clone(),
+		);
+
+		submit_blob_inner(
+			self.client.clone(),
 			self.backend.clone(),
 			self.blob_handle.clone(),
 			self.commitment_queue.clone(),
 			metadata_signed_transaction.0,
 			blob.0,
+			Arc::new(externalities),
 		)
 		.await
 	}
@@ -374,16 +385,17 @@ where
 
 fn get_dynamic_block_length<Block, Backend>(
 	backend: &Arc<Backend>,
-	finalized_block_hash: Block::Hash,
+	finalized_block_hash: H256,
 ) -> RpcResult<(usize, usize)>
 where
 	Block: BlockT,
 	Backend: sc_client_api::Backend<Block> + Send + Sync + 'static,
 	Backend::State: StateBackend<HashingFor<Block>>,
+	<Block as BlockT>::Hash: From<H256>,
 {
 	let storage_key = get_dynamic_blocklength_key();
 	let state = backend
-		.state_at(finalized_block_hash)
+		.state_at(finalized_block_hash.into())
 		.map_err(|e| internal_err!("State backend error: {e:?}"))?;
 	let maybe_raw = state
 		.storage(&storage_key.0)
@@ -445,13 +457,13 @@ fn tx_validation<Block: BlockT>(
 	min_transaction_validity: u64,
 	max_transaction_validity: u64,
 	validity_op: impl Fn(
-		Block::Extrinsic,
+		UncheckedExtrinsic,
 	) -> Result<Result<ValidTransaction, TransactionValidityError>, ApiError>,
-) -> RpcResult<Block::Extrinsic> {
+) -> RpcResult<UncheckedExtrinsic> {
 	let mut metadata = metadata;
 
 	// --- a. Decode the opaque extrinsic ---------------------------------
-	let opaque_tx: Block::Extrinsic = codec::Decode::decode(&mut metadata)
+	let opaque_tx: UncheckedExtrinsic = codec::Decode::decode(&mut metadata)
 		.map_err(|_| internal_err!("failed to decode metadata extrinsic"))?;
 	// --- b. Let the runtime validate it (signature, nonce, weight) ------
 	let opaque_tx_clone = opaque_tx.clone();
@@ -507,15 +519,15 @@ async fn commitment_validation(
 	Ok(())
 }
 
-pub async fn store_and_gossip_blob<Block, Client, Pool>(
+pub async fn store_and_gossip_blob<Block, Client>(
 	client: Arc<Client>,
-	pool: Arc<Pool>,
-	opaque_tx: Block::Extrinsic,
+	opaque_tx: UncheckedExtrinsic,
 	blob_hash: H256,
 	blob_handle: Arc<BlobHandle<Block>>,
 	blob: Arc<Vec<u8>>,
 	blob_params: BlobRuntimeParameters,
 	commitment: Vec<u8>,
+	externalities: Arc<dyn ExternalitiesT>,
 ) where
 	Client: HeaderBackend<Block>
 		+ ProvideRuntimeApi<Block>
@@ -527,15 +539,15 @@ pub async fn store_and_gossip_blob<Block, Client, Pool>(
 	Block: BlockT,
 	H256: From<<Block as BlockT>::Hash>,
 	<Block as BlockT>::Hash: From<H256>,
-	Pool: TransactionPool<Block = Block> + 'static,
+	<Block as BlockT>::Extrinsic: From<UncheckedExtrinsic>,
 {
 	const GOSSIPING: &str = "GOSSIPING";
 	let mut stop_watch = SmartStopwatch::new("😍😍 STORE AND GOSSIP BLOB");
 	stop_watch.add_extra_information(std::format!("Blob Hash: {:?}", blob_hash));
 
-	let client_info = client.info();
-	let finalized_block_hash: H256 = client_info.finalized_hash.into();
-	let finalized_block_number = client_info.finalized_number.saturated_into::<u64>();
+	let client_info = externalities.client_info();
+	let finalized_block_hash = client_info.finalized_hash;
+	let finalized_block_number = client_info.finalized_height as u64;
 
 	// Get my own peer id data
 	let network = blob_handle.network.get().cloned();
@@ -571,7 +583,18 @@ pub async fn store_and_gossip_blob<Block, Client, Pool>(
 	});
 
 	// It might be a new blob or an old one being resubmitted, we still update most of the values
-	let validators = get_active_validators(&client, &finalized_block_hash.encode());
+	let validators = match externalities.get_active_validators(finalized_block_hash) {
+		Ok(validators) => validators,
+		Err(e) => {
+			log::error!(
+				"Failed to fetch active validators at {:?}: {:?}",
+				finalized_block_hash,
+				e
+			);
+			Vec::new()
+		},
+	};
+
 	if validators.is_empty() {
 		return;
 	}
@@ -677,8 +700,8 @@ pub async fn store_and_gossip_blob<Block, Client, Pool>(
 	// Push the clean extrinsic to the tx pool ---------------------
 	// Get the best hash once more, to submit the tx
 	stop_watch.start_tracking("Submit One");
-	let best_hash = client.info().best_hash;
-	if let Err(e) = pool
+	let best_hash = externalities.client_info().best_hash;
+	if let Err(e) = externalities
 		.submit_one(best_hash, TransactionSource::External, opaque_tx)
 		.await
 	{
@@ -691,14 +714,14 @@ pub async fn store_and_gossip_blob<Block, Client, Pool>(
 	stop_watch.stop_tracking("Submit One", "");
 }
 
-pub async fn submit_blob_inner<Client, Pool, Block, Backend>(
+pub async fn submit_blob_inner<Client, Block, Backend>(
 	client: Arc<Client>,
-	pool: Arc<Pool>,
 	backend: Arc<Backend>,
 	blob_handle: Arc<BlobHandle<Block>>,
 	commitment_queue: Arc<CommitmentQueue>,
 	metadata_signed_transaction: Vec<u8>,
 	blob: Vec<u8>,
+	externalities: Arc<dyn ExternalitiesT>,
 ) -> RpcResult<()>
 where
 	Block: BlockT,
@@ -709,23 +732,20 @@ where
 		+ Sync
 		+ 'static,
 	Client::Api: TaggedTransactionQueue<Block> + BlobApi<Block>,
-	Pool: TransactionPool<Block = Block> + 'static,
 	Backend: sc_client_api::Backend<Block> + Send + Sync + 'static,
 	Backend::State: StateBackend<HashingFor<Block>>,
 	H256: From<<Block as BlockT>::Hash>,
 	<Block as BlockT>::Hash: From<H256>,
+	<Block as BlockT>::Extrinsic: From<UncheckedExtrinsic>,
 {
 	let mut stop_watch = SmartStopwatch::new("😍 SUBMIT BLOB Inner");
 
 	// Get client info
-	let client_info = client.info();
+	let client_info = externalities.client_info();
 	let best_hash = client_info.best_hash;
 	let finalized_block_hash = client_info.finalized_hash;
 
-	let blob_params = match client
-		.runtime_api()
-		.get_blob_runtime_parameters(finalized_block_hash)
-	{
+	let blob_params = match externalities.get_blob_runtime_parameters(finalized_block_hash) {
 		Ok(p) => p,
 		Err(e) => {
 			log::error!("Could not get blob_params: {e:?}");
@@ -740,10 +760,9 @@ where
 	stop_watch.stop_tracking("Initial Validation", "");
 	stop_watch.add_extra_information(std::format!("Blob Hash: {:?}", blob_hash));
 
-	let c = client.clone();
-	let validity_op = move |tx: Block::Extrinsic| {
-		c.runtime_api()
-			.validate_transaction(best_hash, TransactionSource::External, tx, best_hash)
+	let e = externalities.clone();
+	let validity_op = move |uxt: UncheckedExtrinsic| {
+		e.validate_transaction(best_hash, TransactionSource::External, uxt, best_hash)
 	};
 
 	stop_watch.start_tracking("TX validation");
@@ -775,12 +794,11 @@ where
 	// Let's check once more to see if the transactions is still valid
 	//
 	// TODO we might remove this
-	let client_info = client.info();
+	let client_info = externalities.client_info();
 	let best_hash = client_info.best_hash;
-	let c = client.clone();
-	let validity_op = move |tx: Block::Extrinsic| {
-		c.runtime_api()
-			.validate_transaction(best_hash, TransactionSource::External, tx, best_hash)
+	let e = externalities.clone();
+	let validity_op = move |uxt: UncheckedExtrinsic| {
+		e.validate_transaction(best_hash, TransactionSource::External, uxt, best_hash)
 	};
 	let _ = tx_validation::<Block>(
 		&metadata_signed_transaction,
@@ -795,13 +813,13 @@ where
 		task::spawn(async move {
 			store_and_gossip_blob(
 				client,
-				pool,
 				opaque_tx,
 				blob_hash,
 				blob_handle,
 				blob,
 				blob_params,
 				provided_commitment,
+				externalities,
 			)
 			.await
 		});

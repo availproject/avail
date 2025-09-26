@@ -30,6 +30,7 @@ use store::{BlobStore, RocksdbBlobStore};
 pub mod p2p;
 pub mod rpc;
 pub mod store;
+mod traits;
 pub mod types;
 pub mod utils;
 
