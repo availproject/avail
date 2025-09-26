@@ -1,0 +1,24 @@
+[package]
+name = "compression_and_decoding"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+const-hex = { version = "1.16.0" }
+bzip2 = { version = "0.6.0" }
+zstd = { version = "0.13.3" }
+base64 = { version = "0.22.1" }
+serde_json = { version =  "1.0.145" }
+serde = { version = "1.0.226", features = ["derive"] }
+divan = { version = "0.1" }
+liblzma = { version = "0.4.4",  features = ["parallel"] }
+rbase64 = { version =  "2.0.3" }
+impl-serde = { version = "0.4.0" }
+
+[[bench]]
+name = "compression"
+harness = false
+
+[[bench]]
+name = "stringify"
+harness = false

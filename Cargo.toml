@@ -15,6 +15,10 @@ members = [
 	"da-commitment"
 ]
 
+exclude = [
+	"utils/compression_and_decoding"
+]
+
 [workspace.package]
 authors = ["Avail Project <info@availproject.org>"]
 edition = "2021"
