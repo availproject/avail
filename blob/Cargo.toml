@@ -56,6 +56,10 @@ ttl_cache = "0.5.1"
 base64 = { workspace = true }
 zstd = { workspace = true }
 
+[dev-dependencies]
+divan = { version = "0.1" }
+avail-rust = { package = "avail-rust-client", git = "https://github.com/availproject/avail-rust", branch = "ghali/infinity-da-rpc" }
+
 [features]
 default = ["std"]
 std = [
@@ -82,3 +86,7 @@ std = [
     "log/std",
     "once_cell/std",
 ]
+
+[[bench]]
+name = "submit_data"
+harness = false

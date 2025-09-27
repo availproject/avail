@@ -1,3 +1,4 @@
+use crate::traits::CommitmentQueueApiT;
 use crate::{
 	p2p::BlobHandle,
 	store::{RocksdbBlobStore, StorageApiT},
@@ -695,33 +696,51 @@ pub struct CommitmentQueue {
 	channel_picker: std::sync::atomic::AtomicBool,
 }
 
-impl CommitmentQueue {
-	pub fn new(channel_size: usize) -> Self {
-		let (tx1, rx) = mpsc::channel(channel_size);
-		tokio::spawn(async move { Self::run_task(rx).await });
-		let (tx2, rx) = mpsc::channel(channel_size);
-		tokio::spawn(async move { Self::run_task(rx).await });
-		Self {
-			tx1,
-			tx2,
-			channel_picker: std::sync::atomic::AtomicBool::new(false),
-		}
-	}
-
-	pub async fn run_task(mut rx: mpsc::Receiver<CommitmentQueueMessage>) {
-		while let Some(msg) = rx.recv().await {
-			let commtment = build_commitments_from_polynomal_grid(msg.grid);
-			_ = msg.request.send(commtment);
-		}
-	}
-
-	pub fn send(&self, value: CommitmentQueueMessage) -> bool {
+impl CommitmentQueueApiT for CommitmentQueue {
+	fn send(&self, value: CommitmentQueueMessage) -> bool {
 		let thread = self
 			.channel_picker
 			.fetch_not(std::sync::atomic::Ordering::Relaxed);
 		match thread {
 			false => self.tx1.try_send(value).is_ok(),
 			true => self.tx2.try_send(value).is_ok(),
+		}
+	}
+}
+
+impl CommitmentQueue {
+	pub fn new(
+		channel_size: usize,
+	) -> (
+		Self,
+		mpsc::Receiver<CommitmentQueueMessage>,
+		mpsc::Receiver<CommitmentQueueMessage>,
+	) {
+		let (tx1, rx1) = mpsc::channel(channel_size);
+		let (tx2, rx2) = mpsc::channel(channel_size);
+		(
+			Self {
+				tx1,
+				tx2,
+				channel_picker: std::sync::atomic::AtomicBool::new(false),
+			},
+			rx1,
+			rx2,
+		)
+	}
+
+	pub fn spawn_background_tasks(
+		rx1: mpsc::Receiver<CommitmentQueueMessage>,
+		rx2: mpsc::Receiver<CommitmentQueueMessage>,
+	) {
+		tokio::spawn(async move { Self::run_task(rx1).await });
+		tokio::spawn(async move { Self::run_task(rx2).await });
+	}
+
+	pub async fn run_task(mut rx: mpsc::Receiver<CommitmentQueueMessage>) {
+		while let Some(msg) = rx.recv().await {
+			let commtment = build_commitments_from_polynomal_grid(msg.grid);
+			_ = msg.request.send(commtment);
 		}
 	}
 }

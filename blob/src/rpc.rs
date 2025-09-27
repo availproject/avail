@@ -1,3 +1,4 @@
+use crate::traits::CommitmentQueueApiT;
 use crate::{
 	p2p::BlobHandle,
 	send_blob_query_request,
@@ -108,12 +109,15 @@ impl<Client, Pool, Block: BlockT, Backend> BlobRpc<Client, Pool, Block, Backend>
 		deps: Deps<Block>,
 		backend: Arc<Backend>,
 	) -> Self {
+		let (queue, rx1, rx2) = CommitmentQueue::new(100);
+		CommitmentQueue::spawn_background_tasks(rx1, rx2);
+
 		Self {
 			client,
 			pool,
 			blob_handle: deps.blob_handle,
 			backend,
-			commitment_queue: Arc::new(CommitmentQueue::new(100)),
+			commitment_queue: Arc::new(queue),
 			_block: PhantomData,
 		}
 	}
@@ -164,13 +168,15 @@ where
 			blob_data_store: self.blob_handle.blob_data_store.clone(),
 		};
 
-		submit_blob_main_task(
+		let _ = submit_blob_main_task(
 			self.commitment_queue.clone(),
 			metadata_signed_transaction.0,
 			blob.0,
 			friends,
 		)
-		.await
+		.await?;
+
+		Ok(())
 	}
 
 	async fn get_blob(
@@ -486,7 +492,7 @@ async fn commitment_validation(
 	blob: Arc<Vec<u8>>,
 	cols: usize,
 	rows: usize,
-	queue: &CommitmentQueue,
+	queue: &Arc<dyn CommitmentQueueApiT>,
 	stop_watch: &mut SmartStopwatch,
 ) -> RpcResult<()> {
 	stop_watch.start("Build Poly Grid");
@@ -516,11 +522,11 @@ async fn commitment_validation(
 }
 
 pub async fn submit_blob_main_task(
-	commitment_queue: Arc<CommitmentQueue>,
+	commitment_queue: Arc<dyn CommitmentQueueApiT>,
 	metadata_signed_transaction: Vec<u8>,
 	blob: Vec<u8>,
 	friends: Friends,
-) -> RpcResult<()> {
+) -> RpcResult<tokio::task::JoinHandle<()>> {
 	let mut stop_watch = SmartStopwatch::new("😍 Submit Blob Main Task");
 
 	// Get client info
@@ -595,21 +601,19 @@ pub async fn submit_blob_main_task(
 
 	// From this point, the transaction should not fail as the user has done everything correctly
 	// We will spawn a task to finish the work and instantly return to the user.
-	{
-		task::spawn(async move {
-			submit_blob_background_task(
-				opaque_tx,
-				blob_hash,
-				blob,
-				blob_params,
-				provided_commitment,
-				friends,
-			)
-			.await
-		});
-	}
+	let handle = task::spawn(async move {
+		submit_blob_background_task(
+			opaque_tx,
+			blob_hash,
+			blob,
+			blob_params,
+			provided_commitment,
+			friends,
+		)
+		.await
+	});
 
-	Ok(())
+	Ok(handle)
 }
 
 async fn submit_blob_background_task(
@@ -635,6 +639,7 @@ async fn submit_blob_background_task(
 	{
 		log::error!("tx-pool error: {e}")
 	}
+
 	log::info!(
 		"BLOB - RPC submit_blob - bg:task - After Submitting to pool - {:?}",
 		blob_hash,
@@ -849,6 +854,7 @@ fn store_new_blob(
 	I'll be there for you
 	('Cause you're there for me too)
 */
+#[derive(Clone)]
 pub struct Friends {
 	pub externalities: Arc<dyn ExternalitiesT>,
 	pub runtime_client: Arc<dyn RuntimeApiT>,

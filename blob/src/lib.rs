@@ -31,7 +31,7 @@ use store::{RocksdbBlobStore, StorageApiT};
 pub mod p2p;
 pub mod rpc;
 pub mod store;
-mod traits;
+pub mod traits;
 pub mod types;
 pub mod utils;
 

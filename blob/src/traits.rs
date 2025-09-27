@@ -1,3 +1,4 @@
+use crate::utils::CommitmentQueueMessage;
 use crate::{BlobHandle, BlobNotification};
 use da_runtime::{apis::BlobApi, AccountId, UncheckedExtrinsic};
 use jsonrpsee::core::async_trait;
@@ -163,7 +164,6 @@ where
 	}
 }
 
-#[async_trait]
 pub trait ExternalitiesT: Send + Sync {
 	fn client_info(&self) -> ClientInfo;
 
@@ -262,28 +262,7 @@ where
 	}
 }
 
-#[allow(dead_code)]
-pub struct DummyExternalities;
-
 #[async_trait]
-impl ExternalitiesT for DummyExternalities {
-	fn client_info(&self) -> ClientInfo {
-		todo!()
-	}
-
-	fn local_peer_id(&self) -> Result<PeerId, ()> {
-		todo!()
-	}
-
-	fn role(&self) -> Role {
-		todo!()
-	}
-
-	fn keystore(&self) -> std::option::Option<&Arc<LocalKeystore>> {
-		todo!()
-	}
-
-	fn gossip_cmd_sender(&self) -> std::option::Option<&async_channel::Sender<BlobNotification>> {
-		todo!()
-	}
+pub trait CommitmentQueueApiT: Send + Sync {
+	fn send(&self, value: CommitmentQueueMessage) -> bool;
 }
