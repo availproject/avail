@@ -11,7 +11,6 @@ use da_runtime::AccountId;
 use da_runtime::UncheckedExtrinsic;
 use divan::Bencher;
 use frame_system::limits::BlockLength;
-use futures::executor::block_on;
 use jsonrpsee::core::async_trait;
 use sc_keystore::LocalKeystore;
 use sc_network::PeerId;
@@ -119,9 +118,9 @@ impl BackendApiT for DummyDummy {
 impl TransactionPoolApiT for DummyDummy {
 	async fn submit_one(
 		&self,
-		block_hash: H256,
-		source: TransactionSource,
-		uxt: UncheckedExtrinsic,
+		_block_hash: H256,
+		_source: TransactionSource,
+		_uxt: UncheckedExtrinsic,
 	) -> Result<H256, String> {
 		Ok(H256::default())
 	}
@@ -184,7 +183,7 @@ fn setting_the_stage() -> (
 
 #[divan::bench(max_time = 10)]
 fn submit_data_benchmark(bencher: Bencher) {
-	let (data, friends, metadata, queue, t1) = setting_the_stage();
+	let (data, friends, metadata, queue, _t1) = setting_the_stage();
 	bencher
 		.with_inputs(|| {
 			(
