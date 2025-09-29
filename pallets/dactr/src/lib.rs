@@ -114,7 +114,7 @@ pub mod pallet {
 				min_transaction_validity: 15,         // In blocks
 				max_transaction_validity: 150,        // In blocks
 				max_blob_retry_before_discarding: 10, // In blocks
-				max_block_size: 2 * 1024 * 1024 * 1024, // 2gb
+				max_block_size: 3 * 1024 * 1024 * 1024, // 3gb
 				max_total_old_submission_size: 4 * 1024 * 1024,
 				disable_old_da_submission: false,
 			}
@@ -718,19 +718,17 @@ pub mod weight_helper {
 	pub fn submit_blob_metadata<T: Config>(data_len: u64) -> Weight {
 		/* Compute regular substrate weight. */
 		let data_len_u32: u32 = data_len.saturated_into();
-		let basic_weight = T::WeightInfo::submit_blob_metadata(data_len_u32);
-		let data_root_weight = T::WeightInfo::data_root(data_len_u32);
-		let regular_weight = basic_weight.saturating_add(data_root_weight);
+		let regular_weight = T::WeightInfo::submit_blob_metadata(data_len_u32);
 
 		/* Compute weight based on size taken compared to the maximum in a block. */
 		// Before we used to compare to the matrix total size, but with new values for blob crate
 		// We could store data up to 128mb worth of commitment which is huge
 		// Hence we use tha maximum allowed in a block
 		let blob_runtime_params = BlobRuntimeParams::<T>::get();
-		let max_total_old_submission_size = blob_runtime_params.max_block_size;
+		let max_total_submission_size = blob_runtime_params.max_block_size;
 
 		// We compute the maximum numbers of scalars in the matrix and multiply with the DA dispatch ratio.
-		let max_da_ratio = DA_DISPATCH_RATIO_PERBILL * max_total_old_submission_size;
+		let max_da_ratio = DA_DISPATCH_RATIO_PERBILL * max_total_submission_size;
 
 		// We get the current maximum weight in a block and multiply with normal dispatch ratio.
 		let block_weights = <T as frame_system::Config>::BlockWeights::get();
