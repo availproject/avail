@@ -24,7 +24,7 @@ Examples of unacceptable behavior include:
 
 ## Reporting & Enforcement
 
-If you experience or witness unacceptable behavior, or have any other concerns, please report it by contacting the project team in our [Discord](https://discord.com/invite/y6fHnxZQX8) and take appropriate action. All reports will be handled with discretion and confidentiality.
+If you experience or witness unacceptable behavior, or have any other concerns, please report it by contacting the project team in our [Discord](https://discord.com/invite/AvailProject) and take appropriate action. All reports will be handled with discretion and confidentiality.
 
 ## Attribution
 

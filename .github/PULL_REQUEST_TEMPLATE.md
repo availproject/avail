@@ -34,4 +34,4 @@ Please note that we currently prioritize substantial contributions over minor ch
 - [ ] The code was formatted with `cargo fmt`.
 - [ ] The code compiles with no new warnings with `cargo build --release` and `cargo build --release --features runtime-benchmarks`.
 - [ ] The code has no new warnings when using `cargo clippy`.
-- [ ] If this change affects documented features or needs new documentation, I have created a PR with a [documentation update](https://github.com/availproject/availproject.github.io).
+- [ ] If this change affects documented features or needs new documentation, I have created a PR with a [documentation update](https://github.com/availproject/docs).
