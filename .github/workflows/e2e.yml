@@ -21,7 +21,7 @@ jobs:
         include:
           - command: ENGINE=podman SCRIPT_LOC=./scripts/workflows/e2e.sh ./scripts/workflows/run.sh
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
