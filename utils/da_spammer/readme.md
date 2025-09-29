@@ -20,6 +20,7 @@ Shared
 **`da-spammer` (single account)**
 - Uses a chosen dev account (`Alice`, `Bob`, `Charlie`, `Dave`, `Eve`, `Ferdie`, `One`, `Two`)
 - Configurable blob size (1-64 MiB), count, and repeated content character
+- Optional staged delays between submissions (`initial`, `warmup`, `subsequent`)
 
 **`da-sybil-spammer` (multi account)**
 - Generates *N* fresh SR25519 accounts (not persisted by default)
@@ -51,6 +52,9 @@ Artifacts:
 ## 🚀 Usage
 
 ### 1) `da-spammer` (single account)
+```bash
+cargo run --release --bin da-spammer -- --account alice
+```
 
 **Flags**
 - `--account <alice|bob|charlie|dave|eve|ferdie|one|two>` (required)
@@ -58,6 +62,9 @@ Artifacts:
 - `--count <1..100>`   (default: `50`)
 - `--ch <char>`        (optional; default is first letter of `--account`)
 - `--endpoint <URL>`   (default: `http://127.0.0.1:8546`)
+- `--initial-delay <ms>`     (default: `0`; sleep before the first submit)
+- `--warmup-delay <ms>`      (default: `0`; additional sleep before the second submit)
+- `--subsequent-delay <ms>`  (default: `0`; additional sleep before every submit after the second)
 
 **Full explicit example**
 ```bash
@@ -83,6 +90,7 @@ Artifacts:
 - Transactions: 50 (default)
 - Blob content: repeated `b`
 - RPC endpoint: `http://127.0.0.1:8546`
+- Delays: no initial/warmup/subsequent delay (all default to `0`)
 
 ---
 

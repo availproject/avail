@@ -11,7 +11,14 @@ pub const DEFAULT_COLS: usize = 4096;
 pub fn build_blob_and_commitments(byte: u8, len_bytes: usize) -> (Vec<u8>, H256, Vec<u8>) {
 	let blob = vec![byte; len_bytes];
 	let blob_hash = H256::from(keccak_256(&blob));
-	let commitments =
-		build_da_commitments(blob.clone(), DEFAULT_ROWS, DEFAULT_COLS, Default::default());
+	let commitments = build_da_commitments(&blob, DEFAULT_ROWS, DEFAULT_COLS, Default::default());
 	(blob, blob_hash, commitments)
+}
+
+pub fn hash_blob(data: &[u8]) -> H256 {
+	H256::from(keccak_256(data))
+}
+
+pub fn build_commitments(data: &[u8]) -> Vec<u8> {
+	build_da_commitments(data, DEFAULT_ROWS, DEFAULT_COLS, Default::default())
 }
