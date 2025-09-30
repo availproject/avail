@@ -64,7 +64,7 @@ cargo run --release --bin da-spammer -- --account alice
 - `--endpoint <URL>`   (default: `http://127.0.0.1:8546`)
 - `--initial-delay <ms>`     (default: `0`; sleep before the first submit)
 - `--warmup-delay <ms>`      (default: `0`; additional sleep before the second submit)
-- `--subsequent-delay <ms>`  (default: `0`; additional sleep before every submit after the second)
+- `--subsequent-delay <ms>`  (default: `100`; additional sleep before every submit after the second)
 
 **Full explicit example**
 ```bash
