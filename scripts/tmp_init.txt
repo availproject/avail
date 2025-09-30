@@ -1,6 +1,6 @@
-./target/release/avail-node --chain dev.tri --alice --tmp --listen-addr /ip4/0.0.0.0/tcp/30333 --listen-addr /ip6/::/tcp/30333 --rpc-port 9944 --rpc-max-request-size 500 --rpc-max-response-size 500
-./target/release/avail-node --chain dev.tri --bob --tmp --listen-addr /ip4/0.0.0.0/tcp/30334 --listen-addr /ip6/::/tcp/30334 --rpc-max-request-size 500 --rpc-max-response-size 500
-./target/release/avail-node --chain dev.tri --charlie --tmp --listen-addr /ip4/0.0.0.0/tcp/30335 --listen-addr /ip6/::/tcp/30335 --rpc-max-request-size 500 --rpc-max-response-size 500
+./target/release/avail-node --chain dev.tri --rpc-port 9944 --alice --tmp --listen-addr /ip4/0.0.0.0/tcp/30333 --listen-addr /ip6/::/tcp/30333 --rpc-max-request-size 500 --rpc-max-response-size 500
+./target/release/avail-node --chain dev.tri --rpc-port 9945 --bob --tmp --listen-addr /ip4/0.0.0.0/tcp/30334 --listen-addr /ip6/::/tcp/30334 --rpc-max-request-size 500 --rpc-max-response-size 500
+./target/release/avail-node --chain dev.tri --rpc-port 9946 --charlie --tmp --listen-addr /ip4/0.0.0.0/tcp/30335 --listen-addr /ip6/::/tcp/30335 --rpc-max-request-size 500 --rpc-max-response-size 500
 
 ./target/release/da-spammer --account bob   --endpoint http://127.0.0.1:9944 --count 1 --fetch-data-from-mainnet --fetch-data-from-mainnet-concat --size-mb 1
 ./target/release/da-spammer --account bob   --endpoint http://127.0.0.1:9944 --count 1

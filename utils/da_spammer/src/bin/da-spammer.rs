@@ -1,4 +1,3 @@
-use avail_rust::avail_rust_core::rpc::blob::submit_blob;
 use avail_rust::prelude::*;
 use clap::Parser;
 use da_spammer::{build_commitments, hash_blob};
@@ -51,7 +50,7 @@ async fn consumer_task(
 	mut rx: ChannelReceiver,
 ) {
 	let account_id = signer.account_id();
-	let mut nonce = clients[0].rpc().account_nonce(&account_id).await.unwrap();
+	let mut nonce = clients[0].chain().account_nonce(account_id.clone()).await.unwrap();
 	println!("AccountId: {account_id}");
 	println!("Start nonce: {nonce}");
 
@@ -199,11 +198,12 @@ async fn main() -> Result<(), avail_rust::error::Error> {
 	// Create Client Pool
 	let mut clients = Vec::with_capacity(CLIENT_COUNT);
 	for _ in 0..CLIENT_COUNT {
-		clients.push(Client::new(&args.endpoint).await?);
+		let c = Client::new(&args.endpoint).await?;
+		clients.push(c);
 	}
 
 	let subsequent_delay = args.subsequent_delay;
-	let (tx, rx) = mpsc::channel(100);
+	let (tx, rx) = mpsc::channel(300);
 	let d = og_blob.clone();
 
 	let t1 = std::thread::spawn(move || {
@@ -235,7 +235,7 @@ async fn submit_blob_task(
 		"New submit block task executed after {} ms. Index: {index}",
 		elapsed.as_millis()
 	);
-	match submit_blob(&client.rpc_client, &metadata, &blob[0..blob_len]).await {
+	match client.chain().blob_submit_blob(&metadata, &blob[0..blob_len]).await {
 		Ok(_) => println!("    ✓ [{}] submitted", index),
 		Err(e) => eprintln!("    ✗ [{}] error: {e}", index),
 	}

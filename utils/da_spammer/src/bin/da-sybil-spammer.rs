@@ -120,7 +120,7 @@ async fn main() -> Result<(), avail_rust::error::Error> {
 
 	// 2) Fund via utility.batchAll(transfers)
 	let funder = dev_keypair(&args.funder);
-	let mut funder_nonce = client.rpc().account_nonce(&funder.account_id()).await?;
+	let mut funder_nonce = client.chain().account_nonce(funder.account_id()).await?;
 	println!("---- Funding accounts with batchAll (nonce starts at {funder_nonce}) ...");
 
 	// Build calls in chunks
@@ -159,7 +159,7 @@ async fn main() -> Result<(), avail_rust::error::Error> {
 	println!("---- Fetching starting nonces for each account ...");
 	let mut nonces: Vec<u32> = Vec::with_capacity(accts.len());
 	for (kp, _) in accts.iter() {
-		let n = client.rpc().account_nonce(&kp.account_id()).await?;
+		let n = client.chain().account_nonce(kp.account_id()).await?;
 		nonces.push(n);
 	}
 	println!("✓ Nonces fetched");
