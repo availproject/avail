@@ -701,10 +701,22 @@ impl CommitmentQueueApiT for CommitmentQueue {
 		let thread = self
 			.channel_picker
 			.fetch_not(std::sync::atomic::Ordering::Relaxed);
-		match thread {
-			false => self.tx1.try_send(value).is_ok(),
-			true => self.tx2.try_send(value).is_ok(),
+
+		let (q1, q2) = if thread {
+			(&self.tx1, &self.tx2)
+		} else {
+			(&self.tx2, &self.tx1)
+		};
+
+		if q1.capacity() != 0 {
+			return q1.try_send(value).is_ok();
 		}
+
+		if q2.capacity() != 0 {
+			return q2.try_send(value).is_ok();
+		}
+
+		false
 	}
 }
 

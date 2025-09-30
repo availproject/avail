@@ -109,7 +109,7 @@ impl<Client, Pool, Block: BlockT, Backend> BlobRpc<Client, Pool, Block, Backend>
 		deps: Deps<Block>,
 		backend: Arc<Backend>,
 	) -> Self {
-		let (queue, rx1, rx2) = CommitmentQueue::new(100);
+		let (queue, rx1, rx2) = CommitmentQueue::new(25);
 		CommitmentQueue::spawn_background_tasks(rx1, rx2);
 
 		Self {
