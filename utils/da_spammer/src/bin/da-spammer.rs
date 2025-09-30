@@ -137,7 +137,7 @@ struct Args {
 	warmup_delay: u64,
 
 	/// Delay after subsequent submit was done. In milliseconds
-	#[arg(long, default_value_t = 100)]
+	#[arg(long, default_value_t = 1)]
 	subsequent_delay: u64,
 }
 
@@ -170,8 +170,8 @@ async fn main() -> Result<(), avail_rust::error::Error> {
 	if !(1..=64).contains(&args.size_mb) {
 		panic!("--size-mb must be within 1..=64");
 	}
-	if !(1..=100).contains(&args.count) {
-		panic!("--count must be within 1..=100");
+	if !(1..=1000).contains(&args.count) {
+		panic!("--count must be within 1..=1000");
 	}
 	if let Some(ch) = args.ch {
 		if ch.len_utf8() != 1 {
@@ -210,6 +210,8 @@ async fn main() -> Result<(), avail_rust::error::Error> {
 		let runtime = Runtime::new().unwrap();
 		runtime.block_on(async move { producer_task(d, len_bytes, args.count, tx).await });
 	});
+
+	std::thread::sleep(Duration::from_millis(args.warmup_delay));
 	let t2 = std::thread::spawn(move || {
 		let runtime = Runtime::new().unwrap();
 		runtime.block_on(async move { consumer_task(clients, signer, subsequent_delay, rx).await });
