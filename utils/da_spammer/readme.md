@@ -21,6 +21,7 @@ Shared
 - Uses a chosen dev account (`Alice`, `Bob`, `Charlie`, `Dave`, `Eve`, `Ferdie`, `One`, `Two`)
 - Configurable blob size (1-64 MiB), count, and repeated content character
 - Optional staged delays between submissions (`initial`, `warmup`, `subsequent`)
+- Payload can be generated from a repeated char or loaded from disk (`--file`); sprinkle random bytes by default, disable via `--randomize-disabled`
 
 **`da-sybil-spammer` (multi account)**
 - Generates *N* fresh SR25519 accounts (not persisted by default)
@@ -57,14 +58,16 @@ cargo run --release --bin da-spammer -- --account alice
 ```
 
 **Flags**
-- `--account <alice|bob|charlie|dave|eve|ferdie|one|two>` (required)
-- `--size-mb <1..64>`  (default: `32`)
-- `--count <1..100>`   (default: `50`)
+- `-a, --account <alice|bob|charlie|dave|eve|ferdie|one|two>` (required)
+- `-s, --size-mb <1..64>`  (default: `32`)
+- `--count <1..1000>`  (default: `50`)
 - `--ch <char>`        (optional; default is first letter of `--account`)
-- `--endpoint <URL>`   (default: `http://127.0.0.1:8546`)
-- `--initial-delay <ms>`     (default: `0`; sleep before the first submit)
-- `--warmup-delay <ms>`      (default: `0`; additional sleep before the second submit)
-- `--subsequent-delay <ms>`  (default: `100`; additional sleep before every submit after the second)
+- `-e, --endpoint <URL>`   (default: `http://127.0.0.1:8546`)
+- `-i, --initial-delay <ms>`     (default: `0`; sleep before the first submit)
+- `-w, --warmup-delay <ms>`      (default: `0`; additional sleep before the second submit)
+- `--subsequent-delay <ms>`  (default: `0`; additional sleep before every submit after the second)
+- `-r, --randomize-disabled` (optional; disable random byte sprinkling, which is enabled by default)
+- `-f, --file <path>`      (optional; use contents of `path` as the payload source instead of a repeated character)
 
 **Full explicit example**
 ```bash
@@ -150,6 +153,7 @@ cargo run --release --bin da-spammer -- --account alice
 - **Batch size**: `utility.batchAll` can be large; if you hit call size/weight limits, reduce `--batch-size`.
 - **Nonces**: `da-sybil-spammer` snapshots starting nonces and increments locally on success. (No retry/backoff logic by default.)
 - **Blob length variance**: The multi-account script reduces the blob length slightly each iteration (`len_bytes - i`) to keep content unique; ensure `--loops <= blob_size_in_bytes`.
+- **External payloads**: If you pass `--file`, make sure the file has at least `size_mb * 1024 * 1024` bytes; only the first chunk of that size is used (and may be randomized).
 
 ---
 

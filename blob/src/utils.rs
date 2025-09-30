@@ -691,66 +691,29 @@ impl CommitmentQueueMessage {
 }
 
 pub struct CommitmentQueue {
-	tx1: mpsc::Sender<CommitmentQueueMessage>,
-	tx2: mpsc::Sender<CommitmentQueueMessage>,
-	channel_picker: std::sync::atomic::AtomicBool,
+	tx: mpsc::Sender<CommitmentQueueMessage>,
 }
 
 impl CommitmentQueueApiT for CommitmentQueue {
 	fn send(&self, value: CommitmentQueueMessage) -> bool {
-		let thread = self
-			.channel_picker
-			.fetch_not(std::sync::atomic::Ordering::Relaxed);
-
-		let (q1, q2) = if thread {
-			(&self.tx1, &self.tx2)
-		} else {
-			(&self.tx2, &self.tx1)
-		};
-
-		if q1.capacity() != 0 {
-			return q1.try_send(value).is_ok();
-		}
-
-		if q2.capacity() != 0 {
-			return q2.try_send(value).is_ok();
-		}
-
-		false
+		return self.tx.try_send(value).is_ok();
 	}
 }
 
 impl CommitmentQueue {
-	pub fn new(
-		channel_size: usize,
-	) -> (
-		Self,
-		mpsc::Receiver<CommitmentQueueMessage>,
-		mpsc::Receiver<CommitmentQueueMessage>,
-	) {
-		let (tx1, rx1) = mpsc::channel(channel_size);
-		let (tx2, rx2) = mpsc::channel(channel_size);
-		(
-			Self {
-				tx1,
-				tx2,
-				channel_picker: std::sync::atomic::AtomicBool::new(false),
-			},
-			rx1,
-			rx2,
-		)
+	pub fn new(channel_size: usize) -> (Self, mpsc::Receiver<CommitmentQueueMessage>) {
+		let (tx, rx) = mpsc::channel(channel_size);
+		(Self { tx }, rx)
 	}
 
-	pub fn spawn_background_tasks(
-		rx1: mpsc::Receiver<CommitmentQueueMessage>,
-		rx2: mpsc::Receiver<CommitmentQueueMessage>,
-	) {
-		tokio::spawn(async move { Self::run_task(rx1).await });
-		tokio::spawn(async move { Self::run_task(rx2).await });
+	pub fn spawn_background_task(rx: mpsc::Receiver<CommitmentQueueMessage>) {
+		std::thread::spawn(move || {
+			Self::run_task(rx);
+		});
 	}
 
-	pub async fn run_task(mut rx: mpsc::Receiver<CommitmentQueueMessage>) {
-		while let Some(msg) = rx.recv().await {
+	pub fn run_task(mut rx: mpsc::Receiver<CommitmentQueueMessage>) {
+		while let Some(msg) = rx.blocking_recv() {
 			let commtment = build_commitments_from_polynomal_grid(msg.grid);
 			_ = msg.request.send(commtment);
 		}
