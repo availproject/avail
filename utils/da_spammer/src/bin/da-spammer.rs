@@ -145,6 +145,7 @@ async fn main() -> Result<(), avail_rust::error::Error> {
 	let warmup_delay = args.warmup_delay;
 	let subsequent_delay = args.subsequent_delay;
 
+	let mut threads = Vec::new();
 	println!("---- Submitting {} blobs ...", prepared.len());
 	for (i, sub_data) in prepared.into_iter().enumerate() {
 		let app_id = (i % 5) as u32;
@@ -166,7 +167,7 @@ async fn main() -> Result<(), avail_rust::error::Error> {
 			tx_bytes.len()
 		);
 
-		{
+		let t_handle = {
 			let client = clients[i & CLIENT_COUNT].clone();
 			let blob = og_blob.clone();
 			tokio::spawn(async move {
@@ -185,10 +186,15 @@ async fn main() -> Result<(), avail_rust::error::Error> {
 
 					submit_blob_task(client, tx_bytes, blob, sub_data.len, i).await
 				}
-			});
-		}
+			})
+		};
+		threads.push(t_handle);
 
 		nonce += 1;
+	}
+
+	for t in threads {
+		t.await.unwrap();
 	}
 
 	println!("✅ Finished. Submitted {} transactions.", args.count);
