@@ -1,12 +1,13 @@
 use crate::traits::CommitmentQueueApiT;
+use crate::validation::{commitment_validation, initial_validation, tx_validation};
 use crate::{
 	nonce_cache::NonceCache,
 	p2p::BlobHandle,
 	send_blob_query_request,
 	store::StorageApiT,
 	traits::{
-		BackendApiT, BackendClient, ExternalitiesT, RealExternalities, RuntimeApiT, RuntimeClient,
-		TransactionPoolApiT, TransactionPoolClient,
+		BackendApiT, BackendClient, ExternalitiesT, NonceCacheApiT, RealExternalities, RuntimeApiT,
+		RuntimeClient, TransactionPoolApiT, TransactionPoolClient,
 	},
 	types::{
 		Blob, BlobMetadata, BlobNotification, BlobReceived, CompressedBlob, Deps, OwnershipEntry,
@@ -14,7 +15,7 @@ use crate::{
 	utils::{
 		build_signature_payload, check_store_blob, extract_signer_and_nonce, generate_base_index,
 		get_dynamic_blocklength_key, get_my_validator_public_account, get_validator_per_blob_inner,
-		sign_blob_data_inner, B64Param, CommitmentQueue, CommitmentQueueMessage, SmartStopwatch,
+		sign_blob_data_inner, B64Param, CommitmentQueue, SmartStopwatch,
 	},
 	MAX_RPC_RETRIES,
 };
@@ -29,15 +30,14 @@ use jsonrpsee::{
 	proc_macros::rpc,
 	types::error::ErrorObject,
 };
-use kate::Seed;
 use sc_client_api::{BlockBackend, HeaderBackend, StateBackend};
 use sc_network::PeerId;
 use sc_transaction_pool_api::TransactionPool;
-use sp_api::{ApiError, ProvideRuntimeApi};
-use sp_core::{keccak_256, H256};
+use sp_api::ProvideRuntimeApi;
+use sp_core::H256;
 use sp_runtime::{
 	traits::{Block as BlockT, HashingFor, Header as HeaderT},
-	transaction_validity::{TransactionSource, TransactionValidityError, ValidTransaction},
+	transaction_validity::TransactionSource,
 	AccountId32, SaturatedConversion,
 };
 use sp_transaction_pool::runtime_api::TaggedTransactionQueue;
@@ -169,7 +169,6 @@ where
 			tx_pool_client: Arc::new(TransactionPoolClient::new(self.pool.clone())),
 			blob_store: self.blob_handle.blob_store.clone(),
 			blob_data_store: self.blob_handle.blob_data_store.clone(),
-			nonce_cache: self.nonce_cache.clone(),
 		};
 
 		let _ = submit_blob_main_task(
@@ -177,6 +176,7 @@ where
 			metadata_signed_transaction.0,
 			blob.0,
 			friends,
+			self.nonce_cache.clone(),
 		)
 		.await?;
 
@@ -415,151 +415,23 @@ fn get_dynamic_block_length(
 	Ok((cols, rows))
 }
 
-fn initial_validation(
-	max_blob_size: usize,
-	blob: &[u8],
-	metadata: &[u8],
-) -> RpcResult<(H256, Vec<u8>)> {
-	if blob.len() > max_blob_size {
-		return Err(internal_err!("blob is too big"));
-	}
-
-	let mut metadata = metadata;
-	let encoded_metadata_signed_transaction: UncheckedExtrinsic = Decode::decode(&mut metadata)
-		.map_err(|_| internal_err!("failed to decode concrete metadata call"))?;
-	let (provided_size, provided_blob_hash, provided_commitment) =
-		match encoded_metadata_signed_transaction.function {
-			RuntimeCall::DataAvailability(Call::submit_blob_metadata {
-				size,
-				blob_hash,
-				commitment,
-			}) => (size as usize, blob_hash, commitment),
-			_ => {
-				return Err(internal_err!(
-					"metadata extrinsic must be dataAvailability.submitBlobMetadata"
-				))
-			},
-		};
-
-	// Check size
-	if provided_size != blob.len() {
-		return Err(internal_err!(
-			"submit data length ({}) != blob length ({})",
-			provided_size,
-			blob.len()
-		));
-	}
-
-	let blob_hash = H256::from(keccak_256(&blob));
-	if provided_blob_hash != blob_hash {
-		return Err(internal_err!("submitted blob: {provided_blob_hash:?} does not correspond to generated blob {blob_hash:?}"));
-	}
-
-	Ok((blob_hash, provided_commitment))
-}
-
-fn tx_validation(
-	at: H256,
-	metadata: &[u8],
-	min_transaction_validity: u64,
-	max_transaction_validity: u64,
-	runtime_client: &Arc<dyn RuntimeApiT>,
-	nonce_cache: &NonceCache,
-	validity_op: impl Fn(
-		UncheckedExtrinsic,
-	) -> Result<Result<ValidTransaction, TransactionValidityError>, ApiError>,
-) -> RpcResult<UncheckedExtrinsic> {
-	let mut metadata = metadata;
-
-	// --- a. Decode the opaque extrinsic ---------------------------------
-	let opaque_tx: UncheckedExtrinsic = codec::Decode::decode(&mut metadata)
-		.map_err(|_| internal_err!("failed to decode metadata extrinsic"))?;
-	// --- b. Let the runtime validate it (signature, nonce, weight) ------
-	let opaque_tx_clone = opaque_tx.clone();
-	let validity = validity_op(opaque_tx_clone)
-		.map_err(|e| internal_err!("runtime validate_transaction error: {e}"))?;
-	let Ok(validity) = validity else {
-		return Err(internal_err!("metadata extrinsic rejected by runtime"));
-	};
-
-	// --- c. Check also that transaction lifetime is above minimum tx lifetime so it does not expire. If validity is not correct, we reject the tx
-	if validity.longevity < min_transaction_validity {
-		return Err(internal_err!(
-			"signed transaction does not live for enough time"
-		));
-	}
-	if validity.longevity > max_transaction_validity {
-		return Err(internal_err!("signed transaction lifetime is too long"));
-	}
-
-	// --- d. Check the nonce in case it's a future transaction
-	let Some((who, tx_nonce)) = extract_signer_and_nonce(&opaque_tx) else {
-		return Err(internal_err!(
-			"signature payload not found (unsigned extrinsic)"
-		));
-	};
-	let onchain_nonce: u32 = runtime_client
-		.account_nonce(at, who.clone())
-		.map_err(|e| internal_err!("failed to read on-chain nonce: {e:?}"))?;
-
-	if let Err(reason) = nonce_cache.check(&who, onchain_nonce, tx_nonce) {
-		return Err(internal_err!("nonce check failed: {}", reason));
-	}
-
-	Ok(opaque_tx)
-}
-
-async fn commitment_validation(
-	provided_commitment: &Vec<u8>,
-	blob: Arc<Vec<u8>>,
-	cols: usize,
-	rows: usize,
-	queue: &Arc<dyn CommitmentQueueApiT>,
-	stop_watch: &mut SmartStopwatch,
-) -> RpcResult<()> {
-	stop_watch.start("Build Poly Grid");
-	let grid = build_polynomal_grid(&*blob, cols, rows, Seed::default());
-	stop_watch.stop("Build Poly Grid");
-
-	let (message, rx_comm) = CommitmentQueueMessage::new(grid);
-	if !queue.send(message) {
-		// Need better error handling
-		return Err(internal_err!("Commitment queue is full"));
-	}
-	let commitment = match rx_comm.await {
-		Ok(x) => x,
-		Err(_) => {
-			return Err(internal_err!(
-				"Cannot compute commitment. :(  Channel is down"
-			));
-		},
-	};
-
-	// Check comitment
-	if !provided_commitment.eq(&commitment) {
-		return Err(internal_err!("submitted blob commitment mismatch"));
-	}
-
-	Ok(())
-}
-
 pub async fn submit_blob_main_task(
 	commitment_queue: Arc<dyn CommitmentQueueApiT>,
 	metadata_signed_transaction: Vec<u8>,
 	blob: Vec<u8>,
 	friends: Friends,
+	nonce_cache: Arc<dyn NonceCacheApiT>,
 ) -> RpcResult<tokio::task::JoinHandle<()>> {
 	let mut stop_watch = SmartStopwatch::new("😍 Submit Blob Main Task");
+
+	let runtime_client = friends.runtime_client.clone();
 
 	// Get client info
 	let client_info = friends.externalities.client_info();
 	let best_hash = client_info.best_hash;
 	let finalized_block_hash = client_info.finalized_hash;
 
-	let blob_params = match friends
-		.runtime_client
-		.get_blob_runtime_parameters(finalized_block_hash)
-	{
+	let blob_params = match runtime_client.get_blob_runtime_parameters(finalized_block_hash) {
 		Ok(p) => p,
 		Err(e) => {
 			log::error!("Could not get blob_params: {e:?}");
@@ -570,14 +442,10 @@ pub async fn submit_blob_main_task(
 
 	stop_watch.start("Initial Validation");
 	let (blob_hash, provided_commitment) =
-		initial_validation(max_blob_size as usize, &blob, &metadata_signed_transaction)?;
+		initial_validation(max_blob_size as usize, &blob, &metadata_signed_transaction)
+			.map_err(|e| internal_err!("{}", e))?;
 	stop_watch.stop("Initial Validation");
 	stop_watch.add_extra_information(std::format!("Blob Hash: {:?}", blob_hash));
-
-	let r = friends.runtime_client.clone();
-	let validity_op = move |uxt: UncheckedExtrinsic| {
-		r.validate_transaction(best_hash, TransactionSource::External, uxt, best_hash)
-	};
 
 	stop_watch.start("TX validation");
 	let opaque_tx = tx_validation(
@@ -585,26 +453,28 @@ pub async fn submit_blob_main_task(
 		&metadata_signed_transaction,
 		blob_params.min_transaction_validity,
 		blob_params.max_transaction_validity,
-		&friends.runtime_client,
-		&friends.nonce_cache,
-		validity_op,
-	)?;
+		&runtime_client,
+		&nonce_cache,
+	)
+	.map_err(|e| internal_err!("{}", e))?;
 	stop_watch.stop("TX validation");
 
 	// Commitment Validation can take a long time.
-	stop_watch.start("Commitment Validation");
+	stop_watch.start("Commitments (Total)");
 	let (cols, rows) = get_dynamic_block_length(&friends.backend_client, finalized_block_hash)?;
 	let blob = Arc::new(blob);
-	commitment_validation(
-		&provided_commitment,
-		blob.clone(),
-		cols,
-		rows,
-		&commitment_queue,
-		&mut stop_watch,
-	)
-	.await?;
+
+	stop_watch.start("Polynominal Grid Gen.");
+	let grid = build_polynomal_grid(&*blob, cols, rows, Default::default());
+	stop_watch.stop("Polynominal Grid Gen.");
+
+	stop_watch.start("Commitment Validation");
+	commitment_validation(&provided_commitment, grid, &commitment_queue)
+		.await
+		.map_err(|e| internal_err!("{}", e))?;
 	stop_watch.stop("Commitment Validation");
+
+	stop_watch.stop("Commitments (Total)");
 
 	// Because Commitment Validation can take a long time
 	// the moment it is done minutes can pass.
@@ -613,19 +483,16 @@ pub async fn submit_blob_main_task(
 	// TODO Blob we might remove this
 	let client_info = friends.externalities.client_info();
 	let best_hash = client_info.best_hash;
-	let r = friends.runtime_client.clone();
-	let validity_op = move |uxt: UncheckedExtrinsic| {
-		r.validate_transaction(best_hash, TransactionSource::External, uxt, best_hash)
-	};
+
 	let _ = tx_validation(
 		best_hash,
 		&metadata_signed_transaction,
 		blob_params.min_transaction_validity,
 		blob_params.max_transaction_validity,
-		&friends.runtime_client,
-		&friends.nonce_cache,
-		validity_op,
-	)?;
+		&runtime_client,
+		&nonce_cache,
+	)
+	.map_err(|e| internal_err!("{}", e))?;
 
 	// From this point, the transaction should not fail as the user has done everything correctly
 	// We will spawn a task to finish the work and instantly return to the user.
@@ -637,6 +504,7 @@ pub async fn submit_blob_main_task(
 			blob_params,
 			provided_commitment,
 			friends,
+			nonce_cache,
 		)
 		.await
 	});
@@ -651,9 +519,10 @@ async fn submit_blob_background_task(
 	blob_params: BlobRuntimeParameters,
 	commitment: Vec<u8>,
 	friends: Friends,
+	nonce_cache: Arc<dyn NonceCacheApiT>,
 ) {
 	if let Some((who, nonce)) = extract_signer_and_nonce(&opaque_tx) {
-		friends.nonce_cache.commit(&who, nonce);
+		nonce_cache.commit(&who, nonce);
 	}
 
 	let stored = store_and_gossip_blob(blob_hash, blob, blob_params, commitment, &friends).await;
@@ -894,5 +763,4 @@ pub struct Friends {
 	pub tx_pool_client: Arc<dyn TransactionPoolApiT>,
 	pub blob_store: Arc<dyn StorageApiT>,
 	pub blob_data_store: Arc<dyn StorageApiT>,
-	pub nonce_cache: Arc<NonceCache>,
 }

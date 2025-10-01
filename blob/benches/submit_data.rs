@@ -1,3 +1,4 @@
+use avail_blob;
 use avail_blob::nonce_cache::NonceCache;
 use avail_blob::rpc::submit_blob_main_task;
 use avail_blob::rpc::Friends;
@@ -17,6 +18,7 @@ use sc_keystore::LocalKeystore;
 use sc_network::PeerId;
 use sc_service::Role;
 use sp_api::ApiError;
+use sp_core::crypto::AccountId32;
 use sp_core::crypto::KeyTypeId;
 use sp_core::keccak_256;
 use sp_core::Encode;
@@ -27,6 +29,54 @@ use std::sync::Arc;
 
 fn main() {
 	divan::main();
+}
+
+pub struct DummyNonceCache;
+impl NonceCacheApiT for DummyNonceCache {
+	fn check(&self, who: &AccountId32, onchain_nonce: u32, tx_nonce: u32) -> Result<(), String> {
+		Ok(())
+	}
+
+	fn commit(&self, who: &AccountId32, tx_nonce: u32) {}
+}
+
+pub struct DummyRuntimeApi;
+impl RuntimeApiT for DummyRuntimeApi {
+	fn get_blob_runtime_parameters(
+		&self,
+		_block_hash: H256,
+	) -> Result<da_control::BlobRuntimeParameters, ApiError> {
+		let mut x = da_control::BlobRuntimeParameters::default();
+		x.max_transaction_validity = u64::MAX;
+		Ok(x)
+	}
+
+	fn validate_transaction(
+		&self,
+		_at: H256,
+		_source: TransactionSource,
+		_uxt: UncheckedExtrinsic,
+		_block_hash: H256,
+	) -> Result<TransactionValidity, ApiError> {
+		Ok(Ok(Default::default()))
+	}
+
+	fn get_active_validators(&self, _block_hash: H256) -> Result<Vec<AccountId>, ApiError> {
+		Ok(vec![AccountId::from([0u8; 32])])
+	}
+
+	fn get_validator_from_key(
+		&self,
+		_at: H256,
+		_id: KeyTypeId,
+		_key_data: Vec<u8>,
+	) -> Result<Option<AccountId>, ApiError> {
+		Ok(Some(AccountId::from([0u8; 32])))
+	}
+
+	fn account_nonce(&self, _block_hash: H256, _who: AccountId) -> Result<u32, ApiError> {
+		Ok(0)
+	}
 }
 
 #[allow(dead_code)]
@@ -137,34 +187,16 @@ impl CommitmentQueueApiT for DummyDummy {
 	}
 }
 
-fn setting_the_stage() -> (
-	Vec<u8>,
+/* fn setting_the_stage() -> (
+	BuildTxOutput,
 	Friends,
 	Vec<u8>,
 	Arc<dyn CommitmentQueueApiT>,
 	std::thread::JoinHandle<()>,
 ) {
-	// Create runtime
-	let runtime = tokio::runtime::Runtime::new().unwrap();
+	let data = Arc::new(std::fs::read("./../32MiB").unwrap());
+	let tx = build_transaction(None, data);
 
-	let rc = runtime
-		.block_on(async { Client::new(LOCAL_ENDPOINT).await })
-		.unwrap();
-	let data = std::fs::read("./../32MiB").unwrap();
-	let blob_hash = H256::from(keccak_256(&data));
-	let commitments = build_da_commitments(&data, 1024, 4096, Default::default());
-
-	let avail_rust_blob_hash = avail_rust::H256::from(blob_hash.0);
-	let unsigned = rc.tx().data_availability().submit_blob_metadata(
-		avail_rust_blob_hash,
-		data.len() as u64,
-		commitments,
-	);
-
-	let tx_bytes = runtime
-		.block_on(async { unsigned.sign(&bob(), Options::new(2)).await })
-		.unwrap()
-		.encode();
 
 	let blob_store = RocksdbBlobStore::open("./tmp_01").unwrap();
 	let blob_data_store = RocksdbBlobStore::open("./tmp_02").unwrap();
@@ -183,10 +215,109 @@ fn setting_the_stage() -> (
 		CommitmentQueue::run_task(queue_rx);
 	});
 
-	(data, friends, tx_bytes, dummy.clone(), t1)
+	(tx, friends, tx_bytes, dummy.clone(), t1)
+} */
+
+struct BuildTxOutput {
+	pub tx_bytes: Vec<u8>,
+	pub data_hash: H256,
+	pub commitments: Vec<u8>,
+	pub data: Arc<Vec<u8>>,
 }
 
-#[divan::bench(max_time = 10)]
+fn build_transaction(nonce: Option<u32>, data: Arc<Vec<u8>>) -> BuildTxOutput {
+	let runtime = tokio::runtime::Runtime::new().unwrap();
+	let rc = runtime
+		.block_on(async { Client::new(LOCAL_ENDPOINT).await })
+		.unwrap();
+
+	// Hash and Commitments
+	let data_hash = H256::from(keccak_256(&*data));
+	let commitments = build_da_commitments(&*data, 1024, 4096, Default::default());
+
+	// Tx
+	let avail_rust_blob_hash = avail_rust::H256::from(data_hash.0);
+	let unsigned = rc.tx().data_availability().submit_blob_metadata(
+		avail_rust_blob_hash,
+		data.len() as u64,
+		commitments.clone(),
+	);
+
+	let mut options = Options::new(2);
+	if let Some(nonce) = nonce {
+		options = options.nonce(nonce)
+	}
+
+	let tx_bytes = runtime
+		.block_on(async { unsigned.sign(&bob(), options).await })
+		.unwrap()
+		.encode();
+	BuildTxOutput {
+		tx_bytes,
+		data_hash,
+		commitments,
+		data,
+	}
+}
+
+mod validation {
+	use super::*;
+
+	#[divan::bench(max_time = 2)]
+	fn initial_validation(bencher: Bencher) {
+		let data = Arc::new(std::fs::read("./../32MiB").unwrap());
+		let tx = build_transaction(None, data.clone());
+		bencher.with_inputs(|| &tx).bench_local_refs(|tx| {
+			avail_blob::validation::initial_validation(
+				tx.data.len(),
+				tx.data.as_slice(),
+				&tx.tx_bytes,
+			)
+			.expect("Ok")
+		});
+	}
+
+	#[divan::bench(max_time = 2)]
+	fn keccak(bencher: Bencher) {
+		let data = Arc::new(std::fs::read("./../32MiB").unwrap());
+		bencher.with_inputs(|| &data).bench_local_refs(|data| {
+			keccak_256(data.as_slice());
+		});
+	}
+
+	#[divan::bench(max_time = 2)]
+	fn tx_validation(bencher: Bencher) {
+		let data = Arc::new(std::fs::read("./../32MiB").unwrap());
+		let tx = build_transaction(None, data.clone());
+		let dummy_runtime_api = Arc::new(DummyRuntimeApi);
+		let dummy_nonce_cache = Arc::new(DummyNonceCache);
+
+		bencher
+			.with_inputs(|| {
+				(
+					&tx.tx_bytes,
+					dummy_runtime_api.clone(),
+					dummy_nonce_cache.clone(),
+				)
+			})
+			.bench_local_refs(|params| {
+				let api_dyn: Arc<dyn RuntimeApiT> = params.1.clone();
+				let nonce_dyn: Arc<dyn NonceCacheApiT> = params.2.clone();
+
+				avail_blob::validation::tx_validation(
+					Default::default(),
+					&params.0,
+					0,
+					u64::MAX,
+					&api_dyn,
+					&nonce_dyn,
+				)
+				.expect("Ok")
+			});
+	}
+}
+
+/* #[divan::bench(max_time = 10)]
 fn submit_data_benchmark(bencher: Bencher) {
 	bencher
 		.with_inputs(|| {
@@ -208,3 +339,4 @@ fn submit_data_benchmark(bencher: Bencher) {
 			});
 		});
 }
+ */

@@ -9,6 +9,7 @@ use sc_service::Role;
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::{ApiError, ProvideRuntimeApi};
 use sp_core::{crypto::KeyTypeId, H256};
+use sp_runtime::AccountId32;
 use sp_runtime::{
 	traits::{Block as BlockT, HashingFor, Header as HeaderT},
 	transaction_validity::{TransactionSource, TransactionValidity},
@@ -270,4 +271,9 @@ where
 
 pub trait CommitmentQueueApiT: Send + Sync {
 	fn send(&self, value: CommitmentQueueMessage) -> bool;
+}
+
+pub trait NonceCacheApiT: Send + Sync {
+	fn check(&self, who: &AccountId32, onchain_nonce: u32, tx_nonce: u32) -> Result<(), String>;
+	fn commit(&self, who: &AccountId32, tx_nonce: u32);
 }

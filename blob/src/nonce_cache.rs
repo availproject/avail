@@ -1,3 +1,4 @@
+use crate::traits::NonceCacheApiT;
 use sp_runtime::AccountId32;
 use std::sync::Mutex;
 use ttl_cache::TtlCache;
@@ -14,13 +15,10 @@ impl NonceCache {
 			inner: Mutex::new(TtlCache::new(BLOB_FUTURE_ACCOUNTS_IN_CACHE as usize)),
 		}
 	}
+}
 
-	pub fn check(
-		&self,
-		who: &AccountId32,
-		onchain_nonce: u32,
-		tx_nonce: u32,
-	) -> Result<(), String> {
+impl NonceCacheApiT for NonceCache {
+	fn check(&self, who: &AccountId32, onchain_nonce: u32, tx_nonce: u32) -> Result<(), String> {
 		let max_allowed = onchain_nonce.saturating_add(BLOB_FUTURE_NONCE_DEPTH);
 		if tx_nonce > max_allowed {
 			return Err(format!(
@@ -28,7 +26,6 @@ impl NonceCache {
 				tx_nonce, onchain_nonce, BLOB_FUTURE_NONCE_DEPTH
 			));
 		}
-
 
 		let cache = self.inner.lock().unwrap();
 		let accept = match cache.get(who) {
@@ -48,7 +45,7 @@ impl NonceCache {
 		}
 	}
 
-	pub fn commit(&self, who: &AccountId32, tx_nonce: u32) {
+	fn commit(&self, who: &AccountId32, tx_nonce: u32) {
 		let mut cache = self.inner.lock().unwrap();
 		if let Some(last) = cache.get_mut(who) {
 			*last = tx_nonce;

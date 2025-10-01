@@ -1,3 +1,12 @@
+pub mod nonce_cache;
+pub mod p2p;
+pub mod rpc;
+pub mod store;
+pub mod traits;
+pub mod types;
+pub mod utils;
+pub mod validation;
+
 use crate::{
 	p2p::BlobHandle,
 	types::{
@@ -27,14 +36,6 @@ use sp_core::H256;
 use sp_runtime::{traits::Block as BlockT, SaturatedConversion};
 use std::{str::FromStr, sync::Arc, time::Duration};
 use store::{RocksdbBlobStore, StorageApiT};
-
-pub mod nonce_cache;
-pub mod p2p;
-pub mod rpc;
-pub mod store;
-pub mod traits;
-pub mod types;
-pub mod utils;
 
 pub(crate) const LOG_TARGET: &str = "avail::blob";
 
