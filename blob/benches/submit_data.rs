@@ -1,3 +1,4 @@
+use avail_blob::nonce_cache::NonceCache;
 use avail_blob::rpc::submit_blob_main_task;
 use avail_blob::rpc::Friends;
 use avail_blob::store::RocksdbBlobStore;
@@ -83,6 +84,10 @@ impl RuntimeApiT for DummyDummy {
 		_key_data: Vec<u8>,
 	) -> Result<Option<AccountId>, ApiError> {
 		Ok(Some(AccountId::from([0u8; 32])))
+	}
+
+	fn account_nonce(&self, _block_hash: H256, _who: AccountId) -> Result<u32, ApiError> {
+		Ok(0)
 	}
 }
 
@@ -172,6 +177,7 @@ fn setting_the_stage() -> (
 		tx_pool_client: dummy.clone(),
 		blob_store: Arc::new(blob_store),
 		blob_data_store: Arc::new(blob_data_store),
+		nonce_cache: Arc::new(NonceCache::new()),
 	};
 	let t1 = std::thread::spawn(move || {
 		let runtime = tokio::runtime::Runtime::new().unwrap();

@@ -41,6 +41,8 @@ pub trait RuntimeApiT: Send + Sync {
 		id: KeyTypeId,
 		key_data: Vec<u8>,
 	) -> Result<Option<AccountId>, ApiError>;
+
+	fn account_nonce(&self, block_hash: H256, who: AccountId) -> Result<u32, ApiError>;
 }
 
 pub struct RuntimeClient<C, B>(Arc<C>, PhantomData<B>);
@@ -95,6 +97,10 @@ where
 		self.0
 			.runtime_api()
 			.get_validator_from_key(at.into(), id, key_data)
+	}
+
+	fn account_nonce(&self, block_hash: H256, who: AccountId) -> Result<u32, ApiError> {
+		self.0.runtime_api().account_nonce(block_hash.into(), who)
 	}
 }
 

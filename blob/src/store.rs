@@ -72,7 +72,7 @@ impl RocksdbBlobStore {
 		let db = Database::open(&db_config, path.as_ref())?;
 		Ok(RocksdbBlobStore {
 			db,
-			cache: Mutex::new(TtlCache::new(MAX_BLOBS_IN_CACHE as usize)), // keep ~128 blobs
+			cache: Mutex::new(TtlCache::new(MAX_BLOBS_IN_CACHE as usize)),
 		})
 	}
 

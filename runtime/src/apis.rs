@@ -83,6 +83,9 @@ decl_runtime_apis! {
 
 		/// Return blob runtime parameters.
 		fn get_blob_runtime_parameters() -> da_control::BlobRuntimeParameters;
+
+		/// Expose accounts nonce
+		fn account_nonce(who: AccountId32) -> u32;
 	}
 }
 
@@ -487,6 +490,10 @@ impl_runtime_apis! {
 
 		fn get_blob_runtime_parameters() -> da_control::BlobRuntimeParameters {
 			da_control::Pallet::<Runtime>::blob_runtime_parameters()
+		}
+
+		fn account_nonce(who: AccountId32) -> u32 {
+			frame_system::Pallet::<Self>::account_nonce(who) as u32
 		}
 	}
 

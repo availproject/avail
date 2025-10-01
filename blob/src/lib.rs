@@ -28,6 +28,7 @@ use sp_runtime::{traits::Block as BlockT, SaturatedConversion};
 use std::{str::FromStr, sync::Arc, time::Duration};
 use store::{RocksdbBlobStore, StorageApiT};
 
+pub mod nonce_cache;
 pub mod p2p;
 pub mod rpc;
 pub mod store;
@@ -64,6 +65,13 @@ const REQ_RES_QUEUE_SIZE: u8 = 255;
 const CONCURRENT_REQUESTS: usize = 255;
 /// Amount of blocks used to periodically check wether we should remove expired blobs or not.
 const BLOB_EXPIRATION_CHECK_PERIOD: u64 = 180;
+/// The time during which we store an account nonce / future nonce to accept or reject blob transactions
+const BLOB_FUTURE_NONCE_CACHE_TTL: Duration = Duration::from_secs(30);
+/// The depth for which we accept future nonce for an account
+/// We can accept up to BLOB_FUTURE_NONCE_DEPTH future tx for the same account as long as we have seen the nonces before
+const BLOB_FUTURE_NONCE_DEPTH: u32 = 100;
+/// The number of account nonce we're storing in the blob future cache
+const BLOB_FUTURE_ACCOUNTS_IN_CACHE: u32 = 256;
 
 pub async fn decode_blob_notification<Block>(data: &[u8], blob_handle: &BlobHandle<Block>)
 where

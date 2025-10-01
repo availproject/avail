@@ -17,6 +17,7 @@ use sc_transaction_pool_api::TransactionSource;
 use sp_api::ProvideRuntimeApi;
 use sp_authority_discovery::AuthorityId;
 use sp_core::{crypto::KeyTypeId, sr25519, twox_128};
+use sp_runtime::MultiAddress;
 use sp_runtime::{
 	key_types,
 	traits::{Block as BlockT, Verify},
@@ -767,4 +768,19 @@ pub fn zstd_compress(data: &[u8], level: i32) -> Result<Vec<u8>, std::io::Error>
 
 pub fn zstd_decompress(data: &[u8]) -> Result<Vec<u8>, std::io::Error> {
 	zstd::decode_all(data)
+}
+
+pub fn extract_signer_and_nonce(uxt: &UncheckedExtrinsic) -> Option<(AccountId32, u32)> {
+	let (address, _sig, extra) = uxt.signature.as_ref()?;
+
+	let who: AccountId32 = match address {
+		MultiAddress::Id(id) => id.clone(),
+		MultiAddress::Address32(data) => AccountId32::new(*data),
+		_ => return None,
+	};
+
+	let check_nonce = &extra.5;
+	let nonce = check_nonce.0;
+
+	Some((who, nonce))
 }
