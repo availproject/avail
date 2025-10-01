@@ -11,6 +11,7 @@ use avail_blob::types::BlobNotification;
 use avail_blob::utils::CommitmentQueue;
 use avail_blob::utils::CommitmentQueueMessage;
 use avail_rust::prelude::*;
+use da_commitment::build_da_commitments;
 use da_commitment::build_da_commitments::build_da_commitments;
 use da_runtime::AccountId;
 use da_runtime::UncheckedExtrinsic;
@@ -33,6 +34,9 @@ use std::sync::Arc;
 fn main() {
 	divan::main();
 }
+
+pub const DEFAULT_ROWS: usize = 1024;
+pub const DEFAULT_COLS: usize = 4096;
 
 pub struct DummyNonceCache;
 impl NonceCacheApiT for DummyNonceCache {
@@ -82,6 +86,177 @@ impl RuntimeApiT for DummyRuntimeApi {
 	}
 }
 
+struct BuildTxOutput {
+	pub tx_bytes: Vec<u8>,
+	pub data_hash: H256,
+	pub commitments: Vec<u8>,
+	pub data: Arc<Vec<u8>>,
+}
+
+fn build_transaction(nonce: Option<u32>, data: Arc<Vec<u8>>) -> BuildTxOutput {
+	// Hash and Commitments
+	let data_hash = H256::from(keccak_256(&*data));
+	let commitments = build_da_commitments(&*data, 1024, 4096, Default::default());
+
+	// Tx
+	let account_id: avail_rust::AccountId = avail_rust::AccountId::from([0u8; 32]);
+	let signature = [0u8; 64];
+
+	let avail_rust_blob_hash = avail_rust::H256::from(data_hash.0);
+	let call = avail::data_availability::tx::SubmitBlobMetadata {
+		blob_hash: avail_rust_blob_hash,
+		size: data.len() as u64,
+		commitments: commitments.clone(),
+	};
+	let call = ExtrinsicCall::from(&call);
+	let extra = ExtrinsicExtra {
+		era: Default::default(),
+		nonce: 0,
+		tip: 0,
+		app_id: 2,
+	};
+	let additional = ExtrinsicAdditional {
+		spec_version: 0,
+		tx_version: 0,
+		genesis_hash: Default::default(),
+		fork_hash: Default::default(),
+	};
+
+	let ext_payload = ExtrinsicPayload::new(call, extra, additional);
+	let ext = GenericExtrinsic::new(account_id, signature, ext_payload);
+
+	let avail_rust_blob_hash = avail_rust::H256::from(data_hash.0);
+	BuildTxOutput {
+		tx_bytes: ext.encode(),
+		data_hash,
+		commitments,
+		data,
+	}
+}
+
+mod validation {
+	use super::*;
+
+	#[divan::bench(max_time = 2)]
+	fn initial_validation(bencher: Bencher) {
+		let data = Arc::new(std::fs::read("./../32MiB").unwrap());
+		let tx = build_transaction(None, data.clone());
+		bencher.with_inputs(|| &tx).bench_local_refs(|tx| {
+			avail_blob::validation::initial_validation(
+				tx.data.len(),
+				tx.data.as_slice(),
+				&tx.tx_bytes,
+			)
+			.expect("Ok")
+		});
+	}
+
+	#[divan::bench(max_time = 2)]
+	fn keccak(bencher: Bencher) {
+		let data = Arc::new(std::fs::read("./../32MiB").unwrap());
+		bencher.with_inputs(|| &data).bench_local_refs(|data| {
+			keccak_256(data.as_slice());
+		});
+	}
+
+	#[divan::bench(max_time = 2)]
+	fn tx_validation(bencher: Bencher) {
+		let data = Arc::new(std::fs::read("./../32MiB").unwrap());
+		let tx = build_transaction(None, data.clone());
+		let runtime_dyn: Arc<dyn RuntimeApiT> = Arc::new(DummyRuntimeApi);
+		let nonce_cache_dyn: Arc<dyn NonceCacheApiT> = Arc::new(DummyNonceCache);
+
+		bencher
+			.with_inputs(|| (&tx.tx_bytes, &runtime_dyn, &nonce_cache_dyn))
+			.bench_local_refs(|params| {
+				avail_blob::validation::tx_validation(
+					Default::default(),
+					&params.0,
+					0,
+					u64::MAX,
+					&params.1,
+					&params.2,
+				)
+				.expect("Ok")
+			});
+	}
+
+	#[divan::bench(max_time = 2)]
+	fn commitment_validation(bencher: Bencher) {
+		let data = Arc::new(std::fs::read("./../32MiB").unwrap());
+		let tx = build_transaction(None, data.clone());
+
+		// Queue
+		let (queue, rx) = CommitmentQueue::new(1);
+		CommitmentQueue::spawn_background_task(rx);
+		let queue: Arc<dyn CommitmentQueueApiT> = Arc::new(queue);
+
+		// grid & Commitment
+		let grid = build_da_commitments::build_polynomal_grid(
+			&*tx.data,
+			DEFAULT_ROWS,
+			DEFAULT_COLS,
+			Default::default(),
+		);
+		let provided_commitment = &tx.commitments;
+
+		bencher
+			.with_inputs(|| (provided_commitment, &grid, &queue))
+			.bench_local_refs(|params| {
+				let runtime = tokio::runtime::Runtime::new().unwrap();
+				runtime.block_on(async {
+					avail_blob::validation::commitment_validation(
+						&params.0,
+						params.1.clone(),
+						&params.2,
+					)
+					.await
+					.expect("Ok")
+				});
+			});
+	}
+
+	#[divan::bench(max_time = 2)]
+	fn build_polynomal_grid(bencher: Bencher) {
+		let data = Arc::new(std::fs::read("./../32MiB").unwrap());
+		let tx = build_transaction(None, data.clone());
+
+		bencher.with_inputs(|| &tx).bench_local_refs(|tx| {
+			build_da_commitments::build_polynomal_grid(
+				&*tx.data,
+				DEFAULT_ROWS,
+				DEFAULT_COLS,
+				Default::default(),
+			);
+		});
+	}
+}
+
+/* #[divan::bench(max_time = 10)]
+fn submit_data_benchmark(bencher: Bencher) {
+	bencher
+		.with_inputs(|| {
+			let (data, friends, metadata, queue, _t1) = setting_the_stage();
+			(
+				data.clone(),
+				friends.clone(),
+				metadata.clone(),
+				queue.clone(),
+			)
+		})
+		.bench_local_refs(|d| {
+			let runtime = tokio::runtime::Runtime::new().unwrap();
+			runtime.block_on(async {
+				let t = submit_blob_main_task(d.3.clone(), d.2.clone(), d.0.clone(), d.1.clone())
+					.await
+					.unwrap();
+				t.await.unwrap();
+			});
+		});
+}
+ */
+
+/*
 #[allow(dead_code)]
 pub struct DummyDummy {
 	keystore: Arc<LocalKeystore>,
@@ -188,164 +363,4 @@ impl CommitmentQueueApiT for DummyDummy {
 	fn send(&self, value: CommitmentQueueMessage) -> bool {
 		self.queue_tx.try_send(value).is_ok()
 	}
-}
-
-/* fn setting_the_stage() -> (
-	BuildTxOutput,
-	Friends,
-	Vec<u8>,
-	Arc<dyn CommitmentQueueApiT>,
-	std::thread::JoinHandle<()>,
-) {
-	let data = Arc::new(std::fs::read("./../32MiB").unwrap());
-	let tx = build_transaction(None, data);
-
-
-	let blob_store = RocksdbBlobStore::open("./tmp_01").unwrap();
-	let blob_data_store = RocksdbBlobStore::open("./tmp_02").unwrap();
-	let (dummy, queue_rx) = DummyDummy::new();
-	let dummy = Arc::new(dummy);
-	let friends = Friends {
-		externalities: dummy.clone(),
-		runtime_client: dummy.clone(),
-		backend_client: dummy.clone(),
-		tx_pool_client: dummy.clone(),
-		blob_store: Arc::new(blob_store),
-		blob_data_store: Arc::new(blob_data_store),
-		nonce_cache: Arc::new(NonceCache::new()),
-	};
-	let t1 = std::thread::spawn(move || {
-		CommitmentQueue::run_task(queue_rx);
-	});
-
-	(tx, friends, tx_bytes, dummy.clone(), t1)
 } */
-
-struct BuildTxOutput {
-	pub tx_bytes: Vec<u8>,
-	pub data_hash: H256,
-	pub commitments: Vec<u8>,
-	pub data: Arc<Vec<u8>>,
-}
-
-fn build_transaction(nonce: Option<u32>, data: Arc<Vec<u8>>) -> BuildTxOutput {
-	// Hash and Commitments
-	let data_hash = H256::from(keccak_256(&*data));
-	let commitments = build_da_commitments(&*data, 1024, 4096, Default::default());
-
-	// Tx
-	let account_id: avail_rust::AccountId = avail_rust::AccountId::from([0u8; 32]);
-	let signature = [0u8; 64];
-
-	let avail_rust_blob_hash = avail_rust::H256::from(data_hash.0);
-	let call = avail::data_availability::tx::SubmitBlobMetadata {
-		blob_hash: avail_rust_blob_hash,
-		size: data.len() as u64,
-		commitments: commitments.clone(),
-	};
-	let call = ExtrinsicCall::from(&call);
-	let extra = ExtrinsicExtra {
-		era: Default::default(),
-		nonce: 0,
-		tip: 0,
-		app_id: 2,
-	};
-	let additional = ExtrinsicAdditional {
-		spec_version: 0,
-		tx_version: 0,
-		genesis_hash: Default::default(),
-		fork_hash: Default::default(),
-	};
-
-	let ext_payload = ExtrinsicPayload::new(call, extra, additional);
-	let ext = GenericExtrinsic::new(account_id, signature, ext_payload);
-
-	let avail_rust_blob_hash = avail_rust::H256::from(data_hash.0);
-	BuildTxOutput {
-		tx_bytes: ext.encode(),
-		data_hash,
-		commitments,
-		data,
-	}
-}
-
-mod validation {
-	use super::*;
-
-	#[divan::bench(max_time = 2)]
-	fn initial_validation(bencher: Bencher) {
-		let data = Arc::new(std::fs::read("./../32MiB").unwrap());
-		let tx = build_transaction(None, data.clone());
-		bencher.with_inputs(|| &tx).bench_local_refs(|tx| {
-			avail_blob::validation::initial_validation(
-				tx.data.len(),
-				tx.data.as_slice(),
-				&tx.tx_bytes,
-			)
-			.expect("Ok")
-		});
-	}
-
-	#[divan::bench(max_time = 2)]
-	fn keccak(bencher: Bencher) {
-		let data = Arc::new(std::fs::read("./../32MiB").unwrap());
-		bencher.with_inputs(|| &data).bench_local_refs(|data| {
-			keccak_256(data.as_slice());
-		});
-	}
-
-	#[divan::bench(max_time = 2)]
-	fn tx_validation(bencher: Bencher) {
-		let data = Arc::new(std::fs::read("./../32MiB").unwrap());
-		let tx = build_transaction(None, data.clone());
-		let dummy_runtime_api = Arc::new(DummyRuntimeApi);
-		let dummy_nonce_cache = Arc::new(DummyNonceCache);
-
-		bencher
-			.with_inputs(|| {
-				(
-					&tx.tx_bytes,
-					dummy_runtime_api.clone(),
-					dummy_nonce_cache.clone(),
-				)
-			})
-			.bench_local_refs(|params| {
-				let api_dyn: Arc<dyn RuntimeApiT> = params.1.clone();
-				let nonce_dyn: Arc<dyn NonceCacheApiT> = params.2.clone();
-
-				avail_blob::validation::tx_validation(
-					Default::default(),
-					&params.0,
-					0,
-					u64::MAX,
-					&api_dyn,
-					&nonce_dyn,
-				)
-				.expect("Ok")
-			});
-	}
-}
-
-/* #[divan::bench(max_time = 10)]
-fn submit_data_benchmark(bencher: Bencher) {
-	bencher
-		.with_inputs(|| {
-			let (data, friends, metadata, queue, _t1) = setting_the_stage();
-			(
-				data.clone(),
-				friends.clone(),
-				metadata.clone(),
-				queue.clone(),
-			)
-		})
-		.bench_local_refs(|d| {
-			let runtime = tokio::runtime::Runtime::new().unwrap();
-			runtime.block_on(async {
-				let t = submit_blob_main_task(d.3.clone(), d.2.clone(), d.0.clone(), d.1.clone())
-					.await
-					.unwrap();
-				t.await.unwrap();
-			});
-		});
-}
- */
