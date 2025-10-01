@@ -1,3 +1,6 @@
+use crate::avail_rust_core::ExtrinsicAdditional;
+use crate::avail_rust_core::ExtrinsicPayload;
+use crate::avail_rust_core::GenericExtrinsic;
 use avail_blob;
 use avail_blob::nonce_cache::NonceCache;
 use avail_blob::rpc::submit_blob_main_task;
@@ -226,34 +229,40 @@ struct BuildTxOutput {
 }
 
 fn build_transaction(nonce: Option<u32>, data: Arc<Vec<u8>>) -> BuildTxOutput {
-	let runtime = tokio::runtime::Runtime::new().unwrap();
-	let rc = runtime
-		.block_on(async { Client::new(LOCAL_ENDPOINT).await })
-		.unwrap();
-
 	// Hash and Commitments
 	let data_hash = H256::from(keccak_256(&*data));
 	let commitments = build_da_commitments(&*data, 1024, 4096, Default::default());
 
 	// Tx
+	let account_id: avail_rust::AccountId = avail_rust::AccountId::from([0u8; 32]);
+	let signature = [0u8; 64];
+
 	let avail_rust_blob_hash = avail_rust::H256::from(data_hash.0);
-	let unsigned = rc.tx().data_availability().submit_blob_metadata(
-		avail_rust_blob_hash,
-		data.len() as u64,
-		commitments.clone(),
-	);
+	let call = avail::data_availability::tx::SubmitBlobMetadata {
+		blob_hash: avail_rust_blob_hash,
+		size: data.len() as u64,
+		commitments: commitments.clone(),
+	};
+	let call = ExtrinsicCall::from(&call);
+	let extra = ExtrinsicExtra {
+		era: Default::default(),
+		nonce: 0,
+		tip: 0,
+		app_id: 2,
+	};
+	let additional = ExtrinsicAdditional {
+		spec_version: 0,
+		tx_version: 0,
+		genesis_hash: Default::default(),
+		fork_hash: Default::default(),
+	};
 
-	let mut options = Options::new(2);
-	if let Some(nonce) = nonce {
-		options = options.nonce(nonce)
-	}
+	let ext_payload = ExtrinsicPayload::new(call, extra, additional);
+	let ext = GenericExtrinsic::new(account_id, signature, ext_payload);
 
-	let tx_bytes = runtime
-		.block_on(async { unsigned.sign(&bob(), options).await })
-		.unwrap()
-		.encode();
+	let avail_rust_blob_hash = avail_rust::H256::from(data_hash.0);
 	BuildTxOutput {
-		tx_bytes,
+		tx_bytes: ext.encode(),
 		data_hash,
 		commitments,
 		data,
