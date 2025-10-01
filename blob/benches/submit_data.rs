@@ -162,7 +162,7 @@ fn setting_the_stage() -> (
 	);
 
 	let tx_bytes = runtime
-		.block_on(async { unsigned.sign(&alice(), Options::new(2)).await })
+		.block_on(async { unsigned.sign(&bob(), Options::new(2)).await })
 		.unwrap()
 		.encode();
 
@@ -180,8 +180,7 @@ fn setting_the_stage() -> (
 		nonce_cache: Arc::new(NonceCache::new()),
 	};
 	let t1 = std::thread::spawn(move || {
-		let runtime = tokio::runtime::Runtime::new().unwrap();
-		runtime.block_on(async { CommitmentQueue::run_task(queue_rx).await });
+		CommitmentQueue::run_task(queue_rx);
 	});
 
 	(data, friends, tx_bytes, dummy.clone(), t1)
@@ -189,9 +188,9 @@ fn setting_the_stage() -> (
 
 #[divan::bench(max_time = 10)]
 fn submit_data_benchmark(bencher: Bencher) {
-	let (data, friends, metadata, queue, _t1) = setting_the_stage();
 	bencher
 		.with_inputs(|| {
+			let (data, friends, metadata, queue, _t1) = setting_the_stage();
 			(
 				data.clone(),
 				friends.clone(),

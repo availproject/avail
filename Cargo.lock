@@ -1244,8 +1244,8 @@ dependencies = [
 
 [[package]]
 name = "avail-rust-client"
-version = "0.3.0"
-source = "git+https://github.com/availproject/avail-rust?branch=ghali%2Finfinity-da-rpc#cad9d25caea3d130f23daefeccb3a2735b3f3e0c"
+version = "0.4.0-rc.4"
+source = "git+https://github.com/availproject/avail-rust?branch=ghali%2Finfinity-da-rpc#1228d8848960fcd1f16e0aef40893eec10885497"
 dependencies = [
  "avail-rust-core",
  "const-hex",
@@ -1265,8 +1265,8 @@ dependencies = [
 
 [[package]]
 name = "avail-rust-core"
-version = "0.3.0"
-source = "git+https://github.com/availproject/avail-rust?branch=ghali%2Finfinity-da-rpc#cad9d25caea3d130f23daefeccb3a2735b3f3e0c"
+version = "0.4.0-rc.4"
+source = "git+https://github.com/availproject/avail-rust?branch=ghali%2Finfinity-da-rpc#1228d8848960fcd1f16e0aef40893eec10885497"
 dependencies = [
  "base64 0.22.1",
  "const-hex",
@@ -1476,7 +1476,7 @@ dependencies = [
  "bitflags 2.8.0",
  "cexpr",
  "clang-sys",
- "itertools 0.13.0",
+ "itertools 0.10.5",
  "log",
  "prettyplease 0.2.29",
  "proc-macro2",
@@ -2216,15 +2216,14 @@ dependencies = [
 
 [[package]]
 name = "const-hex"
-version = "1.14.1"
+version = "1.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "83e22e0ed40b96a48d3db274f72fd365bd78f67af39b6bbd47e8a15e1c6207ff"
+checksum = "b6407bff74dea37e0fa3dc1c1c974e5d46405f0c987bf9997a0762adce71eda6"
 dependencies = [
  "cfg-if",
  "cpufeatures",
- "hex",
  "proptest",
- "serde",
+ "serde_core",
 ]
 
 [[package]]
@@ -5001,7 +5000,7 @@ dependencies = [
  "httpdate",
  "itoa",
  "pin-project-lite 0.2.16",
- "socket2 0.5.8",
+ "socket2 0.4.10",
  "tokio",
  "tower-service",
  "tracing",
@@ -9265,7 +9264,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "157c5a9d7ea5c2ed2d9fb8f495b64759f7816c7eaea54ba3978f0d63000162e3"
 dependencies = [
  "anyhow",
- "itertools 0.13.0",
+ "itertools 0.10.5",
  "proc-macro2",
  "quote",
  "syn 2.0.96",
@@ -10000,7 +9999,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys 0.9.4",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -11645,10 +11644,11 @@ checksum = "f638d531eccd6e23b980caf34876660d38e265409d8e99b397ab71eb3612fad0"
 
 [[package]]
 name = "serde"
-version = "1.0.217"
+version = "1.0.228"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "02fc4265df13d6fa1d00ecff087228cc0a2b5f3c0e87e258d8b94a156e984c70"
+checksum = "9a8e94ea7f378bd32cbbd37198a4a91436180c5bb472411e48b5ec2e2124ae9e"
 dependencies = [
+ "serde_core",
  "serde_derive",
 ]
 
@@ -11662,10 +11662,19 @@ dependencies = [
 ]
 
 [[package]]
-name = "serde_derive"
-version = "1.0.217"
+name = "serde_core"
+version = "1.0.228"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5a9bf7cf98d04a2b28aead066b7496853d4779c9cc183c440dbac457641e19a0"
+checksum = "41d385c7d4ca58e59fc732af25c3983b67ac852c1a25000afe1175de458b67ad"
+dependencies = [
+ "serde_derive",
+]
+
+[[package]]
+name = "serde_derive"
+version = "1.0.228"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d540f220d3187173da220f885ab66608367b6574e925011a9353e4badda91d79"
 dependencies = [
  "proc-macro2",
  "quote",

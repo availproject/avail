@@ -268,7 +268,6 @@ where
 	}
 }
 
-#[async_trait]
 pub trait CommitmentQueueApiT: Send + Sync {
 	fn send(&self, value: CommitmentQueueMessage) -> bool;
 }
