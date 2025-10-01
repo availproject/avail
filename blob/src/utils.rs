@@ -272,7 +272,7 @@ pub fn check_store_blob(
 
 pub fn check_if_wait_next_block<C, Block>(
 	client: &Arc<C>,
-	blob_store: &Arc<RocksdbBlobStore>,
+	blob_database: &Arc<RocksdbBlobStore>,
 	encoded: Vec<u8>,
 	submit_blob_metadata_calls: &mut Vec<(RuntimeCall, u32)>,
 	blob_metadata: &mut BTreeMap<BlobHash, (BlobMetadata, Vec<OwnershipEntry>)>,
@@ -305,11 +305,11 @@ where
 
 	is_submit_blob_metadata = true;
 
-	match blob_store.get_blob_metadata(blob_hash) {
+	match blob_database.get_blob_metadata(blob_hash) {
 		Ok(Some(meta)) => {
-			let Ok(ownerships) = blob_store.get_blob_ownerships(&blob_hash) else {
+			let Ok(ownerships) = blob_database.get_blob_ownerships(&blob_hash) else {
 				log::error!("Failed to read from db");
-				should_submit = check_retries_for_blob(client, blob_hash, blob_store);
+				should_submit = check_retries_for_blob(client, blob_hash, blob_database);
 				return (should_submit, is_submit_blob_metadata);
 			};
 			// Store it for later
@@ -363,13 +363,15 @@ where
 						} else {
 							// still valid and longevity in-bounds → wait another block
 							// But check the number of retried
-							should_submit = check_retries_for_blob(client, blob_hash, blob_store);
+							should_submit =
+								check_retries_for_blob(client, blob_hash, blob_database);
 						}
 					},
 					Err(e) => match e {
 						TransactionValidityError::Invalid(InvalidTransaction::Future) => {
 							// The transaction is supposed to go in, but it's waiting for a tx with a lower nonce.
-							should_submit = check_retries_for_blob(client, blob_hash, blob_store);
+							should_submit =
+								check_retries_for_blob(client, blob_hash, blob_database);
 						},
 						_ => {
 							// Anything went wrong → submit so it disappears
@@ -382,7 +384,7 @@ where
 
 		// No metadata yet (or DB error) → maybe we just haven't seen the blob announcement
 		_ => {
-			should_submit = check_retries_for_blob(client, blob_hash, blob_store);
+			should_submit = check_retries_for_blob(client, blob_hash, blob_database);
 		},
 	}
 
@@ -396,7 +398,7 @@ where
 pub fn check_retries_for_blob<Block, C>(
 	client: &Arc<C>,
 	blob_hash: &BlobHash,
-	blob_store: &Arc<RocksdbBlobStore>,
+	blob_database: &Arc<RocksdbBlobStore>,
 ) -> bool
 where
 	Block: BlockT,
@@ -414,10 +416,10 @@ where
 			BlobRuntimeParameters::default()
 		},
 	};
-	let tried = blob_store.get_blob_retry(blob_hash).unwrap_or(0);
+	let tried = blob_database.get_blob_retry(blob_hash).unwrap_or(0);
 	if tried <= blob_runtime_params.max_blob_retry_before_discarding {
 		// bump retry count and wait
-		let _ = blob_store.insert_blob_retry(blob_hash, tried + 1);
+		let _ = blob_database.insert_blob_retry(blob_hash, tried + 1);
 		log::info!(
 			"BLOB - RPC check_retries_for_blob - it lives - {:?}",
 			blob_hash

@@ -92,7 +92,7 @@ pub struct ProposerFactory<A, C, PR> {
 	/// When estimating the block size, should the proof be included?
 	include_proof_in_block_size_estimation: bool,
 	/// Blob store to check what the client already has for blob data
-	blob_store: Arc<RocksdbBlobStore>,
+	blob_database: Arc<RocksdbBlobStore>,
 	/// phantom member to pin the `ProofRecording` type.
 	_phantom: PhantomData<PR>,
 }
@@ -108,7 +108,7 @@ impl<A, C> ProposerFactory<A, C, DisableProofRecording> {
 		transaction_pool: Arc<A>,
 		prometheus: Option<&PrometheusRegistry>,
 		telemetry: Option<TelemetryHandle>,
-		blob_store: Arc<RocksdbBlobStore>,
+		blob_database: Arc<RocksdbBlobStore>,
 	) -> Self {
 		ProposerFactory {
 			spawn_handle: Box::new(spawn_handle),
@@ -119,7 +119,7 @@ impl<A, C> ProposerFactory<A, C, DisableProofRecording> {
 			telemetry,
 			client,
 			include_proof_in_block_size_estimation: false,
-			blob_store,
+			blob_database,
 			_phantom: PhantomData,
 		}
 	}
@@ -138,7 +138,7 @@ impl<A, C> ProposerFactory<A, C, EnableProofRecording> {
 		transaction_pool: Arc<A>,
 		prometheus: Option<&PrometheusRegistry>,
 		telemetry: Option<TelemetryHandle>,
-		blob_store: Arc<RocksdbBlobStore>,
+		blob_database: Arc<RocksdbBlobStore>,
 	) -> Self {
 		ProposerFactory {
 			client,
@@ -149,7 +149,7 @@ impl<A, C> ProposerFactory<A, C, EnableProofRecording> {
 			soft_deadline_percent: DEFAULT_SOFT_DEADLINE_PERCENT,
 			telemetry,
 			include_proof_in_block_size_estimation: true,
-			blob_store,
+			blob_database,
 			_phantom: PhantomData,
 		}
 	}
@@ -227,7 +227,7 @@ where
 			default_block_size_limit: self.default_block_size_limit,
 			soft_deadline_percent: self.soft_deadline_percent,
 			telemetry: self.telemetry.clone(),
-			blob_store: self.blob_store.clone(),
+			blob_database: self.blob_database.clone(),
 			_phantom: PhantomData,
 			include_proof_in_block_size_estimation: self.include_proof_in_block_size_estimation,
 		};
@@ -279,7 +279,7 @@ pub struct Proposer<Block: BlockT, C, A: TransactionPool, PR> {
 	include_proof_in_block_size_estimation: bool,
 	soft_deadline_percent: Percent,
 	telemetry: Option<TelemetryHandle>,
-	blob_store: Arc<RocksdbBlobStore>,
+	blob_database: Arc<RocksdbBlobStore>,
 	_phantom: PhantomData<PR>,
 }
 
@@ -608,7 +608,7 @@ where
 			stop_watch.start("Check if wait next block");
 			let (should_submit, is_submit_blob_metadata) = check_if_wait_next_block(
 				&self.client,
-				&self.blob_store,
+				&self.blob_database,
 				encoded.clone(),
 				&mut submit_blob_metadata_calls,
 				&mut blob_metadata,

@@ -186,8 +186,7 @@ where
 	Block: BlockT,
 {
 	fn default() -> Self {
-		let blob_store = Arc::new(RocksdbBlobStore::default());
-		let blob_data_store = Arc::new(RocksdbBlobStore::default());
+		let blob_database = Arc::new(RocksdbBlobStore::default());
 		let network = Arc::new(OnceCell::new());
 		let keystore = Arc::new(OnceCell::new());
 		let client = Arc::new(OnceCell::new());
@@ -201,8 +200,7 @@ where
 			sync_service,
 			gossip_cmd_sender,
 			role,
-			blob_store,
-			blob_data_store,
+			blob_database,
 		});
 		Deps { blob_handle }
 	}

@@ -185,7 +185,7 @@ async fn handle_blob_received_notification<Block>(
 	);
 
 	let maybe_metadata = match blob_handle
-		.blob_store
+		.blob_database
 		.get_blob_metadata(&blob_received.hash)
 	{
 		Ok(maybe_meta) => maybe_meta,
@@ -312,7 +312,7 @@ async fn handle_blob_received_notification<Block>(
 		};
 
 		let Ok(existing_ownership) = blob_handle
-			.blob_store
+			.blob_database
 			.get_blob_ownership(&blob_received.hash, &my_validator_id.encode())
 		else {
 			log::error!(
@@ -326,7 +326,7 @@ async fn handle_blob_received_notification<Block>(
 		if existing_ownership.is_none() {
 			// Get maybe already existing ownership so we can target those validators instead of the busy rpc
 			let mut stored_ownerships = blob_handle
-				.blob_store
+				.blob_database
 				.get_blob_ownerships(&blob_received.hash)
 				.unwrap_or(Vec::new());
 			stored_ownerships.extend(ownerships_to_record.clone());
@@ -389,7 +389,7 @@ async fn handle_blob_received_notification<Block>(
 
 			// Insert the blob in the store
 			if let Err(e) = blob_handle
-				.blob_data_store
+				.blob_database
 				.insert_blob(&blob_response.hash, &blob_response.blob)
 			{
 				log::error!(
@@ -419,7 +419,7 @@ async fn handle_blob_received_notification<Block>(
 		.await;
 	}
 
-	if let Err(e) = blob_handle.blob_store.insert_blob_metadata(&blob_meta) {
+	if let Err(e) = blob_handle.blob_database.insert_blob_metadata(&blob_meta) {
 		log::error!(
 			target: LOG_TARGET,
 			"An error occured while trying to store blob metadata {}: {}",
@@ -430,7 +430,7 @@ async fn handle_blob_received_notification<Block>(
 
 	for o in ownerships_to_record {
 		if let Err(e) = blob_handle
-			.blob_store
+			.blob_database
 			.insert_blob_ownership(&blob_received.hash, &o)
 		{
 			log::error!(
@@ -444,7 +444,7 @@ async fn handle_blob_received_notification<Block>(
 
 	// If we received a blob ownership before metadata, we created an expiry for the ownership to avoid orphans, we delete it here
 	if let Err(e) = blob_handle
-		.blob_store
+		.blob_database
 		.remove_blob_ownership_expiry(&blob_meta.hash)
 	{
 		log::error!(
@@ -565,7 +565,7 @@ where
 
 pub fn handle_incoming_blob_request<Block: BlockT>(
 	request: IncomingRequest,
-	blob_data_store: &RocksdbBlobStore,
+	blob_database: &RocksdbBlobStore,
 	network: &Arc<NetworkService<Block, Block::Hash>>,
 ) where
 	Block: BlockT,
@@ -591,10 +591,10 @@ pub fn handle_incoming_blob_request<Block: BlockT>(
 	match BlobRequestEnum::decode(&mut buf) {
 		Ok(blob_request) => match blob_request {
 			BlobRequestEnum::BlobRequest(blob_request) => {
-				process_blob_request(blob_request, blob_data_store, response_tx);
+				process_blob_request(blob_request, blob_database, response_tx);
 			},
 			BlobRequestEnum::BlobQueryRequest(blob_query_request) => {
-				process_blob_query_request(blob_query_request, blob_data_store, response_tx);
+				process_blob_query_request(blob_query_request, blob_database, response_tx);
 			},
 		},
 		Err(err) => {
@@ -615,7 +615,7 @@ pub fn handle_incoming_blob_request<Block: BlockT>(
 
 fn process_blob_request(
 	blob_request: BlobRequest,
-	blob_data_store: &RocksdbBlobStore,
+	blob_database: &RocksdbBlobStore,
 	response_tx: oneshot::Sender<OutgoingResponse>,
 ) {
 	let timer = std::time::Instant::now();
@@ -650,7 +650,7 @@ fn process_blob_request(
 		},
 	}
 
-	let blob = match blob_data_store.get_raw_blob(&blob_request.hash) {
+	let blob = match blob_database.get_raw_blob(&blob_request.hash) {
 		Ok(b) => match b {
 			Some(b) => b,
 			None => {
@@ -789,7 +789,7 @@ async fn handle_blob_stored_notification<Block>(
 	}
 
 	if let Err(e) = blob_handle
-		.blob_store
+		.blob_database
 		.insert_blob_ownership(&blob_stored.hash, &blob_stored.ownership_entry)
 	{
 		log::error!(
@@ -799,7 +799,7 @@ async fn handle_blob_stored_notification<Block>(
 	}
 
 	let metadata_exists = match blob_handle
-		.blob_store
+		.blob_database
 		.blob_metadata_exists(&blob_stored.hash)
 	{
 		Ok(v) => v,
@@ -815,7 +815,7 @@ async fn handle_blob_stored_notification<Block>(
 	// If we receive the stored notification without receiving the metadata, we add an expiry for all ownerships while waiting for the metadata
 	if !metadata_exists {
 		let existing_expiry = blob_handle
-			.blob_store
+			.blob_database
 			.get_blob_ownership_expiry(&blob_stored.hash)
 			.ok()
 			.flatten();
@@ -836,7 +836,7 @@ async fn handle_blob_stored_notification<Block>(
 				};
 			let expires_at = block_number.saturating_add(blob_runtime_params.temp_blob_ttl);
 			if let Err(e) = blob_handle
-				.blob_store
+				.blob_database
 				.insert_blob_ownership_expiry(&blob_stored.hash, expires_at)
 			{
 				log::error!(
@@ -916,7 +916,7 @@ where
 
 pub fn process_blob_query_request(
 	blob_query_request: BlobQueryRequest,
-	blob_data_store: &RocksdbBlobStore,
+	blob_database: &RocksdbBlobStore,
 	response_tx: oneshot::Sender<OutgoingResponse>,
 ) {
 	let timer = std::time::Instant::now();
@@ -925,7 +925,7 @@ pub fn process_blob_query_request(
 		blob_query_request.hash,
 		timer.elapsed()
 	);
-	let maybe_blob = match blob_data_store.get_blob(&blob_query_request.hash) {
+	let maybe_blob = match blob_database.get_blob(&blob_query_request.hash) {
 		Ok(s) => match s {
 			None => None,
 			Some(s) => Some(Blob {

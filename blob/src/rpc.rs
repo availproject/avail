@@ -19,7 +19,7 @@ use crate::{
 	},
 	MAX_RPC_RETRIES,
 };
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use codec::{Decode, Encode};
 use da_commitment::build_da_commitments::build_polynomal_grid;
 use da_control::{pallet::BlobTxSummaryRuntime, BlobRuntimeParameters, Call};
@@ -167,8 +167,7 @@ where
 			runtime_client: Arc::new(RuntimeClient::new(self.client.clone())),
 			backend_client: Arc::new(BackendClient::new(self.backend.clone())),
 			tx_pool_client: Arc::new(TransactionPoolClient::new(self.pool.clone())),
-			blob_store: self.blob_handle.blob_store.clone(),
-			blob_data_store: self.blob_handle.blob_data_store.clone(),
+			database: self.blob_handle.blob_database.clone(),
 		};
 
 		let _ = submit_blob_main_task(
@@ -286,7 +285,7 @@ where
 	}
 
 	async fn log_stuff(&self) -> RpcResult<()> {
-		let _ = self.blob_handle.blob_store.log_all_entries();
+		let _ = self.blob_handle.blob_database.log_all_entries();
 		Ok(())
 	}
 }
@@ -299,7 +298,7 @@ async fn check_rpc_store_blob(
 	finalized_block_hash: H256,
 	externalities: &Arc<dyn ExternalitiesT>,
 	runtime_client: &Arc<dyn RuntimeApiT>,
-) -> Result<Option<OwnershipEntry>> {
+) -> std::result::Result<Option<OwnershipEntry>, String> {
 	let role = externalities.role();
 	if !role.is_authority() {
 		// RPC node (me) is not an authority, so I don't have to store blobs
@@ -308,7 +307,7 @@ async fn check_rpc_store_blob(
 
 	let keystore = externalities.keystore();
 	let Some(keystore) = keystore else {
-		return Err(anyhow!("failed to get keystore"));
+		return Err("failed to get keystore".into());
 	};
 
 	let Some((authority_id, key_type_id)) = get_my_validator_public_account(keystore) else {
@@ -336,7 +335,7 @@ async fn check_rpc_store_blob(
 	) {
 		Ok(s) => s,
 		Err(e) => {
-			return Err(anyhow!("failed to check if I should hold a blob: {e}"));
+			return Err(std::format!("failed to check if I should hold a blob: {e}"));
 		},
 	};
 
@@ -351,7 +350,7 @@ async fn check_rpc_store_blob(
 	let signature = match sign_blob_data_inner(keystore, signature_payload) {
 		Ok(s) => s.signature,
 		Err(e) => {
-			return Err(anyhow!(
+			return Err(std::format!(
 				"An error has occured while trying to sign data, exiting the function: {e}"
 			));
 		},
@@ -570,7 +569,7 @@ pub async fn store_and_gossip_blob(
 	let my_peer_id_base58 = my_peer_id.to_base58();
 
 	// Setup blob metadata and blob and check first in case we already received this exact blob before
-	let maybe_blob_metadata = match friends.blob_store.get_blob_metadata(&blob_hash) {
+	let maybe_blob_metadata = match friends.database.get_blob_metadata(&blob_hash) {
 		Ok(m) => m,
 		Err(e) => {
 			log::error!("Failed to get data from blob storage: {e}");
@@ -599,20 +598,18 @@ pub async fn store_and_gossip_blob(
 		.runtime_client
 		.get_active_validators(finalized_block_hash)
 	{
+		Ok(validators) if validators.is_empty() => return Err(()),
 		Ok(validators) => validators,
 		Err(e) => {
-			log::error!(
+			let err = std::format!(
 				"Failed to fetch active validators at {:?}: {:?}",
 				finalized_block_hash,
 				e
 			);
-			Vec::new()
+			log::error!("{}", err);
+			return Err(());
 		},
 	};
-
-	if validators.is_empty() {
-		return Err(());
-	}
 
 	let (nb_validators_per_blob, threshold) =
 		get_validator_per_blob_inner(blob_params.clone(), validators.len() as u32);
@@ -646,14 +643,16 @@ pub async fn store_and_gossip_blob(
 		blob_metadata.commitment.clone(),
 	);
 
+	if maybe_ownership.is_some() {
+		blob_metadata.expires_at =
+			finalized_block_number.saturating_add(blob_params.blob_ttl) as u64;
+	}
+
 	store_new_blob(
 		blob_hash,
 		blob,
-		blob_metadata,
-		&friends.blob_store,
-		&friends.blob_data_store,
-		finalized_block_number as u32,
-		blob_params.blob_ttl as u32,
+		&blob_metadata,
+		&friends.database,
 		&maybe_ownership,
 		&mut stop_watch,
 	);
@@ -693,11 +692,8 @@ pub async fn store_and_gossip_blob(
 fn store_new_blob(
 	blob_hash: H256,
 	blob: Arc<Vec<u8>>,
-	mut blob_metadata: BlobMetadata,
-	blob_store: &Arc<dyn StorageApiT>,
-	blob_data_store: &Arc<dyn StorageApiT>,
-	finalized_block_number: u32,
-	blob_ttl: u32,
+	blob_metadata: &BlobMetadata,
+	database: &Arc<dyn StorageApiT>,
 	maybe_ownership: &Option<OwnershipEntry>,
 	stop_watch: &mut SmartStopwatch,
 ) {
@@ -715,14 +711,13 @@ fn store_new_blob(
 			"BLOB - RPC submit_blob - bg:task - I Should store - {:?}",
 			blob_hash,
 		);
-		if let Err(e) = blob_store.insert_blob_ownership(&blob_hash, o) {
+		if let Err(e) = database.insert_blob_ownership(&blob_hash, o) {
 			log::error!("failed to insert blob ownership into store: {e}");
 		}
-		blob_metadata.expires_at = finalized_block_number.saturating_add(blob_ttl) as u64;
 	}
 
 	// Store the blob in the store -------------------
-	if let Err(e) = blob_store.insert_blob_metadata(&blob_metadata) {
+	if let Err(e) = database.insert_blob_metadata(blob_metadata) {
 		log::error!("failed to insert blob metadata into store: {e}");
 	}
 	log::info!(
@@ -738,7 +733,7 @@ fn store_new_blob(
 		blob.data.len() as f32 / compressed_blob.raw_data().len() as f32
 	));
 
-	if let Err(e) = blob_data_store.insert_blob(&blob.blob_hash, &compressed_blob) {
+	if let Err(e) = database.insert_blob(&blob.blob_hash, &compressed_blob) {
 		log::error!("failed to insert blob into store: {e}");
 	}
 	log::info!(
@@ -761,6 +756,5 @@ pub struct Friends {
 	pub runtime_client: Arc<dyn RuntimeApiT>,
 	pub backend_client: Arc<dyn BackendApiT>,
 	pub tx_pool_client: Arc<dyn TransactionPoolApiT>,
-	pub blob_store: Arc<dyn StorageApiT>,
-	pub blob_data_store: Arc<dyn StorageApiT>,
+	pub database: Arc<dyn StorageApiT>,
 }

@@ -35,8 +35,7 @@ where
 	pub gossip_cmd_sender: Arc<OnceCell<async_channel::Sender<BlobNotification>>>,
 	pub keystore: Arc<OnceCell<Arc<LocalKeystore>>>,
 	pub client: Arc<OnceCell<Arc<FullClient>>>,
-	pub blob_store: Arc<RocksdbBlobStore>,
-	pub blob_data_store: Arc<RocksdbBlobStore>,
+	pub blob_database: Arc<RocksdbBlobStore>,
 	pub role: Role,
 }
 
@@ -54,16 +53,10 @@ where
 		NonDefaultSetConfig,
 		Box<dyn NotificationService>,
 	) {
-		// Initialize the Blob store
-		let db_path = path.join("blob_store");
-		let blob_store =
+		// Initialize the Blob database
+		let db_path = path.join("blob_database");
+		let blob_database =
 			Arc::new(RocksdbBlobStore::open(db_path).expect("opening RocksDB blob store failed"));
-
-		// Initialize the Blob data store
-		let db_path = path.join("blob_data_store");
-		let blob_data_store = Arc::new(
-			RocksdbBlobStore::open(db_path).expect("opening RocksDB blob data store failed"),
-		);
 
 		// Initialize the blob Blob req/res protocol config
 		let (blob_req_sender, blob_req_receiver) =
@@ -98,8 +91,7 @@ where
 			client,
 			sync_service,
 			gossip_cmd_sender,
-			blob_store,
-			blob_data_store,
+			blob_database,
 			role,
 		};
 
@@ -141,15 +133,15 @@ where
 			.expect("Network should be registered")
 			.clone();
 		spawn_handle.spawn("request-listener", None, {
-			let blob_data_store = self.blob_data_store.clone();
+			let blob_database = self.blob_database.clone();
 			let network = network.clone();
 			async move {
 				req_receiver
 					.for_each_concurrent(CONCURRENT_REQUESTS, move |request| {
-						let blob_data_store = blob_data_store.clone();
+						let blob_database = blob_database.clone();
 						let net = network.clone();
 						tokio::task::spawn_blocking(move || {
-							handle_incoming_blob_request(request, &blob_data_store, &net);
+							handle_incoming_blob_request(request, &blob_database, &net);
 						});
 						future::ready(())
 					})
@@ -236,9 +228,7 @@ where
 			log::error!(target: LOG_TARGET, "Client not yet registered");
 			return;
 		};
-
-		let blob_store = self.blob_store.clone();
-		let blob_data_store = self.blob_data_store.clone();
+		let blob_database = self.blob_database.clone();
 		let client = client.clone();
 		spawn_handle.spawn("blob-cleanup", None, async move {
 			let mut block_sub = client.finality_notification_stream();
@@ -250,14 +240,10 @@ where
 					.clone()
 					.saturated_into::<u64>();
 				if block_number % BLOB_EXPIRATION_CHECK_PERIOD == 0 {
-					let blob_store = blob_store.clone();
-					let blob_data_store = blob_data_store.clone();
+					let blob_database = blob_database.clone();
 					if let Err(e) = tokio::task::spawn_blocking(move || {
-						match blob_store.clean_expired_blobs_info(block_number) {
-							Ok((hashes, _orphan_ownerships)) => {
-								// We have two stores, so we clear blobs from here
-								blob_data_store.clean_blobs_info(&hashes)
-							},
+						match blob_database.clean_expired_blobs_info(block_number) {
+							Ok((_hashes, _orphan_ownerships)) => Ok(()),
 							Err(e) => Err(e),
 						}
 					})

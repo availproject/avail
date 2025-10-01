@@ -114,7 +114,7 @@ impl RocksdbBlobStore {
 impl Default for RocksdbBlobStore {
 	fn default() -> Self {
 		let temp_dir = TempDir::new().expect("failed to create temp dir for RocksdbBlobStore");
-		let db_path = temp_dir.path().join("blob_store");
+		let db_path = temp_dir.path().join("blob_database");
 		let num_columns = 4;
 		let db_config = DatabaseConfig::with_columns(num_columns);
 		let db = Database::open(&db_config, db_path).expect("opening RocksDB blob store failed");

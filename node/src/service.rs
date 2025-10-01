@@ -484,7 +484,7 @@ pub fn new_full_base(
 			transaction_pool.clone(),
 			prometheus_registry.as_ref(),
 			telemetry.as_ref().map(|x| x.handle()),
-			blob_handle.blob_store.clone(),
+			blob_handle.blob_database.clone(),
 		);
 
 		let client_clone = client.clone();
