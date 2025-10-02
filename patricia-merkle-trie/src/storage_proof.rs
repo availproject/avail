@@ -38,7 +38,6 @@ pub type MemoryDB<H> = memory_db::MemoryDB<
 	H,
 	memory_db::HashKey<H>,
 	trie_db::DBValue,
-	memory_db::NoopTracker<trie_db::DBValue>,
 >;
 
 impl StorageProof {

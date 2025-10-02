@@ -106,9 +106,9 @@ zstd = {version = "0.13.3"}
 # Misc
 parity-util-mem = { version = "0.12.0", features = ["primitive-types"], default-features = false }
 array-bytes = "6.1"
-trie-db = { version = "0.24.0", default-features = false }
-hash-db = { version = "0.15.2", default-features = false }
-memory-db = { version = "0.30.0", default-features = false }
+trie-db = { version = "0.28", default-features = false }
+hash-db = { version = "0.16", default-features = false }
+memory-db = { version = "0.32", default-features = false }
 bounded-collections = { version = "0.2", default-features = false }
 itertools = { version = "0.10.5", default-features = false }
 jsonrpsee = { version = "0.22", features = ["server", "client", "macros"] }
