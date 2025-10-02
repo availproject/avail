@@ -36,8 +36,7 @@ use sc_network_sync::SyncingService;
 use sc_service::{
 	error::Error as ServiceError, Configuration, RpcHandlers, TaskManager, WarpSyncParams,
 };
-use sc_telemetry::custom_telemetry::external::BlockIntervalFromNode;
-use sc_telemetry::{custom_telemetry::CustomTelemetryWorker, Telemetry, TelemetryWorker};
+use sc_telemetry::{Telemetry, TelemetryWorker};
 use sc_transaction_pool_api::OffchainTransactionPoolFactory;
 use sp_api::ProvideRuntimeApi;
 use sp_core::crypto::Pair;
@@ -145,7 +144,7 @@ pub fn new_partial(
 	unsafe_da_sync: bool,
 	kate_rpc_deps: kate_rpc::Deps,
 	grandpa_justification_period: u32,
-	blob_rpc_deps: avail_blob::types::Deps<Block>,
+	mut blob_rpc_deps: avail_blob::types::Deps<Block>,
 ) -> Result<
 	sc_service::PartialComponents<
 		FullClient,
@@ -198,18 +197,11 @@ pub fn new_partial(
 	});
 
 	let telemetry_handle = telemetry.as_ref().map(|t| t.handle());
-	let custom_telemetry_worker = CustomTelemetryWorker {
-		handle: telemetry_handle,
-		sampling_interval_ms: 5_000u128,
-		max_interval_buffer_size: 5,
-		max_block_request_buffer_size: 10,
-		is_authority: config.role.is_authority(),
-	};
-	task_manager.spawn_handle().spawn(
-		"custom_telemetry",
-		None,
-		custom_telemetry_worker.run(Some(filter_intervals), None),
-	);
+	let (telemetry_worker, telemetry_channel) =
+		avail_telemetry::Worker::new(telemetry_handle.clone());
+
+	telemetry_worker.spawn_background_task();
+	blob_rpc_deps.telemetry_channel = Some(telemetry_channel);
 
 	let select_chain = sc_consensus::LongestChain::new(backend.clone());
 
@@ -379,6 +371,7 @@ pub fn new_full_base(
 		grandpa_justification_period,
 		Deps {
 			blob_handle: blob_handle.clone(),
+			telemetry_channel: None,
 		},
 	)?;
 
@@ -686,7 +679,7 @@ fn extend_metrics(prometheus: &Registry) -> Result<(), PrometheusError> {
 	Ok(())
 }
 
-fn filter_intervals(intervals: Vec<BlockIntervalFromNode>) -> Vec<BlockIntervalFromNode> {
+/* fn filter_intervals(intervals: Vec<BlockIntervalFromNode>) -> Vec<BlockIntervalFromNode> {
 	// We are working on a 7.5 second telemetry interval basis.
 	// If there are more than 4 blocks worth of events then the node is still syncing and we
 	// don't want to broadcast sync related data.
@@ -695,7 +688,7 @@ fn filter_intervals(intervals: Vec<BlockIntervalFromNode>) -> Vec<BlockIntervalF
 	}
 
 	intervals
-}
+} */
 
 /*
 #[cfg(test)]

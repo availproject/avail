@@ -41,6 +41,7 @@ use sp_runtime::{
 	AccountId32, SaturatedConversion,
 };
 use sp_transaction_pool::runtime_api::TaggedTransactionQueue;
+use std::time::{SystemTime, UNIX_EPOCH};
 use std::{
 	marker::{PhantomData, Sync},
 	str::FromStr,
@@ -101,6 +102,7 @@ pub struct BlobRpc<Client, Pool, Block: BlockT, Backend> {
 	backend: Arc<Backend>,
 	commitment_queue: Arc<CommitmentQueue>,
 	nonce_cache: Arc<NonceCache>,
+	telemetry_channel: Option<avail_telemetry::Sender>,
 	_block: PhantomData<Block>,
 }
 
@@ -121,6 +123,7 @@ impl<Client, Pool, Block: BlockT, Backend> BlobRpc<Client, Pool, Block, Backend>
 			backend,
 			commitment_queue: Arc::new(queue),
 			nonce_cache: Arc::new(NonceCache::new()),
+			telemetry_channel: deps.telemetry_channel,
 			_block: PhantomData,
 		}
 	}
@@ -176,6 +179,7 @@ where
 			blob.0,
 			friends,
 			self.nonce_cache.clone(),
+			self.telemetry_channel.clone(),
 		)
 		.await?;
 
@@ -420,6 +424,7 @@ pub async fn submit_blob_main_task(
 	blob: Vec<u8>,
 	friends: Friends,
 	nonce_cache: Arc<dyn NonceCacheApiT>,
+	telemetry_channel: Option<avail_telemetry::Sender>,
 ) -> RpcResult<tokio::task::JoinHandle<()>> {
 	let mut stop_watch = SmartStopwatch::new("😍 Submit Blob Main Task");
 
@@ -445,6 +450,20 @@ pub async fn submit_blob_main_task(
 			.map_err(|e| internal_err!("{}", e))?;
 	stop_watch.stop("Initial Validation");
 	stop_watch.add_extra_information(std::format!("Blob Hash: {:?}", blob_hash));
+
+	// Telemetry
+	if let Some(telemetry_channel) = telemetry_channel.as_ref() {
+		let timestamp = SystemTime::now()
+			.duration_since(UNIX_EPOCH)
+			.unwrap()
+			.as_millis();
+		let msg = crate::telemetry::BlobReceived {
+			size: blob.len(),
+			hash: blob_hash,
+			timestamp: std::format!("{}", timestamp),
+		};
+		_ = telemetry_channel.send(msg.into()).await;
+	}
 
 	stop_watch.start("TX validation");
 	let opaque_tx = tx_validation(
@@ -504,6 +523,7 @@ pub async fn submit_blob_main_task(
 			provided_commitment,
 			friends,
 			nonce_cache,
+			telemetry_channel,
 		)
 		.await
 	});
@@ -519,7 +539,10 @@ async fn submit_blob_background_task(
 	commitment: Vec<u8>,
 	friends: Friends,
 	nonce_cache: Arc<dyn NonceCacheApiT>,
+	telemetry_channel: Option<avail_telemetry::Sender>,
 ) {
+	let blob_len = blob.len();
+
 	if let Some((who, nonce)) = extract_signer_and_nonce(&opaque_tx) {
 		nonce_cache.commit(&who, nonce);
 	}
@@ -544,6 +567,20 @@ async fn submit_blob_background_task(
 		"BLOB - RPC submit_blob - bg:task - After Submitting to pool - {:?}",
 		blob_hash,
 	);
+
+	// Telemetry
+	if let Some(telemetry_channel) = telemetry_channel.as_ref() {
+		let timestamp = SystemTime::now()
+			.duration_since(UNIX_EPOCH)
+			.unwrap()
+			.as_millis();
+		let msg = crate::telemetry::BlobAddedToPool {
+			size: blob_len,
+			hash: blob_hash,
+			timestamp: std::format!("{}", timestamp),
+		};
+		_ = telemetry_channel.send(msg.into()).await;
+	}
 }
 
 pub async fn store_and_gossip_blob(

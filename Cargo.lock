@@ -1080,6 +1080,7 @@ dependencies = [
  "avail-base",
  "avail-core",
  "avail-rust-client",
+ "avail-telemetry",
  "base64 0.22.1",
  "clap 4.5.26",
  "da-commitment",
@@ -1166,6 +1167,7 @@ dependencies = [
  "avail-base",
  "avail-blob",
  "avail-core",
+ "avail-telemetry",
  "clap 4.5.26",
  "clap-num",
  "clap_complete",
@@ -1283,6 +1285,16 @@ dependencies = [
  "subxt-rpcs",
  "subxt-signer",
  "thiserror 2.0.11",
+]
+
+[[package]]
+name = "avail-telemetry"
+version = "0.1.0"
+dependencies = [
+ "sc-telemetry",
+ "serde",
+ "serde_json",
+ "tokio",
 ]
 
 [[package]]

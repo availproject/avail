@@ -55,6 +55,7 @@ anyhow = "1.0"
 ttl_cache = "0.5.1"
 base64 = { workspace = true }
 zstd = { workspace = true }
+avail-telemetry = { workspace = true }
 
 [dev-dependencies]
 divan = { version = "0.1" }

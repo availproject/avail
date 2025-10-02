@@ -12,7 +12,8 @@ members = [
 	"runtime/fuzz",
 	"node",
 	"blob",
-	"da-commitment"
+	"da-commitment",
+	"telemetry",
 ]
 
 exclude = [
@@ -45,6 +46,7 @@ da-runtime = { path = "runtime", default-features = false }
 kate-rpc = { path = "rpc/kate-rpc" }
 testing-rpc = { path = "rpc/testing-rpc" }
 patricia-merkle-trie = { path = "patricia-merkle-trie", default-features = false }
+avail-telemetry = { path = "./telemetry", default-features = false }
 
 sc-basic-authorship = { path = "client/basic-authorship", default-features = false }
 frame-system = { path = "pallets/system", default-features = false }

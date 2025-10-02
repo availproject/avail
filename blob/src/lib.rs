@@ -2,6 +2,7 @@ pub mod nonce_cache;
 pub mod p2p;
 pub mod rpc;
 pub mod store;
+pub mod telemetry;
 pub mod traits;
 pub mod types;
 pub mod utils;

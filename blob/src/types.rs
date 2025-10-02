@@ -179,6 +179,7 @@ where
 	Block: BlockT,
 {
 	pub blob_handle: Arc<BlobHandle<Block>>,
+	pub telemetry_channel: Option<avail_telemetry::Sender>,
 }
 
 impl<Block> Default for Deps<Block>
@@ -202,7 +203,10 @@ where
 			role,
 			blob_database,
 		});
-		Deps { blob_handle }
+		Deps {
+			blob_handle,
+			telemetry_channel: None,
+		}
 	}
 }
 
