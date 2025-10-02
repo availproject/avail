@@ -21,11 +21,37 @@ use sp_core::H256;
 use sp_runtime::transaction_validity::TransactionSource;
 use sp_runtime::transaction_validity::TransactionValidity;
 use std::sync::Arc;
+use std::sync::OnceLock;
 
-const FILE_PATH: &str = "./../32MiB";
+static DATA_TO_BENCH: OnceLock<Arc<Vec<u8>>> = OnceLock::new();
 
-fn main() {
+fn main() -> Result<(), String> {
+	read_data()?;
 	divan::main();
+
+	Ok(())
+}
+
+fn read_data() -> Result<(), String> {
+	let file_path = std::env::var("FILE");
+	let Ok(file_path) = file_path else {
+		return Err("You must set FILE env variable to point to your file. Example: `FILE=./../rustfmt.toml cargo bench`".into());
+	};
+
+	println!("📁 Benchmarking: {}", file_path);
+
+	// Store file for benchmarking
+	let data = std::fs::read(file_path).unwrap();
+	println!(
+		"📁 Data Size: {} B / {} kB / {} MB",
+		data.len(),
+		data.len() / 1_000,
+		data.len() / 1_000 / 1_000
+	);
+
+	DATA_TO_BENCH.get_or_init(move || Arc::new(data));
+
+	Ok(())
 }
 
 pub const DEFAULT_ROWS: usize = 1024;
@@ -131,8 +157,8 @@ mod validation {
 
 	#[divan::bench(max_time = 2)]
 	fn initial_validation(bencher: Bencher) {
-		let data = Arc::new(std::fs::read(FILE_PATH).unwrap());
-		let tx = build_transaction(data.clone());
+		let data = DATA_TO_BENCH.get().unwrap().clone();
+		let tx = build_transaction(data);
 		bencher.with_inputs(|| &tx).bench_local_refs(|tx| {
 			avail_blob::validation::initial_validation(
 				tx.data.len(),
@@ -145,7 +171,7 @@ mod validation {
 
 	#[divan::bench(max_time = 2)]
 	fn keccak(bencher: Bencher) {
-		let data = Arc::new(std::fs::read(FILE_PATH).unwrap());
+		let data = DATA_TO_BENCH.get().unwrap().clone();
 		bencher.with_inputs(|| &data).bench_local_refs(|data| {
 			keccak_256(data.as_slice());
 		});
@@ -153,8 +179,8 @@ mod validation {
 
 	#[divan::bench(max_time = 2)]
 	fn tx_validation(bencher: Bencher) {
-		let data = Arc::new(std::fs::read(FILE_PATH).unwrap());
-		let tx = build_transaction(data.clone());
+		let data = DATA_TO_BENCH.get().unwrap().clone();
+		let tx = build_transaction(data);
 		let runtime_dyn: Arc<dyn RuntimeApiT> = Arc::new(DummyRuntimeApi);
 		let nonce_cache_dyn: Arc<dyn NonceCacheApiT> = Arc::new(DummyNonceCache);
 
@@ -175,8 +201,8 @@ mod validation {
 
 	#[divan::bench(max_time = 2)]
 	fn commitment_validation(bencher: Bencher) {
-		let data = Arc::new(std::fs::read(FILE_PATH).unwrap());
-		let tx = build_transaction(data.clone());
+		let data = DATA_TO_BENCH.get().unwrap().clone();
+		let tx = build_transaction(data);
 
 		// Queue
 		let (queue, rx) = CommitmentQueue::new(1);
@@ -210,8 +236,8 @@ mod validation {
 
 	#[divan::bench(max_time = 2)]
 	fn build_polynomal_grid(bencher: Bencher) {
-		let data = Arc::new(std::fs::read(FILE_PATH).unwrap());
-		let tx = build_transaction(data.clone());
+		let data = DATA_TO_BENCH.get().unwrap().clone();
+		let tx = build_transaction(data);
 
 		bencher.with_inputs(|| &tx).bench_local_refs(|tx| {
 			build_da_commitments::build_polynomal_grid(
@@ -232,8 +258,8 @@ mod storage {
 
 		#[divan::bench(max_time = 2)]
 		fn compress(bencher: Bencher) {
-			let data = Arc::new(std::fs::read(FILE_PATH).unwrap());
-			let tx = build_transaction(data.clone());
+			let data = DATA_TO_BENCH.get().unwrap().clone();
+			let tx = build_transaction(data);
 			bencher.with_inputs(|| &tx).bench_local_refs(|tx| {
 				CompressedBlob::new_zstd_compress_with_fallback(&tx.data);
 			});
@@ -241,9 +267,11 @@ mod storage {
 
 		#[divan::bench(max_time = 2)]
 		fn insert_blob(bencher: Bencher) {
-			let data = Arc::new(std::fs::read(FILE_PATH).unwrap());
-			let tx = build_transaction(data.clone());
-			let rocksdb = RocksdbBlobStore::open("./tmp_01").unwrap();
+			const DB_PATH: &str = "./db_tmp_01";
+
+			let data = DATA_TO_BENCH.get().unwrap().clone();
+			let tx = build_transaction(data);
+			let rocksdb = RocksdbBlobStore::open(DB_PATH).unwrap();
 			let rocksdb: Arc<dyn StorageApiT> = Arc::new(rocksdb);
 			let data = CompressedBlob::new_nocompression(tx.data.as_ref().clone());
 
@@ -253,13 +281,17 @@ mod storage {
 					let (tx, rocksdb, data) = params;
 					rocksdb.insert_blob(&tx.data_hash, &data).unwrap();
 				});
+
+			_ = std::fs::remove_dir_all(DB_PATH).unwrap();
 		}
 
 		#[divan::bench(max_time = 2)]
 		fn insert_blob_one_third(bencher: Bencher) {
-			let data = Arc::new(std::fs::read(FILE_PATH).unwrap());
-			let tx = build_transaction(data.clone());
-			let rocksdb = RocksdbBlobStore::open("./tmp_02").unwrap();
+			const DB_PATH: &str = "./db_tmp_02";
+
+			let data = DATA_TO_BENCH.get().unwrap().clone();
+			let tx = build_transaction(data);
+			let rocksdb = RocksdbBlobStore::open(DB_PATH).unwrap();
 			let rocksdb: Arc<dyn StorageApiT> = Arc::new(rocksdb);
 			let mut data = tx.data.as_ref().clone();
 			data.truncate(data.len() / 3);
@@ -271,13 +303,17 @@ mod storage {
 					let (tx, rocksdb, data) = params;
 					rocksdb.insert_blob(&tx.data_hash, &data).unwrap();
 				});
+
+			_ = std::fs::remove_dir_all(DB_PATH).unwrap();
 		}
 
 		#[divan::bench(max_time = 2)]
 		fn insert_blob_and_compressed(bencher: Bencher) {
-			let data = Arc::new(std::fs::read(FILE_PATH).unwrap());
-			let tx = build_transaction(data.clone());
-			let rocksdb = RocksdbBlobStore::open("./tmp_03").unwrap();
+			const DB_PATH: &str = "./db_tmp_03";
+
+			let data = DATA_TO_BENCH.get().unwrap().clone();
+			let tx = build_transaction(data);
+			let rocksdb = RocksdbBlobStore::open(DB_PATH).unwrap();
 			let rocksdb: Arc<dyn StorageApiT> = Arc::new(rocksdb);
 
 			bencher
@@ -289,6 +325,8 @@ mod storage {
 						.insert_blob(&tx.data_hash, &compressed_blob)
 						.unwrap();
 				});
+
+			_ = std::fs::remove_dir_all(DB_PATH).unwrap();
 		}
 	}
 }
