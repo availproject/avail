@@ -1135,7 +1135,7 @@ dependencies = [
  "derive_more 0.99.18",
  "ethabi-decode",
  "frame-support",
- "hash-db",
+ "hash-db 0.16.0",
  "hash256-std-hasher",
  "hex",
  "impl-serde 0.5.0",
@@ -1433,7 +1433,7 @@ name = "binary-merkle-tree"
 version = "13.0.0"
 source = "git+https://github.com/availproject/polkadot-sdk.git?branch=ghali%2Finfinity-da-rpc#62d2c01637ed31e6aa5e4d143804765697322815"
 dependencies = [
- "hash-db",
+ "hash-db 0.16.0",
  "log",
 ]
 
@@ -4694,6 +4694,12 @@ dependencies = [
 
 [[package]]
 name = "hash-db"
+version = "0.15.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d23bd4e7b5eda0d0f3a307e8b381fdc8ba9000f26fbe912250c0a4cc3956364a"
+
+[[package]]
+name = "hash-db"
 version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8e7d7786361d7425ae2fe4f9e407eb0efaa0840f5212d109cc018c40c35c6ab4"
@@ -6836,11 +6842,22 @@ dependencies = [
 
 [[package]]
 name = "memory-db"
+version = "0.30.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "34ac11bb793c28fa095b7554466f53b3a60a2cd002afdac01bcf135cbd73a269"
+dependencies = [
+ "hash-db 0.15.2",
+ "hashbrown 0.12.3",
+ "parity-util-mem",
+]
+
+[[package]]
+name = "memory-db"
 version = "0.32.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "808b50db46293432a45e63bc15ea51e0ab4c0a1647b8eb114e31a3e698dd6fbe"
 dependencies = [
- "hash-db",
+ "hash-db 0.16.0",
 ]
 
 [[package]]
@@ -8477,7 +8494,7 @@ dependencies = [
  "sp-std",
  "sp1-sdk",
  "sp1-verifier",
- "trie-db",
+ "trie-db 0.24.0",
 ]
 
 [[package]]
@@ -8533,6 +8550,30 @@ name = "parity-send-wrapper"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "aa9777aa91b8ad9dd5aaa04a9b6bcb02c7f1deb952fca5a66034d5e63afc5c6f"
+
+[[package]]
+name = "parity-util-mem"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0d32c34f4f5ca7f9196001c0aba5a1f9a5a12382c8944b8b0f90233282d1e8f8"
+dependencies = [
+ "cfg-if",
+ "hashbrown 0.12.3",
+ "impl-trait-for-tuples",
+ "parity-util-mem-derive",
+ "winapi",
+]
+
+[[package]]
+name = "parity-util-mem-derive"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f557c32c6d268a07c921471619c0295f5efad3a0e76d4f97a05c091a51d110b2"
+dependencies = [
+ "proc-macro2",
+ "syn 1.0.109",
+ "synstructure 0.12.6",
+]
 
 [[package]]
 name = "parity-wasm"
@@ -8657,18 +8698,18 @@ checksum = "df94ce210e5bc13cb6651479fa48d14f601d9858cfe0467f43ae157023b938d3"
 name = "patricia-merkle-trie"
 version = "0.1.0"
 dependencies = [
- "hash-db",
+ "hash-db 0.15.2",
  "hash256-std-hasher",
  "hex",
  "hex-literal",
- "memory-db",
+ "memory-db 0.30.0",
  "parity-scale-codec",
  "primitive-types 0.12.2",
  "rlp",
  "rlp-derive",
  "sp-io",
  "tiny-keccak",
- "trie-db",
+ "trie-db 0.24.0",
 ]
 
 [[package]]
@@ -10370,7 +10411,7 @@ name = "sc-client-db"
 version = "0.35.0"
 source = "git+https://github.com/availproject/polkadot-sdk.git?branch=ghali%2Finfinity-da-rpc#62d2c01637ed31e6aa5e4d143804765697322815"
 dependencies = [
- "hash-db",
+ "hash-db 0.16.0",
  "kvdb",
  "kvdb-memorydb",
  "kvdb-rocksdb",
@@ -12077,7 +12118,7 @@ name = "sp-api"
 version = "26.0.0"
 source = "git+https://github.com/availproject/polkadot-sdk.git?branch=ghali%2Finfinity-da-rpc#62d2c01637ed31e6aa5e4d143804765697322815"
 dependencies = [
- "hash-db",
+ "hash-db 0.16.0",
  "log",
  "parity-scale-codec",
  "scale-info",
@@ -12290,7 +12331,7 @@ dependencies = [
  "dyn-clonable",
  "ed25519-zebra",
  "futures",
- "hash-db",
+ "hash-db 0.16.0",
  "hash256-std-hasher",
  "impl-serde 0.4.0",
  "itertools 0.10.5",
@@ -12664,7 +12705,7 @@ name = "sp-state-machine"
 version = "0.35.0"
 source = "git+https://github.com/availproject/polkadot-sdk.git?branch=ghali%2Finfinity-da-rpc#62d2c01637ed31e6aa5e4d143804765697322815"
 dependencies = [
- "hash-db",
+ "hash-db 0.16.0",
  "log",
  "parity-scale-codec",
  "parking_lot 0.12.3",
@@ -12677,7 +12718,7 @@ dependencies = [
  "sp-trie",
  "thiserror 1.0.69",
  "tracing",
- "trie-db",
+ "trie-db 0.28.0",
 ]
 
 [[package]]
@@ -12778,9 +12819,9 @@ version = "29.0.0"
 source = "git+https://github.com/availproject/polkadot-sdk.git?branch=ghali%2Finfinity-da-rpc#62d2c01637ed31e6aa5e4d143804765697322815"
 dependencies = [
  "ahash 0.8.11",
- "hash-db",
+ "hash-db 0.16.0",
  "lazy_static",
- "memory-db",
+ "memory-db 0.32.0",
  "nohash-hasher",
  "parity-scale-codec",
  "parking_lot 0.12.3",
@@ -12792,7 +12833,7 @@ dependencies = [
  "sp-std",
  "thiserror 1.0.69",
  "tracing",
- "trie-db",
+ "trie-db 0.28.0",
  "trie-root",
 ]
 
@@ -13586,7 +13627,7 @@ dependencies = [
  "sp-runtime",
  "sp-state-machine",
  "sp-trie",
- "trie-db",
+ "trie-db 0.28.0",
 ]
 
 [[package]]
@@ -14451,11 +14492,24 @@ dependencies = [
 
 [[package]]
 name = "trie-db"
+version = "0.24.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "004e1e8f92535694b4cb1444dc5a8073ecf0815e3357f729638b9f8fc4062908"
+dependencies = [
+ "hash-db 0.15.2",
+ "hashbrown 0.12.3",
+ "log",
+ "rustc-hex",
+ "smallvec",
+]
+
+[[package]]
+name = "trie-db"
 version = "0.28.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ff28e0f815c2fea41ebddf148e008b077d2faddb026c9555b29696114d602642"
 dependencies = [
- "hash-db",
+ "hash-db 0.16.0",
  "hashbrown 0.13.2",
  "log",
  "rustc-hex",
@@ -14468,7 +14522,7 @@ version = "0.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d4ed310ef5ab98f5fa467900ed906cb9232dd5376597e00fd4cba2a449d06c0b"
 dependencies = [
- "hash-db",
+ "hash-db 0.16.0",
 ]
 
 [[package]]
