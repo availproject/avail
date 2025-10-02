@@ -59,7 +59,7 @@ cargo run --release --bin da-spammer -- --account alice
 
 **Flags**
 - `-a, --account <alice|bob|charlie|dave|eve|ferdie|one|two>` (required)
-- `-s, --size-mb <1..64>`  (default: `32`)
+- `-s, --size-mb <1..31>`  (default: `31`)
 - `--count <1..1000>`  (default: `50`)
 - `--ch <char>`        (optional; default is first letter of `--account`)
 - `-e, --endpoint <URL>`   (default: `http://127.0.0.1:8546`)
@@ -89,7 +89,7 @@ cargo run --release --bin da-spammer -- --account alice
 ./target/release/da-spammer --account bob
 ```
 - Account: Bob
-- Blob size: 32 MiB (default)
+- Blob size: 31 MiB (default)
 - Transactions: 50 (default)
 - Blob content: repeated `b`
 - RPC endpoint: `http://127.0.0.1:8546`
@@ -111,7 +111,7 @@ cargo run --release --bin da-spammer -- --account alice
 - `--accounts <N>`              (default: `100`)
 - `--fund-each <AVAIL>`         (default: `10`; amount in AVAIL, multiplied internally by chain `ONE_AVAIL` constant)
 - `--batch-size <N>`            (default: `100`; number of transfers per `batchAll`)
-- `--size-mb <1..64>`           (default: `32`)
+- `--size-mb <1..31>`           (default: `31`)
 - `--loops <N>`                 (default: `1000`)
 - `--sleep-ms <milliseconds>`   (default: `0`; delay between submissions)
 - `--ch <char>`                 (optional; fixed blob character)
@@ -125,7 +125,7 @@ cargo run --release --bin da-spammer -- --account alice
 - Generates 100 accounts
 - Funds 10 AVAIL each (using chain's `ONE_AVAIL` base units)
 - Batches transfers in groups of 100
-- Submits 1000 blobs, 32 MiB each, round-robin over accounts
+- Submits 1000 blobs, 31 MiB each, round-robin over accounts
 
 **Custom run**
 ```bash

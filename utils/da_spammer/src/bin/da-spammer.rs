@@ -15,8 +15,8 @@ struct Args {
 	#[arg(short, long, value_parser = validate_account)]
 	account: String,
 
-	/// Payload size in MiB [1..=64] (default: 32)
-	#[arg(short, long, default_value_t = 32)]
+	/// Payload size in MiB [1..=31] (default: 31)
+	#[arg(short, long, default_value_t = 31)]
 	size_mb: usize,
 
 	/// Number of transactions [1..=1000] (default: 50)
@@ -78,8 +78,8 @@ fn keypair_for(account: &str) -> Keypair {
 async fn main() -> Result<(), avail_rust::error::Error> {
 	let args = Args::parse();
 
-	if !(1..=64).contains(&args.size_mb) {
-		panic!("--size-mb must be within 1..=64");
+	if !(1..=31).contains(&args.size_mb) {
+		panic!("--size-mb must be within 1..=31");
 	}
 	if !(1..=1000).contains(&args.count) {
 		panic!("--count must be within 1..=1000");

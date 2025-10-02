@@ -303,7 +303,7 @@ mod benchmarks {
 	}
 
 	#[benchmark]
-	fn submit_blob_metadata(s: Linear<1, { 32 * 1024 * 1024 }>) -> Result<(), BenchmarkError> {
+	fn submit_blob_metadata(s: Linear<1, { 31 * 1024 * 1024 }>) -> Result<(), BenchmarkError> {
 		let caller = whitelisted_caller::<T::AccountId>();
 		let origin = RawOrigin::Signed(caller.clone());
 

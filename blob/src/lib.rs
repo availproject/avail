@@ -215,7 +215,7 @@ async fn handle_blob_received_notification<Block>(
 		blob_meta.is_notified = true;
 	}
 
-	// TODO hack
+	// TODO Blob hack
 	let h: [u8; 32] = match announced_finalized_hash.encode().try_into() {
 		Ok(x) => x,
 		Err(_) => {

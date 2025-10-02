@@ -19,7 +19,7 @@ mod polynominal_grid_32_mib {
 	}
 	#[divan::bench(max_time = 5)]
 	fn fake_data(bencher: Bencher) {
-		let blob_m = vec![1u8; 32 * 1024 * 1024];
+		let blob_m = vec![1u8; 31 * 1024 * 1024];
 		bencher.bench(|| {
 			build_polynomal_grid(&blob_m, 1024, 4096, Default::default());
 		});
@@ -42,7 +42,7 @@ mod build_commitments_32_mib {
 
 	#[divan::bench(max_time = 10)]
 	fn fake_data(bencher: Bencher) {
-		let blob_m = vec![1u8; 32 * 1024 * 1024];
+		let blob_m = vec![1u8; 31 * 1024 * 1024];
 		let grid = build_polynomal_grid(&blob_m, 1024, 4096, Default::default());
 		bencher
 			.with_inputs(|| grid.clone())

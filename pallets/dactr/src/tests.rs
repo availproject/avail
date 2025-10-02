@@ -581,7 +581,7 @@ mod set_blob_runtime_parameters {
 				let root: RuntimeOrigin = RawOrigin::Root.into();
 				let err = DataAvailability::set_blob_runtime_parameters(
 					root,
-					Some(32 * 1024 * 1024 + 1),
+					Some(31 * 1024 * 1024 + 1),
 					None,
 					None,
 					None,

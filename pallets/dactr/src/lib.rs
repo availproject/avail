@@ -106,7 +106,7 @@ pub mod pallet {
 	impl Default for BlobRuntimeParameters {
 		fn default() -> Self {
 			Self {
-				max_blob_size: 32 * 1024 * 1024,
+				max_blob_size: 31 * 1024 * 1024,
 				min_blob_holder_percentage: Perbill::from_percent(10),
 				min_blob_holder_count: 2,
 				blob_ttl: 120_960,                    // 20sec block -> 28d - 6sec block -> 8.4d
@@ -435,7 +435,7 @@ pub mod pallet {
 
 			BlobRuntimeParams::<T>::try_mutate(|params| -> Result<(), Error<T>> {
 				if let Some(v) = max_blob_size {
-					ensure!(v <= 32 * 1024 * 1024, Error::<T>::BlobSizeTooLarge);
+					ensure!(v <= 31 * 1024 * 1024, Error::<T>::BlobSizeTooLarge);
 					params.max_blob_size = v;
 				}
 				if let Some(v) = min_blob_holder_percentage {
@@ -575,7 +575,7 @@ pub mod pallet {
 		NotPowerOfTwo,
 		/// The commitment is empty
 		CommitmentCannotBeEmpty,
-		/// The blob size exceeds the allowed maximum (e.g., > 32 MB).
+		/// The blob size exceeds the allowed maximum (e.g., > 31 MB).
 		BlobSizeTooLarge,
 		/// The minimum percentage of validators required to hold a blob is invalid (must be > 0).
 		MinBlobHolderPercentageInvalid,

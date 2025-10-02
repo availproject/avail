@@ -34,8 +34,8 @@ struct Args {
 	#[arg(long, default_value_t = 100)]
 	batch_size: usize,
 
-	/// Payload size in MiB [1..=64] per tx
-	#[arg(long, default_value_t = 32)]
+	/// Payload size in MiB [1..=31] per tx
+	#[arg(long, default_value_t = 31)]
 	size_mb: usize,
 
 	/// Total number of blob submissions (loop count)
