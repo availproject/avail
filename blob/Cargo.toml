@@ -59,7 +59,7 @@ avail-telemetry = { workspace = true }
 
 [dev-dependencies]
 divan = { version = "0.1" }
-avail-rust = { package = "avail-rust-client", git = "https://github.com/availproject/avail-rust", branch = "ghali/infinity-da-rpc" }
+avail-rust = { package = "avail-rust-client", version = "0.4.0", default-features = false, features = ["native", "reqwest", "next"] }
 
 [features]
 default = ["std"]

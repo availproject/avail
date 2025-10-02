@@ -1,13 +1,12 @@
 #![allow(dead_code)]
 
 use avail_rust::{avail_rust_core::rpc::blob::submit_blob, prelude::*};
-use avail_rust_core::rpc::Error as RpcError;
 use da_commitment::build_da_commitments::build_da_commitments;
 use kate::Seed;
 use sp_crypto_hashing::keccak_256;
 use sp_std::iter::repeat;
 
-pub async fn run() -> Result<(), RpcError> {
+pub async fn run() -> Result<(), Error> {
 	println!("---------- START Submission ---------- ");
 	let len = 31 * 1024 * 1024;
 	let mode = 1;
@@ -42,7 +41,7 @@ pub async fn run() -> Result<(), RpcError> {
 		b'D'
 	};
 
-	let nonce = client.rpc().account_nonce(&signer.account_id()).await?;
+	let nonce = client.chain().account_nonce(signer.account_id()).await?;
 	println!("Nonce: {nonce}");
 
 	let mut blobs: Vec<(Vec<u8>, H256, Vec<u8>)> = Vec::new();

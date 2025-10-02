@@ -2,23 +2,21 @@
 
 use avail_rust::{
 	avail_rust_core::rpc::blob::submit_blob,
-	block::{BlockExtOptionsExpanded, BlockWithRawExt},
+	block_api::{BlockExtOptionsExpanded, BlockWithRawExt},
 	prelude::*,
-	subscription::SubBuilder,
 };
-use avail_rust_core::rpc::Error as RpcError;
 use da_commitment::build_da_commitments::build_da_commitments;
 use kate::Seed;
 use sp_crypto_hashing::keccak_256;
 use sp_std::iter::repeat;
 
-pub async fn run() -> Result<(), RpcError> {
+pub async fn run() -> Result<(), Error> {
 	println!("---------- START Submission ---------- ");
 	let len = 1 * 1024 * 1024;
 	let client = Client::new(LOCAL_ENDPOINT).await?;
 	let signer = alice();
 	let byte = b'A';
-	let nonce = client.rpc().account_nonce(&signer.account_id()).await?;
+	let nonce = client.chain().account_nonce(signer.account_id()).await?;
 
 	let mut blobs: Vec<(Vec<u8>, H256, Vec<u8>)> = Vec::new();
 	let nb_tx: u32 = 10;
@@ -35,11 +33,9 @@ pub async fn run() -> Result<(), RpcError> {
 	}
 
 	let block_height_before = client.finalized().block_header().await?.number;
-	let mut sub = SubBuilder::default()
-		.follow(true)
-		.block_height(block_height_before)
-		.build(&client)
-		.await?;
+	let mut sub = Sub::new(client.clone());
+	sub.use_best_block(true);
+	sub.set_block_height(block_height_before);
 
 	for (i, (blob, hash, commitments)) in blobs.into_iter().enumerate() {
 		println!("---------- START Submission {i} ---------- ");
@@ -62,7 +58,7 @@ pub async fn run() -> Result<(), RpcError> {
 	let mut block_searched = 0;
 
 	loop {
-		let block_ref = sub.next(&client).await?;
+		let block_ref = sub.next().await?;
 		let block = BlockWithRawExt::new(client.clone(), block_ref.height);
 		let regular_count = block
 			.count(BlockExtOptionsExpanded::default())
