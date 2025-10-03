@@ -3,7 +3,6 @@
 use std::time::Duration;
 
 use avail_rust::prelude::*;
-use avail_rust_core::rpc::Error as RpcError;
 
 use crate::wait_for_new_block;
 
@@ -20,7 +19,7 @@ const GROUP_TX_MAX_SIZE: usize = ONE_MB;
 const NUM_CHUNKS: usize = (BLOCK_SIZE / TX_MAX_SIZE) as usize;
 const TAG: &str = "MAX_BLOCK_SUBMIT";
 
-pub async fn run() -> Result<(), RpcError> {
+pub async fn run() -> Result<(), Error> {
 	let client = Client::new(LOCAL_ENDPOINT).await?;
 
 	let alice = alice();
@@ -37,7 +36,7 @@ pub async fn run() -> Result<(), RpcError> {
 	assert!(receipt.is_some());
 
 	// Testing if we can fit NUM_CHUNKS * GROUP_TX_MAX_SIZE bytes into a block.
-	let mut nonce = client.rpc().account_nonce(&alice.account_id()).await?;
+	let mut nonce = client.chain().account_nonce(alice.account_id()).await?;
 	let tx = client
 		.tx()
 		.data_availability()

@@ -1,0 +1,20 @@
+# Ignore everything
+*
+
+# Allow files and directories
+!/runtime
+!/rpc
+!/patricia-merkle-trie
+!/pallets
+!/node
+!/misc
+!/client
+!/base
+!/blob
+!/scripts
+!/telemetry
+!/da-commitment
+!Cargo.toml
+!Cargo.lock
+!rust-toolchain.toml
+!rustfmt.toml

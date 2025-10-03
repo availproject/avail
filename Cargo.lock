@@ -1246,8 +1246,9 @@ dependencies = [
 
 [[package]]
 name = "avail-rust-client"
-version = "0.4.0-rc.4"
-source = "git+https://github.com/availproject/avail-rust?branch=ghali%2Finfinity-da-rpc#1228d8848960fcd1f16e0aef40893eec10885497"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ca07e8d66c0a213b285d8f6e35feccbe43fbdb2ef61616a9abec149872cdceeb"
 dependencies = [
  "avail-rust-core",
  "const-hex",
@@ -1261,14 +1262,13 @@ dependencies = [
  "serde_json",
  "thiserror 2.0.11",
  "tokio",
- "tracing",
- "tracing-subscriber 0.3.19",
 ]
 
 [[package]]
 name = "avail-rust-core"
-version = "0.4.0-rc.4"
-source = "git+https://github.com/availproject/avail-rust?branch=ghali%2Finfinity-da-rpc#1228d8848960fcd1f16e0aef40893eec10885497"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "67cce092908f0beb9f570b20d150dc1ab5cc2f56ffe552642312b063bf4af1d5"
 dependencies = [
  "base64 0.22.1",
  "const-hex",
@@ -1488,7 +1488,7 @@ dependencies = [
  "bitflags 2.8.0",
  "cexpr",
  "clang-sys",
- "itertools 0.10.5",
+ "itertools 0.13.0",
  "log",
  "prettyplease 0.2.29",
  "proc-macro2",
@@ -5012,7 +5012,7 @@ dependencies = [
  "httpdate",
  "itoa",
  "pin-project-lite 0.2.16",
- "socket2 0.4.10",
+ "socket2 0.5.8",
  "tokio",
  "tower-service",
  "tracing",
@@ -9276,7 +9276,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "157c5a9d7ea5c2ed2d9fb8f495b64759f7816c7eaea54ba3978f0d63000162e3"
 dependencies = [
  "anyhow",
- "itertools 0.10.5",
+ "itertools 0.13.0",
  "proc-macro2",
  "quote",
  "syn 2.0.96",
@@ -14449,16 +14449,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "tracing-serde"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "704b1aeb7be0d0a84fc9828cae51dab5970fee5088f83d1dd7ee6f6246fc6ff1"
-dependencies = [
- "serde",
- "tracing-core",
-]
-
-[[package]]
 name = "tracing-subscriber"
 version = "0.2.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -14478,7 +14468,7 @@ dependencies = [
  "tracing",
  "tracing-core",
  "tracing-log 0.1.4",
- "tracing-serde 0.1.3",
+ "tracing-serde",
 ]
 
 [[package]]
@@ -14491,15 +14481,12 @@ dependencies = [
  "nu-ansi-term",
  "once_cell",
  "regex",
- "serde",
- "serde_json",
  "sharded-slab",
  "smallvec",
  "thread_local",
  "tracing",
  "tracing-core",
  "tracing-log 0.2.0",
- "tracing-serde 0.2.0",
 ]
 
 [[package]]
