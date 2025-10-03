@@ -41,7 +41,7 @@ impl TelemetryOperator {
 			.unwrap()
 			.as_millis();
 
-		let msg = BlobReceived {
+		let msg = BlobAddedToPool {
 			size,
 			hash,
 			timestamp: std::format!("{}", timestamp),
