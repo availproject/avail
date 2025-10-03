@@ -1,0 +1,24 @@
+[package]
+name = "da-commitment-js"
+edition = "2021"
+version = "0.1.0"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+kate = { git = "https://github.com/availproject/avail-core", branch = "ghali/infinity-da-rpc", default-features = false }
+da-commitment = { path = "../../da-commitment", default-features = false }
+wasm-bindgen = { version = "0.2" }
+getrandom = { version = "0.2", features = ["js"] }
+console_error_panic_hook = { version = "0.1" }
+wasm-logger = { version = "0.2" }
+log = "0.4.20"
+
+[features]
+default = ["std", "wasm"]
+std = [
+    "kate/std",
+    "da-commitment/std",
+]
+wasm = []

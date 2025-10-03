@@ -62,8 +62,6 @@ pub fn build_polynomal_grid(
 }
 
 pub fn build_commitments_from_polynomal_grid(grid: PolynomialGrid) -> Vec<u8> {
-	let timer = std::time::Instant::now();
-	log::info!("Build Commitments From Polynominal Grid Start");
 	let pmp = PMP.get_or_init(multiproof_params);
 
 	let Ok(extended_grid) = grid.commitments(pmp) else {
@@ -79,11 +77,6 @@ pub fn build_commitments_from_polynomal_grid(grid: PolynomialGrid) -> Vec<u8> {
 			},
 		}
 	}
-
-	log::info!(
-		"Build Commitments From Polynominal Grid - END - {:?}",
-		timer.elapsed()
-	);
 
 	commitment
 }
@@ -121,9 +114,6 @@ pub fn build_da_commitments(
 	max_height: usize,
 	seed: Seed,
 ) -> DaCommitments {
-	let timer = std::time::Instant::now();
-	log::info!("BLOB - build_da_commitments - START");
-
 	let grid = match build_grid(data, max_width, max_height, seed) {
 		Ok(grid) => grid,
 		Err(e) => {
@@ -139,8 +129,6 @@ pub fn build_da_commitments(
 			return DaCommitments::new();
 		},
 	};
-
-	log::info!("BLOB - build_da_commitments - END - {:?}", timer.elapsed());
 
 	commitments
 }
