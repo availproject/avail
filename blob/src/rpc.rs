@@ -1,3 +1,4 @@
+use crate::telemetry::TelemetryOperator;
 use crate::traits::CommitmentQueueApiT;
 use crate::validation::{commitment_validation, initial_validation, tx_validation};
 use crate::{
@@ -41,7 +42,6 @@ use sp_runtime::{
 	AccountId32, SaturatedConversion,
 };
 use sp_transaction_pool::runtime_api::TaggedTransactionQueue;
-use std::time::{SystemTime, UNIX_EPOCH};
 use std::{
 	marker::{PhantomData, Sync},
 	str::FromStr,
@@ -102,7 +102,7 @@ pub struct BlobRpc<Client, Pool, Block: BlockT, Backend> {
 	backend: Arc<Backend>,
 	commitment_queue: Arc<CommitmentQueue>,
 	nonce_cache: Arc<NonceCache>,
-	telemetry_channel: Option<avail_telemetry::Sender>,
+	telemetry_operator: TelemetryOperator,
 	_block: PhantomData<Block>,
 }
 
@@ -123,7 +123,7 @@ impl<Client, Pool, Block: BlockT, Backend> BlobRpc<Client, Pool, Block, Backend>
 			backend,
 			commitment_queue: Arc::new(queue),
 			nonce_cache: Arc::new(NonceCache::new()),
-			telemetry_channel: deps.telemetry_channel,
+			telemetry_operator: TelemetryOperator::new(deps.telemetry_channel),
 			_block: PhantomData,
 		}
 	}
@@ -179,7 +179,7 @@ where
 			blob.0,
 			friends,
 			self.nonce_cache.clone(),
-			self.telemetry_channel.clone(),
+			self.telemetry_operator.clone(),
 		)
 		.await?;
 
@@ -424,7 +424,7 @@ pub async fn submit_blob_main_task(
 	blob: Vec<u8>,
 	friends: Friends,
 	nonce_cache: Arc<dyn NonceCacheApiT>,
-	telemetry_channel: Option<avail_telemetry::Sender>,
+	telemetry_operator: TelemetryOperator,
 ) -> RpcResult<tokio::task::JoinHandle<()>> {
 	let mut stop_watch = SmartStopwatch::new("😍 Submit Blob Main Task");
 
@@ -452,18 +452,7 @@ pub async fn submit_blob_main_task(
 	stop_watch.add_extra_information(std::format!("Blob Hash: {:?}", blob_hash));
 
 	// Telemetry
-	if let Some(telemetry_channel) = telemetry_channel.as_ref() {
-		let timestamp = SystemTime::now()
-			.duration_since(UNIX_EPOCH)
-			.unwrap()
-			.as_millis();
-		let msg = crate::telemetry::BlobReceived {
-			size: blob.len(),
-			hash: blob_hash,
-			timestamp: std::format!("{}", timestamp),
-		};
-		_ = telemetry_channel.send(msg.into()).await;
-	}
+	telemetry_operator.blob_received(blob.len(), blob_hash);
 
 	stop_watch.start("TX validation");
 	let opaque_tx = tx_validation(
@@ -523,7 +512,7 @@ pub async fn submit_blob_main_task(
 			provided_commitment,
 			friends,
 			nonce_cache,
-			telemetry_channel,
+			telemetry_operator,
 		)
 		.await
 	});
@@ -539,7 +528,7 @@ async fn submit_blob_background_task(
 	commitment: Vec<u8>,
 	friends: Friends,
 	nonce_cache: Arc<dyn NonceCacheApiT>,
-	telemetry_channel: Option<avail_telemetry::Sender>,
+	telemetry_operator: TelemetryOperator,
 ) {
 	let blob_len = blob.len();
 
@@ -547,7 +536,15 @@ async fn submit_blob_background_task(
 		nonce_cache.commit(&who, nonce);
 	}
 
-	let stored = store_and_gossip_blob(blob_hash, blob, blob_params, commitment, &friends).await;
+	let stored = store_and_gossip_blob(
+		blob_hash,
+		blob,
+		blob_params,
+		commitment,
+		&friends,
+		telemetry_operator.clone(),
+	)
+	.await;
 	if stored.is_err() {
 		return;
 	}
@@ -569,18 +566,7 @@ async fn submit_blob_background_task(
 	);
 
 	// Telemetry
-	if let Some(telemetry_channel) = telemetry_channel.as_ref() {
-		let timestamp = SystemTime::now()
-			.duration_since(UNIX_EPOCH)
-			.unwrap()
-			.as_millis();
-		let msg = crate::telemetry::BlobAddedToPool {
-			size: blob_len,
-			hash: blob_hash,
-			timestamp: std::format!("{}", timestamp),
-		};
-		_ = telemetry_channel.send(msg.into()).await;
-	}
+	telemetry_operator.blob_added_to_pool(blob_len, blob_hash);
 }
 
 pub async fn store_and_gossip_blob(
@@ -589,6 +575,7 @@ pub async fn store_and_gossip_blob(
 	blob_params: BlobRuntimeParameters,
 	commitment: Vec<u8>,
 	friends: &Friends,
+	telemetry_operator: TelemetryOperator,
 ) -> Result<(), ()> {
 	let mut stop_watch = SmartStopwatch::new("😍😍 STORE AND GOSSIP BLOB");
 	stop_watch.add_extra_information(std::format!("Blob Hash: {:?}", blob_hash));
@@ -692,6 +679,7 @@ pub async fn store_and_gossip_blob(
 		&friends.database,
 		&maybe_ownership,
 		&mut stop_watch,
+		telemetry_operator,
 	);
 
 	stop_watch.start("Gossiping");
@@ -733,6 +721,7 @@ fn store_new_blob(
 	database: &Arc<dyn StorageApiT>,
 	maybe_ownership: &Option<OwnershipEntry>,
 	stop_watch: &mut SmartStopwatch,
+	telemetry_operator: TelemetryOperator,
 ) {
 	stop_watch.start("Storing Blob");
 
@@ -765,6 +754,14 @@ fn store_new_blob(
 	stop_watch.start("Compression");
 	let compressed_blob = CompressedBlob::new_zstd_compress_with_fallback(&blob.data);
 	stop_watch.stop("Compression");
+
+	// Telemetry
+	telemetry_operator.blob_compression(
+		blob.data.len(),
+		compressed_blob.raw_data().len(),
+		blob_hash,
+	);
+
 	stop_watch.add_extra_information(std::format!(
 		"Compresion rate: {}",
 		blob.data.len() as f32 / compressed_blob.raw_data().len() as f32
