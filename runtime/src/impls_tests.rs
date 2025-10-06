@@ -623,3 +623,196 @@ mod tests {
 		);
 	}
 }
+
+mod measure_full_block_size {
+	use crate::{
+		impls_tests::tests::RuntimeGenesisConfig, Block, DataAvailability, Executive, Header,
+		Runtime, RuntimeCall, SignedExtra, SignedPayload, System, Timestamp, UncheckedExtrinsic,
+	};
+	use avail_core::{currency::AVAIL, from_substrate::keccak_256, AppId};
+	use codec::Encode;
+	use da_control::{
+		extensions::native::hosted_commitment_builder::build_da_commitments, BlobTxSummaryRuntime,
+		CheckAppId,
+	};
+	use frame_support::{
+		// dispatch::GetDispatchInfo,
+		pallet_prelude::{InvalidTransaction, TransactionValidityError},
+	};
+	use frame_system::{
+		CheckEra, CheckGenesis, CheckNonZeroSender, CheckNonce, CheckSpecVersion, CheckTxVersion,
+		CheckWeight,
+	};
+	use pallet_transaction_payment::ChargeTransactionPayment;
+	use sp_authority_discovery::AuthorityId;
+	use sp_core::{sr25519, Pair, H256};
+	use sp_io::TestExternalities;
+	use sp_keyring::Ed25519Keyring::Alice;
+	use sp_runtime::{generic::Era, AccountId32, BuildStorage, MultiAddress, MultiSignature};
+
+	fn runtime_ext() -> TestExternalities {
+		let alice = Alice.to_account_id();
+		let mut t = RuntimeGenesisConfig::default()
+			.system
+			.build_storage()
+			.unwrap();
+
+		pallet_babe::GenesisConfig::<Runtime> {
+			epoch_config: Some(crate::constants::babe::GENESIS_EPOCH_CONFIG),
+			..Default::default()
+		}
+		.assimilate_storage(&mut t)
+		.unwrap();
+
+		pallet_balances::GenesisConfig::<Runtime> {
+			balances: vec![(alice.clone(), 100_000_000 * AVAIL)],
+		}
+		.assimilate_storage(&mut t)
+		.unwrap();
+
+		da_control::GenesisConfig::<Runtime> {
+			app_keys: (0..=1024)
+				.map(|i| (b"".to_vec(), (alice.clone(), i as u32)))
+				.collect::<Vec<_>>(),
+		}
+		.assimilate_storage(&mut t)
+		.unwrap();
+
+		t.into()
+	}
+
+	fn sample_ownerships() -> Vec<(AccountId32, AuthorityId, String, Vec<u8>)> {
+		(0..30)
+			.map(|i| {
+				let pair = sr25519::Pair::from_seed(&[i as u8; 32]);
+				let babe_pair = sr25519::Pair::from_seed(&[i as u8 + 100; 32]);
+
+				let account = AccountId32::from(pair.public());
+				let babe_key = AuthorityId::from(babe_pair.public());
+				let encoded_peer_id = format!("12D3KooWTestPeerId{:02}", i);
+				let signature = pair.sign(b"blob_hash-address-stored").0.to_vec();
+
+				(account, babe_key, encoded_peer_id, signature)
+			})
+			.collect()
+	}
+
+	#[test]
+	fn measure_full_block_size() {
+		runtime_ext().execute_with(|| {
+			let parent_number = 0u32;
+			Executive::initialize_block(&Header::new(
+				parent_number + 1,
+				Default::default(),
+				Default::default(),
+				Default::default(),
+				Default::default(),
+				Default::default(),
+			));
+			Timestamp::set_timestamp(0);
+
+			// We don't care about the real size, we want the maximum number of tx, this will trigger the minimum weight so the maximum number of transaction
+			// The total number is bound by weight and length (also since the base_fee is high, it impacts the weight of the tx)
+			let tx_size: u64 = 1 * 1024;
+			let mut nonce: u32 = 0;
+			let mut extrinsics = Vec::new();
+
+			let block_length = System::block_length();
+			let blob_runtime_parameters = DataAvailability::blob_runtime_parameters();
+			let max_blob_size = blob_runtime_parameters.max_blob_size;
+			let blob = vec![b'a'; max_blob_size as usize];
+			let cols = block_length.cols.0;
+			let rows = block_length.rows.0;
+			let seed = kate::Seed::default();
+			let blob_hash = H256(keccak_256(&blob));
+			let commitment = build_da_commitments(&blob, cols, rows, seed);
+
+			let mut blob_txs_summary: Vec<BlobTxSummaryRuntime> = vec![];
+			let ownership = sample_ownerships();
+
+			loop {
+				let call = RuntimeCall::DataAvailability(
+					da_control::Call::<Runtime>::submit_blob_metadata {
+						blob_hash,
+						size: tx_size,
+						commitment: commitment.clone(),
+					},
+				);
+
+				// let info = call.get_dispatch_info();
+				// println!(
+				// 	"predicted: class={:?}, weight(ref_time)={}, proof_size={}",
+				// 	info.class,
+				// 	info.weight.ref_time(),
+				// 	info.weight.proof_size()
+				// );
+
+				let extra: SignedExtra = (
+					CheckNonZeroSender::<Runtime>::new(),
+					CheckSpecVersion::<Runtime>::new(),
+					CheckTxVersion::<Runtime>::new(),
+					CheckGenesis::<Runtime>::new(),
+					CheckEra::<Runtime>::from(Era::Immortal),
+					CheckNonce::<Runtime>::from(nonce),
+					CheckWeight::<Runtime>::new(),
+					ChargeTransactionPayment::<Runtime>::from(0),
+					CheckAppId::<Runtime>::from(AppId(nonce % 1024)),
+				);
+				let payload = SignedPayload::new(call, extra).unwrap();
+				let enc_payload = payload.encode();
+				let signature = MultiSignature::from(Alice.pair().sign(&enc_payload));
+				let (call, extra, _signed) = payload.deconstruct();
+				let signer = MultiAddress::from(Alice.to_account_id());
+				let tx = UncheckedExtrinsic::new_signed(call.clone(), signer, signature, extra);
+
+				match Executive::apply_extrinsic(tx.clone()) {
+					Ok(_) => {
+						extrinsics.push(tx);
+						nonce += 1;
+						blob_txs_summary.push(BlobTxSummaryRuntime {
+							hash: H256::zero(),
+							tx_index: nonce,
+							success: true,
+							reason: None,
+							ownership: ownership.clone(),
+						});
+					},
+					Err(e) => match e {
+						TransactionValidityError::Invalid(
+							InvalidTransaction::ExhaustsResources,
+						) => {
+							println!("Found InvalidTransaction::ExhaustsResources, exiting loop");
+							break;
+						},
+						_ => panic!("Failed to apply extrinsic at index {}: {:?}", nonce - 1, e),
+					},
+				}
+			}
+
+			let post_inherent_call = RuntimeCall::DataAvailability(
+				da_control::Call::<Runtime>::submit_blob_txs_summary {
+					total_blob_size: tx_size * ((nonce + 1) as u64),
+					nb_blobs: (nonce + 1) as u32,
+					blob_txs_summary,
+				},
+			);
+			let post_inherent_tx = UncheckedExtrinsic::new_unsigned(post_inherent_call);
+			Executive::apply_extrinsic(post_inherent_tx)
+				.unwrap()
+				.unwrap();
+
+			println!("Extrinsics count = {}", nonce);
+
+			let header = Executive::finalize_block();
+
+			// 12.001 MiB for 6 sec blocktime  and 2 sec for extrinsics
+			// ≃ 40 MiB for 20 sec blocktime
+			println!("Encoded header size = {} bytes", header.encode().len());
+
+			let block = Block { header, extrinsics };
+			// 18.402 MiB for 6 sec blocktime and 2 sec for extrinsics
+			// ≃ 62 MiB for 20 sec blocktime
+			println!("Encoded block size = {} bytes", block.encode().len()); // 18.402 MiB
+		})
+	}
+}
