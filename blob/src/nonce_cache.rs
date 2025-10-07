@@ -46,11 +46,18 @@ impl NonceCacheApiT for NonceCache {
 	}
 
 	fn commit(&self, who: &AccountId32, tx_nonce: u32) {
-		let mut cache = self.inner.lock().unwrap();
-		if let Some(last) = cache.get_mut(who) {
-			*last = tx_nonce;
-		} else {
-			cache.insert(who.clone(), tx_nonce, BLOB_FUTURE_NONCE_CACHE_TTL);
+		match self.inner.lock() {
+			Ok(mut cache) => {
+				cache.insert(who.clone(), tx_nonce, BLOB_FUTURE_NONCE_CACHE_TTL);
+			},
+			Err(e) => {
+				log::warn!(
+					"NonceCache: failed to lock cache for account={} nonce={} (error={})",
+					who,
+					tx_nonce,
+					e
+				);
+			},
 		}
 	}
 }
