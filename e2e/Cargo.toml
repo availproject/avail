@@ -8,8 +8,8 @@ edition = "2021"
 [dependencies]
 avail-rust = { package = "avail-rust-client", version = "0.4.0", default-features = false, features = ["native", "reqwest", "next"] }
 da-commitment = { path = "../da-commitment" }
-sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "ghali/infinity-da-rpc", default-features = false, features = ["std"] }
-kate = { git = "https://github.com/availproject/avail-core", branch = "ghali/infinity-da-rpc", default-features = false, features = ["std"] }
+sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "ghali/infinity-da", default-features = false, features = ["std"] }
+kate = { git = "https://github.com/availproject/avail-core", branch = "ghali/infinity-da", default-features = false, features = ["std"] }
 hex = "0.4"
 codec = { package = "parity-scale-codec", version = "3", default-features = false }
 sp-crypto-hashing = { version = "0.1.0", default-features = false }
