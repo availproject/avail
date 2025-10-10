@@ -1,11 +1,6 @@
 # DA Spammer
 
-Two Rust CLIs to stress-test data availability on an [Avail](https://www.availproject.org/) node:
-
-- **`da-spammer`** - single-account spammer: prepares blobs, computes commitments, and submits `submit_blob_metadata + blob` as signed extrinsics.
-- **`da-sybil-spammer`** - multi-account spammer: generates many ephemeral accounts, batch-funds them using `utility.batchAll(balances.transfer_keep_alive(...))`, then round-robins blob submissions across them.
-
-Both binaries connect to an Avail HTTP RPC endpoint and log per-tx progress.
+Rust CLI to stress-test data availability on an [Avail](https://www.availproject.org/) node by preparing blobs, building commitments, and submitting `submit_blob_metadata + blob` as signed extrinsics. The tool connects to an Avail HTTP RPC endpoint and logs per-transaction progress.
 
 ---
 
@@ -16,19 +11,13 @@ Shared
 - Computes KZG commitments for each blob
 - Rotates `app_id` (`i % 5`) for submissions
 - Verbose logging (nonce, app_id, tx size, etc.)
+- Uses a pool of RPC clients to overlap metadata generation and submissions
 
-**`da-spammer` (single account)**
+**`da-spammer`**
 - Uses a chosen dev account (`Alice`, `Bob`, `Charlie`, `Dave`, `Eve`, `Ferdie`, `One`, `Two`)
-- Configurable blob size (1-64 MiB), count, and repeated content character
-- Optional staged delays between submissions (`initial`, `warmup`, `subsequent`)
-- Payload can be generated from a repeated char or loaded from disk (`--file`); sprinkle random bytes by default, disable via `--randomize-disabled`
-
-**`da-sybil-spammer` (multi account)**
-- Generates *N* fresh SR25519 accounts (not persisted by default)
-- Funds them from a dev account via `utility.batchAll + balances.transfer_keep_alive`
-- Loops a given number of times and sends blobs round-robin: at loop *i*, use account `i % N`
-- Optional delay between txs to smooth load
-
+- Configurable blob size (1-31 MiB), count, and repeated content character
+- Optional staged delays between submissions (`warmup`, `subsequent`)
+- Payload can be generated from a repeated char or loaded from disk (`--file`); sprinkles random bytes by default, disable via `--randomize-disabled`
 ---
 
 ## ⚡ Requirements
@@ -46,7 +35,6 @@ cargo build --release
 ```
 Artifacts:
 - `./target/release/da-spammer`
-- `./target/release/da-sybil-spammer`
 
 ---
 
@@ -63,7 +51,6 @@ cargo run --release --bin da-spammer -- --account alice
 - `--count <1..1000>`  (default: `50`)
 - `--ch <char>`        (optional; default is first letter of `--account`)
 - `-e, --endpoint <URL>`   (default: `http://127.0.0.1:8546`)
-- `-i, --initial-delay <ms>`     (default: `0`; sleep before the first submit)
 - `-w, --warmup-delay <ms>`      (default: `0`; additional sleep before the second submit)
 - `--subsequent-delay <ms>`  (default: `0`; additional sleep before every submit after the second)
 - `-r, --randomize-disabled` (optional; disable random byte sprinkling, which is enabled by default)
@@ -93,67 +80,16 @@ cargo run --release --bin da-spammer -- --account alice
 - Transactions: 50 (default)
 - Blob content: repeated `b`
 - RPC endpoint: `http://127.0.0.1:8546`
-- Delays: no initial/warmup/subsequent delay (all default to `0`)
-
----
-
-### 2) `da-sybil-spammer` (multi account)
-
-**What it does**
-1. Generates `--accounts` ephemeral keypairs (mnemonics are printed *only in-memory*; one sample SS58 is logged).
-2. Funds each with `--fund-each` AVAIL using `utility.batchAll(balances.transfer_keep_alive(...))` from `--funder`.
-3. Performs `--loops` submissions, using account `i % --accounts` on each iteration.
-   - Blob size per tx is `--size-mb` MiB; content char is fixed via `--ch` or derived from account index.
-
-**Flags**
-- `--endpoint <URL>`            (default: `http://127.0.0.1:8546`)
-- `--funder <dev-account>`      (default: `alice`; one of: `alice|bob|charlie|dave|eve|ferdie|one|two`)
-- `--accounts <N>`              (default: `100`)
-- `--fund-each <AVAIL>`         (default: `10`; amount in AVAIL, multiplied internally by chain `ONE_AVAIL` constant)
-- `--batch-size <N>`            (default: `100`; number of transfers per `batchAll`)
-- `--size-mb <1..31>`           (default: `31`)
-- `--loops <N>`                 (default: `1000`)
-- `--sleep-ms <milliseconds>`   (default: `0`; delay between submissions)
-- `--ch <char>`                 (optional; fixed blob character)
-
-**Default run**
-```bash
-./target/release/da-sybil-spammer \
-  --endpoint http://127.0.0.1:8546 \
-  --funder alice
-```
-- Generates 100 accounts
-- Funds 10 AVAIL each (using chain's `ONE_AVAIL` base units)
-- Batches transfers in groups of 100
-- Submits 1000 blobs, 31 MiB each, round-robin over accounts
-
-**Custom run**
-```bash
-./target/release/da-sybil-spammer \
-  --endpoint http://127.0.0.1:8546 \
-  --funder bob \
-  --accounts 200 \
-  --fund-each 5 \
-  --batch-size 50 \
-  --size-mb 16 \
-  --loops 500 \
-  --sleep-ms 10 \
-  --ch X
-```
-- 200 accounts, fund 5 AVAIL each, batches of 50
-- 500 blobs of 16 MiB, alternating through accounts
-- 10 ms delay between submissions
-- Blob content: repeated `X`
+- Delays: no warmup/subsequent delay (all default to `0`)
 
 ---
 
 ## 📝 Notes & Tips
 
-- **Funding units**: `--fund-each` is interpreted as whole AVAIL and multiplied by the runtime's `ONE_AVAIL` base unit constant.
-- **Batch size**: `utility.batchAll` can be large; if you hit call size/weight limits, reduce `--batch-size`.
-- **Nonces**: `da-sybil-spammer` snapshots starting nonces and increments locally on success. (No retry/backoff logic by default.)
-- **Blob length variance**: The multi-account script reduces the blob length slightly each iteration (`len_bytes - i`) to keep content unique; ensure `--loops <= blob_size_in_bytes`.
+- **Random bytes**: By default the payload sprinkles random bytes into the repeated character; use `--randomize-disabled` to turn that off.
+- **Timing controls**: Combine`--warmup-delay`, and `--subsequent-delay` to pace transactions.
 - **External payloads**: If you pass `--file`, make sure the file has at least `size_mb * 1024 * 1024` bytes; only the first chunk of that size is used (and may be randomized).
+- **Client pool**: The binary instantiates multiple RPC clients to keep submissions flowing; adjust node-side rate limits accordingly.
 
 ---
 

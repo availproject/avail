@@ -1,12 +1,16 @@
 use avail_rust::prelude::*;
 use clap::Parser;
-use da_spammer::{build_commitments, hash_blob};
+use da_commitment::build_da_commitments::build_da_commitments;
+use sp_crypto_hashing::keccak_256;
 use std::{
 	sync::Arc,
 	time::{Duration, SystemTime, UNIX_EPOCH},
 };
 use tokio::sync::mpsc;
 
+/// Default grid (tune to your runtime)
+pub const DEFAULT_ROWS: usize = 1024;
+pub const DEFAULT_COLS: usize = 4096;
 /// Simple CLI for spamming blobs + metadata to an Avail node.
 #[derive(Parser, Debug)]
 #[command(name = "da-spammer", about = "Submit blobs + metadata to Avail")]
@@ -30,10 +34,6 @@ struct Args {
 	/// RPC endpoint
 	#[arg(short, long, default_value = "http://127.0.0.1:8546")]
 	endpoint: String,
-
-	/// Delay before first submit is done. In milliseconds
-	#[arg(short, long, default_value_t = 0)]
-	initial_delay: u64,
 
 	/// Delay after first submit is done. In milliseconds
 	#[arg(short, long, default_value_t = 0)]
@@ -90,13 +90,7 @@ async fn main() -> Result<(), avail_rust::error::Error> {
 		}
 	}
 
-	let len_bytes = args.size_mb * 1024 * 1024;
-
-	println!("========== Avail DA Spammer ==========");
-	println!("Endpoint : {}", args.endpoint);
-	println!("Account  : {}", args.account);
-	println!("Size     : {} MiB ({} bytes)", args.size_mb, len_bytes);
-	println!("Count    : {}", args.count);
+	let mut len_bytes = args.size_mb * 1024 * 1024;
 
 	let signer = keypair_for(&args.account);
 
@@ -109,6 +103,19 @@ async fn main() -> Result<(), avail_rust::error::Error> {
 	} else {
 		vec![byte; len_bytes]
 	};
+	if data.len() < len_bytes {
+		len_bytes = data.len();
+	}
+
+	println!("========== Avail DA Spammer ==========");
+	println!("Endpoint : {}", args.endpoint);
+	println!("Account  : {}", args.account);
+	println!(
+		"Size     : {} MiB ({} bytes)",
+		len_bytes / 1024 / 1024,
+		len_bytes
+	);
+	println!("Count    : {}", args.count);
 
 	if !args.randomize_disabled {
 		for _ in 0..10 {
@@ -173,7 +180,7 @@ struct ChannelMessage {
 	pub hash: H256,
 }
 
-const CLIENT_COUNT: usize = 25;
+const CLIENT_COUNT: usize = 10;
 type ChannelSender = mpsc::Sender<ChannelMessage>;
 type ChannelReceiver = mpsc::Receiver<ChannelMessage>;
 
@@ -282,4 +289,21 @@ fn generate_random_number(to: u32) -> u32 {
 
 	let magic_number: u128 = micro + nanos + millis + secs as u128;
 	((magic_number * 7) as u32) % to
+}
+
+/// Build a blob filled with `byte` (length `len_bytes`), its keccak256 hash,
+/// and DA commitments using KZG (rows/cols + Seed::default()).
+pub fn build_blob_and_commitments(byte: u8, len_bytes: usize) -> (Vec<u8>, H256, Vec<u8>) {
+	let blob = vec![byte; len_bytes];
+	let blob_hash = H256::from(keccak_256(&blob));
+	let commitments = build_da_commitments(&blob, DEFAULT_ROWS, DEFAULT_COLS, Default::default());
+	(blob, blob_hash, commitments)
+}
+
+pub fn hash_blob(data: &[u8]) -> H256 {
+	H256::from(keccak_256(data))
+}
+
+pub fn build_commitments(data: &[u8]) -> Vec<u8> {
+	build_da_commitments(data, DEFAULT_ROWS, DEFAULT_COLS, Default::default())
 }
