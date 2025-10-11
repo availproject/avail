@@ -50,13 +50,13 @@ struct Args {
 	file: Option<String>,
 }
 
-fn validate_account(s: &str) -> Result<String, String> {
-	let s = s.to_lowercase();
-	match s.as_str() {
-		"alice" | "bob" | "charlie" | "dave" | "eve" | "ferdie" | "one" | "two" => Ok(s),
-		_ => Err("must be one of: alice,bob,charlie,dave,eve,ferdie,one,two".into()),
-	}
-}
+// fn validate_account(s: &str) -> Result<String, String> {
+// 	let s = s.to_lowercase();
+// 	match s.as_str() {
+// 		"alice" | "bob" | "charlie" | "dave" | "eve" | "ferdie" | "one" | "two" => Ok(s),
+// 		_ => Err("must be one of: alice,bob,charlie,dave,eve,ferdie,one,two".into()),
+// 	}
+// }
 
 fn keypair_for(account: &str) -> Keypair {
 	match account {
