@@ -25,3 +25,7 @@ codec = { package = "parity-scale-codec", version = "3", default-features = fals
 # Optional: only used in logs if you want to hex something; safe to keep
 hex = "0.4"
 base64 = { version = "0.22.1" }
+
+# Logs
+tracing = { version = "0.1", default-features = false }
+tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt", "std"]  }

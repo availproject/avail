@@ -7,6 +7,8 @@ use std::{
 	time::{Duration, SystemTime, UNIX_EPOCH},
 };
 use tokio::sync::mpsc;
+use tracing::info;
+use tracing_subscriber::util::SubscriberInitExt;
 
 /// Default grid (tune to your runtime)
 pub const DEFAULT_ROWS: usize = 1024;
@@ -16,8 +18,8 @@ pub const DEFAULT_COLS: usize = 4096;
 #[command(name = "da-spammer", about = "Submit blobs + metadata to Avail")]
 struct Args {
 	/// One of: alice,bob,charlie,dave,eve,ferdie,one,two
-	#[arg(short, long, value_parser = validate_account)]
-	account: String,
+	#[arg(short, long, value_delimiter = ',')]
+	accounts: Option<Vec<String>>,
 
 	/// Payload size in MiB [1..=31] (default: 31)
 	#[arg(short, long, default_value_t = 31)]
@@ -26,10 +28,6 @@ struct Args {
 	/// Number of transactions [1..=1000] (default: 50)
 	#[arg(long, default_value_t = 50)]
 	count: usize,
-
-	/// Single character to repeat for the blob. Default: first char of `--account`
-	#[arg(long)]
-	ch: Option<char>,
 
 	/// RPC endpoint
 	#[arg(short, long, default_value = "http://127.0.0.1:8546")]
@@ -70,12 +68,17 @@ fn keypair_for(account: &str) -> Keypair {
 		"ferdie" => ferdie(),
 		"one" => one(),
 		"two" => two(),
-		_ => unreachable!("validated above"),
+		_ => panic!("Who is {}?", account),
 	}
 }
 
 #[tokio::main]
 async fn main() -> Result<(), avail_rust::error::Error> {
+	// Enable logs
+	_ = tracing_subscriber::fmt::SubscriberBuilder::default()
+		.finish()
+		.try_init();
+
 	let args = Args::parse();
 
 	if !(1..=31).contains(&args.size_mb) {
@@ -84,38 +87,38 @@ async fn main() -> Result<(), avail_rust::error::Error> {
 	if !(1..=1000).contains(&args.count) {
 		panic!("--count must be within 1..=1000");
 	}
-	if let Some(ch) = args.ch {
-		if ch.len_utf8() != 1 {
-			panic!("--ch must be a single ASCII character");
-		}
-	}
 
 	let mut len_bytes = args.size_mb * 1024 * 1024;
 
-	let signer = keypair_for(&args.account);
+	let mut signers = Vec::new();
+	if let Some(accounts) = args.accounts {
+		for account in accounts {
+			let signer = keypair_for(&account);
+			signers.push(signer);
+		}
+	}
+	if signers.is_empty() {
+		signers = vec![keypair_for("alice")];
+	}
 
-	let default_ch = args.account.chars().next().unwrap();
-	let ch = args.ch.unwrap_or(default_ch);
-	let byte = ch as u8;
-
+	// This is the main signer
 	let mut data = if let Some(path) = args.file {
 		std::fs::read(path).unwrap()
 	} else {
-		vec![byte; len_bytes]
+		vec![0; len_bytes]
 	};
 	if data.len() < len_bytes {
 		len_bytes = data.len();
 	}
 
-	println!("========== Avail DA Spammer ==========");
-	println!("Endpoint : {}", args.endpoint);
-	println!("Account  : {}", args.account);
-	println!(
+	info!("========== Avail DA Spammer ==========");
+	info!("Endpoint : {}", args.endpoint);
+	info!(
 		"Size     : {} MiB ({} bytes)",
 		len_bytes / 1024 / 1024,
 		len_bytes
 	);
-	println!("Count    : {}", args.count);
+	info!("Count    : {}", args.count);
 
 	if !args.randomize_disabled {
 		for _ in 0..10 {
@@ -144,7 +147,7 @@ async fn main() -> Result<(), avail_rust::error::Error> {
 	let subsequent_delay = args.subsequent_delay;
 	let warmup_delay = args.warmup_delay;
 
-	consumer_task(clients, signer, subsequent_delay, warmup_delay, rx).await;
+	consumer_task(clients, signers, subsequent_delay, warmup_delay, rx).await;
 
 	Ok(())
 }
@@ -155,19 +158,23 @@ async fn submit_blob_task(
 	blob: Arc<Vec<u8>>,
 	blob_len: usize,
 	index: usize,
-	elapsed: Duration,
+	time: std::time::Instant,
+	account: AccountId,
+	nonce: u32,
 ) {
-	println!(
-		"New submit block task executed after {} ms. Index: {index}",
-		elapsed.as_millis()
+	info!(
+		"Ready to submit new blob. Time passed {} ms. Index: [{index}]. Account: {}, Nonce: {}",
+		time.elapsed().as_millis(),
+		account,
+		nonce
 	);
 	match client
 		.chain()
 		.blob_submit_blob(&metadata, &blob[0..blob_len])
 		.await
 	{
-		Ok(_) => println!("    ✓ [{}] submitted", index),
-		Err(e) => eprintln!("    ✗ [{}] error: {e}", index),
+		Ok(_) => info!("    ✓ [{}] submission done", index),
+		Err(e) => info!("    ✗ [{}] error: {e}", index),
 	}
 }
 
@@ -212,7 +219,7 @@ fn producer_task(data: Arc<Vec<u8>>, mut length: usize, count: usize, tx: Channe
 
 async fn consumer_task(
 	clients: Vec<Client>,
-	signer: Keypair,
+	signers: Vec<Keypair>,
 	subsequent_delay: u64,
 	warmup_delay: u64,
 	mut rx: ChannelReceiver,
@@ -221,21 +228,22 @@ async fn consumer_task(
 		tokio::time::sleep(Duration::from_millis(warmup_delay)).await;
 	}
 
-	let account_id = signer.account_id();
-	let mut nonce = clients[0]
-		.chain()
-		.account_nonce(account_id.clone())
-		.await
-		.unwrap();
-	println!("AccountId: {account_id}");
-	println!("Start nonce: {nonce}");
-
 	let mut i = 0;
 	let mut handles = Vec::with_capacity(100);
 	let mut now = std::time::Instant::now();
+	let mut signer_index = 0;
+	let signers_len = signers.len();
 
 	// Let's do it!
 	loop {
+		let signer = signers.get(signer_index % signers_len).unwrap();
+		let account_id = signer.account_id();
+		let nonce = clients[0]
+			.chain()
+			.account_nonce(account_id.clone())
+			.await
+			.unwrap();
+
 		// Error means that the channel is closed
 		let msg = match rx.recv().await {
 			Some(x) => x,
@@ -252,6 +260,8 @@ async fn consumer_task(
 			msg.commitments,
 		);
 
+		let metadata = unsigned.sign(&signer, options).await.unwrap().encode();
+
 		let elapsed = now.elapsed();
 		if elapsed.as_millis() < subsequent_delay as u128 {
 			tokio::time::sleep(Duration::from_millis(
@@ -260,19 +270,26 @@ async fn consumer_task(
 			.await;
 		}
 
-		let metadata = unsigned.sign(&signer, options).await.unwrap().encode();
-		let h =
-			tokio::spawn(
-				async move {
-					submit_blob_task(c, metadata, msg.data.clone(), msg.length, i, now.elapsed())
-				}
-				.await,
-			);
+		let h = tokio::spawn(
+			async move {
+				submit_blob_task(
+					c,
+					metadata,
+					msg.data.clone(),
+					msg.length,
+					i,
+					now,
+					account_id,
+					nonce,
+				)
+			}
+			.await,
+		);
 		handles.push(h);
 		now = std::time::Instant::now();
 
 		i += 1;
-		nonce += 1;
+		signer_index += 1;
 	}
 
 	for h in handles {
