@@ -340,6 +340,7 @@ mod benchmarks {
 		let summaries: Vec<crate::pallet::BlobTxSummaryRuntime> = (0..n)
 			.map(|i| crate::pallet::BlobTxSummaryRuntime {
 				hash: H256::repeat_byte((i + 1) as u8),
+				finalized_block_hash_checkpoint: H256::repeat_byte((i + 1) as u8),
 				tx_index: i as u32,
 				success: i % 2 == 0,
 				reason: if i % 3 == 0 {
@@ -348,6 +349,7 @@ mod benchmarks {
 					None
 				},
 				ownership: Vec::new(),
+				missing_validators: Vec::new(),
 			})
 			.collect();
 

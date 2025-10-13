@@ -455,16 +455,20 @@ mod submit_blob_txs_summary {
 
 			let s1 = crate::pallet::BlobTxSummaryRuntime {
 				hash: H256::random(),
+				finalized_block_hash_checkpoint: H256::random(),
 				tx_index: 0,
 				success: true,
 				reason: None,
+				missing_validators: Vec::new(),
 				ownership: Vec::new(),
 			};
 			let s2 = crate::pallet::BlobTxSummaryRuntime {
 				hash: H256::random(),
+				finalized_block_hash_checkpoint: H256::random(),
 				tx_index: 1,
 				success: false,
 				reason: Some("example".into()),
+				missing_validators: Vec::new(),
 				ownership: Vec::new(),
 			};
 

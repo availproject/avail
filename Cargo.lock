@@ -2722,6 +2722,7 @@ dependencies = [
 name = "da-control"
 version = "1.0.1"
 dependencies = [
+ "anyhow",
  "avail-base",
  "avail-core",
  "da-commitment",

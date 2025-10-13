@@ -16,14 +16,16 @@ use crate::{
 		BlobSignatureData, BlobStored, OwnershipEntry, BLOB_REQ_PROTO,
 	},
 	utils::{
-		build_signature_payload, check_store_blob, generate_base_index, get_active_validators,
-		get_my_validator_id, get_validator_id_from_key, get_validator_per_blob, sign_blob_data,
-		verify_signed_blob_data,
+		build_signature_payload, get_active_validators, get_my_validator_id,
+		get_validator_id_from_key, get_validator_per_blob, sign_blob_data, verify_signed_blob_data,
 	},
 };
 use anyhow::{anyhow, Result};
 use codec::{Decode, Encode};
-use da_control::BlobRuntimeParameters;
+use da_control::{
+	blob_helper::{generate_base_index, validators_for_blob},
+	BlobRuntimeParameters,
+};
 use da_runtime::apis::BlobApi;
 use futures::channel::oneshot;
 use sc_client_api::HeaderBackend;
@@ -207,6 +209,7 @@ async fn handle_blob_received_notification<Block>(
 		finalized_block_number: 0,
 		nb_validators_per_blob: 0,
 		nb_validators_per_blob_threshold: 0,
+		storing_validator_list: Default::default(),
 	});
 
 	// If we already had the blob metadata but incomplete (is notified == false) we fill the missing data.
@@ -220,7 +223,8 @@ async fn handle_blob_received_notification<Block>(
 	let h: [u8; 32] = match announced_finalized_hash.encode().try_into() {
 		Ok(x) => x,
 		Err(_) => {
-			panic!("Failed to convert announced_finalized_hash to H256");
+			log::error!("Failed to convert announced_finalized_hash to H256");
+			return;
 		},
 	};
 
@@ -281,19 +285,27 @@ async fn handle_blob_received_notification<Block>(
 			},
 		};
 
-	let should_store_blob = match check_store_blob(
+	let storing_validators = match validators_for_blob(
 		blob_received.hash,
 		&validators,
-		&my_validator_id,
 		&announced_finalized_hash.encode(),
 		nb_validators_per_blob,
 	) {
-		Ok(s) => s,
+		Ok(st) => st,
 		Err(e) => {
-			log::error!(target: LOG_TARGET, "Could not check if I should store the blob: {e}");
+			let err = std::format!(
+				"Failed to fetch storing validators at {:?}: {:?}",
+				blob_meta.finalized_block_hash,
+				e
+			);
+			log::error!("{}", err);
 			return;
 		},
 	};
+
+	let should_store_blob = storing_validators.contains(&my_validator_id);
+
+	blob_meta.storing_validator_list = storing_validators;
 
 	if should_store_blob {
 		let my_peer_id = network.local_peer_id();

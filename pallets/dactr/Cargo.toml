@@ -28,6 +28,7 @@ pallet-preimage = { workspace = true, default-features = false }
 log.workspace = true
 thiserror-no-std.workspace = true
 derive_more.workspace = true
+anyhow = "1.0"
 
 # Substrate
 serde = { workspace = true, optional = true, features = ["derive"] }

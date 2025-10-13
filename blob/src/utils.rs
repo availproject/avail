@@ -16,15 +16,17 @@ use sc_keystore::{Keystore, LocalKeystore};
 use sc_transaction_pool_api::TransactionSource;
 use sp_api::ProvideRuntimeApi;
 use sp_authority_discovery::AuthorityId;
+use sp_core::H256;
 use sp_core::{crypto::KeyTypeId, sr25519, twox_128};
 use sp_runtime::MultiAddress;
 use sp_runtime::{
 	key_types,
 	traits::{Block as BlockT, Verify},
 	transaction_validity::{InvalidTransaction, TransactionValidityError},
-	AccountId32, SaturatedConversion,
+	AccountId32,
 };
 use sp_transaction_pool::runtime_api::TaggedTransactionQueue;
+use std::collections::BTreeSet;
 use std::{collections::BTreeMap, io::Write, sync::Arc};
 use tokio::sync::{mpsc, oneshot};
 
@@ -165,109 +167,6 @@ pub fn get_validator_per_blob_inner(
 	let nb_validators_per_blob = threshold + margin;
 
 	(nb_validators_per_blob, threshold)
-}
-
-/// Generate pseudo deterministic index based on given values
-pub fn generate_base_index(
-	blob_hash: BlobHash,
-	block_hash_bytes: &[u8],
-	ring_size: usize,
-	additional: Option<Vec<u8>>,
-) -> Result<usize> {
-	let ring_size: u64 = ring_size.saturated_into();
-
-	let hash_bytes = blob_hash.as_bytes();
-	let truncated = hash_bytes
-		.get(..8)
-		.ok_or(anyhow!("Blob hash is too short, expected at least 8 bytes"))?;
-	let array: [u8; 8] = truncated
-		.try_into()
-		.map_err(|_| anyhow!("Failed to convert first 8 bytes of blob hash"))?;
-	let blob_seed = u64::from_le_bytes(array);
-	let blob_index = blob_seed % ring_size;
-
-	let truncated = block_hash_bytes.get(..8).ok_or(anyhow!(
-		"Block hash is too short, expected at least 8 bytes"
-	))?;
-	let array: [u8; 8] = truncated
-		.try_into()
-		.map_err(|_| anyhow!("Failed to convert first 8 bytes of block hash"))?;
-	let block_seed = u64::from_le_bytes(array);
-	let block_index = block_seed % ring_size;
-
-	let additional_index = match additional {
-		Some(additional) => {
-			let truncated = additional.get(..8).ok_or(anyhow!(
-				"Additional hash is too short, expected at least 8 bytes"
-			))?;
-			let array: [u8; 8] = truncated
-				.try_into()
-				.map_err(|_| anyhow!("Failed to convert first 8 bytes of blob hash"))?;
-			let additional_seed = u64::from_le_bytes(array);
-			let additional_index = additional_seed % ring_size;
-			additional_index
-		},
-		None => 0,
-	};
-
-	let index = blob_index
-		.wrapping_add(block_index)
-		.wrapping_add(additional_index)
-		% ring_size;
-
-	Ok(index as usize)
-}
-
-/// Decide deterministically whether this node should fetch/store a blob based on the blob hash
-/// given the full sorted list of validators.
-pub fn check_store_blob(
-	blob_hash: BlobHash,
-	validators: &Vec<AccountId32>,
-	my_id: &AccountId32,
-	block_hash_bytes: &[u8],
-	nb_validators_per_blob: u32,
-) -> Result<bool> {
-	let nb_validators = validators.len() as u32;
-	log::info!("Check store blob start - nb_validators:{nb_validators:?} - nb_validators_per_blob: {nb_validators_per_blob:?}");
-
-	if nb_validators == 0 || nb_validators_per_blob == 0 {
-		return Ok(false);
-	}
-
-	let my_pos = match validators.iter().position(|v| v == my_id) {
-		Some(p) => p,
-		None => {
-			// We're not in the validator set
-			log::info!(
-				"Check store blob - Could not find my pos. Validators:{:?}. Me: {:?}",
-				validators.clone(),
-				my_id.clone()
-			);
-			return Ok(false);
-		},
-	};
-
-	log::info!("Check store blob - My Pos in the validator set:{my_pos:?}");
-
-	let base_index =
-		generate_base_index(blob_hash, block_hash_bytes, nb_validators as usize, None)?;
-
-	log::info!("Check store blob - base_index:{base_index:?}");
-	for i in 0..nb_validators_per_blob {
-		let index = ((base_index as u32) + i) % nb_validators;
-		log::info!(
-			"Validator: {:?}, should store blob: {:?}",
-			validators.get(index as usize),
-			blob_hash
-		);
-		if index as usize == my_pos {
-			log::info!("I should store blob: {:?}", blob_hash);
-			return Ok(true);
-		}
-	}
-	log::info!("Check store blob end");
-
-	Ok(false)
 }
 
 pub fn check_if_wait_next_block<C, Block>(
@@ -451,21 +350,12 @@ pub async fn get_blob_txs_summary(
 		}) = tx
 		{
 			let maybe_blob_metadata = blob_metadata.get(&blob_hash);
-			match get_block_tx_summary(blob_hash, size, commitment, maybe_blob_metadata, tx_index) {
-				Ok((tx_summary, size)) => {
-					total_size += size;
-					blob_txs_summary.push(tx_summary);
-				},
-				Err(reason) => {
-					blob_txs_summary.push(BlobTxSummary {
-						hash: blob_hash,
-						success: false,
-						reason: Some(reason),
-						ownership: Vec::new(),
-						tx_index,
-					});
-				},
+			let blob_summary =
+				get_block_tx_summary(blob_hash, commitment, maybe_blob_metadata, tx_index, size);
+			if blob_summary.success {
+				total_size += size;
 			}
+			blob_txs_summary.push(blob_summary);
 		}
 	}
 
@@ -474,42 +364,64 @@ pub async fn get_blob_txs_summary(
 
 fn get_block_tx_summary(
 	blob_hash: BlobHash,
-	size: u64,
 	commitment: Vec<u8>,
 	blob_metadata: Option<&(BlobMetadata, Vec<OwnershipEntry>)>,
 	tx_index: u32,
-) -> Result<(BlobTxSummary, u64), String> {
+	size: u64,
+) -> BlobTxSummary {
+	let mut blob_summary = BlobTxSummary {
+		hash: blob_hash,
+		finalized_block_hash_checkpoint: H256::zero(),
+		tx_index,
+		success: false,
+		reason: None,
+		missing_validators: Vec::new(),
+		ownership: Vec::new(),
+	};
+
 	let (meta, ownerships) = match blob_metadata {
 		Some(m) => m,
 		None => {
-			return Err("Blob metadata not found in the store to check for ownerships".into());
+			blob_summary.reason =
+				Some("Blob metadata not found in the store to check for ownerships".into());
+			return blob_summary;
 		},
 	};
 
 	if meta.size != size || meta.commitment != commitment {
-		return Err(
-			"Blob metadata from the store did not match the one from the transaction".into(),
-		);
+		blob_summary.reason =
+			Some("Blob metadata from the store did not match the one from the transaction".into());
+		return blob_summary;
 	}
 
 	if !meta.is_notified {
-		return Err("Blob metadata from the store is not notified, discarding it".into());
+		blob_summary.reason =
+			Some("Blob metadata from the store is not notified, discarding it".into());
+		return blob_summary;
 	}
+
+	blob_summary.ownership = ownerships.to_vec();
 
 	if ownerships.len() < meta.nb_validators_per_blob_threshold as usize {
-		return Err("Not enough validators vouched for this block".into());
+		// We store this only in case we have an issue, if the nb_validators_per_blob_threshold is respected, we can't forget this
+		// Compute the list of missing validators so everyone can check
+		let missing_validators: Vec<AccountId32> = {
+			let owned: BTreeSet<_> = ownerships.iter().map(|o| o.address.clone()).collect();
+			meta.storing_validator_list
+				.iter()
+				.cloned()
+				.filter(|v| !owned.contains(v))
+				.collect()
+		};
+
+		blob_summary.missing_validators = missing_validators;
+		blob_summary.reason = Some("Not enough validators vouched for this block".into());
+		return blob_summary;
 	}
 
-	return Ok((
-		BlobTxSummary {
-			hash: blob_hash,
-			tx_index,
-			success: true,
-			reason: None,
-			ownership: ownerships.to_vec(),
-		},
-		meta.size as u64,
-	));
+	blob_summary.success = true;
+
+	return blob_summary;
 }
 
 pub fn build_signature_payload(blob_hash: BlobHash, additional: Vec<u8>) -> Vec<u8> {

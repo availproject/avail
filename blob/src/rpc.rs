@@ -14,15 +14,16 @@ use crate::{
 		Blob, BlobMetadata, BlobNotification, BlobReceived, CompressedBlob, Deps, OwnershipEntry,
 	},
 	utils::{
-		build_signature_payload, check_store_blob, extract_signer_and_nonce, generate_base_index,
-		get_dynamic_blocklength_key, get_my_validator_public_account, get_validator_per_blob_inner,
-		sign_blob_data_inner, B64Param, CommitmentQueue, SmartStopwatch,
+		build_signature_payload, extract_signer_and_nonce, get_dynamic_blocklength_key,
+		get_my_validator_public_account, get_validator_per_blob_inner, sign_blob_data_inner,
+		B64Param, CommitmentQueue, SmartStopwatch,
 	},
 	MAX_RPC_RETRIES,
 };
 use anyhow::Result;
 use codec::{Decode, Encode};
 use da_commitment::build_da_commitments::build_polynomal_grid;
+use da_control::blob_helper::{generate_base_index, validators_for_blob};
 use da_control::{pallet::BlobTxSummaryRuntime, BlobRuntimeParameters, Call};
 use da_runtime::{apis::BlobApi, RuntimeCall, UncheckedExtrinsic};
 use frame_system::limits::BlockLength;
@@ -297,11 +298,10 @@ where
 async fn check_rpc_store_blob(
 	blob_metadata: &BlobMetadata,
 	my_encoded_peer_id: String,
-	nb_validators_per_blob: u32,
-	validators: &Vec<AccountId32>,
 	finalized_block_hash: H256,
 	externalities: &Arc<dyn ExternalitiesT>,
 	runtime_client: &Arc<dyn RuntimeApiT>,
+	storing_validators: &Vec<AccountId32>,
 ) -> std::result::Result<Option<OwnershipEntry>, String> {
 	let role = externalities.role();
 	if !role.is_authority() {
@@ -330,19 +330,7 @@ async fn check_rpc_store_blob(
 		return Ok(None);
 	};
 
-	let should_store_blob = match check_store_blob(
-		blob_metadata.hash,
-		validators,
-		&my_validator_id,
-		&blob_metadata.finalized_block_hash.encode(),
-		nb_validators_per_blob,
-	) {
-		Ok(s) => s,
-		Err(e) => {
-			return Err(std::format!("failed to check if I should hold a blob: {e}"));
-		},
-	};
-
+	let should_store_blob = storing_validators.contains(&my_validator_id);
 	if !should_store_blob {
 		return Ok(None);
 	}
@@ -614,6 +602,7 @@ pub async fn store_and_gossip_blob(
 			finalized_block_number: 0,
 			nb_validators_per_blob: 0,
 			nb_validators_per_blob_threshold: 0,
+			storing_validator_list: Default::default(),
 		}
 	});
 
@@ -637,20 +626,37 @@ pub async fn store_and_gossip_blob(
 
 	let (nb_validators_per_blob, threshold) =
 		get_validator_per_blob_inner(blob_params.clone(), validators.len() as u32);
+	let storing_validators = match validators_for_blob(
+		blob_hash,
+		&validators,
+		&finalized_block_hash.encode(),
+		nb_validators_per_blob,
+	) {
+		Ok(st) => st,
+		Err(e) => {
+			let err = std::format!(
+				"Failed to fetch storing validators at {:?}: {:?}",
+				finalized_block_hash,
+				e
+			);
+			log::error!("{}", err);
+			return Err(());
+		},
+	};
 	blob_metadata.is_notified = true;
 	blob_metadata.expires_at = finalized_block_number.saturating_add(blob_params.temp_blob_ttl);
 	blob_metadata.finalized_block_hash = finalized_block_hash.into();
 	blob_metadata.finalized_block_number = finalized_block_number;
 	blob_metadata.nb_validators_per_blob = nb_validators_per_blob;
 	blob_metadata.nb_validators_per_blob_threshold = threshold;
+
 	let maybe_ownership: Option<OwnershipEntry> = match check_rpc_store_blob(
 		&blob_metadata,
 		my_peer_id_base58.clone(),
-		nb_validators_per_blob,
-		&validators,
 		finalized_block_hash,
 		&friends.externalities,
 		&friends.runtime_client,
+		&storing_validators,
 	)
 	.await
 	{
@@ -660,6 +666,8 @@ pub async fn store_and_gossip_blob(
 			return Err(());
 		},
 	};
+
+	blob_metadata.storing_validator_list = storing_validators;
 
 	let (b_hash, b_size, b_commitment) = (
 		blob_metadata.hash,

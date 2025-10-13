@@ -236,6 +236,8 @@ pub struct BlobMetadata {
 	pub finalized_block_hash: H256,
 	/// The finalized block number for other nodes reference
 	pub finalized_block_number: u64,
+	/// The list of storing validators
+	pub storing_validator_list: Vec<AccountId32>,
 }
 
 /// Blob object that will get store by each validator
@@ -323,12 +325,16 @@ pub struct OwnershipEntry {
 pub struct BlobTxSummary {
 	/// The hash of the blob
 	pub hash: BlobHash,
+	/// Finalized block hash checkpoint
+	pub finalized_block_hash_checkpoint: H256,
 	/// The transaction index in the block
 	pub tx_index: u32,
 	/// Indicates if the blob was successfully uploaded to validators stores
 	pub success: bool,
 	/// In case of failure, this will contain the reason
 	pub reason: Option<String>,
+	/// The list of missing validators
+	pub missing_validators: Vec<AccountId32>,
 	/// The vector of ownership entries
 	pub ownership: Vec<OwnershipEntry>,
 }
@@ -336,10 +342,12 @@ impl BlobTxSummary {
 	pub fn convert_to_primitives(
 		input: Vec<BlobTxSummary>,
 	) -> Vec<(
-		H256,           // Blob hash
-		u32,            // Tx Index
-		bool,           // Success
-		Option<String>, // Error reason
+		H256,             // Blob hash
+		H256,             // Finalized block hash checkpoint
+		u32,              // Tx Index
+		bool,             // Success
+		Option<String>,   // Error reason
+		Vec<AccountId32>, // Missing validators list
 		Vec<(
 			AccountId32, // Validator address
 			AuthorityId, // Babe key
@@ -362,11 +370,14 @@ impl BlobTxSummary {
 						)
 					})
 					.collect();
+
 				(
 					summary.hash,
+					summary.finalized_block_hash_checkpoint,
 					summary.tx_index,
 					summary.success,
 					summary.reason,
+					summary.missing_validators,
 					ownership,
 				)
 			})

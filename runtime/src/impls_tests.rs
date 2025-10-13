@@ -729,6 +729,8 @@ mod measure_full_block_size {
 
 			let mut blob_txs_summary: Vec<BlobTxSummaryRuntime> = vec![];
 			let ownership = sample_ownerships();
+			let missing_validators: Vec<AccountId32> =
+				ownership.iter().map(|o| o.0.clone()).collect();
 
 			loop {
 				let call = RuntimeCall::DataAvailability(
@@ -771,9 +773,11 @@ mod measure_full_block_size {
 						nonce += 1;
 						blob_txs_summary.push(BlobTxSummaryRuntime {
 							hash: H256::zero(),
+							finalized_block_hash_checkpoint: H256::zero(),
 							tx_index: nonce,
 							success: true,
 							reason: None,
+							missing_validators: missing_validators.clone(),
 							ownership: ownership.clone(),
 						});
 					},
