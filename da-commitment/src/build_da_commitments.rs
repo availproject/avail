@@ -40,7 +40,7 @@ fn build_grid(
 	Ok(grid)
 }
 
-pub fn build_polynomal_grid(
+pub fn build_polynomial_grid(
 	data: &[u8],
 	max_width: usize,
 	max_height: usize,
@@ -61,7 +61,7 @@ pub fn build_polynomal_grid(
 	poly_grid
 }
 
-pub fn build_commitments_from_polynomal_grid(grid: PolynomialGrid) -> Vec<u8> {
+pub fn build_commitments_from_polynomial_grid(grid: PolynomialGrid) -> Vec<u8> {
 	let pmp = PMP.get_or_init(multiproof_params);
 
 	let Ok(extended_grid) = grid.commitments(pmp) else {

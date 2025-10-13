@@ -414,7 +414,7 @@ pub mod pallet {
 			_blob_txs_summary: Vec<BlobTxSummaryRuntime>,
 		) -> DispatchResult {
 			ensure_none(origin)?;
-			
+
 			// TODO Blob:
 			// Check signatures valid or trigger error
 			// Get missing validators

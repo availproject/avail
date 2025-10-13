@@ -210,7 +210,7 @@ mod validation {
 		let queue: Arc<dyn CommitmentQueueApiT> = Arc::new(queue);
 
 		// grid & Commitment
-		let grid = build_da_commitments::build_polynomal_grid(
+		let grid = build_da_commitments::build_polynomial_grid(
 			&*tx.data,
 			DEFAULT_ROWS,
 			DEFAULT_COLS,
@@ -235,12 +235,12 @@ mod validation {
 	}
 
 	#[divan::bench(max_time = 2)]
-	fn build_polynomal_grid(bencher: Bencher) {
+	fn build_polynomial_grid(bencher: Bencher) {
 		let data = DATA_TO_BENCH.get().unwrap().clone();
 		let tx = build_transaction(data);
 
 		bencher.with_inputs(|| &tx).bench_local_refs(|tx| {
-			build_da_commitments::build_polynomal_grid(
+			build_da_commitments::build_polynomial_grid(
 				&*tx.data,
 				DEFAULT_ROWS,
 				DEFAULT_COLS,

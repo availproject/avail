@@ -19,7 +19,7 @@ members = [
 exclude = [
 	"utils/compression_and_decoding",
 	"utils/da-commitment-js",
-	"utils/da_spammer",
+	"utils/da-spammer",
 ]
 
 [workspace.package]

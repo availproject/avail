@@ -1,0 +1,27 @@
+[package]
+name = "da-spammer"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+clap = { version = "4.5", features = ["derive"] }
+tokio = { version = "1.45.1", features = ["macros", "rt-multi-thread"] }
+avail-rust = { package = "avail-rust-client", version = "0.4.0", default-features = false, features = [
+    "native",
+    "reqwest",
+    "next",
+] }
+sp-crypto-hashing = { version = "0.1.0", default-features = false }
+da-commitment = { git = "https://github.com/availproject/avail", branch = "ghali/infinity-da", package = "da-commitment", default-features = false, features = [
+    "std",
+] }
+codec = { package = "parity-scale-codec", version = "3", default-features = false, features = [
+    "std",
+] }
+hex = "0.4"
+base64 = { version = "0.22.1" }
+tracing = { version = "0.1", default-features = false }
+tracing-subscriber = { version = "0.3", default-features = false, features = [
+    "fmt",
+    "std",
+] }

@@ -3,7 +3,8 @@ use clap::Parser;
 use da_commitment::build_da_commitments::build_da_commitments;
 use sp_crypto_hashing::keccak_256;
 use std::{
-	sync::Arc,
+	collections::HashMap,
+	sync::{Arc, Mutex},
 	time::{Duration, SystemTime, UNIX_EPOCH},
 };
 use tokio::sync::mpsc;
@@ -37,8 +38,8 @@ struct Args {
 	#[arg(short, long, default_value_t = 0)]
 	warmup_delay: u64,
 
-	/// Delay after subsequent submit was done. In milliseconds (default: 0)
-	#[arg(long, default_value_t = 0)]
+	/// Delay after subsequent submit was done. In milliseconds (default: 750)
+	#[arg(long, default_value_t = 750)]
 	subsequent_delay: u64,
 
 	/// sprinkle some random bytes (default: enabled)
@@ -190,6 +191,7 @@ struct ChannelMessage {
 const CLIENT_COUNT: usize = 10;
 type ChannelSender = mpsc::Sender<ChannelMessage>;
 type ChannelReceiver = mpsc::Receiver<ChannelMessage>;
+type NonceCache = Arc<Mutex<HashMap<H256, u32>>>;
 
 fn producer_task(data: Arc<Vec<u8>>, mut length: usize, count: usize, tx: ChannelSender) {
 	// Let's do it!
@@ -228,6 +230,8 @@ async fn consumer_task(
 		tokio::time::sleep(Duration::from_millis(warmup_delay)).await;
 	}
 
+	let nonce_cache: NonceCache = Arc::new(Mutex::new(HashMap::new()));
+
 	let mut i = 0;
 	let mut handles = Vec::with_capacity(100);
 	let mut now = std::time::Instant::now();
@@ -238,9 +242,7 @@ async fn consumer_task(
 	loop {
 		let signer = signers.get(signer_index % signers_len).unwrap();
 		let account_id = signer.account_id();
-		let nonce = clients[0]
-			.chain()
-			.account_nonce(account_id.clone())
+		let nonce = next_nonce(&nonce_cache, &clients[0], &account_id)
 			.await
 			.unwrap();
 
@@ -323,4 +325,32 @@ pub fn hash_blob(data: &[u8]) -> H256 {
 
 pub fn build_commitments(data: &[u8]) -> Vec<u8> {
 	build_da_commitments(data, DEFAULT_ROWS, DEFAULT_COLS, Default::default())
+}
+
+async fn next_nonce(
+	cache: &NonceCache,
+	client: &Client,
+	account_id: &AccountId,
+) -> Result<u32, avail_rust::error::Error> {
+	let key = account_key(account_id);
+	let mut map = cache.lock().unwrap();
+
+	let nonce = match map.get_mut(&key) {
+		Some(n) => {
+			let current = *n;
+			*n += 1;
+			current
+		},
+		None => {
+			let initial = client.chain().account_nonce(account_id.clone()).await?;
+			map.insert(key, initial + 1);
+			initial
+		},
+	};
+
+	Ok(nonce)
+}
+
+fn account_key(account_id: &AccountId) -> H256 {
+	H256::from_slice(account_id.as_ref())
 }

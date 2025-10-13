@@ -7,7 +7,7 @@ use crate::{
 use anyhow::{anyhow, Context, Result};
 use base64::Engine;
 use codec::{Decode, Encode};
-use da_commitment::build_da_commitments::build_commitments_from_polynomal_grid;
+use da_commitment::build_da_commitments::build_commitments_from_polynomial_grid;
 use da_control::{BlobRuntimeParameters, Call};
 use da_runtime::{apis::BlobApi, RuntimeCall, UncheckedExtrinsic};
 use kate::gridgen::core::PolynomialGrid;
@@ -629,8 +629,8 @@ impl CommitmentQueue {
 
 	pub fn run_task(mut rx: mpsc::Receiver<CommitmentQueueMessage>) {
 		while let Some(msg) = rx.blocking_recv() {
-			let commtment = build_commitments_from_polynomal_grid(msg.grid);
-			_ = msg.request.send(commtment);
+			let commitment = build_commitments_from_polynomial_grid(msg.grid);
+			_ = msg.request.send(commitment);
 		}
 	}
 }

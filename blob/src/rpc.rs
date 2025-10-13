@@ -22,7 +22,7 @@ use crate::{
 };
 use anyhow::Result;
 use codec::{Decode, Encode};
-use da_commitment::build_da_commitments::build_polynomal_grid;
+use da_commitment::build_da_commitments::build_polynomial_grid;
 use da_control::blob_helper::{generate_base_index, validators_for_blob};
 use da_control::{pallet::BlobTxSummaryRuntime, BlobRuntimeParameters, Call};
 use da_runtime::{apis::BlobApi, RuntimeCall, UncheckedExtrinsic};
@@ -460,7 +460,7 @@ pub async fn submit_blob_main_task(
 	let blob = Arc::new(blob);
 
 	stop_watch.start("Polynominal Grid Gen.");
-	let grid = build_polynomal_grid(&*blob, cols, rows, Default::default());
+	let grid = build_polynomial_grid(&*blob, cols, rows, Default::default());
 	stop_watch.stop("Polynominal Grid Gen.");
 
 	stop_watch.start("Commitment Validation");
