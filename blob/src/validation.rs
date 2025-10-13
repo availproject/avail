@@ -73,9 +73,8 @@ pub fn tx_validation(
 	let validity =
 		runtime_client.validate_transaction(at, TransactionSource::External, opaque_tx_clone, at);
 	let validity = validity.map_err(|e| std::format!("runtime validate_transaction error: {e}"))?;
-	let Ok(validity) = validity else {
-		return Err("metadata extrinsic rejected by runtime".into());
-	};
+	let validity =
+		validity.map_err(|e| format!("Metadata extrinsic rejected by runtime: {:?}", e))?;
 
 	// --- c. Check also that transaction lifetime is above minimum tx lifetime so it does not expire. If validity is not correct, we reject the tx
 	if validity.longevity < min_transaction_validity {
