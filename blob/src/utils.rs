@@ -639,18 +639,17 @@ impl CommitmentQueue {
 	pub fn spawn_background_task(
 		rx: mpsc::Receiver<CommitmentQueueMessage>,
 		telemetry_operator: Option<TelemetryOperator>,
-		stop_watch: SmartStopwatch,
 	) {
 		std::thread::spawn(move || {
-			Self::run_task(rx, telemetry_operator, stop_watch);
+			Self::run_task(rx, telemetry_operator);
 		});
 	}
 
 	pub fn run_task(
 		mut rx: mpsc::Receiver<CommitmentQueueMessage>,
 		telemetry_operator: Option<TelemetryOperator>,
-		mut stop_watch: SmartStopwatch,
 	) {
+		let mut stop_watch = SmartStopwatch::new("Commitment queue stopwatch.");
 		while let Some(msg) = rx.blocking_recv() {
 			stop_watch.start("Building commitment");
 			let commitment = build_commitments_from_polynomial_grid(msg.grid);

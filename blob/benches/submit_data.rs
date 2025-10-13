@@ -7,7 +7,6 @@ use avail_blob::store::StorageApiT;
 use avail_blob::traits::*;
 use avail_blob::types::CompressedBlob;
 use avail_blob::utils::CommitmentQueue;
-use avail_blob::utils::SmartStopwatch;
 use avail_rust::prelude::*;
 use da_commitment::build_da_commitments;
 use da_commitment::build_da_commitments::build_da_commitments;
@@ -207,7 +206,7 @@ mod validation {
 
 		// Queue
 		let (queue, rx) = CommitmentQueue::new(1);
-		CommitmentQueue::spawn_background_task(rx, None, SmartStopwatch::new(""));
+		CommitmentQueue::spawn_background_task(rx, None);
 		let queue: Arc<dyn CommitmentQueueApiT> = Arc::new(queue);
 
 		// grid & Commitment

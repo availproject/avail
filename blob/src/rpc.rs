@@ -116,8 +116,7 @@ impl<Client, Pool, Block: BlockT, Backend> BlobRpc<Client, Pool, Block, Backend>
 	) -> Self {
 		let (queue, rx) = CommitmentQueue::new(25);
 		let telemetry_operator: TelemetryOperator = TelemetryOperator::new(deps.telemetry_channel);
-		let stop_watch = SmartStopwatch::new("Commitment queue stopwatch.");
-		CommitmentQueue::spawn_background_task(rx, Some(telemetry_operator.clone()), stop_watch);
+		CommitmentQueue::spawn_background_task(rx, Some(telemetry_operator.clone()));
 
 		Self {
 			client,

@@ -38,7 +38,7 @@ where
 	pub client: Arc<OnceCell<Arc<FullClient>>>,
 	pub blob_database: Arc<RocksdbBlobStore>,
 	pub role: Role,
-	pub telemetry_operator: Arc<OnceCell<TelemetryOperator>>,
+	pub telemetry_operator: OnceCell<TelemetryOperator>,
 }
 
 impl<Block> BlobHandle<Block>
@@ -86,7 +86,7 @@ where
 		let keystore = Arc::new(OnceCell::new());
 		let client = Arc::new(OnceCell::new());
 		let gossip_cmd_sender = Arc::new(OnceCell::new());
-		let telemetry_operator = Arc::new(OnceCell::new());
+		let telemetry_operator = OnceCell::new();
 
 		let blob_handle = BlobHandle {
 			network,
