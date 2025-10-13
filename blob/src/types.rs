@@ -193,6 +193,7 @@ where
 		let client = Arc::new(OnceCell::new());
 		let sync_service = Arc::new(OnceCell::new());
 		let gossip_cmd_sender = Arc::new(OnceCell::new());
+		let telemetry_operator = Arc::new(OnceCell::new());
 		let role = Role::Full;
 		let blob_handle = Arc::new(BlobHandle {
 			network,
@@ -202,6 +203,7 @@ where
 			gossip_cmd_sender,
 			role,
 			blob_database,
+			telemetry_operator,
 		});
 		Deps {
 			blob_handle,

@@ -1,3 +1,4 @@
+use crate::telemetry::TelemetryOperator;
 use crate::traits::CommitmentQueueApiT;
 use crate::{
 	p2p::BlobHandle,
@@ -27,6 +28,7 @@ use sp_runtime::{
 };
 use sp_transaction_pool::runtime_api::TaggedTransactionQueue;
 use std::collections::BTreeSet;
+use std::time::Duration;
 use std::{collections::BTreeMap, io::Write, sync::Arc};
 use tokio::sync::{mpsc, oneshot};
 
@@ -544,12 +546,14 @@ impl SmartStopwatch {
 		self.tracking.push((name.into(), std::time::Instant::now()));
 	}
 
-	pub fn stop(&mut self, name: &str) {
+	pub fn stop(&mut self, name: &str) -> Duration {
 		let Some(index) = self.tracking.iter().position(|x| x.0 == name) else {
-			return;
+			return Duration::from_secs(0);
 		};
 		let value = self.tracking.swap_remove(index);
-		self.finished.push((value.0, value.1.elapsed(), "".into()));
+		let elapsed = value.1.elapsed();
+		self.finished.push((value.0, elapsed, "".into()));
+		elapsed
 	}
 }
 
@@ -593,14 +597,25 @@ impl Drop for SmartStopwatch {
 }
 
 pub struct CommitmentQueueMessage {
+	hash: H256,
+	size: usize,
 	grid: PolynomialGrid,
 	request: oneshot::Sender<Vec<u8>>,
 }
 
 impl CommitmentQueueMessage {
-	pub fn new(grid: PolynomialGrid) -> (Self, oneshot::Receiver<Vec<u8>>) {
+	pub fn new(
+		hash: H256,
+		size: usize,
+		grid: PolynomialGrid,
+	) -> (Self, oneshot::Receiver<Vec<u8>>) {
 		let (tx, rx) = oneshot::channel();
-		let s = Self { grid, request: tx };
+		let s = Self {
+			hash,
+			size,
+			grid,
+			request: tx,
+		};
 		(s, rx)
 	}
 }
@@ -621,15 +636,28 @@ impl CommitmentQueue {
 		(Self { tx }, rx)
 	}
 
-	pub fn spawn_background_task(rx: mpsc::Receiver<CommitmentQueueMessage>) {
+	pub fn spawn_background_task(
+		rx: mpsc::Receiver<CommitmentQueueMessage>,
+		telemetry_operator: Option<TelemetryOperator>,
+		stop_watch: SmartStopwatch,
+	) {
 		std::thread::spawn(move || {
-			Self::run_task(rx);
+			Self::run_task(rx, telemetry_operator, stop_watch);
 		});
 	}
 
-	pub fn run_task(mut rx: mpsc::Receiver<CommitmentQueueMessage>) {
+	pub fn run_task(
+		mut rx: mpsc::Receiver<CommitmentQueueMessage>,
+		telemetry_operator: Option<TelemetryOperator>,
+		mut stop_watch: SmartStopwatch,
+	) {
 		while let Some(msg) = rx.blocking_recv() {
+			stop_watch.start("Building commitment");
 			let commitment = build_commitments_from_polynomial_grid(msg.grid);
+			let duration = stop_watch.stop("Building commitment");
+			if let Some(ref telemetry_operator) = telemetry_operator {
+				telemetry_operator.blob_commitment(msg.size, msg.hash, duration);
+			}
 			_ = msg.request.send(commitment);
 		}
 	}

@@ -355,6 +355,11 @@ pub fn new_full_base(
 	let (blob_handle, blob_req_res_cfg, blob_req_receiver, blob_gossip_cfg, blob_gossip_service) =
 		BlobHandle::new_blob_service(config.base_path.path(), config.role.clone());
 
+	let blob_rpc_deps = Deps {
+		blob_handle: blob_handle.clone(),
+		telemetry_channel: None,
+	};
+
 	let sc_service::PartialComponents {
 		client,
 		backend,
@@ -369,10 +374,7 @@ pub fn new_full_base(
 		unsafe_da_sync,
 		kate_rpc_deps,
 		grandpa_justification_period,
-		Deps {
-			blob_handle: blob_handle.clone(),
-			telemetry_channel: None,
-		},
+		blob_rpc_deps.clone(),
 	)?;
 
 	let shared_voter_state = rpc_setup;
@@ -421,6 +423,7 @@ pub fn new_full_base(
 		sync_service.clone(),
 		keystore_container.local_keystore(),
 		client.clone(),
+		blob_rpc_deps.telemetry_channel,
 	);
 
 	let role = config.role.clone();

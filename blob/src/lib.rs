@@ -18,6 +18,7 @@ use crate::{
 	utils::{
 		build_signature_payload, get_active_validators, get_my_validator_id,
 		get_validator_id_from_key, get_validator_per_blob, sign_blob_data, verify_signed_blob_data,
+		SmartStopwatch,
 	},
 };
 use anyhow::{anyhow, Result};
@@ -370,6 +371,8 @@ async fn handle_blob_received_notification<Block>(
 				network,
 				target_peer_id,
 				original_peer_id,
+				my_peer_id_base58.clone(),
+				blob_received.size,
 			)
 			.await
 			else {
@@ -481,6 +484,8 @@ async fn send_blob_request<Block>(
 	network: &Arc<NetworkService<Block, Block::Hash>>,
 	target_peer_id: PeerId,
 	original_peer_id: PeerId,
+	my_peer_id_base58: String,
+	blob_size: u64,
 ) -> Option<BlobResponse>
 where
 	Block: BlockT,
@@ -500,6 +505,9 @@ where
 		},
 	};
 
+	let mut stop_watch = SmartStopwatch::new("Request-Response stopwatch");
+	let telemetry_operator = blob_handle.telemetry_operator.get();
+
 	let blob_request = BlobRequestEnum::BlobRequest(BlobRequest {
 		hash: blob_hash,
 		signature_data,
@@ -511,6 +519,8 @@ where
 		} else {
 			original_peer_id
 		};
+
+		stop_watch.start("Blob request");
 		let response = network
 			.request(
 				target_peer,
@@ -520,9 +530,20 @@ where
 				IfDisconnected::TryConnect,
 			)
 			.await;
+		let duration = stop_watch.stop("Blob request");
 
 		match response {
 			Ok((data, _proto)) => {
+				if let Some(telemetry_operator) = telemetry_operator {
+					telemetry_operator.blob_request(
+						blob_size as usize,
+						blob_hash,
+						duration,
+						my_peer_id_base58.clone(),
+						target_peer.to_base58(),
+						true,
+					);
+				}
 				let mut buf: &[u8] = &data;
 				match BlobResponseEnum::decode(&mut buf) {
 					Ok(BlobResponseEnum::BlobResponse(blob_response)) => {
@@ -548,6 +569,16 @@ where
 				}
 			},
 			Err(e) => {
+				if let Some(telemetry_operator) = telemetry_operator {
+					telemetry_operator.blob_request(
+						blob_size as usize,
+						blob_hash,
+						duration,
+						my_peer_id_base58.clone(),
+						target_peer.to_base58(),
+						false,
+					);
+				}
 				log::error!(target: LOG_TARGET,
 					"An error has occured while trying to send blob request {blob_hash:?} (attempt {}/{}): {e}",
 					attempt + 1,
