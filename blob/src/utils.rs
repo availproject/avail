@@ -29,6 +29,7 @@ use sp_runtime::{
 use sp_transaction_pool::runtime_api::TaggedTransactionQueue;
 use std::collections::BTreeSet;
 use std::time::Duration;
+use std::time::{SystemTime, UNIX_EPOCH};
 use std::{collections::BTreeMap, io::Write, sync::Arc};
 use tokio::sync::{mpsc, oneshot};
 
@@ -638,7 +639,7 @@ impl CommitmentQueue {
 
 	pub fn spawn_background_task(
 		rx: mpsc::Receiver<CommitmentQueueMessage>,
-		telemetry_operator: Option<TelemetryOperator>,
+		telemetry_operator: TelemetryOperator,
 	) {
 		std::thread::spawn(move || {
 			Self::run_task(rx, telemetry_operator);
@@ -647,16 +648,15 @@ impl CommitmentQueue {
 
 	pub fn run_task(
 		mut rx: mpsc::Receiver<CommitmentQueueMessage>,
-		telemetry_operator: Option<TelemetryOperator>,
+		telemetry_operator: TelemetryOperator,
 	) {
-		let mut stop_watch = SmartStopwatch::new("Commitment queue stopwatch.");
 		while let Some(msg) = rx.blocking_recv() {
-			stop_watch.start("Building commitment");
+			let start = get_current_timestamp_ms();
 			let commitment = build_commitments_from_polynomial_grid(msg.grid);
-			let duration = stop_watch.stop("Building commitment");
-			if let Some(ref telemetry_operator) = telemetry_operator {
-				telemetry_operator.blob_commitment(msg.size, msg.hash, duration);
-			}
+			let end = get_current_timestamp_ms();
+
+			telemetry_operator.blob_commitment(msg.size, msg.hash, start, end, rx.len());
+
 			_ = msg.request.send(commitment);
 		}
 	}
@@ -724,4 +724,11 @@ pub fn extract_signer_and_nonce(uxt: &UncheckedExtrinsic) -> Option<(AccountId32
 	let nonce = check_nonce.0;
 
 	Some((who, nonce))
+}
+
+pub fn get_current_timestamp_ms() -> u128 {
+	SystemTime::now()
+		.duration_since(UNIX_EPOCH)
+		.map(|x| x.as_millis())
+		.unwrap_or(0)
 }

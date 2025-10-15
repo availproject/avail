@@ -1,3 +1,4 @@
+use crate::blob_helper::{generate_base_index, validators_for_blob};
 use crate::telemetry::TelemetryOperator;
 use crate::traits::CommitmentQueueApiT;
 use crate::validation::{commitment_validation, initial_validation, tx_validation};
@@ -23,7 +24,6 @@ use crate::{
 use anyhow::Result;
 use codec::{Decode, Encode};
 use da_commitment::build_da_commitments::build_polynomial_grid;
-use da_control::blob_helper::{generate_base_index, validators_for_blob};
 use da_control::{pallet::BlobTxSummaryRuntime, BlobRuntimeParameters, Call};
 use da_runtime::{apis::BlobApi, RuntimeCall, UncheckedExtrinsic};
 use frame_system::limits::BlockLength;
@@ -116,7 +116,7 @@ impl<Client, Pool, Block: BlockT, Backend> BlobRpc<Client, Pool, Block, Backend>
 	) -> Self {
 		let (queue, rx) = CommitmentQueue::new(25);
 		let telemetry_operator: TelemetryOperator = TelemetryOperator::new(deps.telemetry_channel);
-		CommitmentQueue::spawn_background_task(rx, Some(telemetry_operator.clone()));
+		CommitmentQueue::spawn_background_task(rx, telemetry_operator.clone());
 
 		Self {
 			client,
@@ -474,6 +474,7 @@ pub async fn submit_blob_main_task(
 		&provided_commitment,
 		grid,
 		&commitment_queue,
+		&telemetry_operator,
 	)
 	.await
 	.map_err(|e| internal_err!("{}", e))?;

@@ -1,3 +1,4 @@
+pub mod blob_helper;
 pub mod nonce_cache;
 pub mod p2p;
 pub mod rpc;
@@ -8,6 +9,7 @@ pub mod types;
 pub mod utils;
 pub mod validation;
 
+use crate::blob_helper::{generate_base_index, validators_for_blob};
 use crate::{
 	p2p::BlobHandle,
 	types::{
@@ -18,15 +20,11 @@ use crate::{
 	utils::{
 		build_signature_payload, get_active_validators, get_my_validator_id,
 		get_validator_id_from_key, get_validator_per_blob, sign_blob_data, verify_signed_blob_data,
-		SmartStopwatch,
 	},
 };
 use anyhow::{anyhow, Result};
 use codec::{Decode, Encode};
-use da_control::{
-	blob_helper::{generate_base_index, validators_for_blob},
-	BlobRuntimeParameters,
-};
+use da_control::BlobRuntimeParameters;
 use da_runtime::apis::BlobApi;
 use futures::channel::oneshot;
 use sc_client_api::HeaderBackend;
@@ -505,7 +503,6 @@ where
 		},
 	};
 
-	let mut stop_watch = SmartStopwatch::new("Request-Response stopwatch");
 	let telemetry_operator = blob_handle.telemetry_operator.get();
 
 	let blob_request = BlobRequestEnum::BlobRequest(BlobRequest {
@@ -520,7 +517,7 @@ where
 			original_peer_id
 		};
 
-		stop_watch.start("Blob request");
+		let start = crate::utils::get_current_timestamp_ms();
 		let response = network
 			.request(
 				target_peer,
@@ -530,7 +527,7 @@ where
 				IfDisconnected::TryConnect,
 			)
 			.await;
-		let duration = stop_watch.stop("Blob request");
+		let end = crate::utils::get_current_timestamp_ms();
 
 		match response {
 			Ok((data, _proto)) => {
@@ -538,7 +535,8 @@ where
 					telemetry_operator.blob_request(
 						blob_size as usize,
 						blob_hash,
-						duration,
+						start,
+						end,
 						my_peer_id_base58.clone(),
 						target_peer.to_base58(),
 						true,
@@ -573,7 +571,8 @@ where
 					telemetry_operator.blob_request(
 						blob_size as usize,
 						blob_hash,
-						duration,
+						start,
+						end,
 						my_peer_id_base58.clone(),
 						target_peer.to_base58(),
 						false,
