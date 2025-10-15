@@ -68,21 +68,11 @@ impl TelemetryOperator {
 			return;
 		};
 
-		let msg = BlobPolyGrid {
-			hash,
-			start,
-			end,
-		};
+		let msg = BlobPolyGrid { hash, start, end };
 		_ = channel.try_send(msg.into());
 	}
 
-	pub fn blob_commitment(
-		&self,
-		hash: H256,
-		start: u128,
-		end: u128,
-		queue_size: usize,
-	) {
+	pub fn blob_commitment(&self, hash: H256, start: u128, end: u128, queue_size: usize) {
 		let Some(channel) = self.channel.as_ref() else {
 			return;
 		};

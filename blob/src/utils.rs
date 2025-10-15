@@ -604,10 +604,7 @@ pub struct CommitmentQueueMessage {
 }
 
 impl CommitmentQueueMessage {
-	pub fn new(
-		hash: H256,
-		grid: PolynomialGrid,
-	) -> (Self, oneshot::Receiver<Vec<u8>>) {
+	pub fn new(hash: H256, grid: PolynomialGrid) -> (Self, oneshot::Receiver<Vec<u8>>) {
 		let (tx, rx) = oneshot::channel();
 		let s = Self {
 			hash,

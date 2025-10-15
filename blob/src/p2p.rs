@@ -117,12 +117,12 @@ where
 		sync_service: Arc<SyncingService<Block>>,
 		keystore: Arc<LocalKeystore>,
 		client: Arc<FullClient>,
-		telemetry_channel: Option<avail_telemetry::Sender>,
+		telemetry_operator: TelemetryOperator,
 	) {
 		self.register_keystore(keystore);
 		self.register_client(client.clone());
 		self.register_network_and_sync(network.clone(), sync_service.clone());
-		self.register_telemetry_operator(telemetry_channel);
+		self.register_telemetry_operator(telemetry_operator);
 		self.start_blob_req_res(spawn_handle.clone(), req_receiver);
 		self.start_blob_gossip(spawn_handle.clone(), notif_service);
 		self.start_blob_cleaning_service(spawn_handle);
@@ -292,9 +292,9 @@ where
 			.expect("Registering client cannot fail");
 	}
 
-	fn register_telemetry_operator(&self, telemetry_channel: Option<avail_telemetry::Sender>) {
+	fn register_telemetry_operator(&self, telemetry_operator: TelemetryOperator) {
 		self.telemetry_operator
-			.set(TelemetryOperator::new(telemetry_channel))
+			.set(telemetry_operator)
 			.map_err(|_| "BlobHandle::set_telemetry_operator called more than once")
 			.expect("Registering telemetry operator cannot fail");
 	}
