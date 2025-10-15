@@ -102,13 +102,12 @@ pub fn tx_validation(
 
 pub async fn commitment_validation(
 	hash: H256,
-	size: usize,
 	provided_commitment: &Vec<u8>,
 	grid: PolynomialGrid,
 	queue: &Arc<dyn CommitmentQueueApiT>,
 	telemetry_operator: &TelemetryOperator,
 ) -> Result<(), String> {
-	let (message, rx_comm) = CommitmentQueueMessage::new(hash, size, grid);
+	let (message, rx_comm) = CommitmentQueueMessage::new(hash, grid);
 	if !queue.send(message) {
 		// Need better error handling
 		return Err("Commitment queue is full".into());

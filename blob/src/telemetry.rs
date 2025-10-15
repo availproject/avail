@@ -58,27 +58,26 @@ impl TelemetryOperator {
 			org_size,
 			new_size,
 			hash,
-			duration,
+			duration: duration.as_millis(),
 		};
 		_ = channel.try_send(msg.into());
 	}
 
-	pub fn blob_poly_grid(&self, size: usize, hash: H256, duration: Duration) {
+	pub fn blob_poly_grid(&self, hash: H256, start: u128, end: u128) {
 		let Some(channel) = self.channel.as_ref() else {
 			return;
 		};
 
 		let msg = BlobPolyGrid {
-			size,
 			hash,
-			duration,
+			start,
+			end,
 		};
 		_ = channel.try_send(msg.into());
 	}
 
 	pub fn blob_commitment(
 		&self,
-		size: usize,
 		hash: H256,
 		start: u128,
 		end: u128,
@@ -89,7 +88,6 @@ impl TelemetryOperator {
 		};
 
 		let msg = BlobCommitment {
-			size,
 			hash,
 			start,
 			end,
@@ -189,24 +187,24 @@ impl From<BlobCompression> for TelemetryMessage {
 
 #[derive(Debug, Clone)]
 struct BlobPolyGrid {
-	pub size: usize,
 	pub hash: H256,
-	// Duration in ms
-	pub duration: u128,
+	// Milliseconds past UNIX EPOCH
+	pub start: u128,
+	// Milliseconds past UNIX EPOCH
+	pub end: u128,
 }
 impl From<BlobPolyGrid> for TelemetryMessage {
 	fn from(value: BlobPolyGrid) -> Self {
 		let mut msg = TelemetryMessage::new("blob.polygrid");
-		msg.push("size", value.size).unwrap();
 		msg.push("hash", value.hash).unwrap();
-		msg.push("duration", value.duration).unwrap();
+		msg.push("start", value.start).unwrap();
+		msg.push("end", value.end).unwrap();
 		msg
 	}
 }
 
 #[derive(Debug, Clone)]
 struct BlobCommitment {
-	pub size: usize,
 	pub hash: H256,
 	// Milliseconds past UNIX EPOCH
 	pub start: u128,
@@ -217,7 +215,6 @@ struct BlobCommitment {
 impl From<BlobCommitment> for TelemetryMessage {
 	fn from(value: BlobCommitment) -> Self {
 		let mut msg = TelemetryMessage::new("blob.commitment");
-		msg.push("size", value.size).unwrap();
 		msg.push("hash", value.hash).unwrap();
 		msg.push("start", value.start).unwrap();
 		msg.push("end", value.end).unwrap();

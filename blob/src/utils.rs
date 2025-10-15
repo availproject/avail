@@ -599,7 +599,6 @@ impl Drop for SmartStopwatch {
 
 pub struct CommitmentQueueMessage {
 	hash: H256,
-	size: usize,
 	grid: PolynomialGrid,
 	request: oneshot::Sender<Vec<u8>>,
 }
@@ -607,13 +606,11 @@ pub struct CommitmentQueueMessage {
 impl CommitmentQueueMessage {
 	pub fn new(
 		hash: H256,
-		size: usize,
 		grid: PolynomialGrid,
 	) -> (Self, oneshot::Receiver<Vec<u8>>) {
 		let (tx, rx) = oneshot::channel();
 		let s = Self {
 			hash,
-			size,
 			grid,
 			request: tx,
 		};
@@ -655,7 +652,7 @@ impl CommitmentQueue {
 			let commitment = build_commitments_from_polynomial_grid(msg.grid);
 			let end = get_current_timestamp_ms();
 
-			telemetry_operator.blob_commitment(msg.size, msg.hash, start, end, rx.len());
+			telemetry_operator.blob_commitment(msg.hash, start, end, rx.len());
 
 			_ = msg.request.send(commitment);
 		}

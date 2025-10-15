@@ -460,17 +460,17 @@ pub async fn submit_blob_main_task(
 	let (cols, rows) = get_dynamic_block_length(&friends.backend_client, finalized_block_hash)?;
 	let blob = Arc::new(blob);
 
+	let start = crate::utils::get_current_timestamp_ms();
 	stop_watch.start("Polynominal Grid Gen.");
 	let grid = build_polynomial_grid(&*blob, cols, rows, Default::default());
-	let duration = stop_watch.stop("Polynominal Grid Gen.");
-
+	stop_watch.stop("Polynominal Grid Gen.");
+	let end = crate::utils::get_current_timestamp_ms();
 	// Telemetry
-	telemetry_operator.blob_poly_grid(blob.len(), blob_hash, duration);
+	telemetry_operator.blob_poly_grid(blob_hash, start, end);
 
 	stop_watch.start("Commitment Validation");
 	commitment_validation(
 		blob_hash,
-		blob.len(),
 		&provided_commitment,
 		grid,
 		&commitment_queue,
