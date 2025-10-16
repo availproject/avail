@@ -3,6 +3,7 @@ use std::{path::Path, sync::Arc, time::Duration};
 use crate::{
 	decode_blob_notification, handle_incoming_blob_request,
 	store::{RocksdbBlobStore, StorageApiT},
+	telemetry::TelemetryOperator,
 	types::{BlobGossipValidator, BlobNotification, FullClient, BLOB_GOSSIP_PROTO, BLOB_REQ_PROTO},
 	BLOB_EXPIRATION_CHECK_PERIOD, CONCURRENT_REQUESTS, LOG_TARGET, NOTIFICATION_MAX_SIZE,
 	NOTIF_QUEUE_SIZE, REQUEST_MAX_SIZE, REQUEST_TIMEOUT_SECONDS, REQ_RES_QUEUE_SIZE,
@@ -37,6 +38,7 @@ where
 	pub client: Arc<OnceCell<Arc<FullClient>>>,
 	pub blob_database: Arc<RocksdbBlobStore>,
 	pub role: Role,
+	pub telemetry_operator: OnceCell<TelemetryOperator>,
 }
 
 impl<Block> BlobHandle<Block>
@@ -84,6 +86,7 @@ where
 		let keystore = Arc::new(OnceCell::new());
 		let client = Arc::new(OnceCell::new());
 		let gossip_cmd_sender = Arc::new(OnceCell::new());
+		let telemetry_operator = OnceCell::new();
 
 		let blob_handle = BlobHandle {
 			network,
@@ -93,6 +96,7 @@ where
 			gossip_cmd_sender,
 			blob_database,
 			role,
+			telemetry_operator,
 		};
 
 		(
@@ -113,10 +117,12 @@ where
 		sync_service: Arc<SyncingService<Block>>,
 		keystore: Arc<LocalKeystore>,
 		client: Arc<FullClient>,
+		telemetry_operator: TelemetryOperator,
 	) {
 		self.register_keystore(keystore);
 		self.register_client(client.clone());
 		self.register_network_and_sync(network.clone(), sync_service.clone());
+		self.register_telemetry_operator(telemetry_operator);
 		self.start_blob_req_res(spawn_handle.clone(), req_receiver);
 		self.start_blob_gossip(spawn_handle.clone(), notif_service);
 		self.start_blob_cleaning_service(spawn_handle);
@@ -284,5 +290,12 @@ where
 			.set(client)
 			.map_err(|_| "BlobHandle::register_client called more than once")
 			.expect("Registering client cannot fail");
+	}
+
+	fn register_telemetry_operator(&self, telemetry_operator: TelemetryOperator) {
+		self.telemetry_operator
+			.set(telemetry_operator)
+			.map_err(|_| "BlobHandle::set_telemetry_operator called more than once")
+			.expect("Registering telemetry operator cannot fail");
 	}
 }

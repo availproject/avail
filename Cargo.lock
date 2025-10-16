@@ -1128,7 +1128,7 @@ dependencies = [
 [[package]]
 name = "avail-core"
 version = "0.6.2"
-source = "git+https://github.com/availproject/avail-core?branch=ghali%2Finfinity-da#4a9aebba058228df8a67fa6a7e992b78161f72b1"
+source = "git+https://github.com/availproject/avail-core.git?branch=ghali%2Finfinity-da#4a9aebba058228df8a67fa6a7e992b78161f72b1"
 dependencies = [
  "binary-merkle-tree",
  "blake2b_simd",
@@ -2722,7 +2722,6 @@ dependencies = [
 name = "da-control"
 version = "1.0.1"
 dependencies = [
- "anyhow",
  "avail-base",
  "avail-core",
  "da-commitment",
@@ -5905,7 +5904,7 @@ dependencies = [
 [[package]]
 name = "kate"
 version = "0.9.2"
-source = "git+https://github.com/availproject/avail-core?branch=ghali%2Finfinity-da#4a9aebba058228df8a67fa6a7e992b78161f72b1"
+source = "git+https://github.com/availproject/avail-core.git?branch=ghali%2Finfinity-da#4a9aebba058228df8a67fa6a7e992b78161f72b1"
 dependencies = [
  "avail-core",
  "derive_more 0.99.18",
@@ -5931,7 +5930,7 @@ dependencies = [
 [[package]]
 name = "kate-recovery"
 version = "0.10.0"
-source = "git+https://github.com/availproject/avail-core?branch=ghali%2Finfinity-da#4a9aebba058228df8a67fa6a7e992b78161f72b1"
+source = "git+https://github.com/availproject/avail-core.git?branch=ghali%2Finfinity-da#4a9aebba058228df8a67fa6a7e992b78161f72b1"
 dependencies = [
  "avail-core",
  "derive_more 0.99.18",

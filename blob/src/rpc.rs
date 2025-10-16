@@ -1,3 +1,4 @@
+use crate::blob_helper::{generate_base_index, validators_for_blob};
 use crate::telemetry::TelemetryOperator;
 use crate::traits::CommitmentQueueApiT;
 use crate::validation::{commitment_validation, initial_validation, tx_validation};
@@ -23,7 +24,6 @@ use crate::{
 use anyhow::Result;
 use codec::{Decode, Encode};
 use da_commitment::build_da_commitments::build_polynomial_grid;
-use da_control::blob_helper::{generate_base_index, validators_for_blob};
 use da_control::{pallet::BlobTxSummaryRuntime, BlobRuntimeParameters, Call};
 use da_runtime::{apis::BlobApi, RuntimeCall, UncheckedExtrinsic};
 use frame_system::limits::BlockLength;
@@ -115,7 +115,8 @@ impl<Client, Pool, Block: BlockT, Backend> BlobRpc<Client, Pool, Block, Backend>
 		backend: Arc<Backend>,
 	) -> Self {
 		let (queue, rx) = CommitmentQueue::new(25);
-		CommitmentQueue::spawn_background_task(rx);
+		let telemetry_operator: TelemetryOperator = TelemetryOperator::new(deps.telemetry_channel);
+		CommitmentQueue::spawn_background_task(rx, telemetry_operator.clone());
 
 		Self {
 			client,
@@ -124,7 +125,7 @@ impl<Client, Pool, Block: BlockT, Backend> BlobRpc<Client, Pool, Block, Backend>
 			backend,
 			commitment_queue: Arc::new(queue),
 			nonce_cache: Arc::new(NonceCache::new()),
-			telemetry_operator: TelemetryOperator::new(deps.telemetry_channel),
+			telemetry_operator,
 			_block: PhantomData,
 		}
 	}
@@ -459,14 +460,24 @@ pub async fn submit_blob_main_task(
 	let (cols, rows) = get_dynamic_block_length(&friends.backend_client, finalized_block_hash)?;
 	let blob = Arc::new(blob);
 
+	let start = crate::utils::get_current_timestamp_ms();
 	stop_watch.start("Polynominal Grid Gen.");
 	let grid = build_polynomial_grid(&*blob, cols, rows, Default::default());
 	stop_watch.stop("Polynominal Grid Gen.");
+	let end = crate::utils::get_current_timestamp_ms();
+	// Telemetry
+	telemetry_operator.blob_poly_grid(blob_hash, start, end);
 
 	stop_watch.start("Commitment Validation");
-	commitment_validation(&provided_commitment, grid, &commitment_queue)
-		.await
-		.map_err(|e| internal_err!("{}", e))?;
+	commitment_validation(
+		blob_hash,
+		&provided_commitment,
+		grid,
+		&commitment_queue,
+		&telemetry_operator,
+	)
+	.await
+	.map_err(|e| internal_err!("{}", e))?;
 	stop_watch.stop("Commitment Validation");
 
 	stop_watch.stop("Commitments (Total)");
@@ -761,13 +772,14 @@ fn store_new_blob(
 
 	stop_watch.start("Compression");
 	let compressed_blob = CompressedBlob::new_zstd_compress_with_fallback(&blob.data);
-	stop_watch.stop("Compression");
+	let duration = stop_watch.stop("Compression");
 
 	// Telemetry
 	telemetry_operator.blob_compression(
 		blob.data.len(),
 		compressed_blob.raw_data().len(),
 		blob_hash,
+		duration,
 	);
 
 	stop_watch.add_extra_information(std::format!(

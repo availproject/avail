@@ -1,3 +1,4 @@
+use crate::telemetry::TelemetryOperator;
 use crate::traits::CommitmentQueueApiT;
 use crate::{
 	p2p::BlobHandle,
@@ -27,6 +28,8 @@ use sp_runtime::{
 };
 use sp_transaction_pool::runtime_api::TaggedTransactionQueue;
 use std::collections::BTreeSet;
+use std::time::Duration;
+use std::time::{SystemTime, UNIX_EPOCH};
 use std::{collections::BTreeMap, io::Write, sync::Arc};
 use tokio::sync::{mpsc, oneshot};
 
@@ -544,12 +547,14 @@ impl SmartStopwatch {
 		self.tracking.push((name.into(), std::time::Instant::now()));
 	}
 
-	pub fn stop(&mut self, name: &str) {
+	pub fn stop(&mut self, name: &str) -> Duration {
 		let Some(index) = self.tracking.iter().position(|x| x.0 == name) else {
-			return;
+			return Duration::from_secs(0);
 		};
 		let value = self.tracking.swap_remove(index);
-		self.finished.push((value.0, value.1.elapsed(), "".into()));
+		let elapsed = value.1.elapsed();
+		self.finished.push((value.0, elapsed, "".into()));
+		elapsed
 	}
 }
 
@@ -593,14 +598,19 @@ impl Drop for SmartStopwatch {
 }
 
 pub struct CommitmentQueueMessage {
+	hash: H256,
 	grid: PolynomialGrid,
 	request: oneshot::Sender<Vec<u8>>,
 }
 
 impl CommitmentQueueMessage {
-	pub fn new(grid: PolynomialGrid) -> (Self, oneshot::Receiver<Vec<u8>>) {
+	pub fn new(hash: H256, grid: PolynomialGrid) -> (Self, oneshot::Receiver<Vec<u8>>) {
 		let (tx, rx) = oneshot::channel();
-		let s = Self { grid, request: tx };
+		let s = Self {
+			hash,
+			grid,
+			request: tx,
+		};
 		(s, rx)
 	}
 }
@@ -621,15 +631,26 @@ impl CommitmentQueue {
 		(Self { tx }, rx)
 	}
 
-	pub fn spawn_background_task(rx: mpsc::Receiver<CommitmentQueueMessage>) {
+	pub fn spawn_background_task(
+		rx: mpsc::Receiver<CommitmentQueueMessage>,
+		telemetry_operator: TelemetryOperator,
+	) {
 		std::thread::spawn(move || {
-			Self::run_task(rx);
+			Self::run_task(rx, telemetry_operator);
 		});
 	}
 
-	pub fn run_task(mut rx: mpsc::Receiver<CommitmentQueueMessage>) {
+	pub fn run_task(
+		mut rx: mpsc::Receiver<CommitmentQueueMessage>,
+		telemetry_operator: TelemetryOperator,
+	) {
 		while let Some(msg) = rx.blocking_recv() {
+			let start = get_current_timestamp_ms();
 			let commitment = build_commitments_from_polynomial_grid(msg.grid);
+			let end = get_current_timestamp_ms();
+
+			telemetry_operator.blob_commitment(msg.hash, start, end, rx.len());
+
 			_ = msg.request.send(commitment);
 		}
 	}
@@ -697,4 +718,11 @@ pub fn extract_signer_and_nonce(uxt: &UncheckedExtrinsic) -> Option<(AccountId32
 	let nonce = check_nonce.0;
 
 	Some((who, nonce))
+}
+
+pub fn get_current_timestamp_ms() -> u128 {
+	SystemTime::now()
+		.duration_since(UNIX_EPOCH)
+		.map(|x| x.as_millis())
+		.unwrap_or(0)
 }

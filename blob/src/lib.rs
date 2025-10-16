@@ -1,3 +1,4 @@
+pub mod blob_helper;
 pub mod nonce_cache;
 pub mod p2p;
 pub mod rpc;
@@ -8,6 +9,7 @@ pub mod types;
 pub mod utils;
 pub mod validation;
 
+use crate::blob_helper::{generate_base_index, validators_for_blob};
 use crate::{
 	p2p::BlobHandle,
 	types::{
@@ -22,10 +24,7 @@ use crate::{
 };
 use anyhow::{anyhow, Result};
 use codec::{Decode, Encode};
-use da_control::{
-	blob_helper::{generate_base_index, validators_for_blob},
-	BlobRuntimeParameters,
-};
+use da_control::BlobRuntimeParameters;
 use da_runtime::apis::BlobApi;
 use futures::channel::oneshot;
 use sc_client_api::HeaderBackend;
@@ -370,6 +369,8 @@ async fn handle_blob_received_notification<Block>(
 				network,
 				target_peer_id,
 				original_peer_id,
+				my_peer_id_base58.clone(),
+				blob_received.size,
 			)
 			.await
 			else {
@@ -481,6 +482,8 @@ async fn send_blob_request<Block>(
 	network: &Arc<NetworkService<Block, Block::Hash>>,
 	target_peer_id: PeerId,
 	original_peer_id: PeerId,
+	my_peer_id_base58: String,
+	blob_size: u64,
 ) -> Option<BlobResponse>
 where
 	Block: BlockT,
@@ -500,6 +503,8 @@ where
 		},
 	};
 
+	let telemetry_operator = blob_handle.telemetry_operator.get();
+
 	let blob_request = BlobRequestEnum::BlobRequest(BlobRequest {
 		hash: blob_hash,
 		signature_data,
@@ -511,6 +516,8 @@ where
 		} else {
 			original_peer_id
 		};
+
+		let start = crate::utils::get_current_timestamp_ms();
 		let response = network
 			.request(
 				target_peer,
@@ -520,9 +527,21 @@ where
 				IfDisconnected::TryConnect,
 			)
 			.await;
+		let end = crate::utils::get_current_timestamp_ms();
 
 		match response {
 			Ok((data, _proto)) => {
+				if let Some(telemetry_operator) = telemetry_operator {
+					telemetry_operator.blob_request(
+						blob_size as usize,
+						blob_hash,
+						start,
+						end,
+						my_peer_id_base58.clone(),
+						target_peer.to_base58(),
+						true,
+					);
+				}
 				let mut buf: &[u8] = &data;
 				match BlobResponseEnum::decode(&mut buf) {
 					Ok(BlobResponseEnum::BlobResponse(blob_response)) => {
@@ -548,6 +567,17 @@ where
 				}
 			},
 			Err(e) => {
+				if let Some(telemetry_operator) = telemetry_operator {
+					telemetry_operator.blob_request(
+						blob_size as usize,
+						blob_hash,
+						start,
+						end,
+						my_peer_id_base58.clone(),
+						target_peer.to_base58(),
+						false,
+					);
+				}
 				log::error!(target: LOG_TARGET,
 					"An error has occured while trying to send blob request {blob_hash:?} (attempt {}/{}): {e}",
 					attempt + 1,

@@ -25,7 +25,6 @@ impl Worker {
 		let Some(handle) = self.handle else { return };
 
 		while let Some(message) = self.messages.blocking_recv() {
-			println!("BG Thread. Received msg. Sending it");
 			handle.send_telemetry(SUBSTRATE_INFO, message.build());
 		}
 	}

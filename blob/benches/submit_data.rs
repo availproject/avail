@@ -206,7 +206,7 @@ mod validation {
 
 		// Queue
 		let (queue, rx) = CommitmentQueue::new(1);
-		CommitmentQueue::spawn_background_task(rx);
+		CommitmentQueue::spawn_background_task(rx, None);
 		let queue: Arc<dyn CommitmentQueueApiT> = Arc::new(queue);
 
 		// grid & Commitment
@@ -224,6 +224,8 @@ mod validation {
 				let runtime = tokio::runtime::Runtime::new().unwrap();
 				runtime.block_on(async {
 					avail_blob::validation::commitment_validation(
+						tx.data_hash,
+						tx.data.len(),
 						&params.0,
 						params.1.clone(),
 						&params.2,

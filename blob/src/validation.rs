@@ -1,3 +1,4 @@
+use crate::telemetry::TelemetryOperator;
 use crate::traits::CommitmentQueueApiT;
 use crate::{
 	traits::{NonceCacheApiT, RuntimeApiT},
@@ -100,11 +101,13 @@ pub fn tx_validation(
 }
 
 pub async fn commitment_validation(
+	hash: H256,
 	provided_commitment: &Vec<u8>,
 	grid: PolynomialGrid,
 	queue: &Arc<dyn CommitmentQueueApiT>,
+	telemetry_operator: &TelemetryOperator,
 ) -> Result<(), String> {
-	let (message, rx_comm) = CommitmentQueueMessage::new(grid);
+	let (message, rx_comm) = CommitmentQueueMessage::new(hash, grid);
 	if !queue.send(message) {
 		// Need better error handling
 		return Err("Commitment queue is full".into());
@@ -112,6 +115,7 @@ pub async fn commitment_validation(
 	let commitment = match rx_comm.await {
 		Ok(x) => x,
 		Err(_) => {
+			telemetry_operator.blob_dropped(Some(hash), true);
 			return Err("Cannot compute commitment. :(  Channel is down".into());
 		},
 	};

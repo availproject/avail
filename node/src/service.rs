@@ -25,6 +25,7 @@ use avail_blob::types::{Deps, FullClient};
 use avail_core::AppId;
 use da_runtime::{apis::RuntimeApi, NodeBlock as Block, Runtime};
 
+use avail_blob::telemetry::TelemetryOperator;
 use codec::Encode;
 use frame_system_rpc_runtime_api::AccountNonceApi;
 use futures::prelude::*;
@@ -164,6 +165,7 @@ pub fn new_partial(
 			),
 			sc_consensus_grandpa::SharedVoterState,
 			Option<Telemetry>,
+			TelemetryOperator,
 		),
 	>,
 	ServiceError,
@@ -199,9 +201,10 @@ pub fn new_partial(
 	let telemetry_handle = telemetry.as_ref().map(|t| t.handle());
 	let (telemetry_worker, telemetry_channel) =
 		avail_telemetry::Worker::new(telemetry_handle.clone());
-
 	telemetry_worker.spawn_background_task();
-	blob_rpc_deps.telemetry_channel = Some(telemetry_channel);
+
+	blob_rpc_deps.telemetry_channel = Some(telemetry_channel.clone());
+	let telemetry_operator = TelemetryOperator::new(Some(telemetry_channel));
 
 	let select_chain = sc_consensus::LongestChain::new(backend.clone());
 
@@ -312,7 +315,13 @@ pub fn new_partial(
 		select_chain,
 		import_queue,
 		transaction_pool,
-		other: (rpc_extensions_builder, import_setup, rpc_setup, telemetry),
+		other: (
+			rpc_extensions_builder,
+			import_setup,
+			rpc_setup,
+			telemetry,
+			telemetry_operator,
+		),
 	})
 }
 
@@ -355,6 +364,11 @@ pub fn new_full_base(
 	let (blob_handle, blob_req_res_cfg, blob_req_receiver, blob_gossip_cfg, blob_gossip_service) =
 		BlobHandle::new_blob_service(config.base_path.path(), config.role.clone());
 
+	let blob_rpc_deps = Deps {
+		blob_handle: blob_handle.clone(),
+		telemetry_channel: None,
+	};
+
 	let sc_service::PartialComponents {
 		client,
 		backend,
@@ -363,16 +377,13 @@ pub fn new_full_base(
 		keystore_container,
 		select_chain,
 		transaction_pool,
-		other: (rpc_builder, import_setup, rpc_setup, mut telemetry),
+		other: (rpc_builder, import_setup, rpc_setup, mut telemetry, telemetry_operator),
 	} = new_partial(
 		&config,
 		unsafe_da_sync,
 		kate_rpc_deps,
 		grandpa_justification_period,
-		Deps {
-			blob_handle: blob_handle.clone(),
-			telemetry_channel: None,
-		},
+		blob_rpc_deps.clone(),
 	)?;
 
 	let shared_voter_state = rpc_setup;
@@ -421,6 +432,7 @@ pub fn new_full_base(
 		sync_service.clone(),
 		keystore_container.local_keystore(),
 		client.clone(),
+		telemetry_operator,
 	);
 
 	let role = config.role.clone();
