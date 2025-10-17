@@ -105,8 +105,6 @@ pub struct FullDeps<C, P, SC, B> {
 	/// - pub rpc_enabled: bool,
 	/// - pub rpc_metrics_enabled: bool,
 	pub kate_rpc_deps: kate_rpc::Deps,
-	/// Blob RPC dependencies.
-	pub blob_rpc_deps: avail_blob::types::Deps<Block>,
 }
 
 /// Instantiate all Full RPC extensions.
@@ -139,7 +137,6 @@ where
 	B::State: sc_client_api::backend::StateBackend<sp_runtime::traits::HashingFor<Block>>,
 	H256: From<<P as sc_transaction_pool_api::TransactionPool>::Hash>,
 {
-	use avail_blob::rpc::{BlobApiServer, BlobRpc};
 	use kate_rpc::justifications::{GrandpaJustifications, GrandpaServer};
 	use kate_rpc::metrics::KateApiMetricsServer;
 	use kate_rpc::{Kate, KateApiServer};
@@ -165,7 +162,6 @@ where
 		babe,
 		grandpa,
 		kate_rpc_deps,
-		blob_rpc_deps,
 	} = deps;
 
 	let BabeDeps {
@@ -236,13 +232,6 @@ where
 	)?;
 
 	io.merge(StateMigration::new(client.clone(), backend.clone(), deny_unsafe).into_rpc())?;
-
-	io.merge(BlobApiServer::into_rpc(BlobRpc::<C, P, Block, B>::new(
-		client.clone(),
-		pool,
-		blob_rpc_deps,
-		backend,
-	)))?;
 
 	if is_dev_chain || kate_rpc_deps.rpc_metrics_enabled {
 		io.merge(KateApiMetricsServer::into_rpc(Kate::<C, Block>::new(

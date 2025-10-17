@@ -1,17 +1,14 @@
 use crate::{
-	p2p::BlobHandle,
-	store::RocksdbBlobStore,
 	utils::{zstd_compress, zstd_decompress},
 	LOG_TARGET,
 };
 use codec::{Decode, Encode};
 use da_runtime::{apis::RuntimeApi, NodeBlock as Block};
-use once_cell::sync::OnceCell;
 use parking_lot::Mutex;
 use sc_executor::NativeElseWasmExecutor;
 use sc_network::{NetworkPeers, NetworkService, PeerId, ProtocolName, ReputationChange};
 use sc_network_gossip::{MessageIntent, ValidationResult, Validator, ValidatorContext};
-use sc_service::{Role, TFullClient};
+use sc_service::TFullClient;
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_authority_discovery::AuthorityId;
@@ -23,7 +20,6 @@ use sp_runtime::{
 use std::{
 	borrow::Cow,
 	collections::HashMap,
-	sync::Arc,
 	time::{Duration, Instant},
 };
 
@@ -168,47 +164,6 @@ impl BlobReputationChange {
 		peer: &PeerId,
 	) {
 		network.report_peer(peer.clone(), self.reputation_change());
-	}
-}
-
-/// The RPC dependecies to enable blob service.
-/// Default implementation is made for ease of use in different files.
-#[derive(Clone)]
-pub struct Deps<Block>
-where
-	Block: BlockT,
-{
-	pub blob_handle: Arc<BlobHandle<Block>>,
-	pub telemetry_channel: Option<avail_telemetry::Sender>,
-}
-
-impl<Block> Default for Deps<Block>
-where
-	Block: BlockT,
-{
-	fn default() -> Self {
-		let blob_database = Arc::new(RocksdbBlobStore::default());
-		let network = Arc::new(OnceCell::new());
-		let keystore = Arc::new(OnceCell::new());
-		let client = Arc::new(OnceCell::new());
-		let sync_service = Arc::new(OnceCell::new());
-		let gossip_cmd_sender = Arc::new(OnceCell::new());
-		let telemetry_operator = OnceCell::new();
-		let role = Role::Full;
-		let blob_handle = Arc::new(BlobHandle {
-			network,
-			keystore,
-			client,
-			sync_service,
-			gossip_cmd_sender,
-			role,
-			blob_database,
-			telemetry_operator,
-		});
-		Deps {
-			blob_handle,
-			telemetry_channel: None,
-		}
 	}
 }
 

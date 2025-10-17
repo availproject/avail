@@ -1,4 +1,3 @@
-pub mod blob_helper;
 pub mod nonce_cache;
 pub mod p2p;
 pub mod rpc;
@@ -9,7 +8,6 @@ pub mod types;
 pub mod utils;
 pub mod validation;
 
-use crate::blob_helper::{generate_base_index, validators_for_blob};
 use crate::{
 	p2p::BlobHandle,
 	types::{
@@ -18,8 +16,9 @@ use crate::{
 		BlobSignatureData, BlobStored, OwnershipEntry, BLOB_REQ_PROTO,
 	},
 	utils::{
-		build_signature_payload, get_active_validators, get_my_validator_id,
-		get_validator_id_from_key, get_validator_per_blob, sign_blob_data, verify_signed_blob_data,
+		build_signature_payload, generate_base_index, get_active_validators, get_my_validator_id,
+		get_validator_id_from_key, get_validator_per_blob, sign_blob_data, validators_for_blob,
+		verify_signed_blob_data,
 	},
 };
 use anyhow::{anyhow, Result};
@@ -131,20 +130,13 @@ async fn handle_blob_received_notification<Block>(
 		return;
 	}
 
-	let Some(client) = blob_handle.client.get() else {
-		log::error!(target: LOG_TARGET, "Client not yet registered");
-		return;
-	};
-
-	let Some(network) = blob_handle.network.get() else {
-		log::error!(target: LOG_TARGET, "Network not yet registered");
-		return;
-	};
-
 	let announced_finalized_hash = blob_received.finalized_block_hash;
 	let announced_finalized_number = blob_received.finalized_block_number;
 
-	let Ok(Some(finalized_hash)) = client.hash(announced_finalized_number.saturated_into()) else {
+	let Ok(Some(finalized_hash)) = blob_handle
+		.client
+		.hash(announced_finalized_number.saturated_into())
+	else {
 		log::error!(target: LOG_TARGET, "Could not get announced block hash from backend");
 		return;
 	};
@@ -154,7 +146,7 @@ async fn handle_blob_received_notification<Block>(
 		return;
 	}
 
-	let client_info = client.info();
+	let client_info = blob_handle.client.info();
 	let finalized_block_number = client_info.finalized_number.saturated_into::<u64>();
 	if announced_finalized_number > finalized_block_number
 		|| finalized_block_number - announced_finalized_number > NOTIFICATION_EXPIRATION_PERIOD
@@ -163,7 +155,8 @@ async fn handle_blob_received_notification<Block>(
 		return;
 	}
 
-	let blob_runtime_params = match client
+	let blob_runtime_params = match blob_handle
+		.client
 		.runtime_api()
 		.get_blob_runtime_parameters(finalized_hash)
 	{
@@ -179,9 +172,9 @@ async fn handle_blob_received_notification<Block>(
 		return;
 	}
 
-	let validators = get_active_validators(&client, &announced_finalized_hash.encode());
+	let validators = get_active_validators(&blob_handle.client, &announced_finalized_hash.encode());
 	let (nb_validators_per_blob, threshold) = get_validator_per_blob(
-		&client,
+		&blob_handle.client,
 		&announced_finalized_hash.encode(),
 		validators.len() as u32,
 	);
@@ -239,7 +232,7 @@ async fn handle_blob_received_notification<Block>(
 	if let Some(ownership) = blob_received.ownership {
 		let Some((expected_address, _)) = get_validator_id_from_key(
 			&ownership.babe_key,
-			client,
+			&blob_handle.client,
 			&announced_finalized_hash.encode(),
 		) else {
 			log::error!("Could not get expected address from signer");
@@ -270,19 +263,17 @@ async fn handle_blob_received_notification<Block>(
 		ownerships_to_record.push(ownership);
 	}
 
-	let Some(keystore) = blob_handle.keystore.get() else {
-		log::error!(target: LOG_TARGET, "Keystore not yet registered");
-		return;
+	let (my_validator_id, babe_key) = match get_my_validator_id(
+		&blob_handle.keystore,
+		&blob_handle.client,
+		&announced_finalized_hash.encode(),
+	) {
+		Some(v) => v,
+		None => {
+			log::error!(target: LOG_TARGET, "No keys found while trying to get this node's id");
+			return;
+		},
 	};
-
-	let (my_validator_id, babe_key) =
-		match get_my_validator_id(&keystore, &client, &announced_finalized_hash.encode()) {
-			Some(v) => v,
-			None => {
-				log::error!(target: LOG_TARGET, "No keys found while trying to get this node's id");
-				return;
-			},
-		};
 
 	let storing_validators = match validators_for_blob(
 		blob_received.hash,
@@ -307,7 +298,7 @@ async fn handle_blob_received_notification<Block>(
 	blob_meta.storing_validator_list = storing_validators;
 
 	if should_store_blob {
-		let my_peer_id = network.local_peer_id();
+		let my_peer_id = blob_handle.network.local_peer_id();
 		let my_peer_id_base58 = my_peer_id.to_base58();
 
 		let signature_payload = build_signature_payload(
@@ -315,7 +306,7 @@ async fn handle_blob_received_notification<Block>(
 			[my_validator_id.encode(), b"stored".to_vec()].concat(),
 		);
 
-		let signature = match sign_blob_data(blob_handle, signature_payload) {
+		let signature = match sign_blob_data(&blob_handle.keystore, signature_payload) {
 			Ok(s) => s.signature,
 			Err(e) => {
 				log::error!(target: LOG_TARGET, "An error has occured while trying to sign data, exiting the function: {e}");
@@ -366,7 +357,6 @@ async fn handle_blob_received_notification<Block>(
 			let Some(blob_response) = send_blob_request(
 				blob_received.hash,
 				blob_handle,
-				network,
 				target_peer_id,
 				original_peer_id,
 				my_peer_id_base58.clone(),
@@ -479,7 +469,6 @@ async fn handle_blob_received_notification<Block>(
 async fn send_blob_request<Block>(
 	blob_hash: BlobHash,
 	blob_handle: &BlobHandle<Block>,
-	network: &Arc<NetworkService<Block, Block::Hash>>,
 	target_peer_id: PeerId,
 	original_peer_id: PeerId,
 	my_peer_id_base58: String,
@@ -495,15 +484,13 @@ where
 		timer.elapsed()
 	);
 	let signature_payload = build_signature_payload(blob_hash, b"request".to_vec());
-	let signature_data = match sign_blob_data(blob_handle, signature_payload) {
+	let signature_data = match sign_blob_data(&blob_handle.keystore, signature_payload) {
 		Ok(s) => s,
 		Err(e) => {
 			log::error!(target: LOG_TARGET, "An error has occured while trying to sign data, exiting the function: {e}");
 			return None;
 		},
 	};
-
-	let telemetry_operator = blob_handle.telemetry_operator.get();
 
 	let blob_request = BlobRequestEnum::BlobRequest(BlobRequest {
 		hash: blob_hash,
@@ -518,7 +505,8 @@ where
 		};
 
 		let start = crate::utils::get_current_timestamp_ms();
-		let response = network
+		let response = blob_handle
+			.network
 			.request(
 				target_peer,
 				BLOB_REQ_PROTO,
@@ -531,17 +519,15 @@ where
 
 		match response {
 			Ok((data, _proto)) => {
-				if let Some(telemetry_operator) = telemetry_operator {
-					telemetry_operator.blob_request(
-						blob_size as usize,
-						blob_hash,
-						start,
-						end,
-						my_peer_id_base58.clone(),
-						target_peer.to_base58(),
-						true,
-					);
-				}
+				blob_handle.telemetry_operator.blob_request(
+					blob_size as usize,
+					blob_hash,
+					start,
+					end,
+					my_peer_id_base58.clone(),
+					target_peer.to_base58(),
+					true,
+				);
 				let mut buf: &[u8] = &data;
 				match BlobResponseEnum::decode(&mut buf) {
 					Ok(BlobResponseEnum::BlobResponse(blob_response)) => {
@@ -555,29 +541,29 @@ where
 					Ok(_other) => {
 						log::error!(target: LOG_TARGET,
 							"Invalid response in send blob request, expected BlobResponse");
-						BlobReputationChange::MalformedResponse.report(&network, &target_peer);
+						BlobReputationChange::MalformedResponse
+							.report(&blob_handle.network, &target_peer);
 						break;
 					},
 					Err(err) => {
 						log::error!(target: LOG_TARGET,
 							"Failed to decode Blob response ({} bytes): {:?}", data.len(), err);
-						BlobReputationChange::MalformedResponse.report(&network, &target_peer);
+						BlobReputationChange::MalformedResponse
+							.report(&blob_handle.network, &target_peer);
 						break;
 					},
 				}
 			},
 			Err(e) => {
-				if let Some(telemetry_operator) = telemetry_operator {
-					telemetry_operator.blob_request(
-						blob_size as usize,
-						blob_hash,
-						start,
-						end,
-						my_peer_id_base58.clone(),
-						target_peer.to_base58(),
-						false,
-					);
-				}
+				blob_handle.telemetry_operator.blob_request(
+					blob_size as usize,
+					blob_hash,
+					start,
+					end,
+					my_peer_id_base58.clone(),
+					target_peer.to_base58(),
+					false,
+				);
 				log::error!(target: LOG_TARGET,
 					"An error has occured while trying to send blob request {blob_hash:?} (attempt {}/{}): {e}",
 					attempt + 1,
@@ -758,12 +744,8 @@ pub async fn send_blob_stored_notification<Block>(
 		finalized_block_hash,
 	};
 
-	let Some(gossip_cmd_sender) = blob_handle.gossip_cmd_sender.get() else {
-		log::error!(target: LOG_TARGET, "Could not send gossip notification since gossip_cmd_sender was not initialized");
-		return;
-	};
-
-	if let Err(e) = gossip_cmd_sender
+	if let Err(e) = blob_handle
+		.gossip_cmd_sender
 		.send(BlobNotification::BlobStored(blob_stored))
 		.await
 	{
@@ -794,15 +776,10 @@ async fn handle_blob_stored_notification<Block>(
 		return;
 	}
 
-	let Some(client) = blob_handle.client.get() else {
-		log::error!(target: LOG_TARGET, "Client not yet registered");
-		return;
-	};
-
 	let finalized_hash = blob_stored.finalized_block_hash;
 	let Some((address, _)) = get_validator_id_from_key(
 		&blob_stored.ownership_entry.babe_key,
-		client,
+		&blob_handle.client,
 		&finalized_hash.encode(),
 	) else {
 		log::error!("Could not find address associated to babe key");
@@ -863,20 +840,26 @@ async fn handle_blob_stored_notification<Block>(
 			.ok()
 			.flatten();
 		if existing_expiry.is_none() {
-			let (block_number, block_hash) = match client.header(blob_stored.hash) {
+			let (block_number, block_hash) = match blob_handle.client.header(blob_stored.hash) {
 				Ok(Some(h)) => (h.number, h.hash()),
-				_ => (client.info().finalized_number, client.info().finalized_hash),
+				_ => (
+					blob_handle.client.info().finalized_number,
+					blob_handle.client.info().finalized_hash,
+				),
 			};
 			let block_number: u64 = block_number.saturated_into();
 
-			let blob_runtime_params =
-				match client.runtime_api().get_blob_runtime_parameters(block_hash) {
-					Ok(p) => p,
-					Err(e) => {
-						log::error!("Could not get blob_params: {e:?}");
-						BlobRuntimeParameters::default()
-					},
-				};
+			let blob_runtime_params = match blob_handle
+				.client
+				.runtime_api()
+				.get_blob_runtime_parameters(block_hash)
+			{
+				Ok(p) => p,
+				Err(e) => {
+					log::error!("Could not get blob_params: {e:?}");
+					BlobRuntimeParameters::default()
+				},
+			};
 			let expires_at = block_number.saturating_add(blob_runtime_params.temp_blob_ttl);
 			if let Err(e) = blob_handle
 				.blob_database

@@ -9,9 +9,9 @@ use crate::{
 	NOTIF_QUEUE_SIZE, REQUEST_MAX_SIZE, REQUEST_TIMEOUT_SECONDS, REQ_RES_QUEUE_SIZE,
 	RESPONSE_MAX_SIZE,
 };
+use async_channel::Receiver;
 use codec::Encode;
 use futures::{future, FutureExt, StreamExt};
-use once_cell::sync::OnceCell;
 use sc_client_api::BlockchainEvents;
 use sc_keystore::LocalKeystore;
 use sc_network::{
@@ -26,106 +26,99 @@ use sp_runtime::{
 	SaturatedConversion,
 };
 
+pub fn get_blob_p2p_config() -> (
+	RequestResponseConfig,
+	async_channel::Receiver<IncomingRequest>,
+	NonDefaultSetConfig,
+	Box<dyn NotificationService>,
+) {
+	// Get blob Blob req/res protocol config
+	let (blob_req_sender, blob_req_receiver) = async_channel::bounded(REQ_RES_QUEUE_SIZE as usize);
+	let blob_req_res_cfg = RequestResponseConfig {
+		name: BLOB_REQ_PROTO,
+		fallback_names: vec![],
+		max_request_size: REQUEST_MAX_SIZE,
+		max_response_size: RESPONSE_MAX_SIZE,
+		request_timeout: Duration::from_secs(REQUEST_TIMEOUT_SECONDS),
+		inbound_queue: Some(blob_req_sender),
+	};
+
+	// Get blob gossip protocol config
+	let (blob_gossip_cfg, blob_gossip_service) = NonDefaultSetConfig::new(
+		BLOB_GOSSIP_PROTO,
+		Vec::default(),
+		NOTIFICATION_MAX_SIZE,
+		None,
+		Default::default(),
+	);
+
+	(
+		blob_req_res_cfg,
+		blob_req_receiver,
+		blob_gossip_cfg,
+		blob_gossip_service,
+	)
+}
+
 #[derive(Clone)]
 pub struct BlobHandle<Block>
 where
 	Block: BlockT,
 {
-	pub network: Arc<OnceCell<Arc<NetworkService<Block, Block::Hash>>>>,
-	pub sync_service: Arc<OnceCell<Arc<SyncingService<Block>>>>,
-	pub gossip_cmd_sender: Arc<OnceCell<async_channel::Sender<BlobNotification>>>,
-	pub keystore: Arc<OnceCell<Arc<LocalKeystore>>>,
-	pub client: Arc<OnceCell<Arc<FullClient>>>,
+	pub network: Arc<NetworkService<Block, Block::Hash>>,
+	pub gossip_cmd_sender: async_channel::Sender<BlobNotification>,
+	pub keystore: Arc<LocalKeystore>,
+	pub client: Arc<FullClient>,
 	pub blob_database: Arc<RocksdbBlobStore>,
 	pub role: Role,
-	pub telemetry_operator: OnceCell<TelemetryOperator>,
+	pub telemetry_operator: TelemetryOperator,
 }
 
 impl<Block> BlobHandle<Block>
 where
 	Block: BlockT,
 {
-	pub fn new_blob_service(
+	pub fn new(
 		path: &Path,
 		role: Role,
-	) -> (
-		Arc<Self>,
-		RequestResponseConfig,
-		async_channel::Receiver<IncomingRequest>,
-		NonDefaultSetConfig,
-		Box<dyn NotificationService>,
-	) {
+		blob_gossip_service: Box<dyn NotificationService>,
+		req_receiver: async_channel::Receiver<IncomingRequest>,
+		network: Arc<NetworkService<Block, Block::Hash>>,
+		client: Arc<FullClient>,
+		keystore: Arc<LocalKeystore>,
+		sync_service: Arc<SyncingService<Block>>,
+		telemetry_operator: TelemetryOperator,
+		spawn_handle: SpawnTaskHandle,
+	) -> Arc<Self> {
 		// Initialize the Blob database
 		let db_path = path.join("blob_database");
 		let blob_database =
 			Arc::new(RocksdbBlobStore::open(db_path).expect("opening RocksDB blob store failed"));
 
-		// Initialize the blob Blob req/res protocol config
-		let (blob_req_sender, blob_req_receiver) =
-			async_channel::bounded(REQ_RES_QUEUE_SIZE as usize);
-		let blob_req_res_cfg = RequestResponseConfig {
-			name: BLOB_REQ_PROTO,
-			fallback_names: vec![],
-			max_request_size: REQUEST_MAX_SIZE,
-			max_response_size: RESPONSE_MAX_SIZE,
-			request_timeout: Duration::from_secs(REQUEST_TIMEOUT_SECONDS),
-			inbound_queue: Some(blob_req_sender),
-		};
-
-		// Initialize the blob gossip protocol config
-		let (blob_gossip_cfg, blob_gossip_service) = NonDefaultSetConfig::new(
-			BLOB_GOSSIP_PROTO,
-			Vec::default(),
-			NOTIFICATION_MAX_SIZE,
-			None,
-			Default::default(),
-		);
-
-		let network = Arc::new(OnceCell::new());
-		let sync_service = Arc::new(OnceCell::new());
-		let keystore = Arc::new(OnceCell::new());
-		let client = Arc::new(OnceCell::new());
-		let gossip_cmd_sender = Arc::new(OnceCell::new());
-		let telemetry_operator = OnceCell::new();
+		// Init gossip sender / receiver
+		let (gossip_cmd_sender, gossip_cmd_receiver) =
+			async_channel::bounded::<BlobNotification>(NOTIF_QUEUE_SIZE as usize);
 
 		let blob_handle = BlobHandle {
 			network,
 			keystore,
 			client,
-			sync_service,
 			gossip_cmd_sender,
 			blob_database,
 			role,
 			telemetry_operator,
 		};
 
-		(
-			Arc::new(blob_handle),
-			blob_req_res_cfg,
-			blob_req_receiver,
-			blob_gossip_cfg,
+		blob_handle.start_blob_req_res(spawn_handle.clone(), req_receiver);
+		blob_handle.start_blob_gossip(
+			spawn_handle.clone(),
 			blob_gossip_service,
-		)
-	}
+			sync_service,
+			gossip_cmd_receiver,
+		);
+		blob_handle.start_blob_cleaning_service(spawn_handle);
 
-	pub fn start_blob_service(
-		&self,
-		spawn_handle: SpawnTaskHandle,
-		req_receiver: async_channel::Receiver<IncomingRequest>,
-		notif_service: Box<dyn NotificationService>,
-		network: Arc<NetworkService<Block, Block::Hash>>,
-		sync_service: Arc<SyncingService<Block>>,
-		keystore: Arc<LocalKeystore>,
-		client: Arc<FullClient>,
-		telemetry_operator: TelemetryOperator,
-	) {
-		self.register_keystore(keystore);
-		self.register_client(client.clone());
-		self.register_network_and_sync(network.clone(), sync_service.clone());
-		self.register_telemetry_operator(telemetry_operator);
-		self.start_blob_req_res(spawn_handle.clone(), req_receiver);
-		self.start_blob_gossip(spawn_handle.clone(), notif_service);
-		self.start_blob_cleaning_service(spawn_handle);
+		Arc::new(blob_handle)
 	}
 
 	fn start_blob_req_res(
@@ -133,14 +126,9 @@ where
 		spawn_handle: SpawnTaskHandle,
 		req_receiver: async_channel::Receiver<IncomingRequest>,
 	) {
-		let network_cell = self.network.clone();
-		let network = network_cell
-			.get()
-			.expect("Network should be registered")
-			.clone();
 		spawn_handle.spawn("request-listener", None, {
 			let blob_database = self.blob_database.clone();
-			let network = network.clone();
+			let network = self.network.clone();
 			async move {
 				req_receiver
 					.for_each_concurrent(CONCURRENT_REQUESTS, move |request| {
@@ -160,16 +148,12 @@ where
 		&self,
 		spawn_handle: SpawnTaskHandle,
 		notif_service: Box<dyn NotificationService>,
+		sync_service: Arc<SyncingService<Block>>,
+		gossip_cmd_receiver: Receiver<BlobNotification>,
 	) {
-		let network = self.network.get().expect("Network should be registered");
-		let sync_service = self
-			.sync_service
-			.get()
-			.expect("Syncing service should be registered");
 		let validator: Arc<BlobGossipValidator> = Arc::new(BlobGossipValidator::default());
-
 		let mut gossip_engine = GossipEngine::<Block>::new(
-			network.clone(),
+			self.network.clone(),
 			sync_service.clone(),
 			notif_service,
 			BLOB_GOSSIP_PROTO,
@@ -179,9 +163,6 @@ where
 
 		let topic = <<Block::Header as HeaderT>::Hashing as HashT>::hash("blob_topic".as_bytes());
 		let incoming_receiver = gossip_engine.messages_for(topic);
-
-		let (gossip_cmd_sender, gossip_cmd_receiver) =
-			async_channel::bounded::<BlobNotification>(NOTIF_QUEUE_SIZE as usize);
 
 		spawn_handle.spawn("gossip-sender", None, async move {
 			loop {
@@ -222,20 +203,11 @@ where
 					.await;
 			}
 		});
-
-		self.gossip_cmd_sender
-			.set(gossip_cmd_sender)
-			.map_err(|_| "Setting gossip_cmd_sender called more than once")
-			.expect("Registering gossip_cmd_sender cannot fail");
 	}
 
 	fn start_blob_cleaning_service(&self, spawn_handle: SpawnTaskHandle) {
-		let Some(client) = self.client.get() else {
-			log::error!(target: LOG_TARGET, "Client not yet registered");
-			return;
-		};
 		let blob_database = self.blob_database.clone();
-		let client = client.clone();
+		let client = self.client.clone();
 		spawn_handle.spawn("blob-cleanup", None, async move {
 			let mut block_sub = client.finality_notification_stream();
 
@@ -260,42 +232,5 @@ where
 				}
 			}
 		});
-	}
-
-	fn register_network_and_sync(
-		&self,
-		network: Arc<NetworkService<Block, Block::Hash>>,
-		sync_service: Arc<SyncingService<Block>>,
-	) {
-		self.network
-			.set(network)
-			.map_err(|_| "BlobHandle::register_network called more than once")
-			.expect("Registering network cannot fail");
-
-		self.sync_service
-			.set(sync_service)
-			.map_err(|_| "BlobHandle::register_sync_service called more than once")
-			.expect("Registering sync_state cannot fail");
-	}
-
-	fn register_keystore(&self, keystore: Arc<LocalKeystore>) {
-		self.keystore
-			.set(keystore)
-			.map_err(|_| "BlobHandle::register_keystore called more than once")
-			.expect("Registering keystore cannot fail");
-	}
-
-	fn register_client(&self, client: Arc<FullClient>) {
-		self.client
-			.set(client)
-			.map_err(|_| "BlobHandle::register_client called more than once")
-			.expect("Registering client cannot fail");
-	}
-
-	fn register_telemetry_operator(&self, telemetry_operator: TelemetryOperator) {
-		self.telemetry_operator
-			.set(telemetry_operator)
-			.map_err(|_| "BlobHandle::set_telemetry_operator called more than once")
-			.expect("Registering telemetry operator cannot fail");
 	}
 }

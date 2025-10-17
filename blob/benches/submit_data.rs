@@ -4,6 +4,7 @@ use crate::avail_rust_core::GenericExtrinsic;
 use avail_blob;
 use avail_blob::store::RocksdbBlobStore;
 use avail_blob::store::StorageApiT;
+use avail_blob::telemetry::TelemetryOperator;
 use avail_blob::traits::*;
 use avail_blob::types::CompressedBlob;
 use avail_blob::utils::CommitmentQueue;
@@ -206,7 +207,7 @@ mod validation {
 
 		// Queue
 		let (queue, rx) = CommitmentQueue::new(1);
-		CommitmentQueue::spawn_background_task(rx, None);
+		CommitmentQueue::spawn_background_task(rx, TelemetryOperator::new(None));
 		let queue: Arc<dyn CommitmentQueueApiT> = Arc::new(queue);
 
 		// grid & Commitment
@@ -225,10 +226,10 @@ mod validation {
 				runtime.block_on(async {
 					avail_blob::validation::commitment_validation(
 						tx.data_hash,
-						tx.data.len(),
 						&params.0,
 						params.1.clone(),
 						&params.2,
+						&TelemetryOperator::new(None),
 					)
 					.await
 					.expect("Ok")

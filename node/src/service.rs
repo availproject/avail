@@ -20,8 +20,9 @@
 #![allow(dead_code)]
 
 use crate::{cli::Cli, rpc as node_rpc};
-use avail_blob::p2p::BlobHandle;
-use avail_blob::types::{Deps, FullClient};
+use avail_blob::p2p::{get_blob_p2p_config, BlobHandle};
+use avail_blob::rpc::{BlobApiServer, BlobRpc};
+use avail_blob::types::FullClient;
 use avail_core::AppId;
 use da_runtime::{apis::RuntimeApi, NodeBlock as Block, Runtime};
 
@@ -145,7 +146,6 @@ pub fn new_partial(
 	unsafe_da_sync: bool,
 	kate_rpc_deps: kate_rpc::Deps,
 	grandpa_justification_period: u32,
-	mut blob_rpc_deps: avail_blob::types::Deps<Block>,
 ) -> Result<
 	sc_service::PartialComponents<
 		FullClient,
@@ -203,7 +203,6 @@ pub fn new_partial(
 		avail_telemetry::Worker::new(telemetry_handle.clone());
 	telemetry_worker.spawn_background_task();
 
-	blob_rpc_deps.telemetry_channel = Some(telemetry_channel.clone());
 	let telemetry_operator = TelemetryOperator::new(Some(telemetry_channel));
 
 	let select_chain = sc_consensus::LongestChain::new(backend.clone());
@@ -299,7 +298,6 @@ pub fn new_partial(
 					finality_provider: finality_proof_provider.clone(),
 				},
 				kate_rpc_deps: kate_rpc_deps.clone(),
-				blob_rpc_deps: blob_rpc_deps.clone(),
 			};
 			node_rpc::create_full(deps, rpc_backend.clone()).map_err(Into::into)
 		};
@@ -361,13 +359,8 @@ pub fn new_full_base(
 	};
 
 	// Blob protocols setup
-	let (blob_handle, blob_req_res_cfg, blob_req_receiver, blob_gossip_cfg, blob_gossip_service) =
-		BlobHandle::new_blob_service(config.base_path.path(), config.role.clone());
-
-	let blob_rpc_deps = Deps {
-		blob_handle: blob_handle.clone(),
-		telemetry_channel: None,
-	};
+	let (blob_req_res_cfg, blob_req_receiver, blob_gossip_cfg, blob_gossip_service) =
+		get_blob_p2p_config();
 
 	let sc_service::PartialComponents {
 		client,
@@ -383,7 +376,6 @@ pub fn new_full_base(
 		unsafe_da_sync,
 		kate_rpc_deps,
 		grandpa_justification_period,
-		blob_rpc_deps.clone(),
 	)?;
 
 	let shared_voter_state = rpc_setup;
@@ -424,16 +416,38 @@ pub fn new_full_base(
 			block_relay: None,
 		})?;
 
-	blob_handle.start_blob_service(
-		task_manager.spawn_handle(),
-		blob_req_receiver,
+	// Initialize blob module
+	let blob_handle = BlobHandle::new(
+		config.base_path.path(),
+		config.role.clone(),
 		blob_gossip_service,
+		blob_req_receiver,
 		network.clone(),
-		sync_service.clone(),
-		keystore_container.local_keystore(),
 		client.clone(),
+		keystore_container.local_keystore(),
+		sync_service.clone(),
 		telemetry_operator,
+		task_manager.spawn_handle(),
 	);
+
+	let basic_authorship_db = blob_handle.blob_database.clone();
+	let rpc_transaction_pool = transaction_pool.clone();
+	let rpc_backend = backend.clone();
+	let overloaded_rpc_builder = move |deny_unsafe: node_rpc::DenyUnsafe,
+	                                   subscription_executor: sc_rpc::SubscriptionTaskExecutor|
+	      -> Result<jsonrpsee::RpcModule<()>, sc_service::Error> {
+		let mut io = (rpc_builder)(deny_unsafe, subscription_executor)?;
+
+		io.merge(BlobApiServer::into_rpc(BlobRpc::<_, Block, _>::new(
+			blob_handle.clone(),
+			rpc_transaction_pool.clone(),
+			rpc_backend.clone(),
+		)))
+		.map_err(|e| sc_service::Error::Other(format!("failed to merge Blob RPC: {e}")))?;
+
+		Ok(io)
+	};
+	// END Initialize blob module
 
 	let role = config.role.clone();
 	let force_authoring = config.force_authoring;
@@ -453,7 +467,7 @@ pub fn new_full_base(
 		client: client.clone(),
 		keystore: keystore_container.keystore(),
 		network: network.clone(),
-		rpc_builder: Box::new(rpc_builder),
+		rpc_builder: Box::new(overloaded_rpc_builder),
 		transaction_pool: transaction_pool.clone(),
 		task_manager: &mut task_manager,
 		system_rpc_tx,
@@ -489,7 +503,7 @@ pub fn new_full_base(
 			transaction_pool.clone(),
 			prometheus_registry.as_ref(),
 			telemetry.as_ref().map(|x| x.handle()),
-			blob_handle.blob_database.clone(),
+			basic_authorship_db,
 		);
 
 		let client_clone = client.clone();
