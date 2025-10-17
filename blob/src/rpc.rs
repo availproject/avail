@@ -1,4 +1,3 @@
-use crate::blob_helper::{generate_base_index, validators_for_blob};
 use crate::telemetry::TelemetryOperator;
 use crate::traits::CommitmentQueueApiT;
 use crate::validation::{commitment_validation, initial_validation, tx_validation};
@@ -11,13 +10,11 @@ use crate::{
 		BackendApiT, BackendClient, ExternalitiesT, NonceCacheApiT, RealExternalities, RuntimeApiT,
 		RuntimeClient, TransactionPoolApiT, TransactionPoolClient,
 	},
-	types::{
-		Blob, BlobMetadata, BlobNotification, BlobReceived, CompressedBlob, Deps, OwnershipEntry,
-	},
+	types::{Blob, BlobMetadata, BlobNotification, BlobReceived, CompressedBlob, OwnershipEntry},
 	utils::{
-		build_signature_payload, extract_signer_and_nonce, get_dynamic_blocklength_key,
-		get_my_validator_public_account, get_validator_per_blob_inner, sign_blob_data_inner,
-		B64Param, CommitmentQueue, SmartStopwatch,
+		build_signature_payload, extract_signer_and_nonce, generate_base_index,
+		get_dynamic_blocklength_key, get_my_validator_public_account, get_validator_per_blob_inner,
+		sign_blob_data, validators_for_blob, B64Param, CommitmentQueue, SmartStopwatch,
 	},
 	MAX_RPC_RETRIES,
 };
@@ -25,7 +22,7 @@ use anyhow::Result;
 use codec::{Decode, Encode};
 use da_commitment::build_da_commitments::build_polynomial_grid;
 use da_control::{pallet::BlobTxSummaryRuntime, BlobRuntimeParameters, Call};
-use da_runtime::{apis::BlobApi, RuntimeCall, UncheckedExtrinsic};
+use da_runtime::{RuntimeCall, UncheckedExtrinsic};
 use frame_system::limits::BlockLength;
 use jsonrpsee::{
 	core::{async_trait, RpcResult},
@@ -35,14 +32,12 @@ use jsonrpsee::{
 use sc_client_api::{BlockBackend, HeaderBackend, StateBackend};
 use sc_network::PeerId;
 use sc_transaction_pool_api::TransactionPool;
-use sp_api::ProvideRuntimeApi;
 use sp_core::H256;
 use sp_runtime::{
 	traits::{Block as BlockT, HashingFor, Header as HeaderT},
 	transaction_validity::TransactionSource,
 	AccountId32, SaturatedConversion,
 };
-use sp_transaction_pool::runtime_api::TaggedTransactionQueue;
 use std::{
 	marker::{PhantomData, Sync},
 	str::FromStr,
@@ -96,52 +91,39 @@ where
 	async fn log_stuff(&self) -> RpcResult<()>;
 }
 
-pub struct BlobRpc<Client, Pool, Block: BlockT, Backend> {
-	client: Arc<Client>,
+pub struct BlobRpc<Pool, Block: BlockT, Backend> {
 	pool: Arc<Pool>,
-	blob_handle: Arc<BlobHandle<Block>>,
 	backend: Arc<Backend>,
+	blob_handle: Arc<BlobHandle<Block>>,
 	commitment_queue: Arc<CommitmentQueue>,
 	nonce_cache: Arc<NonceCache>,
-	telemetry_operator: TelemetryOperator,
 	_block: PhantomData<Block>,
 }
 
-impl<Client, Pool, Block: BlockT, Backend> BlobRpc<Client, Pool, Block, Backend> {
+impl<Pool, Block: BlockT, Backend> BlobRpc<Pool, Block, Backend> {
 	pub fn new(
-		client: Arc<Client>,
+		blob_handle: Arc<BlobHandle<Block>>,
 		pool: Arc<Pool>,
-		deps: Deps<Block>,
 		backend: Arc<Backend>,
 	) -> Self {
 		let (queue, rx) = CommitmentQueue::new(25);
-		let telemetry_operator: TelemetryOperator = TelemetryOperator::new(deps.telemetry_channel);
-		CommitmentQueue::spawn_background_task(rx, telemetry_operator.clone());
+		CommitmentQueue::spawn_background_task(rx, blob_handle.telemetry_operator.clone());
 
 		Self {
-			client,
 			pool,
-			blob_handle: deps.blob_handle,
 			backend,
+			blob_handle,
 			commitment_queue: Arc::new(queue),
 			nonce_cache: Arc::new(NonceCache::new()),
-			telemetry_operator,
 			_block: PhantomData,
 		}
 	}
 }
 
 #[async_trait]
-impl<Client, Pool, Block, Backend> BlobApiServer<Block> for BlobRpc<Client, Pool, Block, Backend>
+impl<Pool, Block, Backend> BlobApiServer<Block> for BlobRpc<Pool, Block, Backend>
 where
 	Block: BlockT,
-	Client: HeaderBackend<Block>
-		+ ProvideRuntimeApi<Block>
-		+ BlockBackend<Block>
-		+ Send
-		+ Sync
-		+ 'static,
-	Client::Api: TaggedTransactionQueue<Block> + BlobApi<Block>,
 	Pool: TransactionPool<Block = Block> + 'static,
 	Backend: sc_client_api::Backend<Block> + Send + Sync + 'static,
 	Backend::State: StateBackend<HashingFor<Block>>,
@@ -165,11 +147,8 @@ where
 		}
 
 		let friends = Friends {
-			externalities: Arc::new(RealExternalities::new(
-				self.client.clone(),
-				self.blob_handle.clone(),
-			)),
-			runtime_client: Arc::new(RuntimeClient::new(self.client.clone())),
+			externalities: Arc::new(RealExternalities::new(self.blob_handle.clone())),
+			runtime_client: Arc::new(RuntimeClient::new(self.blob_handle.client.clone())),
 			backend_client: Arc::new(BackendClient::new(self.backend.clone())),
 			tx_pool_client: Arc::new(TransactionPoolClient::new(self.pool.clone())),
 			database: self.blob_handle.blob_database.clone(),
@@ -181,7 +160,7 @@ where
 			blob.0,
 			friends,
 			self.nonce_cache.clone(),
-			self.telemetry_operator.clone(),
+			self.blob_handle.telemetry_operator.clone(),
 		)
 		.await?;
 
@@ -194,14 +173,8 @@ where
 		blob_index: u32,
 		blob_hash: H256,
 	) -> RpcResult<Blob> {
-		let network = self
-			.blob_handle
-			.network
-			.get()
-			.ok_or_else(|| internal_err!("Could not get network to get my peer id"))
-			.map_err(|e| e)?;
-
-		let Ok(Some(summaries)) = get_blob_tx_summaries_from_block(&self.client, block_hash).await
+		let Ok(Some(summaries)) =
+			get_blob_tx_summaries_from_block(&self.blob_handle.client, block_hash.into()).await
 		else {
 			return Err(internal_err!(
 				"Blob transactions summaries not found in the given block"
@@ -234,7 +207,7 @@ where
 			return Err(internal_err!("Blob ownership is empty"));
 		}
 
-		let finalized_hash = self.client.info().finalized_hash;
+		let finalized_hash = self.blob_handle.client.info().finalized_hash;
 
 		// Take a random owner index and try to get the blob from him, retry with next ones
 		let base_index =
@@ -259,25 +232,29 @@ where
 			};
 
 			match PeerId::from_str(&encoded_peer_id) {
-				Ok(peer_id) => match send_blob_query_request(blob_hash, peer_id, &network).await {
-					Ok(Some(blob)) => {
-						return Ok(blob);
-					},
-					Ok(None) => {
-						log::warn!(
-							"attempt {}/{}: no blob returned",
-							attempt + 1,
-							MAX_RPC_RETRIES
-						);
-					},
-					Err(e) => {
-						log::warn!(
-							"attempt {}/{} RPC error: {:?}",
-							attempt + 1,
-							MAX_RPC_RETRIES,
-							e
-						);
-					},
+				Ok(peer_id) => {
+					match send_blob_query_request(blob_hash, peer_id, &self.blob_handle.network)
+						.await
+					{
+						Ok(Some(blob)) => {
+							return Ok(blob);
+						},
+						Ok(None) => {
+							log::warn!(
+								"attempt {}/{}: no blob returned",
+								attempt + 1,
+								MAX_RPC_RETRIES
+							);
+						},
+						Err(e) => {
+							log::warn!(
+								"attempt {}/{} RPC error: {:?}",
+								attempt + 1,
+								MAX_RPC_RETRIES,
+								e
+							);
+						},
+					}
 				},
 				Err(e) => {
 					log::warn!("Attempt {}: invalid peer_id {:?}", attempt + 1, e);
@@ -311,10 +288,6 @@ async fn check_rpc_store_blob(
 	}
 
 	let keystore = externalities.keystore();
-	let Some(keystore) = keystore else {
-		return Err("failed to get keystore".into());
-	};
-
 	let Some((authority_id, key_type_id)) = get_my_validator_public_account(keystore) else {
 		return Ok(None);
 	};
@@ -340,7 +313,7 @@ async fn check_rpc_store_blob(
 		blob_metadata.hash,
 		[my_validator_id.encode(), b"stored".to_vec()].concat(),
 	);
-	let signature = match sign_blob_data_inner(keystore, signature_payload) {
+	let signature = match sign_blob_data(keystore, signature_payload) {
 		Ok(s) => s.signature,
 		Err(e) => {
 			return Err(std::format!(
@@ -584,11 +557,7 @@ pub async fn store_and_gossip_blob(
 	let finalized_block_number = client_info.finalized_height as u64;
 
 	// Get my own peer id data
-	let Ok(my_peer_id) = friends.externalities.local_peer_id() else {
-		log::error!("submit_blob(bg): network not initialized");
-		return Err(());
-	};
-
+	let my_peer_id = friends.externalities.local_peer_id();
 	let my_peer_id_base58 = my_peer_id.to_base58();
 
 	// Setup blob metadata and blob and check first in case we already received this exact blob before
@@ -715,10 +684,7 @@ pub async fn store_and_gossip_blob(
 			finalized_block_number,
 		});
 
-	let Some(gossip_cmd_sender) = friends.externalities.gossip_cmd_sender() else {
-		log::error!("gossip_cmd_sender was not initialized");
-		return Err(());
-	};
+	let gossip_cmd_sender = friends.externalities.gossip_cmd_sender();
 
 	if let Err(e) = gossip_cmd_sender.send(blob_received_notification).await {
 		log::error!("internal channel closed: {e}");

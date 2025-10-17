@@ -174,13 +174,13 @@ where
 pub trait ExternalitiesT: Send + Sync {
 	fn client_info(&self) -> ClientInfo;
 
-	fn local_peer_id(&self) -> Result<PeerId, ()>;
+	fn local_peer_id(&self) -> PeerId;
 
 	fn role(&self) -> Role;
 
-	fn keystore(&self) -> std::option::Option<&Arc<LocalKeystore>>;
+	fn keystore(&self) -> &Arc<LocalKeystore>;
 
-	fn gossip_cmd_sender(&self) -> std::option::Option<&async_channel::Sender<BlobNotification>>;
+	fn gossip_cmd_sender(&self) -> &async_channel::Sender<BlobNotification>;
 }
 
 #[derive(Debug, Default, Clone)]
@@ -190,33 +190,24 @@ pub struct ClientInfo {
 	pub finalized_height: u32,
 }
 
-pub struct RealExternalities<Client, Block>
+pub struct RealExternalities<Block>
 where
 	Block: BlockT,
 {
-	client: Arc<Client>,
 	blob_handle: Arc<BlobHandle<Block>>,
 	_block: PhantomData<Block>,
 }
 
-impl<Client, Block> RealExternalities<Client, Block>
+impl<Block> RealExternalities<Block>
 where
 	Block: BlockT,
-	Client: HeaderBackend<Block>
-		+ ProvideRuntimeApi<Block>
-		+ BlockBackend<Block>
-		+ Send
-		+ Sync
-		+ 'static,
-	Client::Api: TaggedTransactionQueue<Block> + BlobApi<Block>,
 	H256: From<<Block as BlockT>::Hash>,
 	<Block as BlockT>::Hash: From<H256>,
 	u32: From<<<Block as BlockT>::Header as HeaderT>::Number>,
 	<Block as BlockT>::Extrinsic: From<UncheckedExtrinsic>,
 {
-	pub fn new(client: Arc<Client>, blob_handle: Arc<BlobHandle<Block>>) -> Self {
+	pub fn new(blob_handle: Arc<BlobHandle<Block>>) -> Self {
 		Self {
-			client,
 			blob_handle,
 			_block: PhantomData,
 		}
@@ -224,48 +215,38 @@ where
 }
 
 #[async_trait]
-impl<Client, Block> ExternalitiesT for RealExternalities<Client, Block>
+impl<Block> ExternalitiesT for RealExternalities<Block>
 where
 	Block: BlockT,
-	Client: HeaderBackend<Block>
-		+ ProvideRuntimeApi<Block>
-		+ BlockBackend<Block>
-		+ Send
-		+ Sync
-		+ 'static,
-	Client::Api: TaggedTransactionQueue<Block> + BlobApi<Block>,
 	H256: From<<Block as BlockT>::Hash>,
 	<Block as BlockT>::Hash: From<H256>,
 	u32: From<<<Block as BlockT>::Header as HeaderT>::Number>,
 	<Block as BlockT>::Extrinsic: From<UncheckedExtrinsic>,
 {
 	fn client_info(&self) -> ClientInfo {
-		let client_info = self.client.info();
+		let client_info = self.blob_handle.client.info();
 		ClientInfo {
 			best_hash: client_info.best_hash.into(),
 			finalized_hash: client_info.finalized_hash.into(),
-			finalized_height: u32::from(client_info.finalized_number),
+			finalized_height: u32::from(client_info.finalized_number.into()),
 		}
 	}
 
-	fn local_peer_id(&self) -> Result<PeerId, ()> {
-		let network = self.blob_handle.network.get().cloned();
-		let Some(net) = network else {
-			return Err(());
-		};
-		Ok(net.local_peer_id())
+	fn local_peer_id(&self) -> PeerId {
+		let network = self.blob_handle.network.clone();
+		network.local_peer_id()
 	}
 
 	fn role(&self) -> Role {
 		self.blob_handle.role.clone()
 	}
 
-	fn keystore(&self) -> std::option::Option<&Arc<LocalKeystore>> {
-		self.blob_handle.keystore.get()
+	fn keystore(&self) -> &Arc<LocalKeystore> {
+		&self.blob_handle.keystore
 	}
 
-	fn gossip_cmd_sender(&self) -> std::option::Option<&async_channel::Sender<BlobNotification>> {
-		self.blob_handle.gossip_cmd_sender.get()
+	fn gossip_cmd_sender(&self) -> &async_channel::Sender<BlobNotification> {
+		&self.blob_handle.gossip_cmd_sender
 	}
 }
 
