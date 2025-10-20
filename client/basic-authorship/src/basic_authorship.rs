@@ -22,7 +22,7 @@
 use avail_base::{PostInherentsBackend, PostInherentsProvider};
 
 use avail_blob::{
-	store::RocksdbBlobStore,
+	store::{RocksdbBlobStore, StorageApiT},
 	types::{BlobMetadata, BlobTxSummary, OwnershipEntry},
 	utils::{check_if_wait_next_block, get_blob_txs_summary, SmartStopwatch},
 };
@@ -92,7 +92,7 @@ pub struct ProposerFactory<A, C, PR> {
 	/// When estimating the block size, should the proof be included?
 	include_proof_in_block_size_estimation: bool,
 	/// Blob store to check what the client already has for blob data
-	blob_database: Arc<RocksdbBlobStore>,
+	blob_database: Arc<dyn StorageApiT>,
 	/// phantom member to pin the `ProofRecording` type.
 	_phantom: PhantomData<PR>,
 }
@@ -108,7 +108,7 @@ impl<A, C> ProposerFactory<A, C, DisableProofRecording> {
 		transaction_pool: Arc<A>,
 		prometheus: Option<&PrometheusRegistry>,
 		telemetry: Option<TelemetryHandle>,
-		blob_database: Arc<RocksdbBlobStore>,
+		blob_database: Arc<dyn StorageApiT>,
 	) -> Self {
 		ProposerFactory {
 			spawn_handle: Box::new(spawn_handle),
@@ -279,7 +279,7 @@ pub struct Proposer<Block: BlockT, C, A: TransactionPool, PR> {
 	include_proof_in_block_size_estimation: bool,
 	soft_deadline_percent: Percent,
 	telemetry: Option<TelemetryHandle>,
-	blob_database: Arc<RocksdbBlobStore>,
+	blob_database: Arc<dyn StorageApiT>,
 	_phantom: PhantomData<PR>,
 }
 

@@ -1,7 +1,7 @@
 use crate::telemetry::TelemetryOperator;
 use crate::traits::CommitmentQueueApiT;
 use crate::{
-	store::{RocksdbBlobStore, StorageApiT},
+	store::StorageApiT,
 	types::{BlobHash, BlobMetadata, BlobSignatureData, BlobTxSummary, OwnershipEntry},
 };
 use anyhow::{anyhow, Context, Result};
@@ -243,7 +243,7 @@ pub fn get_validator_per_blob_inner(
 
 pub fn check_if_wait_next_block<C, Block>(
 	client: &Arc<C>,
-	blob_database: &Arc<RocksdbBlobStore>,
+	blob_database: &Arc<dyn StorageApiT>,
 	encoded: Vec<u8>,
 	submit_blob_metadata_calls: &mut Vec<(RuntimeCall, u32)>,
 	blob_metadata: &mut BTreeMap<BlobHash, (BlobMetadata, Vec<OwnershipEntry>)>,
@@ -369,7 +369,7 @@ where
 pub fn check_retries_for_blob<Block, C>(
 	client: &Arc<C>,
 	blob_hash: &BlobHash,
-	blob_database: &Arc<RocksdbBlobStore>,
+	blob_database: &Arc<dyn StorageApiT>,
 ) -> bool
 where
 	Block: BlockT,
