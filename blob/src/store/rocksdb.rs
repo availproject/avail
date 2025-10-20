@@ -1,4 +1,4 @@
-use crate::types::CompressedBlob;
+use crate::{store::*, types::CompressedBlob};
 use anyhow::{anyhow, Result};
 use codec::{Decode, Encode};
 use kvdb::{DBTransaction, KeyValueDB};
@@ -12,60 +12,18 @@ use crate::{
 	BLOB_CACHE_DURATION, LOG_TARGET, MAX_BLOBS_IN_CACHE,
 };
 
-const COL_BLOB_METADATA: u32 = 0;
-const COL_BLOB_RETRY: u32 = 1;
-const COL_BLOB: u32 = 2;
-const COL_BLOB_OWNERSHIP: u32 = 3;
-const COL_BLOB_OWNERSHIP_EXPIRY: u32 = 4;
-
-pub trait StorageApiT: Send + Sync {
-	// Blob metadata
-	fn insert_blob_metadata(&self, blob_metadata: &BlobMetadata) -> Result<()>;
-	fn get_blob_metadata(&self, hash: &BlobHash) -> Result<Option<BlobMetadata>>;
-	fn blob_metadata_exists(&self, hash: &BlobHash) -> Result<bool>;
-
-	// Blobs
-	fn insert_blob(&self, blob_hash: &BlobHash, blob: &CompressedBlob) -> Result<()>;
-	fn get_blob(&self, hash: &BlobHash) -> Result<Option<Blob>>;
-	fn get_raw_blob(&self, hash: &BlobHash) -> Result<Option<CompressedBlob>>;
-
-	// Blobs ownership
-	fn insert_blob_ownership(&self, hash: &BlobHash, o: &OwnershipEntry) -> Result<()>;
-	fn get_blob_ownership(
-		&self,
-		hash: &BlobHash,
-		owner: &Vec<u8>,
-	) -> Result<Option<OwnershipEntry>>;
-	fn get_blob_ownerships(&self, hash: &BlobHash) -> Result<Vec<OwnershipEntry>>;
-
-	// Blob read error retry count
-	fn insert_blob_retry(&self, hash: &BlobHash, count: u16) -> Result<()>;
-	fn get_blob_retry(&self, hash: &BlobHash) -> Result<u16>;
-
-	// Blob ownership expiry -> In case an ownership is recorded without ever seeing the metadata
-	fn insert_blob_ownership_expiry(&self, hash: &BlobHash, expires_at: u64) -> Result<()>;
-	fn get_blob_ownership_expiry(&self, hash: &BlobHash) -> Result<Option<u64>>;
-	fn remove_blob_ownership_expiry(&self, hash: &BlobHash) -> Result<()>;
-
-	// Cleaning
-	fn clean_blobs_info(&self, hashes: &Vec<BlobHash>) -> Result<()>;
-	fn clean_expired_ownerships_without_metadata(&self, hashes: &Vec<BlobHash>) -> Result<()>;
-	fn clean_expired_blobs_info(
-		&self,
-		current_block: u64,
-	) -> Result<(Vec<BlobHash>, Vec<BlobHash>)>;
-
-	// Testing stuff
-	fn log_all_entries(&self) -> Result<()>;
-}
-
+// First implementation, single rocks db
 pub struct RocksdbBlobStore {
 	db: Database,
 	cache: Mutex<TtlCache<BlobHash, Vec<u8>>>,
 }
-
 impl RocksdbBlobStore {
-	/// Open (or create) a new DB at `path`, with a single column.
+	pub const COL_BLOB_METADATA: u32 = 0;
+	pub const COL_BLOB_RETRY: u32 = 1;
+	pub const COL_BLOB: u32 = 2;
+	pub const COL_BLOB_OWNERSHIP: u32 = 3;
+	pub const COL_BLOB_OWNERSHIP_EXPIRY: u32 = 4;
+
 	pub fn open(path: impl AsRef<Path>) -> Result<Self> {
 		let num_columns = 5;
 		let db_config = DatabaseConfig::with_columns(num_columns);
@@ -75,56 +33,15 @@ impl RocksdbBlobStore {
 			cache: Mutex::new(TtlCache::new(MAX_BLOBS_IN_CACHE as usize)),
 		})
 	}
-
-	/// Blob metadata key
-	fn blob_meta_key(hash: &BlobHash) -> Vec<u8> {
-		hash.0.to_vec()
-	}
-
-	/// Blob count retry key
-	fn blob_count_key(hash: &BlobHash) -> Vec<u8> {
-		hash.0.to_vec()
-	}
-
-	/// Blob key
-	fn blob_key(hash: &BlobHash) -> Vec<u8> {
-		hash.0.to_vec()
-	}
-
-	/// Blob ownership key prefix
-	fn blob_ownership_key_prefix(hash: &BlobHash) -> Vec<u8> {
-		hash.0.to_vec()
-	}
-
-	/// Blob ownership expiry key prefix
-	fn blob_ownership_expiry_key(hash: &BlobHash) -> Vec<u8> {
-		hash.0.to_vec()
-	}
-
-	/// Blob ownership key
-	fn blob_ownership_key(hash: &BlobHash, owner: &Vec<u8>) -> Vec<u8> {
-		let prefix = Self::blob_ownership_key_prefix(hash);
-		let mut k = Vec::with_capacity(prefix.len() + owner.len());
-		k.extend_from_slice(&prefix);
-		k.extend_from_slice(&owner);
-		k
-	}
 }
-
 impl Default for RocksdbBlobStore {
 	fn default() -> Self {
 		let temp_dir = TempDir::new().expect("failed to create temp dir for RocksdbBlobStore");
 		let db_path = temp_dir.path().join("blob_database");
-		let num_columns = 4;
-		let db_config = DatabaseConfig::with_columns(num_columns);
-		let db = Database::open(&db_config, db_path).expect("opening RocksDB blob store failed");
-		RocksdbBlobStore {
-			db,
-			cache: Mutex::new(TtlCache::new(MAX_BLOBS_IN_CACHE as usize)),
-		}
+		let store = Self::open(db_path).expect("opening RocksDB blob store failed");
+		store
 	}
 }
-
 impl StorageApiT for RocksdbBlobStore {
 	fn insert_blob_metadata(&self, blob_metadata: &BlobMetadata) -> Result<()> {
 		if let Some(existing) = self.get_blob_metadata(&blob_metadata.hash).ok().flatten() {
@@ -135,8 +52,8 @@ impl StorageApiT for RocksdbBlobStore {
 
 		let mut tx = DBTransaction::new();
 		tx.put(
-			COL_BLOB_METADATA,
-			&Self::blob_meta_key(&blob_metadata.hash),
+			Self::COL_BLOB_METADATA,
+			&blob_meta_key(&blob_metadata.hash),
 			&blob_metadata.encode(),
 		);
 		self.db.write(tx)?;
@@ -145,7 +62,7 @@ impl StorageApiT for RocksdbBlobStore {
 
 	fn get_blob_metadata(&self, hash: &BlobHash) -> Result<Option<BlobMetadata>> {
 		self.db
-			.get(COL_BLOB_METADATA, &Self::blob_meta_key(hash))?
+			.get(Self::COL_BLOB_METADATA, &blob_meta_key(hash))?
 			.map(|bytes| {
 				let mut slice = bytes.as_slice();
 				BlobMetadata::decode(&mut slice)
@@ -157,19 +74,19 @@ impl StorageApiT for RocksdbBlobStore {
 	fn blob_metadata_exists(&self, hash: &BlobHash) -> Result<bool> {
 		Ok(self
 			.db
-			.get(COL_BLOB_METADATA, &Self::blob_meta_key(hash))?
+			.get(Self::COL_BLOB_METADATA, &blob_meta_key(hash))?
 			.is_some())
 	}
 
 	fn insert_blob_retry(&self, hash: &BlobHash, count: u16) -> Result<()> {
 		let mut tx = DBTransaction::new();
-		tx.put(COL_BLOB_RETRY, &Self::blob_count_key(hash), &count.encode());
+		tx.put(Self::COL_BLOB_RETRY, &blob_count_key(hash), &count.encode());
 		self.db.write(tx)?;
 		Ok(())
 	}
 	fn get_blob_retry(&self, hash: &BlobHash) -> Result<u16> {
 		self.db
-			.get(COL_BLOB_RETRY, &Self::blob_count_key(hash))?
+			.get(Self::COL_BLOB_RETRY, &blob_count_key(hash))?
 			.map(|bytes| {
 				let mut slice = bytes.as_slice();
 				u16::decode(&mut slice)
@@ -184,7 +101,7 @@ impl StorageApiT for RocksdbBlobStore {
 
 		// Write to db
 		let mut tx = DBTransaction::new();
-		tx.put(COL_BLOB, &Self::blob_key(&blob_hash), &blob_encoded);
+		tx.put(Self::COL_BLOB, &blob_key(&blob_hash), &blob_encoded);
 		self.db.write(tx)?;
 
 		// Write to cache
@@ -233,7 +150,7 @@ impl StorageApiT for RocksdbBlobStore {
 		}
 
 		// Fallback to db
-		let data = self.db.get(COL_BLOB, &Self::blob_key(hash))?;
+		let data = self.db.get(Self::COL_BLOB, &blob_key(hash))?;
 
 		// Write to cache
 		if let Some(ref v) = data {
@@ -262,8 +179,8 @@ impl StorageApiT for RocksdbBlobStore {
 	fn insert_blob_ownership(&self, hash: &BlobHash, o: &OwnershipEntry) -> Result<()> {
 		let mut tx = DBTransaction::new();
 		tx.put(
-			COL_BLOB_OWNERSHIP,
-			&Self::blob_ownership_key(hash, &o.address.encode()),
+			Self::COL_BLOB_OWNERSHIP,
+			&blob_ownership_key(hash, &o.address.encode()),
 			&o.encode(),
 		);
 		self.db.write(tx)?;
@@ -275,9 +192,9 @@ impl StorageApiT for RocksdbBlobStore {
 		hash: &BlobHash,
 		owner: &Vec<u8>,
 	) -> Result<Option<OwnershipEntry>> {
-		let key = Self::blob_ownership_key(hash, owner);
+		let key = blob_ownership_key(hash, owner);
 		self.db
-			.get(COL_BLOB_OWNERSHIP, &key)?
+			.get(Self::COL_BLOB_OWNERSHIP, &key)?
 			.map(|bytes| {
 				let mut slice = bytes.as_slice();
 				OwnershipEntry::decode(&mut slice)
@@ -287,8 +204,8 @@ impl StorageApiT for RocksdbBlobStore {
 	}
 
 	fn get_blob_ownerships(&self, hash: &BlobHash) -> Result<Vec<OwnershipEntry>> {
-		let prefix = Self::blob_ownership_key_prefix(hash);
-		let iter = self.db.iter_with_prefix(COL_BLOB_OWNERSHIP, &prefix);
+		let prefix = blob_ownership_key_prefix(hash);
+		let iter = self.db.iter_with_prefix(Self::COL_BLOB_OWNERSHIP, &prefix);
 		let mut out = Vec::new();
 		for kv in iter {
 			let (_k, v) = kv?;
@@ -303,8 +220,8 @@ impl StorageApiT for RocksdbBlobStore {
 	fn insert_blob_ownership_expiry(&self, hash: &BlobHash, expires_at: u64) -> Result<()> {
 		let mut tx = DBTransaction::new();
 		tx.put(
-			COL_BLOB_OWNERSHIP_EXPIRY,
-			&Self::blob_ownership_expiry_key(hash),
+			Self::COL_BLOB_OWNERSHIP_EXPIRY,
+			&blob_ownership_expiry_key(hash),
 			&expires_at.encode(),
 		);
 		self.db.write(tx)?;
@@ -314,8 +231,8 @@ impl StorageApiT for RocksdbBlobStore {
 	fn get_blob_ownership_expiry(&self, hash: &BlobHash) -> Result<Option<u64>> {
 		self.db
 			.get(
-				COL_BLOB_OWNERSHIP_EXPIRY,
-				&Self::blob_ownership_expiry_key(hash),
+				Self::COL_BLOB_OWNERSHIP_EXPIRY,
+				&blob_ownership_expiry_key(hash),
 			)?
 			.map(|bytes| {
 				let mut slice = bytes.as_slice();
@@ -330,8 +247,8 @@ impl StorageApiT for RocksdbBlobStore {
 		let mut tx = DBTransaction::new();
 
 		tx.delete(
-			COL_BLOB_OWNERSHIP_EXPIRY,
-			&Self::blob_ownership_expiry_key(hash),
+			Self::COL_BLOB_OWNERSHIP_EXPIRY,
+			&blob_ownership_expiry_key(hash),
 		);
 
 		self.db.write(tx)?;
@@ -343,21 +260,21 @@ impl StorageApiT for RocksdbBlobStore {
 
 		for hash in hashes {
 			// remove blob metadata
-			tx.delete(COL_BLOB_METADATA, &Self::blob_meta_key(hash));
+			tx.delete(Self::COL_BLOB_METADATA, &blob_meta_key(hash));
 
 			// remove blob retry
-			tx.delete(COL_BLOB_RETRY, &Self::blob_count_key(hash));
+			tx.delete(Self::COL_BLOB_RETRY, &blob_count_key(hash));
 
 			// remove blob
-			tx.delete(COL_BLOB, &Self::blob_key(hash));
+			tx.delete(Self::COL_BLOB, &blob_key(hash));
 
 			// remove blob ownership
-			tx.delete_prefix(COL_BLOB_OWNERSHIP, &Self::blob_ownership_key_prefix(hash));
+			tx.delete_prefix(Self::COL_BLOB_OWNERSHIP, &blob_ownership_key_prefix(hash));
 
 			// remove blob ownership expiry
 			tx.delete(
-				COL_BLOB_OWNERSHIP_EXPIRY,
-				&Self::blob_ownership_expiry_key(hash),
+				Self::COL_BLOB_OWNERSHIP_EXPIRY,
+				&blob_ownership_expiry_key(hash),
 			);
 		}
 
@@ -370,12 +287,12 @@ impl StorageApiT for RocksdbBlobStore {
 
 		for hash in hashes {
 			// remove blob ownership
-			tx.delete_prefix(COL_BLOB_OWNERSHIP, &Self::blob_ownership_key_prefix(hash));
+			tx.delete_prefix(Self::COL_BLOB_OWNERSHIP, &blob_ownership_key_prefix(hash));
 
 			// remove blob ownership expiry
 			tx.delete(
-				COL_BLOB_OWNERSHIP_EXPIRY,
-				&Self::blob_ownership_expiry_key(hash),
+				Self::COL_BLOB_OWNERSHIP_EXPIRY,
+				&blob_ownership_expiry_key(hash),
 			);
 		}
 
@@ -388,7 +305,7 @@ impl StorageApiT for RocksdbBlobStore {
 		current_block: u64,
 	) -> Result<(Vec<BlobHash>, Vec<BlobHash>)> {
 		let mut expired_blobs = Vec::new();
-		for (key, value) in self.db.iter(COL_BLOB_METADATA).filter_map(Result::ok) {
+		for (key, value) in self.db.iter(Self::COL_BLOB_METADATA).filter_map(Result::ok) {
 			if let Ok(blob_metadata) = BlobMetadata::decode(&mut value.as_slice()) {
 				if blob_metadata.expires_at <= current_block {
 					let hash = BlobHash::from_slice(&key);
@@ -410,7 +327,7 @@ impl StorageApiT for RocksdbBlobStore {
 		let mut expired_ownerships = Vec::new();
 		for (key, value) in self
 			.db
-			.iter(COL_BLOB_OWNERSHIP_EXPIRY)
+			.iter(Self::COL_BLOB_OWNERSHIP_EXPIRY)
 			.filter_map(Result::ok)
 		{
 			if let Ok(expiry) = u64::decode(&mut value.as_slice()) {
@@ -438,7 +355,7 @@ impl StorageApiT for RocksdbBlobStore {
 
 		// Log Blob Metadata
 		log::info!(target: LOG_TARGET, "--- Blob Metadatas ---");
-		for (_key, value) in self.db.iter(COL_BLOB_METADATA).filter_map(Result::ok) {
+		for (_key, value) in self.db.iter(Self::COL_BLOB_METADATA).filter_map(Result::ok) {
 			if let Ok(blob_metadata) = BlobMetadata::decode(&mut value.as_slice()) {
 				log::info!(
 					target: LOG_TARGET,
@@ -455,7 +372,11 @@ impl StorageApiT for RocksdbBlobStore {
 
 		// Log Blob Retries
 		log::info!(target: LOG_TARGET, "--- Blob Ownerships ---");
-		for (key, value) in self.db.iter(COL_BLOB_OWNERSHIP).filter_map(Result::ok) {
+		for (key, value) in self
+			.db
+			.iter(Self::COL_BLOB_OWNERSHIP)
+			.filter_map(Result::ok)
+		{
 			if let Ok(o) = OwnershipEntry::decode(&mut value.as_slice()) {
 				const BLOB_HASH_LEN: usize = 32;
 				if key.len() < BLOB_HASH_LEN {
@@ -468,7 +389,7 @@ impl StorageApiT for RocksdbBlobStore {
 
 		// Log Blob Retries
 		log::info!(target: LOG_TARGET, "--- Blob Retries ---");
-		for (key, value) in self.db.iter(COL_BLOB_RETRY).filter_map(Result::ok) {
+		for (key, value) in self.db.iter(Self::COL_BLOB_RETRY).filter_map(Result::ok) {
 			if let Ok(count) = u16::decode(&mut value.as_slice()) {
 				let hash = BlobHash::from_slice(&key);
 				log::info!(target: LOG_TARGET, "Blob Retry: hash={:?}, count={}", hash, count);

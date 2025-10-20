@@ -36,7 +36,7 @@ use sp_api::ProvideRuntimeApi;
 use sp_core::H256;
 use sp_runtime::{traits::Block as BlockT, SaturatedConversion};
 use std::{str::FromStr, sync::Arc, time::Duration};
-use store::{RocksdbBlobStore, StorageApiT};
+use store::StorageApiT;
 
 pub(crate) const LOG_TARGET: &str = "avail::blob";
 
@@ -594,7 +594,7 @@ where
 
 pub fn handle_incoming_blob_request<Block: BlockT>(
 	request: IncomingRequest,
-	blob_database: &RocksdbBlobStore,
+	blob_database: &dyn StorageApiT,
 	network: &Arc<NetworkService<Block, Block::Hash>>,
 ) where
 	Block: BlockT,
@@ -644,7 +644,7 @@ pub fn handle_incoming_blob_request<Block: BlockT>(
 
 fn process_blob_request(
 	blob_request: BlobRequest,
-	blob_database: &RocksdbBlobStore,
+	blob_database: &dyn StorageApiT,
 	response_tx: oneshot::Sender<OutgoingResponse>,
 ) {
 	let timer = std::time::Instant::now();
@@ -942,7 +942,7 @@ where
 
 pub fn process_blob_query_request(
 	blob_query_request: BlobQueryRequest,
-	blob_database: &RocksdbBlobStore,
+	blob_database: &dyn StorageApiT,
 	response_tx: oneshot::Sender<OutgoingResponse>,
 ) {
 	let timer = std::time::Instant::now();

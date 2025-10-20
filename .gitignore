@@ -8,3 +8,6 @@ tests/rust_scripts/target
 output
 ts-interfaces
 e2e/e2e_data
+pallets/system/bindings
+pallets/system/rpc/runtime-api/bindings
+rpc/kate-rpc/bindings

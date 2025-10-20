@@ -69,7 +69,7 @@ where
 	pub gossip_cmd_sender: async_channel::Sender<BlobNotification>,
 	pub keystore: Arc<LocalKeystore>,
 	pub client: Arc<FullClient>,
-	pub blob_database: Arc<RocksdbBlobStore>,
+	pub blob_database: Arc<dyn StorageApiT>,
 	pub role: Role,
 	pub telemetry_operator: TelemetryOperator,
 }
@@ -135,7 +135,7 @@ where
 						let blob_database = blob_database.clone();
 						let net = network.clone();
 						tokio::task::spawn_blocking(move || {
-							handle_incoming_blob_request(request, &blob_database, &net);
+							handle_incoming_blob_request(request, blob_database.as_ref(), &net);
 						});
 						future::ready(())
 					})
