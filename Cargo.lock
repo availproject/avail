@@ -1057,7 +1057,6 @@ dependencies = [
  "hex-literal",
  "itertools 0.10.5",
  "log",
- "once_cell",
  "parity-scale-codec",
  "scale-info",
  "sp-api",
@@ -1067,7 +1066,6 @@ dependencies = [
  "sp-runtime",
  "sp-runtime-interface",
  "sp-std",
- "substrate-prometheus-endpoint",
  "test-case",
 ]
 
@@ -1079,6 +1077,7 @@ dependencies = [
  "async-channel 1.9.0",
  "avail-base",
  "avail-core",
+ "avail-metrics",
  "avail-rust-client",
  "avail-telemetry",
  "base64 0.22.1",
@@ -1160,6 +1159,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "avail-metrics"
+version = "0.1.0"
+dependencies = [
+ "log",
+ "once_cell",
+ "substrate-prometheus-endpoint",
+]
+
+[[package]]
 name = "avail-node"
 version = "0.1.0"
 dependencies = [
@@ -1167,6 +1175,7 @@ dependencies = [
  "avail-base",
  "avail-blob",
  "avail-core",
+ "avail-metrics",
  "avail-telemetry",
  "clap 4.5.26",
  "clap-num",
@@ -4191,6 +4200,7 @@ version = "4.0.0-dev"
 dependencies = [
  "avail-base",
  "avail-core",
+ "avail-metrics",
  "binary-merkle-tree",
  "bounded-collections",
  "cfg-if",
@@ -5954,6 +5964,7 @@ version = "0.3.0"
 dependencies = [
  "avail-base",
  "avail-core",
+ "avail-metrics",
  "const-hex",
  "da-runtime",
  "frame-support",

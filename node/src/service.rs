@@ -699,7 +699,7 @@ pub fn new_full(config: Configuration, cli: Cli) -> Result<TaskManager, ServiceE
 }
 
 fn extend_metrics(prometheus: &Registry) -> Result<(), PrometheusError> {
-	use avail_base::metrics::{AvailMetrics, AVAIL_METRICS};
+	use avail_metrics::{AvailMetrics, AVAIL_METRICS};
 
 	AVAIL_METRICS.get_or_try_init(|| AvailMetrics::new(prometheus))?;
 	Ok(())

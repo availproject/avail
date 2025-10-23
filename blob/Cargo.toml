@@ -9,6 +9,8 @@ da-control = { workspace = true, default-features = false }
 avail-core = { workspace = true, default-features = false }
 kate = { workspace = true, default-features = false }
 kate-recovery = { workspace = true, default-features = false }
+avail-telemetry = { workspace = true }
+avail-metrics = { workspace = true }
 
 tokio = { version = "1.43.0", features = [
     "sync",
@@ -55,7 +57,6 @@ anyhow = "1.0"
 ttl_cache = "0.5.1"
 base64 = { workspace = true }
 zstd = { workspace = true }
-avail-telemetry = { workspace = true }
 
 [dev-dependencies]
 divan = { version = "0.1" }

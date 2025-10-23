@@ -4,6 +4,7 @@ use crate::{
 	traits::{NonceCacheApiT, RuntimeApiT},
 	utils::{extract_signer_and_nonce, CommitmentQueueMessage},
 };
+use avail_metrics::BlobMetrics;
 use codec::Decode;
 use da_control::Call;
 use da_runtime::RuntimeCall;
@@ -107,6 +108,9 @@ pub async fn commitment_validation(
 	queue: &Arc<dyn CommitmentQueueApiT>,
 	telemetry_operator: &TelemetryOperator,
 ) -> Result<(), String> {
+	// Metrics
+	BlobMetrics::set_queue_capacity(queue.capacity() as u64);
+
 	let (message, rx_comm) = CommitmentQueueMessage::new(hash, grid);
 	if !queue.send(message) {
 		// Need better error handling
