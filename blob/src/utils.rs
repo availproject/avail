@@ -5,6 +5,7 @@ use crate::{
 	types::{BlobHash, BlobMetadata, BlobSignatureData, BlobTxSummary, OwnershipEntry},
 };
 use anyhow::{anyhow, Context, Result};
+use avail_metrics::BlobMetrics;
 use base64::Engine;
 use codec::{Decode, Encode};
 use da_commitment::build_da_commitments::build_commitments_from_polynomial_grid;
@@ -679,7 +680,15 @@ pub struct CommitmentQueue {
 
 impl CommitmentQueueApiT for CommitmentQueue {
 	fn send(&self, value: CommitmentQueueMessage) -> bool {
-		return self.tx.try_send(value).is_ok();
+		self.tx.try_send(value).is_ok()
+	}
+
+	fn capacity(&self) -> usize {
+		self.tx.capacity()
+	}
+
+	fn max_capacity(&self) -> usize {
+		self.tx.max_capacity()
 	}
 }
 
@@ -710,6 +719,9 @@ impl CommitmentQueue {
 			telemetry_operator.blob_commitment(msg.hash, start, end, rx.len());
 
 			_ = msg.request.send(commitment);
+
+			// Metrics
+			BlobMetrics::set_queue_size_current(rx.capacity() as u64);
 		}
 	}
 }

@@ -19,6 +19,7 @@ use crate::{
 	MAX_RPC_RETRIES,
 };
 use anyhow::Result;
+use avail_metrics::BlobMetrics;
 use codec::{Decode, Encode};
 use da_commitment::build_da_commitments::build_polynomial_grid;
 use da_control::{pallet::BlobTxSummaryRuntime, BlobRuntimeParameters, Call};
@@ -107,6 +108,7 @@ impl<Pool, Block: BlockT, Backend> BlobRpc<Pool, Block, Backend> {
 		backend: Arc<Backend>,
 	) -> Self {
 		let (queue, rx) = CommitmentQueue::new(25);
+		BlobMetrics::set_queue_size_max(rx.max_capacity() as u64);
 		CommitmentQueue::spawn_background_task(rx, blob_handle.telemetry_operator.clone());
 
 		Self {
@@ -138,6 +140,9 @@ where
 		metadata_signed_transaction: B64Param,
 		blob: B64Param,
 	) -> RpcResult<()> {
+		// Metrics
+		BlobMetrics::inc_submissions_count();
+
 		// --- 0. Quick checks -------------------------------------------------
 		if blob.0.is_empty() {
 			return Err(internal_err!("blob cannot be empty"));
@@ -537,7 +542,8 @@ async fn submit_blob_background_task(
 		blob_hash,
 	);
 
-	// Telemetry
+	// Metrics and Telemetry
+	BlobMetrics::inc_submissions_added_to_pool();
 	telemetry_operator.blob_added_to_pool(blob_len, blob_hash);
 }
 

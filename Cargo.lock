@@ -1077,6 +1077,7 @@ dependencies = [
  "async-channel 1.9.0",
  "avail-base",
  "avail-core",
+ "avail-metrics",
  "avail-rust-client",
  "avail-telemetry",
  "base64 0.22.1",

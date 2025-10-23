@@ -1,3 +1,7 @@
+/*
+	Docs: https://docs.rs/substrate-prometheus-endpoint/0.17.7/substrate_prometheus_endpoint/
+*/
+
 use once_cell::sync::OnceCell;
 use substrate_prometheus_endpoint::{
 	exponential_buckets, register, Histogram, HistogramOpts, Opts, PrometheusError, Registry,
@@ -7,7 +11,8 @@ const LOG_TARGET: &str = "avail::base::metrics";
 pub static AVAIL_METRICS: OnceCell<AvailMetrics> = OnceCell::new();
 
 pub mod avail;
-pub use avail::AvailMetrics;
+
+pub use avail::{AvailMetrics, BlobMetrics};
 use std::fmt::Display;
 
 /// Creates an histogram using exponential buckets

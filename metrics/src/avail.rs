@@ -2,13 +2,16 @@ use super::{custom_histogram, AVAIL_METRICS};
 use crate::LOG_TARGET;
 use core::time::Duration;
 use std::time::Instant;
-use substrate_prometheus_endpoint::{Histogram, PrometheusError, Registry};
+use substrate_prometheus_endpoint::{
+	register, Counter, Gauge, Histogram, PrometheusError, Registry, U64,
+};
 
 /// Avail metrics.
 pub struct AvailMetrics {
 	pub import_block: ImportBlockMetrics,
 	pub header_extension: HeaderExtensionBuilderMetrics,
 	pub kate_rpc: KateRpcMetrics,
+	pub blob: BlobMetrics,
 }
 
 impl AvailMetrics {
@@ -17,6 +20,7 @@ impl AvailMetrics {
 		let import_block = ImportBlockMetrics::new(registry)?;
 		let header_extension = HeaderExtensionBuilderMetrics::new(registry)?;
 		let kate_rpc = KateRpcMetrics::new(registry)?;
+		let blob = BlobMetrics::new(registry)?;
 
 		log::info!(
 			target: LOG_TARGET,
@@ -27,7 +31,65 @@ impl AvailMetrics {
 			import_block,
 			header_extension,
 			kate_rpc,
+			blob,
 		})
+	}
+}
+
+pub struct BlobMetrics {
+	pub queue_size_current: Gauge<U64>,
+	pub queue_size_max: Gauge<U64>,
+	pub submissions_count: Counter<U64>,
+	pub submissions_added_to_pool: Counter<U64>,
+}
+
+impl BlobMetrics {
+	pub fn new(registry: &Registry) -> Result<Self, PrometheusError> {
+		let queue_size_current =
+			Gauge::<U64>::new("avail_blob_queue_size_current", "Current queue size")?;
+		let queue_size_max = Gauge::<U64>::new("avail_blob_queue_size_max", "Maxiumum queue size")?;
+		let submissions_count =
+			Counter::<U64>::new("avail_blob_submissions_count", "Submissions count")?;
+		let submissions_added_to_pool = Counter::<U64>::new(
+			"avail_blob_submissions_added_to_pool",
+			"Submissions added to the pool count",
+		)?;
+
+		register(queue_size_current.clone(), registry)?;
+		register(queue_size_max.clone(), registry)?;
+		register(submissions_count.clone(), registry)?;
+		register(submissions_added_to_pool.clone(), registry)?;
+
+		Ok(Self {
+			queue_size_current,
+			queue_size_max,
+			submissions_count,
+			submissions_added_to_pool,
+		})
+	}
+
+	pub fn set_queue_size_current(value: u64) {
+		if let Some(metrics) = AVAIL_METRICS.get() {
+			metrics.blob.queue_size_current.set(value);
+		}
+	}
+
+	pub fn set_queue_size_max(value: u64) {
+		if let Some(metrics) = AVAIL_METRICS.get() {
+			metrics.blob.queue_size_max.set(value);
+		}
+	}
+
+	pub fn inc_submissions_count() {
+		if let Some(metrics) = AVAIL_METRICS.get() {
+			metrics.blob.submissions_count.inc();
+		}
+	}
+
+	pub fn inc_submissions_added_to_pool() {
+		if let Some(metrics) = AVAIL_METRICS.get() {
+			metrics.blob.submissions_added_to_pool.inc();
+		}
 	}
 }
 
