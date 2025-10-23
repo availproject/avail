@@ -108,7 +108,7 @@ impl<Pool, Block: BlockT, Backend> BlobRpc<Pool, Block, Backend> {
 		backend: Arc<Backend>,
 	) -> Self {
 		let (queue, rx) = CommitmentQueue::new(25);
-		BlobMetrics::set_queue_size_max(rx.max_capacity() as u64);
+		BlobMetrics::set_queue_capacity(rx.capacity() as u64);
 		CommitmentQueue::spawn_background_task(rx, blob_handle.telemetry_operator.clone());
 
 		Self {
@@ -141,7 +141,7 @@ where
 		blob: B64Param,
 	) -> RpcResult<()> {
 		// Metrics
-		BlobMetrics::inc_submissions_count();
+		BlobMetrics::inc_submissions_total();
 
 		// --- 0. Quick checks -------------------------------------------------
 		if blob.0.is_empty() {
@@ -159,7 +159,8 @@ where
 			database: self.blob_handle.blob_database.clone(),
 		};
 
-		let _ = submit_blob_main_task(
+		let now = std::time::Instant::now();
+		let result = submit_blob_main_task(
 			self.commitment_queue.clone(),
 			metadata_signed_transaction.0,
 			blob.0,
@@ -167,7 +168,14 @@ where
 			self.nonce_cache.clone(),
 			self.blob_handle.telemetry_operator.clone(),
 		)
-		.await?;
+		.await;
+		let elapsed = now.elapsed();
+
+		// Metrics
+		BlobMetrics::inc_submissions_valid_total();
+		BlobMetrics::observe_submission_rpc_duration(elapsed.as_millis() as f64 / 1000f64);
+
+		result?;
 
 		Ok(())
 	}
@@ -543,7 +551,8 @@ async fn submit_blob_background_task(
 	);
 
 	// Metrics and Telemetry
-	BlobMetrics::inc_submissions_added_to_pool();
+	BlobMetrics::inc_submissions_added_to_pool_total();
+	BlobMetrics::inc_submissions_blob_size_pool_total(blob_len as u64);
 	telemetry_operator.blob_added_to_pool(blob_len, blob_hash);
 }
 

@@ -253,7 +253,6 @@ where
 pub trait CommitmentQueueApiT: Send + Sync {
 	fn send(&self, value: CommitmentQueueMessage) -> bool;
 	fn capacity(&self) -> usize;
-	fn max_capacity(&self) -> usize;
 }
 
 pub trait NonceCacheApiT: Send + Sync {

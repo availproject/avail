@@ -109,7 +109,7 @@ pub async fn commitment_validation(
 	telemetry_operator: &TelemetryOperator,
 ) -> Result<(), String> {
 	// Metrics
-	BlobMetrics::set_queue_size_current(queue.capacity() as u64);
+	BlobMetrics::set_queue_capacity(queue.capacity() as u64);
 
 	let (message, rx_comm) = CommitmentQueueMessage::new(hash, grid);
 	if !queue.send(message) {

@@ -686,10 +686,6 @@ impl CommitmentQueueApiT for CommitmentQueue {
 	fn capacity(&self) -> usize {
 		self.tx.capacity()
 	}
-
-	fn max_capacity(&self) -> usize {
-		self.tx.max_capacity()
-	}
 }
 
 impl CommitmentQueue {
@@ -721,7 +717,11 @@ impl CommitmentQueue {
 			_ = msg.request.send(commitment);
 
 			// Metrics
-			BlobMetrics::set_queue_size_current(rx.capacity() as u64);
+			BlobMetrics::observe_commitment_build_time_duration(
+				(end.saturating_sub(start)) as f64 / 1000f64,
+			);
+			log::info!("{}", rx.capacity());
+			BlobMetrics::set_queue_capacity(rx.capacity() as u64);
 		}
 	}
 }
