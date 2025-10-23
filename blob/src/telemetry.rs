@@ -28,7 +28,7 @@ pub fn blob_request(
 
 pub struct BlobSubmission {
 	pub hash: H256,
-	pub size: Option<usize>,
+	pub size: Option<u64>,
 	// Milliseconds past UNIX EPOCH
 	pub submission_tracked: Option<u128>,
 	// Milliseconds past UNIX EPOCH
@@ -42,7 +42,7 @@ pub struct BlobSubmission {
 	// Milliseconds past UNIX EPOCH
 	pub poly_grid_build_end_timestamp: Option<u128>,
 	// 0 means it was full
-	pub queue_capacity: Option<u32>,
+	pub queue_capacity: Option<u64>,
 	// At what point in time did we measure the queue capacity
 	pub queue_capacity_timestamp: Option<u128>,
 	// Milliseconds past UNIX EPOCH
@@ -137,7 +137,7 @@ impl BlobSubmission {
 		let timestamp = get_current_timestamp_ms();
 
 		let mut msg = BlobSubmission::new(hash);
-		msg.size = Some(size);
+		msg.size = Some(size as u64);
 		msg.submission_tracked = Some(timestamp);
 
 		send_telemetry(msg.into());
@@ -180,7 +180,7 @@ impl BlobSubmission {
 		let timestamp = get_current_timestamp_ms();
 
 		let mut msg = BlobSubmission::new(hash);
-		msg.queue_capacity = Some(capacity as u32);
+		msg.queue_capacity = Some(capacity as u64);
 		msg.queue_capacity_timestamp = Some(timestamp);
 
 		send_telemetry(msg.into());
