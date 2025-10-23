@@ -7,7 +7,7 @@
 use super::hosted_header_builder::MIN_WIDTH;
 use crate::limits::BlockLength;
 use avail_base::header_extension::SubmittedData;
-use avail_base::metrics::avail::{
+use avail_metrics::avail::{
 	HeaderExtensionBuilderMetrics as Metrics, MetricObserver, ObserveKind,
 };
 use avail_core::{

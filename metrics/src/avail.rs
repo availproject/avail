@@ -2,9 +2,7 @@ use core::time::Duration;
 use std::time::Instant;
 
 use substrate_prometheus_endpoint::{Histogram, PrometheusError, Registry};
-
-use crate::metrics::LOG_TARGET;
-
+use crate::LOG_TARGET;
 use super::{custom_histogram, AVAIL_METRICS};
 
 /// Avail metrics.

@@ -8,7 +8,7 @@ pub static AVAIL_METRICS: OnceCell<AvailMetrics> = OnceCell::new();
 
 pub mod avail;
 pub use avail::AvailMetrics;
-use sp_std::fmt::Display;
+use std::fmt::Display;
 
 /// Creates an histogram using exponential buckets
 #[allow(dead_code)]
