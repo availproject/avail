@@ -1,9 +1,8 @@
+use super::{custom_histogram, AVAIL_METRICS};
+use crate::LOG_TARGET;
 use core::time::Duration;
 use std::time::Instant;
-
 use substrate_prometheus_endpoint::{Histogram, PrometheusError, Registry};
-use crate::LOG_TARGET;
-use super::{custom_histogram, AVAIL_METRICS};
 
 /// Avail metrics.
 pub struct AvailMetrics {

@@ -20,6 +20,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 avail-base = { workspace = true, default-features = false }
 avail-core = { workspace = true, default-features = false }
 kate = { workspace = true, default-features = false }
+avail-metrics = { workspace = true, optional = true }
 
 # Other
 cfg-if.workspace = true
@@ -74,6 +75,7 @@ std = [
 	"sp-std/std",
 	"sp-version/std",
 	"sp-weights/std",
+	"dep:avail-metrics",
 ]
 runtime-benchmarks = [
 	"frame-support/runtime-benchmarks",

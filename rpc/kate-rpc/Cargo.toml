@@ -11,6 +11,7 @@ da-runtime.workspace = true
 frame-system = { workspace = true, default-features = false }
 avail-core = { workspace = true, default-features = false }
 kate = { workspace = true, default-features = false }
+avail-metrics = { workspace = true, optional = true }
 kate-recovery = { workspace = true, default-features = false }
 codec = { package = "parity-scale-codec", version = "3" }
 serde_json.workspace = true
@@ -45,6 +46,7 @@ std = [
 	"sp-runtime/std",
 	"serde/std",
 	"sp-core/std",
+	"dep:avail-metrics",
 ]
 
 # Enables secure seed generation using for padding fill during the matrix

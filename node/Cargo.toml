@@ -33,6 +33,7 @@ sc-basic-authorship.workspace = true
 avail-blob = { workspace = true }
 log = { workspace = true }
 avail-telemetry = { workspace = true }
+avail-metrics = { workspace = true }
 
 # 3rd-party
 codec = { package = "parity-scale-codec", version = "3" }

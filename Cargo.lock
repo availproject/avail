@@ -1174,6 +1174,7 @@ dependencies = [
  "avail-base",
  "avail-blob",
  "avail-core",
+ "avail-metrics",
  "avail-telemetry",
  "clap 4.5.26",
  "clap-num",
@@ -4198,6 +4199,7 @@ version = "4.0.0-dev"
 dependencies = [
  "avail-base",
  "avail-core",
+ "avail-metrics",
  "binary-merkle-tree",
  "bounded-collections",
  "cfg-if",
@@ -5961,6 +5963,7 @@ version = "0.3.0"
 dependencies = [
  "avail-base",
  "avail-core",
+ "avail-metrics",
  "const-hex",
  "da-runtime",
  "frame-support",

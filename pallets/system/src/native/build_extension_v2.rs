@@ -7,15 +7,13 @@
 use super::hosted_header_builder::MIN_WIDTH;
 use crate::limits::BlockLength;
 use avail_base::header_extension::SubmittedData;
-use avail_metrics::avail::{
-	HeaderExtensionBuilderMetrics as Metrics, MetricObserver, ObserveKind,
-};
 use avail_core::{
 	app_extrinsic::AppExtrinsic,
 	header::{extension as he, HeaderExtension},
 	kate::COMMITMENT_SIZE,
 	kate_commitment as kc, AppId, DataLookup, HeaderVersion,
 };
+use avail_metrics::avail::{HeaderExtensionBuilderMetrics as Metrics, MetricObserver, ObserveKind};
 use kate::{
 	couscous::multiproof_params,
 	gridgen::core::{AsBytes, EvaluationGrid},

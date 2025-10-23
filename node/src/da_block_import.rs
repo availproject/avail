@@ -4,10 +4,7 @@
 /// to Babe and Grandpa.
 /// It double-checks the **extension header** which contains the `Kate Commitment` and `Data
 /// Root`.
-use avail_base::{
-	metrics::avail::{MetricObserver, ObserveKind},
-	HeaderExtensionBuilderData,
-};
+use avail_base::HeaderExtensionBuilderData;
 use avail_core::{
 	ensure,
 	header::{extension as he, HeaderExtension},
@@ -15,6 +12,7 @@ use avail_core::{
 	kate_commitment as kc, AppId, BlockLengthColumns, BlockLengthRows, DataLookup, HeaderVersion,
 	OpaqueExtrinsic, BLOCK_CHUNK_SIZE,
 };
+use avail_metrics::avail::{MetricObserver, ObserveKind};
 use da_runtime::{
 	apis::{DataAvailApi, ExtensionBuilder},
 	Header as DaHeader, Runtime,
