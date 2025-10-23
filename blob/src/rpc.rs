@@ -1,4 +1,3 @@
-use crate::telemetry::TelemetryOperator;
 use crate::traits::CommitmentQueueApiT;
 use crate::validation::{commitment_validation, initial_validation, tx_validation};
 use crate::{
@@ -109,7 +108,7 @@ impl<Pool, Block: BlockT, Backend> BlobRpc<Pool, Block, Backend> {
 	) -> Self {
 		let (queue, rx) = CommitmentQueue::new(25);
 		BlobMetrics::set_queue_capacity(rx.capacity() as u64);
-		CommitmentQueue::spawn_background_task(rx, blob_handle.telemetry_operator.clone());
+		CommitmentQueue::spawn_background_task(rx);
 
 		Self {
 			pool,
@@ -166,7 +165,6 @@ where
 			blob.0,
 			friends,
 			self.nonce_cache.clone(),
-			self.blob_handle.telemetry_operator.clone(),
 		)
 		.await;
 		let elapsed = now.elapsed();
@@ -399,7 +397,6 @@ pub async fn submit_blob_main_task(
 	blob: Vec<u8>,
 	friends: Friends,
 	nonce_cache: Arc<dyn NonceCacheApiT>,
-	telemetry_operator: TelemetryOperator,
 ) -> RpcResult<tokio::task::JoinHandle<()>> {
 	let mut stop_watch = SmartStopwatch::new("😍 Submit Blob Main Task");
 
@@ -427,7 +424,7 @@ pub async fn submit_blob_main_task(
 	stop_watch.add_extra_information(std::format!("Blob Hash: {:?}", blob_hash));
 
 	// Telemetry
-	telemetry_operator.blob_received(blob.len(), blob_hash);
+	crate::telemetry::blob_received(blob.len(), blob_hash);
 
 	stop_watch.start("TX validation");
 	let opaque_tx = tx_validation(
@@ -452,18 +449,12 @@ pub async fn submit_blob_main_task(
 	stop_watch.stop("Polynominal Grid Gen.");
 	let end = crate::utils::get_current_timestamp_ms();
 	// Telemetry
-	telemetry_operator.blob_poly_grid(blob_hash, start, end);
+	crate::telemetry::blob_poly_grid(blob_hash, start, end);
 
 	stop_watch.start("Commitment Validation");
-	commitment_validation(
-		blob_hash,
-		&provided_commitment,
-		grid,
-		&commitment_queue,
-		&telemetry_operator,
-	)
-	.await
-	.map_err(|e| internal_err!("{}", e))?;
+	commitment_validation(blob_hash, &provided_commitment, grid, &commitment_queue)
+		.await
+		.map_err(|e| internal_err!("{}", e))?;
 	stop_watch.stop("Commitment Validation");
 
 	stop_watch.stop("Commitments (Total)");
@@ -497,7 +488,6 @@ pub async fn submit_blob_main_task(
 			provided_commitment,
 			friends,
 			nonce_cache,
-			telemetry_operator,
 		)
 		.await
 	});
@@ -513,7 +503,6 @@ async fn submit_blob_background_task(
 	commitment: Vec<u8>,
 	friends: Friends,
 	nonce_cache: Arc<dyn NonceCacheApiT>,
-	telemetry_operator: TelemetryOperator,
 ) {
 	let blob_len = blob.len();
 
@@ -521,15 +510,7 @@ async fn submit_blob_background_task(
 		nonce_cache.commit(&who, nonce);
 	}
 
-	let stored = store_and_gossip_blob(
-		blob_hash,
-		blob,
-		blob_params,
-		commitment,
-		&friends,
-		telemetry_operator.clone(),
-	)
-	.await;
+	let stored = store_and_gossip_blob(blob_hash, blob, blob_params, commitment, &friends).await;
 	if stored.is_err() {
 		return;
 	}
@@ -553,7 +534,7 @@ async fn submit_blob_background_task(
 	// Metrics and Telemetry
 	BlobMetrics::inc_submissions_added_to_pool_total();
 	BlobMetrics::inc_submissions_blob_size_pool_total(blob_len as u64);
-	telemetry_operator.blob_added_to_pool(blob_len, blob_hash);
+	crate::telemetry::blob_added_to_pool(blob_len, blob_hash);
 }
 
 pub async fn store_and_gossip_blob(
@@ -562,7 +543,6 @@ pub async fn store_and_gossip_blob(
 	blob_params: BlobRuntimeParameters,
 	commitment: Vec<u8>,
 	friends: &Friends,
-	telemetry_operator: TelemetryOperator,
 ) -> Result<(), ()> {
 	let mut stop_watch = SmartStopwatch::new("😍😍 STORE AND GOSSIP BLOB");
 	stop_watch.add_extra_information(std::format!("Blob Hash: {:?}", blob_hash));
@@ -682,7 +662,6 @@ pub async fn store_and_gossip_blob(
 		&friends.database,
 		&maybe_ownership,
 		&mut stop_watch,
-		telemetry_operator,
 	);
 
 	stop_watch.start("Gossiping");
@@ -721,7 +700,6 @@ fn store_new_blob(
 	database: &Arc<dyn StorageApiT>,
 	maybe_ownership: &Option<OwnershipEntry>,
 	stop_watch: &mut SmartStopwatch,
-	telemetry_operator: TelemetryOperator,
 ) {
 	stop_watch.start("Storing Blob");
 
@@ -756,7 +734,7 @@ fn store_new_blob(
 	let duration = stop_watch.stop("Compression");
 
 	// Telemetry
-	telemetry_operator.blob_compression(
+	crate::telemetry::blob_compression(
 		blob.data.len(),
 		compressed_blob.raw_data().len(),
 		blob_hash,

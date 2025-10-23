@@ -1,4 +1,3 @@
-use crate::telemetry::TelemetryOperator;
 use crate::traits::CommitmentQueueApiT;
 use crate::{
 	store::StorageApiT,
@@ -694,25 +693,19 @@ impl CommitmentQueue {
 		(Self { tx }, rx)
 	}
 
-	pub fn spawn_background_task(
-		rx: mpsc::Receiver<CommitmentQueueMessage>,
-		telemetry_operator: TelemetryOperator,
-	) {
+	pub fn spawn_background_task(rx: mpsc::Receiver<CommitmentQueueMessage>) {
 		std::thread::spawn(move || {
-			Self::run_task(rx, telemetry_operator);
+			Self::run_task(rx);
 		});
 	}
 
-	pub fn run_task(
-		mut rx: mpsc::Receiver<CommitmentQueueMessage>,
-		telemetry_operator: TelemetryOperator,
-	) {
+	pub fn run_task(mut rx: mpsc::Receiver<CommitmentQueueMessage>) {
 		while let Some(msg) = rx.blocking_recv() {
 			let start = get_current_timestamp_ms();
 			let commitment = build_commitments_from_polynomial_grid(msg.grid);
 			let end = get_current_timestamp_ms();
 
-			telemetry_operator.blob_commitment(msg.hash, start, end, rx.len());
+			crate::telemetry::blob_commitment(msg.hash, start, end, rx.len());
 
 			_ = msg.request.send(commitment);
 

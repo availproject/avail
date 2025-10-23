@@ -1,125 +1,86 @@
 use crate::utils::get_current_timestamp_ms;
+use avail_observability::telemetry::send_telemetry;
 use avail_observability::telemetry::TelemetryMessage;
 use sp_core::H256;
 use std::time::Duration;
 
-#[derive(Clone, Default)]
-pub struct TelemetryOperator {
-	channel: Option<avail_observability::telemetry::Sender>,
+pub fn blob_received(size: usize, hash: H256) {
+	let timestamp = get_current_timestamp_ms();
+
+	let msg = BlobReceived {
+		size,
+		hash,
+		timestamp,
+	};
+
+	send_telemetry(msg.into());
 }
 
-impl TelemetryOperator {
-	pub fn new(channel: Option<avail_observability::telemetry::Sender>) -> Self {
-		Self { channel }
-	}
+pub fn blob_added_to_pool(size: usize, hash: H256) {
+	let timestamp = get_current_timestamp_ms();
 
-	pub fn blob_received(&self, size: usize, hash: H256) {
-		let Some(channel) = self.channel.as_ref() else {
-			return;
-		};
+	let msg = BlobAddedToPool {
+		size,
+		hash,
+		timestamp,
+	};
 
-		let timestamp = get_current_timestamp_ms();
+	send_telemetry(msg.into());
+}
 
-		let msg = BlobReceived {
-			size,
-			hash,
-			timestamp,
-		};
-		_ = channel.try_send(msg.into());
-	}
+pub fn blob_compression(org_size: usize, new_size: usize, hash: H256, duration: Duration) {
+	let msg = BlobCompression {
+		org_size,
+		new_size,
+		hash,
+		duration: duration.as_millis(),
+	};
 
-	pub fn blob_added_to_pool(&self, size: usize, hash: H256) {
-		let Some(channel) = self.channel.as_ref() else {
-			return;
-		};
+	send_telemetry(msg.into());
+}
 
-		let timestamp = get_current_timestamp_ms();
+pub fn blob_poly_grid(hash: H256, start: u128, end: u128) {
+	let msg = BlobPolyGrid { hash, start, end };
 
-		let msg = BlobAddedToPool {
-			size,
-			hash,
-			timestamp,
-		};
-		_ = channel.try_send(msg.into());
-	}
+	send_telemetry(msg.into());
+}
 
-	pub fn blob_compression(
-		&self,
-		org_size: usize,
-		new_size: usize,
-		hash: H256,
-		duration: Duration,
-	) {
-		let Some(channel) = self.channel.as_ref() else {
-			return;
-		};
+pub fn blob_commitment(hash: H256, start: u128, end: u128, queue_size: usize) {
+	let msg = BlobCommitment {
+		hash,
+		start,
+		end,
+		queue_size,
+	};
 
-		let msg = BlobCompression {
-			org_size,
-			new_size,
-			hash,
-			duration: duration.as_millis(),
-		};
-		_ = channel.try_send(msg.into());
-	}
+	send_telemetry(msg.into());
+}
 
-	pub fn blob_poly_grid(&self, hash: H256, start: u128, end: u128) {
-		let Some(channel) = self.channel.as_ref() else {
-			return;
-		};
+pub fn blob_request(
+	size: usize,
+	hash: H256,
+	start: u128,
+	end: u128,
+	from: String,
+	to: String,
+	success: bool,
+) {
+	let msg = BlobRequest {
+		size,
+		hash,
+		start,
+		end,
+		from,
+		to,
+		success,
+	};
 
-		let msg = BlobPolyGrid { hash, start, end };
-		_ = channel.try_send(msg.into());
-	}
+	send_telemetry(msg.into());
+}
 
-	pub fn blob_commitment(&self, hash: H256, start: u128, end: u128, queue_size: usize) {
-		let Some(channel) = self.channel.as_ref() else {
-			return;
-		};
-
-		let msg = BlobCommitment {
-			hash,
-			start,
-			end,
-			queue_size,
-		};
-		_ = channel.try_send(msg.into());
-	}
-
-	pub fn blob_request(
-		&self,
-		size: usize,
-		hash: H256,
-		start: u128,
-		end: u128,
-		from: String,
-		to: String,
-		success: bool,
-	) {
-		let Some(channel) = self.channel.as_ref() else {
-			return;
-		};
-
-		let msg = BlobRequest {
-			size,
-			hash,
-			start,
-			end,
-			from,
-			to,
-			success,
-		};
-		_ = channel.try_send(msg.into());
-	}
-
-	pub fn blob_dropped(&self, hash: Option<H256>, queue_full: bool) {
-		let Some(channel) = self.channel.as_ref() else {
-			return;
-		};
-
-		let msg = BlobDropped { hash, queue_full };
-		_ = channel.try_send(msg.into());
-	}
+pub fn blob_dropped(hash: Option<H256>, queue_full: bool) {
+	let msg = BlobDropped { hash, queue_full };
+	send_telemetry(msg.into());
 }
 
 #[derive(Debug, Clone)]

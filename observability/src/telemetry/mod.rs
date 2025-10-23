@@ -1,10 +1,19 @@
 mod worker;
 
+use once_cell::sync::OnceCell;
 use serde::Serialize;
 pub use worker::Worker;
 
+pub static AVAIL_TELEMETRY: OnceCell<Sender> = OnceCell::new();
+
 pub type Sender = tokio::sync::mpsc::Sender<TelemetryMessage>;
 pub type Receiver = tokio::sync::mpsc::Receiver<TelemetryMessage>;
+
+pub fn send_telemetry(message: TelemetryMessage) {
+	if let Some(channel) = AVAIL_TELEMETRY.get() {
+		_ = channel.try_send(message);
+	}
+}
 
 #[derive(Debug, Clone)]
 pub struct TelemetryMessage {
