@@ -1,8 +1,7 @@
 mod worker;
 
-pub use worker::Worker;
-
 use serde::Serialize;
+pub use worker::Worker;
 
 pub type Sender = tokio::sync::mpsc::Sender<TelemetryMessage>;
 pub type Receiver = tokio::sync::mpsc::Receiver<TelemetryMessage>;

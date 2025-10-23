@@ -1,0 +1,1 @@
+podman run --rm --network host --name=grafana -p 3000:3000 grafana/grafana

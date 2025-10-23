@@ -12,7 +12,7 @@ use avail_core::{
 	kate_commitment as kc, AppId, BlockLengthColumns, BlockLengthRows, DataLookup, HeaderVersion,
 	OpaqueExtrinsic, BLOCK_CHUNK_SIZE,
 };
-use avail_metrics::avail::{MetricObserver, ObserveKind};
+use avail_observability::metrics::avail::{MetricObserver, ObserveKind};
 use da_runtime::{
 	apis::{DataAvailApi, ExtensionBuilder},
 	Header as DaHeader, Runtime,

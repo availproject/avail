@@ -1,15 +1,15 @@
 use crate::utils::get_current_timestamp_ms;
-use avail_telemetry::TelemetryMessage;
+use avail_observability::telemetry::TelemetryMessage;
 use sp_core::H256;
 use std::time::Duration;
 
 #[derive(Clone, Default)]
 pub struct TelemetryOperator {
-	channel: Option<avail_telemetry::Sender>,
+	channel: Option<avail_observability::telemetry::Sender>,
 }
 
 impl TelemetryOperator {
-	pub fn new(channel: Option<avail_telemetry::Sender>) -> Self {
+	pub fn new(channel: Option<avail_observability::telemetry::Sender>) -> Self {
 		Self { channel }
 	}
 

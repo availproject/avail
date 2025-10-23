@@ -13,8 +13,7 @@ members = [
 	"node",
 	"blob",
 	"da-commitment",
-	"telemetry",
-	"metrics",
+	"observability",
 ]
 
 exclude = [
@@ -48,8 +47,7 @@ da-runtime = { path = "runtime", default-features = false }
 kate-rpc = { path = "rpc/kate-rpc" }
 testing-rpc = { path = "rpc/testing-rpc" }
 patricia-merkle-trie = { path = "patricia-merkle-trie", default-features = false }
-avail-telemetry = { path = "./telemetry", default-features = false }
-avail-metrics = { path = "./metrics", default-features = false }
+avail-observability = { path = "./observability", default-features = false }
 
 sc-basic-authorship = { path = "client/basic-authorship", default-features = false }
 frame-system = { path = "pallets/system", default-features = false }

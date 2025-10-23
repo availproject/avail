@@ -4,7 +4,7 @@ use crate::{
 	traits::{NonceCacheApiT, RuntimeApiT},
 	utils::{extract_signer_and_nonce, CommitmentQueueMessage},
 };
-use avail_metrics::BlobMetrics;
+use avail_observability::metrics::BlobMetrics;
 use codec::Decode;
 use da_control::Call;
 use da_runtime::RuntimeCall;

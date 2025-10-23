@@ -1,5 +1,5 @@
 use super::{custom_histogram, AVAIL_METRICS};
-use crate::LOG_TARGET;
+use crate::metrics::LOG_TARGET;
 use core::time::Duration;
 use std::time::Instant;
 use substrate_prometheus_endpoint::{

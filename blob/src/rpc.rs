@@ -19,7 +19,7 @@ use crate::{
 	MAX_RPC_RETRIES,
 };
 use anyhow::Result;
-use avail_metrics::BlobMetrics;
+use avail_observability::metrics::BlobMetrics;
 use codec::{Decode, Encode};
 use da_commitment::build_da_commitments::build_polynomial_grid;
 use da_control::{pallet::BlobTxSummaryRuntime, BlobRuntimeParameters, Call};

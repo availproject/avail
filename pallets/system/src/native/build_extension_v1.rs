@@ -11,7 +11,9 @@ use avail_core::{
 	header::{extension as he, HeaderExtension},
 	kate_commitment as kc, HeaderVersion,
 };
-use avail_metrics::avail::{HeaderExtensionBuilderMetrics as Metrics, MetricObserver, ObserveKind};
+use avail_observability::metrics::avail::{
+	HeaderExtensionBuilderMetrics as Metrics, MetricObserver, ObserveKind,
+};
 use kate::{
 	couscous::multiproof_params,
 	gridgen::core::{AsBytes, EvaluationGrid},
