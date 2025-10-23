@@ -424,7 +424,7 @@ pub async fn submit_blob_main_task(
 	stop_watch.add_extra_information(std::format!("Blob Hash: {:?}", blob_hash));
 
 	// Telemetry
-	crate::telemetry::blob_received(blob.len(), blob_hash);
+	crate::telemetry::BlobSubmission::submission_tracked(blob_hash, blob.len());
 
 	stop_watch.start("TX validation");
 	let opaque_tx = tx_validation(
@@ -449,7 +449,7 @@ pub async fn submit_blob_main_task(
 	stop_watch.stop("Polynominal Grid Gen.");
 	let end = crate::utils::get_current_timestamp_ms();
 	// Telemetry
-	crate::telemetry::blob_poly_grid(blob_hash, start, end);
+	crate::telemetry::BlobSubmission::build_poly_grid(blob_hash, start, end);
 
 	stop_watch.start("Commitment Validation");
 	commitment_validation(blob_hash, &provided_commitment, grid, &commitment_queue)
@@ -534,7 +534,7 @@ async fn submit_blob_background_task(
 	// Metrics and Telemetry
 	BlobMetrics::inc_submissions_added_to_pool_total();
 	BlobMetrics::inc_submissions_blob_size_pool_total(blob_len as u64);
-	crate::telemetry::blob_added_to_pool(blob_len, blob_hash);
+	crate::telemetry::BlobSubmission::added_to_pool(blob_hash);
 }
 
 pub async fn store_and_gossip_blob(
@@ -734,10 +734,9 @@ fn store_new_blob(
 	let duration = stop_watch.stop("Compression");
 
 	// Telemetry
-	crate::telemetry::blob_compression(
-		blob.data.len(),
-		compressed_blob.raw_data().len(),
+	crate::telemetry::BlobSubmission::compression(
 		blob_hash,
+		compressed_blob.raw_data().len(),
 		duration,
 	);
 

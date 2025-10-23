@@ -107,7 +107,9 @@ pub async fn commitment_validation(
 	queue: &Arc<dyn CommitmentQueueApiT>,
 ) -> Result<(), String> {
 	// Metrics
-	BlobMetrics::set_queue_capacity(queue.capacity() as u64);
+	let queue_capacity = queue.capacity();
+	BlobMetrics::set_queue_capacity(queue_capacity as u64);
+	crate::telemetry::BlobSubmission::queue_capacity(hash, queue_capacity);
 
 	let (message, rx_comm) = CommitmentQueueMessage::new(hash, grid);
 	if !queue.send(message) {
@@ -117,7 +119,6 @@ pub async fn commitment_validation(
 	let commitment = match rx_comm.await {
 		Ok(x) => x,
 		Err(_) => {
-			crate::telemetry::blob_dropped(Some(hash), true);
 			return Err("Cannot compute commitment. :(  Channel is down".into());
 		},
 	};

@@ -705,7 +705,7 @@ impl CommitmentQueue {
 			let commitment = build_commitments_from_polynomial_grid(msg.grid);
 			let end = get_current_timestamp_ms();
 
-			crate::telemetry::blob_commitment(msg.hash, start, end, rx.len());
+			crate::telemetry::BlobSubmission::build_commitment(msg.hash, start, end);
 
 			_ = msg.request.send(commitment);
 
