@@ -1,11 +1,10 @@
-use crate::telemetry::TelemetryOperator;
 use crate::traits::CommitmentQueueApiT;
 use crate::{
 	store::StorageApiT,
 	types::{BlobHash, BlobMetadata, BlobSignatureData, BlobTxSummary, OwnershipEntry},
 };
 use anyhow::{anyhow, Context, Result};
-use avail_metrics::BlobMetrics;
+use avail_observability::metrics::BlobMetrics;
 use base64::Engine;
 use codec::{Decode, Encode};
 use da_commitment::build_da_commitments::build_commitments_from_polynomial_grid;
@@ -694,25 +693,19 @@ impl CommitmentQueue {
 		(Self { tx }, rx)
 	}
 
-	pub fn spawn_background_task(
-		rx: mpsc::Receiver<CommitmentQueueMessage>,
-		telemetry_operator: TelemetryOperator,
-	) {
+	pub fn spawn_background_task(rx: mpsc::Receiver<CommitmentQueueMessage>) {
 		std::thread::spawn(move || {
-			Self::run_task(rx, telemetry_operator);
+			Self::run_task(rx);
 		});
 	}
 
-	pub fn run_task(
-		mut rx: mpsc::Receiver<CommitmentQueueMessage>,
-		telemetry_operator: TelemetryOperator,
-	) {
+	pub fn run_task(mut rx: mpsc::Receiver<CommitmentQueueMessage>) {
 		while let Some(msg) = rx.blocking_recv() {
 			let start = get_current_timestamp_ms();
 			let commitment = build_commitments_from_polynomial_grid(msg.grid);
 			let end = get_current_timestamp_ms();
 
-			telemetry_operator.blob_commitment(msg.hash, start, end, rx.len());
+			crate::telemetry::BlobSubmission::build_commitment(msg.hash, start, end);
 
 			_ = msg.request.send(commitment);
 

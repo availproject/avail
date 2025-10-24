@@ -1,4 +1,4 @@
-use crate::{Receiver, Sender};
+use crate::telemetry::{Receiver, Sender};
 use sc_telemetry::{TelemetryHandle, SUBSTRATE_INFO};
 use std::thread::JoinHandle;
 

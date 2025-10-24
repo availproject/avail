@@ -9,8 +9,7 @@ da-control = { workspace = true, default-features = false }
 avail-core = { workspace = true, default-features = false }
 kate = { workspace = true, default-features = false }
 kate-recovery = { workspace = true, default-features = false }
-avail-telemetry = { workspace = true }
-avail-metrics = { workspace = true }
+avail-observability = { workspace = true }
 
 tokio = { version = "1.43.0", features = [
     "sync",

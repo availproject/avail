@@ -1,10 +1,9 @@
-use crate::telemetry::TelemetryOperator;
 use crate::traits::CommitmentQueueApiT;
 use crate::{
 	traits::{NonceCacheApiT, RuntimeApiT},
 	utils::{extract_signer_and_nonce, CommitmentQueueMessage},
 };
-use avail_metrics::BlobMetrics;
+use avail_observability::metrics::BlobMetrics;
 use codec::Decode;
 use da_control::Call;
 use da_runtime::RuntimeCall;
@@ -106,10 +105,11 @@ pub async fn commitment_validation(
 	provided_commitment: &Vec<u8>,
 	grid: PolynomialGrid,
 	queue: &Arc<dyn CommitmentQueueApiT>,
-	telemetry_operator: &TelemetryOperator,
 ) -> Result<(), String> {
 	// Metrics
-	BlobMetrics::set_queue_capacity(queue.capacity() as u64);
+	let queue_capacity = queue.capacity();
+	BlobMetrics::set_queue_capacity(queue_capacity as u64);
+	crate::telemetry::BlobSubmission::queue_capacity(hash, queue_capacity);
 
 	let (message, rx_comm) = CommitmentQueueMessage::new(hash, grid);
 	if !queue.send(message) {
@@ -119,7 +119,6 @@ pub async fn commitment_validation(
 	let commitment = match rx_comm.await {
 		Ok(x) => x,
 		Err(_) => {
-			telemetry_operator.blob_dropped(Some(hash), true);
 			return Err("Cannot compute commitment. :(  Channel is down".into());
 		},
 	};
