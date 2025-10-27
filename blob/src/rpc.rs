@@ -31,6 +31,7 @@ use jsonrpsee::{
 };
 use sc_client_api::{BlockBackend, HeaderBackend, StateBackend};
 use sc_network::PeerId;
+// use sc_network::NetworkStateInfo;
 use sc_transaction_pool_api::TransactionPool;
 use sp_core::H256;
 use sp_runtime::{
@@ -219,6 +220,15 @@ where
 		}
 
 		let finalized_hash = self.blob_handle.client.info().finalized_hash;
+
+		// check if the ownership includes current node, if so, get the blob from local storage
+		// let my_peer_id = network.local_peer_id();
+
+		// Or simply check if the blob is stored locally
+		if let Ok(Some(blob)) = self.blob_handle.blob_database.get_blob(&blob_hash) {
+			log::info!("Blob found in local storage: {:?}", blob_hash);
+			return Ok(blob);
+		}
 
 		// Take a random owner index and try to get the blob from him, retry with next ones
 		let base_index =
