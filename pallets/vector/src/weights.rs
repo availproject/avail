@@ -66,7 +66,9 @@ pub trait WeightInfo {
 	fn set_step_verification_key() -> Weight;
 	fn set_rotate_verification_key() -> Weight;
 	fn set_updater() -> Weight;
+	fn set_pico_updater() -> Weight;
 	fn set_sp1_verification_key() -> Weight;
+	fn set_pico_verification_key() -> Weight;
 	fn set_sync_committee_hash() -> Weight;
 	fn fulfill() -> Weight;
 	fn enable_mock() -> Weight;
@@ -280,9 +282,31 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(1_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
+	/// Storage: `Vector::PicoUpdater` (r:1 w:1)
+	/// Proof: `Vector::PicoUpdater` (`max_values`: Some(1), `max_size`: Some(32), added: 527, mode: `MaxEncodedLen`)
+	fn set_pico_updater() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `388`
+		//  Estimated: `1517`
+		// Minimum execution time: 14_000_000 picoseconds.
+		Weight::from_parts(15_000_000, 1517)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
 	/// Storage: `Vector::SP1VerificationKey` (r:1 w:1)
 	/// Proof: `Vector::SP1VerificationKey` (`max_values`: Some(1), `max_size`: Some(32), added: 527, mode: `MaxEncodedLen`)
 	fn set_sp1_verification_key() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `357`
+		//  Estimated: `1517`
+		// Minimum execution time: 7_000_000 picoseconds.
+		Weight::from_parts(8_000_000, 1517)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
+	/// Storage: `Vector::PicoVerificationKey` (r:1 w:1)
+	/// Proof: `Vector::PicoVerificationKey` (`max_values`: Some(1), `max_size`: Some(32), added: 527, mode: `MaxEncodedLen`)
+	fn set_pico_verification_key() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `357`
 		//  Estimated: `1517`
@@ -547,9 +571,31 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().reads(1_u64))
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
+	/// Storage: `Vector::PicoUpdater` (r:1 w:1)
+	/// Proof: `Vector::PicoUpdater` (`max_values`: Some(1), `max_size`: Some(32), added: 527, mode: `MaxEncodedLen`)
+	fn set_pico_updater() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `388`
+		//  Estimated: `1517`
+		// Minimum execution time: 14_000_000 picoseconds.
+		Weight::from_parts(15_000_000, 1517)
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
+	}
 	/// Storage: `Vector::SP1VerificationKey` (r:1 w:1)
 	/// Proof: `Vector::SP1VerificationKey` (`max_values`: Some(1), `max_size`: Some(32), added: 527, mode: `MaxEncodedLen`)
 	fn set_sp1_verification_key() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `357`
+		//  Estimated: `1517`
+		// Minimum execution time: 7_000_000 picoseconds.
+		Weight::from_parts(8_000_000, 1517)
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
+	}
+	/// Storage: `Vector::PicoVerificationKey` (r:1 w:1)
+	/// Proof: `Vector::PicoVerificationKey` (`max_values`: Some(1), `max_size`: Some(32), added: 527, mode: `MaxEncodedLen`)
+	fn set_pico_verification_key() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `357`
 		//  Estimated: `1517`

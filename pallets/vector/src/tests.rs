@@ -1,3 +1,5 @@
+use std::{fs::File, io::BufReader};
+
 use crate::{
 	mock::{
 		new_test_ext, Balances, Bridge, RuntimeEvent, RuntimeOrigin, System, Test,
@@ -7,9 +9,9 @@ use crate::{
 	storage_utils::MessageStatusEnum,
 	Broadcasters, ConfigurationStorage, Error, Event, ExecutionStateRoots, FunctionIds,
 	FunctionInput, FunctionOutput, FunctionProof, Head, Headers, MessageStatus, MockEnabled,
-	ProofOutputs, RotateVerificationKey, SP1VerificationKey, SourceChainFrozen,
-	StepVerificationKey, SyncCommitteeHashes, SyncCommitteePoseidons, Updater, ValidProof,
-	WhitelistedDomains,
+	PicoUpdater, PicoVerificationKey, ProofOutputs, RotateVerificationKey, SP1VerificationKey,
+	SourceChainFrozen, StepVerificationKey, SyncCommitteeHashes, SyncCommitteePoseidons, Updater,
+	ValidProof, WhitelistedDomains,
 };
 use alloy_sol_types::SolValue;
 use avail_core::data_proof::Message::FungibleToken;
@@ -22,6 +24,7 @@ use frame_support::{
 use frame_system::RawOrigin;
 use hex_literal::hex;
 use primitive_types::U256;
+use serde::{Deserialize, Serialize};
 use sp1_sdk::SP1ProofWithPublicValues;
 use sp_core::{crypto::AccountId32, keccak_256, ByteArray};
 use sp_runtime::{testing::H256, traits::BadOrigin};
@@ -30,10 +33,16 @@ const TEST_SENDER_VEC: [u8; 32] =
 	hex!("d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d");
 const TEST_SENDER_ACCOUNT: AccountId32 = AccountId32::new(TEST_SENDER_VEC);
 
+const TEST_PICO_SENDER_VEC: [u8; 32] =
+	hex!("c43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27c");
+
 // Generated with SP1 Helios https://github.com/succinctlabs/sp1-helios/blob/main/README.md
 // cargo prove key —-elf (sp1 helios elf) in SP1 Helios
 const SP1_VERIFICATION_KEY: [u8; 32] =
 	hex!("003ef077b6a82831a994a12a673901221ca1752080605189930748d0772d5c68");
+
+const PICO_VERIFICATION_KEY: [u8; 32] =
+	hex!("0034c0b4c589330096b1141bccb7ba8f6f403f3d46b47c386b404ed9ebc8c5d3");
 
 pub const PROOF_FILE: &str = "test/proof.bin";
 
@@ -1413,7 +1422,122 @@ fn set_sp1_verification_key_non_root() {
 }
 
 #[test]
-fn test_fulfill_successfully() {
+fn test_pico_fulfill_successfully() {
+	fn from_hex<'de, D>(deserializer: D) -> Result<Vec<u8>, D::Error>
+	where
+		D: serde::Deserializer<'de>,
+	{
+		let s: String = Deserialize::deserialize(deserializer)?;
+		hex::decode(s.trim_start_matches("0x")).map_err(serde::de::Error::custom)
+	}
+
+	fn from_hex2<'de, D>(deserializer: D) -> Result<[u8; 32], D::Error>
+	where
+		D: serde::Deserializer<'de>,
+	{
+		let s: String = Deserialize::deserialize(deserializer)?;
+
+		Ok(hex::decode(s.trim_start_matches("0x"))
+			.map_err(serde::de::Error::custom)?
+			.try_into()
+			.unwrap())
+	}
+
+	#[derive(Clone, Debug, Serialize, Deserialize)]
+	pub struct Input {
+		pub proof: Vec<Prooflet>,
+		#[serde(rename = "publicValues")]
+		#[serde(deserialize_with = "from_hex")]
+		pub public_values: Vec<u8>,
+		#[serde(rename = "riscvVKey")]
+		#[serde(deserialize_with = "from_hex")]
+		pub riscv_v_key: Vec<u8>,
+	}
+
+	#[derive(Clone, Debug, Serialize, Deserialize)]
+	#[serde(transparent)]
+	pub struct Prooflet(#[serde(deserialize_with = "from_hex2")] pub [u8; 32]);
+
+	new_test_ext().execute_with(|| {
+		let file = File::open("test/pico_inputs.json").unwrap();
+		let reader = BufReader::new(file);
+		let input: Input = serde_json::from_reader(reader).unwrap();
+
+		PicoVerificationKey::<Test>::set(H256(PICO_VERIFICATION_KEY));
+		let _proof_outputs: ProofOutputs =
+			SolValue::abi_decode(&input.public_values, true).unwrap();
+		let slots_per_period = 8192;
+		let finality_threshold = 342u16;
+		let last_slot = 7689024u64;
+		let current_period = last_slot / slots_per_period;
+		Head::<Test>::set(last_slot);
+
+		SyncCommitteeHashes::<Test>::set(
+			current_period,
+			H256(hex!(
+				"31512ff842552e59828654c07ac112264508ed9834a0651a783cbd6047a2379e"
+			)),
+		);
+
+		let new_head = 7689056u64;
+
+		ConfigurationStorage::<Test>::set(Configuration {
+			slots_per_period,
+			finality_threshold,
+		});
+
+		PicoUpdater::<Test>::set(H256(TEST_PICO_SENDER_VEC));
+
+		let mut proofs: Vec<u8> = vec![];
+		for p in input.proof {
+			proofs.extend(&p.0);
+		}
+		let proof = proofs;
+
+		let origin = RuntimeOrigin::signed(TEST_PICO_SENDER_VEC.into());
+		let ok = Bridge::fulfill(
+			origin,
+			BoundedVec::truncate_from(proof),
+			BoundedVec::truncate_from(input.public_values),
+		);
+
+		assert_ok!(ok);
+
+		let header = Headers::<Test>::get(new_head);
+		assert_eq!(
+			H256(hex!(
+				"54b43230b8680d88900ee1a50a5fb98c370d4fb3f650820cdc1554e705c647d9"
+			)),
+			header
+		);
+		let execution_state_root = ExecutionStateRoots::<Test>::get(new_head);
+		assert_eq!(
+			H256(hex!(
+				"122878128909b776d5eb3aae62052db5e436ae716f296d771468cb53e99fcee6"
+			)),
+			execution_state_root
+		);
+
+		let sync_committee_hash = SyncCommitteeHashes::<Test>::get(new_head / 8192);
+		assert_eq!(
+			H256(hex!(
+				"31512ff842552e59828654c07ac112264508ed9834a0651a783cbd6047a2379e"
+			)),
+			sync_committee_hash
+		);
+
+		let next_sync_committee_hash = SyncCommitteeHashes::<Test>::get((new_head / 8192) + 1);
+		assert_eq!(
+			H256(hex!(
+				"285a236728eb0f7de00632fb29c07165cfa17daa915de3464220b226b3a686b4"
+			)),
+			next_sync_committee_hash
+		);
+	});
+}
+
+#[test]
+fn test_sp1_fulfill_successfully() {
 	new_test_ext().execute_with(|| {
 		let sp1_proof_with_public_values = SP1ProofWithPublicValues::load(PROOF_FILE).unwrap();
 		let proof = sp1_proof_with_public_values.bytes();
