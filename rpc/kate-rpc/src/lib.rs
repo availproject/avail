@@ -1,5 +1,6 @@
 use avail_core::{
-	data_proof::ProofResponse, header::HeaderExtension, traits::ExtendedHeader, OpaqueExtrinsic,
+	data_proof::ProofResponse, header::HeaderExtension, traits::ExtendedHeader, DataProof,
+	OpaqueExtrinsic,
 };
 use avail_observability::metrics::avail::{MetricObserver, ObserveKind};
 use da_runtime::apis::{DataAvailApi, KateApi as RTKateApi};
@@ -16,6 +17,7 @@ use jsonrpsee::{
 use sc_client_api::BlockBackend;
 use sp_api::{ApiRef, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
+use sp_core::H256;
 use sp_runtime::{
 	generic::SignedBlock,
 	traits::{Block as BlockT, ConstU32, Header},
@@ -77,6 +79,13 @@ where
 		transaction_index: u32,
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<ProofResponse>;
+
+	#[method(name = "queryInclusionProof")]
+	async fn query_inclusion_proof(
+		&self,
+		blob_hash: H256,
+		at: Option<HashOf<Block>>,
+	) -> RpcResult<DataProof>;
 }
 
 #[allow(clippy::type_complexity)]
@@ -343,5 +352,23 @@ where
 			})?;
 
 		Ok(proof)
+	}
+
+	async fn query_inclusion_proof(
+		&self,
+		blob_hash: H256,
+		at: Option<HashOf<Block>>,
+	) -> RpcResult<DataProof> {
+		let _metric_observer = MetricObserver::new(ObserveKind::KateQueryDataProof);
+
+		// Generate proof for block and blob_hash
+		let (api, at, _, _, extrinsics, _) = self.scope(at)?;
+		let data_proof = api
+			.inclusion_proof(at, extrinsics, blob_hash)
+			.map_err(|e| internal_err!("KateApi::data_proof failed: {e:?}"))?
+			.ok_or_else(|| {
+				internal_err!("Cannot fetch tx data by blob_hash {blob_hash:?} at block {at:?}")
+			})?;
+		Ok(data_proof)
 	}
 }

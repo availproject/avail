@@ -72,6 +72,7 @@ decl_runtime_apis! {
 		fn rows(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, rows: Vec<u32>) -> Result<Vec<GRow>, RTKateError >;
 		fn proof(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, cells: Vec<(u32,u32)> ) -> Result<Vec<GDataProof>, RTKateError>;
 		fn multiproof(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, cells: Vec<(u32,u32)> ) -> Result<Vec<(GMultiProof, GCellBlock)>, RTKateError>;
+		fn inclusion_proof(extrinsics: Vec<OpaqueExtrinsic>, blob_hash: H256) -> Option<DataProof>;
 	}
 
 	pub trait BlobApi {
@@ -528,6 +529,18 @@ impl_runtime_apis! {
 				"KateApi::data_proof: proof={proof:#?}");
 
 			Some(proof)
+		}
+
+		fn inclusion_proof(extrinsics: Vec<OpaqueExtrinsic>, blob_hash: H256) -> Option<DataProof> {
+			// TODO: block_number, rows & cols has no significance in this case, should be refactored later
+			let builder_data = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(0, &extrinsics, 0, 0);
+
+			let (leaf_idx, sub_trie) = builder_data.leaf_idx_by_hash(blob_hash)?;
+
+			let sub_proof = builder_data.submitted_proof_of(leaf_idx)?;
+			let roots = builder_data.roots();
+			let data_proof = DataProof::new(sub_trie, roots, sub_proof);
+			Some(data_proof)
 		}
 
 		fn rows(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, rows: Vec<u32>) -> Result<Vec<GRow>, RTKateError> {
