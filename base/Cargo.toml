@@ -25,11 +25,8 @@ sp-authority-discovery = { workspace = true, default-features = false }
 frame-support = { workspace = true, default-features = false }
 binary-merkle-tree = { workspace = true, default-features = false }
 
-substrate-prometheus-endpoint = { workspace = true, optional = true }
-
 # 3rd-party
 log.workspace = true
-once_cell = { workspace = true, optional = true }
 derive_more.workspace = true
 itertools = { workspace = true, default-features = false }
 
@@ -44,12 +41,10 @@ std = [
 	"binary-merkle-tree/std",
 	"codec/std",
 	"frame-support/std",
-	"once_cell",
 	"sp-authority-discovery/std",
 	"sp-api/std",
 	"sp-core/std",
 	"sp-runtime-interface/std",
 	"sp-runtime/std",
 	"sp-std/std",
-	"substrate-prometheus-endpoint",
 ]

@@ -1,7 +1,7 @@
-use avail_base::metrics::avail::{MetricObserver, ObserveKind};
 use avail_core::{
 	data_proof::ProofResponse, header::HeaderExtension, traits::ExtendedHeader, OpaqueExtrinsic,
 };
+use avail_observability::metrics::avail::{MetricObserver, ObserveKind};
 use da_runtime::apis::{DataAvailApi, KateApi as RTKateApi};
 use da_runtime::kate::{GCellBlock, GDataProof, GMultiProof, GRow};
 use kate::com::Cell;

@@ -4,7 +4,6 @@ use crate::{
 	decode_blob_notification, handle_incoming_blob_request,
 	slashing::check_missing_validators,
 	store::{RocksdbBlobStore, StorageApiT},
-	telemetry::TelemetryOperator,
 	types::{BlobGossipValidator, BlobNotification, FullClient, BLOB_GOSSIP_PROTO, BLOB_REQ_PROTO},
 	BLOB_EXPIRATION_CHECK_PERIOD, CONCURRENT_REQUESTS, LOG_TARGET, NOTIFICATION_MAX_SIZE,
 	NOTIF_QUEUE_SIZE, REQUEST_MAX_SIZE, REQUEST_TIMEOUT_SECONDS, REQ_RES_QUEUE_SIZE,
@@ -73,7 +72,6 @@ where
 	pub client: Arc<FullClient>,
 	pub blob_database: Arc<dyn StorageApiT>,
 	pub role: Role,
-	pub telemetry_operator: TelemetryOperator,
 }
 
 impl<Block> BlobHandle<Block>
@@ -89,7 +87,6 @@ where
 		client: Arc<FullClient>,
 		keystore: Arc<LocalKeystore>,
 		sync_service: Arc<SyncingService<Block>>,
-		telemetry_operator: TelemetryOperator,
 		spawn_handle: SpawnTaskHandle,
 		pool: Arc<Pool>,
 	) -> Arc<Self>
@@ -112,7 +109,6 @@ where
 			gossip_cmd_sender,
 			blob_database,
 			role,
-			telemetry_operator,
 		};
 
 		blob_handle.start_blob_req_res(spawn_handle.clone(), req_receiver);

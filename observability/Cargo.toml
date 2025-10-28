@@ -1,0 +1,16 @@
+[package]
+name = "avail-observability"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[dependencies]
+sc-telemetry = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+substrate-prometheus-endpoint = { workspace = true }
+log = { workspace = true }
+once_cell = { workspace = true }
+tokio = { version = "1.43.0", features = ["sync"] }

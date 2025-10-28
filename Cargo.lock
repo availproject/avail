@@ -1057,7 +1057,6 @@ dependencies = [
  "hex-literal",
  "itertools 0.10.5",
  "log",
- "once_cell",
  "parity-scale-codec",
  "scale-info",
  "sp-api",
@@ -1067,7 +1066,6 @@ dependencies = [
  "sp-runtime",
  "sp-runtime-interface",
  "sp-std",
- "substrate-prometheus-endpoint",
  "test-case",
 ]
 
@@ -1079,8 +1077,8 @@ dependencies = [
  "async-channel 1.9.0",
  "avail-base",
  "avail-core",
+ "avail-observability",
  "avail-rust-client",
- "avail-telemetry",
  "base64 0.22.1",
  "clap 4.5.26",
  "da-commitment",
@@ -1172,7 +1170,7 @@ dependencies = [
  "avail-base",
  "avail-blob",
  "avail-core",
- "avail-telemetry",
+ "avail-observability",
  "clap 4.5.26",
  "clap-num",
  "clap_complete",
@@ -1250,6 +1248,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "avail-observability"
+version = "0.1.0"
+dependencies = [
+ "log",
+ "once_cell",
+ "sc-telemetry",
+ "serde",
+ "serde_json",
+ "substrate-prometheus-endpoint",
+ "tokio",
+]
+
+[[package]]
 name = "avail-rust-client"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1290,16 +1301,6 @@ dependencies = [
  "subxt-rpcs",
  "subxt-signer",
  "thiserror 2.0.11",
-]
-
-[[package]]
-name = "avail-telemetry"
-version = "0.1.0"
-dependencies = [
- "sc-telemetry",
- "serde",
- "serde_json",
- "tokio",
 ]
 
 [[package]]
@@ -4197,6 +4198,7 @@ version = "4.0.0-dev"
 dependencies = [
  "avail-base",
  "avail-core",
+ "avail-observability",
  "binary-merkle-tree",
  "bounded-collections",
  "cfg-if",
@@ -5960,6 +5962,7 @@ version = "0.3.0"
 dependencies = [
  "avail-base",
  "avail-core",
+ "avail-observability",
  "const-hex",
  "da-runtime",
  "frame-support",

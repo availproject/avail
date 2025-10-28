@@ -1,4 +1,3 @@
-use crate::telemetry::TelemetryOperator;
 use crate::traits::CommitmentQueueApiT;
 use crate::validation::{commitment_validation, initial_validation, tx_validation};
 use crate::{
@@ -19,6 +18,7 @@ use crate::{
 	MAX_RPC_RETRIES,
 };
 use anyhow::Result;
+use avail_observability::metrics::BlobMetrics;
 use codec::{Decode, Encode};
 use da_commitment::build_da_commitments::build_polynomial_grid;
 use da_control::{BlobRuntimeParameters, BlobTxSummaryRuntime, Call};
@@ -107,7 +107,8 @@ impl<Pool, Block: BlockT, Backend> BlobRpc<Pool, Block, Backend> {
 		backend: Arc<Backend>,
 	) -> Self {
 		let (queue, rx) = CommitmentQueue::new(25);
-		CommitmentQueue::spawn_background_task(rx, blob_handle.telemetry_operator.clone());
+		BlobMetrics::set_queue_capacity(rx.capacity() as u64);
+		CommitmentQueue::spawn_background_task(rx);
 
 		Self {
 			pool,
@@ -138,6 +139,9 @@ where
 		metadata_signed_transaction: B64Param,
 		blob: B64Param,
 	) -> RpcResult<()> {
+		// Metrics
+		BlobMetrics::inc_submissions_total();
+
 		// --- 0. Quick checks -------------------------------------------------
 		if blob.0.is_empty() {
 			return Err(internal_err!("blob cannot be empty"));
@@ -154,15 +158,22 @@ where
 			database: self.blob_handle.blob_database.clone(),
 		};
 
-		let _ = submit_blob_main_task(
+		let now = std::time::Instant::now();
+		let result = submit_blob_main_task(
 			self.commitment_queue.clone(),
 			metadata_signed_transaction.0,
 			blob.0,
 			friends,
 			self.nonce_cache.clone(),
-			self.blob_handle.telemetry_operator.clone(),
 		)
-		.await?;
+		.await;
+		let elapsed = now.elapsed();
+
+		// Metrics
+		BlobMetrics::inc_submissions_valid_total();
+		BlobMetrics::observe_submission_rpc_duration(elapsed.as_millis() as f64 / 1000f64);
+
+		result?;
 
 		Ok(())
 	}
@@ -386,7 +397,6 @@ pub async fn submit_blob_main_task(
 	blob: Vec<u8>,
 	friends: Friends,
 	nonce_cache: Arc<dyn NonceCacheApiT>,
-	telemetry_operator: TelemetryOperator,
 ) -> RpcResult<tokio::task::JoinHandle<()>> {
 	let mut stop_watch = SmartStopwatch::new("😍 Submit Blob Main Task");
 
@@ -414,7 +424,7 @@ pub async fn submit_blob_main_task(
 	stop_watch.add_extra_information(std::format!("Blob Hash: {:?}", blob_hash));
 
 	// Telemetry
-	telemetry_operator.blob_received(blob.len(), blob_hash);
+	crate::telemetry::BlobSubmission::submission_tracked(blob_hash, blob.len());
 
 	stop_watch.start("TX validation");
 	let opaque_tx = tx_validation(
@@ -439,18 +449,12 @@ pub async fn submit_blob_main_task(
 	stop_watch.stop("Polynominal Grid Gen.");
 	let end = crate::utils::get_current_timestamp_ms();
 	// Telemetry
-	telemetry_operator.blob_poly_grid(blob_hash, start, end);
+	crate::telemetry::BlobSubmission::build_poly_grid(blob_hash, start, end);
 
 	stop_watch.start("Commitment Validation");
-	commitment_validation(
-		blob_hash,
-		&provided_commitment,
-		grid,
-		&commitment_queue,
-		&telemetry_operator,
-	)
-	.await
-	.map_err(|e| internal_err!("{}", e))?;
+	commitment_validation(blob_hash, &provided_commitment, grid, &commitment_queue)
+		.await
+		.map_err(|e| internal_err!("{}", e))?;
 	stop_watch.stop("Commitment Validation");
 
 	stop_watch.stop("Commitments (Total)");
@@ -484,7 +488,6 @@ pub async fn submit_blob_main_task(
 			provided_commitment,
 			friends,
 			nonce_cache,
-			telemetry_operator,
 		)
 		.await
 	});
@@ -500,7 +503,6 @@ async fn submit_blob_background_task(
 	commitment: Vec<u8>,
 	friends: Friends,
 	nonce_cache: Arc<dyn NonceCacheApiT>,
-	telemetry_operator: TelemetryOperator,
 ) {
 	let blob_len = blob.len();
 
@@ -508,15 +510,7 @@ async fn submit_blob_background_task(
 		nonce_cache.commit(&who, nonce);
 	}
 
-	let stored = store_and_gossip_blob(
-		blob_hash,
-		blob,
-		blob_params,
-		commitment,
-		&friends,
-		telemetry_operator.clone(),
-	)
-	.await;
+	let stored = store_and_gossip_blob(blob_hash, blob, blob_params, commitment, &friends).await;
 	if stored.is_err() {
 		return;
 	}
@@ -537,8 +531,10 @@ async fn submit_blob_background_task(
 		blob_hash,
 	);
 
-	// Telemetry
-	telemetry_operator.blob_added_to_pool(blob_len, blob_hash);
+	// Metrics and Telemetry
+	BlobMetrics::inc_submissions_added_to_pool_total();
+	BlobMetrics::inc_submissions_blob_size_pool_total(blob_len as u64);
+	crate::telemetry::BlobSubmission::added_to_pool(blob_hash);
 }
 
 pub async fn store_and_gossip_blob(
@@ -547,7 +543,6 @@ pub async fn store_and_gossip_blob(
 	blob_params: BlobRuntimeParameters,
 	commitment: Vec<u8>,
 	friends: &Friends,
-	telemetry_operator: TelemetryOperator,
 ) -> Result<(), ()> {
 	let mut stop_watch = SmartStopwatch::new("😍😍 STORE AND GOSSIP BLOB");
 	stop_watch.add_extra_information(std::format!("Blob Hash: {:?}", blob_hash));
@@ -667,7 +662,6 @@ pub async fn store_and_gossip_blob(
 		&friends.database,
 		&maybe_ownership,
 		&mut stop_watch,
-		telemetry_operator,
 	);
 
 	stop_watch.start("Gossiping");
@@ -706,7 +700,6 @@ fn store_new_blob(
 	database: &Arc<dyn StorageApiT>,
 	maybe_ownership: &Option<OwnershipEntry>,
 	stop_watch: &mut SmartStopwatch,
-	telemetry_operator: TelemetryOperator,
 ) {
 	stop_watch.start("Storing Blob");
 
@@ -741,10 +734,9 @@ fn store_new_blob(
 	let duration = stop_watch.stop("Compression");
 
 	// Telemetry
-	telemetry_operator.blob_compression(
-		blob.data.len(),
-		compressed_blob.raw_data().len(),
+	crate::telemetry::BlobSubmission::compression(
 		blob_hash,
+		compressed_blob.raw_data().len(),
 		duration,
 	);
 

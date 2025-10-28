@@ -1,17 +1,17 @@
+use super::{custom_histogram, AVAIL_METRICS};
+use crate::metrics::LOG_TARGET;
 use core::time::Duration;
 use std::time::Instant;
-
-use substrate_prometheus_endpoint::{Histogram, PrometheusError, Registry};
-
-use crate::metrics::LOG_TARGET;
-
-use super::{custom_histogram, AVAIL_METRICS};
+use substrate_prometheus_endpoint::{
+	register, Counter, Gauge, Histogram, HistogramOpts, Opts, PrometheusError, Registry, U64,
+};
 
 /// Avail metrics.
 pub struct AvailMetrics {
 	pub import_block: ImportBlockMetrics,
 	pub header_extension: HeaderExtensionBuilderMetrics,
 	pub kate_rpc: KateRpcMetrics,
+	pub blob: BlobMetrics,
 }
 
 impl AvailMetrics {
@@ -20,6 +20,7 @@ impl AvailMetrics {
 		let import_block = ImportBlockMetrics::new(registry)?;
 		let header_extension = HeaderExtensionBuilderMetrics::new(registry)?;
 		let kate_rpc = KateRpcMetrics::new(registry)?;
+		let blob = BlobMetrics::new(registry)?;
 
 		log::info!(
 			target: LOG_TARGET,
@@ -30,7 +31,120 @@ impl AvailMetrics {
 			import_block,
 			header_extension,
 			kate_rpc,
+			blob,
 		})
+	}
+}
+
+pub struct BlobMetrics {
+	pub queue_capacity: Gauge<U64>,
+	pub submissions_total: Counter<U64>,
+	pub submissions_valid_total: Counter<U64>,
+	pub submissions_added_to_pool_total: Counter<U64>,
+	pub submissions_blob_size_pool_total: Counter<U64>,
+	pub commitment_build_time_duration_seconds: Histogram,
+	pub submission_rpc_duration_seconds: Histogram,
+}
+
+impl BlobMetrics {
+	pub fn new(registry: &Registry) -> Result<Self, PrometheusError> {
+		let queue_capacity =
+			Gauge::<U64>::new("avail_blob_queue_capacity", "Current queue size. ")?;
+		let submissions_total = Counter::<U64>::new(
+			"avail_blob_submissions_total",
+			"Total submission count. Valid and not valid",
+		)?;
+		let submissions_valid_total = Counter::<U64>::new(
+			"avail_blob_submissions_valid_total",
+			"Total valid submission count",
+		)?;
+		let submissions_added_to_pool_total = Counter::<U64>::new(
+			"avail_blob_submissions_added_to_pool_total",
+			"Submissions added to the pool count",
+		)?;
+		let submissions_blob_size_pool_total =
+			Counter::<U64>::new("avail_blob_submissions_blob_size_pool_total", "TODO")?;
+
+		let buckets: Vec<f64> = vec![
+			0.01, 0.025, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 1.0, 1.5, 2.0, 5.0, 10.0,
+		];
+		let commitment_build_time_duration_seconds = Histogram::with_opts(HistogramOpts {
+			common_opts: Opts::new("avail_blob_commitment_build_time_duration_seconds", "Todo"),
+			buckets,
+		})?;
+
+		let buckets: Vec<f64> = vec![
+			0.05, 0.1, 0.25, 0.5, 0.75, 1.0, 1.5, 2.0, 3.5, 5.0, 7.5, 10.0,
+		];
+		let submission_rpc_duration_seconds = Histogram::with_opts(HistogramOpts {
+			common_opts: Opts::new("avail_blob_submission_rpc_duration_seconds", "Todo"),
+			buckets,
+		})?;
+
+		register(queue_capacity.clone(), registry)?;
+		register(submissions_total.clone(), registry)?;
+		register(submissions_valid_total.clone(), registry)?;
+		register(submissions_added_to_pool_total.clone(), registry)?;
+		register(submissions_blob_size_pool_total.clone(), registry)?;
+		register(commitment_build_time_duration_seconds.clone(), registry)?;
+		register(submission_rpc_duration_seconds.clone(), registry)?;
+
+		Ok(Self {
+			queue_capacity,
+			submissions_total,
+			submissions_valid_total,
+			submissions_added_to_pool_total,
+			submissions_blob_size_pool_total,
+			commitment_build_time_duration_seconds,
+			submission_rpc_duration_seconds,
+		})
+	}
+
+	pub fn set_queue_capacity(value: u64) {
+		if let Some(metrics) = AVAIL_METRICS.get() {
+			metrics.blob.queue_capacity.set(value);
+		}
+	}
+
+	pub fn inc_submissions_total() {
+		if let Some(metrics) = AVAIL_METRICS.get() {
+			metrics.blob.submissions_total.inc();
+		}
+	}
+
+	pub fn inc_submissions_valid_total() {
+		if let Some(metrics) = AVAIL_METRICS.get() {
+			metrics.blob.submissions_valid_total.inc();
+		}
+	}
+
+	pub fn inc_submissions_added_to_pool_total() {
+		if let Some(metrics) = AVAIL_METRICS.get() {
+			metrics.blob.submissions_added_to_pool_total.inc();
+		}
+	}
+
+	pub fn inc_submissions_blob_size_pool_total(value: u64) {
+		if let Some(metrics) = AVAIL_METRICS.get() {
+			metrics.blob.submissions_blob_size_pool_total.inc_by(value);
+		}
+	}
+
+	// In Seconds
+	pub fn observe_commitment_build_time_duration(value: f64) {
+		if let Some(metrics) = AVAIL_METRICS.get() {
+			metrics
+				.blob
+				.commitment_build_time_duration_seconds
+				.observe(value);
+		}
+	}
+
+	// In Seconds
+	pub fn observe_submission_rpc_duration(value: f64) {
+		if let Some(metrics) = AVAIL_METRICS.get() {
+			metrics.blob.submission_rpc_duration_seconds.observe(value);
+		}
 	}
 }
 

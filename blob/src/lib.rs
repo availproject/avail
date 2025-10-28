@@ -520,7 +520,7 @@ where
 
 		match response {
 			Ok((data, _proto)) => {
-				blob_handle.telemetry_operator.blob_request(
+				crate::telemetry::blob_request(
 					blob_size as usize,
 					blob_hash,
 					start,
@@ -556,7 +556,7 @@ where
 				}
 			},
 			Err(e) => {
-				blob_handle.telemetry_operator.blob_request(
+				crate::telemetry::blob_request(
 					blob_size as usize,
 					blob_hash,
 					start,
