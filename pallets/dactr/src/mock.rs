@@ -1,6 +1,7 @@
 #![cfg(test)]
 
 use avail_core::currency::{Balance, AVAIL};
+use core::marker::PhantomData;
 use frame_support::{
 	derive_impl, parameter_types,
 	weights::{ConstantMultiplier, IdentityFee},
@@ -10,7 +11,9 @@ use frame_system::{
 	test_utils::TestRandomness,
 };
 use pallet_transaction_payment::FungibleAdapter;
+use sp_runtime::traits::Convert;
 use sp_runtime::BuildStorage;
+use sp_std::vec::Vec;
 
 use crate::{self as da_control, *};
 
@@ -21,6 +24,39 @@ type Extrinsic = MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockDaBlock<Test>;
 
 type BlockNumber = u32;
+
+pub struct IdentitySome<A>(PhantomData<A>);
+impl<A> Convert<A, Option<A>> for IdentitySome<A> {
+	fn convert(a: A) -> Option<A> {
+		Some(a)
+	}
+}
+pub struct DummyValidatorSet<T>(PhantomData<T>);
+impl<T> frame_support::traits::ValidatorSet<<T as frame_system::Config>::AccountId>
+	for DummyValidatorSet<T>
+where
+	T: frame_system::Config,
+{
+	type ValidatorId = <T as frame_system::Config>::AccountId;
+	type ValidatorIdOf = IdentitySome<<T as frame_system::Config>::AccountId>;
+
+	fn session_index() -> sp_staking::SessionIndex {
+		0
+	}
+	fn validators() -> Vec<Self::ValidatorId> {
+		Vec::new()
+	}
+}
+
+impl<T>
+	frame_support::traits::ValidatorSetWithIdentification<<T as frame_system::Config>::AccountId>
+	for DummyValidatorSet<T>
+where
+	T: frame_system::Config,
+{
+	type Identification = <T as frame_system::Config>::AccountId;
+	type IdentificationOf = IdentitySome<<T as frame_system::Config>::AccountId>;
+}
 
 frame_support::construct_runtime!(
 	pub struct Test {
@@ -78,7 +114,11 @@ impl pallet_utility::Config for Test {
 }
 
 #[derive_impl(da_control::config_preludes::TestDefaultConfig)]
-impl da_control::Config for Test {}
+impl da_control::Config for Test {
+	type Currency = ();
+	type ValidatorSet = DummyValidatorSet<Test>;
+	type ReportOffence = ();
+}
 
 /// Create new externalities for `System` module tests.
 pub fn new_test_ext() -> sp_io::TestExternalities {

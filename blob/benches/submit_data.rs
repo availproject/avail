@@ -13,6 +13,7 @@ use da_commitment::build_da_commitments;
 use da_commitment::build_da_commitments::build_da_commitments;
 use da_runtime::AccountId;
 use da_runtime::UncheckedExtrinsic;
+use da_runtime::AVAIL;
 use divan::Bencher;
 use sp_api::ApiError;
 use sp_core::crypto::AccountId32;
@@ -103,6 +104,10 @@ impl RuntimeApiT for DummyRuntimeApi {
 
 	fn account_nonce(&self, _block_hash: H256, _who: AccountId) -> Result<u32, ApiError> {
 		Ok(0)
+	}
+
+	fn get_blob_vouch_fee_reserve(&self, _block_hash: H256) -> Result<u128, ApiError> {
+		Ok(AVAIL)
 	}
 }
 

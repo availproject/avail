@@ -44,6 +44,8 @@ pub trait RuntimeApiT: Send + Sync {
 	) -> Result<Option<AccountId>, ApiError>;
 
 	fn account_nonce(&self, block_hash: H256, who: AccountId) -> Result<u32, ApiError>;
+
+	fn get_blob_vouch_fee_reserve(&self, block_hash: H256) -> Result<u128, ApiError>;
 }
 
 pub struct RuntimeClient<C, B>(Arc<C>, PhantomData<B>);
@@ -102,6 +104,12 @@ where
 
 	fn account_nonce(&self, block_hash: H256, who: AccountId) -> Result<u32, ApiError> {
 		self.0.runtime_api().account_nonce(block_hash.into(), who)
+	}
+
+	fn get_blob_vouch_fee_reserve(&self, block_hash: H256) -> Result<u128, ApiError> {
+		self.0
+			.runtime_api()
+			.get_blob_vouch_fee_reserve(block_hash.into())
 	}
 }
 
