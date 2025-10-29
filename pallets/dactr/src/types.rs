@@ -144,7 +144,6 @@ impl Default for BlobRuntimeParameters {
 #[derive(RuntimeDebug, Clone, PartialEq, Eq, Encode, Decode, MaxEncodedLen, TypeInfo)]
 pub enum BlobOffenceKind {
 	SummaryNbBlobMismatch,
-	DuplicateBlobSummary,
 	InvalidNbOfOwnershipForBlob,
 	InvalidSignatureForBlob,
 	DuplicateSignatureForBlob,
@@ -184,9 +183,6 @@ impl OffenceKey {
 		match self.kind {
 			BlobOffenceKind::SummaryNbBlobMismatch => {
 				self.blob_hash.is_none() && self.missing_validator.is_none()
-			},
-			BlobOffenceKind::DuplicateBlobSummary => {
-				self.blob_hash.is_some() && self.missing_validator.is_none()
 			},
 			BlobOffenceKind::InvalidNbOfOwnershipForBlob => {
 				self.blob_hash.is_some() && self.missing_validator.is_none()
@@ -344,7 +340,6 @@ impl<Offender: Clone + Eq + Encode> Offence<Offender> for BlobOffence<Offender> 
 	fn slash_fraction(&self, _offenders_count: u32) -> Perbill {
 		match self.kind {
 			BlobOffenceKind::SummaryNbBlobMismatch => Perbill::from_percent(1),
-			BlobOffenceKind::DuplicateBlobSummary => Perbill::from_percent(1),
 			BlobOffenceKind::InvalidNbOfOwnershipForBlob => Perbill::from_percent(5),
 			BlobOffenceKind::InvalidSignatureForBlob => Perbill::from_percent(10),
 			BlobOffenceKind::DuplicateSignatureForBlob => Perbill::from_percent(10),

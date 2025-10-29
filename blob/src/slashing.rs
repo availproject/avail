@@ -302,21 +302,7 @@ pub async fn check_missing_validators<Pool, Block>(
 			});
 		}
 
-		let mut seen_blob_hash: HashSet<H256> = HashSet::new();
-		let mut has_duplicate_blob_hash = false;
-
 		for summary in blob_txs_summary.iter() {
-			// DuplicateBlobHash
-			if !has_duplicate_blob_hash && !seen_blob_hash.insert(summary.hash) {
-				has_duplicate_blob_hash = true;
-				offence_to_create.push(OffenceKey {
-					block_hash: imported_block.hash,
-					kind: BlobOffenceKind::DuplicateBlobSummary,
-					blob_hash: Some(summary.hash),
-					missing_validator: None,
-				});
-			}
-
 			// InvalidSignatureForBlob && DuplicateSignatureForBlob: Check the provided ownership signatures and check for duplicates
 			let mut has_invalid_sig = false;
 			let mut has_duplicate_validator = false;
