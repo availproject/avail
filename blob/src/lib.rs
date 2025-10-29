@@ -1,6 +1,7 @@
 pub mod nonce_cache;
 pub mod p2p;
 pub mod rpc;
+pub mod slashing;
 pub mod store;
 pub mod telemetry;
 pub mod traits;
@@ -66,7 +67,7 @@ const REQ_RES_QUEUE_SIZE: u8 = 255;
 /// The maximum number of allowed parallel request processing or notification processing
 const CONCURRENT_REQUESTS: usize = 255;
 /// Amount of blocks used to periodically check wether we should remove expired blobs or not.
-const BLOB_EXPIRATION_CHECK_PERIOD: u64 = 180;
+const BLOB_EXPIRATION_CHECK_PERIOD: u64 = 600;
 /// The time during which we store an account nonce / future nonce to accept or reject blob transactions
 const BLOB_FUTURE_NONCE_CACHE_TTL: Duration = Duration::from_secs(30);
 /// The depth for which we accept future nonce for an account

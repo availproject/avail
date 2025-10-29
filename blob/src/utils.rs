@@ -9,13 +9,15 @@ use base64::Engine;
 use codec::{Decode, Encode};
 use da_commitment::build_da_commitments::build_commitments_from_polynomial_grid;
 use da_control::{BlobRuntimeParameters, Call};
-use da_runtime::{apis::BlobApi, RuntimeCall, UncheckedExtrinsic};
+use da_runtime::UncheckedExtrinsic;
+use da_runtime::{apis::BlobApi, RuntimeCall};
 use kate::gridgen::core::PolynomialGrid;
 use sc_client_api::{HeaderBackend, StorageKey};
 use sc_keystore::{Keystore, LocalKeystore};
 use sc_transaction_pool_api::TransactionSource;
 use sp_api::ProvideRuntimeApi;
 use sp_authority_discovery::AuthorityId;
+use sp_core::sr25519::{Public, Signature};
 use sp_core::H256;
 use sp_core::{crypto::KeyTypeId, sr25519, twox_128};
 use sp_runtime::MultiAddress;
@@ -27,7 +29,6 @@ use sp_runtime::{
 };
 use sp_std::vec::Vec;
 use sp_transaction_pool::runtime_api::TaggedTransactionQueue;
-use std::collections::BTreeSet;
 use std::time::Duration;
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::{collections::BTreeMap, io::Write, sync::Arc};
@@ -443,11 +444,9 @@ fn get_block_tx_summary(
 ) -> BlobTxSummary {
 	let mut blob_summary = BlobTxSummary {
 		hash: blob_hash,
-		finalized_block_hash_checkpoint: H256::zero(),
 		tx_index,
 		success: false,
 		reason: None,
-		missing_validators: Vec::new(),
 		ownership: Vec::new(),
 	};
 
@@ -475,18 +474,6 @@ fn get_block_tx_summary(
 	blob_summary.ownership = ownerships.to_vec();
 
 	if ownerships.len() < meta.nb_validators_per_blob_threshold as usize {
-		// We store this only in case we have an issue, if the nb_validators_per_blob_threshold is respected, we can't forget this
-		// Compute the list of missing validators so everyone can check
-		let missing_validators: Vec<AccountId32> = {
-			let owned: BTreeSet<_> = ownerships.iter().map(|o| o.address.clone()).collect();
-			meta.storing_validator_list
-				.iter()
-				.cloned()
-				.filter(|v| !owned.contains(v))
-				.collect()
-		};
-
-		blob_summary.missing_validators = missing_validators;
 		blob_summary.reason = Some("Not enough validators vouched for this block".into());
 		return blob_summary;
 	}
@@ -503,14 +490,11 @@ pub fn build_signature_payload(blob_hash: BlobHash, additional: Vec<u8>) -> Vec<
 	payload
 }
 
-pub fn sign_blob_data(
-	keystore: &Arc<LocalKeystore>,
-	payload: Vec<u8>,
-) -> Result<BlobSignatureData> {
+pub fn sign_data(keystore: &Arc<LocalKeystore>, payload: Vec<u8>) -> Result<(Public, Signature)> {
 	let key_type = key_types::BABE;
 	let keys = keystore.sr25519_public_keys(key_type);
 
-	if keys.len() == 0 {
+	if keys.is_empty() {
 		return Err(anyhow!(
 			"No keys found in the store when trying to sign data"
 		));
@@ -534,6 +518,14 @@ pub fn sign_blob_data(
 		},
 	};
 
+	Ok((public, signature))
+}
+
+pub fn sign_blob_data(
+	keystore: &Arc<LocalKeystore>,
+	payload: Vec<u8>,
+) -> Result<BlobSignatureData> {
+	let (public, signature) = sign_data(keystore, payload)?;
 	let pubkey_bytes = public.0.to_vec();
 	let sig_bytes = signature.0.to_vec();
 	Ok(BlobSignatureData {
@@ -574,6 +566,14 @@ pub fn get_dynamic_blocklength_key() -> StorageKey {
 	let mut key = Vec::new();
 	key.extend(&twox_128(b"System"));
 	key.extend(&twox_128(b"DynamicBlockLength"));
+	let storage_key = StorageKey(key);
+	storage_key
+}
+
+pub fn get_current_session_key() -> StorageKey {
+	let mut key = Vec::new();
+	key.extend(&twox_128(b"Session"));
+	key.extend(&twox_128(b"CurrentIndex"));
 	let storage_key = StorageKey(key);
 	storage_key
 }

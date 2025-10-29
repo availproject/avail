@@ -7,6 +7,11 @@ edition = "2021"
 da-runtime = { workspace = true, default-features = false }
 da-control = { workspace = true, default-features = false }
 avail-core = { workspace = true, default-features = false }
+pallet-staking = { workspace = true, default-features = false }
+sp-consensus-babe = { workspace = true, default-features = false }
+sc-transaction-pool = { workspace = true, default-features = false }
+frame-support = { workspace = true, default-features = false }
+pallet-balances = { workspace = true, default-features = false }
 kate = { workspace = true, default-features = false }
 kate-recovery = { workspace = true, default-features = false }
 avail-observability = { workspace = true }

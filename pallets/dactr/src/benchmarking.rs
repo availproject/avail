@@ -19,7 +19,7 @@ use kate::Seed;
 use scale_info::{StaticTypeInfo, TypeInfo};
 use sp_core::H256;
 use sp_runtime::{
-	traits::{DispatchInfoOf, Dispatchable, SignedExtension},
+	traits::{Bounded, DispatchInfoOf, Dispatchable, SignedExtension},
 	transaction_validity::{TransactionValidity, TransactionValidityError},
 	Perbill,
 };
@@ -337,10 +337,9 @@ mod benchmarks {
 	fn submit_blob_txs_summary(n: Linear<1, 1_000>) -> Result<(), BenchmarkError> {
 		let origin = RawOrigin::None;
 
-		let summaries: Vec<crate::pallet::BlobTxSummaryRuntime> = (0..n)
-			.map(|i| crate::pallet::BlobTxSummaryRuntime {
+		let summaries: Vec<crate::BlobTxSummaryRuntime> = (0..n)
+			.map(|i| crate::BlobTxSummaryRuntime {
 				hash: H256::repeat_byte((i + 1) as u8),
-				finalized_block_hash_checkpoint: H256::repeat_byte((i + 1) as u8),
 				tx_index: i as u32,
 				success: i % 2 == 0,
 				reason: if i % 3 == 0 {
@@ -349,7 +348,6 @@ mod benchmarks {
 					None
 				},
 				ownership: Vec::new(),
-				missing_validators: Vec::new(),
 			})
 			.collect();
 
@@ -377,6 +375,7 @@ mod benchmarks {
 		let max_block_size = Some(1 * 1024 * 1024 * 1024);
 		let max_total_old_submission_size = Some(2 * 1024 * 1024);
 		let disable_old_da_submission = Some(true);
+		let vouch_threshold = Some(1);
 
 		#[extrinsic_call]
 		_(
@@ -392,9 +391,10 @@ mod benchmarks {
 			max_block_size,
 			max_total_old_submission_size,
 			disable_old_da_submission,
+			vouch_threshold,
 		);
 
-		let expected = crate::pallet::BlobRuntimeParameters {
+		let expected = crate::BlobRuntimeParameters {
 			max_blob_size: max_blob_size.unwrap(),
 			min_blob_holder_percentage: min_blob_holder_percentage.unwrap(),
 			min_blob_holder_count: min_blob_holder_count.unwrap(),
@@ -406,6 +406,7 @@ mod benchmarks {
 			max_block_size: max_block_size.unwrap(),
 			max_total_old_submission_size: max_total_old_submission_size.unwrap(),
 			disable_old_da_submission: disable_old_da_submission.unwrap(),
+			vouch_threshold: vouch_threshold.unwrap(),
 		};
 		assert_last_event::<T>(
 			Event::SubmitBlobRuntimeParametersSet {
@@ -413,6 +414,85 @@ mod benchmarks {
 			}
 			.into(),
 		);
+
+		Ok(())
+	}
+
+	#[benchmark]
+	fn register_blob_offence() -> Result<(), BenchmarkError> {
+		use sp_core::sr25519::{Public, Signature};
+		use sp_runtime::AccountId32;
+
+		let origin = RawOrigin::None;
+
+		let offence_key = crate::OffenceKey {
+			kind: crate::BlobOffenceKind::SummaryNbBlobMismatch,
+			block_hash: H256::zero(),
+			blob_hash: None,
+			missing_validator: None,
+		};
+
+		let validator = AccountId32::new([1; 32]);
+		let validator_account_id = T::AccountId::decode(&mut &validator.encode()[..]).unwrap();
+		let block_author = validator.clone();
+		let voucher = crate::ValidatorVoucher {
+			validator: validator.clone(),
+			key: Public::from_h256(H256::zero()),
+			session_index: 0,
+			signature: Signature::from_raw([0u8; 64]),
+			block_author,
+		};
+
+		T::Currency::make_free_balance_be(&validator_account_id, BalanceOf::<T>::max_value());
+
+		#[extrinsic_call]
+		_(origin, offence_key.clone(), voucher.clone());
+
+		assert_last_event::<T>(
+			Event::BlobOffenceReported {
+				who: validator_account_id,
+				offence_key,
+				voucher,
+				added: true,
+			}
+			.into(),
+		);
+
+		Ok(())
+	}
+
+	#[benchmark]
+	fn clear_blob_offence_records() -> Result<(), BenchmarkError> {
+		let origin = RawOrigin::Root;
+
+		for _ in 0..10 {
+			let key = crate::OffenceKey {
+				kind: crate::BlobOffenceKind::SummaryNbBlobMismatch,
+				block_hash: H256::zero(),
+				blob_hash: Some(H256::zero()),
+				missing_validator: None,
+			};
+			let record = crate::OffenceRecord::<T>::new(
+				key.kind.clone(),
+				key.block_hash,
+				key.blob_hash.clone(),
+				key.missing_validator.clone(),
+			);
+			crate::BlobOffenceRecords::<T>::insert(key, record);
+		}
+
+		// Sanity check: ensure something is stored
+		assert!(!crate::BlobOffenceRecords::<T>::iter()
+			.collect::<Vec<_>>()
+			.is_empty());
+
+		#[extrinsic_call]
+		_(origin);
+
+		// Verify everything has been cleared
+		assert!(crate::BlobOffenceRecords::<T>::iter()
+			.collect::<Vec<_>>()
+			.is_empty());
 
 		Ok(())
 	}

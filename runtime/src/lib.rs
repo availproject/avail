@@ -327,16 +327,16 @@ mod tests {
 	const DA_CALL_SIZE: usize = size_of::<da_control::Call<Runtime>>();
 	const SYSTEM_CALL_SIZE: usize = size_of::<frame_system::Call<Runtime>>();
 
-	#[test_case(RUNTIME_CALL_SIZE => 208)]
-	#[test_case(DA_CALL_SIZE => 144)]
+	#[test_case(RUNTIME_CALL_SIZE => 272)]
+	#[test_case(DA_CALL_SIZE => 272)]
 	#[test_case(SYSTEM_CALL_SIZE => 40)]
 	fn call_size(size: usize) -> usize {
-		const MAX_CALL_SIZE: usize = 208;
+		const MAX_CALL_SIZE: usize = 300;
 		assert!(
 			size <= MAX_CALL_SIZE,
-			"size of RuntimeCall {} is more than 208 bytes: some calls have too big arguments, use Box to reduce the
+			"size of RuntimeCall {} is more than 300 bytes: some calls have too big arguments, use Box to reduce the
 			size of RuntimeCall.
-			If the limit is too strong, maybe consider increase the limit to 300.",
+			If the limit is too strong, maybe consider increasing the limit.",
 			size,
 		);
 		size
