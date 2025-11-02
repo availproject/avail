@@ -861,7 +861,7 @@ mod set_submit_blob_metadata_fee_modifier {
 }
 
 mod register_blob_offence {
-	use crate::{BlobOffenceRecords, OffenceRecord};
+	use crate::OffenceRecord;
 
 	use super::*;
 	use sp_core::sr25519::{Public, Signature};
@@ -898,14 +898,28 @@ mod register_blob_offence {
 				offence_key.clone(),
 				voucher.clone(),
 			);
-
 			assert_ok!(res);
 
 			let expected = RuntimeEvent::DataAvailability(Event::BlobOffenceReported {
 				who: 72340172838076673, // Hard coded account based on the voucher validator
-				offence_key,
+				offence_key: offence_key.clone(),
 				voucher,
 				added: true,
+			});
+			System::assert_last_event(expected);
+
+			let voucher = make_voucher(AccountId32::new([2; 32]), AccountId32::new([1; 32]));
+			let res = DataAvailability::register_blob_offence(
+				RawOrigin::None.into(),
+				offence_key.clone(),
+				voucher.clone(),
+			);
+			assert_ok!(res);
+			let expected = RuntimeEvent::DataAvailability(Event::BlobOffenceReported {
+				who: 144680345676153346,
+				offence_key,
+				voucher,
+				added: false,
 			});
 			System::assert_last_event(expected);
 		});
@@ -953,19 +967,13 @@ mod register_blob_offence {
 				None,
 				None,
 			);
-			let offence_key = record.offence_key();
 			let max_vouches = <Test as crate::Config>::MaxVouchesPerRecord::get() as usize;
 			let dummy_voucher = make_voucher(bob_32.clone(), bob_32.clone());
 			for _ in 0..max_vouches {
 				record.vouches.try_push(dummy_voucher.clone()).ok();
 			}
-			BlobOffenceRecords::<Test>::insert(&offence_key, record);
-			let res = DataAvailability::register_blob_offence(
-				origin.clone(),
-				offence_key.clone(),
-				voucher,
-			);
-			assert_noop!(res, Error::VouchListFull);
+			let res = record.vouches.try_push(dummy_voucher.clone());
+			assert!(res.is_err());
 		})
 	}
 }

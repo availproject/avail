@@ -6,7 +6,8 @@ use avail_core::{
 	currency::Balance, AppId, BlockLengthColumns, BlockLengthRows, BLOCK_CHUNK_SIZE,
 	DA_DISPATCH_RATIO, NORMAL_DISPATCH_RATIO,
 };
-use codec::{Compact, CompactLen as _};
+use codec::{Compact, CompactLen as _, Encode};
+use frame_support::ensure;
 use frame_support::traits::{ValidatorSet, ValidatorSetWithIdentification};
 use frame_support::weights::constants::ExtrinsicBaseWeight;
 use frame_support::{
@@ -672,28 +673,14 @@ pub mod pallet {
 				return Err(Error::<T>::InvalidVoucherValidator.into());
 			};
 
-			#[cfg(not(any(test, feature = "runtime-benchmarks")))]
-			{
-				let key = voucher.key;
-				let key_type = sp_core::crypto::key_types::BABE;
-				ensure!(
-					Some(validator_id.clone())
-						== T::SessionDataProvider::get_validator_from_key(key_type, key.encode()),
-					Error::<T>::InvalidVoucherValidator
-				);
-
-				// Check if the extrinsic is coming from an active validator
-				ensure!(
-					validators.contains(&validator_id),
-					Error::<T>::NotAnActiveValidator
-				);
-
-				// Check that the offence key is correctly signed
-				ensure!(
-					voucher.verify_signature((offence_key.clone(), current_session).encode()),
-					Error::<T>::InvalidVoucherSignature
-				);
-			}
+			// Check the sender and the signature
+			Self::check_validator_and_signature(
+				&offence_key,
+				&voucher,
+				current_session,
+				&validator_id,
+				&validators,
+			)?;
 
 			// Get or create the offence
 			let mut record = BlobOffenceRecords::<T>::get(&offence_key).unwrap_or_else(|| {
@@ -716,11 +703,8 @@ pub mod pallet {
 
 			// If the offence record has not reached threshold, add my boucher
 			let mut added = false;
-			let threshold_reached = if cfg!(test) {
-				false
-			} else {
-				record.has_reached_threshold(validators.len() as u32, T::MaxVouchesPerRecord::get())
-			};
+			let threshold_reached = record
+				.has_reached_threshold(validators.len() as u32, T::MaxVouchesPerRecord::get());
 
 			if !threshold_reached {
 				// Reserve the report fee
@@ -1022,6 +1006,43 @@ impl<T: Config> Pallet<T> {
 		let (imbalance, _remainder) = T::Currency::slash_reserved(who, amount);
 
 		drop(imbalance);
+	}
+
+	pub fn check_validator_and_signature(
+		offence_key: &OffenceKey,
+		voucher: &ValidatorVoucher,
+		current_session: u32,
+		validator_id: &T::AccountId,
+		validators: &Vec<T::AccountId>,
+	) -> DispatchResult {
+		// Early return if test or benchmark mode
+		if cfg!(test) || cfg!(feature = "runtime-benchmarks") {
+			return Ok(());
+		}
+
+		let key = voucher.key;
+		let key_type = sp_core::crypto::key_types::BABE;
+
+		// Check validator address validity
+		ensure!(
+			Some(validator_id.clone())
+				== T::SessionDataProvider::get_validator_from_key(key_type, key.encode()),
+			Error::<T>::InvalidVoucherValidator
+		);
+
+		// Check if the extrinsic is coming from an active validator
+		ensure!(
+			validators.contains(&validator_id),
+			Error::<T>::NotAnActiveValidator
+		);
+
+		// Check that the offence key is correctly signed
+		ensure!(
+			voucher.verify_signature((offence_key.clone(), current_session).encode()),
+			Error::<T>::InvalidVoucherSignature
+		);
+
+		Ok(())
 	}
 }
 

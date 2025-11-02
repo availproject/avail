@@ -119,7 +119,10 @@ where
 			gossip_cmd_receiver,
 		);
 		blob_handle.start_blob_cleaning_service(spawn_handle.clone());
-		blob_handle.start_missing_validators_listener(spawn_handle, pool);
+
+		if blob_handle.role.is_authority() {
+			blob_handle.start_missing_validators_listener(spawn_handle, pool);
+		}
 
 		Arc::new(blob_handle)
 	}
@@ -245,11 +248,6 @@ where
 		Block: BlockT,
 		Pool: TransactionPool<Block = Block> + 'static,
 	{
-		// Return if I'm not an active authority
-		if !self.role.is_authority() {
-			return;
-		}
-
 		let blob_database = self.blob_database.clone();
 		let client = self.client.clone();
 		let keystore = self.keystore.clone();
