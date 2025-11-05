@@ -4,7 +4,6 @@ use crate::avail_rust_core::GenericExtrinsic;
 use avail_blob;
 use avail_blob::store::RocksdbBlobStore;
 use avail_blob::store::StorageApiT;
-use avail_blob::telemetry::TelemetryOperator;
 use avail_blob::traits::*;
 use avail_blob::types::CompressedBlob;
 use avail_blob::utils::CommitmentQueue;
@@ -13,6 +12,7 @@ use da_commitment::build_da_commitments;
 use da_commitment::build_da_commitments::build_da_commitments;
 use da_runtime::AccountId;
 use da_runtime::UncheckedExtrinsic;
+use da_runtime::AVAIL;
 use divan::Bencher;
 use sp_api::ApiError;
 use sp_core::crypto::AccountId32;
@@ -103,6 +103,10 @@ impl RuntimeApiT for DummyRuntimeApi {
 
 	fn account_nonce(&self, _block_hash: H256, _who: AccountId) -> Result<u32, ApiError> {
 		Ok(0)
+	}
+
+	fn get_blob_vouch_fee_reserve(&self, _block_hash: H256) -> Result<u128, ApiError> {
+		Ok(AVAIL)
 	}
 }
 
@@ -207,7 +211,7 @@ mod validation {
 
 		// Queue
 		let (queue, rx) = CommitmentQueue::new(1);
-		CommitmentQueue::spawn_background_task(rx, TelemetryOperator::new(None));
+		CommitmentQueue::spawn_background_task(rx);
 		let queue: Arc<dyn CommitmentQueueApiT> = Arc::new(queue);
 
 		// grid & Commitment
@@ -229,7 +233,6 @@ mod validation {
 						&params.0,
 						params.1.clone(),
 						&params.2,
-						&TelemetryOperator::new(None),
 					)
 					.await
 					.expect("Ok")

@@ -1,6 +1,6 @@
 # Phase 1: Builder
 # =========================
-FROM debian:12.5-slim AS builder
+FROM debian:12.12-slim AS builder
 
 # Install needed packages
 RUN apt update -y && \
@@ -9,7 +9,7 @@ RUN apt update -y && \
 WORKDIR "/da/src"
 
 # Clone repo
-ARG AVAIL_TAG=v1.8.0.3
+ARG AVAIL_TAG=v2.3.4.0
 RUN git clone -b $AVAIL_TAG --single-branch https://github.com/availproject/avail.git .
 
 # This installs Rust and updates Rust to the right version.
@@ -22,7 +22,7 @@ RUN cp ./target/release/avail-node .
 
 # Phase 2: Binary deployment
 # =========================
-FROM debian:12.5-slim
+FROM debian:12.12-slim
 
 RUN apt update -y && apt install curl -y
 
@@ -42,5 +42,5 @@ LABEL org.opencontainers.image.authors="The Avail Project Team" \
 
 VOLUME ["/da/node-data"]
 ENTRYPOINT ["/usr/local/bin/avail-node"]
-CMD ["--chain", "goldberg", "--tmp", "--name", "MyAwesomeAvailNodeInContainer"]
+CMD ["--chain", "turing", "--tmp", "--name", "MyAwesomeAvailNodeInContainer"]
 

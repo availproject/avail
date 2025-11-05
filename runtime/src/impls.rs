@@ -38,12 +38,14 @@ use pallet_identity::legacy::IdentityInfo;
 use pallet_transaction_payment::{FungibleAdapter, Multiplier, TargetedFeeAdjustment};
 use pallet_treasury::TreasuryAccountId;
 use pallet_tx_pause::RuntimeCallNameOf;
+use sp_core::crypto::KeyTypeId;
 use sp_core::{ConstU64, RuntimeDebug};
 use sp_runtime::{
 	generic::Era,
 	traits::{self, BlakeTwo256, Bounded, Convert, IdentityLookup, OpaqueKeys},
 	FixedPointNumber, FixedU128, Perbill, Permill, Perquintill,
 };
+use sp_std::vec::Vec;
 
 pub type NegativeImbalance<T> = <pallet_balances::Pallet<T> as Currency<
 	<T as frame_system::Config>::AccountId,
@@ -119,14 +121,31 @@ impl pallet_identity::Config for Runtime {
 
 impl da_control::Config for Runtime {
 	type BlockLenProposalId = u32;
+	type Currency = Balances;
 	type MaxAppDataLength = constants::da::MaxAppDataLength;
 	type MaxAppKeyLength = constants::da::MaxAppKeyLength;
 	type MaxBlockCols = constants::da::MaxBlockCols;
 	type MaxBlockRows = constants::da::MaxBlockRows;
 	type MinBlockCols = constants::da::MinBlockCols;
 	type MinBlockRows = constants::da::MinBlockRows;
+	type MaxVouchesPerRecord = constants::da::MaxVouchesPerRecord;
+	type SessionDataProvider = Self;
+	type BlobVouchFeeReserve = constants::da::BlobVouchFeeReserve;
+	type ValidatorSet = Historical;
+	type ReportOffence = Offences;
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = weights::pallet_dactr::WeightInfo<Runtime>;
+}
+impl da_control::SessionDataProvider<<Runtime as frame_system::Config>::AccountId> for Runtime {
+	fn validators() -> Vec<<Runtime as frame_system::Config>::AccountId> {
+		pallet_session::Pallet::<Self>::validators()
+	}
+	fn get_validator_from_key(
+		id: KeyTypeId,
+		key_data: Vec<u8>,
+	) -> Option<<Runtime as frame_system::Config>::AccountId> {
+		pallet_session::Pallet::<Self>::key_owner(id, &key_data)
+	}
 }
 
 impl pallet_offences::Config for Runtime {

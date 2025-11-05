@@ -453,22 +453,18 @@ mod submit_blob_txs_summary {
 		new_test_ext().execute_with(|| {
 			let none: RuntimeOrigin = RawOrigin::None.into();
 
-			let s1 = crate::pallet::BlobTxSummaryRuntime {
+			let s1 = crate::BlobTxSummaryRuntime {
 				hash: H256::random(),
-				finalized_block_hash_checkpoint: H256::random(),
 				tx_index: 0,
 				success: true,
 				reason: None,
-				missing_validators: Vec::new(),
 				ownership: Vec::new(),
 			};
-			let s2 = crate::pallet::BlobTxSummaryRuntime {
+			let s2 = crate::BlobTxSummaryRuntime {
 				hash: H256::random(),
-				finalized_block_hash_checkpoint: H256::random(),
 				tx_index: 1,
 				success: false,
 				reason: Some("example".into()),
-				missing_validators: Vec::new(),
 				ownership: Vec::new(),
 			};
 
@@ -509,6 +505,7 @@ mod set_blob_runtime_parameters {
 			let max_block_size = Some(1 * 1024 * 1024 * 1024);
 			let max_total_old_submission_size = Some(2 * 1024 * 1024);
 			let disable_old_da_submission = Some(true);
+			let vouch_threshold = Some(1);
 
 			assert_ok!(DataAvailability::set_blob_runtime_parameters(
 				root,
@@ -523,10 +520,11 @@ mod set_blob_runtime_parameters {
 				max_block_size,
 				max_total_old_submission_size,
 				disable_old_da_submission,
+				vouch_threshold,
 			));
 
 			let after = BlobRuntimeParams::<Test>::get();
-			let expected = crate::pallet::BlobRuntimeParameters {
+			let expected = crate::BlobRuntimeParameters {
 				max_blob_size: max_blob_size.unwrap(),
 				min_blob_holder_percentage: min_blob_holder_percentage.unwrap(),
 				min_blob_holder_count: min_blob_holder_count.unwrap(),
@@ -538,6 +536,7 @@ mod set_blob_runtime_parameters {
 				max_block_size: max_block_size.unwrap(),
 				max_total_old_submission_size: max_total_old_submission_size.unwrap(),
 				disable_old_da_submission: disable_old_da_submission.unwrap(),
+				vouch_threshold: vouch_threshold.unwrap(),
 			};
 
 			assert_ne!(before, after);
@@ -558,7 +557,7 @@ mod set_blob_runtime_parameters {
 			let before = BlobRuntimeParams::<Test>::get();
 
 			assert_ok!(DataAvailability::set_blob_runtime_parameters(
-				root, None, None, None, None, None, None, None, None, None, None, None
+				root, None, None, None, None, None, None, None, None, None, None, None, None
 			));
 
 			let after = BlobRuntimeParams::<Test>::get();
@@ -596,6 +595,7 @@ mod set_blob_runtime_parameters {
 					None,
 					None,
 					None,
+					None,
 				);
 				assert_noop!(err, Error::BlobSizeTooLarge);
 				assert_unchanged();
@@ -607,6 +607,7 @@ mod set_blob_runtime_parameters {
 					root,
 					None,
 					Some(Perbill::from_percent(0)),
+					None,
 					None,
 					None,
 					None,
@@ -636,6 +637,7 @@ mod set_blob_runtime_parameters {
 					None,
 					None,
 					None,
+					None,
 				);
 				assert_noop!(err, Error::MinBlobHolderCountInvalid);
 				assert_unchanged();
@@ -649,6 +651,7 @@ mod set_blob_runtime_parameters {
 					None,
 					None,
 					Some(1_000),
+					None,
 					None,
 					None,
 					None,
@@ -676,6 +679,7 @@ mod set_blob_runtime_parameters {
 					None,
 					None,
 					None,
+					None,
 				);
 				assert_noop!(err, Error::TempBlobTtlTooShort);
 				assert_unchanged();
@@ -691,6 +695,7 @@ mod set_blob_runtime_parameters {
 					None,
 					None,
 					Some(3),
+					None,
 					None,
 					None,
 					None,
@@ -716,6 +721,7 @@ mod set_blob_runtime_parameters {
 					None,
 					None,
 					None,
+					None,
 				);
 				assert_noop!(err, Error::MaxTransactionValidityTooHigh);
 				assert_unchanged();
@@ -733,6 +739,7 @@ mod set_blob_runtime_parameters {
 					None,
 					None,
 					Some(2),
+					None,
 					None,
 					None,
 					None,
@@ -756,6 +763,7 @@ mod set_blob_runtime_parameters {
 					Some(10 * 1024 * 1024 * 1024),
 					None,
 					None,
+					None,
 				);
 				assert_noop!(err, Error::MaxBlockSizeTooLarge);
 				assert_unchanged();
@@ -776,8 +784,30 @@ mod set_blob_runtime_parameters {
 					None,
 					Some(5 * 1024 * 1024),
 					None,
+					None,
 				);
 				assert_noop!(err, Error::MaxOldSubmissionTooLarge);
+				assert_unchanged();
+			}
+
+			{
+				let root: RuntimeOrigin = RawOrigin::Root.into();
+				let err = DataAvailability::set_blob_runtime_parameters(
+					root,
+					None,
+					None,
+					None,
+					None,
+					None,
+					None,
+					None,
+					None,
+					None,
+					None,
+					None,
+					Some(0),
+				);
+				assert_noop!(err, Error::InvalidVouchThreshold);
 				assert_unchanged();
 			}
 		})
@@ -827,5 +857,169 @@ mod set_submit_blob_metadata_fee_modifier {
 			));
 			assert_eq!(new_value, SubmitBlobMetadataFeeModifier::<Test>::get());
 		})
+	}
+}
+
+mod register_blob_offence {
+	use crate::OffenceRecord;
+
+	use super::*;
+	use sp_core::sr25519::{Public, Signature};
+	use sp_runtime::AccountId32;
+
+	fn make_voucher(validator: AccountId32, block_author: AccountId32) -> crate::ValidatorVoucher {
+		crate::ValidatorVoucher {
+			validator,
+			key: Public::from_h256(H256::zero()),
+			session_index: 0,
+			signature: Signature::from_raw([0u8; 64]),
+			block_author,
+		}
+	}
+
+	fn dummy_offence_key(kind: crate::BlobOffenceKind) -> crate::OffenceKey {
+		crate::OffenceKey {
+			kind,
+			block_hash: H256::random(),
+			blob_hash: None,
+			missing_validator: None,
+		}
+	}
+
+	#[test]
+	fn register_blob_offence() {
+		new_test_ext().execute_with(|| {
+			let offence_key = dummy_offence_key(crate::BlobOffenceKind::SummaryNbBlobMismatch);
+
+			let voucher = make_voucher(AccountId32::new([1; 32]), AccountId32::new([1; 32]));
+
+			let res = DataAvailability::register_blob_offence(
+				RawOrigin::None.into(),
+				offence_key.clone(),
+				voucher.clone(),
+			);
+			assert_ok!(res);
+
+			let expected = RuntimeEvent::DataAvailability(Event::BlobOffenceReported {
+				who: 72340172838076673, // Hard coded account based on the voucher validator
+				offence_key: offence_key.clone(),
+				voucher,
+				added: true,
+			});
+			System::assert_last_event(expected);
+
+			let voucher = make_voucher(AccountId32::new([2; 32]), AccountId32::new([1; 32]));
+			let res = DataAvailability::register_blob_offence(
+				RawOrigin::None.into(),
+				offence_key.clone(),
+				voucher.clone(),
+			);
+			assert_ok!(res);
+			let expected = RuntimeEvent::DataAvailability(Event::BlobOffenceReported {
+				who: 144680345676153346,
+				offence_key,
+				voucher,
+				added: false,
+			});
+			System::assert_last_event(expected);
+		});
+	}
+
+	#[test]
+	fn register_blob_offence_errors() {
+		new_test_ext().execute_with(|| {
+			let origin: RuntimeOrigin = RawOrigin::None.into();
+			let alice_32 = AccountId32::new([1; 32]);
+			let bob_32 = AccountId32::new([2; 32]);
+
+			// Invalid Offence Key
+			let offence_key = dummy_offence_key(crate::BlobOffenceKind::InvalidSignatureForBlob);
+			let voucher = make_voucher(alice_32.clone(), alice_32.clone());
+			let res = DataAvailability::register_blob_offence(origin.clone(), offence_key, voucher);
+			assert_noop!(res, Error::InvalidOffenceKey);
+
+			// Invalid session index
+			let offence_key = dummy_offence_key(crate::BlobOffenceKind::SummaryNbBlobMismatch);
+			let mut voucher = make_voucher(alice_32.clone(), alice_32.clone());
+			voucher.session_index = 1000;
+			let res = DataAvailability::register_blob_offence(origin.clone(), offence_key, voucher);
+			assert_noop!(res, Error::InvalidVoucherSession);
+
+			// DuplicateVouch
+			let offence_key = dummy_offence_key(crate::BlobOffenceKind::SummaryNbBlobMismatch);
+			let voucher = make_voucher(alice_32.clone(), alice_32.clone());
+			assert_ok!(DataAvailability::register_blob_offence(
+				origin.clone(),
+				offence_key.clone(),
+				voucher.clone()
+			));
+			let res = DataAvailability::register_blob_offence(
+				origin.clone(),
+				offence_key.clone(),
+				voucher.clone(),
+			);
+			assert_noop!(res, Error::DuplicateVouch);
+
+			// VouchListFull
+			let mut record = OffenceRecord::<Test>::new(
+				crate::BlobOffenceKind::SummaryNbBlobMismatch,
+				H256::random(),
+				None,
+				None,
+			);
+			let max_vouches = <Test as crate::Config>::MaxVouchesPerRecord::get() as usize;
+			let dummy_voucher = make_voucher(bob_32.clone(), bob_32.clone());
+			for _ in 0..max_vouches {
+				record.vouches.try_push(dummy_voucher.clone()).ok();
+			}
+			let res = record.vouches.try_push(dummy_voucher.clone());
+			assert!(res.is_err());
+		})
+	}
+}
+
+mod clear_blob_offence_records {
+	use super::*;
+	use crate::BlobOffenceRecords;
+
+	#[test]
+	fn clear_blob_offence_records() {
+		new_test_ext().execute_with(|| {
+			for _ in 0..5 {
+				let key = crate::OffenceKey {
+					kind: crate::BlobOffenceKind::SummaryNbBlobMismatch,
+					block_hash: H256::random(),
+					blob_hash: Some(H256::random()),
+					missing_validator: None,
+				};
+				let record = crate::OffenceRecord::<Test>::new(
+					key.kind.clone(),
+					key.block_hash,
+					key.blob_hash.clone(),
+					key.missing_validator.clone(),
+				);
+				BlobOffenceRecords::<Test>::insert(key, record);
+			}
+
+			assert!(!BlobOffenceRecords::<Test>::iter()
+				.collect::<Vec<_>>()
+				.is_empty());
+
+			let root: RuntimeOrigin = RawOrigin::Root.into();
+			assert_ok!(DataAvailability::clear_blob_offence_records(root));
+
+			assert!(BlobOffenceRecords::<Test>::iter()
+				.collect::<Vec<_>>()
+				.is_empty());
+		});
+	}
+
+	#[test]
+	fn bad_origin() {
+		new_test_ext().execute_with(|| {
+			let alice: RuntimeOrigin = RawOrigin::Signed(ALICE).into();
+			let res = DataAvailability::clear_blob_offence_records(alice);
+			assert_noop!(res, frame_support::error::BadOrigin);
+		});
 	}
 }

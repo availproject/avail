@@ -19,6 +19,7 @@ use sp_core::ConstU32;
 use sp_runtime::traits::BlakeTwo256;
 use sp_runtime::{AccountId32, BuildStorage};
 
+use crate::mock::DummyValidatorSet;
 use crate::{self as da_control, *};
 
 /// An unchecked extrinsic type to be used in tests.
@@ -85,7 +86,11 @@ impl pallet_utility::Config for Test {
 }
 
 #[derive_impl(da_control::config_preludes::TestDefaultConfig)]
-impl da_control::Config for Test {}
+impl da_control::Config for Test {
+	type Currency = ();
+	type ValidatorSet = DummyValidatorSet<Test>;
+	type ReportOffence = ();
+}
 
 #[derive_impl(pallet_vector::config_preludes::TestDefaultConfig as pallet_vector::DefaultConfig)]
 impl pallet_vector::Config for Test {

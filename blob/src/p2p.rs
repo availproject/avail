@@ -2,6 +2,7 @@ use std::{path::Path, sync::Arc, time::Duration};
 
 use crate::{
 	decode_blob_notification, handle_incoming_blob_request,
+	slashing::check_missing_validators,
 	store::{RocksdbBlobStore, StorageApiT},
 	types::{BlobGossipValidator, BlobNotification, FullClient, BLOB_GOSSIP_PROTO, BLOB_REQ_PROTO},
 	BLOB_EXPIRATION_CHECK_PERIOD, CONCURRENT_REQUESTS, LOG_TARGET, NOTIFICATION_MAX_SIZE,
@@ -20,6 +21,7 @@ use sc_network::{
 use sc_network_gossip::GossipEngine;
 use sc_network_sync::SyncingService;
 use sc_service::SpawnTaskHandle;
+use sc_transaction_pool_api::TransactionPool;
 use sp_runtime::{
 	traits::{Block as BlockT, Hash as HashT, Header as HeaderT},
 	SaturatedConversion,
@@ -76,7 +78,7 @@ impl<Block> BlobHandle<Block>
 where
 	Block: BlockT,
 {
-	pub fn new(
+	pub fn new<Pool>(
 		path: &Path,
 		role: Role,
 		blob_gossip_service: Box<dyn NotificationService>,
@@ -86,7 +88,11 @@ where
 		keystore: Arc<LocalKeystore>,
 		sync_service: Arc<SyncingService<Block>>,
 		spawn_handle: SpawnTaskHandle,
-	) -> Arc<Self> {
+		pool: Arc<Pool>,
+	) -> Arc<Self>
+	where
+		Pool: TransactionPool<Block = Block> + 'static,
+	{
 		// Initialize the Blob database
 		let db_path = path.join("blob_database");
 		let blob_database =
@@ -112,7 +118,11 @@ where
 			sync_service,
 			gossip_cmd_receiver,
 		);
-		blob_handle.start_blob_cleaning_service(spawn_handle);
+		blob_handle.start_blob_cleaning_service(spawn_handle.clone());
+
+		if blob_handle.role.is_authority() {
+			blob_handle.start_missing_validators_listener(spawn_handle, pool);
+		}
 
 		Arc::new(blob_handle)
 	}
@@ -227,6 +237,24 @@ where
 					}
 				}
 			}
+		});
+	}
+
+	fn start_missing_validators_listener<Pool>(
+		&self,
+		spawn_handle: SpawnTaskHandle,
+		pool: Arc<Pool>,
+	) where
+		Block: BlockT,
+		Pool: TransactionPool<Block = Block> + 'static,
+	{
+		let blob_database = self.blob_database.clone();
+		let client = self.client.clone();
+		let keystore = self.keystore.clone();
+		let pool = pool.clone();
+
+		spawn_handle.spawn("missing-validators-listener", None, async move {
+			check_missing_validators(client, keystore, blob_database, pool).await;
 		});
 	}
 }
