@@ -48,66 +48,33 @@ pub struct VerifyingKeyJson {
 }
 
 impl VerifyingKeyJson {
+	fn create_g2_affine(&self, coords: &[Vec<String>]) -> Result<G2Affine, VerificationError> {
+		Ok(G2Affine::from(G2Projective::new(
+			Fq2::new(
+				str_to_fq(&coords[0][0])?,
+				str_to_fq(&coords[0][1])?,
+			),
+			Fq2::new(
+				str_to_fq(&coords[1][0])?,
+				str_to_fq(&coords[1][1])?,
+			),
+			Fq2::new(
+				str_to_fq(&coords[2][0])?,
+				str_to_fq(&coords[2][1])?,
+			),
+		)))
+	}
+
 	pub fn to_verifying_key(&self) -> Result<VerifyingKey<Bn254>, VerificationError> {
 		let alpha_g1 = G1Affine::from(G1Projective::new(
 			str_to_fq(&self.vk_alpha_1[0])?,
 			str_to_fq(&self.vk_alpha_1[1])?,
 			str_to_fq(&self.vk_alpha_1[2])?,
 		));
-		let beta_g2 = G2Affine::from(G2Projective::new(
-			// x
-			Fq2::new(
-				str_to_fq(&self.vk_beta_2[0][0])?,
-				str_to_fq(&self.vk_beta_2[0][1])?,
-			),
-			// y
-			Fq2::new(
-				str_to_fq(&self.vk_beta_2[1][0])?,
-				str_to_fq(&self.vk_beta_2[1][1])?,
-			),
-			// z,
-			Fq2::new(
-				str_to_fq(&self.vk_beta_2[2][0])?,
-				str_to_fq(&self.vk_beta_2[2][1])?,
-			),
-		));
-
-		let gamma_g2 = G2Affine::from(G2Projective::new(
-			// x
-			Fq2::new(
-				str_to_fq(&self.vk_gamma_2[0][0])?,
-				str_to_fq(&self.vk_gamma_2[0][1])?,
-			),
-			// y
-			Fq2::new(
-				str_to_fq(&self.vk_gamma_2[1][0])?,
-				str_to_fq(&self.vk_gamma_2[1][1])?,
-			),
-			// z,
-			Fq2::new(
-				str_to_fq(&self.vk_gamma_2[2][0])?,
-				str_to_fq(&self.vk_gamma_2[2][1])?,
-			),
-		));
-
-		let delta_g2 = G2Affine::from(G2Projective::new(
-			// x
-			Fq2::new(
-				str_to_fq(&self.vk_delta_2[0][0])?,
-				str_to_fq(&self.vk_delta_2[0][1])?,
-			),
-			// y
-			Fq2::new(
-				str_to_fq(&self.vk_delta_2[1][0])?,
-				str_to_fq(&self.vk_delta_2[1][1])?,
-			),
-			// z,
-			Fq2::new(
-				str_to_fq(&self.vk_delta_2[2][0])?,
-				str_to_fq(&self.vk_delta_2[2][1])?,
-			),
-		));
-
+		let beta_g2 = self.create_g2_affine(&self.vk_beta_2)?;
+		let gamma_g2 = self.create_g2_affine(&self.vk_gamma_2)?;
+		let delta_g2 = self.create_g2_affine(&self.vk_delta_2)?;
+		
 		let gamma_abc_g1_result: Result<Vec<G1Affine>, VKeyDeserializationError> = self
 			.ic
 			.iter()
