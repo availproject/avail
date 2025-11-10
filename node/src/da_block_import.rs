@@ -212,10 +212,7 @@ where
 		}
 
 		let candidate_block_number: u32 = block.header.number;
-		let candidate_block_hash: H256 = {
-			let header = block.header.clone();
-			<B as BlockT>::Header::hash(&header)
-		};
+		let candidate_block_hash = block.post_hash();
 
 		// Next import block stage & metrics
 		let result = self.inner.import_block(block).await;

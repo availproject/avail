@@ -19,10 +19,12 @@ use crate::{
 	MAX_RPC_RETRIES,
 };
 use anyhow::Result;
+use avail_core::DataProof;
 use avail_observability::metrics::BlobMetrics;
 use codec::{Decode, Encode};
 use da_commitment::build_da_commitments::build_polynomial_grid;
 use da_control::{pallet::BlobTxSummaryRuntime, BlobRuntimeParameters, Call};
+use da_runtime::apis::KateApi;
 use da_runtime::{RuntimeCall, UncheckedExtrinsic};
 use frame_system::limits::BlockLength;
 use jsonrpsee::{
@@ -32,6 +34,7 @@ use jsonrpsee::{
 };
 use sc_client_api::{BlockBackend, HeaderBackend, StateBackend};
 use sc_network::PeerId;
+use sp_api::ProvideRuntimeApi;
 // use sc_network::NetworkStateInfo;
 use sc_transaction_pool_api::TransactionPool;
 use sp_core::H256;
@@ -91,6 +94,13 @@ where
 
 	#[method(name = "blob_getBlobInfo")]
 	async fn get_blob_info(&self, blob_hash: H256) -> RpcResult<BlobInfo>;
+
+	#[method(name = "blob_inclusionProof")]
+	async fn inclusion_proof(
+		&self,
+		blob_hash: H256,
+		at: Option<Block::Hash>,
+	) -> RpcResult<DataProof>;
 
 	#[method(name = "blob_logStuff")]
 	async fn log_stuff(&self) -> RpcResult<()>;
@@ -298,6 +308,47 @@ where
 			.get_blob_info(&blob_hash)
 			.map_err(|e| internal_err!("Failed to get blob info: {:?}", e))?
 			.ok_or_else(|| internal_err!("Blob info not found for hash: {:?}", blob_hash))
+	}
+
+	async fn inclusion_proof(
+		&self,
+		blob_hash: H256,
+		at: Option<<Block as BlockT>::Hash>,
+	) -> RpcResult<DataProof> {
+		// if block_hash is supplied, use it, otherwise try using blob_info to find the latest block it was included in
+		let block_hash = if let Some(h) = at {
+			h
+		} else {
+			let blob_info = self
+				.blob_handle
+				.blob_database
+				.get_blob_info(&blob_hash)
+				.map_err(|e| internal_err!("Failed to get blob info: {:?}", e))?
+				.ok_or_else(|| internal_err!("Blob info not found for blob_hash: {:?}", blob_hash))?;
+			blob_info.block_hash.into()
+		};
+
+		let block = self
+			.blob_handle
+			.client
+			.block(block_hash.into())
+			.map_err(|e| internal_err!("Failed to get block for generating inclusion proof: {:?}", e))?
+			.ok_or_else(|| internal_err!("Block not found for block_hash: {:?}", block_hash))?
+			.block;
+
+		// We can restrict generating inclusion_proof only for finalised blocks
+		let (header, extrinsics) = block.deconstruct();
+		self.blob_handle
+			.client
+			.runtime_api()
+			.inclusion_proof(header.hash(), extrinsics, blob_hash)
+			.map_err(|e| internal_err!("KateApi::inclusion_proof failed: {e:?}"))?
+			.ok_or_else(|| {
+				internal_err!(
+					"Cannot fetch tx data by blob_hash {blob_hash:?} at block {:?}",
+					block_hash
+				)
+			})
 	}
 
 	async fn log_stuff(&self) -> RpcResult<()> {
