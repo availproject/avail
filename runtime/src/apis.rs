@@ -59,6 +59,7 @@ decl_runtime_apis! {
 		fn build_data_root(block: u32, extrinsics: Vec<OpaqueExtrinsic>) -> H256;
 		fn check_if_extrinsic_is_vector_post_inherent(uxt: &<Block as BlockT>::Extrinsic) -> bool;
 		fn check_if_extrinsic_is_da_post_inherent(uxt: &<Block as BlockT>::Extrinsic) -> bool;
+		fn extract_post_inherent_summaries(uxt: &<Block as BlockT>::Extrinsic) -> Option<Vec<da_control::BlobTxSummaryRuntime>>;
 	}
 
 	pub trait VectorApi {
@@ -463,6 +464,23 @@ impl_runtime_apis! {
 
 
 			matches!(da_pallet_call, da_control::Call::submit_blob_txs_summary { total_blob_size: _, nb_blobs: _, blob_txs_summary: _})
+		}
+
+		fn extract_post_inherent_summaries(uxt: &<Block as BlockT>::Extrinsic) -> Option<Vec<da_control::BlobTxSummaryRuntime>> {
+			use frame_support::traits::ExtrinsicCall;
+
+			let Ok(xt) =  TryInto::<&RTExtrinsic>::try_into(uxt);
+
+			let da_pallet_call = match xt.call() {
+				RuntimeCall::DataAvailability(call) => call,
+				_ => return None
+			};
+
+			if let da_control::Call::submit_blob_txs_summary { total_blob_size: _, nb_blobs: _, blob_txs_summary } = da_pallet_call {
+				Some(blob_txs_summary.clone())
+			} else {
+				None
+			}
 		}
 	}
 

@@ -23,6 +23,7 @@ impl DoubleRocksdbBlobStore {
 	pub const COL_BLOB_RETRY: u32 = 1;
 	pub const COL_BLOB_OWNERSHIP: u32 = 2;
 	pub const COL_BLOB_OWNERSHIP_EXPIRY: u32 = 3;
+	pub const COL_BLOB_INFO: u32 = 4;
 
 	pub const COL_BLOB: u32 = 1;
 
@@ -30,7 +31,7 @@ impl DoubleRocksdbBlobStore {
 		let base = path.as_ref();
 
 		let meta_dir = base.join("meta");
-		let num_columns = 4;
+		let num_columns = 5;
 		let db_config = DatabaseConfig::with_columns(num_columns);
 		let db_meta = Database::open(&db_config, meta_dir)?;
 
@@ -418,5 +419,29 @@ impl StorageApiT for DoubleRocksdbBlobStore {
 
 		log::info!(target: LOG_TARGET, "--- [Double] End of blob store log ---");
 		Ok(())
+	}
+
+	fn insert_blob_info(&self, blob_info: BlobInfo) -> Result<()> {
+		// TODO: check if already exists? & decide based on use-case like what is the current blob block_number vs existing one
+		let mut tx = DBTransaction::new();
+		tx.put(
+			Self::COL_BLOB_INFO,
+			&blob_key(&blob_info.hash),
+			&blob_info.encode(),
+		);
+		self.db_meta.write(tx)?;
+		Ok(())
+	}
+
+	fn get_blob_info(&self, hash: &BlobHash) -> Result<Option<BlobInfo>> {
+		let key = blob_key(hash);
+		self.db_meta
+			.get(Self::COL_BLOB_INFO, &key)?
+			.map(|bytes| {
+				let mut slice = bytes.as_slice();
+				BlobInfo::decode(&mut slice)
+					.map_err(|_| anyhow!("failed to decode blob_info from store"))
+			})
+			.transpose()
 	}
 }

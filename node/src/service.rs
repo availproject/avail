@@ -22,6 +22,7 @@
 use crate::{cli::Cli, rpc as node_rpc};
 use avail_blob::p2p::{get_blob_p2p_config, BlobHandle};
 use avail_blob::rpc::{BlobApiServer, BlobRpc};
+use avail_blob::store::{RocksdbBlobStore, StorageApiT};
 use avail_blob::types::FullClient;
 use avail_core::AppId;
 use da_runtime::{apis::RuntimeApi, NodeBlock as Block, Runtime};
@@ -164,6 +165,7 @@ pub fn new_partial(
 			),
 			sc_consensus_grandpa::SharedVoterState,
 			Option<Telemetry>,
+			Arc<dyn StorageApiT>,
 		),
 	>,
 	ServiceError,
@@ -228,7 +230,20 @@ pub fn new_partial(
 		client.clone(),
 	)?;
 
-	let da_block_import = BlockImport::new(client.clone(), block_import, unsafe_da_sync);
+	// Initialize the Blob database
+	let blob_db_path = config.base_path.path().join("blob_database");
+
+	let blob_database: Arc<dyn StorageApiT> = Arc::new(
+		RocksdbBlobStore::open(&blob_db_path)
+			.map_err(|e| ServiceError::Other(format!("open blob_database: {e}")))?,
+	);
+
+	let da_block_import = BlockImport::new(
+		client.clone(),
+		block_import,
+		unsafe_da_sync,
+		blob_database.clone(),
+	);
 
 	let slot_duration = babe_link.config().slot_duration();
 	let (import_queue, babe_worker_handle) =
@@ -311,7 +326,13 @@ pub fn new_partial(
 		select_chain,
 		import_queue,
 		transaction_pool,
-		other: (rpc_extensions_builder, import_setup, rpc_setup, telemetry),
+		other: (
+			rpc_extensions_builder,
+			import_setup,
+			rpc_setup,
+			telemetry,
+			blob_database,
+		),
 	})
 }
 
@@ -362,7 +383,7 @@ pub fn new_full_base(
 		keystore_container,
 		select_chain,
 		transaction_pool,
-		other: (rpc_builder, import_setup, rpc_setup, mut telemetry),
+		other: (rpc_builder, import_setup, rpc_setup, mut telemetry, blob_database),
 	} = new_partial(
 		&config,
 		unsafe_da_sync,
@@ -410,8 +431,8 @@ pub fn new_full_base(
 
 	// Initialize blob module
 	let blob_handle = BlobHandle::new(
-		config.base_path.path(),
 		config.role.clone(),
+		blob_database,
 		blob_gossip_service,
 		blob_req_receiver,
 		network.clone(),

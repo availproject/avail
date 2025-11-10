@@ -1,4 +1,5 @@
 use crate::traits::CommitmentQueueApiT;
+use crate::types::BlobInfo;
 use crate::validation::{commitment_validation, initial_validation, tx_validation};
 use crate::{
 	nonce_cache::NonceCache,
@@ -87,6 +88,9 @@ where
 		blob_index: u32,
 		blob_hash: H256,
 	) -> RpcResult<Blob>;
+
+	#[method(name = "blob_getBlobInfo")]
+	async fn get_blob_info(&self, blob_hash: H256) -> RpcResult<BlobInfo>;
 
 	#[method(name = "blob_logStuff")]
 	async fn log_stuff(&self) -> RpcResult<()>;
@@ -286,6 +290,14 @@ where
 		Err(internal_err!(
 			"All attempts to get the blob from validators failed."
 		))
+	}
+
+	async fn get_blob_info(&self, blob_hash: H256) -> RpcResult<BlobInfo> {
+		self.blob_handle
+			.blob_database
+			.get_blob_info(&blob_hash)
+			.map_err(|e| internal_err!("Failed to get blob info: {:?}", e))?
+			.ok_or_else(|| internal_err!("Blob info not found for hash: {:?}", blob_hash))
 	}
 
 	async fn log_stuff(&self) -> RpcResult<()> {

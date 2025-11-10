@@ -1,4 +1,4 @@
-use crate::types::{Blob, BlobHash, BlobMetadata, CompressedBlob, OwnershipEntry};
+use crate::types::{Blob, BlobHash, BlobInfo, BlobMetadata, CompressedBlob, OwnershipEntry};
 use anyhow::Result;
 
 mod doublerocksdb;
@@ -44,6 +44,10 @@ pub trait StorageApiT: Send + Sync {
 		&self,
 		current_block: u64,
 	) -> Result<(Vec<BlobHash>, Vec<BlobHash>)>;
+
+	// Blob info is a lightweight Blob indexer, which keeps track of blobs included in blocks, Wont store blobs themselves
+	fn insert_blob_info(&self, blob_info: BlobInfo) -> Result<()>;
+	fn get_blob_info(&self, hash: &BlobHash) -> Result<Option<BlobInfo>>;
 
 	// Testing / diagnostics
 	fn log_all_entries(&self) -> Result<()>;

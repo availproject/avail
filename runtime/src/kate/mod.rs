@@ -4,10 +4,10 @@ pub mod runtime;
 #[cfg(feature = "std")]
 use kate::gridgen::core::CellBlock;
 // Reexport
-pub use runtime::{grid, multiproof, proof};
 use avail_core::data_proof::DataProof;
 use codec::{Decode, Encode};
 use core::num::TryFromIntError;
+pub use runtime::{grid, multiproof, proof};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};

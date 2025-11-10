@@ -23,9 +23,10 @@ impl RocksdbBlobStore {
 	pub const COL_BLOB: u32 = 2;
 	pub const COL_BLOB_OWNERSHIP: u32 = 3;
 	pub const COL_BLOB_OWNERSHIP_EXPIRY: u32 = 4;
+	pub const COL_BLOB_INFO: u32 = 5;
 
 	pub fn open(path: impl AsRef<Path>) -> Result<Self> {
-		let num_columns = 5;
+		let num_columns = 6;
 		let db_config = DatabaseConfig::with_columns(num_columns);
 		let db = Database::open(&db_config, path.as_ref())?;
 		Ok(RocksdbBlobStore {
@@ -398,5 +399,28 @@ impl StorageApiT for RocksdbBlobStore {
 
 		log::info!(target: LOG_TARGET, "--- End of blob store log ---");
 		Ok(())
+	}
+
+	fn insert_blob_info(&self, blob_info: BlobInfo) -> Result<()> {
+		let mut tx = DBTransaction::new();
+		tx.put(
+			Self::COL_BLOB_INFO,
+			&blob_key(&blob_info.hash),
+			&blob_info.encode(),
+		);
+		self.db.write(tx)?;
+		Ok(())
+	}
+
+	fn get_blob_info(&self, hash: &BlobHash) -> Result<Option<BlobInfo>> {
+		let key = blob_key(hash);
+		self.db
+			.get(Self::COL_BLOB_INFO, &key)?
+			.map(|bytes| {
+				let mut slice = bytes.as_slice();
+				BlobInfo::decode(&mut slice)
+					.map_err(|_| anyhow!("failed to decode blob info from the store"))
+			})
+			.transpose()
 	}
 }

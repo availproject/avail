@@ -70,6 +70,7 @@ pub mod pallet {
 		pub success: bool,
 		pub reason: Option<String>,
 		pub missing_validators: Vec<AccountId32>,
+		// address, babe_key, encoded_peer_id, signature
 		pub ownership: Vec<(AccountId32, AuthorityId, String, Vec<u8>)>,
 	}
 
