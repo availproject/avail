@@ -193,6 +193,39 @@ where
 	}
 }
 
+
+	/// Checks if the block has non-empty commitments.
+	fn ensure_has_commitments(&self, header: &<Block as BlockT>::Header, at: Block::Hash) -> RpcResult<()> {
+		match header.extension() {
+			HeaderExtension::V3(ext) => {
+				if ext.commitment.commitment.is_empty() {
+					return Err(internal_err!("Requested block {at} has empty commitments"));
+				}
+			},
+		};
+		Ok(())
+	}
+
+	/// Validates that the requested number of cells doesn't exceed the configured limit.
+	fn validate_cells_limit(&self, cells_count: usize) -> RpcResult<()> {
+		if cells_count > self.max_cells_size {
+			return Err(internal_err!(
+				"Cannot query ({}) more than {} amount of cells per request. Either increase the max cells size (--kate-max-cells-size) or query less amount of cells per request.",
+				cells_count,
+				self.max_cells_size
+			));
+		}
+		Ok(())
+	}
+
+	/// Converts cells to position tuples (row, col).
+	fn cells_to_positions(cells: Cells) -> Vec<(u32, u32)> {
+		cells
+			.into_iter()
+			.map(|cell| (cell.row.0, cell.col.0))
+			.collect()
+	}
+
 #[async_trait]
 impl<Client, Block> KateApiServer<Block> for Kate<Client, Block>
 where
