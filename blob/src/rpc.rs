@@ -324,7 +324,9 @@ where
 				.blob_database
 				.get_blob_info(&blob_hash)
 				.map_err(|e| internal_err!("Failed to get blob info: {:?}", e))?
-				.ok_or_else(|| internal_err!("Blob info not found for blob_hash: {:?}", blob_hash))?;
+				.ok_or_else(|| {
+					internal_err!("Blob info not found for blob_hash: {:?}", blob_hash)
+				})?;
 			blob_info.block_hash.into()
 		};
 
@@ -332,7 +334,12 @@ where
 			.blob_handle
 			.client
 			.block(block_hash.into())
-			.map_err(|e| internal_err!("Failed to get block for generating inclusion proof: {:?}", e))?
+			.map_err(|e| {
+				internal_err!(
+					"Failed to get block for generating inclusion proof: {:?}",
+					e
+				)
+			})?
 			.ok_or_else(|| internal_err!("Block not found for block_hash: {:?}", block_hash))?
 			.block;
 
