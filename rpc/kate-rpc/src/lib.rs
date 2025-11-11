@@ -259,18 +259,9 @@ where
 		let _metric_observer = MetricObserver::new(ObserveKind::KateQueryProof);
 
 		let (api, at, number, block_len, extrinsics, header) = self.scope(at)?;
-		match header.extension() {
-			HeaderExtension::V3(ext) => {
-				if ext.commitment.commitment.is_empty() {
-					return Err(internal_err!("Requested block {at} has empty commitments"));
-				}
-			},
-		};
+		self.ensure_has_commitments(&header, at)?;
 
-		let cells = cells
-			.into_iter()
-			.map(|cell| (cell.row.0, cell.col.0))
-			.collect::<Vec<_>>();
+		let cells = Self::cells_to_positions(cells);
 		let proof = api
 			.proof(at, number, extrinsics, block_len, cells)
 			.map_err(|kate_err| internal_err!("KateApi::proof failed: {kate_err:?}"))?
