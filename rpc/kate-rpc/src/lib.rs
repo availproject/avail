@@ -254,15 +254,7 @@ where
 		cells: Cells,
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<Vec<GDataProof>> {
-		if cells.len() > self.max_cells_size {
-			return Err(
-				internal_err!(
-					"Cannot query ({}) more than {} amount of cells per request. Either increase the max cells size (--kate-max-cells-size) or query less amount of cells per request.",
-					cells.len(),
-					self.max_cells_size
-				)
-			);
-		}
+		self.validate_cells_limit(cells.len())?;
 
 		let _metric_observer = MetricObserver::new(ObserveKind::KateQueryProof);
 
