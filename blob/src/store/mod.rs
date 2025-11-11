@@ -1,4 +1,6 @@
-use crate::types::{Blob, BlobHash, BlobInfo, BlobMetadata, CompressedBlob, OwnershipEntry};
+use crate::types::{
+	Blob, BlobHash, BlobInfo, BlobMetadata, BlockHash, CompressedBlob, OwnershipEntry,
+};
 use anyhow::Result;
 
 mod doublerocksdb;
@@ -45,7 +47,29 @@ pub trait StorageApiT: Send + Sync {
 		current_block: u64,
 	) -> Result<(Vec<BlobHash>, Vec<BlobHash>)>;
 
+	// temporary blob info (per blob+block)
+	fn insert_blob_info_by_block(&self, blob_info: &BlobInfo) -> Result<()>;
+	fn insert_blob_infos_by_block_batch(&self, items: &[BlobInfo]) -> Result<()>;
+	fn get_blob_info_by_block(
+		&self,
+		blob_hash: &BlobHash,
+		block_hash: &BlockHash,
+	) -> Result<Option<BlobInfo>>;
+	fn list_blob_infos_by_hash(&self, blob_hash: &BlobHash) -> Result<Vec<BlobInfo>>;
+	fn list_blob_infos_by_block(&self, block_hash: &BlockHash) -> Result<Vec<BlobInfo>>;
+
+	// pending durable buffer (block -> Vec<BlobInfo>) ---
+	fn append_pending_blob_info(&self, block_hash: &BlockHash, blob_info: &BlobInfo) -> Result<()>;
+	fn append_pending_blob_infos_batch(
+		&self,
+		block_hash: &BlockHash,
+		items: &[BlobInfo],
+	) -> Result<()>;
+	fn take_pending_blob_infos(&self, block_hash: &BlockHash) -> Result<Vec<BlobInfo>>;
+	fn get_pending_block_hashes(&self) -> Result<Vec<BlockHash>>;
+
 	// Blob info is a lightweight Blob indexer, which keeps track of blobs included in blocks, Wont store blobs themselves
+	// NOTE: BlobInfo entries are only stored for canonical blocks to handle re-orgs after block import
 	fn insert_blob_info(&self, blob_info: BlobInfo) -> Result<()>;
 	fn get_blob_info(&self, hash: &BlobHash) -> Result<Option<BlobInfo>>;
 
@@ -85,4 +109,25 @@ pub(crate) fn blob_ownership_key(hash: &BlobHash, owner: &Vec<u8>) -> Vec<u8> {
 	k.extend_from_slice(&prefix);
 	k.extend_from_slice(owner);
 	k
+}
+
+#[inline]
+pub(crate) fn blob_by_hash_block_key(hash: &BlobHash, block_hash: &BlockHash) -> Vec<u8> {
+	let mut k = Vec::with_capacity(64);
+	k.extend_from_slice(&hash.0);
+	k.extend_from_slice(&block_hash.0);
+	k
+}
+
+#[inline]
+pub(crate) fn blob_by_block_key(block_hash: &BlockHash, hash: &BlobHash) -> Vec<u8> {
+	let mut k = Vec::with_capacity(64);
+	k.extend_from_slice(&block_hash.0);
+	k.extend_from_slice(&hash.0);
+	k
+}
+
+#[inline]
+pub(crate) fn block_key(hash: &BlockHash) -> Vec<u8> {
+	hash.0.to_vec()
 }

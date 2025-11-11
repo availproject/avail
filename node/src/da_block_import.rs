@@ -219,12 +219,10 @@ where
 
 		// On successful import of block, write to our blob indexer.
 		if let Ok(ImportResult::Imported(_imported)) = &result {
-			// filter out successful blobs only
-			let mut total_written: usize = 0;
-			let mut total_write_ns: u128 = 0;
+			// filter out successful blobs only and collect BlobInfo entries
+			let mut blob_infos: Vec<BlobInfo> = Vec::new();
 
 			for s in pre_extracted_summaries.iter().filter(|s| s.success) {
-				// Build ownership entries
 				let ownership_entries: Vec<OwnershipEntry> = s
 					.ownership
 					.iter()
@@ -243,52 +241,76 @@ where
 					ownership: ownership_entries,
 				};
 
-				// time each insert
-				let write_start = std::time::Instant::now();
-				match self.blob_store.insert_blob_info(blob_info) {
-					Ok(()) => {
-						let elapsed = write_start.elapsed().as_nanos();
-						total_written += 1;
-						total_write_ns += elapsed;
-						log::debug!(
-							"insert_blob_info OK for {} took {} µs",
-							s.hash,
-							elapsed as f64 / 1_000.0_f64
-						);
-					},
-					Err(e) => {
-						let elapsed = write_start.elapsed().as_nanos();
-						// still count the attempted write time
-						total_write_ns += elapsed;
-						log::warn!(
-							"BlobStore write failed for blob {} @ #{}/{} (took {} µs): {}",
-							s.hash,
-							candidate_block_number,
-							candidate_block_hash,
-							elapsed as f64 / 1_000.0_f64,
-							e
-						);
-					},
-				}
+				blob_infos.push(blob_info);
 			}
 
-			if total_written > 0 {
-				let avg_us = (total_write_ns as f64 / total_written as f64) / 1_000.0_f64;
-				log::info!(
-                "⏱️ Wrote {} blob_info entries for block #{}/{}: total_time = {} ms, avg = {:.3} µs",
-                total_written,
-                candidate_block_number,
-                candidate_block_hash,
-                (total_write_ns as f64) / 1_000_000.0_f64,
-                avg_us
-            );
-			} else if total_write_ns > 0 {
-				log::warn!(
-                "Attempted writes for blob_info in block #{}/{} took total {} ms (all failed or zero successes)",
-                candidate_block_number,
-                candidate_block_hash,
-                (total_write_ns as f64) / 1_000_000.0_f64
-            );
+			// If there are none, skip DB work and logs
+			if blob_infos.is_empty() {
+				log::debug!(
+					"No successful blob summaries to write for block #{}/{}",
+					candidate_block_number,
+					candidate_block_hash
+				);
+			} else {
+				// Batch insert per-block history (blob_by_hash_block + blob_by_block)
+				let write_start = std::time::Instant::now();
+				let mut written_history = 0usize;
+				if let Err(e) = self
+					.blob_store
+					.insert_blob_infos_by_block_batch(&blob_infos)
+				{
+					log::warn!(
+						"Failed batch insert_blob_infos_by_block_batch for block #{}/{}: {}",
+						candidate_block_number,
+						candidate_block_hash,
+						e
+					);
+				} else {
+					written_history = blob_infos.len();
+				}
+				let history_ns = write_start.elapsed().as_nanos();
+
+				// Append pending pending_by_block
+				let pending_start = std::time::Instant::now();
+				let mut written_pending = 0usize;
+				if let Err(e) = self
+					.blob_store
+					.append_pending_blob_infos_batch(&candidate_block_hash, &blob_infos)
+				{
+					log::warn!(
+						"Failed append_pending_blob_infos_batch for block #{}/{}: {}",
+						candidate_block_number,
+						candidate_block_hash,
+						e
+					);
+				} else {
+					written_pending = blob_infos.len();
+				}
+				let pending_ns = pending_start.elapsed().as_nanos();
+
+				// Logging aggregated stats
+				if written_history > 0 || written_pending > 0 {
+					let total_written = std::cmp::max(written_history, written_pending);
+					let total_ns = history_ns + pending_ns;
+					let avg_us = (total_ns as f64 / total_written as f64) / 1_000.0_f64;
+					log::info!(
+						"⏱️ Persisted {} BlobInfo entries for block #{}/{} (history={}, pending={}), total_time = {} ms, avg = {:.3} µs",
+						total_written,
+						candidate_block_number,
+						candidate_block_hash,
+						written_history,
+						written_pending,
+						(total_ns as f64) / 1_000_000.0_f64,
+						avg_us
+					);
+				} else {
+					log::warn!(
+						"Attempted writes for blob_info in block #{}/{} took total {} ms (all failed)",
+						candidate_block_number,
+						candidate_block_hash,
+						((history_ns + pending_ns) as f64) / 1_000_000.0_f64
+					);
+				}
 			}
 		}
 

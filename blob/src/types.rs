@@ -24,6 +24,7 @@ use std::{
 };
 
 pub type BlobHash = H256;
+pub type BlockHash = <Block as BlockT>::Hash;
 
 pub const BLOB_REQ_PROTO_STR: &str = "/avail/blob/req/1";
 pub const BLOB_REQ_PROTO: ProtocolName = ProtocolName::Static(BLOB_REQ_PROTO_STR);

@@ -8,7 +8,7 @@ use tempfile::TempDir;
 use ttl_cache::TtlCache;
 
 use crate::{
-	types::{Blob, BlobHash, BlobMetadata, OwnershipEntry},
+	types::{Blob, BlobHash, BlobInfo, BlobMetadata, BlockHash, OwnershipEntry},
 	BLOB_CACHE_DURATION, LOG_TARGET, MAX_BLOBS_IN_CACHE,
 };
 
@@ -23,10 +23,17 @@ impl RocksdbBlobStore {
 	pub const COL_BLOB: u32 = 2;
 	pub const COL_BLOB_OWNERSHIP: u32 = 3;
 	pub const COL_BLOB_OWNERSHIP_EXPIRY: u32 = 4;
+	// canonical blob info storage: BlobHash -> BlobInfo
 	pub const COL_BLOB_INFO: u32 = 5;
+	// temporary blob_info by blob_hash & block_hash: BlobHash || BlockHash -> BlobInfo
+	pub const COL_BLOB_BY_HASH_BLOCK: u32 = 6;
+	// temporary blobs info by block_hash & blob_hash : BlockHash || BlobHash -> BlobInfo
+	pub const COL_BLOB_BY_BLOCK: u32 = 7;
+	// pending blobs by block: BlockHash -> Vec<BlobInfo>
+	pub const COL_BLOB_PENDING_BY_BLOCK: u32 = 8;
 
 	pub fn open(path: impl AsRef<Path>) -> Result<Self> {
-		let num_columns = 6;
+		let num_columns = 9;
 		let db_config = DatabaseConfig::with_columns(num_columns);
 		let db = Database::open(&db_config, path.as_ref())?;
 		Ok(RocksdbBlobStore {
@@ -422,5 +429,156 @@ impl StorageApiT for RocksdbBlobStore {
 					.map_err(|_| anyhow!("failed to decode blob info from the store"))
 			})
 			.transpose()
+	}
+
+	fn insert_blob_info_by_block(&self, blob_info: &BlobInfo) -> Result<()> {
+		let key1 = blob_by_hash_block_key(&blob_info.hash, &blob_info.block_hash);
+		let key2 = blob_by_block_key(&blob_info.block_hash, &blob_info.hash);
+		let value = blob_info.encode();
+
+		let mut tx = DBTransaction::new();
+		tx.put(Self::COL_BLOB_BY_HASH_BLOCK, &key1, &value);
+		tx.put(Self::COL_BLOB_BY_BLOCK, &key2, &value);
+		self.db.write(tx)?;
+		Ok(())
+	}
+
+	fn insert_blob_infos_by_block_batch(&self, items: &[BlobInfo]) -> Result<()> {
+		if items.is_empty() {
+			return Ok(());
+		}
+		let mut tx = DBTransaction::new();
+		for info in items.iter() {
+			let key1 = blob_by_hash_block_key(&info.hash, &info.block_hash);
+			let key2 = blob_by_block_key(&info.block_hash, &info.hash);
+			let value = info.encode();
+			tx.put(Self::COL_BLOB_BY_HASH_BLOCK, &key1, &value);
+			tx.put(Self::COL_BLOB_BY_BLOCK, &key2, &value);
+		}
+		self.db.write(tx)?;
+		Ok(())
+	}
+
+	fn get_blob_info_by_block(
+		&self,
+		blob_hash: &BlobHash,
+		block_hash: &BlockHash,
+	) -> Result<Option<BlobInfo>> {
+		let key = blob_by_hash_block_key(blob_hash, block_hash);
+		match self.db.get(Self::COL_BLOB_BY_HASH_BLOCK, &key)? {
+			Some(bytes) => {
+				let mut s = bytes.as_slice();
+				let info =
+					BlobInfo::decode(&mut s).map_err(|_| anyhow!("failed to decode BlobInfo"))?;
+				Ok(Some(info))
+			},
+			None => Ok(None),
+		}
+	}
+
+	fn list_blob_infos_by_hash(&self, blob_hash: &BlobHash) -> Result<Vec<BlobInfo>> {
+		let prefix = blob_hash.0.to_vec();
+		let iter = self
+			.db
+			.iter_with_prefix(Self::COL_BLOB_BY_HASH_BLOCK, &prefix);
+		let mut out = Vec::new();
+		for kv in iter {
+			let (_k, v) = kv?;
+			let mut s = v.as_slice();
+			let info =
+				BlobInfo::decode(&mut s).map_err(|_| anyhow!("failed to decode BlobInfo"))?;
+			out.push(info);
+		}
+		Ok(out)
+	}
+
+	fn list_blob_infos_by_block(&self, block_hash: &BlockHash) -> Result<Vec<BlobInfo>> {
+		let prefix = block_hash.0.to_vec();
+		let iter = self.db.iter_with_prefix(Self::COL_BLOB_BY_BLOCK, &prefix);
+		let mut out = Vec::new();
+		for kv in iter {
+			let (_k, v) = kv?;
+			let mut s = v.as_slice();
+			let info =
+				BlobInfo::decode(&mut s).map_err(|_| anyhow!("failed to decode BlobInfo"))?;
+			out.push(info);
+		}
+		Ok(out)
+	}
+
+	fn append_pending_blob_info(&self, block_hash: &BlockHash, blob_info: &BlobInfo) -> Result<()> {
+		let key = block_key(block_hash);
+		let existing = self.db.get(Self::COL_BLOB_PENDING_BY_BLOCK, &key)?;
+		let mut vec: Vec<BlobInfo> = if let Some(bytes) = existing {
+			let mut s = bytes.as_slice();
+			Vec::<BlobInfo>::decode(&mut s)
+				.map_err(|_| anyhow!("failed to decode pending BlobInfo vec"))?
+		} else {
+			Vec::new()
+		};
+
+		vec.push(blob_info.clone());
+		let encoded = vec.encode();
+
+		let mut tx = DBTransaction::new();
+		tx.put(Self::COL_BLOB_PENDING_BY_BLOCK, &key, &encoded);
+		self.db.write(tx)?;
+		Ok(())
+	}
+
+	fn append_pending_blob_infos_batch(
+		&self,
+		block_hash: &BlockHash,
+		items: &[BlobInfo],
+	) -> Result<()> {
+		let key = block_key(block_hash);
+		// read existing
+		let existing = self.db.get(Self::COL_BLOB_PENDING_BY_BLOCK, &key)?;
+		let mut vec: Vec<BlobInfo> = if let Some(bytes) = existing {
+			let mut s = bytes.as_slice();
+			Vec::<BlobInfo>::decode(&mut s)
+				.map_err(|_| anyhow!("failed to decode pending BlobInfo vec"))?
+		} else {
+			Vec::new()
+		};
+
+		vec.extend_from_slice(items);
+		let encoded = vec.encode();
+
+		let mut tx = DBTransaction::new();
+		tx.put(Self::COL_BLOB_PENDING_BY_BLOCK, &key, &encoded);
+		self.db.write(tx)?;
+		Ok(())
+	}
+
+	fn take_pending_blob_infos(&self, block_hash: &BlockHash) -> Result<Vec<BlobInfo>> {
+		let key = block_key(block_hash);
+		let existing = self.db.get(Self::COL_BLOB_PENDING_BY_BLOCK, &key)?;
+		let mut tx = DBTransaction::new();
+		tx.delete(Self::COL_BLOB_PENDING_BY_BLOCK, &key);
+		self.db.write(tx)?;
+		if let Some(bytes) = existing {
+			let mut s = bytes.as_slice();
+			let vec = Vec::<BlobInfo>::decode(&mut s)
+				.map_err(|_| anyhow!("failed to decode pending BlobInfo vec"))?;
+			Ok(vec)
+		} else {
+			Ok(Vec::new())
+		}
+	}
+
+	fn get_pending_block_hashes(&self) -> Result<Vec<BlockHash>> {
+		let mut out = Vec::new();
+		for kv in self
+			.db
+			.iter(Self::COL_BLOB_PENDING_BY_BLOCK)
+			.filter_map(Result::ok)
+		{
+			let (k, _) = kv;
+			if k.len() == 32 {
+				out.push(BlockHash::from_slice(&k));
+			}
+		}
+		Ok(out)
 	}
 }

@@ -19,6 +19,7 @@
 //! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 #![allow(dead_code)]
 
+use crate::finality_watcher::finality_promoter;
 use crate::{cli::Cli, rpc as node_rpc};
 use avail_blob::p2p::{get_blob_p2p_config, BlobHandle};
 use avail_blob::rpc::{BlobApiServer, BlobRpc};
@@ -43,6 +44,7 @@ use sc_transaction_pool_api::OffchainTransactionPoolFactory;
 use sp_api::ProvideRuntimeApi;
 use sp_core::crypto::Pair;
 use sp_runtime::{generic::Era, traits::Block as BlockT, SaturatedConversion};
+use std::time::Duration;
 use std::{path::Path, sync::Arc};
 use substrate_prometheus_endpoint::{PrometheusError, Registry};
 
@@ -432,7 +434,7 @@ pub fn new_full_base(
 	// Initialize blob module
 	let blob_handle = BlobHandle::new(
 		config.role.clone(),
-		blob_database,
+		blob_database.clone(),
 		blob_gossip_service,
 		blob_req_receiver,
 		network.clone(),
@@ -461,6 +463,11 @@ pub fn new_full_base(
 	};
 	// END Initialize blob module
 
+	task_manager.spawn_handle().spawn(
+		"finality_promoter",
+		Some("blob_indexing"),
+		finality_promoter(client.clone(), blob_database, Duration::from_secs(3)),
+	);
 	let role = config.role.clone();
 	let force_authoring = config.force_authoring;
 	let backoff_authoring_blocks =
