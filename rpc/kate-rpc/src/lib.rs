@@ -239,15 +239,8 @@ where
 		let _metric_observer = MetricObserver::new(ObserveKind::KateQueryRows);
 
 		let (api, at, number, block_len, extrinsics, header) = self.scope(at)?;
-
-		match header.extension() {
-			HeaderExtension::V3(ext) => {
-				if ext.commitment.commitment.is_empty() {
-					return Err(internal_err!("Requested block {at} has empty commitments"));
-				}
-			},
-		};
-
+		self.ensure_has_commitments(&header, at)?;
+		
 		let grid_rows = api
 			.rows(at, number, extrinsics, block_len, rows.into())
 			.map_err(|kate_err| internal_err!("Failed Kate rows: {kate_err:?}"))?
