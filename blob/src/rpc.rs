@@ -315,7 +315,7 @@ where
 		blob_hash: H256,
 		at: Option<<Block as BlockT>::Hash>,
 	) -> RpcResult<DataProof> {
-		// if block_hash is supplied, use it, otherwise try using blob_info to find the latest block it was included in
+		// if block_hash is supplied, use it, otherwise try using blob_info to find the latest finalised block it was included in
 		let block_hash = if let Some(h) = at {
 			h
 		} else {
@@ -343,7 +343,7 @@ where
 			.ok_or_else(|| internal_err!("Block not found for block_hash: {:?}", block_hash))?
 			.block;
 
-		// We can restrict generating inclusion_proof only for finalised blocks
+		// We can restrict generating inclusion_proof only for finalised blocks, although if block_hash is not provided, we use blob_info from finalised blocks only
 		let (header, extrinsics) = block.deconstruct();
 		self.blob_handle
 			.client
