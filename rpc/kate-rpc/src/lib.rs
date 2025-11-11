@@ -193,6 +193,39 @@ where
 	}
 }
 
+
+	/// Checks if the block has non-empty commitments.
+	fn ensure_has_commitments(&self, header: &<Block as BlockT>::Header, at: Block::Hash) -> RpcResult<()> {
+		match header.extension() {
+			HeaderExtension::V3(ext) => {
+				if ext.commitment.commitment.is_empty() {
+					return Err(internal_err!("Requested block {at} has empty commitments"));
+				}
+			},
+		};
+		Ok(())
+	}
+
+	/// Validates that the requested number of cells doesn't exceed the configured limit.
+	fn validate_cells_limit(&self, cells_count: usize) -> RpcResult<()> {
+		if cells_count > self.max_cells_size {
+			return Err(internal_err!(
+				"Cannot query ({}) more than {} amount of cells per request. Either increase the max cells size (--kate-max-cells-size) or query less amount of cells per request.",
+				cells_count,
+				self.max_cells_size
+			));
+		}
+		Ok(())
+	}
+
+	/// Converts cells to position tuples (row, col).
+	fn cells_to_positions(cells: Cells) -> Vec<(u32, u32)> {
+		cells
+			.into_iter()
+			.map(|cell| (cell.row.0, cell.col.0))
+			.collect()
+	}
+
 #[async_trait]
 impl<Client, Block> KateApiServer<Block> for Kate<Client, Block>
 where
@@ -206,15 +239,8 @@ where
 		let _metric_observer = MetricObserver::new(ObserveKind::KateQueryRows);
 
 		let (api, at, number, block_len, extrinsics, header) = self.scope(at)?;
-
-		match header.extension() {
-			HeaderExtension::V3(ext) => {
-				if ext.commitment.commitment.is_empty() {
-					return Err(internal_err!("Requested block {at} has empty commitments"));
-				}
-			},
-		};
-
+		self.ensure_has_commitments(&header, at)?;
+		
 		let grid_rows = api
 			.rows(at, number, extrinsics, block_len, rows.into())
 			.map_err(|kate_err| internal_err!("Failed Kate rows: {kate_err:?}"))?
@@ -228,31 +254,14 @@ where
 		cells: Cells,
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<Vec<GDataProof>> {
-		if cells.len() > self.max_cells_size {
-			return Err(
-				internal_err!(
-					"Cannot query ({}) more than {} amount of cells per request. Either increase the max cells size (--kate-max-cells-size) or query less amount of cells per request.",
-					cells.len(),
-					self.max_cells_size
-				)
-			);
-		}
+		self.validate_cells_limit(cells.len())?;
 
 		let _metric_observer = MetricObserver::new(ObserveKind::KateQueryProof);
 
 		let (api, at, number, block_len, extrinsics, header) = self.scope(at)?;
-		match header.extension() {
-			HeaderExtension::V3(ext) => {
-				if ext.commitment.commitment.is_empty() {
-					return Err(internal_err!("Requested block {at} has empty commitments"));
-				}
-			},
-		};
+		self.ensure_has_commitments(&header, at)?;
 
-		let cells = cells
-			.into_iter()
-			.map(|cell| (cell.row.0, cell.col.0))
-			.collect::<Vec<_>>();
+		let cells = Self::cells_to_positions(cells);
 		let proof = api
 			.proof(at, number, extrinsics, block_len, cells)
 			.map_err(|kate_err| internal_err!("KateApi::proof failed: {kate_err:?}"))?
@@ -266,31 +275,14 @@ where
 		cells: Cells,
 		at: Option<HashOf<Block>>,
 	) -> RpcResult<Vec<(GMultiProof, GCellBlock)>> {
-		if cells.len() > self.max_cells_size {
-			return Err(
-				internal_err!(
-					"Cannot query ({}) more than {} amount of cells per request. Either increase the max cells size (--kate-max-cells-size) or query less amount of cells per request.",
-					cells.len(),
-					self.max_cells_size
-				)
-			);
-		}
+		self.validate_cells_limit(cells.len())?;
 
 		let _metric_observer = MetricObserver::new(ObserveKind::KateQueryProof);
 
 		let (api, at, number, block_len, extrinsics, header) = self.scope(at)?;
-		match header.extension() {
-			HeaderExtension::V3(ext) => {
-				if ext.commitment.commitment.is_empty() {
-					return Err(internal_err!("Requested block {at} has empty commitments"));
-				}
-			},
-		};
+		self.ensure_has_commitments(&header, at)?;
 
-		let cells = cells
-			.into_iter()
-			.map(|cell| (cell.row.0, cell.col.0))
-			.collect::<Vec<_>>();
+		let cells = Self::cells_to_positions(cells);
 		let proof = api
 			.multiproof(at, number, extrinsics, block_len, cells)
 			.map_err(|kate_err| internal_err!("KateApi::proof failed: {kate_err:?}"))?
