@@ -24,6 +24,7 @@ use std::{
 };
 
 pub type BlobHash = H256;
+pub type BlockHash = <Block as BlockT>::Hash;
 
 pub const BLOB_REQ_PROTO_STR: &str = "/avail/blob/req/1";
 pub const BLOB_REQ_PROTO: ProtocolName = ProtocolName::Static(BLOB_REQ_PROTO_STR);
@@ -332,6 +333,19 @@ impl BlobTxSummary {
 			})
 			.collect()
 	}
+}
+
+/// Blob info used to store info about blobs which were included in blocks
+#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, TypeInfo, Serialize, Deserialize)]
+pub struct BlobInfo {
+	/// The hash of the blob
+	pub hash: BlobHash,
+	/// Block hash
+	pub block_hash: H256,
+	/// Block number
+	pub block_number: u32,
+	/// The vector of ownership entries
+	pub ownership: Vec<OwnershipEntry>,
 }
 
 /// Structure for the request when a blob is requested from an RPC

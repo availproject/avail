@@ -4,14 +4,14 @@ pub mod runtime;
 #[cfg(feature = "std")]
 use kate::gridgen::core::CellBlock;
 // Reexport
-pub use runtime::{grid, multiproof, proof};
-
+use avail_core::data_proof::DataProof;
 use codec::{Decode, Encode};
 use core::num::TryFromIntError;
+pub use runtime::{grid, multiproof, proof};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_core::U256;
+use sp_core::{H256, U256};
 use sp_runtime_interface::pass_by::{PassByCodec, PassByInner};
 use sp_std::vec::Vec;
 use thiserror_no_std::Error;
@@ -111,4 +111,16 @@ impl From<KateAppRowError> for Error {
 	fn from(_: KateAppRowError) -> Self {
 		Self::AppRow
 	}
+}
+
+#[derive(Encode, Decode, TypeInfo, PassByCodec, Debug, Clone)]
+#[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
+#[cfg_attr(feature = "std", serde(rename_all = "camelCase"))]
+pub struct InclusionProof {
+	/// The block containing the blob.
+	pub block_hash: H256,
+
+	/// Merkle proof of inclusion for the blob in the block's data root.
+	/// NOTE: The leaf is a Hash of blob because block itself does not contain blob data & proving inclusion by hash is cheaper.
+	pub data_proof: DataProof,
 }
