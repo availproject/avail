@@ -442,6 +442,7 @@ pub fn new_full_base(
 		keystore_container.local_keystore(),
 		sync_service.clone(),
 		task_manager.spawn_handle(),
+		transaction_pool.clone(),
 	);
 
 	let basic_authorship_db = blob_handle.blob_database.clone();

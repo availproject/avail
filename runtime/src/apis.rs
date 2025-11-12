@@ -88,6 +88,9 @@ decl_runtime_apis! {
 
 		/// Expose accounts nonce
 		fn account_nonce(who: AccountId32) -> u32;
+
+		/// Get the blob vouch fee reserve amount
+		fn get_blob_vouch_fee_reserve() -> u128;
 	}
 }
 
@@ -514,6 +517,10 @@ impl_runtime_apis! {
 		fn account_nonce(who: AccountId32) -> u32 {
 			frame_system::Pallet::<Self>::account_nonce(who) as u32
 		}
+
+		fn get_blob_vouch_fee_reserve() -> u128 {
+			crate::constants::da::BlobVouchFeeReserve::get()
+		}
 	}
 
 	impl crate::apis::KateApi<Block> for Runtime {
@@ -592,11 +599,9 @@ impl_runtime_apis! {
 	impl avail_base::PostInherentsProvider<Block> for Runtime {
 		fn create_post_inherent_extrinsics(data: avail_base::StorageMap, blob_txs_summary: Vec<(
 			H256,
-			H256,
 			u32,
 			bool,
 			Option<String>,
-			Vec<AccountId32>,
 			Vec<(AccountId32, AuthorityDiscoveryId, String, Vec<u8>)>,
 		)>, total_blob_size: u64) -> Vec<<Block as BlockT>::Extrinsic> {
 			let mut post_inherent_extrinsics: Vec<<Block as BlockT>::Extrinsic> = pallet_vector::Pallet::<Runtime>::create_inherent(&data)

@@ -64,11 +64,9 @@ decl_runtime_apis! {
 	pub trait PostInherentsProvider {
 		fn create_post_inherent_extrinsics(data: StorageMap, blob_txs_summary: Vec<(
 			sp_core::H256,
-			sp_core::H256,
 			u32,
 			bool,
 			Option<String>,
-			Vec<sp_runtime::AccountId32>,
 			Vec<(sp_runtime::AccountId32, AuthorityId, String, Vec<u8>)>,
 		)>, total_blob_size: u64) -> Vec<<Block as BlockT>::Extrinsic>;
 	}

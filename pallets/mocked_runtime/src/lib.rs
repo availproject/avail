@@ -173,7 +173,11 @@ impl pallet_balances::Config for Runtime {
 }
 
 #[derive_impl(da_control::config_preludes::TestDefaultConfig)]
-impl da_control::Config for Runtime {}
+impl da_control::Config for Runtime {
+	type Currency = ();
+	type ValidatorSet = da_control::mock::DummyValidatorSet<Runtime>;
+	type ReportOffence = ();
+}
 
 impl custom::custom::Config for Runtime {}
 

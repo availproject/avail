@@ -3,21 +3,23 @@
 #![recursion_limit = "256"]
 
 use avail_core::{
-	AppId, BlockLengthColumns, BlockLengthRows, BLOCK_CHUNK_SIZE, DA_DISPATCH_RATIO,
-	NORMAL_DISPATCH_RATIO,
+	currency::Balance, AppId, BlockLengthColumns, BlockLengthRows, BLOCK_CHUNK_SIZE,
+	DA_DISPATCH_RATIO, NORMAL_DISPATCH_RATIO,
 };
-use codec::{Compact, CompactLen as _};
+use codec::{Compact, CompactLen as _, Encode};
+use frame_support::ensure;
+use frame_support::traits::{ValidatorSet, ValidatorSetWithIdentification};
 use frame_support::weights::constants::ExtrinsicBaseWeight;
-use frame_support::{dispatch::DispatchClass, traits::Get, weights::Weight};
+use frame_support::{
+	dispatch::DispatchClass,
+	traits::{Currency, Get, ReservableCurrency},
+	weights::Weight,
+};
 use frame_system::{limits::BlockLength, pallet::DynamicBlockLength};
-use scale_info::prelude::string::String;
-#[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
 use sp_arithmetic::traits::{CheckedAdd, One, SaturatedConversion};
-use sp_authority_discovery::AuthorityId;
 use sp_core::H256;
 use sp_io::hashing::keccak_256;
-use sp_runtime::AccountId32;
+use sp_runtime::traits::Convert;
 use sp_runtime::Perbill;
 use sp_std::{mem::replace, vec, vec::Vec};
 
@@ -32,97 +34,44 @@ pub mod mock;
 mod tests;
 pub use extensions::check_app_id::CheckAppId;
 pub use extensions::check_batch_transactions::CheckBatchTransactions;
-use frame_support::dispatch::DispatchFeeModifier;
+use frame_support::dispatch::{DispatchFeeModifier, DispatchResult};
+pub mod types;
 pub mod weights;
+pub use types::*;
 
 pub const LOG_TARGET: &str = "runtime::da_control";
 pub const DA_DISPATCH_RATIO_PERBILL: Perbill = Perbill::from_percent(DA_DISPATCH_RATIO as u32);
 pub const NORMAL_DISPATCH_RATIO_PERBILL: Perbill =
 	Perbill::from_percent(NORMAL_DISPATCH_RATIO as u32);
 
+pub type BalanceOf<T> =
+	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+
+pub type NegativeImbalanceOf<T> = <<T as Config>::Currency as Currency<
+	<T as frame_system::Config>::AccountId,
+>>::NegativeImbalance;
+
+/// A type for representing the validator id in a session.
+pub type ValidatorId<T> = <<T as Config>::ValidatorSet as ValidatorSet<
+	<T as frame_system::Config>::AccountId,
+>>::ValidatorId;
+
+/// A tuple of (ValidatorId, Identification) where `Identification` is the full identification of
+/// `ValidatorId`.
+pub type IdentificationTuple<T> = (
+	ValidatorId<T>,
+	<<T as Config>::ValidatorSet as ValidatorSetWithIdentification<
+		<T as frame_system::Config>::AccountId,
+	>>::Identification,
+);
+
 #[frame_support::pallet]
 pub mod pallet {
 	use frame_support::{pallet_prelude::*, DefaultNoBound};
 	use frame_system::pallet_prelude::*;
-	use sp_runtime::AccountId32;
+	use sp_staking::{offence::ReportOffence, SessionIndex};
 
 	use super::*;
-
-	pub type AppKeyFor<T> = BoundedVec<u8, <T as Config>::MaxAppKeyLength>;
-	pub type AppDataFor<T> = BoundedVec<u8, <T as Config>::MaxAppDataLength>;
-
-	#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-	#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, RuntimeDebug, MaxEncodedLen)]
-	pub struct AppKeyInfo<Acc: PartialEq> {
-		/// Owner of the key
-		pub owner: Acc,
-		/// Application ID associated.
-		pub id: AppId,
-	}
-
-	pub type AppKeyInfoFor<T> = AppKeyInfo<<T as frame_system::Config>::AccountId>;
-
-	#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, RuntimeDebug)]
-	pub struct BlobTxSummaryRuntime {
-		pub hash: H256,
-		pub finalized_block_hash_checkpoint: H256,
-		pub tx_index: u32,
-		pub success: bool,
-		pub reason: Option<String>,
-		pub missing_validators: Vec<AccountId32>,
-		// address, babe_key, encoded_peer_id, signature
-		pub ownership: Vec<(AccountId32, AuthorityId, String, Vec<u8>)>,
-	}
-
-	/// Structure for blob runtime parameters
-	#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, MaxEncodedLen, TypeInfo)]
-	pub struct BlobRuntimeParameters {
-		/// Maximum size of a blob, need to change the rpc request and response size to handle this
-		pub max_blob_size: u64,
-		/// Minimum amount of validator that needs to store a blob, if we have less than minimum, everyone stores it.
-		pub min_blob_holder_percentage: Perbill,
-		/// We take the maximum between this and MIN_BLOB_HOLDER_PERCENTAGE
-		pub min_blob_holder_count: u32,
-		/// Amount of block for which we need to store the blob metadata and blob.
-		pub blob_ttl: u64,
-		/// Amount of block for which we need to store the blob metadata if the blob is not notified yet.
-		pub temp_blob_ttl: u64,
-		/// Min Amount of block for which the transaction submitted through RPC is valid.
-		/// This value needs to handle the time to upload the blob to the store
-		pub min_transaction_validity: u64,
-		/// Max Amount of block for which the transaction submitted through RPC is valid.
-		/// This value is used so a transaction won't be stuck in the mempool.
-		pub max_transaction_validity: u64,
-		/// The number of time we'll allow trying to fetch internal blob metadata or blob data before letting the transaction go through to get discarded
-		pub max_blob_retry_before_discarding: u16,
-		/// The maximum size of data that can go in a block
-		/// Before this value came from the matrix size as we stored data in the block header but now we store only commitments
-		/// Theoritically with a matrix size of 4096 / 1024 we can store up to 132 mb of commitments which represents a huge block
-		/// Hence we need to bound it with a value
-		pub max_block_size: u64,
-		/// Tha mximum size allowed for old data submission
-		/// We use this value to bound old data submission now that the matrix size is increased
-		pub max_total_old_submission_size: u64,
-		/// Flag to disable / enable old DA submission
-		pub disable_old_da_submission: bool,
-	}
-	impl Default for BlobRuntimeParameters {
-		fn default() -> Self {
-			Self {
-				max_blob_size: 31 * 1024 * 1024,
-				min_blob_holder_percentage: Perbill::from_percent(10),
-				min_blob_holder_count: 2,
-				blob_ttl: 120_960,                    // 20sec block -> 28d - 6sec block -> 8.4d
-				temp_blob_ttl: 180,                   // 20sec block -> 1h - 6sec block -> 18mn
-				min_transaction_validity: 15,         // In blocks
-				max_transaction_validity: 150,        // In blocks
-				max_blob_retry_before_discarding: 10, // In blocks
-				max_block_size: 3 * 1024 * 1024 * 1024, // 3gb
-				max_total_old_submission_size: 4 * 1024 * 1024,
-				disable_old_da_submission: false,
-			}
-		}
-	}
 
 	/// Default implementations of [`DefaultConfig`], which can be used to implement [`Config`].
 	pub mod config_preludes {
@@ -145,6 +94,8 @@ pub mod pallet {
 			pub const MaxBlockCols: BlockLengthColumns = BlockLengthColumns(1024);
 			pub const MaxAppKeyLength: u32 = 32;
 			pub const MaxAppDataLength: u32 = 1_048_576; // 1 Mb
+			pub const MaxVouchesPerRecord: u32 = 256; // Need to be greater than vouch threshold
+			pub const BlobVouchFeeReserve: Balance = 0;
 		}
 
 		#[frame_support::register_default_impl(TestDefaultConfig)]
@@ -156,6 +107,9 @@ pub mod pallet {
 			type MaxBlockRows = MaxBlockRows;
 			type MinBlockCols = MinBlockCols;
 			type MinBlockRows = MinBlockRows;
+			type MaxVouchesPerRecord = MaxVouchesPerRecord;
+			type SessionDataProvider = ();
+			type BlobVouchFeeReserve = BlobVouchFeeReserve;
 			type WeightInfo = ();
 			#[inject_runtime_type]
 			type RuntimeEvent = ();
@@ -167,6 +121,10 @@ pub mod pallet {
 		/// Pallet Event
 		#[pallet::no_default_bounds]
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+
+		/// Currency mechanism used for deposits.
+		#[pallet::no_default]
+		type Currency: ReservableCurrency<Self::AccountId>;
 
 		/// Block length proposal Id.
 		type BlockLenProposalId: Parameter + Default + One + CheckedAdd + MaxEncodedLen;
@@ -195,11 +153,35 @@ pub mod pallet {
 		#[pallet::constant]
 		type MaxBlockCols: Get<BlockLengthColumns>;
 
+		/// Maximum number of validators vouching for a blob validator accusation.
+		#[pallet::constant]
+		type MaxVouchesPerRecord: Get<u32>;
+
+		/// The amount reserve to add an offence report voucher.
+		#[pallet::constant]
+		type BlobVouchFeeReserve: Get<Balance>;
+
+		/// A provider that gives the information about era and validators.
+		type SessionDataProvider: SessionDataProvider<Self::AccountId>;
+
+		/// A type for retrieving the validators in a session.
+		#[pallet::no_default]
+		type ValidatorSet: ValidatorSetWithIdentification<Self::AccountId>;
+
+		/// Hook into the offences pipeline.
+		#[pallet::no_default]
+		type ReportOffence: sp_staking::offence::ReportOffence<
+			Self::AccountId,
+			IdentificationTuple<Self>,
+			BlobOffence<IdentificationTuple<Self>>,
+		>;
+
 		/// Weights for this pallet.
 		type WeightInfo: weights::WeightInfo;
 	}
 
 	#[pallet::pallet]
+	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
 
 	/// Last application ID
@@ -226,6 +208,144 @@ pub mod pallet {
 	#[pallet::getter(fn blob_runtime_parameters)]
 	pub type BlobRuntimeParams<T: Config> = StorageValue<_, BlobRuntimeParameters, ValueQuery>;
 
+	/// Era wide blob offences
+	#[pallet::storage]
+	#[pallet::getter(fn blob_offence_records)]
+	pub type BlobOffenceRecords<T: Config> =
+		StorageMap<_, Blake2_128Concat, OffenceKey, OffenceRecord<T>>;
+
+	/// Last seen active era
+	#[pallet::storage]
+	#[pallet::getter(fn last_seen_era)]
+	pub type LastSeenSession<T: Config> = StorageValue<_, SessionIndex, OptionQuery>;
+
+	/// Last seen validator set
+	#[pallet::storage]
+	#[pallet::getter(fn last_seen_validator_set)]
+	pub type LastSeenValidatorSet<T: Config> = StorageValue<_, Vec<ValidatorId<T>>, ValueQuery>;
+
+	#[pallet::hooks]
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		fn on_initialize(_n: BlockNumberFor<T>) -> Weight {
+			let mut weight = Weight::zero();
+			let session_index = T::ValidatorSet::session_index();
+			let previous_session_index = LastSeenSession::<T>::get().unwrap_or(0);
+			weight = weight.saturating_add(<T as frame_system::Config>::DbWeight::get().reads(2));
+
+			if session_index > previous_session_index {
+				let mut previous_validator_set = LastSeenValidatorSet::<T>::get();
+				if previous_validator_set.is_empty() {
+					previous_validator_set = T::ValidatorSet::validators();
+				}
+				let blob_runtime_params = BlobRuntimeParams::<T>::get();
+				let vouch_threshold = blob_runtime_params.vouch_threshold;
+				let validator_length = previous_validator_set.len() as u32;
+				let threshold = vouch_threshold.min(validator_length);
+				weight =
+					weight.saturating_add(<T as frame_system::Config>::DbWeight::get().reads(2));
+
+				for (key, record) in BlobOffenceRecords::<T>::iter() {
+					weight = weight
+						.saturating_add(<T as frame_system::Config>::DbWeight::get().reads(1));
+					if !key.is_valid() {
+						continue;
+					}
+
+					let vouch_fee: BalanceOf<T> = T::BlobVouchFeeReserve::get().saturated_into();
+					weight = weight
+						.saturating_add(<T as frame_system::Config>::DbWeight::get().reads(1));
+
+					if !record.has_reached_threshold(validator_length, threshold) {
+						// Slash vouch fee
+						for voucher in record.vouches.iter() {
+							let validator =
+								T::AccountId::decode(&mut &voucher.validator.encode()[..]).ok();
+							if let Some(validator) = validator {
+								Self::slash_vouch_fee(&validator, Some(vouch_fee));
+								weight = weight.saturating_add(
+									<T as frame_system::Config>::DbWeight::get().writes(1),
+								);
+							}
+						}
+						continue;
+					}
+
+					let reporters: Vec<T::AccountId> = record
+						.vouches
+						.iter()
+						.filter_map(|v| T::AccountId::decode(&mut &v.validator.encode()[..]).ok())
+						.collect();
+
+					// Return vouch fee
+					for validator in reporters.clone().iter() {
+						Self::return_vouch_fee(&validator, Some(vouch_fee));
+						weight = weight
+							.saturating_add(<T as frame_system::Config>::DbWeight::get().writes(1));
+					}
+
+					let offender = match record.kind {
+						BlobOffenceKind::MissingValidatorForBlob => record
+							.missing_validator
+							.and_then(|a| T::AccountId::decode(&mut &a.encode()[..]).ok()),
+						_ => record
+							.get_block_author()
+							.and_then(|a| T::AccountId::decode(&mut &a.encode()[..]).ok()),
+					};
+
+					let Some(offender) = offender else {
+						continue;
+					};
+
+					let offender =
+						<T::ValidatorSet as ValidatorSet<T::AccountId>>::ValidatorIdOf::convert(
+							offender,
+						)
+						.and_then(|validator_id| {
+							<T::ValidatorSet as ValidatorSetWithIdentification<
+								T::AccountId,
+							>>::IdentificationOf::convert(validator_id.clone())
+							.map(|full_id| (validator_id, full_id))
+						});
+					weight = weight
+						.saturating_add(<T as frame_system::Config>::DbWeight::get().reads(2));
+
+					let Some(offender) = offender else {
+						continue;
+					};
+
+					let offence = BlobOffence {
+						kind: record.kind.clone(),
+						key: key.clone(),
+						session_index: previous_session_index,
+						validator_set_count: validator_length,
+						offenders: vec![offender],
+					};
+
+					match T::ReportOffence::report_offence(reporters, offence) {
+						Ok(()) => {
+							log::info!(target: crate::LOG_TARGET, "Reported blob offence: {:?}", key);
+						},
+						Err(e) => {
+							log::warn!(target: crate::LOG_TARGET, "Failed to report offence {:?}: {:?}", key, e);
+						},
+					}
+				}
+
+				LastSeenSession::<T>::put(session_index);
+				LastSeenValidatorSet::<T>::put(T::ValidatorSet::validators());
+				weight =
+					weight.saturating_add(<T as frame_system::Config>::DbWeight::get().writes(2));
+
+				let cleared_count = BlobOffenceRecords::<T>::clear(u32::max_value(), None);
+				weight = weight.saturating_add(
+					<T as frame_system::Config>::DbWeight::get()
+						.reads_writes(cleared_count.loops.into(), cleared_count.unique.into()),
+				);
+			}
+
+			weight
+		}
+	}
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Creates an application key if `key` does not exist yet.
@@ -415,14 +535,7 @@ pub mod pallet {
 			_blob_txs_summary: Vec<BlobTxSummaryRuntime>,
 		) -> DispatchResult {
 			ensure_none(origin)?;
-
-			// TODO Blob:
-			// Check signatures valid or trigger error
-			// Get missing validators
-			// If !missing.empty()
-			// Put in the storage mapped to blobhash / blochash checkpoint / reporting validator ? / ...
-			// Trigger missing validator event (new)
-			// Then client will subscribe / check its store / vouch or not vouch
+			// All the checks are done client side by validators
 
 			Ok(())
 		}
@@ -442,6 +555,7 @@ pub mod pallet {
 			max_block_size: Option<u64>,
 			max_total_old_submission_size: Option<u64>,
 			disable_old_da_submission: Option<bool>,
+			vouch_threshold: Option<u32>,
 		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
 
@@ -495,6 +609,13 @@ pub mod pallet {
 				if let Some(v) = disable_old_da_submission {
 					params.disable_old_da_submission = v;
 				}
+				if let Some(v) = vouch_threshold {
+					ensure!(
+						v > 0 && v <= T::MaxVouchesPerRecord::get(),
+						Error::<T>::InvalidVouchThreshold
+					);
+					params.vouch_threshold = v;
+				}
 
 				Ok(())
 			})?;
@@ -520,6 +641,176 @@ pub mod pallet {
 			Self::deposit_event(Event::SubmitBlobMetadataFeeModifierSet { value: modifier });
 
 			Ok(().into())
+		}
+
+		#[pallet::call_index(9)]
+		#[pallet::weight(T::WeightInfo::register_blob_offence())]
+		pub fn register_blob_offence(
+			origin: OriginFor<T>,
+			offence_key: OffenceKey,
+			voucher: ValidatorVoucher,
+		) -> DispatchResultWithPostInfo {
+			ensure_none(origin)?;
+
+			// Ensure the key is valid based on the kind and params
+			ensure!(offence_key.is_valid(), Error::<T>::InvalidOffenceKey);
+
+			// Get validators list
+			let validators = T::SessionDataProvider::validators();
+
+			// Check given session
+			let provided_session = voucher.session_index;
+			let current_session = T::ValidatorSet::session_index();
+			ensure!(
+				provided_session == current_session,
+				Error::<T>::InvalidVoucherSession
+			);
+
+			// Checks only run outside of tests and runtime benchmarks
+			let Some(validator_id) =
+				T::AccountId::decode(&mut &voucher.validator.encode()[..]).ok()
+			else {
+				return Err(Error::<T>::InvalidVoucherValidator.into());
+			};
+
+			// Check the sender and the signature
+			Self::check_validator_and_signature(
+				&offence_key,
+				&voucher,
+				current_session,
+				&validator_id,
+				&validators,
+			)?;
+
+			// Get or create the offence
+			let mut record = BlobOffenceRecords::<T>::get(&offence_key).unwrap_or_else(|| {
+				OffenceRecord::<T>::new(
+					offence_key.kind.clone(),
+					offence_key.block_hash,
+					offence_key.blob_hash.clone(),
+					offence_key.missing_validator.clone(),
+				)
+			});
+
+			// If the vouchers already contains my voucher, return an error
+			ensure!(
+				!record
+					.vouches
+					.iter()
+					.any(|v| voucher.validator == v.validator),
+				Error::<T>::DuplicateVouch
+			);
+
+			// If the offence record has not reached threshold, add my boucher
+			let mut added = false;
+			let threshold_reached = record
+				.has_reached_threshold(validators.len() as u32, T::MaxVouchesPerRecord::get());
+
+			if !threshold_reached {
+				// Reserve the report fee
+				Self::reserve_vouch_fee(&validator_id)?;
+
+				record
+					.vouches
+					.try_push(voucher.clone())
+					.map_err(|_| Error::<T>::VouchListFull)?;
+				BlobOffenceRecords::<T>::insert(&offence_key, record.clone());
+				added = true;
+			}
+
+			Self::deposit_event(Event::BlobOffenceReported {
+				who: validator_id,
+				offence_key,
+				voucher,
+				added,
+			});
+
+			// Refund full fee since it was valid
+			Ok(().into())
+		}
+
+		#[pallet::call_index(10)]
+		#[pallet::weight(T::WeightInfo::clear_blob_offence_records())]
+		pub fn clear_blob_offence_records(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+			ensure_root(origin)?;
+
+			let _ = BlobOffenceRecords::<T>::clear(u32::max_value(), None);
+
+			Ok(().into())
+		}
+	}
+
+	#[pallet::validate_unsigned]
+	impl<T: Config> ValidateUnsigned for Pallet<T> {
+		type Call = Call<T>;
+
+		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
+			// Let blob txs summary pass
+			if matches!(call, Call::submit_blob_txs_summary { .. }) {
+				return Ok(Default::default());
+			}
+
+			// Check extrinsic type
+			let Call::register_blob_offence {
+				offence_key,
+				voucher,
+			} = call
+			else {
+				return InvalidTransaction::Call.into();
+			};
+
+			// Check the key
+			if !offence_key.is_valid() {
+				return InvalidTransaction::BadProof.into();
+			}
+
+			// Check given session
+			let provided_session = voucher.session_index;
+			let current_session = T::ValidatorSet::session_index();
+			if provided_session != current_session {
+				return InvalidTransaction::Stale.into();
+			}
+
+			// Verify that key owner is the correct account id
+			let key = voucher.key;
+			let key_type = sp_core::crypto::key_types::BABE;
+			let Some(key_owner) =
+				T::SessionDataProvider::get_validator_from_key(key_type, key.encode())
+			else {
+				return InvalidTransaction::BadProof.into();
+			};
+			let Some(validator) = T::AccountId::decode(&mut &voucher.validator.encode()[..]).ok()
+			else {
+				return InvalidTransaction::BadProof.into();
+			};
+
+			if key_owner != validator {
+				return InvalidTransaction::BadProof.into();
+			}
+
+			// Check that validator is part of the active set
+			let validators = T::SessionDataProvider::validators();
+			if !validators.contains(&validator) {
+				return InvalidTransaction::BadProof.into();
+			}
+
+			// Check that validator has enough balance
+			let free_balance = T::Currency::free_balance(&validator).saturated_into::<u128>();
+			let fee = T::BlobVouchFeeReserve::get();
+			if free_balance < fee {
+				return InvalidTransaction::Payment.into();
+			}
+
+			// Check the voucher signature
+			if !voucher.verify_signature((offence_key.clone(), current_session).encode()) {
+				return InvalidTransaction::BadProof.into();
+			}
+
+			ValidTransaction::with_tag_prefix("BlobOffence")
+				.longevity(32)
+				.and_provides((offence_key, voucher))
+				.propagate(true)
+				.build()
 		}
 	}
 
@@ -557,6 +848,12 @@ pub mod pallet {
 		},
 		SubmitBlobMetadataFeeModifierSet {
 			value: DispatchFeeModifier,
+		},
+		BlobOffenceReported {
+			who: T::AccountId,
+			offence_key: OffenceKey,
+			voucher: ValidatorVoucher,
+			added: bool,
 		},
 	}
 
@@ -607,8 +904,26 @@ pub mod pallet {
 		MaxBlockSizeTooLarge,
 		/// The maximum old submissions in a block is too large.
 		MaxOldSubmissionTooLarge,
-		/// Old data submission are disabled
+		/// Old data submission are disabled.
 		OldDaSubmissionDisabled,
+		/// The vouch threshold cannot be zero.
+		InvalidVouchThreshold,
+		/// Attempted to register an invalid offence key.
+		InvalidOffenceKey,
+		/// Provided voucher session is invalid.
+		InvalidVoucherSession,
+		/// Provided voucher validator is invalid.
+		InvalidVoucherValidator,
+		/// The caller is not part of the current active validator set.
+		NotAnActiveValidator,
+		/// The voucher signature is invalid or does not match the offence key payload.
+		InvalidVoucherSignature,
+		/// This validator has already vouched for this offence record.
+		DuplicateVouch,
+		/// Failed to add a new vouch entry because the vouch list is full.
+		VouchListFull,
+		/// Unable to reserve the vouch fee (insufficient funds or unexpected reserve failure).
+		InsufficientBalanceForVouch,
 	}
 
 	#[pallet::genesis_config]
@@ -665,6 +980,69 @@ impl<T: Config> Pallet<T> {
 			.saturating_mul(5)
 			.saturating_add(base_weight);
 		current_normal_weight.all_lte(acceptable_limit)
+	}
+
+	/// Try to reserve the vouch fee for `who`.
+	/// If the account doesn't have enough free balance, returns an error.
+	pub fn reserve_vouch_fee(who: &T::AccountId) -> DispatchResult {
+		let amount: BalanceOf<T> = T::BlobVouchFeeReserve::get().saturated_into();
+
+		T::Currency::reserve(who, amount).map_err(|_| Error::<T>::InsufficientBalanceForVouch)?;
+
+		Ok(())
+	}
+
+	/// Return (unreserve) the vouch fee back to `who`.
+	pub fn return_vouch_fee(who: &T::AccountId, vouch_fee: Option<BalanceOf<T>>) {
+		let amount: BalanceOf<T> =
+			vouch_fee.unwrap_or(T::BlobVouchFeeReserve::get().saturated_into());
+		let _unreserved = T::Currency::unreserve(who, amount);
+	}
+
+	/// Slash the vouch fee, permanently remove the reserved balance from `who`.
+	pub fn slash_vouch_fee(who: &T::AccountId, vouch_fee: Option<BalanceOf<T>>) {
+		let amount: BalanceOf<T> =
+			vouch_fee.unwrap_or(T::BlobVouchFeeReserve::get().saturated_into());
+		let (imbalance, _remainder) = T::Currency::slash_reserved(who, amount);
+
+		drop(imbalance);
+	}
+
+	pub fn check_validator_and_signature(
+		offence_key: &OffenceKey,
+		voucher: &ValidatorVoucher,
+		current_session: u32,
+		validator_id: &T::AccountId,
+		validators: &Vec<T::AccountId>,
+	) -> DispatchResult {
+		// Early return if test or benchmark mode
+		if cfg!(test) || cfg!(feature = "runtime-benchmarks") {
+			return Ok(());
+		}
+
+		let key = voucher.key;
+		let key_type = sp_core::crypto::key_types::BABE;
+
+		// Check validator address validity
+		ensure!(
+			Some(validator_id.clone())
+				== T::SessionDataProvider::get_validator_from_key(key_type, key.encode()),
+			Error::<T>::InvalidVoucherValidator
+		);
+
+		// Check if the extrinsic is coming from an active validator
+		ensure!(
+			validators.contains(&validator_id),
+			Error::<T>::NotAnActiveValidator
+		);
+
+		// Check that the offence key is correctly signed
+		ensure!(
+			voucher.verify_signature((offence_key.clone(), current_session).encode()),
+			Error::<T>::InvalidVoucherSignature
+		);
+
+		Ok(())
 	}
 }
 
@@ -755,51 +1133,5 @@ pub mod weight_helper {
 		// We return the biggest value between the regular weight and da weight.
 		// I cannot think of a case where regular weight > da weight.
 		da_weight.max(regular_weight)
-	}
-}
-
-impl<Acc> AppKeyInfo<Acc>
-where
-	Acc: PartialEq,
-{
-	pub fn new(owner: Acc, id: AppId) -> Self {
-		Self { owner, id }
-	}
-}
-
-impl BlobTxSummaryRuntime {
-	pub fn convert_into(
-		input: Vec<(
-			H256,
-			H256,
-			u32,
-			bool,
-			Option<String>,
-			Vec<AccountId32>,
-			Vec<(AccountId32, AuthorityId, String, Vec<u8>)>,
-		)>,
-	) -> Vec<BlobTxSummaryRuntime> {
-		input
-			.into_iter()
-			.map(
-				|(
-					hash,
-					finalized_block_hash_checkpoint,
-					tx_index,
-					success,
-					reason,
-					missing_validators,
-					ownership,
-				)| BlobTxSummaryRuntime {
-					hash,
-					finalized_block_hash_checkpoint,
-					tx_index,
-					success,
-					reason,
-					missing_validators,
-					ownership,
-				},
-			)
-			.collect()
 	}
 }

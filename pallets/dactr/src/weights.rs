@@ -61,6 +61,8 @@ pub trait WeightInfo {
 	fn submit_blob_txs_summary(n: u32, ) -> Weight;
 	fn submit_blob_metadata(s: u32, ) -> Weight;
 	fn set_submit_blob_metadata_fee_modifier() -> Weight;
+	fn register_blob_offence() -> Weight;
+	fn clear_blob_offence_records() -> Weight;
 }
 
 /// Weights for `da_control` using the Avail node and recommended hardware.
@@ -180,6 +182,30 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		Weight::from_parts(3_921_000, 0)
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
+	/// Storage: `Session::Validators` (r:1 w:0)
+	/// Proof: `Session::Validators` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `DataAvailability::BlobOffenceRecords` (r:1 w:1)
+	/// Proof: `DataAvailability::BlobOffenceRecords` (`max_values`: None, `max_size`: Some(32984), added: 35459, mode: `MaxEncodedLen`)
+	fn register_blob_offence() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `205`
+		//  Estimated: `36449`
+		// Minimum execution time: 28_273_000 picoseconds.
+		Weight::from_parts(29_355_000, 36449)
+			.saturating_add(T::DbWeight::get().reads(2_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
+	/// Storage: `DataAvailability::BlobOffenceRecords` (r:1 w:1)
+	/// Proof: `DataAvailability::BlobOffenceRecords` (`max_values`: None, `max_size`: Some(32984), added: 35459, mode: `MaxEncodedLen`)
+	fn clear_blob_offence_records() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `199`
+		//  Estimated: `36449`
+		// Minimum execution time: 9_508_000 picoseconds.
+		Weight::from_parts(12_954_000, 36449)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
 }
 
 // For backwards compatibility and tests.
@@ -296,6 +322,30 @@ impl WeightInfo for () {
 		//  Estimated: `0`
 		// Minimum execution time: 3_537_000 picoseconds.
 		Weight::from_parts(3_921_000, 0)
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
+	}
+	/// Storage: `Session::Validators` (r:1 w:0)
+	/// Proof: `Session::Validators` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
+	/// Storage: `DataAvailability::BlobOffenceRecords` (r:1 w:1)
+	/// Proof: `DataAvailability::BlobOffenceRecords` (`max_values`: None, `max_size`: Some(32984), added: 35459, mode: `MaxEncodedLen`)
+	fn register_blob_offence() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `205`
+		//  Estimated: `36449`
+		// Minimum execution time: 28_273_000 picoseconds.
+		Weight::from_parts(29_355_000, 36449)
+			.saturating_add(RocksDbWeight::get().reads(2_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
+	}
+	/// Storage: `DataAvailability::BlobOffenceRecords` (r:1 w:1)
+	/// Proof: `DataAvailability::BlobOffenceRecords` (`max_values`: None, `max_size`: Some(32984), added: 35459, mode: `MaxEncodedLen`)
+	fn clear_blob_offence_records() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `199`
+		//  Estimated: `36449`
+		// Minimum execution time: 9_508_000 picoseconds.
+		Weight::from_parts(12_954_000, 36449)
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 }
