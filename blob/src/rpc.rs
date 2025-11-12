@@ -33,10 +33,10 @@ use jsonrpsee::{
 	types::error::ErrorObject,
 };
 use sc_client_api::{BlockBackend, HeaderBackend, StateBackend};
+use sc_network::NetworkStateInfo;
 use sc_network::PeerId;
-use sp_api::ProvideRuntimeApi;
-// use sc_network::NetworkStateInfo;
 use sc_transaction_pool_api::TransactionPool;
+use sp_api::ProvideRuntimeApi;
 use sp_core::H256;
 use sp_runtime::{
 	traits::{Block as BlockT, HashingFor, Header as HeaderT},
@@ -91,6 +91,13 @@ where
 		blob_index: u32,
 		blob_hash: H256,
 	) -> RpcResult<Blob>;
+
+	#[method(name = "blob_getBlobV2")]
+	/// This RPC will work in two different modes based on params passed:
+	/// if 'at' param is passed, it will try to get blob ownership from that block's blob tx summaries
+	/// if 'at' param is None, it will try to get blob ownership from storage's blob info
+	/// based on the blob ownership, it will try to get the blob from local storage or from p2p network
+	async fn get_blob_v2(&self, blob_hash: H256, at: Option<Block::Hash>) -> RpcResult<Blob>;
 
 	#[method(name = "blob_getBlobInfo")]
 	async fn get_blob_info(&self, blob_hash: H256) -> RpcResult<BlobInfo>;
@@ -299,6 +306,172 @@ where
 
 		Err(internal_err!(
 			"All attempts to get the blob from validators failed."
+		))
+	}
+
+	async fn get_blob_v2(&self, blob_hash: H256, at: Option<Block::Hash>) -> RpcResult<Blob> {
+		// get the blob owners peer_id's
+		let peer_ids: Vec<String> = if let Some(at_hash) = at {
+			// Mode A: read the block directly from our client and decode the summary extrinsic.
+			let block = self
+				.blob_handle
+				.client
+				.block(at_hash.into())
+				.map_err(|e| internal_err!("Failed to get block: {:?}", e))?
+				.ok_or_else(|| internal_err!("Block not found: {:?}", at_hash))?
+				.block;
+
+			let extrinsics = block.extrinsics();
+			if extrinsics.len() < 2 {
+				return Err(internal_err!(
+					"Block does not contain post-inherent summary extrinsic"
+				));
+			}
+
+			// summary is second last extrinsic
+			let summary_encoded = extrinsics[extrinsics.len().wrapping_sub(2)].encode();
+			let summary_xt: UncheckedExtrinsic = Decode::decode(&mut &summary_encoded[..])
+				.map_err(|_| internal_err!("Failed to decode summary extrinsic"))?;
+
+			if let RuntimeCall::DataAvailability(Call::submit_blob_txs_summary {
+				blob_txs_summary,
+				..
+			}) = summary_xt.function
+			{
+				// find the summary for this blob_hash
+				let summary = blob_txs_summary
+					.into_iter()
+					.find(|s| s.hash == blob_hash)
+					.ok_or_else(|| {
+						internal_err!(
+						"Blob transaction summary not found for blob {:?} in provided block {:?}",
+						blob_hash,
+						at_hash
+					)
+					})?;
+
+				if !summary.success {
+					return Err(internal_err!(
+						"Blob update not successful at provided block {:?}: {:?}",
+						at_hash,
+						summary.reason
+					));
+				}
+				if summary.ownership.is_empty() {
+					return Err(internal_err!(
+						"Blob ownership empty in provided block {:?} for blob {:?}",
+						at_hash,
+						blob_hash
+					));
+				}
+
+				summary
+					.ownership
+					.into_iter()
+					.map(|(_addr, _babe_key, encoded_peer_id, _sig)| encoded_peer_id)
+					.collect()
+			} else {
+				return Err(internal_err!(
+					"Expected DataAvailability::submit_blob_txs_summary in block"
+				));
+			}
+		} else {
+			// Mode B: read local BlobInfo (indexer).
+			let blob_info = self
+				.blob_handle
+				.blob_database
+				.get_blob_info(&blob_hash)
+				.map_err(|e| internal_err!("Failed to get blob info: {:?}", e))?
+				.ok_or_else(|| internal_err!("Blob info not found for hash: {:?}", blob_hash))?;
+
+			if blob_info.ownership.is_empty() {
+				return Err(internal_err!(
+					"Blob ownership empty in local BlobInfo for {:?}",
+					blob_hash
+				));
+			}
+
+			blob_info
+				.ownership
+				.into_iter()
+				.map(|entry| entry.encoded_peer_id)
+				.collect()
+		};
+
+		// If blob exists locally, return immediately
+		if let Ok(Some(blob)) = self.blob_handle.blob_database.get_blob(&blob_hash) {
+			log::info!("Blob found in local storage: {:?}", blob_hash);
+			return Ok(blob);
+		}
+
+		// Ensure we have peers to try
+		if peer_ids.is_empty() {
+			return Err(internal_err!(
+				"No owners/peers known for blob {:?}",
+				blob_hash
+			));
+		}
+
+		let my_peer_id = self.blob_handle.network.local_peer_id();
+		// Deterministic start index (seeded by finalized_hash for stability)
+		let seed_bytes = self.blob_handle.client.info().finalized_hash.encode();
+		let base_index = generate_base_index(blob_hash, &seed_bytes, peer_ids.len(), None)
+			.map_err(|e| internal_err!("Failed to generate base index: {e:?}"))?;
+
+		// Try peers round-robin
+		for attempt in 0..(MAX_RPC_RETRIES as usize) {
+			let index = (base_index + attempt) % peer_ids.len();
+			let encoded_peer_id = &peer_ids[index];
+
+			match PeerId::from_str(encoded_peer_id) {
+				Ok(peer_id) => {
+					if peer_id == my_peer_id {
+						log::warn!(
+							"Attempt {}/{}: skipping self peer_id {} we've already tried locally",
+							attempt + 1,
+							MAX_RPC_RETRIES,
+							encoded_peer_id
+						);
+						continue;
+					}
+					match send_blob_query_request(blob_hash, peer_id, &self.blob_handle.network)
+						.await
+					{
+						Ok(Some(blob)) => return Ok(blob),
+						Ok(None) => {
+							log::warn!(
+								"Attempt {}/{}: owner {} returned no blob",
+								attempt + 1,
+								MAX_RPC_RETRIES,
+								encoded_peer_id
+							);
+						},
+						Err(e) => {
+							log::warn!(
+								"Attempt {}/{}: RPC error from {}: {:?}",
+								attempt + 1,
+								MAX_RPC_RETRIES,
+								encoded_peer_id,
+								e
+							);
+						},
+					}
+				},
+				Err(e) => {
+					log::warn!(
+						"Attempt {}/{}: invalid peer_id '{}' : {:?}",
+						attempt + 1,
+						MAX_RPC_RETRIES,
+						encoded_peer_id,
+						e
+					);
+				},
+			}
+		}
+
+		Err(internal_err!(
+			"All attempts to fetch blob {:?} from its owners failed.",
+			blob_hash
 		))
 	}
 

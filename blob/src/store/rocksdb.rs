@@ -3,6 +3,7 @@ use anyhow::{anyhow, Result};
 use codec::{Decode, Encode};
 use kvdb::{DBTransaction, KeyValueDB};
 use kvdb_rocksdb::{Database, DatabaseConfig};
+use sp_runtime::SaturatedConversion;
 use std::{path::Path, sync::Mutex};
 use tempfile::TempDir;
 use ttl_cache::TtlCache;
@@ -123,16 +124,20 @@ impl StorageApiT for RocksdbBlobStore {
 		match self.get_raw_blob(hash)? {
 			Some(compressed_blob) => {
 				let timer = std::time::Instant::now();
-				let data = compressed_blob.data()?;
-				let mut slice = data.as_slice();
-				let decoded = Blob::decode(&mut slice)
-					.map_err(|_| anyhow!("failed to decode blob from the store"))?;
+				// `data()` returns decompressed raw bytes (Vec<u8>)
+				let raw = compressed_blob.data()?;
+				// Build Blob struct from raw bytes, no decoding required
+				let blob = Blob {
+					blob_hash: hash.clone(),
+					size: raw.len().saturated_into(),
+					data: std::sync::Arc::new(raw).to_vec(),
+				};
 				log::info!(
-					"GET_BLOB - Decoding took - {:?} - hash: {:?}",
+					"GET_BLOB - Reconstruction took - {:?} - hash: {:?}",
 					timer.elapsed(),
 					hash
 				);
-				Ok(Some(decoded))
+				Ok(Some(blob))
 			},
 			None => Ok(None),
 		}
