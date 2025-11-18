@@ -647,10 +647,6 @@ pub mod fetch_extrinsics_v1 {
 			true
 		}
 		pub fn filter_in(&self, signature: &Option<TransactionSignature>) -> bool {
-			if !self.filter_in_app_id(signature.as_ref().map(|x| x.app_id)) {
-				return false;
-			}
-
 			if !self.filter_in_ss58_address(
 				signature.as_ref().map(|x| x.ss58_address.clone()).flatten(),
 			) {
@@ -671,12 +667,6 @@ pub mod fetch_extrinsics_v1 {
 			self.ss58_address == value
 		}
 
-		pub fn filter_in_app_id(&self, value: Option<u32>) -> bool {
-			if self.app_id.is_none() {
-				return true;
-			}
-			self.app_id == value
-		}
 
 		pub fn filter_in_nonce(&self, value: Option<u32>) -> bool {
 			if self.nonce.is_none() {
