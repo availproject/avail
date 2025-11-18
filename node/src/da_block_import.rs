@@ -5,6 +5,10 @@
 /// It double-checks the **extension header** which contains the `Kate Commitment` and `Data
 /// Root`.
 use avail_base::HeaderExtensionBuilderData;
+use avail_blob::{
+	store::StorageApiT,
+	types::{BlobInfo, OwnershipEntry},
+};
 use avail_core::{
 	ensure,
 	header::{extension as he, HeaderExtension},
@@ -13,6 +17,7 @@ use avail_core::{
 	OpaqueExtrinsic, BLOCK_CHUNK_SIZE,
 };
 use avail_observability::metrics::avail::{MetricObserver, ObserveKind};
+use da_control::BlobTxSummaryRuntime;
 use da_runtime::{
 	apis::{DataAvailApi, ExtensionBuilder},
 	Header as DaHeader, Runtime,
@@ -37,6 +42,8 @@ pub struct BlockImport<B, C, I> {
 	inner: I,
 	// If true, it skips the DA block import check during sync only.
 	unsafe_da_sync: bool,
+	// External blob DB handle:
+	blob_store: Arc<dyn StorageApiT>,
 	_block: PhantomData<B>,
 }
 
@@ -48,12 +55,18 @@ where
 	C: ProvideRuntimeApi<B> + HeaderBackend<B> + Send + Sync,
 	C::Api: DataAvailApi<B> + ExtensionBuilder<B>,
 {
-	pub fn new(client: Arc<C>, inner: I, unsafe_da_sync: bool) -> Self {
+	pub fn new(
+		client: Arc<C>,
+		inner: I,
+		unsafe_da_sync: bool,
+		blob_store: Arc<dyn StorageApiT>,
+	) -> Self {
 		Self {
 			client,
 			inner,
 			unsafe_da_sync,
 			_block: PhantomData,
+			blob_store,
 		}
 	}
 
@@ -85,10 +98,13 @@ where
 		Ok(())
 	}
 
+	// Now this ALWAYS runs and returns the decoded summaries (if any)
+	// by calling the new runtime API that both checks and decodes the
+	// DA post-inherent.
 	fn ensure_before_last_extrinsic_is_blob_summary_tx(
 		&self,
 		block: &BlockImportParams<B>,
-	) -> Result<(), ConsensusError> {
+	) -> Result<Vec<BlobTxSummaryRuntime>, ConsensusError> {
 		let err = block_doesnt_contain_da_post_inherent();
 
 		let maybe_body = block.body.as_ref();
@@ -103,15 +119,14 @@ where
 		let parent_hash = <B as BlockT>::Hash::from(block.header.parent_hash);
 		let api = self.client.runtime_api();
 
-		let Ok(found) =
-			api.check_if_extrinsic_is_da_post_inherent(parent_hash, da_summary_extrinsic)
+		let Ok(extracted) = api.extract_post_inherent_summaries(parent_hash, da_summary_extrinsic)
 		else {
 			return Err(err);
 		};
 
-		ensure!(found, err);
+		ensure!(extracted.is_some(), err);
 
-		Ok(())
+		Ok(extracted.expect("Checked above; qed"))
 	}
 
 	fn ensure_valid_header_extension(
@@ -178,14 +193,120 @@ where
 			BlockOrigin::NetworkInitialSync | BlockOrigin::File
 		);
 		let skip_sync = self.unsafe_da_sync && is_sync;
+
+		// Always extract blob summaries (if any) from DA post-inherent extrinsic.
+		// we know that it will add small overheasd but simplifies the code flow.
+		let pre_extracted_summaries =
+			self.ensure_before_last_extrinsic_is_blob_summary_tx(&block)?;
+
 		if !is_own && !skip_sync && !block.with_state() {
 			self.ensure_last_extrinsic_is_failed_send_message_txs(&block)?;
-			self.ensure_before_last_extrinsic_is_blob_summary_tx(&block)?;
 			self.ensure_valid_header_extension(&block)?;
 		}
 
+		let candidate_block_number: u32 = block.header.number;
+		let candidate_block_hash = block.post_hash();
+
 		// Next import block stage & metrics
 		let result = self.inner.import_block(block).await;
+
+		// On successful import of block, write to our blob indexer.
+		if let Ok(ImportResult::Imported(_imported)) = &result {
+			// filter out successful blobs only and collect BlobInfo entries
+			let mut blob_infos: Vec<BlobInfo> = Vec::new();
+
+			for s in pre_extracted_summaries.iter().filter(|s| s.success) {
+				let ownership_entries: Vec<OwnershipEntry> = s
+					.ownership
+					.iter()
+					.map(|(a, b, c, d)| OwnershipEntry {
+						address: a.clone(),
+						babe_key: b.clone(),
+						encoded_peer_id: c.clone(),
+						signature: d.clone(),
+					})
+					.collect();
+
+				let blob_info = BlobInfo {
+					hash: s.hash,
+					block_hash: candidate_block_hash,
+					block_number: candidate_block_number,
+					ownership: ownership_entries,
+				};
+
+				blob_infos.push(blob_info);
+			}
+
+			// If there are none, skip DB work and logs
+			if blob_infos.is_empty() {
+				log::debug!(
+					"No successful blob summaries to write for block #{}/{}",
+					candidate_block_number,
+					candidate_block_hash
+				);
+			} else {
+				// Batch insert per-block history (blob_by_hash_block + blob_by_block)
+				let write_start = std::time::Instant::now();
+				let mut written_history = 0usize;
+				if let Err(e) = self
+					.blob_store
+					.insert_blob_infos_by_block_batch(&blob_infos)
+				{
+					log::warn!(
+						"Failed batch insert_blob_infos_by_block_batch for block #{}/{}: {}",
+						candidate_block_number,
+						candidate_block_hash,
+						e
+					);
+				} else {
+					written_history = blob_infos.len();
+				}
+				let history_ns = write_start.elapsed().as_nanos();
+
+				// Append pending pending_by_block
+				let pending_start = std::time::Instant::now();
+				let mut written_pending = 0usize;
+				if let Err(e) = self
+					.blob_store
+					.append_pending_blob_infos_batch(&candidate_block_hash, &blob_infos)
+				{
+					log::warn!(
+						"Failed append_pending_blob_infos_batch for block #{}/{}: {}",
+						candidate_block_number,
+						candidate_block_hash,
+						e
+					);
+				} else {
+					written_pending = blob_infos.len();
+				}
+				let pending_ns = pending_start.elapsed().as_nanos();
+
+				// Logging aggregated stats
+				if written_history > 0 || written_pending > 0 {
+					let total_written = std::cmp::max(written_history, written_pending);
+					let total_ns = history_ns + pending_ns;
+					let avg_us = (total_ns as f64 / total_written as f64) / 1_000.0_f64;
+					log::info!(
+						"⏱️ Persisted {} BlobInfo entries for block #{}/{} (history={}, pending={}), total_time = {} ms, avg = {:.3} µs",
+						total_written,
+						candidate_block_number,
+						candidate_block_hash,
+						written_history,
+						written_pending,
+						(total_ns as f64) / 1_000_000.0_f64,
+						avg_us
+					);
+				} else {
+					log::warn!(
+						"Attempted writes for blob_info in block #{}/{} took total {} ms (all failed)",
+						candidate_block_number,
+						candidate_block_hash,
+						((history_ns + pending_ns) as f64) / 1_000_000.0_f64
+					);
+				}
+			}
+		}
+
 		result.map_err(Into::into)
 	}
 
@@ -203,6 +324,7 @@ impl<B, C, I: Clone> Clone for BlockImport<B, C, I> {
 			client: self.client.clone(),
 			inner: self.inner.clone(),
 			unsafe_da_sync: self.unsafe_da_sync,
+			blob_store: self.blob_store.clone(),
 			_block: PhantomData,
 		}
 	}

@@ -159,6 +159,18 @@ impl HeaderExtensionBuilderData {
 		}
 		None
 	}
+
+	/// Returns the leaf index for the given leaf hash in the blob_tree.
+	pub fn leaf_idx_by_hash(&self, leaf_hash: H256) -> Option<(usize, SubTrie)> {
+		if let Some(idx) = self
+			.data_submissions
+			.iter()
+			.position(|s| s.hash == leaf_hash)
+		{
+			return Some((idx, SubTrie::DataSubmit));
+		}
+		return None;
+	}
 }
 
 impl HeaderExtensionBuilderData {

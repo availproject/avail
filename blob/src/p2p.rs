@@ -1,9 +1,9 @@
-use std::{path::Path, sync::Arc, time::Duration};
+use std::{sync::Arc, time::Duration};
 
 use crate::{
 	decode_blob_notification, handle_incoming_blob_request,
 	slashing::check_missing_validators,
-	store::{RocksdbBlobStore, StorageApiT},
+	store::StorageApiT,
 	types::{BlobGossipValidator, BlobNotification, FullClient, BLOB_GOSSIP_PROTO, BLOB_REQ_PROTO},
 	BLOB_EXPIRATION_CHECK_PERIOD, CONCURRENT_REQUESTS, LOG_TARGET, NOTIFICATION_MAX_SIZE,
 	NOTIF_QUEUE_SIZE, REQUEST_MAX_SIZE, REQUEST_TIMEOUT_SECONDS, REQ_RES_QUEUE_SIZE,
@@ -79,8 +79,8 @@ where
 	Block: BlockT,
 {
 	pub fn new<Pool>(
-		path: &Path,
 		role: Role,
+		blob_database: Arc<dyn StorageApiT>,
 		blob_gossip_service: Box<dyn NotificationService>,
 		req_receiver: async_channel::Receiver<IncomingRequest>,
 		network: Arc<NetworkService<Block, Block::Hash>>,
@@ -93,11 +93,6 @@ where
 	where
 		Pool: TransactionPool<Block = Block> + 'static,
 	{
-		// Initialize the Blob database
-		let db_path = path.join("blob_database");
-		let blob_database =
-			Arc::new(RocksdbBlobStore::open(db_path).expect("opening RocksDB blob store failed"));
-
 		// Init gossip sender / receiver
 		let (gossip_cmd_sender, gossip_cmd_receiver) =
 			async_channel::bounded::<BlobNotification>(NOTIF_QUEUE_SIZE as usize);
