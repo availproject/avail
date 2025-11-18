@@ -477,7 +477,8 @@ where
 		Ok(ValidTransaction::default())
 	}
 
-	// TODO: adding back checking AppId validity until TxsSummary post-inherent is updated to take care of failed BlobMetadata txs
+	/// Note: AppId validation is added back to preserve previous UX. The runtime performs this
+	/// check as well, based on which BlobTxs summaries can be updated while applying post-inherent.
 	fn ensure_valid_app_id(
 		&self,
 		call: &<T as SystemConfig>::RuntimeCall,
