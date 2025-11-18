@@ -29,6 +29,7 @@ pub fn initial_validation(
 	let (provided_size, provided_blob_hash, provided_commitment) =
 		match encoded_metadata_signed_transaction.function {
 			RuntimeCall::DataAvailability(Call::submit_blob_metadata {
+				app_id,
 				size,
 				blob_hash,
 				commitment,

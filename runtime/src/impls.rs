@@ -1,16 +1,13 @@
 use crate::{
-	constants, prod_or_fast, voter_bags, weights, AccountId, AccountIndex, Babe, Balances, Block,
-	BlockNumber, ElectionProviderMultiPhase, Everything, Hash, Header, Historical, ImOnline,
-	ImOnlineId, Index, Indices, Moment, NominationPools, Offences, OriginCaller, PalletInfo,
-	Preimage, ReserveIdentifier, Runtime, RuntimeCall, RuntimeEvent, RuntimeFreezeReason,
-	RuntimeHoldReason, RuntimeOrigin, RuntimeVersion, Session, SessionKeys, Signature,
-	SignedPayload, Staking, System, Timestamp, TransactionPayment, Treasury, TxPause,
+	constants, extensions, prod_or_fast, voter_bags, weights, AccountId, AccountIndex, Babe,
+	Balances, Block, BlockNumber, ElectionProviderMultiPhase, Everything, Hash, Header, Historical,
+	ImOnline, ImOnlineId, Index, Indices, Moment, NominationPools, Offences, OriginCaller,
+	PalletInfo, Preimage, ReserveIdentifier, Runtime, RuntimeCall, RuntimeEvent,
+	RuntimeFreezeReason, RuntimeHoldReason, RuntimeOrigin, RuntimeVersion, Session, SessionKeys,
+	Signature, SignedPayload, Staking, System, Timestamp, TransactionPayment, Treasury, TxPause,
 	UncheckedExtrinsic, VoterList, MINUTES, SLOT_DURATION, VERSION,
 };
-use avail_core::{
-	currency::{Balance, AVAIL, CENTS, NANO_AVAIL, PICO_AVAIL},
-	AppId,
-};
+use avail_core::currency::{Balance, AVAIL, CENTS, NANO_AVAIL, PICO_AVAIL};
 
 use codec::{Decode, Encode, MaxEncodedLen};
 use constants::time::DAYS;
@@ -927,7 +924,7 @@ where
 			frame_system::CheckNonce::<Runtime>::from(nonce),
 			frame_system::CheckWeight::<Runtime>::new(),
 			pallet_transaction_payment::ChargeTransactionPayment::<Runtime>::from(tip),
-			da_control::CheckAppId::<Runtime>::from(AppId(0)),
+			extensions::check_batch_transactions::CheckBatchTransactions::<Runtime>::new(),
 		);
 		let raw_payload = SignedPayload::new(call, extra)
 			.map_err(|e| {

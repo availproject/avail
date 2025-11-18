@@ -23,7 +23,6 @@
 use std::{sync::Arc, time::Duration};
 
 use avail_blob::types::FullClient;
-use avail_core::AppId;
 use codec::Encode;
 use da_runtime::{AccountId, Balance, BalancesCall};
 use frame_system::Call as SystemCall;
@@ -65,7 +64,6 @@ impl frame_benchmarking_cli::ExtrinsicBuilder for RemarkBuilder {
 			acc,
 			SystemCall::remark { remark: vec![] },
 			Some(nonce),
-			AppId(0),
 		);
 		OpaqueExtrinsic::from_bytes(&extrinsic.encode())
 			.map_err(|_| "`AppUncheckedExtrinsic` cannot be decoded as `OpaqueExtrinsic`")
@@ -112,7 +110,6 @@ impl frame_benchmarking_cli::ExtrinsicBuilder for TransferKeepAliveBuilder {
 				value: self.value,
 			},
 			Some(nonce),
-			AppId(0),
 		);
 		OpaqueExtrinsic::from_bytes(&extrinsic.encode())
 			.map_err(|_| "`AppUncheckedExtrinsic` cannot be decoded as `OpaqueExtrinsic`")
