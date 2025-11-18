@@ -4,8 +4,8 @@ use avail_base::header_extension::{
 };
 use avail_core::{
 	data_proof::{tx_uid, AddressedMessage},
-	traits::{GetAppId, MaybeCaller},
-	AppExtrinsic, AppId, OpaqueExtrinsic,
+	traits::MaybeCaller,
+	OpaqueExtrinsic,
 };
 
 use da_control::Call as DACall;
@@ -34,7 +34,6 @@ impl HeaderExtensionDataFilter for Runtime {
 			return None;
 		};
 
-		let app_id = unchecked_extrinsic.app_id();
 		let maybe_caller = unchecked_extrinsic.caller();
 
 		let (final_call, nb_iterations) = extract_final_call(&unchecked_extrinsic.function);
@@ -52,11 +51,8 @@ impl HeaderExtensionDataFilter for Runtime {
 					filter_vector_call(failed_transactions, maybe_caller, call, block, tx_index)
 				},
 				Call::DataAvailability(call) => {
-					let app_extrinsic = AppExtrinsic::from(unchecked_extrinsic.clone());
 					filter_da_call(
-						app_extrinsic,
 						call,
-						app_id,
 						tx_index,
 						failed_transactions,
 						cols,
@@ -112,9 +108,7 @@ impl HeaderExtensionDataFilter for Runtime {
 
 /// Filters and extracts `data` from `calls` if internal data is not empty.
 fn filter_da_call(
-	app_extrinsic: AppExtrinsic,
 	call: &DACall<Runtime>,
-	app_id: AppId,
 	tx_index: usize,
 	failed_transactions: &[u32],
 	cols: u32,
@@ -125,8 +119,9 @@ fn filter_da_call(
 		return None;
 	}
 
-	let (blob_hash, commitment) = match call {
+	let (app_id, blob_hash, commitment) = match call {
 		DACall::submit_blob_metadata {
+			app_id,
 			blob_hash,
 			commitment,
 			size: _,
@@ -134,9 +129,9 @@ fn filter_da_call(
 			if commitment.is_empty() {
 				return None;
 			}
-			(*blob_hash, commitment.clone())
+			(*app_id, *blob_hash, commitment.clone())
 		},
-		DACall::submit_data { data } => {
+		DACall::submit_data { app_id, data } => {
 			if data.is_empty() {
 				return None;
 			}
@@ -148,7 +143,7 @@ fn filter_da_call(
 					rows,
 					Seed::default(),
 				);
-			(blob_hash, commitment)
+			(*app_id, blob_hash, commitment)
 		},
 		_ => return None,
 	};
@@ -158,7 +153,6 @@ fn filter_da_call(
 
 	Some(ExtractedTxData {
 		submitted_data,
-		app_extrinsic: Some(app_extrinsic),
 		..Default::default()
 	})
 }
