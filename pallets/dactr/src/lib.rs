@@ -32,8 +32,6 @@ pub mod extensions;
 pub mod mock;
 #[cfg(test)]
 mod tests;
-pub use extensions::check_app_id::CheckAppId;
-pub use extensions::check_batch_transactions::CheckBatchTransactions;
 use frame_support::dispatch::{DispatchFeeModifier, DispatchResult};
 pub mod types;
 pub mod weights;
@@ -381,9 +379,14 @@ pub mod pallet {
 		))]
 		pub fn submit_data(
 			origin: OriginFor<T>,
+			app_id: AppId,
 			data: AppDataFor<T>,
 		) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
+			ensure!(
+				app_id < Self::peek_next_application_id(),
+				Error::<T>::InvalidAppId
+			);
 			ensure!(!data.is_empty(), Error::<T>::DataCannotBeEmpty);
 			ensure!(
 				!BlobRuntimeParams::<T>::get().disable_old_da_submission,
@@ -509,11 +512,16 @@ pub mod pallet {
 		))]
 		pub fn submit_blob_metadata(
 			origin: OriginFor<T>,
+			app_id: AppId,
 			blob_hash: H256,
 			size: u64,
 			commitment: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
+			ensure!(
+				app_id < Self::peek_next_application_id(),
+				Error::<T>::InvalidAppId
+			);
 			ensure!(size > 0, Error::<T>::DataCannotBeEmpty);
 			ensure!(commitment.len() > 0, Error::<T>::CommitmentCannotBeEmpty);
 			ensure!(blob_hash != H256::zero(), Error::<T>::DataCannotBeEmpty);
@@ -924,6 +932,8 @@ pub mod pallet {
 		VouchListFull,
 		/// Unable to reserve the vouch fee (insufficient funds or unexpected reserve failure).
 		InsufficientBalanceForVouch,
+		/// Invalid AppId
+		InvalidAppId,
 	}
 
 	#[pallet::genesis_config]

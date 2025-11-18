@@ -131,15 +131,8 @@ where
 		let version = block.header.extension.get_header_version();
 
 		let extension = match version {
-			HeaderVersion::V3 => api
-				.build_extension(
-					parent_hash,
-					extrinsics(),
-					data_root,
-					block_len,
-					block_number,
-				)
-				.map_err(build_ext_fail)?,
+			// Since V3 has AppExtrinsics which is derived from the AppId SignedExtension, We cant support it GOING FORWARD
+			HeaderVersion::V3 => todo!(),
 			HeaderVersion::V4 => build_extension_with_comms(
 				extrinsics(),
 				data_root,
@@ -360,10 +353,10 @@ fn data_root_fail(e: ApiError) -> ConsensusError {
 	ConsensusError::ClientImport(msg)
 }
 
-fn build_ext_fail(e: ApiError) -> ConsensusError {
-	let msg = format!("Build extension fails due to: {e:?}");
-	ConsensusError::ClientImport(msg)
-}
+// fn build_ext_fail(e: ApiError) -> ConsensusError {
+// 	let msg = format!("Build extension fails due to: {e:?}");
+// 	ConsensusError::ClientImport(msg)
+// }
 
 fn block_doesnt_contain_vector_post_inherent() -> ConsensusError {
 	let msg = "Block does not contain vector post inherent".to_string();

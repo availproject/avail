@@ -51,13 +51,7 @@ impl HeaderExtensionDataFilter for Runtime {
 					filter_vector_call(failed_transactions, maybe_caller, call, block, tx_index)
 				},
 				Call::DataAvailability(call) => {
-					filter_da_call(
-						call,
-						tx_index,
-						failed_transactions,
-						cols,
-						rows,
-					)
+					filter_da_call(call, tx_index, failed_transactions, cols, rows)
 				},
 				_ => None,
 			}

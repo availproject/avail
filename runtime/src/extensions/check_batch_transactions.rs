@@ -1,8 +1,7 @@
-use super::MAX_ITERATIONS;
-use crate::{Call as DACall, Config as DAConfig};
+use avail_core::AppId;
 use avail_core::InvalidTransactionCustomId;
-
 use codec::{Decode, Encode};
+use da_control::{Call as DACall, Config as DAConfig, Pallet};
 use frame_support::{
 	ensure,
 	traits::{IsSubType, IsType},
@@ -14,8 +13,20 @@ use pallet_scheduler::{Call as SchedulerCall, Config as SchedulerConfig};
 use pallet_utility::{Call as UtilityCall, Config as UtilityConfig};
 use pallet_vector::{Call as VectorCall, Config as VectorConfig};
 use scale_info::TypeInfo;
-use sp_runtime::transaction_validity::{InvalidTransaction, TransactionValidity, ValidTransaction};
-use sp_std::{default::Default, vec::Vec};
+use sp_runtime::transaction_validity::InvalidTransaction as TxInvalid;
+use sp_runtime::{
+	traits::{DispatchInfoOf, SignedExtension},
+	transaction_validity::{
+		InvalidTransaction, TransactionValidity, TransactionValidityError, ValidTransaction,
+	},
+};
+use sp_std::{
+	default::Default,
+	fmt::{self, Debug, Formatter},
+	vec::Vec,
+};
+
+const MAX_ITERATIONS: usize = 5;
 
 struct WrappedCall<'a, T>(pub &'a <T as SystemConfig>::RuntimeCall)
 where
@@ -121,10 +132,7 @@ where
 			| Some(MultisigCall::as_multi_threshold_1 {
 				other_signatories: _,
 				call,
-			}) => {
-				//
-				Some(call)
-			},
+			}) => Some(call),
 			_ => None,
 		}
 	}
@@ -141,8 +149,6 @@ where
 	}
 }
 
-/// TODO
-///
 #[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
 #[scale_info(skip_type_params(T))]
 pub struct CheckBatchTransactions<
@@ -182,13 +188,14 @@ where
 		Self(sp_std::marker::PhantomData)
 	}
 
-	/// DataAvailability::submit_data and any Bridge::* transactions are forbidden to be included inside batch transactions.
+	/// forbid DataAvailability::submit_data and Vector::send_message inside batch
 	pub fn do_validate(
 		&self,
 		call: &<T as SystemConfig>::RuntimeCall,
 		_len: usize,
 	) -> TransactionValidity {
-		let iterations = 0;
+		self.ensure_valid_app_id(call)?;
+		let iterations = 0usize;
 		let call = WrappedCall::<T>(call);
 
 		if let Some(call) = call.get_proxy_call() {
@@ -214,7 +221,6 @@ where
 		Ok(ValidTransaction::default())
 	}
 
-	// No Send Message or Submit Data calls are allowed inside Batch Call
 	fn recursive_batch_call(
 		calls: &Vec<<T as UtilityConfig>::RuntimeCall>,
 		iteration: usize,
@@ -223,7 +229,7 @@ where
 		use InvalidTransactionCustomId::*;
 
 		if iteration >= MAX_ITERATIONS {
-			return Err(InvalidTransaction::Custom(MaxRecursionExceeded as u8).into());
+			return Err(TxInvalid::Custom(MaxRecursionExceeded as u8).into());
 		}
 
 		for call in calls {
@@ -249,7 +255,7 @@ where
 
 			if let Some(calls) = call.get_batch_call() {
 				if inside_batch {
-					return Err(InvalidTransaction::Custom(MaxRecursionExceeded as u8).into());
+					return Err(TxInvalid::Custom(MaxRecursionExceeded as u8).into());
 				}
 				Self::recursive_batch_call(calls, iteration + 1, true)?;
 			};
@@ -262,7 +268,6 @@ where
 		Ok(ValidTransaction::default())
 	}
 
-	// Send Message is allowed if it is behind a zero, single or double transaction that accepts a call.
 	fn recursive_proxy_call(
 		call: &<T as ProxyConfig>::RuntimeCall,
 		iteration: usize,
@@ -270,7 +275,7 @@ where
 	) -> TransactionValidity {
 		use InvalidTransactionCustomId::*;
 		if iteration >= MAX_ITERATIONS {
-			return Err(InvalidTransaction::Custom(MaxRecursionExceeded as u8).into());
+			return Err(TxInvalid::Custom(MaxRecursionExceeded as u8).into());
 		}
 
 		let call: &<T as SystemConfig>::RuntimeCall = call.into_ref();
@@ -299,11 +304,9 @@ where
 			return Self::recursive_scheduler_call(call, iteration + 1, inside_batch);
 		};
 
-		// Everything else is OK
-		return Ok(ValidTransaction::default());
+		Ok(ValidTransaction::default())
 	}
 
-	// Send Message is allowed if it is behind a zero, single or double transaction that accepts a call.
 	fn recursive_multisig_call(
 		call: &<T as MultisigConfig>::RuntimeCall,
 		iteration: usize,
@@ -311,13 +314,13 @@ where
 	) -> TransactionValidity {
 		use InvalidTransactionCustomId::*;
 		if iteration >= MAX_ITERATIONS {
-			return Err(InvalidTransaction::Custom(MaxRecursionExceeded as u8).into());
+			return Err(TxInvalid::Custom(MaxRecursionExceeded as u8).into());
 		}
 
 		if iteration > 1 || inside_batch {
 			match call.is_sub_type() {
 				Some(VectorCall::<T>::send_message { .. }) => {
-					return Err(InvalidTransaction::Custom(UnexpectedSendMessageCall as u8).into())
+					return Err(TxInvalid::Custom(UnexpectedSendMessageCall as u8).into())
 				},
 				_ => (),
 			}
@@ -390,11 +393,9 @@ where
 			_ => (),
 		}
 
-		// Everything else is OK
-		return Ok(ValidTransaction::default());
+		Ok(ValidTransaction::default())
 	}
 
-	// Send Message is not allowed at all
 	fn recursive_scheduler_call(
 		call: &<T as SchedulerConfig>::RuntimeCall,
 		iteration: usize,
@@ -402,12 +403,12 @@ where
 	) -> TransactionValidity {
 		use InvalidTransactionCustomId::*;
 		if iteration >= MAX_ITERATIONS {
-			return Err(InvalidTransaction::Custom(MaxRecursionExceeded as u8).into());
+			return Err(TxInvalid::Custom(MaxRecursionExceeded as u8).into());
 		}
 
 		match call.is_sub_type() {
 			Some(VectorCall::<T>::send_message { .. }) => {
-				return Err(InvalidTransaction::Custom(UnexpectedSendMessageCall as u8).into())
+				return Err(TxInvalid::Custom(UnexpectedSendMessageCall as u8).into())
 			},
 			_ => (),
 		}
@@ -479,8 +480,114 @@ where
 			_ => (),
 		}
 
-		// Everything else is OK
-		return Ok(ValidTransaction::default());
+		Ok(ValidTransaction::default())
+	}
+
+	// TODO: adding back checking AppId validity until TxsSummary post-inherent is updated to take care of failed BlobMetadata txs
+	fn ensure_valid_app_id(
+		&self,
+		call: &<T as SystemConfig>::RuntimeCall,
+	) -> Result<(), TransactionValidityError> {
+		let mut stack = Vec::new();
+		stack.push(call);
+
+		let mut maybe_next_app_id: Option<AppId> = None;
+
+		while let Some(call) = stack.pop() {
+			if let Some(DACall::<T>::submit_data { app_id, .. })
+			| Some(DACall::<T>::submit_blob_metadata { app_id, .. }) = call.is_sub_type()
+			{
+				let next_app_id =
+					maybe_next_app_id.get_or_insert_with(<Pallet<T>>::peek_next_application_id);
+				ensure!(
+					app_id < next_app_id,
+					InvalidTransaction::Custom(InvalidTransactionCustomId::InvalidAppId as u8)
+				);
+			}
+		}
+		Ok(())
+	}
+}
+
+impl<T> Debug for CheckBatchTransactions<T>
+where
+	T: DAConfig
+		+ UtilityConfig
+		+ VectorConfig
+		+ MultisigConfig
+		+ ProxyConfig
+		+ SchedulerConfig
+		+ Send
+		+ Sync,
+{
+	#[cfg(feature = "std")]
+	fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+		write!(f, "CheckBatchTransactions")
+	}
+
+	#[cfg(not(feature = "std"))]
+	fn fmt(&self, _: &mut Formatter) -> fmt::Result {
+		Ok(())
+	}
+}
+
+impl<T> SignedExtension for CheckBatchTransactions<T>
+where
+	T: DAConfig
+		+ UtilityConfig
+		+ VectorConfig
+		+ MultisigConfig
+		+ ProxyConfig
+		+ SchedulerConfig
+		+ Send
+		+ Sync,
+	<T as MultisigConfig>::RuntimeCall: IsSubType<VectorCall<T>>
+		+ IsSubType<ProxyCall<T>>
+		+ IsSubType<UtilityCall<T>>
+		+ IsSubType<MultisigCall<T>>
+		+ IsSubType<SchedulerCall<T>>,
+	<T as SchedulerConfig>::RuntimeCall: IsSubType<VectorCall<T>>
+		+ IsSubType<ProxyCall<T>>
+		+ IsSubType<UtilityCall<T>>
+		+ IsSubType<MultisigCall<T>>
+		+ IsSubType<SchedulerCall<T>>,
+	<T as SystemConfig>::RuntimeCall: IsSubType<DACall<T>>
+		+ IsSubType<UtilityCall<T>>
+		+ IsSubType<VectorCall<T>>
+		+ IsSubType<MultisigCall<T>>
+		+ IsSubType<ProxyCall<T>>
+		+ IsSubType<SchedulerCall<T>>,
+	[u8; 32]: From<<T as frame_system::Config>::AccountId>,
+{
+	type AccountId = <T as frame_system::Config>::AccountId;
+	type Call = <T as frame_system::Config>::RuntimeCall;
+	type AdditionalSigned = ();
+	type Pre = ();
+	const IDENTIFIER: &'static str = "CheckBatchTransactions";
+
+	fn additional_signed(&self) -> Result<(), TransactionValidityError> {
+		Ok(())
+	}
+
+	fn validate(
+		&self,
+		_who: &Self::AccountId,
+		call: &Self::Call,
+		_info: &DispatchInfoOf<Self::Call>,
+		len: usize,
+	) -> TransactionValidity {
+		self.do_validate(call, len)
+	}
+
+	fn pre_dispatch(
+		self,
+		_who: &Self::AccountId,
+		call: &Self::Call,
+		_info: &DispatchInfoOf<Self::Call>,
+		len: usize,
+	) -> Result<Self::Pre, TransactionValidityError> {
+		self.do_validate(call, len)?;
+		Ok(())
 	}
 }
 
@@ -494,6 +601,7 @@ mod tests {
 			MaxRecursionExceeded, UnexpectedSendMessageCall, UnexpectedSubmitDataCall,
 		},
 	};
+	use da_control::pallet::Call as DACall;
 	use frame_system::pallet::Call as SysCall;
 	use pallet_utility::pallet::Call as UtilityCall;
 	use sp_core::H256;
@@ -501,11 +609,8 @@ mod tests {
 	use test_case::test_case;
 
 	use super::*;
-	use crate::pallet::Call as DACall;
-	use crate::{
-		extensions::extensions_mock::{new_test_ext, RuntimeCall, Test},
-		CheckAppId,
-	};
+
+	use crate::extensions::extensions_mock::{new_test_ext, RuntimeCall, Test};
 
 	fn remark_call() -> RuntimeCall {
 		RuntimeCall::System(SysCall::remark { remark: vec![] })
@@ -513,6 +618,7 @@ mod tests {
 
 	fn submit_data_call() -> RuntimeCall {
 		RuntimeCall::DataAvailability(DACall::submit_data {
+			app_id: AppId(1),
 			data: vec![].try_into().unwrap(),
 		})
 	}
@@ -551,7 +657,8 @@ mod tests {
 		let extrinsic =
 			AppUncheckedExtrinsic::<u32, RuntimeCall, (), ()>::new_unsigned(call.clone());
 		let len = extrinsic.encoded_size();
-		new_test_ext().execute_with(|| CheckAppId::<Test>::from(AppId(0)).do_validate(&call, len))
+		new_test_ext()
+			.execute_with(|| CheckBatchTransactions::<Test>::new().do_validate(&call, len))
 	}
 
 	#[test]

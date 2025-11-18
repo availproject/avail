@@ -23,7 +23,7 @@ use crate::{cli::Cli, rpc as node_rpc};
 use avail_blob::p2p::{get_blob_p2p_config, BlobHandle};
 use avail_blob::rpc::{BlobApiServer, BlobRpc};
 use avail_blob::types::FullClient;
-use avail_core::AppId;
+use da_runtime::extensions::check_batch_transactions::CheckBatchTransactions;
 use da_runtime::{apis::RuntimeApi, NodeBlock as Block, Runtime};
 
 use codec::Encode;
@@ -83,7 +83,6 @@ pub fn create_extrinsic(
 	sender: sp_core::sr25519::Pair,
 	function: impl Into<da_runtime::RuntimeCall>,
 	nonce: Option<u32>,
-	app_id: AppId,
 ) -> da_runtime::UncheckedExtrinsic {
 	let function = function.into();
 	let genesis_hash = client
@@ -109,7 +108,7 @@ pub fn create_extrinsic(
 		frame_system::CheckNonce::<Runtime>::from(nonce),
 		frame_system::CheckWeight::<Runtime>::new(),
 		ChargeTransactionPayment::<Runtime>::from(tip),
-		da_control::CheckAppId::<Runtime>::from(app_id),
+		CheckBatchTransactions::<Runtime>::new(),
 	);
 
 	let raw_payload = da_runtime::SignedPayload::from_raw(

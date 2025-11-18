@@ -6,7 +6,7 @@ use sp_runtime::{
 };
 use sp_std::vec::Vec;
 
-use crate::{AllPalletsWithSystem, Runtime, RuntimeCall};
+use crate::{extensions, AllPalletsWithSystem, Runtime, RuntimeCall};
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -58,7 +58,7 @@ pub type SignedExtra = (
 	frame_system::CheckNonce<Runtime>,
 	frame_system::CheckWeight<Runtime>,
 	pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
-	da_control::CheckAppId<Runtime>,
+	extensions::check_batch_transactions::CheckBatchTransactions<Runtime>,
 );
 
 /// The payload being signed in transactions.

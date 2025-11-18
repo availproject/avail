@@ -13,9 +13,7 @@ use jsonrpsee::{
 use sc_client_api::BlockBackend;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
-use sp_runtime::{
-	traits::{Block as BlockT, ConstU32},
-};
+use sp_runtime::traits::{Block as BlockT, ConstU32};
 use std::{marker::PhantomData, marker::Sync, sync::Arc};
 
 pub type HashOf<Block> = <Block as BlockT>::Hash;
