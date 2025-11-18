@@ -23,7 +23,7 @@ use avail_core::DataProof;
 use avail_observability::metrics::BlobMetrics;
 use codec::{Decode, Encode};
 use da_commitment::build_da_commitments::build_polynomial_grid;
-use da_control::{types::BlobTxSummaryRuntime, BlobRuntimeParameters, Call};
+use da_control::{BlobRuntimeParameters, Call};
 use da_runtime::apis::KateApi;
 use da_runtime::{RuntimeCall, UncheckedExtrinsic};
 use frame_system::limits::BlockLength;
@@ -85,19 +85,11 @@ where
 	) -> RpcResult<()>;
 
 	#[method(name = "blob_getBlob")]
-	async fn get_blob(
-		&self,
-		block_hash: Block::Hash,
-		blob_index: u32,
-		blob_hash: H256,
-	) -> RpcResult<Blob>;
-
-	#[method(name = "blob_getBlobV2")]
 	/// This RPC will work in two different modes based on params passed:
 	/// if 'at' param is passed, it will try to get blob ownership from that block's blob tx summaries
 	/// if 'at' param is None, it will try to get blob ownership from storage's blob info
 	/// based on the blob ownership, it will try to get the blob from local storage or from p2p network
-	async fn get_blob_v2(&self, blob_hash: H256, at: Option<Block::Hash>) -> RpcResult<Blob>;
+	async fn get_blob(&self, blob_hash: H256, at: Option<Block::Hash>) -> RpcResult<Blob>;
 
 	#[method(name = "blob_getBlobInfo")]
 	async fn get_blob_info(&self, blob_hash: H256) -> RpcResult<BlobInfo>;
@@ -200,116 +192,7 @@ where
 		Ok(())
 	}
 
-	async fn get_blob(
-		&self,
-		block_hash: Block::Hash,
-		blob_index: u32,
-		blob_hash: H256,
-	) -> RpcResult<Blob> {
-		let Ok(Some(summaries)) =
-			get_blob_tx_summaries_from_block(&self.blob_handle.client, block_hash.into()).await
-		else {
-			return Err(internal_err!(
-				"Blob transactions summaries not found in the given block"
-			));
-		};
-
-		let Some(blob_summary) = summaries.get(blob_index as usize) else {
-			return Err(internal_err!(
-				"Blob transaction summary not found in the given block and blob_index"
-			));
-		};
-
-		if blob_summary.hash != blob_hash {
-			return Err(internal_err!(
-				"Blob hash mismatch - Expected: {:?} - Found: {:?}",
-				blob_hash,
-				blob_summary.hash
-			));
-		}
-
-		if !blob_summary.success {
-			return Err(internal_err!(
-				"Blob update was not successful: {:?}",
-				blob_summary.reason
-			));
-		}
-
-		let ownership_len = blob_summary.ownership.len();
-		if ownership_len == 0 {
-			return Err(internal_err!("Blob ownership is empty"));
-		}
-
-		let finalized_hash = self.blob_handle.client.info().finalized_hash;
-
-		// check if the ownership includes current node, if so, get the blob from local storage
-		// let my_peer_id = network.local_peer_id();
-
-		// Or simply check if the blob is stored locally
-		if let Ok(Some(blob)) = self.blob_handle.blob_database.get_blob(&blob_hash) {
-			log::info!("Blob found in local storage: {:?}", blob_hash);
-			return Ok(blob);
-		}
-
-		// Take a random owner index and try to get the blob from him, retry with next ones
-		let base_index =
-			match generate_base_index(blob_hash, &finalized_hash.encode(), ownership_len, None) {
-				Ok(i) => i,
-				Err(e) => {
-					return Err(internal_err!(
-						"An error has occured while generating a base index: {e:?}"
-					));
-				},
-			};
-
-		for attempt in 0..(MAX_RPC_RETRIES as usize) {
-			let index = (base_index + attempt) % ownership_len;
-			let Some((_, _, encoded_peer_id, _)) = blob_summary.ownership.get(index) else {
-				log::warn!(
-					"Attempt {}/{}: invalid array index",
-					attempt + 1,
-					MAX_RPC_RETRIES
-				);
-				continue;
-			};
-
-			match PeerId::from_str(&encoded_peer_id) {
-				Ok(peer_id) => {
-					match send_blob_query_request(blob_hash, peer_id, &self.blob_handle.network)
-						.await
-					{
-						Ok(Some(blob)) => {
-							return Ok(blob);
-						},
-						Ok(None) => {
-							log::warn!(
-								"attempt {}/{}: no blob returned",
-								attempt + 1,
-								MAX_RPC_RETRIES
-							);
-						},
-						Err(e) => {
-							log::warn!(
-								"attempt {}/{} RPC error: {:?}",
-								attempt + 1,
-								MAX_RPC_RETRIES,
-								e
-							);
-						},
-					}
-				},
-				Err(e) => {
-					log::warn!("Attempt {}: invalid peer_id {:?}", attempt + 1, e);
-				},
-			}
-		}
-
-		Err(internal_err!(
-			"All attempts to get the blob from validators failed."
-		))
-	}
-
-	async fn get_blob_v2(&self, blob_hash: H256, at: Option<Block::Hash>) -> RpcResult<Blob> {
+	async fn get_blob(&self, blob_hash: H256, at: Option<Block::Hash>) -> RpcResult<Blob> {
 		// get the blob owners peer_id's
 		let peer_ids: Vec<String> = if let Some(at_hash) = at {
 			// Mode A: read the block directly from our client and decode the summary extrinsic.
@@ -592,39 +475,6 @@ async fn check_rpc_store_blob(
 		encoded_peer_id: my_encoded_peer_id,
 		signature,
 	}))
-}
-
-async fn get_blob_tx_summaries_from_block<Client, Block>(
-	client: &Arc<Client>,
-	block_hash: Block::Hash,
-) -> RpcResult<Option<Vec<BlobTxSummaryRuntime>>>
-where
-	Block: BlockT,
-	<Block as BlockT>::Extrinsic: Encode,
-	Client: HeaderBackend<Block> + BlockBackend<Block> + Send + Sync + 'static,
-{
-	let block = client
-		.block(block_hash)
-		.map_err(|e| internal_err!("Failed to get block: {e}"))?
-		.ok_or_else(|| internal_err!("Block not found"))?;
-
-	let extrinsics = block.block.extrinsics();
-	if extrinsics.len() < 2 {
-		return Ok(None);
-	}
-
-	let summary_extrinsic_encoded = extrinsics[extrinsics.len() - 2].encode();
-	let summary_extrinsic: UncheckedExtrinsic = Decode::decode(&mut &summary_extrinsic_encoded[..])
-		.map_err(|_| internal_err!("Failed to decode summary extrinsic"))?;
-
-	if let RuntimeCall::DataAvailability(Call::submit_blob_txs_summary {
-		blob_txs_summary, ..
-	}) = summary_extrinsic.function
-	{
-		Ok(Some(blob_txs_summary))
-	} else {
-		Ok(None)
-	}
 }
 
 fn get_dynamic_block_length(
