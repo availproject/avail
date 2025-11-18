@@ -196,7 +196,6 @@ impl From<Vec<ExtractedTxData>> for HeaderExtensionBuilderData {
 			if let Some(bridge_message) = val.bridge_data {
 				bridge_messages.push(bridge_message);
 			}
-
 		}
 
 		// Sort data_submissions by app_id once

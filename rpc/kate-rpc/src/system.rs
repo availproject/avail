@@ -692,7 +692,7 @@ pub mod fetch_extrinsics_v1 {
 	pub struct TransactionSignature {
 		pub ss58_address: Option<String>,
 		pub nonce: u32,
-		pub app_id: u32,
+		// pub app_id: u32,
 		pub mortality: Option<(u64, u64)>,
 	}
 
@@ -708,7 +708,7 @@ pub mod fetch_extrinsics_v1 {
 				None
 			};
 			let nonce = sig.2 .5 .0;
-			let app_id = sig.2 .8 .0 .0;
+			// let app_id = sig.2 .8 .0 .0;
 			let mortality = match sig.2 .4 .0 {
 				sp_runtime::generic::Era::Immortal => None,
 				sp_runtime::generic::Era::Mortal(x, y) => Some((x, y)),
@@ -717,7 +717,7 @@ pub mod fetch_extrinsics_v1 {
 			let value = Self {
 				ss58_address,
 				nonce,
-				app_id,
+				// app_id: *app_id,
 				mortality,
 			};
 			Some(value)
