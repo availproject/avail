@@ -129,7 +129,7 @@ fn filter_da_call(
 			if data.is_empty() {
 				return None;
 			}
-			let blob_hash = H256(keccak_256(&data));
+			let blob_hash = H256(keccak_256(data));
 			let commitment =
 				da_control::extensions::native::hosted_commitment_builder::build_da_commitments(
 					data,

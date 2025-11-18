@@ -304,7 +304,7 @@ impl_runtime_apis! {
 				}
 
 				let emitted_index: (u8, u8) = (encoded[0], encoded[1]);
-				let encoded = enable_encoding.then(|| encoded);
+				let encoded = enable_encoding.then_some(encoded);
 				let decoded = enable_decoding.then(|| decode_runtime_event_v1(&event.event)).flatten();
 
 				let ev = RuntimeEvent::new(position as u32, emitted_index, encoded, decoded);
@@ -516,7 +516,7 @@ impl_runtime_apis! {
 		}
 
 		fn account_nonce(who: AccountId32) -> u32 {
-			frame_system::Pallet::<Self>::account_nonce(who) as u32
+			frame_system::Pallet::<Self>::account_nonce(who)
 		}
 
 		fn get_blob_vouch_fee_reserve() -> u128 {
@@ -746,49 +746,46 @@ fn decode_runtime_event_v1(event: &super::RuntimeEvent) -> Option<Vec<u8>> {
 			},
 			_ => (),
 		},
-		RuntimeEvent::Multisig(e) => match e {
-			pallet_multisig::Event::<Runtime>::MultisigExecuted {
+		RuntimeEvent::Multisig(e) => {
+			if let pallet_multisig::Event::<Runtime>::MultisigExecuted {
 				multisig,
 				call_hash,
 				result: x,
 				..
-			} => {
+			} = e
+			{
 				let mut event_data = Vec::<u8>::new();
 				multisig.encode_to(&mut event_data);
 				call_hash.encode_to(&mut event_data);
 				x.is_ok().encode_to(&mut event_data);
 
 				return Some(event_data);
-			},
-			_ => (),
+			}
 		},
-		RuntimeEvent::Proxy(e) => match e {
-			pallet_proxy::Event::<Runtime>::ProxyExecuted { result, .. } => {
+		RuntimeEvent::Proxy(e) => {
+			if let pallet_proxy::Event::<Runtime>::ProxyExecuted { result, .. } = e {
 				let mut event_data = Vec::<u8>::new();
 				result.is_ok().encode_to(&mut event_data);
 
 				return Some(event_data);
-			},
-			_ => (),
+			}
 		},
-		RuntimeEvent::Scheduler(e) => match e {
-			pallet_scheduler::Event::<Runtime>::Dispatched { result, .. } => {
+		RuntimeEvent::Scheduler(e) => {
+			if let pallet_scheduler::Event::<Runtime>::Dispatched { result, .. } = e {
 				let mut event_data = Vec::<u8>::new();
 				result.is_ok().encode_to(&mut event_data);
 
 				return Some(event_data);
-			},
-			_ => (),
+			}
 		},
-		RuntimeEvent::DataAvailability(e) => match e {
-			da_control::Event::<Runtime>::DataSubmitted { who, data_hash } => {
+		RuntimeEvent::DataAvailability(e) => {
+			if let da_control::Event::<Runtime>::DataSubmitted { who, data_hash } = e {
 				let mut event_data = Vec::<u8>::new();
 				who.encode_to(&mut event_data);
 				data_hash.encode_to(&mut event_data);
 
 				return Some(event_data);
-			},
-			_ => (),
+			}
 		},
 		_ => (),
 	};

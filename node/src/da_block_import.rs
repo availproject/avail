@@ -287,9 +287,11 @@ fn build_extension_with_comms(
 		commitment = commitment
 			.into_iter()
 			.chain(
-				std::iter::repeat(padded_row_commitment)
-					.take((padded_rows - original_rows) as usize)
-					.flatten(),
+				std::iter::repeat_n(
+					padded_row_commitment,
+					(padded_rows - original_rows) as usize,
+				)
+				.flatten(),
 			)
 			.collect();
 	}
@@ -339,12 +341,12 @@ fn extension_mismatch(imported: &HeaderExtension, generated: &HeaderExtension) -
 // }
 
 fn pregenerated_comms_failed() -> ConsensusError {
-	let msg = format!("Failed to get pregenerated rows & commitments.");
+	let msg = "Failed to get pregenerated rows & commitments.".to_string();
 	ConsensusError::ClientImport(msg)
 }
 
 fn data_lookup_failed() -> ConsensusError {
-	let msg = format!("Failed to construct DataLookup.");
+	let msg = "Failed to construct DataLookup.".to_string();
 	ConsensusError::ClientImport(msg)
 }
 

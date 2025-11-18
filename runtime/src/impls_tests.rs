@@ -633,8 +633,7 @@ mod measure_full_block_size {
 	use avail_core::{currency::AVAIL, from_substrate::keccak_256, AppId};
 	use codec::Encode;
 	use da_control::{
-		extensions::native::hosted_commitment_builder::build_da_commitments,
-		BlobTxSummaryRuntime,
+		extensions::native::hosted_commitment_builder::build_da_commitments, BlobTxSummaryRuntime,
 	};
 	use frame_support::{
 		// dispatch::GetDispatchInfo,

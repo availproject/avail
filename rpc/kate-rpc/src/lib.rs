@@ -76,6 +76,7 @@ where
 #[allow(clippy::type_complexity)]
 pub struct Kate<Client, Block: BlockT> {
 	client: Arc<Client>,
+	#[allow(dead_code)]
 	max_cells_size: usize,
 	_block: PhantomData<Block>,
 }

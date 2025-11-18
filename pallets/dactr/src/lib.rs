@@ -276,7 +276,7 @@ pub mod pallet {
 
 					// Return vouch fee
 					for validator in reporters.clone().iter() {
-						Self::return_vouch_fee(&validator, Some(vouch_fee));
+						Self::return_vouch_fee(validator, Some(vouch_fee));
 						weight = weight
 							.saturating_add(<T as frame_system::Config>::DbWeight::get().writes(1));
 					}
@@ -523,7 +523,7 @@ pub mod pallet {
 				Error::<T>::InvalidAppId
 			);
 			ensure!(size > 0, Error::<T>::DataCannotBeEmpty);
-			ensure!(commitment.len() > 0, Error::<T>::CommitmentCannotBeEmpty);
+			ensure!(!commitment.is_empty(), Error::<T>::CommitmentCannotBeEmpty);
 			ensure!(blob_hash != H256::zero(), Error::<T>::DataCannotBeEmpty);
 
 			Self::deposit_event(Event::SubmitBlobMetadataRequest { who, blob_hash });
@@ -695,7 +695,7 @@ pub mod pallet {
 				OffenceRecord::<T>::new(
 					offence_key.kind.clone(),
 					offence_key.block_hash,
-					offence_key.blob_hash.clone(),
+					offence_key.blob_hash,
 					offence_key.missing_validator.clone(),
 				)
 			});
@@ -1042,7 +1042,7 @@ impl<T: Config> Pallet<T> {
 
 		// Check if the extrinsic is coming from an active validator
 		ensure!(
-			validators.contains(&validator_id),
+			validators.contains(validator_id),
 			Error::<T>::NotAnActiveValidator
 		);
 

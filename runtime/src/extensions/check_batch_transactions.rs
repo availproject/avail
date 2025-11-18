@@ -318,21 +318,18 @@ where
 		}
 
 		if iteration > 1 || inside_batch {
-			match call.is_sub_type() {
-				Some(VectorCall::<T>::send_message { .. }) => {
-					return Err(TxInvalid::Custom(UnexpectedSendMessageCall as u8).into())
-				},
-				_ => (),
+			if let Some(VectorCall::<T>::send_message { .. }) = call.is_sub_type() {
+				return Err(TxInvalid::Custom(UnexpectedSendMessageCall as u8).into());
 			}
 		}
 
-		match call.is_sub_type() {
-			Some(ProxyCall::<T>::proxy {
-				call,
-				real: _,
-				force_proxy_type: _,
-			}) => return Self::recursive_proxy_call(call, iteration + 1, inside_batch),
-			_ => (),
+		if let Some(ProxyCall::<T>::proxy {
+			call,
+			real: _,
+			force_proxy_type: _,
+		}) = call.is_sub_type()
+		{
+			return Self::recursive_proxy_call(call, iteration + 1, inside_batch);
 		}
 
 		match call.is_sub_type() {
@@ -406,20 +403,17 @@ where
 			return Err(TxInvalid::Custom(MaxRecursionExceeded as u8).into());
 		}
 
-		match call.is_sub_type() {
-			Some(VectorCall::<T>::send_message { .. }) => {
-				return Err(TxInvalid::Custom(UnexpectedSendMessageCall as u8).into())
-			},
-			_ => (),
+		if let Some(VectorCall::<T>::send_message { .. }) = call.is_sub_type() {
+			return Err(TxInvalid::Custom(UnexpectedSendMessageCall as u8).into());
 		}
 
-		match call.is_sub_type() {
-			Some(ProxyCall::<T>::proxy {
-				call,
-				real: _,
-				force_proxy_type: _,
-			}) => return Self::recursive_proxy_call(call, iteration + 1, inside_batch),
-			_ => (),
+		if let Some(ProxyCall::<T>::proxy {
+			call,
+			real: _,
+			force_proxy_type: _,
+		}) = call.is_sub_type()
+		{
+			return Self::recursive_proxy_call(call, iteration + 1, inside_batch);
 		}
 
 		match call.is_sub_type() {

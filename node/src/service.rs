@@ -487,7 +487,7 @@ pub fn new_full_base(
 
 	(with_startup_data)(&block_import, &babe_link);
 
-	if let sc_service::config::Role::Authority { .. } = &role {
+	if let sc_service::config::Role::Authority = &role {
 		let proposer = sc_basic_authorship::ProposerFactory::new(
 			task_manager.spawn_handle(),
 			client.clone(),

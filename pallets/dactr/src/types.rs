@@ -232,7 +232,7 @@ impl<T: Config> Clone for OffenceRecord<T> {
 		Self {
 			kind: self.kind.clone(),
 			block_hash: self.block_hash,
-			blob_hash: self.blob_hash.clone(),
+			blob_hash: self.blob_hash,
 			missing_validator: self.missing_validator.clone(),
 			vouches: self.vouches.clone(),
 		}

@@ -203,7 +203,7 @@ where
 
 			let encoded = match encode_selector {
 				EncodeSelector::None => None,
-				EncodeSelector::Call => Some((&tx.tx_encoded[tx.call_start_pos..]).to_string()),
+				EncodeSelector::Call => Some(tx.tx_encoded[tx.call_start_pos..].to_string()),
 				EncodeSelector::Extrinsic => Some(tx.tx_encoded.clone()),
 			};
 
@@ -647,9 +647,8 @@ pub mod fetch_extrinsics_v1 {
 			true
 		}
 		pub fn filter_in(&self, signature: &Option<TransactionSignature>) -> bool {
-			if !self.filter_in_ss58_address(
-				signature.as_ref().map(|x| x.ss58_address.clone()).flatten(),
-			) {
+			if !self.filter_in_ss58_address(signature.as_ref().and_then(|x| x.ss58_address.clone()))
+			{
 				return false;
 			}
 
@@ -666,7 +665,6 @@ pub mod fetch_extrinsics_v1 {
 			}
 			self.ss58_address == value
 		}
-
 
 		pub fn filter_in_nonce(&self, value: Option<u32>) -> bool {
 			if self.nonce.is_none() {
@@ -784,7 +782,7 @@ pub mod fetch_extrinsics_v1 {
 		}
 
 		pub fn insert(&mut self, hash: H256, value: CachedBlock) -> &CachedBlock {
-			if self.blocks.len() >= self.max_size as usize && self.blocks.len() > 0 {
+			if self.blocks.len() >= self.max_size as usize && !self.blocks.is_empty() {
 				self.blocks.remove(0);
 			}
 			self.blocks.push((hash, value));
