@@ -102,7 +102,7 @@ use avail_base::{HeaderExtensionBuilderData, HeaderExtensionDataFilter};
 use avail_core::{
 	ensure,
 	header::{Header as DaHeader, HeaderExtension},
-	traits::{ExtendedBlock, ExtendedHeader, GetAppId, MaybeCaller},
+	traits::{ExtendedBlock, ExtendedHeader, MaybeCaller},
 	HeaderVersion,
 };
 
@@ -547,7 +547,6 @@ pub mod pallet {
 		type Extrinsic: Encode
 			+ Decode
 			+ ExtrinsicCall<Call = Self::RuntimeCall>
-			+ GetAppId
 			+ MaybeCaller<Self::AccountId>;
 
 		type Header: ExtendedHeader<Extension = HeaderExtension, Hash = Self::Hash>;

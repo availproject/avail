@@ -32,8 +32,6 @@ pub mod extensions;
 pub mod mock;
 #[cfg(test)]
 mod tests;
-pub use extensions::check_app_id::CheckAppId;
-pub use extensions::check_batch_transactions::CheckBatchTransactions;
 use frame_support::dispatch::{DispatchFeeModifier, DispatchResult};
 pub mod types;
 pub mod weights;
@@ -278,7 +276,7 @@ pub mod pallet {
 
 					// Return vouch fee
 					for validator in reporters.clone().iter() {
-						Self::return_vouch_fee(&validator, Some(vouch_fee));
+						Self::return_vouch_fee(validator, Some(vouch_fee));
 						weight = weight
 							.saturating_add(<T as frame_system::Config>::DbWeight::get().writes(1));
 					}
@@ -381,9 +379,14 @@ pub mod pallet {
 		))]
 		pub fn submit_data(
 			origin: OriginFor<T>,
+			app_id: AppId,
 			data: AppDataFor<T>,
 		) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
+			ensure!(
+				app_id < Self::peek_next_application_id(),
+				Error::<T>::InvalidAppId
+			);
 			ensure!(!data.is_empty(), Error::<T>::DataCannotBeEmpty);
 			ensure!(
 				!BlobRuntimeParams::<T>::get().disable_old_da_submission,
@@ -509,13 +512,18 @@ pub mod pallet {
 		))]
 		pub fn submit_blob_metadata(
 			origin: OriginFor<T>,
+			app_id: AppId,
 			blob_hash: H256,
 			size: u64,
 			commitment: Vec<u8>,
 		) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
+			ensure!(
+				app_id < Self::peek_next_application_id(),
+				Error::<T>::InvalidAppId
+			);
 			ensure!(size > 0, Error::<T>::DataCannotBeEmpty);
-			ensure!(commitment.len() > 0, Error::<T>::CommitmentCannotBeEmpty);
+			ensure!(!commitment.is_empty(), Error::<T>::CommitmentCannotBeEmpty);
 			ensure!(blob_hash != H256::zero(), Error::<T>::DataCannotBeEmpty);
 
 			Self::deposit_event(Event::SubmitBlobMetadataRequest { who, blob_hash });
@@ -687,7 +695,7 @@ pub mod pallet {
 				OffenceRecord::<T>::new(
 					offence_key.kind.clone(),
 					offence_key.block_hash,
-					offence_key.blob_hash.clone(),
+					offence_key.blob_hash,
 					offence_key.missing_validator.clone(),
 				)
 			});
@@ -924,6 +932,8 @@ pub mod pallet {
 		VouchListFull,
 		/// Unable to reserve the vouch fee (insufficient funds or unexpected reserve failure).
 		InsufficientBalanceForVouch,
+		/// Invalid AppId
+		InvalidAppId,
 	}
 
 	#[pallet::genesis_config]
@@ -1032,7 +1042,7 @@ impl<T: Config> Pallet<T> {
 
 		// Check if the extrinsic is coming from an active validator
 		ensure!(
-			validators.contains(&validator_id),
+			validators.contains(validator_id),
 			Error::<T>::NotAnActiveValidator
 		);
 

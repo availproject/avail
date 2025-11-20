@@ -203,7 +203,7 @@ where
 
 			let encoded = match encode_selector {
 				EncodeSelector::None => None,
-				EncodeSelector::Call => Some((&tx.tx_encoded[tx.call_start_pos..]).to_string()),
+				EncodeSelector::Call => Some(tx.tx_encoded[tx.call_start_pos..].to_string()),
 				EncodeSelector::Extrinsic => Some(tx.tx_encoded.clone()),
 			};
 
@@ -647,13 +647,8 @@ pub mod fetch_extrinsics_v1 {
 			true
 		}
 		pub fn filter_in(&self, signature: &Option<TransactionSignature>) -> bool {
-			if !self.filter_in_app_id(signature.as_ref().map(|x| x.app_id)) {
-				return false;
-			}
-
-			if !self.filter_in_ss58_address(
-				signature.as_ref().map(|x| x.ss58_address.clone()).flatten(),
-			) {
+			if !self.filter_in_ss58_address(signature.as_ref().and_then(|x| x.ss58_address.clone()))
+			{
 				return false;
 			}
 
@@ -671,13 +666,6 @@ pub mod fetch_extrinsics_v1 {
 			self.ss58_address == value
 		}
 
-		pub fn filter_in_app_id(&self, value: Option<u32>) -> bool {
-			if self.app_id.is_none() {
-				return true;
-			}
-			self.app_id == value
-		}
-
 		pub fn filter_in_nonce(&self, value: Option<u32>) -> bool {
 			if self.nonce.is_none() {
 				return true;
@@ -692,7 +680,7 @@ pub mod fetch_extrinsics_v1 {
 	pub struct TransactionSignature {
 		pub ss58_address: Option<String>,
 		pub nonce: u32,
-		pub app_id: u32,
+		// pub app_id: u32,
 		pub mortality: Option<(u64, u64)>,
 	}
 
@@ -708,7 +696,7 @@ pub mod fetch_extrinsics_v1 {
 				None
 			};
 			let nonce = sig.2 .5 .0;
-			let app_id = sig.2 .8 .0 .0;
+			// let app_id = sig.2 .8 .0 .0;
 			let mortality = match sig.2 .4 .0 {
 				sp_runtime::generic::Era::Immortal => None,
 				sp_runtime::generic::Era::Mortal(x, y) => Some((x, y)),
@@ -717,7 +705,7 @@ pub mod fetch_extrinsics_v1 {
 			let value = Self {
 				ss58_address,
 				nonce,
-				app_id,
+				// app_id: *app_id,
 				mortality,
 			};
 			Some(value)
@@ -794,7 +782,7 @@ pub mod fetch_extrinsics_v1 {
 		}
 
 		pub fn insert(&mut self, hash: H256, value: CachedBlock) -> &CachedBlock {
-			if self.blocks.len() >= self.max_size as usize && self.blocks.len() > 0 {
+			if self.blocks.len() >= self.max_size as usize && !self.blocks.is_empty() {
 				self.blocks.remove(0);
 			}
 			self.blocks.push((hash, value));

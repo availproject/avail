@@ -984,10 +984,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			public_values: PublicValuesInput,
 		) -> DispatchResultWithPostInfo {
-			ensure!(
-				MockEnabled::<T>::get() == true,
-				Error::<T>::MockIsNotEnabled
-			);
+			ensure!(MockEnabled::<T>::get(), Error::<T>::MockIsNotEnabled);
 
 			let sender: [u8; 32] = ensure_signed(origin)?.into();
 			let updater = Updater::<T>::get();

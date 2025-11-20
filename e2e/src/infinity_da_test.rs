@@ -58,8 +58,9 @@ pub async fn run() -> Result<(), Error> {
 	}
 	for (i, (blob, hash, commitments)) in blobs.into_iter().enumerate() {
 		println!("---------- START Submission {i} ---------- ");
-		let options = Options::new((i % 5) as u32).nonce(nonce + i as u32);
+		let options = Options::default().nonce(nonce + i as u32);
 		let unsigned_tx = client.tx().data_availability().submit_blob_metadata(
+			5,
 			hash,
 			blob.len() as u64,
 			commitments,

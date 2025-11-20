@@ -11,10 +11,11 @@ use std::{
 };
 
 use avail_core::header::HeaderExtension;
-use da_control::{pallet::Call as DaControlCall, AppDataFor, CheckAppId};
+use da_control::{pallet::Call as DaControlCall, AppDataFor};
 use da_runtime::{
-	AppId, Executive, Header, Runtime, RuntimeCall, RuntimeGenesisConfig, SignedExtra,
-	SignedPayload, Timestamp, UncheckedExtrinsic, AVAIL,
+	extensions::check_batch_transactions::CheckBatchTransactions, AppId, Executive, Header,
+	Runtime, RuntimeCall, RuntimeGenesisConfig, SignedExtra, SignedPayload, Timestamp,
+	UncheckedExtrinsic, AVAIL,
 };
 
 use codec::Encode;
@@ -70,7 +71,8 @@ fn submit_data(
 	data: Vec<u8>,
 ) -> Result<(UncheckedExtrinsic, RuntimeCall)> {
 	let data = AppDataFor::<Runtime>::try_from(data).map_err(|_| anyhow!("Data too long"))?;
-	let call = RuntimeCall::DataAvailability(DaControlCall::<Runtime>::submit_data { data });
+	let call =
+		RuntimeCall::DataAvailability(DaControlCall::<Runtime>::submit_data { app_id, data });
 
 	let extra: SignedExtra = (
 		CheckNonZeroSender::<Runtime>::new(),
@@ -81,7 +83,7 @@ fn submit_data(
 		CheckNonce::<Runtime>::from(nonce),
 		CheckWeight::<Runtime>::new(),
 		ChargeTransactionPayment::<Runtime>::from(0),
-		CheckAppId::<Runtime>::from(app_id),
+		CheckBatchTransactions::<Runtime>::new(),
 	);
 	let payload =
 		SignedPayload::new(call, extra).map_err(|e| anyhow!("Failed to create payload: {e:?}"))?;

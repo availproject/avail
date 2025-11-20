@@ -6,7 +6,7 @@ edition = "2021"
 [workspace]
 
 [dependencies]
-avail-rust = { package = "avail-rust-client", version = "0.4.0", default-features = false, features = ["native", "reqwest", "next"] }
+avail-rust = { package = "avail-rust-client", git = "https://github.com/availproject/avail-rust.git", rev = "610db1c5bcad3e636e6c3192b80cec95f002c737", default-features = false, features = ["native", "reqwest", "next"] }
 da-commitment = { path = "../da-commitment" }
 sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "ghali/infinity-da", default-features = false, features = ["std"] }
 kate = { git = "https://github.com/availproject/avail-core", branch = "ghali/infinity-da", default-features = false, features = ["std"] }

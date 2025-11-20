@@ -31,9 +31,9 @@ homepage = "https://www.availproject.org/"
 
 
 [workspace.dependencies]
-avail-core = { git = "https://github.com/availproject/avail-core.git", branch = "ghali/infinity-da", default-features = false, features = [ "runtime"] }
-kate = { git = "https://github.com/availproject/avail-core", branch = "ghali/infinity-da", default-features = false }
-kate-recovery = { git = "https://github.com/availproject/avail-core", branch = "ghali/infinity-da", default-features = false  }
+avail-core = { git = "https://github.com/availproject/avail-core.git", rev = "e4d46158444c4155eccea493373e308a5ec7b497", default-features = false, features = [ "runtime"] }
+kate = { git = "https://github.com/availproject/avail-core", rev = "e4d46158444c4155eccea493373e308a5ec7b497", default-features = false }
+kate-recovery = { git = "https://github.com/availproject/avail-core", rev = "e4d46158444c4155eccea493373e308a5ec7b497", default-features = false  }
 # avail-core = { path = "../avail-core/core", default-features = false, features = [ "runtime"] }
 # kate = { path = "../avail-core/kate/", default-features = false }
 # kate-recovery = { path = "../avail-core/kate/recovery/", default-features = false}

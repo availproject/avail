@@ -1,7 +1,6 @@
 use super::HeaderExtensionDataFilter;
 use avail_core::OpaqueExtrinsic;
 use avail_core::{
-	app_extrinsic::AppExtrinsic,
 	data_proof::{AddressedMessage, SubTrie, TxDataRoots},
 	Keccak256,
 };
@@ -35,14 +34,12 @@ impl GetAppId for SubmittedData {
 
 #[derive(Debug, Default)]
 pub struct ExtractedTxData {
-	pub app_extrinsic: Option<AppExtrinsic>,
 	pub submitted_data: Option<SubmittedData>,
 	pub bridge_data: Option<BridgedData>,
 }
 
 #[derive(Debug, Default, PassByCodec, Encode, Decode)]
 pub struct HeaderExtensionBuilderData {
-	pub app_extrinsics: Vec<AppExtrinsic>,
 	pub data_submissions: Vec<SubmittedData>,
 	pub bridge_messages: Vec<BridgedData>,
 }
@@ -81,8 +78,8 @@ impl HeaderExtensionBuilderData {
 		HeaderExtensionBuilderData::from(extracted_tx_datas)
 	}
 
-	pub fn to_app_extrinsics(&self) -> Vec<AppExtrinsic> {
-		self.app_extrinsics.clone()
+	pub fn to_submitted_datas(&self) -> Vec<SubmittedData> {
+		self.data_submissions.clone()
 	}
 
 	pub fn is_empty(&self) -> bool {
@@ -202,7 +199,6 @@ impl From<Vec<ExtractedTxData>> for HeaderExtensionBuilderData {
 	fn from(value: Vec<ExtractedTxData>) -> Self {
 		let mut data_submissions = Vec::new();
 		let mut bridge_messages = Vec::new();
-		let mut app_extrinsics = Vec::new();
 
 		for val in value {
 			if let Some(data_submission) = val.submitted_data {
@@ -212,10 +208,6 @@ impl From<Vec<ExtractedTxData>> for HeaderExtensionBuilderData {
 			if let Some(bridge_message) = val.bridge_data {
 				bridge_messages.push(bridge_message);
 			}
-
-			if let Some(app_extrinsic) = val.app_extrinsic {
-				app_extrinsics.push(app_extrinsic);
-			}
 		}
 
 		// Sort data_submissions by app_id once
@@ -224,7 +216,6 @@ impl From<Vec<ExtractedTxData>> for HeaderExtensionBuilderData {
 		Self {
 			data_submissions,
 			bridge_messages,
-			app_extrinsics,
 		}
 	}
 }
@@ -271,7 +262,6 @@ mod tests {
 		let extrinsics: Vec<Vec<u8>> = vec![vec![1, 2, 3], vec![4, 5, 6]];
 		let builder_data =
 			HeaderExtensionBuilderData::from_raw_extrinsics::<()>(1, &extrinsics, 1024, 4096);
-		assert_eq!(builder_data.app_extrinsics.len(), 0);
 		assert_eq!(builder_data.data_submissions.len(), 0);
 		assert_eq!(builder_data.bridge_messages.len(), 0);
 	}
@@ -279,7 +269,6 @@ mod tests {
 	#[test]
 	fn test_data_root() {
 		let builder_data = HeaderExtensionBuilderData {
-			app_extrinsics: vec![],
 			data_submissions: vec![SubmittedData {
 				id: AppId::default(),
 				tx_index: 0,
@@ -297,7 +286,6 @@ mod tests {
 		assert!(builder_data.submitted_proof_of(0).is_none());
 
 		let builder_data = HeaderExtensionBuilderData {
-			app_extrinsics: vec![],
 			data_submissions: vec![SubmittedData {
 				id: AppId::default(),
 				tx_index: 0,
@@ -315,7 +303,6 @@ mod tests {
 		assert!(builder_data.leaf_idx(0).is_none());
 
 		let builder_data = HeaderExtensionBuilderData {
-			app_extrinsics: vec![],
 			data_submissions: vec![SubmittedData {
 				id: AppId::default(),
 				tx_index: 0,
@@ -357,7 +344,6 @@ mod tests {
 		];
 
 		let mut builder_data = HeaderExtensionBuilderData {
-			app_extrinsics: vec![],
 			data_submissions,
 			bridge_messages: vec![],
 		};

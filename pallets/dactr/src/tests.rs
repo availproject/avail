@@ -76,6 +76,8 @@ mod create_application_key {
 }
 
 mod submit_data {
+	use avail_core::AppId;
+
 	use super::*;
 
 	#[test]
@@ -86,7 +88,7 @@ mod submit_data {
 			let data = AppDataFor::<Test>::try_from(vec![b'X'; max_app_key_length]).unwrap();
 			let data_hash = H256(sp_io::hashing::keccak_256(&data));
 
-			assert_ok!(DataAvailability::submit_data(alice, data));
+			assert_ok!(DataAvailability::submit_data(alice, AppId(1), data));
 
 			let event = RuntimeEvent::DataAvailability(Event::DataSubmitted {
 				who: ALICE,
@@ -102,7 +104,7 @@ mod submit_data {
 			let alice: RuntimeOrigin = RawOrigin::Signed(ALICE).into();
 			let data = AppDataFor::<Test>::try_from(vec![]).unwrap();
 
-			let err = DataAvailability::submit_data(alice, data);
+			let err = DataAvailability::submit_data(alice, AppId(1), data);
 			assert_noop!(err, Error::DataCannotBeEmpty);
 		})
 	}
@@ -383,6 +385,8 @@ mod set_submit_data_fee_modifier {
 }
 
 mod submit_blob_metadata {
+	use avail_core::AppId;
+
 	use super::*;
 
 	#[test]
@@ -394,7 +398,11 @@ mod submit_blob_metadata {
 			let commitment = vec![1u8];
 
 			assert_ok!(DataAvailability::submit_blob_metadata(
-				alice, blob_hash, size, commitment
+				alice,
+				AppId(1),
+				blob_hash,
+				size,
+				commitment
 			));
 
 			let event = RuntimeEvent::DataAvailability(Event::SubmitBlobMetadataRequest {
@@ -413,7 +421,13 @@ mod submit_blob_metadata {
 			let size: u64 = 1;
 			let commitment = Vec::<u8>::new();
 
-			let err = DataAvailability::submit_blob_metadata(alice, blob_hash, size, commitment);
+			let err = DataAvailability::submit_blob_metadata(
+				alice,
+				AppId(1),
+				blob_hash,
+				size,
+				commitment,
+			);
 			assert_noop!(err, Error::CommitmentCannotBeEmpty);
 		})
 	}
@@ -426,7 +440,13 @@ mod submit_blob_metadata {
 			let size: u64 = 0;
 			let commitment = vec![1u8];
 
-			let err = DataAvailability::submit_blob_metadata(alice, blob_hash, size, commitment);
+			let err = DataAvailability::submit_blob_metadata(
+				alice,
+				AppId(1),
+				blob_hash,
+				size,
+				commitment,
+			);
 			assert_noop!(err, Error::DataCannotBeEmpty);
 		})
 	}
@@ -439,7 +459,13 @@ mod submit_blob_metadata {
 			let size: u64 = 1;
 			let commitment = vec![1u8];
 
-			let err = DataAvailability::submit_blob_metadata(alice, blob_hash, size, commitment);
+			let err = DataAvailability::submit_blob_metadata(
+				alice,
+				AppId(1),
+				blob_hash,
+				size,
+				commitment,
+			);
 			assert_noop!(err, Error::DataCannotBeEmpty);
 		})
 	}

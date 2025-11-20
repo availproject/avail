@@ -149,7 +149,7 @@ impl serde::Serialize for AuthorityId {
 	where
 		S: serde::Serializer,
 	{
-		let account_id = AccountId32::from(self.0.clone());
+		let account_id = AccountId32::from(self.0);
 		serializer.serialize_str(&account_id.to_string())
 	}
 }
@@ -172,7 +172,7 @@ impl serde::Serialize for Signature {
 	where
 		S: serde::Serializer,
 	{
-		serializer.serialize_str(&const_hex::encode_prefixed(&self.0))
+		serializer.serialize_str(&const_hex::encode_prefixed(self.0))
 	}
 }
 

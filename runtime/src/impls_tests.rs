@@ -626,6 +626,7 @@ mod tests {
 
 mod measure_full_block_size {
 	use crate::{
+		extensions::check_batch_transactions::CheckBatchTransactions,
 		impls_tests::tests::RuntimeGenesisConfig, Block, DataAvailability, Executive, Header,
 		Runtime, RuntimeCall, SignedExtra, SignedPayload, System, Timestamp, UncheckedExtrinsic,
 	};
@@ -633,7 +634,6 @@ mod measure_full_block_size {
 	use codec::Encode;
 	use da_control::{
 		extensions::native::hosted_commitment_builder::build_da_commitments, BlobTxSummaryRuntime,
-		CheckAppId,
 	};
 	use frame_support::{
 		// dispatch::GetDispatchInfo,
@@ -733,6 +733,7 @@ mod measure_full_block_size {
 			loop {
 				let call = RuntimeCall::DataAvailability(
 					da_control::Call::<Runtime>::submit_blob_metadata {
+						app_id: AppId(1),
 						blob_hash,
 						size: tx_size,
 						commitment: commitment.clone(),
@@ -756,7 +757,7 @@ mod measure_full_block_size {
 					CheckNonce::<Runtime>::from(nonce),
 					CheckWeight::<Runtime>::new(),
 					ChargeTransactionPayment::<Runtime>::from(0),
-					CheckAppId::<Runtime>::from(AppId(nonce % 1024)),
+					CheckBatchTransactions::<Runtime>::new(),
 				);
 				let payload = SignedPayload::new(call, extra).unwrap();
 				let enc_payload = payload.encode();

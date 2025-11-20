@@ -117,7 +117,10 @@ where
 	T: frame_system::Config + Send + Sync + pallet::Config + Debug + StaticTypeInfo,
 	RuntimeCallOf<T>: From<DACall<T>>,
 {
-	let call = DACall::submit_data::<T> { data };
+	let call = DACall::submit_data::<T> {
+		app_id: AppId(2),
+		data,
+	};
 	let runtime_call: <T as frame_system::Config>::RuntimeCall = call.into();
 	let unchecked_extrinsic =
 		AppUncheckedExtrinsic::<(), RuntimeCallOf<T>, (), SignedExtensionUnused<T>>::new_unsigned(
@@ -205,9 +208,10 @@ mod benchmarks {
 		let origin = RawOrigin::Signed(caller.clone());
 		let data = generate_bounded::<AppDataFor<T>>(i);
 		let data_hash = H256(keccak_256(&data));
+		let app_id = AppId(2);
 
 		#[extrinsic_call]
-		_(origin, data);
+		_(origin, app_id, data);
 
 		assert_last_event::<T>(
 			Event::DataSubmitted {
@@ -311,6 +315,7 @@ mod benchmarks {
 
 		let block_length = frame_system::Pallet::<T>::block_length();
 		let data = vec![0u8; s as usize];
+		let app_id = AppId(2);
 		let commitment = crate::extensions::native::hosted_commitment_builder::build_da_commitments(
 			&data,
 			block_length.cols.0,
@@ -320,7 +325,7 @@ mod benchmarks {
 		debug_assert!(!commitment.is_empty());
 
 		#[extrinsic_call]
-		_(origin, blob_hash, s.into(), commitment);
+		_(origin, app_id, blob_hash, s.into(), commitment);
 
 		assert_last_event::<T>(
 			Event::SubmitBlobMetadataRequest {

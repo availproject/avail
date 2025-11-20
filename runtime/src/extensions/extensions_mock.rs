@@ -17,16 +17,52 @@ use frame_system::{
 use pallet_transaction_payment::FungibleAdapter;
 use sp_core::ConstU32;
 use sp_runtime::traits::BlakeTwo256;
+use sp_runtime::traits::Convert;
+use sp_runtime::Perbill;
 use sp_runtime::{AccountId32, BuildStorage};
+use sp_std::marker::PhantomData;
 
-use crate::mock::DummyValidatorSet;
-use crate::{self as da_control, *};
+use crate::Weight;
+use da_control::DefaultConfig;
 
 /// An unchecked extrinsic type to be used in tests.
 type Extrinsic = MockUncheckedExtrinsic<Test>;
 /// An implementation of `sp_runtime::traits::Block` to be used in tests.
 type Block = frame_system::mocking::MockDaBlock<Test>;
 type Balance = u64;
+
+pub struct IdentitySome<A>(PhantomData<A>);
+impl<A> Convert<A, Option<A>> for IdentitySome<A> {
+	fn convert(a: A) -> Option<A> {
+		Some(a)
+	}
+}
+pub struct DummyValidatorSet<T>(PhantomData<T>);
+impl<T> frame_support::traits::ValidatorSet<<T as frame_system::Config>::AccountId>
+	for DummyValidatorSet<T>
+where
+	T: frame_system::Config,
+{
+	type ValidatorId = <T as frame_system::Config>::AccountId;
+	type ValidatorIdOf = IdentitySome<<T as frame_system::Config>::AccountId>;
+
+	fn session_index() -> sp_staking::SessionIndex {
+		0
+	}
+	fn validators() -> Vec<Self::ValidatorId> {
+		Vec::new()
+	}
+}
+
+impl<T>
+	frame_support::traits::ValidatorSetWithIdentification<<T as frame_system::Config>::AccountId>
+	for DummyValidatorSet<T>
+where
+	T: frame_system::Config,
+{
+	type Identification = <T as frame_system::Config>::AccountId;
+	type IdentificationOf = IdentitySome<<T as frame_system::Config>::AccountId>;
+}
 
 frame_support::construct_runtime!(
 	pub struct Test {

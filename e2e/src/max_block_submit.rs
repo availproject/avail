@@ -30,7 +30,7 @@ pub async fn run() -> Result<(), Error> {
 	let tx = client
 		.tx()
 		.data_availability()
-		.submit_data(vec![0; TX_MAX_SIZE]);
+		.submit_data(5, vec![0; TX_MAX_SIZE]);
 	let res = tx.sign_and_submit(&alice, options).await?;
 	let receipt = res.receipt(true).await.unwrap();
 	assert!(receipt.is_some());
@@ -40,7 +40,7 @@ pub async fn run() -> Result<(), Error> {
 	let tx = client
 		.tx()
 		.data_availability()
-		.submit_data(vec![0; GROUP_TX_MAX_SIZE]);
+		.submit_data(5, vec![0; GROUP_TX_MAX_SIZE]);
 
 	println!("{}: Submitting transactions...", TAG);
 	let mut submitted_txs = Vec::with_capacity(NUM_CHUNKS);
