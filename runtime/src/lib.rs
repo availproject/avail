@@ -23,7 +23,7 @@
 #![recursion_limit = "512"]
 #![allow(macro_expanded_macro_exports_accessed_by_absolute_paths)]
 
-// pub(crate) const LOG_TARGET: &str = "da-runtime";
+pub(crate) const LOG_TARGET: &str = "da-runtime";
 
 pub mod apis;
 pub mod constants;
