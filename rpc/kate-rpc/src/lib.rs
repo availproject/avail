@@ -1,6 +1,7 @@
+use avail_core::data_proof::ProofResponse;
 use avail_core::{header::HeaderExtension, traits::ExtendedHeader, OpaqueExtrinsic};
 use avail_observability::metrics::avail::{MetricObserver, ObserveKind};
-use da_runtime::apis::DataAvailApi;
+use da_runtime::apis::{DataAvailApi, KateApi as RTKateApi};
 use kate::com::Cell;
 
 use frame_support::BoundedVec;
@@ -8,12 +9,15 @@ use frame_system::limits::BlockLength;
 use jsonrpsee::{
 	core::{async_trait, RpcResult},
 	proc_macros::rpc,
-	types::error::ErrorObject,
+	types::error::{ErrorCode, ErrorObject},
 };
 use sc_client_api::BlockBackend;
-use sp_api::ProvideRuntimeApi;
+use sp_api::{ApiRef, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
-use sp_runtime::traits::{Block as BlockT, ConstU32};
+use sp_runtime::{
+	generic::SignedBlock,
+	traits::{Block as BlockT, ConstU32, Header},
+};
 use std::{marker::PhantomData, marker::Sync, sync::Arc};
 
 pub type HashOf<Block> = <Block as BlockT>::Hash;
@@ -65,12 +69,12 @@ where
 	#[method(name = "kate_blockLength")]
 	async fn query_block_length(&self, at: Option<HashOf<Block>>) -> RpcResult<BlockLength>;
 
-	// #[method(name = "kate_queryDataProof")]
-	// async fn query_data_proof(
-	// 	&self,
-	// 	transaction_index: u32,
-	// 	at: Option<HashOf<Block>>,
-	// ) -> RpcResult<ProofResponse>;
+	#[method(name = "kate_queryDataProof")]
+	async fn query_data_proof(
+		&self,
+		transaction_index: u32,
+		at: Option<HashOf<Block>>,
+	) -> RpcResult<ProofResponse>;
 }
 
 #[allow(clippy::type_complexity)]
@@ -117,8 +121,8 @@ macro_rules! internal_err {
 
 // ApiRef<'_, dyn ApiExt<Block>>,
 
-// type Opaques<B> = Vec<<B as BlockT>::Extrinsic>;
-// type Api<'a, C, B> = ApiRef<'a, <C as ProvideRuntimeApi<B>>::Api>;
+type Opaques<B> = Vec<<B as BlockT>::Extrinsic>;
+type Api<'a, C, B> = ApiRef<'a, <C as ProvideRuntimeApi<B>>::Api>;
 
 impl<Client, Block> Kate<Client, Block>
 where
@@ -129,63 +133,63 @@ where
 	Client::Api: DataAvailApi<Block>,
 	// Extrinsic: TryFrom<<Block as BlockT>::Extrinsic>,
 {
-	// #[allow(clippy::type_complexity)]
-	// fn scope(
-	// 	&self,
-	// 	at: Option<Block::Hash>,
-	// ) -> RpcResult<(
-	// 	Api<'_, Client, Block>,
-	// 	<Block as BlockT>::Hash,
-	// 	u32,
-	// 	BlockLength,
-	// 	Opaques<Block>,
-	// 	<Block as BlockT>::Header,
-	// )> {
-	// 	let at = self.at_or_best(at);
-	// 	let block = self.get_finalized_block(Some(at))?.block;
-	// 	let number: u32 = (*block.header().number())
-	// 		.try_into()
-	// 		.map_err(|_| ErrorCode::InvalidParams)?;
-	// 	let (header, extrinsics) = block.deconstruct();
+	#[allow(clippy::type_complexity)]
+	fn scope(
+		&self,
+		at: Option<Block::Hash>,
+	) -> RpcResult<(
+		Api<'_, Client, Block>,
+		<Block as BlockT>::Hash,
+		u32,
+		BlockLength,
+		Opaques<Block>,
+		<Block as BlockT>::Header,
+	)> {
+		let at = self.at_or_best(at);
+		let block = self.get_finalized_block(Some(at))?.block;
+		let number: u32 = (*block.header().number())
+			.try_into()
+			.map_err(|_| ErrorCode::InvalidParams)?;
+		let (header, extrinsics) = block.deconstruct();
 
-	// 	let api = self.client.runtime_api();
-	// 	let block_len = api
-	// 		.block_length(at)
-	// 		.map_err(|e| internal_err!("Length of best block({at:?}): {e:?}"))?;
+		let api = self.client.runtime_api();
+		let block_len = api
+			.block_length(at)
+			.map_err(|e| internal_err!("Length of best block({at:?}): {e:?}"))?;
 
-	// 	Ok((api, at, number, block_len, extrinsics, header))
-	// }
+		Ok((api, at, number, block_len, extrinsics, header))
+	}
 
 	fn at_or_best(&self, at: Option<<Block as BlockT>::Hash>) -> <Block as BlockT>::Hash {
 		at.unwrap_or_else(|| self.client.info().best_hash)
 	}
 
-	// fn ensure_block_finalized(&self, block: &SignedBlock<Block>) -> RpcResult<()> {
-	// 	let block_header = block.block.header();
-	// 	let (block_hash, block_number) = (block_header.hash(), *block_header.number());
+	fn ensure_block_finalized(&self, block: &SignedBlock<Block>) -> RpcResult<()> {
+		let block_header = block.block.header();
+		let (block_hash, block_number) = (block_header.hash(), *block_header.number());
 
-	// 	if self.client.info().finalized_number < block_number {
-	// 		return Err(internal_err!(
-	// 			"Requested block {block_hash} is not finalized"
-	// 		));
-	// 	}
+		if self.client.info().finalized_number < block_number {
+			return Err(internal_err!(
+				"Requested block {block_hash} is not finalized"
+			));
+		}
 
-	// 	Ok(())
-	// }
+		Ok(())
+	}
 
-	// fn get_block(&self, at: Option<Block::Hash>) -> RpcResult<SignedBlock<Block>> {
-	// 	let at = self.at_or_best(at);
-	// 	self.client
-	// 		.block(at)
-	// 		.map_err(|e| internal_err!("Invalid block number: {:?}", e))?
-	// 		.ok_or_else(|| internal_err!("Missing block {}", at))
-	// }
+	fn get_block(&self, at: Option<Block::Hash>) -> RpcResult<SignedBlock<Block>> {
+		let at = self.at_or_best(at);
+		self.client
+			.block(at)
+			.map_err(|e| internal_err!("Invalid block number: {:?}", e))?
+			.ok_or_else(|| internal_err!("Missing block {}", at))
+	}
 
-	// fn get_finalized_block(&self, at: Option<Block::Hash>) -> RpcResult<SignedBlock<Block>> {
-	// 	let signed_block = self.get_block(at)?;
-	// 	self.ensure_block_finalized(&signed_block)?;
-	// 	Ok(signed_block)
-	// }
+	fn get_finalized_block(&self, at: Option<Block::Hash>) -> RpcResult<SignedBlock<Block>> {
+		let signed_block = self.get_block(at)?;
+		self.ensure_block_finalized(&signed_block)?;
+		Ok(signed_block)
+	}
 }
 
 #[async_trait]
@@ -195,7 +199,7 @@ where
 	<Block as BlockT>::Header: ExtendedHeader<Extension = HeaderExtension>,
 	Client: Send + Sync + 'static,
 	Client: HeaderBackend<Block> + ProvideRuntimeApi<Block> + BlockBackend<Block>,
-	Client::Api: DataAvailApi<Block>,
+	Client::Api: DataAvailApi<Block> + RTKateApi<Block>,
 {
 	// async fn query_rows(&self, rows: Rows, at: Option<HashOf<Block>>) -> RpcResult<Vec<GRow>> {
 	// 	let _metric_observer = MetricObserver::new(ObserveKind::KateQueryRows);
@@ -321,22 +325,22 @@ where
 		Ok(block_length)
 	}
 
-	// async fn query_data_proof(
-	// 	&self,
-	// 	tx_idx: u32,
-	// 	at: Option<HashOf<Block>>,
-	// ) -> RpcResult<ProofResponse> {
-	// 	let _metric_observer = MetricObserver::new(ObserveKind::KateQueryDataProof);
+	async fn query_data_proof(
+		&self,
+		tx_idx: u32,
+		at: Option<HashOf<Block>>,
+	) -> RpcResult<ProofResponse> {
+		let _metric_observer = MetricObserver::new(ObserveKind::KateQueryDataProof);
 
-	// 	// Calculate proof for block and tx index
-	// 	let (api, at, number, _, extrinsics, _) = self.scope(at)?;
-	// 	let proof = api
-	// 		.data_proof(at, number, extrinsics, tx_idx)
-	// 		.map_err(|e| internal_err!("KateApi::data_proof failed: {e:?}"))?
-	// 		.ok_or_else(|| {
-	// 			internal_err!("Cannot fetch tx data at tx index {tx_idx:?} at block {at:?}")
-	// 		})?;
+		// Calculate proof for block and tx index
+		let (api, at, number, _, extrinsics, _) = self.scope(at)?;
+		let proof = api
+			.data_proof(at, number, extrinsics, tx_idx)
+			.map_err(|e| internal_err!("KateApi::data_proof failed: {e:?}"))?
+			.ok_or_else(|| {
+				internal_err!("Cannot fetch tx data at tx index {tx_idx:?} at block {at:?}")
+			})?;
 
-	// 	Ok(proof)
-	// }
+		Ok(proof)
+	}
 }

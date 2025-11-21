@@ -1,4 +1,5 @@
 // use super::kate::{Error as RTKateError, GDataProof, GRow};
+use crate::LOG_TARGET;
 use crate::{
 	constants,
 	// kate::{GCellBlock, GMultiProof},
@@ -27,7 +28,12 @@ use crate::{
 	TransactionPayment,
 };
 use avail_base::{HeaderExtensionBuilderData, ProvidePostInherent};
-use avail_core::{currency::Balance, header::HeaderExtension, DataProof, OpaqueExtrinsic};
+use avail_core::{
+	currency::Balance,
+	data_proof::{DataProof, ProofResponse, SubTrie},
+	header::HeaderExtension,
+	OpaqueExtrinsic,
+};
 
 use frame_system::limits::BlockLength;
 
@@ -82,7 +88,7 @@ decl_runtime_apis! {
 	}
 
 	pub trait KateApi {
-		// fn data_proof(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, tx_idx: u32) -> Option<ProofResponse>;
+		fn data_proof(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, tx_idx: u32) -> Option<ProofResponse>;
 		// fn rows(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, rows: Vec<u32>) -> Result<Vec<GRow>, RTKateError >;
 		// fn proof(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, cells: Vec<(u32,u32)> ) -> Result<Vec<GDataProof>, RTKateError>;
 		// fn multiproof(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, cells: Vec<(u32,u32)> ) -> Result<Vec<(GMultiProof, GCellBlock)>, RTKateError>;
@@ -539,37 +545,37 @@ impl_runtime_apis! {
 	}
 
 	impl crate::apis::KateApi<Block> for Runtime {
-	// 	fn data_proof(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, tx_idx: u32) -> Option<ProofResponse> {
-	// 		let bl = frame_system::Pallet::<Runtime>::block_length();
-	// 		let cols = bl.cols.0;
-	// 		let rows = bl.rows.0;
-	// 		let data = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block_number, &extrinsics, cols, rows);
-	// 		let (leaf_idx, sub_trie) = data.leaf_idx(tx_idx)?;
-	// 		log::trace!(
-	// 			target: LOG_TARGET,
-	// 			"KateApi::data_proof: tx_idx={tx_idx:?} leaf_idx={leaf_idx:?}, sub_trie:{sub_trie:?}");
+		fn data_proof(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, tx_idx: u32) -> Option<ProofResponse> {
+			let bl = frame_system::Pallet::<Runtime>::block_length();
+			let cols = bl.cols.0;
+			let rows = bl.rows.0;
+			let data = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block_number, &extrinsics, cols, rows);
+			let (leaf_idx, sub_trie) = data.leaf_idx(tx_idx)?;
+			log::trace!(
+				target: LOG_TARGET,
+				"KateApi::data_proof: tx_idx={tx_idx:?} leaf_idx={leaf_idx:?}, sub_trie:{sub_trie:?}");
 
-	// 		let (sub_proof, message) = match sub_trie {
-	// 			SubTrie::DataSubmit => {
-	// 				let proof = data.submitted_proof_of(leaf_idx)?;
-	// 				(proof, None)
-	// 			},
-	// 			SubTrie::Bridge => {
-	// 				let message = data.bridge_messages.get(leaf_idx).map(|b| b.addr_msg.clone());
-	// 				let proof = data.bridged_proof_of(leaf_idx)?;
-	// 				(proof, message)
-	// 			},
-	// 		};
+			let (sub_proof, message) = match sub_trie {
+				SubTrie::DataSubmit => {
+					let proof = data.submitted_proof_of(leaf_idx)?;
+					(proof, None)
+				},
+				SubTrie::Bridge => {
+					let message = data.bridge_messages.get(leaf_idx).map(|b| b.addr_msg.clone());
+					let proof = data.bridged_proof_of(leaf_idx)?;
+					(proof, message)
+				},
+			};
 
-	// 		let roots = data.roots();
-	// 		let data_proof = DataProof::new(sub_trie, roots, sub_proof);
-	// 		let proof = ProofResponse::new(data_proof, message);
-	// 		log::trace!(
-	// 			target: LOG_TARGET,
-	// 			"KateApi::data_proof: proof={proof:#?}");
+			let roots = data.roots();
+			let data_proof = DataProof::new(sub_trie, roots, sub_proof);
+			let proof = ProofResponse::new(data_proof, message);
+			log::trace!(
+				target: LOG_TARGET,
+				"KateApi::data_proof: proof={proof:#?}");
 
-	// 		Some(proof)
-	// 	}
+			Some(proof)
+		}
 
 		fn inclusion_proof(extrinsics: Vec<OpaqueExtrinsic>, blob_hash: H256) -> Option<DataProof> {
 			// TODO: block_number, rows & cols has no significance in this case, should be refactored later
