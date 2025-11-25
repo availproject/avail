@@ -18,22 +18,18 @@ use std::{
 
 #[rpc(client, server)]
 pub trait Api {
-	#[method(name = "system_fetchEventsV1")]
-	async fn fetch_events_v1(
+	#[method(name = "system_fetchEvents")]
+	async fn fetch_events(
 		&self,
 		at: H256,
-		options: Option<fetch_events_v1::Options>,
-	) -> RpcResult<fetch_events_v1::ApiResult>;
+		options: Option<fetch_events::Options>,
+	) -> RpcResult<fetch_events::ApiResult>;
 
-	#[method(name = "system_fetchExtrinsicsV1")]
-	async fn fetch_extrinsics_v1(
+	#[method(name = "system_fetchExtrinsics")]
+	async fn fetch_extrinsics(
 		&self,
-		block_id: fetch_extrinsics_v1::BlockId,
-		options: Option<fetch_extrinsics_v1::Options>,
-	) -> RpcResult<fetch_extrinsics_v1::ApiResult>;
-
-	#[method(name = "system_latestBlockInfo")]
-	async fn latest_block_info(&self, use_best_block: Option<bool>) -> RpcResult<types::BlockInfo>;
+		params: fetch_extrinsics::Params,
+	) -> RpcResult<fetch_extrinsics::ApiResult>;
 
 	#[method(name = "system_latestChainInfo")]
 	async fn latest_chain_info(&self) -> RpcResult<types::ChainInfo>;
@@ -49,7 +45,7 @@ where
 	Block: BlockT,
 {
 	pub client: Arc<C>,
-	pub block_cache: Arc<Mutex<fetch_extrinsics_v1::Cache>>,
+	pub block_cache: Arc<Mutex<fetch_extrinsics::Cache>>,
 	_phantom: PhantomData<Block>,
 }
 impl<C, Block> Rpc<C, Block>
@@ -63,7 +59,7 @@ where
 	pub fn new(client: Arc<C>) -> Self {
 		Self {
 			client,
-			block_cache: Arc::new(Mutex::new(fetch_extrinsics_v1::Cache::new(5))),
+			block_cache: Arc::new(Mutex::new(fetch_extrinsics::Cache::new(5))),
 			_phantom: PhantomData,
 		}
 	}
@@ -110,16 +106,16 @@ where
 	<<Block as BlockT>::Header as HeaderT>::Number: From<u32>,
 	<<Block as BlockT>::Header as HeaderT>::Number: Into<u32>,
 {
-	async fn fetch_events_v1(
+	async fn fetch_events(
 		&self,
 		at: H256,
-		options: Option<fetch_events_v1::Options>,
-	) -> RpcResult<fetch_events_v1::ApiResult> {
-		use fetch_events_v1::GroupedRuntimeEvents;
+		options: Option<fetch_events::Options>,
+	) -> RpcResult<fetch_events::ApiResult> {
+		use fetch_events::GroupedRuntimeEvents;
 
 		let runtime_api = self.client.runtime_api();
 		let result = runtime_api
-			.fetch_events_v1(at.into(), options.unwrap_or_default())
+			.fetch_events(at.into(), options.unwrap_or_default())
 			.map_err(|x| Error::RuntimeApi.into_error_object(x.to_string()))?;
 
 		match result {
@@ -129,31 +125,19 @@ where
 		}
 	}
 
-	async fn fetch_extrinsics_v1(
+	async fn fetch_extrinsics(
 		&self,
-		block_id: fetch_extrinsics_v1::BlockId,
-		options: Option<fetch_extrinsics_v1::Options>,
-	) -> RpcResult<fetch_extrinsics_v1::ApiResult> {
-		use fetch_extrinsics_v1::{
-			BlockId, EncodeSelector, ExtrinsicInformation, TransactionFilterOptions,
+		params: fetch_extrinsics::Params,
+	) -> RpcResult<fetch_extrinsics::ApiResult> {
+		use fetch_extrinsics::{
+			BlockId, EncodeSelector, ExtrinsicFilterOptions, ExtrinsicInformation,
 		};
-		let options = options.unwrap_or_default();
-		let filter = options.filter.unwrap_or_default();
-		let tx_filter = filter.transaction.unwrap_or_default();
-		let sig_filter = filter.signature.unwrap_or_default();
-		let encode_selector = options.encode_selector.unwrap_or_default();
 
-		if !tx_filter.is_valid() {
-			return Err(Error::InvalidInput
-				.into_error_object(String::from("Transaction filter: Invalid input")));
+		if !params.is_valid() {
+			return Err(Error::InvalidInput.into_error_object(String::from("Invalid input")));
 		}
 
-		if !sig_filter.is_valid() {
-			return Err(Error::InvalidInput
-				.into_error_object(String::from("Signature filter: Invalid input")));
-		}
-
-		let block_hash = match block_id {
+		let block_hash = match params.block_id {
 			BlockId::Hash(h) => h,
 			BlockId::Number(n) => {
 				let hash = match self.client.block_hash(n.into()) {
@@ -174,34 +158,34 @@ where
 		let cached_block = match cache.block(block_hash) {
 			Some(block) => block,
 			None => {
-				let block = fetch_extrinsics_v1::cache_block::<C, Block>(&self.client, block_hash)?;
+				let block = fetch_extrinsics::cache_block::<C, Block>(&self.client, block_hash)?;
 				cache.insert(block_hash, block)
 			},
 		};
 
-		let transactions = cached_block.transactions();
-		let mut found_extrinsics = match &tx_filter {
-			TransactionFilterOptions::All => Vec::with_capacity(transactions.len()),
-			TransactionFilterOptions::TxHash(list) => Vec::with_capacity(list.len()),
-			TransactionFilterOptions::TxIndex(list) => Vec::with_capacity(list.len()),
+		let extrinsics = cached_block.transactions();
+		let mut found_extrinsics = match &params.extrinsic {
+			ExtrinsicFilterOptions::All => Vec::with_capacity(extrinsics.len()),
+			ExtrinsicFilterOptions::TxHash(list) => Vec::with_capacity(list.len()),
+			ExtrinsicFilterOptions::TxIndex(list) => Vec::with_capacity(list.len()),
 			_ => Vec::new(),
 		};
-		for tx in transactions.iter() {
-			if !tx_filter.filter_in_tx_index(tx.index) || !tx_filter.filter_in_tx_hash(tx.tx_hash) {
+		for tx in extrinsics.iter() {
+			if !params.filter_in_tx_index(tx.index) || !params.filter_in_tx_hash(tx.tx_hash) {
 				continue;
 			}
 
-			if !tx_filter.filter_in_pallet(tx.dispatch_index.0)
-				|| !tx_filter.filter_in_pallet_call(tx.dispatch_index)
+			if !params.filter_in_pallet(tx.dispatch_index.0)
+				|| !params.filter_in_pallet_call(tx.dispatch_index)
 			{
 				continue;
 			}
 
-			if !sig_filter.filter_in(&tx.signature) {
+			if !params.filter_in(&tx.signature) {
 				continue;
 			}
 
-			let encoded = match encode_selector {
+			let encoded = match params.encode_selector {
 				EncodeSelector::None => None,
 				EncodeSelector::Call => Some(tx.tx_encoded[tx.call_start_pos..].to_string()),
 				EncodeSelector::Extrinsic => Some(tx.tx_encoded.clone()),
@@ -217,13 +201,13 @@ where
 			};
 			found_extrinsics.push(ext_info);
 
-			if let TransactionFilterOptions::TxIndex(list) = &tx_filter {
+			if let ExtrinsicFilterOptions::TxIndex(list) = &params.extrinsic {
 				if found_extrinsics.len() >= list.len() {
 					break;
 				}
 			}
 
-			if let TransactionFilterOptions::TxHash(list) = &tx_filter {
+			if let ExtrinsicFilterOptions::TxHash(list) = &params.extrinsic {
 				if found_extrinsics.len() >= list.len() {
 					break;
 				}
@@ -233,22 +217,6 @@ where
 		cache.promote_block(block_hash);
 
 		Ok(found_extrinsics)
-	}
-
-	async fn latest_block_info(&self, use_best_block: Option<bool>) -> RpcResult<types::BlockInfo> {
-		let info = self.client.info();
-		let use_best_block = use_best_block.unwrap_or(true);
-		if use_best_block {
-			return Ok(types::BlockInfo {
-				hash: info.best_hash.into(),
-				height: info.best_number.into(),
-			});
-		}
-
-		Ok(types::BlockInfo {
-			hash: info.finalized_hash.into(),
-			height: info.finalized_number.into(),
-		})
 	}
 
 	async fn latest_chain_info(&self) -> RpcResult<types::ChainInfo> {
@@ -275,140 +243,23 @@ pub mod types {
 	use super::*;
 
 	#[derive(Clone, serde::Serialize, serde::Deserialize)]
-	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-	#[cfg_attr(feature = "ts", ts(export, export_to = "Types.ts"))]
-	pub struct BlockInfo {
-		#[cfg_attr(feature = "ts", ts(as = "String"))]
-		pub hash: H256,
-		pub height: u32,
-	}
-
-	#[derive(Clone, serde::Serialize, serde::Deserialize)]
-	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-	#[cfg_attr(feature = "ts", ts(export, export_to = "Types.ts"))]
 	pub struct ChainInfo {
-		#[cfg_attr(feature = "ts", ts(as = "String"))]
 		pub best_hash: H256,
 		pub best_height: u32,
-		#[cfg_attr(feature = "ts", ts(as = "String"))]
 		pub finalized_hash: H256,
 		pub finalized_height: u32,
-		#[cfg_attr(feature = "ts", ts(as = "String"))]
 		pub genesis_hash: H256,
-	}
-
-	#[cfg(feature = "ts")]
-	pub mod ts_types {
-		use super::*;
-
-		#[allow(dead_code)]
-		#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-		#[cfg_attr(feature = "ts", ts(export, export_to = "Types.ts"))]
-		struct RpcRequestBlockInfo {
-			id: u32,
-			jsonrpc: String,
-			method: String,
-			params: (bool,),
-		}
-
-		#[allow(dead_code)]
-		#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-		#[cfg_attr(feature = "ts", ts(export, export_to = "Types.ts"))]
-		struct RpcResponseBlockInfo {
-			jsonrpc: String,
-			result: Option<BlockInfo>,
-			error: Option<Error>,
-			id: u32,
-		}
-
-		#[allow(dead_code)]
-		#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-		#[cfg_attr(feature = "ts", ts(export, export_to = "Types.ts"))]
-		struct RpcRequestChainInfo {
-			id: u32,
-			jsonrpc: String,
-			method: String,
-			params: (),
-		}
-
-		#[allow(dead_code)]
-		#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-		#[cfg_attr(feature = "ts", ts(export, export_to = "Types.ts"))]
-		struct RpcResponseChainInfo {
-			jsonrpc: String,
-			result: Option<ChainInfo>,
-			error: Option<Error>,
-			id: u32,
-		}
-
-		#[allow(dead_code)]
-		#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-		#[cfg_attr(feature = "ts", ts(export, export_to = "Types.ts"))]
-		struct RpcRequestBlockNumber {
-			id: u32,
-			jsonrpc: String,
-			method: String,
-			#[cfg_attr(feature = "ts", ts(as = "(String,)"))]
-			params: (H256,),
-		}
-
-		#[allow(dead_code)]
-		#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-		#[cfg_attr(feature = "ts", ts(export, export_to = "Types.ts"))]
-		struct RpcResponseBlockNumber {
-			jsonrpc: String,
-			result: Option<u32>,
-			error: Option<Error>,
-			id: u32,
-		}
-
-		#[allow(dead_code)]
-		#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-		#[cfg_attr(feature = "ts", ts(export, export_to = "Types.ts"))]
-		pub struct Error {
-			code: i32,
-			message: String,
-			data: Option<String>,
-		}
 	}
 }
 
-pub mod fetch_events_v1 {
-	pub use frame_system_rpc_runtime_api::system_events_api::fetch_events_v1::{
+pub mod fetch_events {
+	pub use frame_system_rpc_runtime_api::system_events_api::fetch_events::{
 		GroupedRuntimeEvents as RuntimeGroupedRuntimeEvents, Options,
 		RuntimeEvent as RuntimeRuntimeEvent,
 	};
 	pub type ApiResult = Vec<GroupedRuntimeEvents>;
 
-	#[cfg(feature = "ts")]
-	pub mod ts_types {
-		use super::super::types::ts_types::Error;
-		use super::*;
-
-		#[allow(dead_code)]
-		#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-		#[cfg_attr(feature = "ts", ts(export, export_to = "FetchEvents.ts"))]
-		struct RpcRequest {
-			id: u32,
-			jsonrpc: String,
-			method: String,
-			params: (String, Option<Options>),
-		}
-
-		#[allow(dead_code)]
-		#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-		#[cfg_attr(feature = "ts", ts(export, export_to = "FetchEvents.ts"))]
-		struct RpcResponse {
-			jsonrpc: String,
-			result: Option<Vec<GroupedRuntimeEvents>>,
-			error: Option<Error>,
-			id: u32,
-		}
-	}
-
 	#[derive(Clone, serde::Serialize, serde::Deserialize)]
-	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchEvents.ts"))]
 	pub struct GroupedRuntimeEvents {
 		pub phase: frame_system::Phase,
 		pub events: Vec<RuntimeEvent>,
@@ -433,14 +284,11 @@ pub mod fetch_events_v1 {
 	}
 
 	#[derive(Clone, serde::Serialize, serde::Deserialize)]
-	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchEvents.ts"))]
 	pub struct RuntimeEvent {
 		pub index: u32,
 		// (Pallet Id, Event Id)
 		pub emitted_index: (u8, u8),
-		pub encoded: Option<String>,
-		pub decoded: Option<String>,
+		pub data: Option<String>,
 	}
 
 	impl From<RuntimeRuntimeEvent> for RuntimeEvent {
@@ -448,14 +296,13 @@ pub mod fetch_events_v1 {
 			Self {
 				index: value.index,
 				emitted_index: value.emitted_index,
-				encoded: value.encoded.map(const_hex::encode),
-				decoded: value.decoded.map(const_hex::encode),
+				data: value.data.map(const_hex::encode),
 			}
 		}
 	}
 }
 
-pub mod fetch_extrinsics_v1 {
+pub mod fetch_extrinsics {
 	use super::*;
 	use avail_core::asdr::EXTRINSIC_FORMAT_VERSION;
 	use codec::{Decode, Input};
@@ -466,38 +313,9 @@ pub mod fetch_extrinsics_v1 {
 
 	pub type ApiResult = Vec<ExtrinsicInformation>;
 
-	#[cfg(feature = "ts")]
-	pub mod ts_types {
-		use super::super::types::ts_types::Error;
-		use super::*;
-
-		#[allow(dead_code)]
-		#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-		#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
-		struct RpcRequest {
-			id: u32,
-			jsonrpc: String,
-			method: String,
-			params: (BlockId, Option<Options>),
-		}
-
-		#[allow(dead_code)]
-		#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-		#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
-		struct RpcResponse {
-			jsonrpc: String,
-			result: Option<Vec<ExtrinsicInformation>>,
-			error: Option<Error>,
-			id: u32,
-		}
-	}
-
 	#[derive(Clone, Serialize, Deserialize)]
-	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
 	pub struct ExtrinsicInformation {
 		pub encoded: Option<String>,
-		#[cfg_attr(feature = "ts", ts(as = "String"))]
 		pub tx_hash: H256,
 		pub tx_index: u32,
 		pub pallet_id: u8,
@@ -506,146 +324,46 @@ pub mod fetch_extrinsics_v1 {
 	}
 
 	#[derive(Clone, Copy, Serialize, Deserialize)]
-	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
 	pub enum BlockId {
 		/// Identify by block header hash.
-		#[cfg_attr(feature = "ts", ts(as = "String"))]
 		Hash(H256),
 		/// Identify by block number.
 		Number(u32),
 	}
 
-	#[derive(Default, Clone, Serialize, Deserialize)]
-	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
-	pub struct Options {
-		pub filter: Option<Filter>,
-		pub encode_selector: Option<EncodeSelector>,
-	}
-
 	#[derive(Clone, Serialize, Deserialize)]
-	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
-	#[repr(u8)]
-	pub enum EncodeSelector {
-		None = 0,
-		Call = 1,
-		Extrinsic = 2,
-	}
-
-	impl EncodeSelector {
-		pub fn is_call(&self) -> bool {
-			match self {
-				EncodeSelector::Call => true,
-				_ => false,
-			}
-		}
-
-		pub fn is_extrinsic(&self) -> bool {
-			match self {
-				EncodeSelector::Extrinsic => true,
-				_ => false,
-			}
-		}
-	}
-
-	impl Default for EncodeSelector {
-		fn default() -> Self {
-			Self::Extrinsic
-		}
-	}
-
-	#[derive(Default, Clone, Serialize, Deserialize)]
-	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
-	pub struct Filter {
-		pub transaction: Option<TransactionFilterOptions>,
-		pub signature: Option<SignatureFilterOptions>,
-	}
-
-	#[derive(Clone, Serialize, Deserialize)]
-	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
-	pub enum TransactionFilterOptions {
-		All,
-		#[cfg_attr(feature = "ts", ts(as = "Vec<String>"))]
-		TxHash(Vec<H256>),
-		TxIndex(Vec<u32>),
-		Pallet(Vec<u8>),
-		PalletCall(Vec<(u8, u8)>),
-	}
-
-	impl TransactionFilterOptions {
-		pub fn is_valid(&self) -> bool {
-			match self {
-				TransactionFilterOptions::All => true,
-				TransactionFilterOptions::TxHash(items) => items.len() < 30,
-				TransactionFilterOptions::TxIndex(items) => items.len() < 30,
-				TransactionFilterOptions::Pallet(items) => items.len() < 30,
-				TransactionFilterOptions::PalletCall(items) => items.len() < 30,
-			}
-		}
-
-		pub fn is_tx_hash(&self) -> bool {
-			match self {
-				Self::TxHash(_) => true,
-				_ => false,
-			}
-		}
-
-		pub fn filter_in_pallet(&self, value: u8) -> bool {
-			let TransactionFilterOptions::Pallet(list) = self else {
-				return true;
-			};
-			list.contains(&value)
-		}
-
-		pub fn filter_in_pallet_call(&self, value: (u8, u8)) -> bool {
-			let TransactionFilterOptions::PalletCall(list) = self else {
-				return true;
-			};
-			list.contains(&value)
-		}
-
-		pub fn filter_in_tx_hash(&self, value: H256) -> bool {
-			let TransactionFilterOptions::TxHash(list) = self else {
-				return true;
-			};
-			list.contains(&value)
-		}
-
-		pub fn filter_in_tx_index(&self, value: u32) -> bool {
-			let TransactionFilterOptions::TxIndex(list) = self else {
-				return true;
-			};
-			list.contains(&value)
-		}
-	}
-
-	impl Default for TransactionFilterOptions {
-		fn default() -> Self {
-			Self::All
-		}
-	}
-
-	#[derive(Default, Clone, Serialize, Deserialize)]
-	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
-	pub struct SignatureFilterOptions {
+	pub struct Params {
+		pub block_id: BlockId,
 		pub ss58_address: Option<String>,
 		pub app_id: Option<u32>,
 		pub nonce: Option<u32>,
+		#[serde(default)]
+		pub extrinsic: ExtrinsicFilterOptions,
+		#[serde(default)]
+		pub encode_selector: EncodeSelector,
 	}
 
-	impl SignatureFilterOptions {
+	impl Params {
 		pub fn is_valid(&self) -> bool {
 			if self.ss58_address.as_ref().is_some_and(|x| x.len() > 100) {
 				return false;
 			}
 
+			let valid = match &self.extrinsic {
+				ExtrinsicFilterOptions::All => true,
+				ExtrinsicFilterOptions::TxHash(items) => items.len() < 30,
+				ExtrinsicFilterOptions::TxIndex(items) => items.len() < 30,
+				ExtrinsicFilterOptions::Pallet(items) => items.len() < 30,
+				ExtrinsicFilterOptions::PalletCall(items) => items.len() < 30,
+			};
+
+			if !valid {
+				return false;
+			}
+
 			true
 		}
+
 		pub fn filter_in(&self, signature: &Option<TransactionSignature>) -> bool {
 			if !self.filter_in_ss58_address(signature.as_ref().and_then(|x| x.ss58_address.clone()))
 			{
@@ -672,11 +390,87 @@ pub mod fetch_extrinsics_v1 {
 			}
 			self.nonce == value
 		}
+
+		pub fn is_tx_hash(&self) -> bool {
+			match &self.extrinsic {
+				ExtrinsicFilterOptions::TxHash(_) => true,
+				_ => false,
+			}
+		}
+
+		pub fn filter_in_pallet(&self, value: u8) -> bool {
+			let ExtrinsicFilterOptions::Pallet(list) = &self.extrinsic else {
+				return true;
+			};
+			list.contains(&value)
+		}
+
+		pub fn filter_in_pallet_call(&self, value: (u8, u8)) -> bool {
+			let ExtrinsicFilterOptions::PalletCall(list) = &self.extrinsic else {
+				return true;
+			};
+			list.contains(&value)
+		}
+
+		pub fn filter_in_tx_hash(&self, value: H256) -> bool {
+			let ExtrinsicFilterOptions::TxHash(list) = &self.extrinsic else {
+				return true;
+			};
+			list.contains(&value)
+		}
+
+		pub fn filter_in_tx_index(&self, value: u32) -> bool {
+			let ExtrinsicFilterOptions::TxIndex(list) = &self.extrinsic else {
+				return true;
+			};
+			list.contains(&value)
+		}
+
+		pub fn is_call(&self) -> bool {
+			match self.encode_selector {
+				EncodeSelector::Call => true,
+				_ => false,
+			}
+		}
+
+		pub fn is_extrinsic(&self) -> bool {
+			match self.encode_selector {
+				EncodeSelector::Extrinsic => true,
+				_ => false,
+			}
+		}
+	}
+
+	#[derive(Clone, Copy, Serialize, Deserialize)]
+	#[repr(u8)]
+	pub enum EncodeSelector {
+		None = 0,
+		Call = 1,
+		Extrinsic = 2,
+	}
+
+	impl Default for EncodeSelector {
+		fn default() -> Self {
+			Self::Extrinsic
+		}
 	}
 
 	#[derive(Clone, Serialize, Deserialize)]
-	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
+	pub enum ExtrinsicFilterOptions {
+		All,
+		TxHash(Vec<H256>),
+		TxIndex(Vec<u32>),
+		Pallet(Vec<u8>),
+		PalletCall(Vec<(u8, u8)>),
+	}
+
+	impl Default for ExtrinsicFilterOptions {
+		fn default() -> Self {
+			Self::All
+		}
+	}
+
+	#[derive(Clone, Serialize, Deserialize)]
 	pub struct TransactionSignature {
 		pub ss58_address: Option<String>,
 		pub nonce: u32,
@@ -867,7 +661,7 @@ pub mod fetch_extrinsics_v1 {
 
 #[cfg(test)]
 mod test {
-	use super::fetch_extrinsics_v1::*;
+	use super::fetch_extrinsics::*;
 	use sp_core::H256;
 
 	#[test]
