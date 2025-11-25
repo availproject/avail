@@ -589,7 +589,6 @@ where
 #[cfg(test)]
 mod tests {
 	use avail_core::{
-		asdr::AppUncheckedExtrinsic,
 		data_proof::Message,
 		AppId,
 		InvalidTransactionCustomId::{
@@ -600,6 +599,7 @@ mod tests {
 	use frame_system::pallet::Call as SysCall;
 	use pallet_utility::pallet::Call as UtilityCall;
 	use sp_core::H256;
+	use sp_runtime::generic::UncheckedExtrinsic;
 	use sp_runtime::transaction_validity::{InvalidTransaction, TransactionValidityError};
 	use test_case::test_case;
 
@@ -649,8 +649,7 @@ mod tests {
 	}
 
 	fn validate(call: RuntimeCall) -> TransactionValidity {
-		let extrinsic =
-			AppUncheckedExtrinsic::<u32, RuntimeCall, (), ()>::new_unsigned(call.clone());
+		let extrinsic = UncheckedExtrinsic::<u32, RuntimeCall, (), ()>::new_unsigned(call.clone());
 		let len = extrinsic.encoded_size();
 		new_test_ext()
 			.execute_with(|| CheckBatchTransactions::<Test>::new().do_validate(&call, len))

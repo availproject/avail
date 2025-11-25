@@ -1,5 +1,4 @@
 use super::HeaderExtensionDataFilter;
-use avail_core::OpaqueExtrinsic;
 use avail_core::{
 	data_proof::{AddressedMessage, SubTrie, TxDataRoots},
 	Keccak256,
@@ -9,6 +8,7 @@ use binary_merkle_tree::{merkle_proof, merkle_root, MerkleProof};
 use codec::{Decode, Encode};
 use derive_more::Constructor;
 use sp_core::H256;
+use sp_runtime::OpaqueExtrinsic;
 use sp_runtime_interface::pass_by::PassByCodec;
 use sp_std::{iter::repeat, vec::Vec};
 

@@ -1,7 +1,8 @@
 use crate::{HashOf, Kate, KateApiServer, ProofResponse};
 // use crate::{Cells, HashOf, Kate, KateApiServer, ProofResponse, Rows};
-use avail_core::{header::HeaderExtension, traits::ExtendedHeader, OpaqueExtrinsic};
+use avail_core::{header::HeaderExtension, traits::ExtendedHeader};
 use da_runtime::apis::DataAvailApi;
+use sp_runtime::OpaqueExtrinsic;
 
 use crate::RTKateApi;
 // use da_runtime::kate::{GDataProof, GRow};

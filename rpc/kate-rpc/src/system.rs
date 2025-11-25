@@ -1,4 +1,3 @@
-use avail_core::OpaqueExtrinsic;
 use codec::Encode;
 use frame_system_rpc_runtime_api::SystemEventsApi;
 use jsonrpsee::{
@@ -11,6 +10,7 @@ use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_core::{Blake2Hasher, Hasher, H256};
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
+use sp_runtime::OpaqueExtrinsic;
 use std::{
 	marker::PhantomData,
 	sync::{Arc, Mutex},
@@ -790,6 +790,15 @@ pub mod fetch_extrinsics_v1 {
 		}
 	}
 
+	/// Recover the inner `Vec<u8>` from a `sp_runtime::OpaqueExtrinsic`.
+	/// Returns `None` if something goes wrong (decode error) — the caller can decide to continue.
+	fn opaque_into_inner_bytes(ext: &OpaqueExtrinsic) -> Option<Vec<u8>> {
+		// Encode the wrapper (SCALE), then decode into Vec<u8> to recover the original inner Vec<u8>.
+		// This avoids accessing the private field `0`.
+		let encoded = ext.encode();
+		Vec::<u8>::decode(&mut &encoded[..]).ok()
+	}
+
 	pub fn cache_block<'a, C, Block>(client: &C, block_hash: H256) -> RpcResult<CachedBlock>
 	where
 		C: BlockBackend<Block>,
@@ -809,17 +818,25 @@ pub mod fetch_extrinsics_v1 {
 			Vec::with_capacity(opaque_extrinsics.len());
 
 		for (index, ext) in opaque_extrinsics.iter().enumerate() {
-			let ext_slice = &mut ext.0.as_slice();
-			let Ok(version) = ext_slice.read_byte() else {
+			let ext_inner = match opaque_into_inner_bytes(ext) {
+				Some(b) => b,
+				None => continue,
+			};
+
+			let ext_slice = &mut ext_inner.as_slice();
+
+			// read version byte
+			let Ok(version_byte) = ext_slice.read_byte() else {
 				continue;
 			};
 
-			let is_signed = version & 0b1000_0000 != 0;
-			let version = version & 0b0111_1111;
+			let is_signed = version_byte & 0b1000_0000 != 0;
+			let version = version_byte & 0b0111_1111;
 			if version != EXTRINSIC_FORMAT_VERSION {
 				continue;
 			}
 
+			// parse signature payload if signed
 			let signature = if is_signed {
 				let Ok(signature) = SignaturePayload::decode(ext_slice) else {
 					continue;
@@ -828,20 +845,21 @@ pub mod fetch_extrinsics_v1 {
 			} else {
 				None
 			};
-			let call_start_pos = ext.0.len() - ext_slice.len();
+			let call_start_pos = ext_inner.len() - ext_slice.len();
 			let call_length = ext_slice.len();
-			let Some(pallet_id) = ext.0.get(call_start_pos) else {
+			let Some(pallet_id) = ext_inner.get(call_start_pos) else {
 				continue;
 			};
-			let Some(call_id) = ext.0.get(call_start_pos + 1) else {
+			let Some(call_id) = ext_inner.get(call_start_pos + 1) else {
 				continue;
 			};
 			let dispatch_index = (*pallet_id, *call_id);
 
+			// build tx_encoded and tx_hash using ext_inner
 			let (tx_encoded, tx_hash) = {
-				let mut encoded: Vec<u8> = Vec::with_capacity(ext.0.len() + 4);
-				codec::Compact::<u32>(ext.0.len() as u32).encode_to(&mut encoded);
-				encoded.extend_from_slice(&ext.0);
+				let mut encoded: Vec<u8> = Vec::with_capacity(ext_inner.len() + 4);
+				codec::Compact::<u32>(ext_inner.len() as u32).encode_to(&mut encoded);
+				encoded.extend_from_slice(&ext_inner);
 
 				let tx_hash = Blake2Hasher::hash(&encoded);
 				(const_hex::encode(encoded), tx_hash)

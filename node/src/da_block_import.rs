@@ -14,7 +14,7 @@ use avail_core::{
 	header::{extension as he, HeaderExtension},
 	kate::COMMITMENT_SIZE,
 	kate_commitment as kc, AppId, BlockLengthColumns, BlockLengthRows, DataLookup, HeaderVersion,
-	OpaqueExtrinsic, BLOCK_CHUNK_SIZE,
+	BLOCK_CHUNK_SIZE,
 };
 use avail_observability::metrics::avail::{MetricObserver, ObserveKind};
 use da_control::BlobTxSummaryRuntime;
@@ -23,6 +23,7 @@ use da_runtime::{
 	Header as DaHeader, Runtime,
 };
 use frame_system::limits::BlockLength;
+use sp_runtime::OpaqueExtrinsic;
 
 use sc_consensus::{
 	block_import::{BlockCheckParams, BlockImport as BlockImportT, BlockImportParams},
