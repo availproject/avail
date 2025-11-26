@@ -23,8 +23,8 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use system_events_api::fetch_events_v1::ApiResult as FetchEventsResult;
-use system_events_api::fetch_events_v1::Options as FetchEventsOptions;
+use system_events_api::fetch_events::ApiResult as FetchEventsResult;
+use system_events_api::fetch_events::Options as FetchEventsOptions;
 
 sp_api::decl_runtime_apis! {
 	/// The API to query account nonce.
@@ -38,14 +38,14 @@ sp_api::decl_runtime_apis! {
 
 	pub trait SystemEventsApi
 	{
-		fn fetch_events_v1(options: FetchEventsOptions) -> FetchEventsResult;
+		fn fetch_events(options: FetchEventsOptions) -> FetchEventsResult;
 	}
 }
 
 pub mod system_events_api {
 	use sp_std::vec::Vec;
 
-	pub mod fetch_events_v1 {
+	pub mod fetch_events {
 		use super::*;
 
 		pub const MAX_INDICES_COUNT: usize = 30;
@@ -55,18 +55,13 @@ pub mod system_events_api {
 
 		#[derive(Clone, Default, scale_info::TypeInfo, codec::Decode, codec::Encode)]
 		#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
-		#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-		#[cfg_attr(feature = "ts", ts(export, export_to = "FetchEvents.ts"))]
 		pub struct Options {
 			pub filter: Option<Filter>,
-			pub enable_encoding: Option<bool>,
-			pub enable_decoding: Option<bool>,
+			pub fetch_data: Option<bool>,
 		}
 
 		#[derive(Clone, scale_info::TypeInfo, codec::Decode, codec::Encode)]
 		#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
-		#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-		#[cfg_attr(feature = "ts", ts(export, export_to = "FetchEvents.ts"))]
 		#[repr(u8)]
 		pub enum Filter {
 			All = 0,
@@ -130,22 +125,19 @@ pub mod system_events_api {
 			pub index: u32,
 			// (Pallet Id, Event Id)
 			pub emitted_index: (u8, u8),
-			pub encoded: Option<Vec<u8>>,
-			pub decoded: Option<Vec<u8>>,
+			pub data: Option<Vec<u8>>,
 		}
 
 		impl RuntimeEvent {
 			pub fn new(
 				index: u32,
 				emitted_index: (u8, u8),
-				encoded: Option<Vec<u8>>,
-				decoded: Option<Vec<u8>>,
+				data: Option<Vec<u8>>,
 			) -> Self {
 				Self {
 					index,
 					emitted_index,
-					encoded,
-					decoded,
+					data,
 				}
 			}
 		}
