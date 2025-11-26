@@ -102,7 +102,7 @@ use avail_base::{HeaderExtensionBuilderData, HeaderExtensionDataFilter};
 use avail_core::{
 	ensure,
 	header::{Header as DaHeader, HeaderExtension},
-	traits::{ExtendedBlock, ExtendedHeader, MaybeCaller},
+	traits::{ExtendedBlock, ExtendedHeader},
 	HeaderVersion,
 };
 
@@ -544,10 +544,7 @@ pub mod pallet {
 
 		/// UncheckedExtrinsic Type used on Kate commitment & Data root calculation.
 		#[pallet::no_default]
-		type Extrinsic: Encode
-			+ Decode
-			+ ExtrinsicCall<Call = Self::RuntimeCall>
-			+ MaybeCaller<Self::AccountId>;
+		type Extrinsic: Encode + Decode + ExtrinsicCall<Call = Self::RuntimeCall>;
 
 		type Header: ExtendedHeader<Extension = HeaderExtension, Hash = Self::Hash>;
 

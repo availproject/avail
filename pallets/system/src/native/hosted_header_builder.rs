@@ -5,7 +5,7 @@
 use crate::{limits::BlockLength, Config, LOG_TARGET};
 use avail_base::header_extension::SubmittedData;
 use avail_core::HeaderVersion;
-use avail_core::{header::HeaderExtension, traits::ExtendedHeader, AppExtrinsic};
+use avail_core::{header::HeaderExtension, traits::ExtendedHeader};
 pub use kate::{
 	metrics::{IgnoreMetrics, Metrics},
 	Seed,
@@ -38,24 +38,6 @@ pub mod da {
 		type Header = DaHeader<BlockNumber, BlakeTwo256>;
 
 		#[inline]
-		fn build(
-			submitted: Vec<AppExtrinsic>,
-			data_root: H256,
-			block_length: BlockLength,
-			block_number: u32,
-		) -> HeaderExtension {
-			let seed = Self::random_seed::<T>();
-
-			super::hosted_header_builder::build(
-				submitted,
-				data_root,
-				block_length,
-				block_number,
-				seed,
-			)
-		}
-
-		#[inline]
 		fn build_extension(
 			submitted: Vec<SubmittedData>,
 			data_root: H256,
@@ -75,14 +57,6 @@ pub mod da {
 /// Trait for header builder.
 pub trait HeaderExtensionBuilder {
 	type Header: ExtendedHeader<Extension = HeaderExtension>;
-
-	/// Creates the legacy header extension (upto V3) using the given parameters.
-	fn build(
-		app_extrinsics: Vec<AppExtrinsic>,
-		data_root: H256,
-		block_length: BlockLength,
-		block_number: u32,
-	) -> HeaderExtension;
 
 	/// Creates the header using the given parameters.
 	fn build_extension(
@@ -113,46 +87,6 @@ pub trait HeaderExtensionBuilder {
 /// Hosted function to build the header using `kate` commitments.
 #[runtime_interface]
 pub trait HostedHeaderBuilder {
-	/// Note: Whenever a new header version is introduced, ensure to create a corresponding version
-	/// of the `build` hosted function, while retaining the existing ones.
-	#[version(1)]
-	fn build(
-		submitted: Vec<AppExtrinsic>,
-		data_root: H256,
-		block_length: BlockLength,
-		block_number: u32,
-		seed: Seed,
-	) -> HeaderExtension {
-		crate::native::build_extension_v1::build_extension(
-			submitted,
-			data_root,
-			block_length,
-			block_number,
-			seed,
-			HeaderVersion::V3,
-		)
-	}
-
-	/// Note: Whenever a new header version is introduced, ensure to create a corresponding version
-	/// of the `build` hosted function, while retaining the existing ones.
-	#[version(2)]
-	fn build(
-		submitted: Vec<AppExtrinsic>,
-		data_root: H256,
-		block_length: BlockLength,
-		block_number: u32,
-		seed: Seed,
-	) -> HeaderExtension {
-		crate::native::build_extension_v2::build_extension(
-			submitted,
-			data_root,
-			block_length,
-			block_number,
-			seed,
-			HeaderVersion::V3,
-		)
-	}
-
 	fn build_extension(
 		submitted: Vec<SubmittedData>,
 		data_root: H256,

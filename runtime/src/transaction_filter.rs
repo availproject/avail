@@ -1,12 +1,9 @@
-use crate::{AccountId, Runtime, RuntimeCall as Call, UncheckedExtrinsic};
+use crate::{opaque_to_unchecked, unchecked_get_caller, AccountId, Runtime, RuntimeCall as Call};
 use avail_base::header_extension::{
 	BridgedData, ExtractedTxData, HeaderExtensionDataFilter, SubmittedData,
 };
-use avail_core::{
-	data_proof::{tx_uid, AddressedMessage},
-	traits::MaybeCaller,
-	OpaqueExtrinsic,
-};
+use avail_core::data_proof::{tx_uid, AddressedMessage};
+use sp_runtime::OpaqueExtrinsic;
 
 use da_control::Call as DACall;
 use kate::Seed;
@@ -30,31 +27,45 @@ impl HeaderExtensionDataFilter for Runtime {
 		cols: u32,
 		rows: u32,
 	) -> Option<ExtractedTxData> {
-		let Ok(unchecked_extrinsic) = UncheckedExtrinsic::try_from(opaque) else {
-			return None;
-		};
+		let res = opaque_to_unchecked(&opaque);
+		match res {
+			Ok(unchecked_extrinsic) => {
+				let maybe_caller = unchecked_get_caller(&unchecked_extrinsic);
 
-		let maybe_caller = unchecked_extrinsic.caller();
+				let (final_call, nb_iterations) = extract_final_call(&unchecked_extrinsic.function);
 
-		let (final_call, nb_iterations) = extract_final_call(&unchecked_extrinsic.function);
-
-		if nb_iterations > 0 {
-			match final_call {
-				Call::Vector(call) => {
-					filter_vector_call(failed_transactions, maybe_caller, call, block, tx_index)
-				},
-				_ => None,
-			}
-		} else {
-			match final_call {
-				Call::Vector(call) => {
-					filter_vector_call(failed_transactions, maybe_caller, call, block, tx_index)
-				},
-				Call::DataAvailability(call) => {
-					filter_da_call(call, tx_index, failed_transactions, cols, rows)
-				},
-				_ => None,
-			}
+				if nb_iterations > 0 {
+					match final_call {
+						Call::Vector(call) => filter_vector_call(
+							failed_transactions,
+							maybe_caller,
+							call,
+							block,
+							tx_index,
+						),
+						_ => None,
+					}
+				} else {
+					match final_call {
+						Call::Vector(call) => filter_vector_call(
+							failed_transactions,
+							maybe_caller,
+							call,
+							block,
+							tx_index,
+						),
+						Call::DataAvailability(call) => {
+							filter_da_call(call, tx_index, failed_transactions, cols, rows)
+						},
+						_ => None,
+					}
+				}
+			},
+			Err(_e) => {
+				// ideally we should not reach heer
+				// TODO: add logs
+				None
+			},
 		}
 	}
 
@@ -66,7 +77,7 @@ impl HeaderExtensionDataFilter for Runtime {
 		}
 
 		// Vector failed transactions
-		if let Ok(unchecked_extrinsic) = UncheckedExtrinsic::try_from(opaques[len - 1].clone()) {
+		if let Ok(unchecked_extrinsic) = opaque_to_unchecked(&opaques[len - 1]) {
 			if let Call::Vector(VectorCall::failed_send_message_txs { failed_txs }) =
 				&unchecked_extrinsic.function
 			{
@@ -77,8 +88,7 @@ impl HeaderExtensionDataFilter for Runtime {
 
 		if len > 1 {
 			// DA submit blob failed transactions
-			if let Ok(unchecked_extrinsic) = UncheckedExtrinsic::try_from(opaques[len - 2].clone())
-			{
+			if let Ok(unchecked_extrinsic) = opaque_to_unchecked(&opaques[len - 2]) {
 				if let Call::DataAvailability(DACall::submit_blob_txs_summary {
 					total_blob_size: _,
 					nb_blobs: _,

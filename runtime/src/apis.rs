@@ -32,8 +32,8 @@ use avail_core::{
 	currency::Balance,
 	data_proof::{DataProof, ProofResponse, SubTrie},
 	header::HeaderExtension,
-	OpaqueExtrinsic,
 };
+use sp_runtime::OpaqueExtrinsic;
 
 use frame_system::limits::BlockLength;
 
