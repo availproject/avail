@@ -98,12 +98,6 @@ fn opaque_inner_bytes(opaque: &OpaqueExtrinsic) -> Result<Vec<u8>, String> {
 	Vec::<u8>::decode(&mut cursor).map_err(|e| format!("opaque wrapper decode failed: {:?}", e))
 }
 
-/// Generic helper: decode inner bytes as `T` (when inner bytes are direct SCALE(T)).
-fn opaque_to<T: Decode>(opaque: &OpaqueExtrinsic) -> Result<T, String> {
-	let inner = opaque_inner_bytes(opaque)?;
-	T::decode(&mut &inner[..]).map_err(|e| format!("SCALE decode failed: {:?}", e))
-}
-
 /// Decode runtime `UncheckedExtrinsic` from `OpaqueExtrinsic` following the
 /// `version_byte || [signature_tuple?] || RuntimeCall` layout (no vec prefix).
 pub fn opaque_to_unchecked(opaque: &OpaqueExtrinsic) -> Result<UncheckedExtrinsic, String> {
@@ -161,38 +155,6 @@ mod tests {
 	use sp_runtime::MultiSignature;
 	use sp_runtime::OpaqueExtrinsic;
 	use sp_std::convert::TryInto;
-
-	#[test]
-	fn unsigned_unchecked_extrinsic_roundtrip_via_opaque() {
-		// Test using a simple unsigned extrinsic whose Call is unit `()`.
-		type TestAddress = MultiAddress<AccountId32, u32>;
-		type TestSignature = MultiSignature;
-		type TestCall = ();
-		type TestSignedExtra = ();
-
-		type TestUncheckedExtrinsic =
-			GenericUxt<TestAddress, TestCall, TestSignature, TestSignedExtra>;
-
-		let uxt = TestUncheckedExtrinsic {
-			signature: None,
-			function: (),
-		};
-
-		// construct wrapper: compact(len) || inner_bytes
-		let inner_bytes = uxt.encode();
-		let mut wrapper: Vec<u8> = Vec::with_capacity(inner_bytes.len() + 8);
-		Compact::<u32>(inner_bytes.len() as u32).encode_to(&mut wrapper);
-		wrapper.extend_from_slice(&inner_bytes);
-
-		let opaque = OpaqueExtrinsic::from_bytes(wrapper.as_slice()).expect("opaque from bytes ok");
-
-		// generic decode should work for this test since the inner bytes are exactly a plain SCALE encoded Uxt
-		let decoded: TestUncheckedExtrinsic =
-			opaque_to::<TestUncheckedExtrinsic>(&opaque).expect("generic decode must succeed");
-
-		assert_eq!(decoded.signature, uxt.signature);
-		assert_eq!(decoded.function, uxt.function);
-	}
 
 	#[test]
 	fn roundtrip_show_inner_bytes_and_report() {
