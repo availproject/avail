@@ -37,7 +37,7 @@ use log::{debug, error, info, trace, warn};
 use sc_authority_discovery::AuthorityDiscovery;
 use sc_block_builder::{BlockBuilderApi, BlockBuilderBuilder};
 use sc_telemetry::{telemetry, TelemetryHandle, CONSENSUS_INFO};
-use sc_transaction_pool_api::{InPoolTransaction, TransactionPool};
+use sc_transaction_pool_api::{InPoolTransaction, TransactionPool, TxInvalidityReportMap};
 use sp_api::{ApiExt, CallApiAt, ProvideRuntimeApi};
 use sp_blockchain::{ApplyExtrinsicFailed::Validity, Error::ApplyExtrinsicFailed, HeaderBackend};
 use sp_consensus::{DisableProofRecording, EnableProofRecording, ProofRecording, Proposal};
@@ -520,9 +520,9 @@ where
 		let soft_deadline =
 			now + time::Duration::from_micros(self.soft_deadline_percent.mul_floor(left_micros));
 		let mut skipped = 0;
-		let mut unqueue_invalid = Vec::new();
+		let mut unqueue_invalid = TxInvalidityReportMap::new();
 
-		let mut t1 = self.transaction_pool.ready_at(self.parent_number).fuse();
+		let mut t1 = self.transaction_pool.ready_at(self.parent_hash).fuse();
 		let mut t2 =
 			futures_timer::Delay::new(deadline.saturating_duration_since((self.now)()) / 8).fuse();
 
@@ -571,7 +571,7 @@ where
 				break EndProposingReason::HitDeadline;
 			}
 
-			let pending_tx_data = pending_tx.data().clone();
+			let pending_tx_data = (**pending_tx.data()).clone();
 			let pending_tx_hash = pending_tx.hash().clone();
 
 			let block_size =
@@ -657,9 +657,13 @@ where
 					}
 					debug!(
 						target: LOG_TARGET,
-						"[{:?}] Invalid transaction: {}", pending_tx_hash, e
+						"[{:?}] Invalid transaction: {} at: {}", pending_tx_hash, e, self.parent_hash
 					);
-					unqueue_invalid.push(pending_tx_hash);
+					let error_to_report = match e {
+						ApplyExtrinsicFailed(Validity(e)) => Some(e),
+						_ => None,
+					};
+					unqueue_invalid.insert(pending_tx_hash, error_to_report);
 				},
 			}
 		};
@@ -679,7 +683,9 @@ where
 		};
 		stop_watch.stop("Get blob txs summary");
 
-		self.transaction_pool.remove_invalid(&unqueue_invalid);
+		self.transaction_pool
+			.report_invalid(Some(self.parent_hash), unqueue_invalid)
+			.await;
 		Ok((end_reason, blob_txs_summary, total_blob_size))
 	}
 

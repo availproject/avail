@@ -36,7 +36,7 @@ use avail_core::{
 use sp_runtime::OpaqueExtrinsic;
 
 use frame_system::limits::BlockLength;
-
+use frame_support::genesis_builder_helper::{build_state, get_preset};
 use frame_support::{traits::KeyOwnerProofSystem, weights::Weight};
 use pallet_nomination_pools::PoolId;
 use pallet_transaction_payment::{FeeDetails, RuntimeDispatchInfo};
@@ -786,7 +786,7 @@ impl_runtime_apis! {
 
 	impl sp_genesis_builder::GenesisBuilder<Block> for Runtime {
 		fn build_state(config: Vec<u8>) -> sp_genesis_builder::Result {
-			todo!()
+			build_state::<RuntimeGenesisConfig>(config)
 		}
 
 		fn get_preset(id: &Option<sp_genesis_builder::PresetId>) -> Option<Vec<u8>> {

@@ -24,6 +24,7 @@ use da_runtime::Block;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use sc_cli::{Result, SubstrateCli};
 use sc_service::PartialComponents;
+use sp_runtime::traits::HashingFor;
 #[cfg(feature = "try-runtime")]
 use {
 	avail_blob::types::ExecutorDispatch, da_runtime::constants::time::SLOT_DURATION,
@@ -115,12 +116,12 @@ pub fn run() -> Result<()> {
 									.into(),
 							);
 						}
-						cmd.run::<Block, (
+						cmd.run_with_spec::<HashingFor<Block>, (
 							frame_system::native::hosted_header_builder::hosted_header_builder::HostFunctions,
 							avail_base::mem_tmp_storage::hosted_mem_tmp_storage::HostFunctions,
 							da_runtime::kate::native::hosted_kate::HostFunctions,
 							da_control::extensions::native::hosted_commitment_builder::HostFunctions,
-						)>(config)
+						)>(Some(config.chain_spec))
 					},
 					BenchmarkCmd::Block(_cmd) => {
 						unimplemented!();

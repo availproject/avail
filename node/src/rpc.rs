@@ -48,7 +48,6 @@ use sc_consensus_grandpa::{
 	FinalityProofProvider, GrandpaJustificationStream, SharedAuthoritySet, SharedVoterState,
 };
 use sc_rpc::SubscriptionTaskExecutor;
-pub use sc_rpc_api::DenyUnsafe;
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
@@ -92,8 +91,6 @@ pub struct FullDeps<C, P, SC, B> {
 	pub select_chain: SC,
 	/// A copy of the chain spec.
 	pub chain_spec: Box<dyn sc_chain_spec::ChainSpec>,
-	/// Whether to deny unsafe calls
-	pub deny_unsafe: DenyUnsafe,
 	/// BABE specific dependencies.
 	pub babe: BabeDeps,
 	/// GRANDPA specific dependencies.
@@ -158,7 +155,6 @@ where
 		pool,
 		select_chain,
 		chain_spec,
-		deny_unsafe,
 		babe,
 		grandpa,
 		kate_rpc_deps,
@@ -186,7 +182,7 @@ where
 	let properties = chain_spec.properties();
 	io.merge(ChainSpec::new(chain_name, genesis_hash, properties).into_rpc())?;
 
-	io.merge(System::new(client.clone(), pool.clone(), deny_unsafe).into_rpc())?;
+	io.merge(System::new(client.clone(), pool.clone()).into_rpc())?;
 	// Making synchronous calls in light client freezes the browser currently,
 	// more context: https://github.com/paritytech/substrate/pull/3480
 	// These RPCs should use an asynchronous caller instead.
@@ -206,7 +202,6 @@ where
 			babe_worker_handle.clone(),
 			keystore,
 			select_chain,
-			deny_unsafe,
 		)
 		.into_rpc(),
 	)?;
@@ -231,7 +226,7 @@ where
 		.into_rpc(),
 	)?;
 
-	io.merge(StateMigration::new(client.clone(), backend.clone(), deny_unsafe).into_rpc())?;
+	io.merge(StateMigration::new(client.clone(), backend.clone()).into_rpc())?;
 
 	if is_dev_chain || kate_rpc_deps.rpc_metrics_enabled {
 		io.merge(KateApiMetricsServer::into_rpc(Kate::<C, Block>::new(
