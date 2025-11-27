@@ -317,8 +317,12 @@ where
 						);
 						continue;
 					}
-					match send_blob_query_request(blob_hash, peer_id, &self.blob_handle.network)
-						.await
+					match send_blob_query_request::<Block>(
+						blob_hash,
+						peer_id,
+						&self.blob_handle.network,
+					)
+					.await
 					{
 						Ok(Some(blob)) => return Ok(blob),
 						Ok(None) => {

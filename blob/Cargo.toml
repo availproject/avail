@@ -67,30 +67,30 @@ divan = { version = "0.1" }
 avail-rust = { package = "avail-rust-client", version = "0.4.0", default-features = false, features = ["native", "reqwest", "next"] }
 
 [features]
-default = ["std"]
+default = [ "std" ]
 std = [
-    "avail-core/std",
-    "kate/std",
-    "kate-recovery/std",
-    "frame-benchmarking/std",
-    "da-runtime/std",
-    "da-control/std",
-    "codec/std",
-    "scale-info/std",
-    "serde/std",
-    "frame-system/std",
-    "avail-base/std",
-    "da-commitment/std",
-    "sp-core/std",
-    "sp-runtime/std",
-    "sp-api/std",
-    "sp-std/std",
-    "sc-executor/std",
-    "sp-transaction-pool/std",
-    "sp-authority-discovery/std",
-    "futures/std",
-    "log/std",
-    "once_cell/std",
+	"avail-base/std",
+	"avail-core/std",
+	"codec/std",
+	"da-commitment/std",
+	"da-control/std",
+	"da-runtime/std",
+	"frame-benchmarking/std",
+	"frame-system/std",
+	"futures/std",
+	"kate-recovery/std",
+	"kate/std",
+	"log/std",
+	"once_cell/std",
+	"sc-executor/std",
+	"scale-info/std",
+	"serde/std",
+	"sp-api/std",
+	"sp-authority-discovery/std",
+	"sp-core/std",
+	"sp-runtime/std",
+	"sp-std/std",
+	"sp-transaction-pool/std",
 ]
 
 [[bench]]

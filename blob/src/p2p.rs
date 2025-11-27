@@ -11,6 +11,7 @@ use crate::{
 };
 use async_channel::Receiver;
 use codec::Encode;
+use core::marker::PhantomData;
 use futures::{future, FutureExt, StreamExt};
 use sc_client_api::BlockchainEvents;
 use sc_keystore::LocalKeystore;
@@ -18,6 +19,7 @@ use sc_network::{
 	config::{IncomingRequest, NonDefaultSetConfig, RequestResponseConfig, Role},
 	NetworkService, NotificationService,
 };
+use sc_network::{service::traits::NetworkService as NetworkServiceT, NetworkBackend};
 use sc_network_gossip::GossipEngine;
 use sc_network_sync::SyncingService;
 use sc_service::SpawnTaskHandle;
@@ -27,25 +29,28 @@ use sp_runtime::{
 	SaturatedConversion,
 };
 
-pub fn get_blob_p2p_config() -> (
-	RequestResponseConfig,
+pub fn get_blob_p2p_config<B: BlockT, N: NetworkBackend<B, <B as BlockT>::Hash>>(
+	metrics: sc_network::service::NotificationMetrics,
+	peer_store_handle: Arc<dyn sc_network::peer_store::PeerStoreProvider>,
+) -> (
+	N::RequestResponseProtocolConfig,
 	async_channel::Receiver<IncomingRequest>,
-	NonDefaultSetConfig,
+	N::NotificationProtocolConfig,
 	Box<dyn NotificationService>,
 ) {
 	// Get blob Blob req/res protocol config
 	let (blob_req_sender, blob_req_receiver) = async_channel::bounded(REQ_RES_QUEUE_SIZE as usize);
-	let blob_req_res_cfg = RequestResponseConfig {
-		name: BLOB_REQ_PROTO,
-		fallback_names: vec![],
-		max_request_size: REQUEST_MAX_SIZE,
-		max_response_size: RESPONSE_MAX_SIZE,
-		request_timeout: Duration::from_secs(REQUEST_TIMEOUT_SECONDS),
-		inbound_queue: Some(blob_req_sender),
-	};
+	let blob_req_res_cfg = N::request_response_config(
+		BLOB_REQ_PROTO,
+		Vec::new(),
+		REQUEST_MAX_SIZE,
+		RESPONSE_MAX_SIZE,
+		Duration::from_secs(REQUEST_TIMEOUT_SECONDS),
+		Some(blob_req_sender),
+	);
 
 	// Get blob gossip protocol config
-	let (blob_gossip_cfg, blob_gossip_service) = NonDefaultSetConfig::new(
+	let (peerset_cfg, blob_gossip_service) = NonDefaultSetConfig::new(
 		BLOB_GOSSIP_PROTO,
 		Vec::default(),
 		NOTIFICATION_MAX_SIZE,
@@ -53,6 +58,20 @@ pub fn get_blob_p2p_config() -> (
 		Default::default(),
 	);
 
+	let (blob_gossip_cfg, _) = N::notification_config(
+		BLOB_GOSSIP_PROTO,
+		Vec::new(),
+		NOTIFICATION_MAX_SIZE,
+		None,
+		sc_network::config::SetConfig {
+			in_peers: 0,
+			out_peers: 0,
+			reserved_nodes: Vec::new(),
+			non_reserved_mode: sc_network::config::NonReservedPeerMode::Deny,
+		},
+		metrics,
+		peer_store_handle,
+	);
 	(
 		blob_req_res_cfg,
 		blob_req_receiver,
@@ -66,12 +85,13 @@ pub struct BlobHandle<Block>
 where
 	Block: BlockT,
 {
-	pub network: Arc<NetworkService<Block, Block::Hash>>,
+	pub network: Arc<dyn NetworkServiceT>,
 	pub gossip_cmd_sender: async_channel::Sender<BlobNotification>,
 	pub keystore: Arc<LocalKeystore>,
 	pub client: Arc<FullClient>,
 	pub blob_database: Arc<dyn StorageApiT>,
 	pub role: Role,
+	pub _marker: PhantomData<Block>,
 }
 
 impl<Block> BlobHandle<Block>
@@ -83,7 +103,7 @@ where
 		blob_database: Arc<dyn StorageApiT>,
 		blob_gossip_service: Box<dyn NotificationService>,
 		req_receiver: async_channel::Receiver<IncomingRequest>,
-		network: Arc<NetworkService<Block, Block::Hash>>,
+		network: Arc<dyn NetworkServiceT>,
 		client: Arc<FullClient>,
 		keystore: Arc<LocalKeystore>,
 		sync_service: Arc<SyncingService<Block>>,
@@ -104,6 +124,7 @@ where
 			gossip_cmd_sender,
 			blob_database,
 			role,
+			_marker: PhantomData,
 		};
 
 		blob_handle.start_blob_req_res(spawn_handle.clone(), req_receiver);
@@ -136,7 +157,11 @@ where
 						let blob_database = blob_database.clone();
 						let net = network.clone();
 						tokio::task::spawn_blocking(move || {
-							handle_incoming_blob_request(request, blob_database.as_ref(), &net);
+							handle_incoming_blob_request::<Block>(
+								request,
+								blob_database.as_ref(),
+								&net,
+							);
 						});
 						future::ready(())
 					})

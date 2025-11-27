@@ -6,7 +6,8 @@ use codec::{Decode, Encode};
 use da_runtime::{apis::RuntimeApi, NodeBlock as Block};
 use parking_lot::Mutex;
 use sc_executor::NativeElseWasmExecutor;
-use sc_network::{NetworkPeers, NetworkService, PeerId, ProtocolName, ReputationChange};
+use sc_network::service::traits::NetworkService as NetworkServiceT;
+use sc_network::{PeerId, ProtocolName, ReputationChange};
 use sc_network_gossip::{MessageIntent, ValidationResult, Validator, ValidatorContext};
 use sc_service::TFullClient;
 use scale_info::TypeInfo;
@@ -159,11 +160,7 @@ impl BlobReputationChange {
 		Vec::default()
 	}
 
-	pub fn report<Block: BlockT>(
-		self,
-		network: &NetworkService<Block, Block::Hash>,
-		peer: &PeerId,
-	) {
+	pub fn report<Block: BlockT>(self, network: &dyn NetworkServiceT, peer: &PeerId) {
 		network.report_peer(peer.clone(), self.reputation_change());
 	}
 }
