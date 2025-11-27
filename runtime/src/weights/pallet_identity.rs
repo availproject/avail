@@ -360,24 +360,6 @@ impl<T: frame_system::Config> pallet_identity::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
-	/// Storage: `Identity::UsernameAuthorities` (r:1 w:1)
-	/// Proof: `Identity::UsernameAuthorities` (`max_values`: None, `max_size`: Some(52), added: 2527, mode: `MaxEncodedLen`)
-	/// Storage: `Identity::AccountOfUsername` (r:1 w:1)
-	/// Proof: `Identity::AccountOfUsername` (`max_values`: None, `max_size`: Some(81), added: 2556, mode: `MaxEncodedLen`)
-	/// Storage: `Identity::PendingUsernames` (r:1 w:0)
-	/// Proof: `Identity::PendingUsernames` (`max_values`: None, `max_size`: Some(85), added: 2560, mode: `MaxEncodedLen`)
-	/// Storage: `Identity::IdentityOf` (r:1 w:1)
-	/// Proof: `Identity::IdentityOf` (`max_values`: None, `max_size`: Some(7572), added: 10047, mode: `MaxEncodedLen`)
-	fn set_username_for() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `80`
-		//  Estimated: `11037`
-		// Minimum execution time: 128_910_000 picoseconds.
-		Weight::from_parts(134_339_000, 0)
-			.saturating_add(Weight::from_parts(0, 11037))
-			.saturating_add(T::DbWeight::get().reads(4))
-			.saturating_add(T::DbWeight::get().writes(3))
-	}
 	/// Storage: `Identity::PendingUsernames` (r:1 w:1)
 	/// Proof: `Identity::PendingUsernames` (`max_values`: None, `max_size`: Some(85), added: 2560, mode: `MaxEncodedLen`)
 	/// Storage: `Identity::IdentityOf` (r:1 w:1)
@@ -394,18 +376,6 @@ impl<T: frame_system::Config> pallet_identity::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(3))
 	}
-	/// Storage: `Identity::PendingUsernames` (r:1 w:1)
-	/// Proof: `Identity::PendingUsernames` (`max_values`: None, `max_size`: Some(85), added: 2560, mode: `MaxEncodedLen`)
-	fn remove_expired_approval() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `115`
-		//  Estimated: `3550`
-		// Minimum execution time: 41_977_000 picoseconds.
-		Weight::from_parts(44_456_000, 0)
-			.saturating_add(Weight::from_parts(0, 3550))
-			.saturating_add(T::DbWeight::get().reads(1))
-			.saturating_add(T::DbWeight::get().writes(1))
-	}
 	/// Storage: `Identity::AccountOfUsername` (r:1 w:0)
 	/// Proof: `Identity::AccountOfUsername` (`max_values`: None, `max_size`: Some(81), added: 2556, mode: `MaxEncodedLen`)
 	/// Storage: `Identity::IdentityOf` (r:1 w:1)
@@ -420,18 +390,48 @@ impl<T: frame_system::Config> pallet_identity::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
-	/// Storage: `Identity::AccountOfUsername` (r:1 w:1)
-	/// Proof: `Identity::AccountOfUsername` (`max_values`: None, `max_size`: Some(81), added: 2556, mode: `MaxEncodedLen`)
-	/// Storage: `Identity::IdentityOf` (r:1 w:0)
-	/// Proof: `Identity::IdentityOf` (`max_values`: None, `max_size`: Some(7572), added: 10047, mode: `MaxEncodedLen`)
-	fn remove_dangling_username() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `98`
-		//  Estimated: `11037`
-		// Minimum execution time: 22_602_000 picoseconds.
-		Weight::from_parts(23_560_000, 0)
-			.saturating_add(Weight::from_parts(0, 11037))
-			.saturating_add(T::DbWeight::get().reads(2))
-			.saturating_add(T::DbWeight::get().writes(1))
-	}
+
+	fn unbind_username() -> Weight {
+			todo!()
+		}
+
+	fn remove_username() -> Weight {
+			todo!()
+		}
+
+	fn kill_username(p: u32, ) -> Weight {
+			todo!()
+		}
+
+	fn migration_v2_authority_step() -> Weight {
+			todo!()
+		}
+
+	fn migration_v2_username_step() -> Weight {
+			todo!()
+		}
+
+	fn migration_v2_identity_step() -> Weight {
+			todo!()
+		}
+
+	fn migration_v2_pending_username_step() -> Weight {
+			todo!()
+		}
+
+	fn migration_v2_cleanup_authority_step() -> Weight {
+			todo!()
+		}
+
+	fn migration_v2_cleanup_username_step() -> Weight {
+			todo!()
+		}
+
+		fn set_username_for(p: u32, ) -> Weight {
+				todo!()
+			}
+
+		fn remove_expired_approval(p: u32, ) -> Weight {
+				todo!()
+			}
 }

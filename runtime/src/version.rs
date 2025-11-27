@@ -1,16 +1,16 @@
-use sp_runtime::create_runtime_str;
-use sp_version::RuntimeVersion;
-
 use crate::apis;
+use crate::apis::RUNTIME_API_VERSIONS;
+use sp_version::Cow;
+use sp_version::RuntimeVersion;
 
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
 	// The identifier for the different Substrate runtimes.
-	spec_name: create_runtime_str!("avail"),
+	spec_name: Cow::Borrowed("avail"),
 	// The name of the implementation of the spec. This is of little
 	// consequence for the node and serves only to differentiate code of
 	// different implementation teams.
-	impl_name: create_runtime_str!("avail"),
+	impl_name: Cow::Borrowed("avail"),
 	// The version of the authorship interface. An authoring node will not
 	// attempt to author blocks unless this is equal to its native runtime.
 	authoring_version: 12,
@@ -33,6 +33,6 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	// parameters or parameter types. If this number is updated, then the spec_version must also
 	// be updated.
 	transaction_version: 1,
-	apis: apis::runtime_api_versions(),
-	state_version: 1,
+	apis: RUNTIME_API_VERSIONS,
+	system_version: 1,
 };

@@ -37,7 +37,6 @@ use frame_support::{
 use scale_info::{build::Fields, Path, Type, TypeInfo};
 use serde::{Deserialize, Serialize};
 use sp_runtime::{traits::Bounded, Perbill, RuntimeDebug};
-use sp_runtime_interface::pass_by::PassByCodec;
 use sp_std::vec::Vec;
 use static_assertions::const_assert;
 
@@ -45,7 +44,7 @@ pub const MAX_BLOCK_ROWS: BlockLengthRows = BlockLengthRows(4096);
 pub const MAX_BLOCK_COLUMNS: BlockLengthColumns = BlockLengthColumns(1024);
 
 /// Block length limit configuration.
-#[derive(RuntimeDebug, PartialEq, Clone, PassByCodec, MaxEncodedLen, Serialize, Deserialize)]
+#[derive(RuntimeDebug, PartialEq, Clone, MaxEncodedLen, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BlockLength {
 	/// Maximal total length in bytes for each extrinsic class.

@@ -37,11 +37,8 @@ use sp_runtime::OpaqueExtrinsic;
 
 use frame_system::limits::BlockLength;
 
-use frame_support::{
-	genesis_builder_helper::{build_config, create_default_config},
-	traits::KeyOwnerProofSystem,
-	weights::Weight,
-};
+use frame_support::{traits::KeyOwnerProofSystem, weights::Weight};
+use pallet_nomination_pools::PoolId;
 use pallet_transaction_payment::{FeeDetails, RuntimeDispatchInfo};
 use scale_info::prelude::string::String;
 use sp_api::{decl_runtime_apis, impl_runtime_apis};
@@ -49,6 +46,7 @@ use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_consensus_grandpa::AuthorityId as GrandpaId;
 use sp_core::{crypto::KeyTypeId, H256, U256};
 use sp_inherents::{CheckInherentsResult, InherentData};
+use sp_runtime::traits::ExtrinsicCall;
 use sp_runtime::{
 	traits::{Block as BlockT, Extrinsic as ExtrinsicT, NumberFor},
 	transaction_validity::{TransactionSource, TransactionValidity},
@@ -113,10 +111,6 @@ decl_runtime_apis! {
 	}
 }
 
-pub(crate) const fn runtime_api_versions() -> Cow<'static, [([u8; 8], u32)]> {
-	RUNTIME_API_VERSIONS
-}
-
 pub static NATIVE_VERSION: &RuntimeVersion = &VERSION;
 
 impl_runtime_apis! {
@@ -129,7 +123,7 @@ impl_runtime_apis! {
 			Executive::execute_block(block);
 		}
 
-		fn initialize_block(header: &<Block as BlockT>::Header) {
+		fn initialize_block(header: &<Block as BlockT>::Header) -> sp_runtime::ExtrinsicInclusionMode {
 			Executive::initialize_block(header)
 		}
 	}
@@ -367,17 +361,17 @@ impl_runtime_apis! {
 		BlockNumber,
 	> for Runtime {
 		fn mmr_root() -> Result<mmr::Hash, mmr::Error> {
-			Ok(Mmr::mmr_root())
+			Ok(pallet_mmr::RootHash::<Runtime>::get())
 		}
 
 		fn mmr_leaf_count() -> Result<mmr::LeafIndex, mmr::Error> {
-			Ok(Mmr::mmr_leaves())
+			Ok(pallet_mmr::NumberOfLeaves::<Runtime>::get())
 		}
 
 		fn generate_proof(
 			block_numbers: Vec<BlockNumber>,
 			best_known_block_number: Option<BlockNumber>,
-		) -> Result<(Vec<mmr::EncodableOpaqueLeaf>, mmr::Proof<mmr::Hash>), mmr::Error> {
+		) -> Result<(Vec<mmr::EncodableOpaqueLeaf>, mmr::LeafProof<mmr::Hash>), mmr::Error> {
 			Mmr::generate_proof(block_numbers, best_known_block_number).map(
 				|(leaves, proof)| {
 					(
@@ -391,7 +385,7 @@ impl_runtime_apis! {
 			)
 		}
 
-		fn verify_proof(leaves: Vec<mmr::EncodableOpaqueLeaf>, proof: mmr::Proof<mmr::Hash>)
+		fn verify_proof(leaves: Vec<mmr::EncodableOpaqueLeaf>, proof: mmr::LeafProof<mmr::Hash>)
 			-> Result<(), mmr::Error>
 		{
 			let leaves = leaves.into_iter().map(|leaf|
@@ -404,7 +398,7 @@ impl_runtime_apis! {
 		fn verify_proof_stateless(
 			root: mmr::Hash,
 			leaves: Vec<mmr::EncodableOpaqueLeaf>,
-			proof: mmr::Proof<mmr::Hash>
+			proof: mmr::LeafProof<mmr::Hash>
 		) -> Result<(), mmr::Error> {
 			let nodes = leaves.into_iter().map(|leaf|mmr::DataOrHash::Data(leaf.into_opaque_leaf())).collect();
 			pallet_mmr::verify_leaves_proof::<mmr::Hashing, _>(root, nodes, proof)
@@ -426,6 +420,34 @@ impl_runtime_apis! {
 
 		fn balance_to_points(pool_id: pallet_nomination_pools::PoolId, new_funds: Balance) -> Balance {
 			NominationPools::api_balance_to_points(pool_id, new_funds)
+		}
+
+		fn pool_pending_slash(pool_id: PoolId) -> Balance {
+			NominationPools::api_pool_pending_slash(pool_id)
+		}
+
+		fn member_pending_slash(member: AccountId) -> Balance {
+			NominationPools::api_member_pending_slash(member)
+		}
+
+		fn pool_needs_delegate_migration(pool_id: PoolId) -> bool {
+			NominationPools::api_pool_needs_delegate_migration(pool_id)
+		}
+
+		fn member_needs_delegate_migration(member: AccountId) -> bool {
+			NominationPools::api_member_needs_delegate_migration(member)
+		}
+
+		fn member_total_balance(member: AccountId) -> Balance {
+			NominationPools::api_member_total_balance(member)
+		}
+
+		fn pool_balance(pool_id: PoolId) -> Balance {
+			NominationPools::api_pool_balance(pool_id)
+		}
+
+		fn pool_accounts(pool_id: PoolId) -> (AccountId, AccountId) {
+			NominationPools::api_pool_accounts(pool_id)
 		}
 	}
 
@@ -463,8 +485,6 @@ impl_runtime_apis! {
 		}
 
 		fn check_if_extrinsic_is_vector_post_inherent(uxt: &<Block as BlockT>::Extrinsic) -> bool {
-			use frame_support::traits::ExtrinsicCall;
-
 			let Ok(xt) =  TryInto::<&RTExtrinsic>::try_into(uxt);
 
 			let vector_pallet_call = match xt.call() {
@@ -477,7 +497,6 @@ impl_runtime_apis! {
 		}
 
 		fn check_if_extrinsic_is_da_post_inherent(uxt: &<Block as BlockT>::Extrinsic) -> bool {
-			use frame_support::traits::ExtrinsicCall;
 
 			let Ok(xt) =  TryInto::<&RTExtrinsic>::try_into(uxt);
 
@@ -491,8 +510,6 @@ impl_runtime_apis! {
 		}
 
 		fn extract_post_inherent_summaries(uxt: &<Block as BlockT>::Extrinsic) -> Option<Vec<da_control::BlobTxSummaryRuntime>> {
-			use frame_support::traits::ExtrinsicCall;
-
 			let Ok(xt) =  TryInto::<&RTExtrinsic>::try_into(uxt);
 
 			let da_pallet_call = match xt.call() {
@@ -618,30 +635,46 @@ impl_runtime_apis! {
 	}
 
 	impl avail_base::PostInherentsProvider<Block> for Runtime {
-		fn create_post_inherent_extrinsics(data: avail_base::StorageMap, blob_txs_summary: Vec<(
+	fn create_post_inherent_extrinsics(
+		data: avail_base::StorageMap,
+		blob_txs_summary: Vec<(
 			H256,
 			u32,
 			bool,
 			Option<String>,
 			Vec<(AccountId32, AuthorityDiscoveryId, String, Vec<u8>)>,
-		)>, total_blob_size: u64) -> Vec<<Block as BlockT>::Extrinsic> {
-			let mut post_inherent_extrinsics: Vec<<Block as BlockT>::Extrinsic> = pallet_vector::Pallet::<Runtime>::create_inherent(&data)
+		)>,
+		total_blob_size: u64,
+	) -> Vec<<Block as BlockT>::Extrinsic> {
+		// 1. Vector pallet post-inherent extrinsics (unsigned, bare)
+		let mut post_inherent_extrinsics: Vec<<Block as BlockT>::Extrinsic> =
+			pallet_vector::Pallet::<Runtime>::create_inherent(&data)
 				.into_iter()
-				.filter_map(|inherent| {
-					<Block as BlockT>::Extrinsic::new(inherent.into(), None)
+				.map(|inherent_call| {
+					// unsigned, no nonce/fee/etc
+					<Block as BlockT>::Extrinsic::new_bare_legacy(inherent_call.into())
 				})
 				.collect();
 
-			let blob_txs_summary = da_control::BlobTxSummaryRuntime::convert_into(blob_txs_summary);
-			let da_inherent_call: da_control::Call<Runtime> = da_control::Call::submit_blob_txs_summary { total_blob_size, nb_blobs:blob_txs_summary.len().saturated_into(),  blob_txs_summary };
-			if let Some(da_inherent_extrinsic) = <Block as BlockT>::Extrinsic::new(da_inherent_call.into(), None) {
-				post_inherent_extrinsics.insert(0, da_inherent_extrinsic);
+		// 2. DA blob summary post-inherent (also unsigned)
+		let blob_txs_summary =
+			da_control::BlobTxSummaryRuntime::convert_into(blob_txs_summary);
+
+		let da_inherent_call: da_control::Call<Runtime> =
+			da_control::Call::submit_blob_txs_summary {
+				total_blob_size,
+				nb_blobs: blob_txs_summary.len().saturated_into(),
+				blob_txs_summary,
 			};
 
-			post_inherent_extrinsics
-		}
-	}
+		// push DA inherent as first post-inherent extrinsic
+		let da_inherent_extrinsic: <Block as BlockT>::Extrinsic =
+			<Block as BlockT>::Extrinsic::new_bare_legacy(da_inherent_call.into());
+		post_inherent_extrinsics.insert(0, da_inherent_extrinsic);
 
+		post_inherent_extrinsics
+	}
+}
 	impl sp_session::SessionKeys<Block> for Runtime {
 		fn generate_session_keys(seed: Option<Vec<u8>>) -> Vec<u8> {
 			SessionKeys::generate(seed)
@@ -661,6 +694,10 @@ impl_runtime_apis! {
 
 		fn eras_stakers_page_count(era: sp_staking::EraIndex, account: AccountId) -> sp_staking::Page {
 			Staking::api_eras_stakers_page_count(era, account)
+		}
+
+		fn pending_rewards(era: sp_staking::EraIndex, account: AccountId) -> bool {
+			Staking::api_pending_rewards(era, account)
 		}
 	}
 
@@ -748,12 +785,16 @@ impl_runtime_apis! {
 	}
 
 	impl sp_genesis_builder::GenesisBuilder<Block> for Runtime {
-		fn create_default_config() -> Vec<u8> {
-			create_default_config::<RuntimeGenesisConfig>()
+		fn build_state(config: Vec<u8>) -> sp_genesis_builder::Result {
+			todo!()
 		}
 
-		fn build_config(config: Vec<u8>) -> sp_genesis_builder::Result {
-			build_config::<RuntimeGenesisConfig>(config)
+		fn get_preset(id: &Option<sp_genesis_builder::PresetId>) -> Option<Vec<u8>> {
+			todo!()
+		}
+
+		fn preset_names() -> Vec<sp_genesis_builder::PresetId> {
+			todo!()
 		}
 	}
 }

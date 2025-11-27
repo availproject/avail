@@ -1,6 +1,6 @@
 use crate::Config;
 use avail_core::AppId;
-use codec::Encode;
+use codec::{DecodeWithMemTracking, Encode};
 use frame_support::pallet_prelude::*;
 use scale_info::prelude::string::String;
 #[cfg(feature = "std")]
@@ -12,7 +12,8 @@ use sp_core::{sr25519, H256};
 use sp_runtime::traits::Verify;
 use sp_runtime::AccountId32;
 use sp_runtime::Perbill;
-use sp_staking::offence::{DisableStrategy, Offence};
+// use sp_staking::offence::{DisableStrategy, Offence};
+use sp_staking::offence::Offence;
 use sp_staking::SessionIndex;
 use sp_std::cmp::Ordering;
 use sp_std::collections::btree_map::BTreeMap;
@@ -53,7 +54,7 @@ impl<AccountId> SessionDataProvider<AccountId> for () {
 	}
 }
 
-#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, RuntimeDebug)]
+#[derive(Clone, Encode, Decode, DecodeWithMemTracking, TypeInfo, PartialEq, RuntimeDebug)]
 pub struct BlobTxSummaryRuntime {
 	pub hash: H256,
 	pub tx_index: u32,
@@ -87,7 +88,9 @@ impl BlobTxSummaryRuntime {
 }
 
 /// Structure for blob runtime parameters
-#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, MaxEncodedLen, TypeInfo)]
+#[derive(
+	Debug, Clone, PartialEq, Eq, Encode, Decode, DecodeWithMemTracking, MaxEncodedLen, TypeInfo,
+)]
 pub struct BlobRuntimeParameters {
 	/// Maximum size of a blob, need to change the rpc request and response size to handle this
 	pub max_blob_size: u64,
@@ -141,7 +144,17 @@ impl Default for BlobRuntimeParameters {
 
 /// Structure used when there is an offence reported by validators client side.
 /// They all need some vouching from accusing validators and it needs to reach a threshold to be considered valid.
-#[derive(RuntimeDebug, Clone, PartialEq, Eq, Encode, Decode, MaxEncodedLen, TypeInfo)]
+#[derive(
+	RuntimeDebug,
+	Clone,
+	PartialEq,
+	Eq,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	MaxEncodedLen,
+	TypeInfo,
+)]
 pub enum BlobOffenceKind {
 	SummaryNbBlobMismatch,
 	InvalidNbOfOwnershipForBlob,
@@ -152,7 +165,17 @@ pub enum BlobOffenceKind {
 	OmittedValidatorForBlob,
 }
 
-#[derive(RuntimeDebug, Clone, PartialEq, Eq, Encode, Decode, MaxEncodedLen, TypeInfo)]
+#[derive(
+	RuntimeDebug,
+	Clone,
+	PartialEq,
+	Eq,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	MaxEncodedLen,
+	TypeInfo,
+)]
 pub struct ValidatorVoucher {
 	pub session_index: u32,
 	pub validator: AccountId32,
@@ -169,7 +192,17 @@ impl ValidatorVoucher {
 	}
 }
 
-#[derive(RuntimeDebug, Clone, PartialEq, Eq, Encode, Decode, MaxEncodedLen, TypeInfo)]
+#[derive(
+	RuntimeDebug,
+	Clone,
+	PartialEq,
+	Eq,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	MaxEncodedLen,
+	TypeInfo,
+)]
 pub struct OffenceKey {
 	pub block_hash: H256,
 	pub kind: BlobOffenceKind,
@@ -354,7 +387,7 @@ impl<Offender: Clone + Eq + Encode> Offence<Offender> for BlobOffence<Offender> 
 		self.validator_set_count
 	}
 
-	fn disable_strategy(&self) -> DisableStrategy {
-		DisableStrategy::Never
-	}
+	// fn disable_strategy(&self) -> DisableStrategy {
+	// 	DisableStrategy::Never
+	// }
 }

@@ -66,6 +66,7 @@ pub type BalanceOf<T> =
 
 #[frame_support::pallet]
 pub mod pallet {
+	use ethabi::ethereum_types::U256 as EthU256;
 	use ethabi::Token;
 	use ethabi::Token::Uint;
 	use frame_support::dispatch::GetDispatchInfo;
@@ -556,8 +557,20 @@ pub mod pallet {
 				get_storage_root(account_proof_vec, contract_broadcaster_address, root)
 					.map_err(|_| Error::<T>::CannotGetStorageRoot)?;
 
-			let message_id = Uint(U256::from(addr_message.id));
-			let mm_idx = Uint(U256::from(T::MessageMappingStorageIndex::get()));
+			let message_id = {
+				// addr_message.id: H256
+				let mut bytes = [0u8; 32];
+				bytes[24..32].copy_from_slice(&addr_message.id.to_be_bytes());
+				let id_u256 = EthU256::from(bytes);
+				Uint(id_u256)
+			};
+
+			let mm_idx = {
+				// assume index is some integer type (u32/u64/u128/etc)
+				let idx = T::MessageMappingStorageIndex::get();
+				let idx_u256 = EthU256::from(idx as u64); // or as u128 etc, depending on the type
+				Uint(idx_u256)
+			};
 			let slot_key = H256(keccak_256(ethabi::encode(&[message_id, mm_idx]).as_slice()));
 
 			let storage_proof_vec = storage_proof
@@ -680,7 +693,11 @@ pub mod pallet {
 				Error::<T>::CannotParseOutputData
 			);
 
-			let hash = U256::from(poseidon_hash.to_vec().as_slice());
+			// let hash = U256::from(poseidon_hash.to_vec().as_slice());
+			let hash = {
+				assert_eq!(poseidon_hash.len(), 32);
+				U256::from_big_endian(&poseidon_hash)
+			};
 
 			SyncCommitteePoseidons::<T>::insert(period, hash);
 			Self::deposit_event(Event::SyncCommitteeUpdated { period, root: hash });

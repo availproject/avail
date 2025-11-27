@@ -1,10 +1,10 @@
 use avail_core::kate::DATA_CHUNK_SIZE;
 use avail_core::AppId;
 
-use bounded_collections::{BoundedBTreeMap, BoundedVec};
 use codec::{Compact, CompactLen as _, Decode, Encode, MaxEncodedLen};
 use core::mem::swap;
 use frame_support::traits::Get;
+use frame_support::{BoundedBTreeMap, BoundedVec};
 use scale_info::TypeInfo;
 use sp_std::iter::once;
 

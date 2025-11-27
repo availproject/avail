@@ -1,5 +1,8 @@
 use codec::{Decode, Encode};
-use sp_runtime_interface::runtime_interface;
+use sp_runtime_interface::{
+	pass_by::{AllocateAndReturnByCodec, PassFatPointerAndRead},
+	runtime_interface,
+};
 use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
 
 /// A simple key-value storage in memory.
@@ -20,7 +23,7 @@ impl MemoryTemporaryStorage {
 	/// Encodes and inserts `value` into the memory temporal storage under `key`.
 	pub fn insert<T: Encode + Decode>(key: Vec<u8>, value: T) -> Option<T> {
 		let raw_value = value.encode();
-		hosted_mem_tmp_storage::insert(key, raw_value)
+		hosted_mem_tmp_storage::insert(&key, raw_value)
 			.and_then(|raw| T::decode(&mut raw.as_slice()).ok())
 	}
 
@@ -60,10 +63,10 @@ impl MemoryTemporaryStorage {
 ////// Native Code
 //////
 
-#[cfg(feature = "std")]
+#[cfg(not(substrate_runtime))]
 pub(crate) mod native {
 	use super::*;
-	use sp_std::sync::RwLock;
+	use parking_lot::RwLock;
 
 	pub static MEM_TMP_STORAGE: RwLock<StorageMap> = RwLock::new(StorageMap::new());
 }
@@ -76,58 +79,39 @@ pub(crate) mod native {
 /// - [ ] Improve error handling of poisoned sync: Panic?
 #[runtime_interface]
 pub trait HostedMemTmpStorage {
-	/// Insert auxiliary data into key-value storage.
-	fn insert(key: Vec<u8>, value: Vec<u8>) -> Option<Vec<u8>> {
-		let Ok(mut guard) = native::MEM_TMP_STORAGE.write() else {
-			log_poisoned_sync();
-			return None;
-		};
-
-		guard.insert(key, value)
+	fn insert(
+		key: PassFatPointerAndRead<&[u8]>,
+		value: PassFatPointerAndRead<Vec<u8>>,
+	) -> AllocateAndReturnByCodec<Option<Vec<u8>>> {
+		let mut guard = native::MEM_TMP_STORAGE.write();
+		guard.insert(key.to_vec(), value)
 	}
 
-	/// Returns the value under `key` from the memory temporal storage.
-	fn get(key: &[u8]) -> Option<Vec<u8>> {
-		let Ok(guard) = native::MEM_TMP_STORAGE.read() else {
-			log_poisoned_sync();
-			return None;
-		};
-
-		guard.get(key).cloned()
+	fn get(key: PassFatPointerAndRead<&[u8]>) -> AllocateAndReturnByCodec<Option<Vec<u8>>> {
+		let guard = native::MEM_TMP_STORAGE.read();
+		guard.get(&*key).cloned()
 	}
 
-	fn take(key: &[u8]) -> Option<Vec<u8>> {
-		let Ok(mut guard) = native::MEM_TMP_STORAGE.write() else {
-			log_poisoned_sync();
-			return None;
-		};
-
-		guard.remove(key)
+	fn take(key: PassFatPointerAndRead<&[u8]>) -> AllocateAndReturnByCodec<Option<Vec<u8>>> {
+		let mut guard = native::MEM_TMP_STORAGE.write();
+		guard.remove(&*key)
 	}
 
 	/// Clears the memory temporal storage.
 	fn clear() {
-		let Ok(mut guard) = native::MEM_TMP_STORAGE.write() else {
-			log_poisoned_sync();
-			return;
-		};
-
+		let mut guard = native::MEM_TMP_STORAGE.write();
 		guard.clear();
 	}
 
 	/// Returns the content of the memory temporal storage as a list of key-value pairs.
 	/// NOTE: Conversion to plain list is needed due to `ByPass` constraints.
-	fn storage() -> Vec<(Vec<u8>, Vec<u8>)> {
-		let Ok(guard) = native::MEM_TMP_STORAGE.read() else {
-			log_poisoned_sync();
-			return Vec::default();
-		};
-
+	fn storage() -> AllocateAndReturnByCodec<Vec<(Vec<u8>, Vec<u8>)>> {
+		let guard = native::MEM_TMP_STORAGE.read();
 		guard.iter().map(|(k, v)| (k.clone(), v.clone())).collect()
 	}
 }
 
-#[cfg(feature = "std")]
-fn log_poisoned_sync() {
-	log::error!("Memory Temporal Storage with a poisoned sync");
-}
+// #[cfg(not(substrate_runtime))]
+// fn log_poisoned_sync() {
+// 	log::error!("Memory Temporal Storage with a poisoned sync");
+// }

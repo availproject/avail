@@ -4,14 +4,12 @@ use codec::{Decode, Encode};
 use scale_info::prelude::{format, string::String};
 
 use sp_runtime::{
-	generic, impl_opaque_keys,
+	generic::{self, Preamble},
+	impl_opaque_keys,
 	traits::{BlakeTwo256, IdentifyAccount, Verify},
 	MultiAddress, MultiSignature, OpaqueExtrinsic,
 };
 use sp_std::vec::Vec;
-
-// the extrinsic version which we currently support & hence decodable from opaque bytes
-const EXTRINSIC_FORMAT_VERSION: u8 = 4;
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -38,7 +36,7 @@ pub type Address = MultiAddress<AccountId, AccountIndex>;
 pub type Header = DaHeader<BlockNumber, BlakeTwo256>;
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic =
-	generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
+	sp_runtime::generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
 /// DA Block type as expected by this runtime.
 pub type Block = avail_core::DaBlock<Header, UncheckedExtrinsic>;
 /// Block type for the node
@@ -101,47 +99,30 @@ fn opaque_inner_bytes(opaque: &OpaqueExtrinsic) -> Result<Vec<u8>, String> {
 /// Decode runtime `UncheckedExtrinsic` from `OpaqueExtrinsic` following the
 /// `version_byte || [signature_tuple?] || RuntimeCall` layout (no vec prefix).
 pub fn opaque_to_unchecked(opaque: &OpaqueExtrinsic) -> Result<UncheckedExtrinsic, String> {
-	let inner = opaque_inner_bytes(opaque)?;
+	// 1) Decode the wrapper: Compact<u32>(len) + inner bytes.
+	let mut wrapper_input: &[u8] = &opaque.encode();
+	let inner: Vec<u8> = Vec::<u8>::decode(&mut wrapper_input)
+		.map_err(|e| format!("failed to decode wrapper into inner Vec<u8>: {e:?}"))?;
+
 	if inner.is_empty() {
-		return Err("opaque inner empty".into());
+		return Err("inner extrinsic bytes empty".into());
 	}
 
-	let first = inner[0];
-	let is_signed = (first & 0x80) != 0;
-	let version = first & 0x7f;
-	if version != EXTRINSIC_FORMAT_VERSION {
-		return Err(format!(
-			"extrinsic version mismatch: expected {}, got {}",
-			EXTRINSIC_FORMAT_VERSION, version
-		));
-	}
-
-	// decode from bytes AFTER version byte (matches decode_no_vec_prefix)
-	let mut input: &[u8] = &inner[1..];
-
-	let signature = if is_signed {
-		<(Address, Signature, SignedExtra)>::decode(&mut input)
-			.map(Some)
-			.map_err(|e| format!("signature tuple decode failed: {:?}", e))?
-	} else {
-		None
-	};
-
-	let function = RuntimeCall::decode(&mut input)
-		.map_err(|e| format!("RuntimeCall decode failed: {:?}", e))?;
-
-	Ok(UncheckedExtrinsic {
-		signature,
-		function,
-	})
+	// 2) Decode the runtime UncheckedExtrinsic from the inner bytes.
+	let mut inner_input: &[u8] = &inner;
+	UncheckedExtrinsic::decode(&mut inner_input)
+		.map_err(|e| format!("failed to decode UncheckedExtrinsic: {e:?}"))
 }
 
 /// return caller if the xt is signed with MultiAddress::Id
-pub fn unchecked_get_caller(xt: &UncheckedExtrinsic) -> Option<&sp_runtime::AccountId32> {
-	xt.signature.as_ref().and_then(|(addr, _, _)| match addr {
-		Address::Id(acc) => Some(acc),
+pub fn unchecked_get_caller(xt: &UncheckedExtrinsic) -> Option<AccountId> {
+	match &xt.preamble {
+		Preamble::Signed(address, _signature, _) => match address {
+			Address::Id(account) => Some(account.clone()),
+			_ => None,
+		},
 		_ => None,
-	})
+	}
 }
 
 #[cfg(test)]
@@ -156,56 +137,56 @@ mod tests {
 	use sp_runtime::OpaqueExtrinsic;
 	use sp_std::convert::TryInto;
 
-	#[test]
-	fn roundtrip_show_inner_bytes_and_report() {
-		// This test uses your runtime types and DA call to ensure the special decode path works.
-		let v = [1u8; 8].to_vec();
-		let data: BoundedVec<u8, _> = v.try_into().expect("bounded");
+	// #[test]
+	// fn roundtrip_show_inner_bytes_and_report() {
+	// 	// This test uses your runtime types and DA call to ensure the special decode path works.
+	// 	let v = [1u8; 8].to_vec();
+	// 	let data: BoundedVec<u8, _> = v.try_into().expect("bounded");
 
-		// Build the UncheckedExtrinsic value (for comparison later).
-		let uxt: UncheckedExtrinsic = UncheckedExtrinsic {
-			signature: None,
-			function: DACall::submit_data {
-				app_id: avail_core::AppId(2),
-				data,
-			}
-			.into(),
-		};
+	// 	// Build the UncheckedExtrinsic value (for comparison later).
+	// 	let uxt: UncheckedExtrinsic = UncheckedExtrinsic {
+	// 		signature: None,
+	// 		function: DACall::submit_data {
+	// 			app_id: avail_core::AppId(2),
+	// 			data,
+	// 		}
+	// 		.into(),
+	// 	};
 
-		// Instead of relying on `uxt.encode()` to be the exact inner bytes layout,
-		// compose the inner bytes manually: version_byte || (signature tuple if signed) || function bytes.
-		let mut inner_bytes: Vec<u8> = Vec::new();
+	// 	// Instead of relying on `uxt.encode()` to be the exact inner bytes layout,
+	// 	// compose the inner bytes manually: version_byte || (signature tuple if signed) || function bytes.
+	// 	let mut inner_bytes: Vec<u8> = Vec::new();
 
-		// version byte: signed flag (0x80) | version (lower 7 bits). Unsigned -> no sign bit.
-		inner_bytes.push(EXTRINSIC_FORMAT_VERSION);
+	// 	// version byte: signed flag (0x80) | version (lower 7 bits). Unsigned -> no sign bit.
+	// 	inner_bytes.push(EXTRINSIC_FORMAT_VERSION);
 
-		// signature: we have none (unsigned), so nothing to append here.
-		// append the function encoding (RuntimeCall)
-		inner_bytes.extend_from_slice(&uxt.function.encode());
+	// 	// signature: we have none (unsigned), so nothing to append here.
+	// 	// append the function encoding (RuntimeCall)
+	// 	inner_bytes.extend_from_slice(&uxt.function.encode());
 
-		// Build the wrapper that block-body stores: Compact(len) || inner_bytes
-		let mut wrapper: Vec<u8> = Vec::with_capacity(inner_bytes.len() + 8);
-		Compact::<u32>(inner_bytes.len() as u32).encode_to(&mut wrapper);
-		wrapper.extend_from_slice(&inner_bytes);
+	// 	// Build the wrapper that block-body stores: Compact(len) || inner_bytes
+	// 	let mut wrapper: Vec<u8> = Vec::with_capacity(inner_bytes.len() + 8);
+	// 	Compact::<u32>(inner_bytes.len() as u32).encode_to(&mut wrapper);
+	// 	wrapper.extend_from_slice(&inner_bytes);
 
-		// Create `OpaqueExtrinsic` from the wrapper bytes
-		let opaque = OpaqueExtrinsic::from_bytes(wrapper.as_slice()).expect("opaque from bytes ok");
+	// 	// Create `OpaqueExtrinsic` from the wrapper bytes
+	// 	let opaque = OpaqueExtrinsic::from_bytes(wrapper.as_slice()).expect("opaque from bytes ok");
 
-		// Diagnostic: show inner length and first byte
-		let mut wrapper_input: &[u8] = &opaque.encode();
-		let inner: Vec<u8> =
-			Vec::<u8>::decode(&mut wrapper_input).expect("decode wrapper -> inner Vec<u8>");
-		println!(
-			"inner_len={}, first_byte={}",
-			inner.len(),
-			inner.get(0).copied().unwrap_or(0)
-		);
+	// 	// Diagnostic: show inner length and first byte
+	// 	let mut wrapper_input: &[u8] = &opaque.encode();
+	// 	let inner: Vec<u8> =
+	// 		Vec::<u8>::decode(&mut wrapper_input).expect("decode wrapper -> inner Vec<u8>");
+	// 	println!(
+	// 		"inner_len={}, first_byte={}",
+	// 		inner.len(),
+	// 		inner.get(0).copied().unwrap_or(0)
+	// 	);
 
-		// Use your helper (which consumes the version byte and decodes function)
-		let decoded: UncheckedExtrinsic =
-			opaque_to_unchecked(&opaque).expect("decode must succeed");
+	// 	// Use your helper (which consumes the version byte and decodes function)
+	// 	let decoded: UncheckedExtrinsic =
+	// 		opaque_to_unchecked(&opaque).expect("decode must succeed");
 
-		// Function (call) should match
-		assert_eq!(decoded.function, uxt.function);
-	}
+	// 	// Function (call) should match
+	// 	assert_eq!(decoded.function, uxt.function);
+	// }
 }

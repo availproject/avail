@@ -14,7 +14,10 @@ pub use kate::{
 use frame_support::traits::Randomness;
 use sp_core::H256;
 use sp_runtime::traits::Hash;
-use sp_runtime_interface::runtime_interface;
+use sp_runtime_interface::{
+	pass_by::{AllocateAndReturnByCodec, PassFatPointerAndDecode},
+	runtime_interface,
+};
 use sp_std::vec::Vec;
 
 pub const MIN_WIDTH: usize = 4;
@@ -69,18 +72,7 @@ pub trait HeaderExtensionBuilder {
 	/// Generates a random seed using the _epoch seed_ and the _current block_ returned by
 	/// `T::Randomness` type.
 	fn random_seed<T: Config>() -> Seed {
-		let seed = if cfg!(feature = "secure_padding_fill") {
-			let (epoch_seed, block_number) = <T as Config>::Randomness::random_seed();
-			let seed = <T as Config>::Hashing::hash_of(&(&epoch_seed, &block_number));
-			log::trace!(
-				target: LOG_TARGET,
-				"Header builder seed {seed:?} from epoch seed {epoch_seed:?} and block {block_number:?}");
-			seed
-		} else {
-			<T as Config>::Hash::default()
-		};
-
-		seed.into()
+		<T as Config>::Hash::default().into()
 	}
 }
 
@@ -88,16 +80,24 @@ pub trait HeaderExtensionBuilder {
 #[runtime_interface]
 pub trait HostedHeaderBuilder {
 	fn build_extension(
-		submitted: Vec<SubmittedData>,
-		data_root: H256,
-		block_length: BlockLength,
-		version: HeaderVersion,
-	) -> HeaderExtension {
-		crate::native::build_extension_v2::build_extension_v4(
-			submitted,
-			data_root,
-			block_length,
-			version,
-		)
+		submitted: PassFatPointerAndDecode<Vec<SubmittedData>>,
+		data_root: PassFatPointerAndDecode<H256>,
+		block_length: PassFatPointerAndDecode<BlockLength>,
+		version: PassFatPointerAndDecode<HeaderVersion>,
+	) -> AllocateAndReturnByCodec<HeaderExtension> {
+		#[cfg(feature = "std")]
+		{
+			return crate::native::build_extension_v2::build_extension_v4(
+				submitted.to_vec(),
+				data_root,
+				block_length,
+				version,
+			);
+		}
+
+		#[cfg(not(feature = "std"))]
+		{
+			return HeaderExtension::get_faulty_header(data_root, version);
+		}
 	}
 }

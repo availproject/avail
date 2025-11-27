@@ -224,4 +224,8 @@ impl<T: frame_system::Config> pallet_proxy::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
+
+	fn poke_deposit() -> Weight {
+			todo!()
+		}
 }

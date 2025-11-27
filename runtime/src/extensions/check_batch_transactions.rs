@@ -1,7 +1,18 @@
 use avail_core::AppId;
 use avail_core::InvalidTransactionCustomId;
-use codec::{Decode, Encode};
+use codec::{Decode, DecodeWithMemTracking, Encode};
+use sp_runtime::traits::{DispatchTransaction, TransactionExtension, ValidateResult};
+use sp_runtime::{
+	traits::DispatchInfoOf,
+	transaction_validity::{
+		InvalidTransaction, TransactionSource, TransactionValidity, TransactionValidityError,
+		ValidTransaction,
+	},
+};
+
 use da_control::{Call as DACall, Config as DAConfig, Pallet};
+use frame_support::dispatch::{DispatchInfo, DispatchResult};
+use frame_support::weights::Weight;
 use frame_support::{
 	ensure,
 	traits::{IsSubType, IsType},
@@ -13,13 +24,9 @@ use pallet_scheduler::{Call as SchedulerCall, Config as SchedulerConfig};
 use pallet_utility::{Call as UtilityCall, Config as UtilityConfig};
 use pallet_vector::{Call as VectorCall, Config as VectorConfig};
 use scale_info::TypeInfo;
+use sp_runtime::traits::{Dispatchable, PostDispatchInfoOf};
 use sp_runtime::transaction_validity::InvalidTransaction as TxInvalid;
-use sp_runtime::{
-	traits::{DispatchInfoOf, SignedExtension},
-	transaction_validity::{
-		InvalidTransaction, TransactionValidity, TransactionValidityError, ValidTransaction,
-	},
-};
+
 use sp_std::{
 	default::Default,
 	fmt::{self, Debug, Formatter},
@@ -149,7 +156,7 @@ where
 	}
 }
 
-#[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
+#[derive(Encode, Decode, DecodeWithMemTracking, Clone, Eq, PartialEq, TypeInfo)]
 #[scale_info(skip_type_params(T))]
 pub struct CheckBatchTransactions<
 	T: DAConfig + UtilityConfig + MultisigConfig + ProxyConfig + SchedulerConfig + Send + Sync,
@@ -526,7 +533,7 @@ where
 	}
 }
 
-impl<T> SignedExtension for CheckBatchTransactions<T>
+impl<T> TransactionExtension<<T as SystemConfig>::RuntimeCall> for CheckBatchTransactions<T>
 where
 	T: DAConfig
 		+ UtilityConfig
@@ -554,35 +561,56 @@ where
 		+ IsSubType<SchedulerCall<T>>,
 	[u8; 32]: From<<T as frame_system::Config>::AccountId>,
 {
-	type AccountId = <T as frame_system::Config>::AccountId;
-	type Call = <T as frame_system::Config>::RuntimeCall;
-	type AdditionalSigned = ();
-	type Pre = ();
 	const IDENTIFIER: &'static str = "CheckBatchTransactions";
+	type Implicit = ();
+	type Val = ();
+	type Pre = ();
 
-	fn additional_signed(&self) -> Result<(), TransactionValidityError> {
-		Ok(())
+	fn weight(&self, _call: &<T as SystemConfig>::RuntimeCall) -> Weight {
+		// TODO: we can update this
+		Weight::zero()
 	}
 
 	fn validate(
 		&self,
-		_who: &Self::AccountId,
-		call: &Self::Call,
-		_info: &DispatchInfoOf<Self::Call>,
+		origin: <T as SystemConfig>::RuntimeOrigin,
+		call: &<T as SystemConfig>::RuntimeCall,
+		_info: &DispatchInfoOf<<T as SystemConfig>::RuntimeCall>,
 		len: usize,
-	) -> TransactionValidity {
-		self.do_validate(call, len)
+		_self_implicit: <Self as TransactionExtension<<T as SystemConfig>::RuntimeCall>>::Implicit,
+		_inherited_implication: &impl Encode,
+		_source: TransactionSource,
+	) -> ValidateResult<Self::Val, <T as SystemConfig>::RuntimeCall> {
+		let validity = self.do_validate(call, len)?;
+		Ok((validity, (), origin))
 	}
 
-	fn pre_dispatch(
+	fn prepare(
 		self,
-		_who: &Self::AccountId,
-		call: &Self::Call,
-		_info: &DispatchInfoOf<Self::Call>,
-		len: usize,
-	) -> Result<Self::Pre, TransactionValidityError> {
-		self.do_validate(call, len)?;
+		_val: <CheckBatchTransactions<T> as DispatchTransaction<
+			<T as SystemConfig>::RuntimeCall,
+		>>::Val,
+		_origin: &<T as SystemConfig>::RuntimeOrigin,
+		_call: &<T as SystemConfig>::RuntimeCall,
+		_info: &DispatchInfoOf<<T as SystemConfig>::RuntimeCall>,
+		_len: usize,
+	) -> Result<
+		<CheckBatchTransactions<T> as DispatchTransaction<<T as SystemConfig>::RuntimeCall>>::Pre,
+		TransactionValidityError,
+	> {
 		Ok(())
+	}
+
+	fn post_dispatch_details(
+		_pre: <CheckBatchTransactions<T> as DispatchTransaction<
+			<T as SystemConfig>::RuntimeCall,
+		>>::Pre,
+		_info: &<<T as SystemConfig>::RuntimeCall as Dispatchable>::Info,
+		_post_info: &PostDispatchInfoOf<<T as SystemConfig>::RuntimeCall>,
+		_len: usize,
+		_result: &DispatchResult,
+	) -> Result<Weight, TransactionValidityError> {
+		Ok(Weight::zero())
 	}
 }
 

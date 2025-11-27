@@ -14,6 +14,8 @@ avail-core = { workspace = true, default-features = false }
 
 # Substrate related
 codec = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
+# parking_lot= { workspace = true }
+parking_lot= { workspace = true, optional = true }
 scale-info = { workspace = true, default-features = false }
 sp-core = { workspace = true, default-features = false, features = ["serde"] }
 sp-std = { workspace = true, default-features = false }
@@ -41,8 +43,9 @@ std = [
 	"binary-merkle-tree/std",
 	"codec/std",
 	"frame-support/std",
-	"sp-authority-discovery/std",
+	"parking_lot",
 	"sp-api/std",
+	"sp-authority-discovery/std",
 	"sp-core/std",
 	"sp-runtime-interface/std",
 	"sp-runtime/std",

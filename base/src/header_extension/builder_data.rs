@@ -9,7 +9,6 @@ use codec::{Decode, Encode};
 use derive_more::Constructor;
 use sp_core::H256;
 use sp_runtime::OpaqueExtrinsic;
-use sp_runtime_interface::pass_by::PassByCodec;
 use sp_std::{iter::repeat, vec::Vec};
 
 #[derive(Constructor, Debug, Encode, Decode, Clone, PartialEq, Eq)]
@@ -38,7 +37,7 @@ pub struct ExtractedTxData {
 	pub bridge_data: Option<BridgedData>,
 }
 
-#[derive(Debug, Default, PassByCodec, Encode, Decode)]
+#[derive(Debug, Default, Encode, Decode)]
 pub struct HeaderExtensionBuilderData {
 	pub data_submissions: Vec<SubmittedData>,
 	pub bridge_messages: Vec<BridgedData>,
@@ -238,7 +237,7 @@ where
 	T: AsRef<[u8]>,
 {
 	let leaves = leaf_iter.collect::<Vec<_>>();
-	let mp = merkle_proof::<Keccak256, _, T>(leaves, leaf_idx);
+	let mp = merkle_proof::<Keccak256, _, T>(leaves, leaf_idx as u32);
 	// NOTE: As we are using refrences for the leaves, like `&'a [u8]`, we need to
 	// convert them to `Vec<u8>`.
 	MerkleProof {

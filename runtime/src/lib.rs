@@ -48,7 +48,7 @@ pub use frame_support::{
 	parameter_types,
 	traits::{
 		ConstU32, ContainsLengthBound, Currency, EitherOfDiverse, EqualPrivilegeOnly, Everything,
-		ExtrinsicCall, Imbalance, KeyOwnerProofSystem, OnUnbalanced, Randomness, SortedMembers,
+		Imbalance, KeyOwnerProofSystem, OnUnbalanced, Randomness, SortedMembers,
 	},
 	weights::{
 		constants::{

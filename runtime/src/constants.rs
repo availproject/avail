@@ -254,8 +254,9 @@ pub mod staking {
 		pub const MaxElectingVoters: u32 = 22_500;
 		/// For onchain solutions, which are used as fallback(s), we only consider top 5K nominators as electing voters
 		pub const MaxOnchainElectingVoters: u32 = 5000;
+		pub MaxElectingVotersSolution: u32 = 40_000;
 		/// cannot have active validators higher than this count.
-		pub const MaxActiveValidators: u32 = 1200;
+		pub const MaxActiveValidators: u32 = 1000;
 
 		pub const MaxNominations: u32 = <NposSolution16 as frame_election_provider_support::NposSolution>::LIMIT as u32;
 		pub const OffendingValidatorsThreshold: Perbill = Perbill::from_percent(17);

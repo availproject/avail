@@ -1,5 +1,6 @@
 use hex_literal::hex;
-use primitive_types::U256;
+// use primitive_types::U256;
+use ethabi::ethereum_types::U256;
 use sp_core::H256;
 // {
 // "genesisTime": 1606824023,
