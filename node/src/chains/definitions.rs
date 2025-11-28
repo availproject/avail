@@ -23,7 +23,7 @@ pub struct Extensions {
 }
 
 /// Specialized `ChainSpec`. This is a specialization of the general Substrate ChainSpec type.
- pub type ChainSpec = sc_service::GenericChainSpec<Extensions>;
+pub type ChainSpec = sc_service::GenericChainSpec<Extensions>;
 // pub type ChainSpec = sc_service::GenericChainSpec<RuntimeGenesisConfig, Extensions>;
 
 /// Generate a crypto pair from seed.
