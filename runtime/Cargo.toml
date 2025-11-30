@@ -29,6 +29,7 @@ log.workspace = true
 hex-literal.workspace = true
 rayon = { workspace = true, optional = true }
 serde = { workspace = true, optional = true, features = ["derive"] }
+serde_json = { workspace = true, features = ["alloc", "arbitrary_precision"] }
 thiserror-no-std.workspace = true
 derive_more.workspace = true
 
@@ -106,6 +107,7 @@ frame-system-benchmarking = { workspace = true, default-features = false, option
 substrate-wasm-builder = { workspace = true, default-features = false }
 
 [dev-dependencies]
+bounded-collections.workspace = true
 test-case.workspace = true
 hex.workspace = true
 hex-literal.workspace = true
@@ -207,6 +209,7 @@ std = [
 	"sp-std/std",
 	"sp-transaction-pool/std",
 	"sp-version/std",
+	"serde_json/std",
 ]
 
 runtime-benchmarks = [

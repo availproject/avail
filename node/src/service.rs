@@ -35,7 +35,6 @@ use jsonrpsee::RpcModule;
 use pallet_transaction_payment::ChargeTransactionPayment;
 use sc_client_api::{Backend, BlockBackend};
 use sc_consensus_babe::{self, SlotProportion};
-use sc_network::config::{FullNetworkConfiguration, NonDefaultSetConfig, RequestResponseConfig};
 use sc_network::{service::traits::NetworkService, Event, NetworkBackend, NetworkEventStream};
 use sc_network_sync::SyncingService;
 use sc_network_sync::WarpSyncConfig;

@@ -50,7 +50,7 @@ pub fn get_blob_p2p_config<B: BlockT, N: NetworkBackend<B, <B as BlockT>::Hash>>
 	);
 
 	// Get blob gossip protocol config
-	let (peerset_cfg, blob_gossip_service) = NonDefaultSetConfig::new(
+	let (_peerset_cfg, blob_gossip_service) = NonDefaultSetConfig::new(
 		BLOB_GOSSIP_PROTO,
 		Vec::default(),
 		NOTIFICATION_MAX_SIZE,

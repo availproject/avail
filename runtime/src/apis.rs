@@ -35,9 +35,9 @@ use avail_core::{
 };
 use sp_runtime::OpaqueExtrinsic;
 
-use frame_system::limits::BlockLength;
 use frame_support::genesis_builder_helper::{build_state, get_preset};
 use frame_support::{traits::KeyOwnerProofSystem, weights::Weight};
+use frame_system::limits::BlockLength;
 use pallet_nomination_pools::PoolId;
 use pallet_transaction_payment::{FeeDetails, RuntimeDispatchInfo};
 use scale_info::prelude::string::String;
@@ -790,11 +790,14 @@ impl_runtime_apis! {
 		}
 
 		fn get_preset(id: &Option<sp_genesis_builder::PresetId>) -> Option<Vec<u8>> {
-			todo!()
+			get_preset::<RuntimeGenesisConfig>(
+				id,
+				&crate::genesis_config_presets::get_preset,
+			)
 		}
 
 		fn preset_names() -> Vec<sp_genesis_builder::PresetId> {
-			todo!()
+			crate::genesis_config_presets::preset_names()
 		}
 	}
 }

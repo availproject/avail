@@ -27,6 +27,7 @@ pub(crate) const LOG_TARGET: &str = "da-runtime";
 
 pub mod apis;
 pub mod constants;
+mod genesis_config_presets;
 #[cfg(test)]
 mod header_extension_builder_data_tests;
 pub mod impls;
@@ -208,7 +209,7 @@ mod tests {
 	use frame_system::offchain::CreateSignedTransaction;
 	use hex_literal::hex;
 	use sp_core::hexdisplay::HexDisplay;
-	use sp_keyring::AccountKeyring::Bob;
+	use sp_keyring::Sr25519Keyring::Bob;
 	use sp_runtime::{MultiAddress, UpperOf};
 	use test_case::test_case;
 

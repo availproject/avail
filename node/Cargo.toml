@@ -81,6 +81,7 @@ sp-authority-discovery = { workspace = true, default-features = false }
 sc-authority-discovery = { workspace = true, default-features = false }
 sc-chain-spec = { workspace = true, default-features = false }
 sp-blockchain = { workspace = true, default-features = false }
+sp-genesis-builder = { workspace = true, default-features = false }
 sp-block-builder = { workspace = true, default-features = false }
 sc-sync-state-rpc = { workspace = true, default-features = false }
 sp-api = { workspace = true, default-features = false }

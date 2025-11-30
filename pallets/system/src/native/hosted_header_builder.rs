@@ -68,12 +68,6 @@ pub trait HeaderExtensionBuilder {
 		block_length: BlockLength,
 		version: HeaderVersion,
 	) -> HeaderExtension;
-
-	/// Generates a random seed using the _epoch seed_ and the _current block_ returned by
-	/// `T::Randomness` type.
-	fn random_seed<T: Config>() -> Seed {
-		<T as Config>::Hash::default().into()
-	}
 }
 
 /// Hosted function to build the header using `kate` commitments.

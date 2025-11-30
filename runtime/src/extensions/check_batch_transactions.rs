@@ -11,7 +11,7 @@ use sp_runtime::{
 };
 
 use da_control::{Call as DACall, Config as DAConfig, Pallet};
-use frame_support::dispatch::{DispatchInfo, DispatchResult};
+use frame_support::dispatch::DispatchResult;
 use frame_support::weights::Weight;
 use frame_support::{
 	ensure,

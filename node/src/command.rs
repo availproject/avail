@@ -101,6 +101,10 @@ pub fn run() -> Result<()> {
 
 			runner.sync_run(|config| cmd.run::<Block, RuntimeApi, ExecutorDispatch>(config))
 		},*/
+		Some(Subcommand::ExportChainSpec(cmd)) => {
+			let chain_spec = cli.load_spec(&cmd.chain)?;
+			cmd.run(chain_spec)
+		},
 		Some(Subcommand::Benchmark(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 

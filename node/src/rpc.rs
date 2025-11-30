@@ -180,7 +180,7 @@ where
 		.flatten()
 		.expect("Genesis block exists; qed");
 	let properties = chain_spec.properties();
-	io.merge(ChainSpec::new(chain_name, genesis_hash, properties).into_rpc())?;
+	// io.merge(ChainSpec::new(chain_name, genesis_hash, properties).into_rpc())?;
 
 	io.merge(System::new(client.clone(), pool.clone()).into_rpc())?;
 	// Making synchronous calls in light client freezes the browser currently,

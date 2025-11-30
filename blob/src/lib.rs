@@ -31,8 +31,7 @@ use sc_client_api::HeaderBackend;
 use sc_network::service::traits::NetworkService as NetworkServiceT;
 use sc_network::{
 	config::{IncomingRequest, OutgoingResponse},
-	IfDisconnected, NetworkPeers, NetworkRequest, NetworkService, NetworkStateInfo, ObservedRole,
-	PeerId,
+	IfDisconnected, NetworkPeers, NetworkRequest, NetworkStateInfo, ObservedRole, PeerId,
 };
 use sp_api::ProvideRuntimeApi;
 use sp_core::H256;

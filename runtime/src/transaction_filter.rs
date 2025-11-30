@@ -61,9 +61,10 @@ impl HeaderExtensionDataFilter for Runtime {
 					}
 				}
 			},
-			Err(_e) => {
+			Err(e) => {
 				// ideally we should not reach heer
 				// TODO: add logs
+				log::error!("failed to convert opaque to uxt: {:?}", e);
 				None
 			},
 		}
