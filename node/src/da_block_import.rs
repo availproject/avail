@@ -13,7 +13,7 @@ use da_runtime::{
 	apis::{DataAvailApi, ExtensionBuilder},
 	Header as DaHeader,
 };
-use frame_system::limits::BlockLength;
+use frame_system::limits::{BlockLength, BlockLengthError};
 
 use sc_consensus::{
 	block_import::{BlockCheckParams, BlockImport as BlockImportT, BlockImportParams},
@@ -82,7 +82,7 @@ where
 		&self,
 		block: &BlockImportParams<B>,
 	) -> Result<(), ConsensusError> {
-		let block_len = extension_block_len(&block.header.extension);
+		let block_len = extension_block_len(&block.header.extension)?;
 		let extrinsics = || block.body.clone().unwrap_or_default();
 		let block_number: u32 = block.header.number;
 		let parent_hash = <B as BlockT>::Hash::from(block.header.parent_hash);
@@ -168,14 +168,14 @@ impl<B, C, I: Clone> Clone for BlockImport<B, C, I> {
 }
 
 /// Calculate block length from `extension`.
-fn extension_block_len(extension: &HeaderExtension) -> BlockLength {
+fn extension_block_len(extension: &HeaderExtension) -> Result<BlockLength, ConsensusError> {
 	BlockLength::with_normal_ratio(
 		BlockLengthRows(extension.rows() as u32),
 		BlockLengthColumns(extension.cols() as u32),
 		BLOCK_CHUNK_SIZE,
 		sp_runtime::Perbill::from_percent(90),
 	)
-	.expect("Valid BlockLength at genesis .qed")
+	.map_err(block_contains_invalid_block_length)
 }
 
 fn extension_mismatch(imported: &HeaderExtension, generated: &HeaderExtension) -> ConsensusError {
@@ -196,5 +196,10 @@ fn build_ext_fail(e: ApiError) -> ConsensusError {
 
 fn block_doesnt_contain_post_inherent() -> ConsensusError {
 	let msg = "Block does not contain post inherent".to_string();
+	ConsensusError::ClientImport(msg)
+}
+
+fn block_contains_invalid_block_length(err: BlockLengthError) -> ConsensusError {
+	let msg = format!("Block contains invalid block_length: {err:?}");
 	ConsensusError::ClientImport(msg)
 }
