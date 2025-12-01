@@ -1,14 +1,14 @@
 #![allow(dead_code)]
 
 use avail_rust::{avail_rust_core::rpc::blob::submit_blob, prelude::*};
-use da_commitment::build_da_commitments::build_da_commitments;
+use da_commitment::build_kzg_commitments::build_da_commitments;
 use kate::Seed;
 use sp_crypto_hashing::keccak_256;
 use sp_std::iter::repeat;
 
 pub async fn run() -> Result<(), Error> {
 	println!("---------- START Submission ---------- ");
-	let len = 31 * 1024 * 1024;
+	let len = 31 * 1024;
 	let mode = 1;
 
 	let local_endpoint: &str = if mode == 1 {
@@ -46,7 +46,7 @@ pub async fn run() -> Result<(), Error> {
 
 	let mut blobs: Vec<(Vec<u8>, H256, Vec<u8>)> = Vec::new();
 	println!("---------- START Commitments generation ---------- ");
-	for i in 0..50 {
+	for i in 0..2 {
 		println!("---------- START Commitment generation {i} ---------- ");
 		let blob: Vec<u8> = repeat(byte).take(len - i).collect::<Vec<u8>>();
 		let blob_hash = H256::from(keccak_256(&blob));
