@@ -141,7 +141,7 @@ where
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
 	use sc_consensus_babe_rpc::{Babe, BabeApiServer};
 	use sc_consensus_grandpa_rpc::{Grandpa, GrandpaApiServer};
-	use sc_rpc_spec_v2::chain_spec::{ChainSpec, ChainSpecApiServer};
+	// use sc_rpc_spec_v2::chain_spec::{ChainSpec, ChainSpecApiServer};
 	use sc_sync_state_rpc::{SyncState, SyncStateApiServer};
 	use substrate_frame_rpc_system::{System, SystemApiServer};
 	use substrate_state_trie_migration_rpc::{StateMigration, StateMigrationApiServer};
@@ -173,13 +173,13 @@ where
 	} = grandpa;
 
 	let is_dev_chain = chain_spec.id().ends_with("development_network");
-	let chain_name = chain_spec.name().to_string();
-	let genesis_hash = client
-		.block_hash(0)
-		.ok()
-		.flatten()
-		.expect("Genesis block exists; qed");
-	let properties = chain_spec.properties();
+	// let chain_name = chain_spec.name().to_string();
+	// let genesis_hash = client
+	// 	.block_hash(0)
+	// 	.ok()
+	// 	.flatten()
+	// 	.expect("Genesis block exists; qed");
+	// let properties = chain_spec.properties();
 	// io.merge(ChainSpec::new(chain_name, genesis_hash, properties).into_rpc())?;
 
 	io.merge(System::new(client.clone(), pool.clone()).into_rpc())?;
