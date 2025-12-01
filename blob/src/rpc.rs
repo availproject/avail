@@ -22,7 +22,7 @@ use anyhow::Result;
 use avail_core::DataProof;
 use avail_observability::metrics::BlobMetrics;
 use codec::{Decode, Encode};
-use da_commitment::build_da_commitments::build_polynomial_grid;
+use da_commitment::build_kzg_commitments::build_polynomial_grid;
 use da_control::{BlobRuntimeParameters, Call};
 use da_runtime::apis::KateApi;
 use da_runtime::{RuntimeCall, UncheckedExtrinsic};

@@ -35,6 +35,7 @@ homepage = "https://www.availproject.org/"
 # kate = { git = "https://github.com/availproject/avail-core", branch = "ghali/infinity-da", default-features = false }
 # kate-recovery = { git = "https://github.com/availproject/avail-core", branch = "ghali/infinity-da", default-features = false  }
 avail-core = { path = "../avail-core/core", default-features = false, features = [ "runtime"] }
+avail-fri = { path = "../avail-core/fri", default-features = false }
 kate = { path = "../avail-core/kate/", default-features = false }
 kate-recovery = { path = "../avail-core/kate/recovery/", default-features = false}
 

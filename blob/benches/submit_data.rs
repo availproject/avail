@@ -8,8 +8,8 @@ use avail_blob::traits::*;
 use avail_blob::types::CompressedBlob;
 use avail_blob::utils::CommitmentQueue;
 use avail_rust::prelude::*;
-use da_commitment::build_da_commitments;
-use da_commitment::build_da_commitments::build_da_commitments;
+use da_commitment::build_kzg_commitments;
+use da_commitment::build_kzg_commitments::build_da_commitments;
 use da_runtime::AccountId;
 use da_runtime::UncheckedExtrinsic;
 use da_runtime::AVAIL;
@@ -215,7 +215,7 @@ mod validation {
 		let queue: Arc<dyn CommitmentQueueApiT> = Arc::new(queue);
 
 		// grid & Commitment
-		let grid = build_da_commitments::build_polynomial_grid(
+		let grid = build_kzg_commitments::build_polynomial_grid(
 			&*tx.data,
 			DEFAULT_ROWS,
 			DEFAULT_COLS,
@@ -246,7 +246,7 @@ mod validation {
 		let tx = build_transaction(data);
 
 		bencher.with_inputs(|| &tx).bench_local_refs(|tx| {
-			build_da_commitments::build_polynomial_grid(
+			build_kzg_commitments::build_polynomial_grid(
 				&*tx.data,
 				DEFAULT_ROWS,
 				DEFAULT_COLS,

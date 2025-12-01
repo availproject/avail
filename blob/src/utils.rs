@@ -7,7 +7,7 @@ use anyhow::{anyhow, Context, Result};
 use avail_observability::metrics::BlobMetrics;
 use base64::Engine;
 use codec::{Decode, Encode};
-use da_commitment::build_da_commitments::build_commitments_from_polynomial_grid;
+use da_commitment::build_kzg_commitments::build_commitments_from_polynomial_grid;
 use da_control::{BlobRuntimeParameters, Call};
 use da_runtime::UncheckedExtrinsic;
 use da_runtime::{apis::BlobApi, RuntimeCall};
