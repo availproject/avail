@@ -7,32 +7,35 @@
 use crate::limits::BlockLength;
 use avail_base::header_extension::SubmittedData;
 use avail_core::{
-	header::{extension as he, HeaderExtension},
-	kate::COMMITMENT_SIZE,
-	kate_commitment as kc, AppId, DataLookup, HeaderVersion,
+	header::extension as he, kate::COMMITMENT_SIZE, kate_commitment as kc, AppId, DataLookup,
+	HeaderVersion,
 };
+use he::{kzg::KzgHeader, kzg::KzgHeaderVersion, HeaderExtension};
 use sp_core::H256;
 use std::vec::Vec;
 
 #[cfg(feature = "testing-environment")]
 use avail_base::testing_env::*;
 
+/// Build a KZG v4 header extension
 #[allow(unused_mut)]
 pub fn build_extension_v4(
 	mut submitted: Vec<SubmittedData>,
 	data_root: H256,
 	block_length: BlockLength,
-	version: HeaderVersion,
+	_version: HeaderVersion,
 ) -> HeaderExtension {
+	let kzg_version = KzgHeaderVersion::V4;
+
 	// Blocks with non-DA extrinsics will have empty commitments
 	if submitted.is_empty() {
-		return HeaderExtension::get_empty_header(data_root, version);
+		return HeaderExtension::get_empty_kzg(data_root, kzg_version);
 	}
 
 	let max_columns = block_length.cols.0 as usize;
 	if max_columns == 0 {
 		// Blocks with 0 columns will have empty commitments, ideally we should never reach here
-		return HeaderExtension::get_empty_header(data_root, version);
+		return HeaderExtension::get_empty_kzg(data_root, kzg_version);
 	}
 
 	let total_commitments: usize = submitted
@@ -54,21 +57,24 @@ pub fn build_extension_v4(
 
 	let app_lookup = match DataLookup::from_id_and_len_iter(app_rows.into_iter()) {
 		Ok(lookup) => lookup,
-		Err(_) => return HeaderExtension::get_faulty_header(data_root, version),
+		Err(_) => return HeaderExtension::get_faulty_kzg(data_root, kzg_version),
 	};
 
 	let original_rows = app_lookup.len();
 	let padded_rows = original_rows.next_power_of_two();
 
-	// We can reduce the header size further letting the verification clients to do this padding since anyway they're extending the commitments
+	// We can reduce the header size further letting the verification clients do this padding
+	// since anyway they're extending the commitments.
 	if padded_rows > original_rows {
 		let (_, padded_row_commitment) =
 			match kate::gridgen::core::get_pregenerated_row_and_commitment(max_columns) {
 				Ok(result) => result,
 				Err(e) => {
 					log::error!("NODE_CRITICAL_ERROR_003 - A critical error has occured: {e:?}.");
-					log::error!("NODE_CRITICAL_ERROR_003 - If you see this, please warn Avail team and raise an issue.");
-					return HeaderExtension::get_faulty_header(data_root, version);
+					log::error!(
+                        "NODE_CRITICAL_ERROR_003 - If you see this, please warn Avail team and raise an issue."
+                    );
+					return HeaderExtension::get_faulty_kzg(data_root, kzg_version);
 				},
 			};
 		commitment = commitment
@@ -88,9 +94,12 @@ pub fn build_extension_v4(
 		commitment,
 	);
 
-	he::v4::HeaderExtension {
+	// Build the v4 KZG header extension
+	let v4_ext = he::v4::HeaderExtension {
 		app_lookup,
 		commitment,
-	}
-	.into()
+	};
+
+	// …wrap it into KzgHeader::V4, then into the top-level HeaderExtension::Kzg
+	HeaderExtension::Kzg(KzgHeader::from(v4_ext))
 }

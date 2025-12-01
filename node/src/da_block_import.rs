@@ -13,7 +13,7 @@ use avail_core::{
 	ensure,
 	header::{extension as he, HeaderExtension},
 	kate::COMMITMENT_SIZE,
-	kate_commitment as kc, AppId, BlockLengthColumns, BlockLengthRows, DataLookup, HeaderVersion,
+	kate_commitment as kc, AppId, BlockLengthColumns, BlockLengthRows, DataLookup,
 	BLOCK_CHUNK_SIZE,
 };
 use avail_observability::metrics::avail::{MetricObserver, ObserveKind};
@@ -23,6 +23,7 @@ use da_runtime::{
 	Header as DaHeader, Runtime,
 };
 use frame_system::limits::BlockLength;
+use he::kzg::{KzgHeader, KzgHeaderVersion};
 use sp_runtime::OpaqueExtrinsic;
 
 use sc_consensus::{
@@ -144,24 +145,22 @@ where
 		let data_root = api
 			.build_data_root(parent_hash, block_number, extrinsics())
 			.map_err(data_root_fail)?;
-		let version = block.header.extension.get_header_version();
-
-		let extension = match version {
-			// Since V3 has AppExtrinsics which is derived from the AppId SignedExtension, We cant support it GOING FORWARD
-			HeaderVersion::V3 => todo!(),
-			HeaderVersion::V4 => build_extension_with_comms(
-				extrinsics(),
-				data_root,
-				block_len,
-				block_number,
-				block.header.extension.get_header_version(),
-			)?,
+		let regenerated_extension = match &block.header.extension {
+			HeaderExtension::Kzg(kzg_hdr) => match kzg_hdr {
+				KzgHeader::V4(_) => {
+					build_extension_with_comms(extrinsics(), data_root, block_len, block_number)?
+				},
+			},
+			HeaderExtension::Fri(_) => {
+				let msg = "Fri header not supported yet".to_string();
+				return Err(ConsensusError::ClientImport(msg));
+			},
 		};
 
 		// Check equality between calculated and imported extensions.
 		ensure!(
-			block.header.extension == extension,
-			extension_mismatch(&block.header.extension, &extension)
+			block.header.extension == regenerated_extension,
+			extension_mismatch(&block.header.extension, &regenerated_extension)
 		);
 		Ok(())
 	}
@@ -337,10 +336,10 @@ fn build_extension_with_comms(
 	data_root: H256,
 	block_length: BlockLength,
 	block_number: u32,
-	version: HeaderVersion,
 ) -> Result<HeaderExtension, ConsensusError> {
 	let timer_total = Instant::now();
 	let timer_app_ext = Instant::now();
+	let kzg_version = KzgHeaderVersion::V4;
 	let app_extrinsics = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(
 		block_number,
 		&extrinsics,
@@ -360,7 +359,7 @@ fn build_extension_with_comms(
 			"✅ No DA extrinsics, returning empty header. Total time: {:?}",
 			timer_total.elapsed()
 		);
-		return Ok(HeaderExtension::get_empty_header(data_root, version));
+		return Ok(HeaderExtension::get_empty_kzg(data_root, kzg_version));
 	}
 
 	let max_columns = block_length.cols.0 as usize;
@@ -369,7 +368,7 @@ fn build_extension_with_comms(
 			"⚠️ Max columns = 0, returning empty header. Total time: {:?}",
 			timer_total.elapsed()
 		);
-		return Ok(HeaderExtension::get_empty_header(data_root, version));
+		return Ok(HeaderExtension::get_empty_kzg(data_root, kzg_version));
 	}
 
 	let timer_commitment_prep = Instant::now();
@@ -434,22 +433,38 @@ fn build_extension_with_comms(
 		timer_total.elapsed()
 	);
 
-	Ok(he::v4::HeaderExtension {
+	// Build KZG v4 header extension and wrap into top-level HeaderExtension::Kzg
+	let v4_ext = he::v4::HeaderExtension {
 		app_lookup,
 		commitment,
-	}
-	.into())
+	};
+	let kzg_header = KzgHeader::from(v4_ext);
+
+	Ok(HeaderExtension::Kzg(kzg_header))
 }
 
 /// Calculate block length from `extension`.
+// TODO: we know what to handle here. Right?
 fn extension_block_len(extension: &HeaderExtension) -> BlockLength {
-	BlockLength::with_normal_ratio(
-		BlockLengthRows(extension.rows() as u32),
-		BlockLengthColumns(extension.cols() as u32),
-		BLOCK_CHUNK_SIZE,
-		sp_runtime::Perbill::from_percent(90),
-	)
-	.expect("Valid BlockLength at genesis .qed")
+	match extension {
+		HeaderExtension::Kzg(kzg_hdr) => {
+			// Only KZG v4 is used on Turing/Mainnet.
+			let (rows, cols) = match kzg_hdr {
+				KzgHeader::V4(ext) => (ext.rows() as u32, ext.cols() as u32),
+			};
+
+			BlockLength::with_normal_ratio(
+				BlockLengthRows(rows),
+				BlockLengthColumns(cols),
+				BLOCK_CHUNK_SIZE,
+				sp_runtime::Perbill::from_percent(90),
+			)
+			.expect("Valid BlockLength at genesis .qed")
+		},
+		HeaderExtension::Fri(_) => {
+			panic!("Fri header not supported yet");
+		},
+	}
 }
 
 fn extension_mismatch(imported: &HeaderExtension, generated: &HeaderExtension) -> ConsensusError {
