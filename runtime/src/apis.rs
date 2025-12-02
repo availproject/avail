@@ -31,6 +31,7 @@ use avail_base::{HeaderExtensionBuilderData, ProvidePostInherent};
 use avail_core::{
 	currency::Balance,
 	data_proof::{DataProof, ProofResponse, SubTrie},
+	header::extension::CommitmentScheme,
 	header::HeaderExtension,
 };
 use sp_runtime::OpaqueExtrinsic;
@@ -74,7 +75,6 @@ decl_runtime_apis! {
 			block_length: BlockLength,
 			block_number: u32,
 		) -> HeaderExtension;
-
 		fn build_data_root(block: u32, extrinsics: Vec<OpaqueExtrinsic>) -> H256;
 		fn check_if_extrinsic_is_vector_post_inherent(uxt: &<Block as BlockT>::Extrinsic) -> bool;
 		fn check_if_extrinsic_is_da_post_inherent(uxt: &<Block as BlockT>::Extrinsic) -> bool;
@@ -110,6 +110,9 @@ decl_runtime_apis! {
 
 		/// Get the blob vouch fee reserve amount
 		fn get_blob_vouch_fee_reserve() -> u128;
+
+		/// Get teh commitment_scheme active in the Runtime
+		fn commitement_scheme() -> CommitmentScheme;
 	}
 }
 
@@ -541,6 +544,10 @@ impl_runtime_apis! {
 
 		fn get_blob_vouch_fee_reserve() -> u128 {
 			crate::constants::da::BlobVouchFeeReserve::get()
+		}
+
+		fn commitement_scheme() -> CommitmentScheme {
+			<Runtime as frame_system::Config>::DaCommitmentScheme::get()
 		}
 	}
 

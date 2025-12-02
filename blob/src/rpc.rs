@@ -1,6 +1,8 @@
 use crate::traits::CommitmentQueueApiT;
 use crate::types::BlobInfo;
-use crate::validation::{commitment_validation, initial_validation, tx_validation};
+use crate::validation::{
+	commitment_validation, initial_validation, tx_validation, validate_fri_commitment,
+};
 use crate::{
 	nonce_cache::NonceCache,
 	p2p::BlobHandle,
@@ -19,6 +21,7 @@ use crate::{
 	MAX_RPC_RETRIES,
 };
 use anyhow::Result;
+use avail_core::header::extension::CommitmentScheme;
 use avail_core::DataProof;
 use avail_observability::metrics::BlobMetrics;
 use codec::{Decode, Encode};
@@ -510,6 +513,17 @@ pub async fn submit_blob_main_task(
 	let best_hash = client_info.best_hash;
 	let finalized_block_hash = client_info.finalized_hash;
 
+	let commitment_scheme = match runtime_client.commitment_scheme(best_hash) {
+		Ok(scheme) => scheme,
+		Err(e) => {
+			log::error!(
+				"Could not get commitment scheme from runtime at {:?}: {e:?}. Falling back to Fri.",
+				best_hash
+			);
+			CommitmentScheme::Fri
+		},
+	};
+
 	let blob_params = match runtime_client.get_blob_runtime_parameters(finalized_block_hash) {
 		Ok(p) => p,
 		Err(e) => {
@@ -521,7 +535,7 @@ pub async fn submit_blob_main_task(
 
 	stop_watch.start("Initial Validation");
 	let (blob_hash, provided_commitment) =
-		initial_validation(max_blob_size as usize, &blob, &metadata_signed_transaction)
+		initial_validation(max_blob_size, &blob, &metadata_signed_transaction)
 			.map_err(|e| internal_err!("{}", e))?;
 	stop_watch.stop("Initial Validation");
 	stop_watch.add_extra_information(std::format!("Blob Hash: {:?}", blob_hash));
@@ -541,61 +555,100 @@ pub async fn submit_blob_main_task(
 	.map_err(|e| internal_err!("{}", e))?;
 	stop_watch.stop("TX validation");
 
-	// Commitment Validation can take a long time.
 	stop_watch.start("Commitments (Total)");
-	let (cols, rows) = get_dynamic_block_length(&friends.backend_client, finalized_block_hash)?;
-	let blob = Arc::new(blob);
 
-	let start = crate::utils::get_current_timestamp_ms();
-	stop_watch.start("Polynominal Grid Gen.");
-	let grid = build_polynomial_grid(&*blob, cols, rows, Default::default());
-	stop_watch.stop("Polynominal Grid Gen.");
-	let end = crate::utils::get_current_timestamp_ms();
-	// Telemetry
-	crate::telemetry::BlobSubmission::build_poly_grid(blob_hash, start, end);
+	match commitment_scheme {
+		CommitmentScheme::Kzg => {
+			let (cols, rows) =
+				get_dynamic_block_length(&friends.backend_client, finalized_block_hash)?;
+			let blob = Arc::new(blob);
 
-	stop_watch.start("Commitment Validation");
-	commitment_validation(blob_hash, &provided_commitment, grid, &commitment_queue)
-		.await
-		.map_err(|e| internal_err!("{}", e))?;
-	stop_watch.stop("Commitment Validation");
+			let start = crate::utils::get_current_timestamp_ms();
+			stop_watch.start("Polynominal Grid Gen.");
+			let grid = build_polynomial_grid(&*blob, cols, rows, Default::default());
+			stop_watch.stop("Polynominal Grid Gen.");
+			let end = crate::utils::get_current_timestamp_ms();
+			// Telemetry
+			crate::telemetry::BlobSubmission::build_poly_grid(blob_hash, start, end);
 
-	stop_watch.stop("Commitments (Total)");
+			stop_watch.start("Commitment Validation");
+			commitment_validation(blob_hash, &provided_commitment, grid, &commitment_queue)
+				.await
+				.map_err(|e| internal_err!("{}", e))?;
+			stop_watch.stop("Commitment Validation");
 
-	// Because Commitment Validation can take a long time
-	// the moment it is done minutes can pass.
-	// Let's check once more to see if the transactions is still valid
-	//
-	// TODO Blob we might remove this
-	let client_info = friends.externalities.client_info();
-	let best_hash = client_info.best_hash;
+			stop_watch.stop("Commitments (Total)");
 
-	let _ = tx_validation(
-		best_hash,
-		&metadata_signed_transaction,
-		blob_params.min_transaction_validity,
-		blob_params.max_transaction_validity,
-		&runtime_client,
-		&nonce_cache,
-	)
-	.map_err(|e| internal_err!("{}", e))?;
+			// After potentially long work, re-validate tx
+			let client_info = friends.externalities.client_info();
+			let best_hash = client_info.best_hash;
 
-	// From this point, the transaction should not fail as the user has done everything correctly
-	// We will spawn a task to finish the work and instantly return to the user.
-	let handle = task::spawn(async move {
-		submit_blob_background_task(
-			opaque_tx,
-			blob_hash,
-			blob,
-			blob_params,
-			provided_commitment,
-			friends,
-			nonce_cache,
-		)
-		.await
-	});
+			let _ = tx_validation(
+				best_hash,
+				&metadata_signed_transaction,
+				blob_params.min_transaction_validity,
+				blob_params.max_transaction_validity,
+				&runtime_client,
+				&nonce_cache,
+			)
+			.map_err(|e| internal_err!("{}", e))?;
 
-	Ok(handle)
+			let handle = task::spawn(async move {
+				submit_blob_background_task(
+					opaque_tx,
+					blob_hash,
+					blob,
+					blob_params,
+					provided_commitment,
+					friends,
+					nonce_cache,
+				)
+				.await
+			});
+
+			Ok(handle)
+		},
+
+		CommitmentScheme::Fri => {
+			stop_watch.start("Fri Commitment Validation");
+			if let Err(e) = validate_fri_commitment(blob_hash, &blob, &provided_commitment) {
+				stop_watch.stop("Fri Commitment Validation");
+				stop_watch.stop("Commitments (Total)");
+				return Err(internal_err!("{}", e));
+			}
+			stop_watch.stop("Fri Commitment Validation");
+			stop_watch.stop("Commitments (Total)");
+
+			let client_info = friends.externalities.client_info();
+			let best_hash = client_info.best_hash;
+
+			let _ = tx_validation(
+				best_hash,
+				&metadata_signed_transaction,
+				blob_params.min_transaction_validity,
+				blob_params.max_transaction_validity,
+				&runtime_client,
+				&nonce_cache,
+			)
+			.map_err(|e| internal_err!("{}", e))?;
+
+			let blob = Arc::new(blob);
+			let handle = task::spawn(async move {
+				submit_blob_background_task(
+					opaque_tx,
+					blob_hash,
+					blob,
+					blob_params,
+					provided_commitment,
+					friends,
+					nonce_cache,
+				)
+				.await
+			});
+
+			Ok(handle)
+		},
+	}
 }
 
 async fn submit_blob_background_task(
