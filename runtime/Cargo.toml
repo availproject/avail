@@ -23,11 +23,11 @@ da-control = { workspace = true, default-features = false }
 pallet-mandate = { workspace = true, default-features = false }
 pallet-vector = { workspace = true, default-features = false }
 
-# External 
+# External
 static_assertions.workspace = true
-log.workspace = true
+log = { workspace = true, default-features = false }
 hex-literal.workspace = true
-rayon.workspace = true
+rayon = { workspace = true, optional = true }
 serde = { workspace = true, optional = true, features = ["derive"] }
 thiserror-no-std.workspace = true
 derive_more.workspace = true
@@ -187,6 +187,7 @@ std = [
 	"pallet-tx-pause/std",
 	"pallet-utility/std",
 	"pallet-vector/std",
+	"rayon",
 	"scale-info/std",
 	"serde",
 	"sp-api/std",

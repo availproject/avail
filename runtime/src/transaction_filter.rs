@@ -141,7 +141,7 @@ fn filter_da_call(
 			}
 			let blob_hash = H256(keccak_256(data));
 			let commitment =
-				da_control::extensions::native::hosted_commitment_builder::build_da_commitments(
+				da_control::extensions::native::hosted_commitment_builder::build_kzg_commitments(
 					data,
 					cols,
 					rows,

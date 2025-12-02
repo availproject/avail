@@ -99,11 +99,11 @@
 #![warn(unused_extern_crates)]
 
 use avail_base::{HeaderExtensionBuilderData, HeaderExtensionDataFilter};
+use avail_core::header::extension::kzg::KzgHeaderVersion;
 use avail_core::{
 	ensure,
 	header::{Header as DaHeader, HeaderExtension},
 	traits::{ExtendedBlock, ExtendedHeader},
-	HeaderVersion,
 };
 
 use codec::{Decode, Encode, EncodeLike, FullCodec, MaxEncodedLen};
@@ -1867,11 +1867,11 @@ impl<T: Config> Pallet<T> {
 
 		let data_root = header_extension_builder_data.data_root();
 		let extension =
-			native::hosted_header_builder::da::HeaderExtensionBuilder::<T>::build_extension(
+			native::hosted_header_builder::da::HeaderExtensionBuilder::<T>::build_kzg_extension(
 				header_extension_builder_data.data_submissions,
 				data_root,
 				block_length,
-				HeaderVersion::V4,
+				KzgHeaderVersion::V4,
 			);
 
 		let header = <HeaderFor<T> as ExtendedHeader>::new(

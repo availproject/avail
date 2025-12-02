@@ -65,7 +65,7 @@ iai-callgrind = "0.7.3"
 divan = "0.1.11"
 
 # Logging and testing
-log = "0.4.20"
+log = { version = "0.4.20", default-features = false }
 test-case = "1.2.3"
 hex = "0.4"
 const-hex = { version = "1.14.1", default-features = false, features = ["alloc"] }

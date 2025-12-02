@@ -147,9 +147,13 @@ where
 			.map_err(data_root_fail)?;
 		let regenerated_extension = match &block.header.extension {
 			HeaderExtension::Kzg(kzg_hdr) => match kzg_hdr {
-				KzgHeader::V4(_) => {
-					build_extension_with_comms(extrinsics(), data_root, block_len, block_number)?
-				},
+				KzgHeader::V4(_) => build_extension_with_comms(
+					extrinsics(),
+					data_root,
+					block_len,
+					block_number,
+					KzgHeaderVersion::V4,
+				)?,
 			},
 			HeaderExtension::Fri(_) => {
 				let msg = "Fri header not supported yet".to_string();
@@ -336,10 +340,10 @@ fn build_extension_with_comms(
 	data_root: H256,
 	block_length: BlockLength,
 	block_number: u32,
+	kzg_version: KzgHeaderVersion,
 ) -> Result<HeaderExtension, ConsensusError> {
 	let timer_total = Instant::now();
 	let timer_app_ext = Instant::now();
-	let kzg_version = KzgHeaderVersion::V4;
 	let app_extrinsics = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(
 		block_number,
 		&extrinsics,
@@ -448,7 +452,6 @@ fn build_extension_with_comms(
 fn extension_block_len(extension: &HeaderExtension) -> BlockLength {
 	match extension {
 		HeaderExtension::Kzg(kzg_hdr) => {
-			// Only KZG v4 is used on Turing/Mainnet.
 			let (rows, cols) = match kzg_hdr {
 				KzgHeader::V4(ext) => (ext.rows() as u32, ext.cols() as u32),
 			};

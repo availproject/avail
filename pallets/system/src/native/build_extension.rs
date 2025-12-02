@@ -8,9 +8,11 @@ use crate::limits::BlockLength;
 use avail_base::header_extension::SubmittedData;
 use avail_core::{
 	header::extension as he, kate::COMMITMENT_SIZE, kate_commitment as kc, AppId, DataLookup,
-	HeaderVersion,
 };
-use he::{kzg::KzgHeader, kzg::KzgHeaderVersion, HeaderExtension};
+use he::{
+	kzg::{KzgHeader, KzgHeaderVersion},
+	HeaderExtension,
+};
 use sp_core::H256;
 use std::vec::Vec;
 
@@ -18,15 +20,12 @@ use std::vec::Vec;
 use avail_base::testing_env::*;
 
 /// Build a KZG v4 header extension
-#[allow(unused_mut)]
-pub fn build_extension_v4(
-	mut submitted: Vec<SubmittedData>,
+pub fn build_kzg_extension(
+	submitted: Vec<SubmittedData>,
 	data_root: H256,
 	block_length: BlockLength,
-	_version: HeaderVersion,
+	kzg_version: KzgHeaderVersion,
 ) -> HeaderExtension {
-	let kzg_version = KzgHeaderVersion::V4;
-
 	// Blocks with non-DA extrinsics will have empty commitments
 	if submitted.is_empty() {
 		return HeaderExtension::get_empty_kzg(data_root, kzg_version);
@@ -100,6 +99,5 @@ pub fn build_extension_v4(
 		commitment,
 	};
 
-	// …wrap it into KzgHeader::V4, then into the top-level HeaderExtension::Kzg
 	HeaderExtension::Kzg(KzgHeader::from(v4_ext))
 }

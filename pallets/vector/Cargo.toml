@@ -29,7 +29,7 @@ ark-std.workspace = true
 ark-ff.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-log.workspace = true
+log = { workspace = true, default-features = false }
 hex-literal.workspace = true
 trie-db.workspace = true
 rlp.workspace = true
@@ -51,6 +51,7 @@ std = [
 	"frame-benchmarking?/std",
 	"frame-support/std",
 	"frame-system/std",
+	"log/std",
 	"scale-info/std",
 	"sp-core/std",
 	"sp-io/std",

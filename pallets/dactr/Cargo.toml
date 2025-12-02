@@ -16,7 +16,7 @@ avail-base = { workspace = true, default-features = false }
 avail-core = { workspace = true, default-features = false }
 kate = { workspace = true, default-features = false }
 frame-system = { workspace = true, default-features = false }
-da-commitment = { workspace = true, default-features = false }
+da-commitment = { workspace = true, default-features = false, optional = true }
 pallet-transaction-payment = { workspace = true, default-features = false }
 pallet-vector = { workspace = true, default-features = false }
 pallet-multisig = { workspace = true, default-features = false }
@@ -25,7 +25,7 @@ pallet-scheduler = { workspace = true, default-features = false }
 pallet-preimage = { workspace = true, default-features = false }
 
 # Others
-log.workspace = true
+log = { workspace = true, default-features = false }
 thiserror-no-std.workspace = true
 derive_more.workspace = true
 
@@ -60,13 +60,13 @@ std = [
 	"frame-system/std",
 	"kate/std",
 	"log/std",
+	"pallet-multisig/std",
+	"pallet-preimage/std",
+	"pallet-proxy/std",
+	"pallet-scheduler/std",
 	"pallet-transaction-payment/std",
 	"pallet-utility/std",
 	"pallet-vector/std",
-	"pallet-multisig/std",
-	"pallet-proxy/std",
-	"pallet-scheduler/std",
-	"pallet-preimage/std",
 	"scale-info/std",
 	"serde",
 	"sp-arithmetic/std",
