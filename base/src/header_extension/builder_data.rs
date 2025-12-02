@@ -23,6 +23,7 @@ pub struct SubmittedData {
 	pub id: AppId,
 	pub tx_index: u32,
 	pub hash: H256,
+	pub size_bytes: u64,
 	pub commitments: Vec<u8>,
 }
 
@@ -273,6 +274,7 @@ mod tests {
 				id: AppId::default(),
 				tx_index: 0,
 				commitments: vec![],
+				size_bytes: 0,
 				hash: H256::from(keccak_256(&vec![1, 2, 3])),
 			}],
 			bridge_messages: vec![],
@@ -290,6 +292,7 @@ mod tests {
 				id: AppId::default(),
 				tx_index: 0,
 				hash: H256::from(keccak_256(&vec![1, 2, 3])),
+				size_bytes: 0,
 				commitments: vec![],
 			}],
 			bridge_messages: vec![],
@@ -306,6 +309,7 @@ mod tests {
 			data_submissions: vec![SubmittedData {
 				id: AppId::default(),
 				tx_index: 0,
+				size_bytes: 0,
 				hash: H256::from(keccak_256(&vec![1, 2, 3])),
 				commitments: vec![],
 			}],
@@ -320,24 +324,28 @@ mod tests {
 			SubmittedData {
 				id: AppId(3),
 				tx_index: 0,
+				size_bytes: 0,
 				hash: H256::from(keccak_256(&vec![1, 2, 3])),
 				commitments: vec![],
 			},
 			SubmittedData {
 				id: AppId(1),
 				tx_index: 1,
+				size_bytes: 0,
 				hash: H256::from(keccak_256(&vec![4, 5, 6])),
 				commitments: vec![],
 			},
 			SubmittedData {
 				id: AppId(2),
 				tx_index: 2,
+				size_bytes: 0,
 				hash: H256::from(keccak_256(&vec![7, 8, 9])),
 				commitments: vec![],
 			},
 			SubmittedData {
 				id: AppId(1),
 				tx_index: 3,
+				size_bytes: 0,
 				hash: H256::from(keccak_256(&vec![7, 8, 9])),
 				commitments: vec![],
 			},

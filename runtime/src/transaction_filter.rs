@@ -111,6 +111,7 @@ impl HeaderExtensionDataFilter for Runtime {
 }
 
 /// Filters and extracts `data` from `calls` if internal data is not empty.
+/// If we no longer want to support the submit_data extrinisc, we can get rid of the block_length/rows/cols requirement in the flter
 fn filter_da_call(
 	call: &DACall<Runtime>,
 	tx_index: usize,
@@ -123,23 +124,24 @@ fn filter_da_call(
 		return None;
 	}
 
-	let (app_id, blob_hash, commitment) = match call {
+	let (app_id, blob_hash, size_bytes, commitment) = match call {
 		DACall::submit_blob_metadata {
 			app_id,
 			blob_hash,
 			commitment,
-			size: _,
+			size,
 		} => {
 			if commitment.is_empty() {
 				return None;
 			}
-			(*app_id, *blob_hash, commitment.clone())
+			(*app_id, *blob_hash, *size, commitment.clone())
 		},
 		DACall::submit_data { app_id, data } => {
 			if data.is_empty() {
 				return None;
 			}
 			let blob_hash = H256(keccak_256(data));
+			// submit_data supports only KZG commitments
 			let commitment =
 				da_control::extensions::native::hosted_commitment_builder::build_kzg_commitments(
 					data,
@@ -147,13 +149,15 @@ fn filter_da_call(
 					rows,
 					Seed::default(),
 				);
-			(*app_id, blob_hash, commitment)
+			(*app_id, blob_hash, data.len() as u64, commitment)
 		},
 		_ => return None,
 	};
 
 	let tx_index = u32::try_from(tx_index).ok()?;
-	let submitted_data = Some(SubmittedData::new(app_id, tx_index, blob_hash, commitment));
+	let submitted_data = Some(SubmittedData::new(
+		app_id, tx_index, blob_hash, size_bytes, commitment,
+	));
 
 	Some(ExtractedTxData {
 		submitted_data,

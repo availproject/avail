@@ -5,7 +5,9 @@
 use crate::{limits::BlockLength, Config};
 use avail_base::header_extension::SubmittedData;
 use avail_core::{
-	header::extension::kzg::KzgHeaderVersion, header::HeaderExtension, traits::ExtendedHeader,
+	header::{extension::fri::FriHeaderVersion, extension::kzg::KzgHeaderVersion, HeaderExtension},
+	traits::ExtendedHeader,
+	FriParamsVersion,
 };
 pub use kate::{
 	metrics::{IgnoreMetrics, Metrics},
@@ -31,14 +33,21 @@ pub trait HeaderExtensionBuilder {
 		block_length: BlockLength,
 		kzg_version: KzgHeaderVersion,
 	) -> HeaderExtension;
+
+	/// Build the Fri header extension for the given data.
+	fn build_fri_extension(
+		submitted: Vec<SubmittedData>,
+		data_root: H256,
+		params_version: FriParamsVersion,
+		fri_version: FriHeaderVersion,
+	) -> HeaderExtension;
 }
 
 /// Header builder which is actually called by the Avail runtime.
 pub mod da {
-	use core::marker::PhantomData;
-
 	use avail_base::header_extension::SubmittedData;
 	use avail_core::header::{Header as DaHeader, HeaderExtension};
+	use core::marker::PhantomData;
 	use sp_runtime::traits::BlakeTwo256;
 
 	use super::*;
@@ -68,6 +77,21 @@ pub mod da {
 				kzg_version,
 			)
 		}
+
+		#[inline]
+		fn build_fri_extension(
+			submitted: Vec<SubmittedData>,
+			data_root: H256,
+			params_version: FriParamsVersion,
+			fri_version: FriHeaderVersion,
+		) -> HeaderExtension {
+			super::hosted_header_builder::build_fri_extension(
+				submitted,
+				data_root,
+				params_version,
+				fri_version,
+			)
+		}
 	}
 }
 
@@ -88,6 +112,20 @@ pub trait HostedHeaderBuilder {
 			data_root,
 			block_length,
 			kzg_version,
+		)
+	}
+
+	fn build_fri_extension(
+		submitted: Vec<SubmittedData>,
+		data_root: H256,
+		params_version: FriParamsVersion,
+		fri_version: FriHeaderVersion,
+	) -> HeaderExtension {
+		crate::native::build_extension::build_fri_extension(
+			submitted,
+			data_root,
+			params_version,
+			fri_version,
 		)
 	}
 }

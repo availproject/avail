@@ -6,9 +6,12 @@
 
 use crate::limits::BlockLength;
 use avail_base::header_extension::SubmittedData;
+use avail_core::FriParamsVersion;
 use avail_core::{
 	header::extension as he, kate::COMMITMENT_SIZE, kate_commitment as kc, AppId, DataLookup,
 };
+use he::fri::{FriHeader, FriHeaderVersion};
+use he::fri_v1::{FriBlobCommitment, HeaderExtension as FriV1HeaderExtension};
 use he::{
 	kzg::{KzgHeader, KzgHeaderVersion},
 	HeaderExtension,
@@ -100,4 +103,49 @@ pub fn build_kzg_extension(
 	};
 
 	HeaderExtension::Kzg(KzgHeader::from(v4_ext))
+}
+
+/// Build a Fri header extension (V1) from submitted blobs.
+///
+/// - We expect `submitted[i].commitments` to contain exactly one 32-byte Fri commitment
+///   (Merkle root of the RS codewords). If any entry has len != 32, we log and return a *faulty* header.
+pub fn build_fri_extension(
+	submitted: Vec<SubmittedData>,
+	data_root: H256,
+	params_version: FriParamsVersion,
+	fri_version: FriHeaderVersion,
+) -> HeaderExtension {
+	if submitted.is_empty() {
+		return HeaderExtension::get_empty_fri(data_root, fri_version);
+	}
+
+	// Just do some sanitary check, as we cant actually check teh commitments here
+	let fri_v1 = match fri_version {
+		FriHeaderVersion::V1 => {
+			let mut blobs: Vec<FriBlobCommitment> = Vec::with_capacity(submitted.len());
+
+			for (idx, s) in submitted.into_iter().enumerate() {
+				if s.commitments.len() != 32 {
+					log::error!(
+						"Fri header: expected 32-byte commitment for blob #{idx}, got {} bytes",
+						s.commitments.len()
+					);
+					return HeaderExtension::get_faulty_fri(data_root, fri_version);
+				}
+
+				blobs.push(FriBlobCommitment {
+					size_bytes: s.size_bytes,
+					commitment: s.commitments,
+				});
+			}
+
+			FriV1HeaderExtension {
+				blobs,
+				data_root,
+				params_version,
+			}
+		},
+	};
+
+	HeaderExtension::Fri(FriHeader::V1(fri_v1))
 }
