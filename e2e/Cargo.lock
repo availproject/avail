@@ -629,6 +629,7 @@ checksum = "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26"
 [[package]]
 name = "avail-core"
 version = "0.6.2"
+source = "git+https://github.com/availproject/avail-core?branch=ghali%2Finfinity-da#4a9aebba058228df8a67fa6a7e992b78161f72b1"
 dependencies = [
  "binary-merkle-tree",
  "blake2b_simd",
@@ -660,7 +661,7 @@ dependencies = [
 [[package]]
 name = "avail-core"
 version = "0.6.2"
-source = "git+https://github.com/availproject/avail-core?branch=ghali%2Finfinity-da#4a9aebba058228df8a67fa6a7e992b78161f72b1"
+source = "git+https://github.com/availproject/avail-core.git?rev=92d64d4ea0d98a69532dccb692d779dd0ad38d68#92d64d4ea0d98a69532dccb692d779dd0ad38d68"
 dependencies = [
  "binary-merkle-tree",
  "blake2b_simd",
@@ -680,9 +681,11 @@ dependencies = [
  "serde",
  "sha2 0.10.8",
  "sha3",
+ "sp-debug-derive 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali%2Finfinity-da)",
  "sp-runtime",
  "sp-runtime-interface 24.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali%2Finfinity-da)",
  "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali%2Finfinity-da)",
+ "sp-storage 19.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali%2Finfinity-da)",
  "sp-trie",
  "static_assertions",
  "thiserror-no-std",
@@ -692,8 +695,9 @@ dependencies = [
 [[package]]
 name = "avail-fri"
 version = "0.1.0"
+source = "git+https://github.com/availproject/avail-core.git?rev=92d64d4ea0d98a69532dccb692d779dd0ad38d68#92d64d4ea0d98a69532dccb692d779dd0ad38d68"
 dependencies = [
- "avail-core 0.6.2",
+ "avail-core 0.6.2 (git+https://github.com/availproject/avail-core.git?rev=92d64d4ea0d98a69532dccb692d779dd0ad38d68)",
  "binius-field",
  "binius-math",
  "binius-prover",
@@ -705,6 +709,7 @@ dependencies = [
 [[package]]
 name = "avail-rust-client"
 version = "0.5.0"
+source = "git+https://github.com/availproject/avail-rust.git?rev=498d7272961571db86106998f24fbd3c8bde4065#498d7272961571db86106998f24fbd3c8bde4065"
 dependencies = [
  "avail-rust-core",
  "const-hex",
@@ -723,6 +728,7 @@ dependencies = [
 [[package]]
 name = "avail-rust-core"
 version = "0.5.0"
+source = "git+https://github.com/availproject/avail-rust.git?rev=498d7272961571db86106998f24fbd3c8bde4065#498d7272961571db86106998f24fbd3c8bde4065"
 dependencies = [
  "base64 0.22.1",
  "const-hex",
@@ -1509,7 +1515,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "avail-fri",
- "kate 0.9.2",
+ "kate 0.9.2 (git+https://github.com/availproject/avail-core.git?rev=92d64d4ea0d98a69532dccb692d779dd0ad38d68)",
  "log",
  "primitive-types 0.12.2",
  "thiserror-no-std",
@@ -1758,6 +1764,7 @@ checksum = "1c7a8fb8a9fbf66c1f703fe16184d10ca0ee9d23be5b4436400408ba54a95005"
 name = "e2e"
 version = "0.1.0"
 dependencies = [
+ "avail-core 0.6.2 (git+https://github.com/availproject/avail-core.git?rev=92d64d4ea0d98a69532dccb692d779dd0ad38d68)",
  "avail-rust-client",
  "da-commitment",
  "hex",
@@ -3083,31 +3090,6 @@ dependencies = [
 [[package]]
 name = "kate"
 version = "0.9.2"
-dependencies = [
- "avail-core 0.6.2",
- "derive_more 0.99.19",
- "hex",
- "hex-literal",
- "kate-recovery 0.10.0",
- "log",
- "lru 0.7.8",
- "nalgebra",
- "once_cell",
- "parity-scale-codec",
- "poly-multiproof",
- "rand 0.8.5",
- "rand_chacha 0.3.1",
- "rayon",
- "serde",
- "serde_json",
- "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali%2Finfinity-da)",
- "static_assertions",
- "thiserror-no-std",
-]
-
-[[package]]
-name = "kate"
-version = "0.9.2"
 source = "git+https://github.com/availproject/avail-core?branch=ghali%2Finfinity-da#4a9aebba058228df8a67fa6a7e992b78161f72b1"
 dependencies = [
  "avail-core 0.6.2 (git+https://github.com/availproject/avail-core?branch=ghali%2Finfinity-da)",
@@ -3132,10 +3114,37 @@ dependencies = [
 ]
 
 [[package]]
+name = "kate"
+version = "0.9.2"
+source = "git+https://github.com/availproject/avail-core.git?rev=92d64d4ea0d98a69532dccb692d779dd0ad38d68#92d64d4ea0d98a69532dccb692d779dd0ad38d68"
+dependencies = [
+ "avail-core 0.6.2 (git+https://github.com/availproject/avail-core.git?rev=92d64d4ea0d98a69532dccb692d779dd0ad38d68)",
+ "derive_more 0.99.19",
+ "hex",
+ "hex-literal",
+ "kate-recovery 0.10.0 (git+https://github.com/availproject/avail-core.git?rev=92d64d4ea0d98a69532dccb692d779dd0ad38d68)",
+ "log",
+ "lru 0.7.8",
+ "nalgebra",
+ "once_cell",
+ "parity-scale-codec",
+ "poly-multiproof",
+ "rand 0.8.5",
+ "rand_chacha 0.3.1",
+ "rayon",
+ "serde",
+ "serde_json",
+ "sp-std 14.0.0 (git+https://github.com/availproject/polkadot-sdk.git?branch=ghali%2Finfinity-da)",
+ "static_assertions",
+ "thiserror-no-std",
+]
+
+[[package]]
 name = "kate-recovery"
 version = "0.10.0"
+source = "git+https://github.com/availproject/avail-core?branch=ghali%2Finfinity-da#4a9aebba058228df8a67fa6a7e992b78161f72b1"
 dependencies = [
- "avail-core 0.6.2",
+ "avail-core 0.6.2 (git+https://github.com/availproject/avail-core?branch=ghali%2Finfinity-da)",
  "derive_more 0.99.19",
  "hex-literal",
  "log",
@@ -3154,9 +3163,9 @@ dependencies = [
 [[package]]
 name = "kate-recovery"
 version = "0.10.0"
-source = "git+https://github.com/availproject/avail-core?branch=ghali%2Finfinity-da#4a9aebba058228df8a67fa6a7e992b78161f72b1"
+source = "git+https://github.com/availproject/avail-core.git?rev=92d64d4ea0d98a69532dccb692d779dd0ad38d68#92d64d4ea0d98a69532dccb692d779dd0ad38d68"
 dependencies = [
- "avail-core 0.6.2 (git+https://github.com/availproject/avail-core?branch=ghali%2Finfinity-da)",
+ "avail-core 0.6.2 (git+https://github.com/availproject/avail-core.git?rev=92d64d4ea0d98a69532dccb692d779dd0ad38d68)",
  "derive_more 0.99.19",
  "hex-literal",
  "log",
