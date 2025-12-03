@@ -2,12 +2,14 @@
 
 use anyhow::Result;
 use avail_fri::{
-	core::{FriBiniusPCS, FriParamsVersion, B128},
+	core::{FriBiniusPCS, B128},
 	encoding::BytesEncoder,
 };
 use log;
 use primitive_types::H256;
 use thiserror_no_std::Error;
+// re-export for convineince
+pub use avail_fri::core::FriParamsVersion;
 
 /// Single Fri commitment for a DA blob (32-byte)
 pub type FriDaCommitment = Vec<u8>;
