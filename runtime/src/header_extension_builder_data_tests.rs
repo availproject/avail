@@ -4,22 +4,23 @@ use crate::{Runtime, SignedExtra, UncheckedExtrinsic};
 
 use avail_base::HeaderExtensionBuilderData;
 use avail_core::data_proof::{BoundedData, Message, TxDataRoots};
-use da_control::{AppDataFor, Call as DaCall};
-use frame_system::limits::BlockLength;
+use da_control::Call as DaCall;
 use frame_system::{
 	CheckEra, CheckGenesis, CheckNonZeroSender, CheckNonce, CheckSpecVersion, CheckTxVersion,
 	CheckWeight,
 };
-use pallet_balances::Call as BalancesCall;
+// use pallet_balances::Call as BalancesCall;
 use pallet_vector::Call as VectorCall;
 
 use avail_core::data_proof::AddressedMessage;
 use avail_core::data_proof::SubTrie;
 use binary_merkle_tree::{verify_proof, Leaf, MerkleProof};
 use codec::{Compact, Encode};
+use da_commitment::build_kzg_commitments::build_da_commitments;
 use derive_more::Constructor;
 use hex_literal::hex;
 use pallet_transaction_payment::ChargeTransactionPayment;
+use sp_core::keccak_256;
 use sp_core::H256;
 use sp_keyring::AccountKeyring::{Alice, Bob};
 use sp_runtime::traits::Keccak256;
@@ -57,11 +58,8 @@ pub fn calls_proof(
 	extrinsics: &[Vec<u8>],
 	leaf_idx: usize,
 	call_type: SubTrie,
-	cols: u32,
-	rows: u32,
 ) -> Option<CallsProof> {
-	let tx_data =
-		HeaderExtensionBuilderData::from_raw_extrinsics::<Runtime>(block, &extrinsics, cols, rows);
+	let tx_data = HeaderExtensionBuilderData::from_raw_extrinsics::<Runtime>(block, &extrinsics);
 	let message = tx_data
 		.bridge_messages
 		.get(leaf_idx)
@@ -145,28 +143,31 @@ fn signed_extrinsic(function: RuntimeCall) -> Vec<u8> {
 	UncheckedExtrinsic::new_signed(function, alice.into(), signature, extra).encode()
 }
 
-fn submit_data(data: Vec<u8>) -> Vec<u8> {
-	let data = AppDataFor::<Runtime>::truncate_from(data);
-	let function = DaCall::submit_data {
+fn submit_blob_metadata(data: Vec<u8>) -> Vec<u8> {
+	let blob_hash = H256::from(keccak_256(&data));
+	let commitment = build_da_commitments(&data, 1024, 4096, Seed::default());
+	let function = DaCall::submit_blob_metadata {
 		app_id: AppId(0),
-		data,
+		blob_hash,
+		size: data.len() as u64,
+		commitment,
 	}
 	.into();
 
 	signed_extrinsic(function)
 }
 
-fn transfer_keep_alive() -> Vec<u8> {
-	let bob = Bob.to_account_id();
-	let amount = 1 * AVAIL;
-	let function = BalancesCall::transfer_keep_alive {
-		dest: bob.into(),
-		value: amount,
-	}
-	.into();
+// fn transfer_keep_alive() -> Vec<u8> {
+// 	let bob = Bob.to_account_id();
+// 	let amount = 1 * AVAIL;
+// 	let function = BalancesCall::transfer_keep_alive {
+// 		dest: bob.into(),
+// 		value: amount,
+// 	}
+// 	.into();
 
-	signed_extrinsic(function)
-}
+// 	signed_extrinsic(function)
+// }
 
 fn bridge_msg(data: Vec<u8>) -> Vec<u8> {
 	let message = Message::ArbitraryMessage(BoundedData::truncate_from(data));
@@ -208,19 +209,16 @@ fn empty_root() -> H256 {
 }
 
 // Data root tests
-#[test_case(&[submit_data(hex!("abcd").to_vec())] => H256(hex!("f1f399f7e0d8c8ed712df0c21b4ec78f3b8533f1c3d0215e4023e1b7c80bfd91")); "submitted")]
-#[test_case(&[submit_data(vec![])] => empty_root(); "empty submitted")]
+#[test_case(&[submit_blob_metadata(hex!("abcd").to_vec())] => H256(hex!("f1f399f7e0d8c8ed712df0c21b4ec78f3b8533f1c3d0215e4023e1b7c80bfd91")); "submitted")]
+// We wont allow empty blob to be submitted, so this case is not possible
+// #[test_case(&[submit_blob_metadata(vec![])] => empty_root(); "empty submitted")]
 #[test_case(&[] => empty_root(); "empty submitted 2")]
 #[test_case(&[bridge_msg(hex!("47").to_vec())] => H256(hex!("df93f65f9f5adf3ac0d46e5a08432b96ef362bf229e1737939051884c5506e02")); "bridged data")]
 #[test_case(&[bridge_fungible_msg(H256::repeat_byte(1), 1_000_000)] => H256(hex!("e93394eeaedb2158a154a29b9333fe06451fbe82c9cff5b961a6d701782450bc")) ; "bridged fungible")]
-#[test_case(&[submit_data(hex!("abcd").to_vec()), bridge_msg(hex!("47").to_vec())] => H256(hex!("c925bfccfc86f15523c5b40b2bd6d8a66fc51f3d41176d77be7928cb9e3831a7")); "submitted and bridged")]
+#[test_case(&[submit_blob_metadata(hex!("abcd").to_vec()), bridge_msg(hex!("47").to_vec())] => H256(hex!("c925bfccfc86f15523c5b40b2bd6d8a66fc51f3d41176d77be7928cb9e3831a7")); "submitted and bridged")]
 fn data_root_filter(extrinsics: &[Vec<u8>]) -> H256 {
 	new_test_ext().execute_with(|| {
-		let bl = BlockLength::default();
-		HeaderExtensionBuilderData::from_raw_extrinsics::<Runtime>(
-			0, extrinsics, bl.cols.0, bl.rows.0,
-		)
-		.data_root()
+		HeaderExtensionBuilderData::from_raw_extrinsics::<Runtime>(0, extrinsics).data_root()
 	})
 }
 
@@ -399,15 +397,9 @@ mod bridge_tests {
 			let extrinsics = vec![
 				bridge_msg(b"123".to_vec()),
 				bridge_fungible_msg(H256::zero(), 42_000_000_000_000_000_000u128),
-				submit_data(hex!("abcd").to_vec()),
+				submit_blob_metadata(hex!("abcd").to_vec()),
 			];
-			let bl = BlockLength::default();
-			let data = HeaderExtensionBuilderData::from_raw_extrinsics::<Runtime>(
-				0,
-				&extrinsics,
-				bl.cols.0,
-				bl.rows.0,
-			);
+			let data = HeaderExtensionBuilderData::from_raw_extrinsics::<Runtime>(0, &extrinsics);
 			let expected = expected_send_arbitrary_data();
 			assert_eq!(data.bridge_messages, expected.bridge_messages);
 			assert_eq!(data.roots().bridge_root, expected.roots().bridge_root);
@@ -418,14 +410,8 @@ mod bridge_tests {
 	#[test]
 	fn bridge_message_is_empty() {
 		new_test_ext().execute_with(|| {
-			let extrinsics: Vec<Vec<u8>> = vec![submit_data(hex!("abcd").to_vec())];
-			let bl = BlockLength::default();
-			let data = HeaderExtensionBuilderData::from_raw_extrinsics::<Runtime>(
-				0,
-				&extrinsics,
-				bl.cols.0,
-				bl.rows.0,
-			);
+			let extrinsics: Vec<Vec<u8>> = vec![submit_blob_metadata(hex!("abcd").to_vec())];
+			let data = HeaderExtensionBuilderData::from_raw_extrinsics::<Runtime>(0, &extrinsics);
 			let expected = HeaderExtensionBuilderData::default();
 			assert_eq!(data.bridge_messages, expected.bridge_messages);
 			assert_eq!(data.roots().bridge_root, expected.roots().bridge_root);
@@ -439,16 +425,10 @@ mod bridge_tests {
 			let extrinsics = vec![
 				bridge_msg(b"123".to_vec()),
 				bridge_fungible_msg(H256::zero(), 42_000_000_000_000_000_000u128),
-				submit_data(hex!("abcd").to_vec()),
+				submit_blob_metadata(hex!("abcd").to_vec()),
 				bridge_failed_send_message_txs(vec![0, 1]),
 			];
-			let bl = BlockLength::default();
-			let data = HeaderExtensionBuilderData::from_raw_extrinsics::<Runtime>(
-				0,
-				&extrinsics,
-				bl.cols.0,
-				bl.rows.0,
-			);
+			let data = HeaderExtensionBuilderData::from_raw_extrinsics::<Runtime>(0, &extrinsics);
 			let expected: HeaderExtensionBuilderData = HeaderExtensionBuilderData::default();
 			assert_eq!(data.bridge_messages, expected.bridge_messages);
 			assert_eq!(data.roots().bridge_root, expected.roots().bridge_root);
@@ -463,28 +443,19 @@ mod bridge_tests {
 				bridge_msg(b"123".to_vec()),
 				bridge_fungible_msg(H256::zero(), 42_000_000_000_000_000_000u128),
 				bridge_fungible_msg(H256::zero(), 42_000_000_000_000_000_000u128),
-				submit_data(hex!("abcd").to_vec()),
+				submit_blob_metadata(hex!("abcd").to_vec()),
 				bridge_failed_send_message_txs(vec![1, 2]),
 			];
-			let bl = BlockLength::default();
-			let data_1 = HeaderExtensionBuilderData::from_raw_extrinsics::<Runtime>(
-				0,
-				&extrinsics_1,
-				bl.cols.0,
-				bl.rows.0,
-			);
+			let data_1 =
+				HeaderExtensionBuilderData::from_raw_extrinsics::<Runtime>(0, &extrinsics_1);
 
 			let extrinsics_2 = vec![
 				bridge_msg(b"123".to_vec()),
-				submit_data(hex!("abcd").to_vec()),
+				submit_blob_metadata(hex!("abcd").to_vec()),
 				bridge_failed_send_message_txs(vec![]),
 			];
-			let data_2 = HeaderExtensionBuilderData::from_raw_extrinsics::<Runtime>(
-				0,
-				&extrinsics_2,
-				bl.cols.0,
-				bl.rows.0,
-			);
+			let data_2 =
+				HeaderExtensionBuilderData::from_raw_extrinsics::<Runtime>(0, &extrinsics_2);
 
 			assert_eq!(data_1.bridge_messages, data_2.bridge_messages);
 			assert_eq!(data_1.roots(), data_2.roots());
@@ -500,13 +471,7 @@ mod bridge_tests {
 				bridge_msg(b"123".to_vec()),
 				bridge_msg(b"123".to_vec()),
 			];
-			let bl = BlockLength::default();
-			let data = HeaderExtensionBuilderData::from_raw_extrinsics::<Runtime>(
-				0,
-				&extrinsics,
-				bl.cols.0,
-				bl.rows.0,
-			);
+			let data = HeaderExtensionBuilderData::from_raw_extrinsics::<Runtime>(0, &extrinsics);
 			let merkle_proof = data.bridged_proof_of(2).unwrap();
 			let proof = merkle_proof.proof;
 			let expected_first_item_in_proof = H256(keccak_256(H256::zero().as_bytes()));
@@ -528,11 +493,8 @@ mod data_root {
 	fn get_calls_proof(
 		extrinsics: &[Vec<u8>],
 		leaf_idx: usize,
-		cols: u32,
-		rows: u32,
 	) -> Option<(MerkleProof<H256, Vec<u8>>, H256)> {
-		let calls_proof =
-			calls_proof(0, &extrinsics, leaf_idx, SubTrie::DataSubmit, cols, rows).unwrap();
+		let calls_proof = calls_proof(0, &extrinsics, leaf_idx, SubTrie::DataSubmit).unwrap();
 		let proof = calls_proof.proof;
 		let root = calls_proof.root;
 
@@ -555,10 +517,9 @@ mod data_root {
 				hex!("40105d5bc10105c17fd72b93a8f73369e2ee6eee4d4714b7bf7bf3c2f156e601")
 			);
 
-			let extrinsics: Vec<Vec<u8>> = vec![submit_data("0".into())];
+			let extrinsics: Vec<Vec<u8>> = vec![submit_blob_metadata("0".into())];
 
-			let bl = BlockLength::default();
-			let (da_proof, root) = get_calls_proof(&extrinsics, 0, bl.cols.0, bl.rows.0)
+			let (da_proof, root) = get_calls_proof(&extrinsics, 0)
 				.expect("Proof not generated for the transaction index 0!");
 
 			assert_eq!(root, H256::zero());
@@ -576,14 +537,16 @@ mod data_root {
 				hex!("db0ccc7a2d6559682303cc9322d4b79a7ad619f0c87d5f94723a33015550a64e");
 			let exp_proof_0 =
 				hex!("4aeff0db81e3146828378be230d377356e57b6d599286b4b517dbf8941b3e1b2");
-			let extrinsics: Vec<Vec<u8>> = vec![submit_data("0".into()), submit_data("1".into())];
+			let extrinsics: Vec<Vec<u8>> = vec![
+				submit_blob_metadata("0".into()),
+				submit_blob_metadata("1".into()),
+			];
 			// leaf 0 keccak256(044852b2a670ade5407e78fb2863c51de9fcb96542a07186fe3aeda6bb8a116d)
 			//                  40105d5bc10105c17fd72b93a8f73369e2ee6eee4d4714b7bf7bf3c2f156e601
 			// leaf 1 keccak256(c89efdaa54c0f20c7adf612882df0950f5a951637e0307cdcb4c672f298b8bc6)
 			//                  4aeff0db81e3146828378be230d377356e57b6d599286b4b517dbf8941b3e1b2
 
-			let bl = BlockLength::default();
-			let (da_proof, root) = get_calls_proof(&extrinsics, 0, bl.cols.0, bl.rows.0)
+			let (da_proof, root) = get_calls_proof(&extrinsics, 0)
 				.expect("Proof not generated for the transaction index 0!");
 
 			assert_eq!(root, H256::zero());
@@ -599,10 +562,11 @@ mod data_root {
 	fn test_left_data_proof_with_skipped_tx() {
 		new_test_ext().execute_with(|| {
 			let extrinsics: Vec<Vec<u8>> = vec![
-				submit_data("0".into()),
-				submit_data("".into()),
-				submit_data("1".into()),
-				submit_data("2".into()),
+				submit_blob_metadata("0".into()),
+				// Again, these kind of tx is not allowed, so we can ignore
+				// submit_blob_metadata("".into()),
+				submit_blob_metadata("1".into()),
+				submit_blob_metadata("2".into()),
 			];
 
 			// leaf 0 keccak256(044852b2a670ade5407e78fb2863c51de9fcb96542a07186fe3aeda6bb8a116d)
@@ -620,8 +584,7 @@ mod data_root {
 			// data_root keccak256(db0ccc7a2d6559682303cc9322d4b79a7ad619f0c87d5f94723a33015550a64e, 3c86bde3a90d18efbcf23e27e9b6714012aa055263fe903a72333aa9caa37f1b)
 			//                                                       (877f9ed6aa67f160e9b9b7794bb851998d15b65d11bab3efc6ff444339a3d750)
 
-			let bl = BlockLength::default();
-			let (da_proof, root) = get_calls_proof(&extrinsics, 0, bl.cols.0, bl.rows.0)
+			let (da_proof, root) = get_calls_proof(&extrinsics, 0)
 				.expect("Proof not generated for the transaction index 0!");
 
 			let exp_proof_root =
@@ -640,7 +603,7 @@ mod data_root {
 			assert_eq!(exp_leaf_0, da_proof.leaf.as_slice());
 			assert_eq!(da_proof.number_of_leaves, 4);
 
-			let (da_proof, root) = get_calls_proof(&extrinsics, 1, bl.cols.0, bl.rows.0)
+			let (da_proof, root) = get_calls_proof(&extrinsics, 1)
 				.expect("Proof not generated for the transaction index 0!");
 			let exp_proof_2: [H256; 2] = [
 				hex!("40105d5bc10105c17fd72b93a8f73369e2ee6eee4d4714b7bf7bf3c2f156e601").into(),
@@ -653,7 +616,7 @@ mod data_root {
 			assert_eq!(exp_proof_2, da_proof.proof.as_slice());
 			assert_eq!(da_proof.number_of_leaves, 4);
 
-			let (da_proof, root) = get_calls_proof(&extrinsics, 2, bl.cols.0, bl.rows.0)
+			let (da_proof, root) = get_calls_proof(&extrinsics, 2)
 				.expect("Proof not generated for the transaction index 0!");
 
 			assert_eq!(root, H256::zero());

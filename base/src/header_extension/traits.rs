@@ -8,8 +8,6 @@ pub trait HeaderExtensionDataFilter {
 		opaque: OpaqueExtrinsic,
 		block: u32,
 		tx_idx: usize,
-		cols: u32,
-		rows: u32,
 	) -> Option<ExtractedTxData>;
 
 	fn get_failed_transaction_ids(opaques: &[OpaqueExtrinsic]) -> Vec<u32>;
@@ -17,14 +15,7 @@ pub trait HeaderExtensionDataFilter {
 
 #[cfg(feature = "std")]
 impl HeaderExtensionDataFilter for () {
-	fn filter(
-		_: &[u32],
-		_: OpaqueExtrinsic,
-		_: u32,
-		_: usize,
-		_: u32,
-		_: u32,
-	) -> Option<ExtractedTxData> {
+	fn filter(_: &[u32], _: OpaqueExtrinsic, _: u32, _: usize) -> Option<ExtractedTxData> {
 		None
 	}
 
@@ -34,14 +25,7 @@ impl HeaderExtensionDataFilter for () {
 }
 #[cfg(not(feature = "std"))]
 impl HeaderExtensionDataFilter for () {
-	fn filter(
-		_: &[u32],
-		_: OpaqueExtrinsic,
-		_: u32,
-		_: usize,
-		_: u32,
-		_: u32,
-	) -> Option<ExtractedTxData> {
+	fn filter(_: &[u32], _: OpaqueExtrinsic, _: u32, _: usize) -> Option<ExtractedTxData> {
 		None
 	}
 

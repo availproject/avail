@@ -2909,6 +2909,7 @@ dependencies = [
  "avail-core",
  "binary-merkle-tree",
  "criterion",
+ "da-commitment",
  "da-control",
  "derive_more 0.99.18",
  "divan",

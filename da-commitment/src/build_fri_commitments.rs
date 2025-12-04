@@ -6,7 +6,6 @@ use avail_fri::{
 	encoding::BytesEncoder,
 };
 use log;
-use primitive_types::H256;
 use thiserror_no_std::Error;
 // re-export for convineince
 pub use avail_fri::core::FriParamsVersion;
@@ -28,7 +27,7 @@ fn build_fri_commitment_internal(
 	data: &[u8],
 	params_version: FriParamsVersion,
 ) -> Result<FriDaCommitment, FriDaCommitmentError> {
-	// 1) Encode bytes → multilinear extension over B128
+	// Encode bytes → multilinear extension over B128
 	let encoder = BytesEncoder::<B128>::new();
 	let packed = encoder
 		.bytes_to_packed_mle(data)
@@ -36,16 +35,16 @@ fn build_fri_commitment_internal(
 
 	let n_vars = packed.total_n_vars;
 
-	// 2) Map version + n_vars → concrete FriParamsConfig
+	// Map version + n_vars → concrete FriParamsConfig
 	let cfg = params_version.to_config(n_vars);
 
-	// 3) Build PCS + FRI context
+	// Build PCS + FRI context
 	let pcs = FriBiniusPCS::new(cfg);
 	let ctx = pcs
 		.initialize_fri_context(&packed.packed_mle)
 		.map_err(|e| FriDaCommitmentError::ContextInitFailed(e.to_string()))?;
 
-	// 4) Commit to the blob MLE: returns a 32-byte digest in `commitment`
+	// Commit to the blob MLE: returns a 32-byte digest in `commitment`
 	let commit_output = pcs
 		.commit(&packed.packed_mle, &ctx)
 		.map_err(|e| FriDaCommitmentError::CommitFailed(e.to_string()))?;
@@ -61,17 +60,5 @@ pub fn build_fri_da_commitment(data: &[u8], params_version: FriParamsVersion) ->
 			log::error!("Fri DA commitment generation failed: {:?}", e);
 			FriDaCommitment::new()
 		},
-	}
-}
-
-/// Convenience: get the Fri commitment as an `H256` if it’s the expected 32 bytes.
-pub fn build_fri_da_commitment_h256(data: &[u8], params_version: FriParamsVersion) -> Option<H256> {
-	let bytes = build_fri_da_commitment(data, params_version);
-	if bytes.len() == 32 {
-		Some(H256(
-			bytes.try_into().expect("length checked to be 32; qed"),
-		))
-	} else {
-		None
 	}
 }

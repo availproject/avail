@@ -149,13 +149,9 @@ where
 		let data_root = api
 			.build_data_root(parent_hash, block_number, extrinsics())
 			.map_err(data_root_fail)?;
-		let header_extension_builder_data =
-			HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(
-				block_number,
-				&extrinsics(),
-				block_length.cols.0,
-				block_length.rows.0,
-			);
+		let header_extension_builder_data = HeaderExtensionBuilderData::from_opaque_extrinsics::<
+			RTExtractor,
+		>(block_number, &extrinsics());
 		let submitted_blobs = header_extension_builder_data.data_submissions;
 		let regenerated_extension = match &block.header.extension {
 			HeaderExtension::Kzg(kzg_hdr) => {

@@ -106,6 +106,7 @@ frame-system-benchmarking = { workspace = true, default-features = false, option
 substrate-wasm-builder = { workspace = true, default-features = false }
 
 [dev-dependencies]
+da-commitment.workspace = true
 test-case.workspace = true
 hex.workspace = true
 hex-literal.workspace = true

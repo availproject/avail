@@ -49,31 +49,25 @@ impl HeaderExtensionBuilderData {
 	pub fn from_raw_extrinsics<F: HeaderExtensionDataFilter>(
 		block: u32,
 		extrinsics: &[Vec<u8>],
-		cols: u32,
-		rows: u32,
 	) -> Self {
 		let opaques: Vec<OpaqueExtrinsic> = extrinsics
 			.iter()
 			.filter_map(|e| OpaqueExtrinsic::from_bytes(e).ok())
 			.collect();
 
-		Self::from_opaque_extrinsics::<F>(block, &opaques, cols, rows)
+		Self::from_opaque_extrinsics::<F>(block, &opaques)
 	}
 
 	pub fn from_opaque_extrinsics<F: HeaderExtensionDataFilter>(
 		block: u32,
 		opaques: &[OpaqueExtrinsic],
-		cols: u32,
-		rows: u32,
 	) -> Self {
 		let failed_transactions = F::get_failed_transaction_ids(opaques);
 
 		let extracted_tx_datas: Vec<ExtractedTxData> = opaques
 			.into_iter()
 			.enumerate()
-			.filter_map(|(idx, opaque)| {
-				F::filter(&failed_transactions, opaque.clone(), block, idx, cols, rows)
-			})
+			.filter_map(|(idx, opaque)| F::filter(&failed_transactions, opaque.clone(), block, idx))
 			.collect();
 
 		HeaderExtensionBuilderData::from(extracted_tx_datas)
@@ -261,8 +255,7 @@ mod tests {
 	#[test]
 	fn test_from_raw_extrinsics() {
 		let extrinsics: Vec<Vec<u8>> = vec![vec![1, 2, 3], vec![4, 5, 6]];
-		let builder_data =
-			HeaderExtensionBuilderData::from_raw_extrinsics::<()>(1, &extrinsics, 1024, 4096);
+		let builder_data = HeaderExtensionBuilderData::from_raw_extrinsics::<()>(1, &extrinsics);
 		assert_eq!(builder_data.data_submissions.len(), 0);
 		assert_eq!(builder_data.bridge_messages.len(), 0);
 	}

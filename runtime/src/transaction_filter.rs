@@ -6,12 +6,10 @@ use avail_core::data_proof::{tx_uid, AddressedMessage};
 use sp_runtime::OpaqueExtrinsic;
 
 use da_control::Call as DACall;
-use kate::Seed;
 use pallet_multisig::Call as MultisigCall;
 use pallet_proxy::Call as ProxyCall;
 use pallet_vector::Call as VectorCall;
 use sp_core::H256;
-use sp_io::hashing::keccak_256;
 use sp_std::vec::Vec;
 
 const MAX_FILTER_ITERATIONS: usize = 3;
@@ -24,8 +22,6 @@ impl HeaderExtensionDataFilter for Runtime {
 		opaque: OpaqueExtrinsic,
 		block: u32,
 		tx_index: usize,
-		cols: u32,
-		rows: u32,
 	) -> Option<ExtractedTxData> {
 		let res = opaque_to_unchecked(&opaque);
 		match res {
@@ -55,7 +51,7 @@ impl HeaderExtensionDataFilter for Runtime {
 							tx_index,
 						),
 						Call::DataAvailability(call) => {
-							filter_da_call(call, tx_index, failed_transactions, cols, rows)
+							filter_da_call(call, tx_index, failed_transactions)
 						},
 						_ => None,
 					}
@@ -111,13 +107,10 @@ impl HeaderExtensionDataFilter for Runtime {
 }
 
 /// Filters and extracts `data` from `calls` if internal data is not empty.
-/// If we no longer want to support the submit_data extrinisc, we can get rid of the block_length/rows/cols requirement in the flter
 fn filter_da_call(
 	call: &DACall<Runtime>,
 	tx_index: usize,
 	failed_transactions: &[u32],
-	cols: u32,
-	rows: u32,
 ) -> Option<ExtractedTxData> {
 	let tx_index = u32::try_from(tx_index).ok()?;
 	if failed_transactions.contains(&tx_index) {
@@ -135,21 +128,6 @@ fn filter_da_call(
 				return None;
 			}
 			(*app_id, *blob_hash, *size, commitment.clone())
-		},
-		DACall::submit_data { app_id, data } => {
-			if data.is_empty() {
-				return None;
-			}
-			let blob_hash = H256(keccak_256(data));
-			// submit_data supports only KZG commitments
-			let commitment =
-				da_control::extensions::native::hosted_commitment_builder::build_kzg_commitments(
-					data,
-					cols,
-					rows,
-					Seed::default(),
-				);
-			(*app_id, blob_hash, data.len() as u64, commitment)
 		},
 		_ => return None,
 	};
