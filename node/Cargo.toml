@@ -119,11 +119,11 @@ sp-tracing = { workspace = true, default-features = false }
 tempfile.workspace = true
 
 [features]
-default = ["cli"]
-header_commitment_corruption = ["da-runtime/header_commitment_corruption"]
-fast-runtime = ["da-runtime/fast-runtime"]
-testing-environment = ["da-runtime/testing-environment"]
-cli = ["clap", "clap-num", "clap_complete", "frame-benchmarking-cli"]
+default = [ "cli" ]
+header_commitment_corruption = [ "da-runtime/header_commitment_corruption" ]
+fast-runtime = [ "da-runtime/fast-runtime" ]
+testing-environment = [ "da-runtime/testing-environment" ]
+cli = [ "clap", "clap-num", "clap_complete", "frame-benchmarking-cli" ]
 runtime-benchmarks = [
 	"da-control/runtime-benchmarks",
 	"da-runtime/runtime-benchmarks",

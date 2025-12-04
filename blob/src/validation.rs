@@ -3,8 +3,10 @@ use crate::{
 	traits::{NonceCacheApiT, RuntimeApiT},
 	utils::{extract_signer_and_nonce, CommitmentQueueMessage},
 };
+use avail_core::FriParamsVersion;
 use avail_observability::metrics::BlobMetrics;
 use codec::Decode;
+use da_commitment::build_fri_commitments::build_fri_da_commitment;
 use da_control::Call;
 use da_runtime::RuntimeCall;
 use da_runtime::UncheckedExtrinsic;
@@ -127,6 +129,30 @@ pub async fn commitment_validation(
 	// Check comitment
 	if !provided_commitment.eq(&commitment) {
 		return Err("submitted blob commitment mismatch".into());
+	}
+
+	Ok(())
+}
+
+pub fn validate_fri_commitment(
+	blob_hash: H256,
+	blob: &[u8],
+	provided_commitment: &[u8],
+) -> Result<(), String> {
+	const FRI_COMMITMENT_SIZE: usize = 32;
+
+	if provided_commitment.len() != FRI_COMMITMENT_SIZE {
+		return Err(format!(
+			"Fri commitment must be {} bytes, got {}",
+			FRI_COMMITMENT_SIZE,
+			provided_commitment.len()
+		));
+	}
+
+	let expected = build_fri_da_commitment(blob, FriParamsVersion(0));
+
+	if expected.as_slice() != provided_commitment {
+		return Err(format!("Fri commitment mismatch for blob {blob_hash:?}"));
 	}
 
 	Ok(())

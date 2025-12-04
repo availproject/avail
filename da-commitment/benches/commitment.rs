@@ -1,4 +1,4 @@
-use da_commitment::build_da_commitments::{
+use da_commitment::build_kzg_commitments::{
 	build_commitments_from_polynomial_grid, build_polynomial_grid,
 };
 use divan::Bencher;

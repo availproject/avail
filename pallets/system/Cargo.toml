@@ -25,7 +25,7 @@ avail-observability = { workspace = true, optional = true }
 # Other
 cfg-if.workspace = true
 static_assertions.workspace = true
-log.workspace = true
+log = { workspace = true, default-features = false }
 docify.workspace = true
 derive_more.workspace = true
 hex-literal.workspace = true
@@ -62,6 +62,7 @@ std = [
 	"binary-merkle-tree/std",
 	"bounded-collections/std",
 	"codec/std",
+	"dep:avail-observability",
 	"frame-support/std",
 	"kate/std",
 	"log/std",
@@ -75,7 +76,6 @@ std = [
 	"sp-std/std",
 	"sp-version/std",
 	"sp-weights/std",
-	"dep:avail-observability",
 ]
 runtime-benchmarks = [
 	"frame-support/runtime-benchmarks",
@@ -92,15 +92,15 @@ experimental = [ "frame-support/experimental" ]
 # NOTE: Only for testing and development purposes.
 header_commitment_corruption = []
 
-# Enables secure seed generation using for padding fill during the matrix 
+# Enables secure seed generation using for padding fill during the matrix
 # generation for Kate commitment.
-# NOTE: WIP because that affects the Data Availability Protocol used during 
+# NOTE: WIP because that affects the Data Availability Protocol used during
 # the block import process.
 secure_padding_fill = []
 
 testing-environment = []
 
-ts = ["ts-rs"]
+ts = [ "ts-rs" ]
 
 [[bench]]
 name = "bench"

@@ -633,7 +633,7 @@ mod measure_full_block_size {
 	use avail_core::{currency::AVAIL, from_substrate::keccak_256, AppId};
 	use codec::Encode;
 	use da_control::{
-		extensions::native::hosted_commitment_builder::build_da_commitments, BlobTxSummaryRuntime,
+		extensions::native::hosted_commitment_builder::build_kzg_commitments, BlobTxSummaryRuntime,
 	};
 	use frame_support::{
 		// dispatch::GetDispatchInfo,
@@ -725,7 +725,7 @@ mod measure_full_block_size {
 			let rows = block_length.rows.0;
 			let seed = kate::Seed::default();
 			let blob_hash = H256(keccak_256(&blob));
-			let commitment = build_da_commitments(&blob, cols, rows, seed);
+			let commitment = build_kzg_commitments(&blob, cols, rows, seed);
 
 			let mut blob_txs_summary: Vec<BlobTxSummaryRuntime> = vec![];
 			let ownership = sample_ownerships();

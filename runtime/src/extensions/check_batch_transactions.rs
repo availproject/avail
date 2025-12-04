@@ -64,12 +64,11 @@ where
 		+ IsSubType<SchedulerCall<T>>,
 	[u8; 32]: From<<T as frame_system::Config>::AccountId>,
 {
-	pub fn is_submit_data_call(&self) -> bool {
-		matches!(self.0.is_sub_type(), Some(DACall::<T>::submit_data { .. }))
-			|| matches!(
-				self.0.is_sub_type(),
-				Some(DACall::<T>::submit_blob_metadata { .. })
-			)
+	pub fn is_da_call(&self) -> bool {
+		matches!(
+			self.0.is_sub_type(),
+			Some(DACall::<T>::submit_blob_metadata { .. })
+		)
 	}
 
 	pub fn is_send_message_call(&self) -> bool {
@@ -237,7 +236,7 @@ where
 			let call = WrappedCall::<T>(call);
 
 			ensure!(
-				!call.is_submit_data_call(),
+				!call.is_da_call(),
 				InvalidTransaction::Custom(UnexpectedSubmitDataCall as u8)
 			);
 			ensure!(
@@ -611,10 +610,12 @@ mod tests {
 		RuntimeCall::System(SysCall::remark { remark: vec![] })
 	}
 
-	fn submit_data_call() -> RuntimeCall {
-		RuntimeCall::DataAvailability(DACall::submit_data {
+	fn submit_blob_metadata_call() -> RuntimeCall {
+		RuntimeCall::DataAvailability(DACall::submit_blob_metadata {
 			app_id: AppId(1),
-			data: vec![].try_into().unwrap(),
+			blob_hash: H256::zero(),
+			size: 0,
+			commitment: Vec::new(),
 		})
 	}
 
@@ -669,14 +670,14 @@ mod tests {
 		);
 	}
 
-	#[test_case(submit_data_call() =>  Ok(ValidTransaction::default()); "Single Submit Data call should be allowed" )]
+	#[test_case(submit_blob_metadata_call() =>  Ok(ValidTransaction::default()); "Single Submit Data call should be allowed" )]
 	#[test_case(send_message_call() =>  Ok(ValidTransaction::default()); "Single Send Message call should be allowed" )]
 	#[test_case(remark_call() =>  Ok(ValidTransaction::default()); "Single Non-Submit-Data and Non-Send-Message call should be allowed" )]
 	fn test_single_call(call: RuntimeCall) -> TransactionValidity {
 		validate(call)
 	}
 
-	#[test_case(vec![remark_call(), submit_data_call()] =>  to_invalid_tx(UnexpectedSubmitDataCall); "Submit Data call inside a Batch call should be blocked" )]
+	#[test_case(vec![remark_call(), submit_blob_metadata_call()] =>  to_invalid_tx(UnexpectedSubmitDataCall); "Submit Data call inside a Batch call should be blocked" )]
 	#[test_case(vec![remark_call(), send_message_call()] =>  to_invalid_tx(UnexpectedSendMessageCall); "Send Message call inside a Batch call should be blocked" )]
 	#[test_case(vec![remark_call(), remark_call()] =>  Ok(ValidTransaction::default()); "Non-Submit-Data and Non-Send-Message call inside a Batch call should be allowed" )]
 	fn test_batch_call(calls: Vec<RuntimeCall>) -> TransactionValidity {

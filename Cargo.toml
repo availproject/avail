@@ -31,10 +31,12 @@ homepage = "https://www.availproject.org/"
 
 
 [workspace.dependencies]
-avail-core = { git = "https://github.com/availproject/avail-core.git", branch = "ghali/infinity-da", default-features = false, features = [ "runtime"] }
-kate = { git = "https://github.com/availproject/avail-core", branch = "ghali/infinity-da", default-features = false }
-kate-recovery = { git = "https://github.com/availproject/avail-core", branch = "ghali/infinity-da", default-features = false  }
+avail-core = { git = "https://github.com/availproject/avail-core.git", rev = "aaa537b8b5ea1ef43f8e13d5b67c0282fbc80808", default-features = false, features = [ "runtime"] }
+avail-fri = { git = "https://github.com/availproject/avail-core.git", rev = "aaa537b8b5ea1ef43f8e13d5b67c0282fbc80808", default-features = false, features = [ "runtime"] }
+kate = { git = "https://github.com/availproject/avail-core", rev = "aaa537b8b5ea1ef43f8e13d5b67c0282fbc80808", default-features = false }
+kate-recovery = { git = "https://github.com/availproject/avail-core", rev = "aaa537b8b5ea1ef43f8e13d5b67c0282fbc80808", default-features = false  }
 # avail-core = { path = "../avail-core/core", default-features = false, features = [ "runtime"] }
+# avail-fri = { path = "../avail-core/fri", default-features = false }
 # kate = { path = "../avail-core/kate/", default-features = false }
 # kate-recovery = { path = "../avail-core/kate/recovery/", default-features = false}
 
@@ -64,7 +66,7 @@ iai-callgrind = "0.7.3"
 divan = "0.1.11"
 
 # Logging and testing
-log = "0.4.20"
+log = { version = "0.4.20", default-features = false }
 test-case = "1.2.3"
 hex = "0.4"
 const-hex = { version = "1.14.1", default-features = false, features = ["alloc"] }

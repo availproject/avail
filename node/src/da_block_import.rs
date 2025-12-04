@@ -11,10 +11,14 @@ use avail_blob::{
 };
 use avail_core::{
 	ensure,
-	header::{extension as he, HeaderExtension},
-	kate::COMMITMENT_SIZE,
-	kate_commitment as kc, AppId, BlockLengthColumns, BlockLengthRows, DataLookup, HeaderVersion,
-	BLOCK_CHUNK_SIZE,
+	header::{
+		extension::{
+			fri::{FriHeader, FriHeaderVersion},
+			kzg::{KzgHeader, KzgHeaderVersion},
+		},
+		HeaderExtension,
+	},
+	BlockLengthColumns, BlockLengthRows, BLOCK_CHUNK_SIZE,
 };
 use avail_observability::metrics::avail::{MetricObserver, ObserveKind};
 use da_control::BlobTxSummaryRuntime;
@@ -22,7 +26,8 @@ use da_runtime::{
 	apis::{DataAvailApi, ExtensionBuilder},
 	Header as DaHeader, Runtime,
 };
-use frame_system::limits::BlockLength;
+use frame_system::limits::{BlockLength, BlockLengthError};
+use frame_system::native::build_extension;
 use sp_runtime::OpaqueExtrinsic;
 
 use sc_consensus::{
@@ -34,7 +39,7 @@ use sp_blockchain::HeaderBackend;
 use sp_consensus::{BlockOrigin, Error as ConsensusError};
 use sp_core::H256;
 use sp_runtime::traits::Block as BlockT;
-use std::{marker::PhantomData, sync::Arc, time::Instant};
+use std::{marker::PhantomData, sync::Arc};
 
 type RTExtractor = <Runtime as frame_system::Config>::HeaderExtensionDataFilter;
 
@@ -134,34 +139,53 @@ where
 		&self,
 		block: &BlockImportParams<B>,
 	) -> Result<(), ConsensusError> {
-		let block_len = extension_block_len(&block.header.extension);
+		let block_length = extension_block_len(&block.header.extension)?;
 		let extrinsics = || block.body.clone().unwrap_or_default();
 		let block_number: u32 = block.header.number;
 		let parent_hash = <B as BlockT>::Hash::from(block.header.parent_hash);
 		let api = self.client.runtime_api();
 
-		// Calculate data root and extension.
+		// Calculate data root which is common for both commitment schemes.
 		let data_root = api
 			.build_data_root(parent_hash, block_number, extrinsics())
 			.map_err(data_root_fail)?;
-		let version = block.header.extension.get_header_version();
+		let header_extension_builder_data = HeaderExtensionBuilderData::from_opaque_extrinsics::<
+			RTExtractor,
+		>(block_number, &extrinsics());
+		let submitted_blobs = header_extension_builder_data.data_submissions;
+		let regenerated_extension = match &block.header.extension {
+			HeaderExtension::Kzg(kzg_hdr) => {
+				let kzg_version = match kzg_hdr {
+					KzgHeader::V4(_) => KzgHeaderVersion::V4,
+				};
 
-		let extension = match version {
-			// Since V3 has AppExtrinsics which is derived from the AppId SignedExtension, We cant support it GOING FORWARD
-			HeaderVersion::V3 => todo!(),
-			HeaderVersion::V4 => build_extension_with_comms(
-				extrinsics(),
-				data_root,
-				block_len,
-				block_number,
-				block.header.extension.get_header_version(),
-			)?,
+				build_extension::build_kzg_extension(
+					submitted_blobs,
+					data_root,
+					block_length,
+					kzg_version,
+				)
+			},
+
+			HeaderExtension::Fri(fri_hdr) => {
+				// Extract params_version + version from the header itself
+				let (params_version, fri_version) = match fri_hdr {
+					FriHeader::V1(inner) => (inner.params_version, FriHeaderVersion::V1),
+				};
+
+				build_extension::build_fri_extension(
+					submitted_blobs,
+					data_root,
+					params_version,
+					fri_version,
+				)
+			},
 		};
 
 		// Check equality between calculated and imported extensions.
 		ensure!(
-			block.header.extension == extension,
-			extension_mismatch(&block.header.extension, &extension)
+			block.header.extension == regenerated_extension,
+			extension_mismatch(&block.header.extension, &regenerated_extension)
 		);
 		Ok(())
 	}
@@ -331,125 +355,141 @@ impl<B, C, I: Clone> Clone for BlockImport<B, C, I> {
 	}
 }
 
-/// builds header extension by regenerating the commitments for DA txs
-fn build_extension_with_comms(
-	extrinsics: Vec<OpaqueExtrinsic>,
-	data_root: H256,
-	block_length: BlockLength,
-	block_number: u32,
-	version: HeaderVersion,
-) -> Result<HeaderExtension, ConsensusError> {
-	let timer_total = Instant::now();
-	let timer_app_ext = Instant::now();
-	let app_extrinsics = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(
-		block_number,
-		&extrinsics,
-		block_length.cols.0,
-		block_length.rows.0,
-	)
-	.data_submissions;
-	log::info!(
-		"⏱️ Extracting app extrinsics took {:?}",
-		timer_app_ext.elapsed()
-	);
-	log::info!("Ext length: {}", extrinsics.len());
+// /// builds header extension by regenerating the commitments for DA txs
+// fn build_extension_with_comms(
+// 	extrinsics: Vec<OpaqueExtrinsic>,
+// 	data_root: H256,
+// 	block_length: BlockLength,
+// 	block_number: u32,
+// 	kzg_version: KzgHeaderVersion,
+// ) -> Result<HeaderExtension, ConsensusError> {
+// 	let timer_total = Instant::now();
+// 	let timer_app_ext = Instant::now();
+// 	let header_extension_builder_data =
+// 		HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(
+// 			block_number,
+// 			&extrinsics,
+// 			block_length.cols.0,
+// 			block_length.rows.0,
+// 		);
+// 	let submitted_blobs = header_extension_builder_data.data_submissions;
+// 	log::info!(
+// 		"⏱️ Extracting app extrinsics took {:?}",
+// 		timer_app_ext.elapsed()
+// 	);
+// 	log::info!("Ext length: {}", extrinsics.len());
 
-	// Blocks with non-DA extrinsics will have empty commitments
-	if app_extrinsics.is_empty() {
-		log::info!(
-			"✅ No DA extrinsics, returning empty header. Total time: {:?}",
-			timer_total.elapsed()
-		);
-		return Ok(HeaderExtension::get_empty_header(data_root, version));
-	}
+// 	// Blocks with non-DA extrinsics will have empty commitments
+// 	if submitted_blobs.is_empty() {
+// 		log::info!(
+// 			"✅ No DA extrinsics, returning empty header. Total time: {:?}",
+// 			timer_total.elapsed()
+// 		);
+// 		return Ok(HeaderExtension::get_empty_kzg(data_root, kzg_version));
+// 	}
 
-	let max_columns = block_length.cols.0 as usize;
-	if max_columns == 0 {
-		log::info!(
-			"⚠️ Max columns = 0, returning empty header. Total time: {:?}",
-			timer_total.elapsed()
-		);
-		return Ok(HeaderExtension::get_empty_header(data_root, version));
-	}
+// 	let max_columns = block_length.cols.0 as usize;
+// 	if max_columns == 0 {
+// 		log::info!(
+// 			"⚠️ Max columns = 0, returning empty header. Total time: {:?}",
+// 			timer_total.elapsed()
+// 		);
+// 		return Ok(HeaderExtension::get_empty_kzg(data_root, kzg_version));
+// 	}
 
-	let timer_commitment_prep = Instant::now();
-	let total_commitments_len: usize = app_extrinsics
-		.iter()
-		.map(|da_call| da_call.commitments.len())
-		.sum();
-	let mut commitment = Vec::with_capacity(total_commitments_len);
+// 	let timer_commitment_prep = Instant::now();
+// 	let total_commitments_len: usize = submitted_blobs
+// 		.iter()
+// 		.map(|da_call| da_call.commitments.len())
+// 		.sum();
+// 	let mut commitment = Vec::with_capacity(total_commitments_len);
 
-	let mut app_rows: Vec<(AppId, usize)> = Vec::with_capacity(app_extrinsics.len());
+// 	let mut app_rows: Vec<(AppId, usize)> = Vec::with_capacity(submitted_blobs.len());
 
-	for da_call in app_extrinsics.iter() {
-		// Commitments from blob submission where checked
-		// Commitments from regular submit data are computed by the node
-		commitment.extend(da_call.commitments.clone());
-		let rows_taken = da_call.commitments.len() / COMMITMENT_SIZE;
+// 	for da_call in submitted_blobs.iter() {
+// 		// Commitments from blob submission where checked
+// 		// Commitments from regular submit data are computed by the node
+// 		commitment.extend(da_call.commitments.clone());
+// 		let rows_taken = da_call.commitments.len() / COMMITMENT_SIZE;
 
-		// Update app_rows
-		app_rows.push((da_call.id, rows_taken));
-	}
-	log::info!(
-		"⏱️ Collecting commitments + app_rows took {:?}",
-		timer_commitment_prep.elapsed()
-	);
+// 		// Update app_rows
+// 		app_rows.push((da_call.id, rows_taken));
+// 	}
+// 	log::info!(
+// 		"⏱️ Collecting commitments + app_rows took {:?}",
+// 		timer_commitment_prep.elapsed()
+// 	);
 
-	let timer_lookup = Instant::now();
-	let app_lookup = DataLookup::from_id_and_len_iter(app_rows.clone().into_iter())
-		.map_err(|_| data_lookup_failed())?;
-	log::info!("⏱️ Building DataLookup took {:?}", timer_lookup.elapsed());
+// 	let timer_lookup = Instant::now();
+// 	let app_lookup = DataLookup::from_id_and_len_iter(app_rows.clone().into_iter())
+// 		.map_err(|_| data_lookup_failed())?;
+// 	log::info!("⏱️ Building DataLookup took {:?}", timer_lookup.elapsed());
 
-	let timer_padding = Instant::now();
-	let original_rows = app_lookup.len();
-	let padded_rows = original_rows.next_power_of_two();
-	if padded_rows > original_rows {
-		let (_, padded_row_commitment) =
-			kate::gridgen::core::get_pregenerated_row_and_commitment(max_columns)
-				.map_err(|_| pregenerated_comms_failed())?;
-		commitment = commitment
-			.into_iter()
-			.chain(
-				std::iter::repeat_n(
-					padded_row_commitment,
-					(padded_rows - original_rows) as usize,
-				)
-				.flatten(),
-			)
-			.collect();
-	}
-	log::info!("⏱️ Padding commitments took {:?}", timer_padding.elapsed());
+// 	let timer_padding = Instant::now();
+// 	let original_rows = app_lookup.len();
+// 	let padded_rows = original_rows.next_power_of_two();
+// 	if padded_rows > original_rows {
+// 		let (_, padded_row_commitment) =
+// 			kate::gridgen::core::get_pregenerated_row_and_commitment(max_columns)
+// 				.map_err(|_| pregenerated_comms_failed())?;
+// 		commitment = commitment
+// 			.into_iter()
+// 			.chain(
+// 				std::iter::repeat_n(
+// 					padded_row_commitment,
+// 					(padded_rows - original_rows) as usize,
+// 				)
+// 				.flatten(),
+// 			)
+// 			.collect();
+// 	}
+// 	log::info!("⏱️ Padding commitments took {:?}", timer_padding.elapsed());
 
-	let timer_kate = Instant::now();
-	let commitment = kc::v3::KateCommitment::new(
-		padded_rows.try_into().unwrap_or_default(),
-		max_columns.try_into().unwrap_or_default(),
-		data_root,
-		commitment,
-	);
-	log::info!("⏱️ Building KateCommitment took {:?}", timer_kate.elapsed());
+// 	let timer_kate = Instant::now();
+// 	let commitment = kc::v3::KateCommitment::new(
+// 		padded_rows.try_into().unwrap_or_default(),
+// 		max_columns.try_into().unwrap_or_default(),
+// 		data_root,
+// 		commitment,
+// 	);
+// 	log::info!("⏱️ Building KateCommitment took {:?}", timer_kate.elapsed());
 
-	log::info!(
-		"✅ Finished build_extension_with_comms in {:?}",
-		timer_total.elapsed()
-	);
+// 	log::info!(
+// 		"✅ Finished build_extension_with_comms in {:?}",
+// 		timer_total.elapsed()
+// 	);
 
-	Ok(he::v4::HeaderExtension {
-		app_lookup,
-		commitment,
-	}
-	.into())
-}
+// 	// Build KZG v4 header extension and wrap into top-level HeaderExtension::Kzg
+// 	let v4_ext = he::v4::HeaderExtension {
+// 		app_lookup,
+// 		commitment,
+// 	};
+// 	let kzg_header = KzgHeader::from(v4_ext);
+
+// 	Ok(HeaderExtension::Kzg(kzg_header))
+// }
 
 /// Calculate block length from `extension`.
-fn extension_block_len(extension: &HeaderExtension) -> BlockLength {
-	BlockLength::with_normal_ratio(
-		BlockLengthRows(extension.rows() as u32),
-		BlockLengthColumns(extension.cols() as u32),
-		BLOCK_CHUNK_SIZE,
-		sp_runtime::Perbill::from_percent(90),
-	)
-	.expect("Valid BlockLength at genesis .qed")
+fn extension_block_len(extension: &HeaderExtension) -> Result<BlockLength, ConsensusError> {
+	match extension {
+		HeaderExtension::Kzg(kzg_hdr) => {
+			let (rows, cols) = match kzg_hdr {
+				KzgHeader::V4(ext) => (ext.rows() as u32, ext.cols() as u32),
+			};
+
+			BlockLength::with_normal_ratio(
+				BlockLengthRows(rows),
+				BlockLengthColumns(cols),
+				BLOCK_CHUNK_SIZE,
+				sp_runtime::Perbill::from_percent(90),
+			)
+			.map_err(block_contains_invalid_block_length)
+		},
+		HeaderExtension::Fri(_) => {
+			// Because we wont be using this actually
+			Ok(BlockLength::default())
+		},
+	}
 }
 
 fn extension_mismatch(imported: &HeaderExtension, generated: &HeaderExtension) -> ConsensusError {
@@ -463,15 +503,15 @@ fn extension_mismatch(imported: &HeaderExtension, generated: &HeaderExtension) -
 // 	ConsensusError::ClientImport(msg)
 // }
 
-fn pregenerated_comms_failed() -> ConsensusError {
-	let msg = "Failed to get pregenerated rows & commitments.".to_string();
-	ConsensusError::ClientImport(msg)
-}
+// fn pregenerated_comms_failed() -> ConsensusError {
+// 	let msg = "Failed to get pregenerated rows & commitments.".to_string();
+// 	ConsensusError::ClientImport(msg)
+// }
 
-fn data_lookup_failed() -> ConsensusError {
-	let msg = "Failed to construct DataLookup.".to_string();
-	ConsensusError::ClientImport(msg)
-}
+// fn data_lookup_failed() -> ConsensusError {
+// 	let msg = "Failed to construct DataLookup.".to_string();
+// 	ConsensusError::ClientImport(msg)
+// }
 
 fn data_root_fail(e: ApiError) -> ConsensusError {
 	let msg = format!("Data root cannot be calculated: {e:?}");
@@ -490,5 +530,10 @@ fn block_doesnt_contain_vector_post_inherent() -> ConsensusError {
 
 fn block_doesnt_contain_da_post_inherent() -> ConsensusError {
 	let msg = "Block does not contain da post inherent".to_string();
+	ConsensusError::ClientImport(msg)
+}
+
+fn block_contains_invalid_block_length(err: BlockLengthError) -> ConsensusError {
+	let msg = format!("Block contains invalid block_length: {err:?}");
 	ConsensusError::ClientImport(msg)
 }

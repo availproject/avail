@@ -99,11 +99,14 @@
 #![warn(unused_extern_crates)]
 
 use avail_base::{HeaderExtensionBuilderData, HeaderExtensionDataFilter};
+use avail_core::header::extension::fri::FriHeaderVersion;
+use avail_core::header::extension::kzg::KzgHeaderVersion;
+use avail_core::header::extension::CommitmentScheme;
+use avail_core::FriParamsVersion;
 use avail_core::{
 	ensure,
 	header::{Header as DaHeader, HeaderExtension},
 	traits::{ExtendedBlock, ExtendedHeader},
-	HeaderVersion,
 };
 
 use codec::{Decode, Encode, EncodeLike, FullCodec, MaxEncodedLen};
@@ -272,8 +275,11 @@ pub mod pallet {
 
 	/// Default implementations of [`DefaultConfig`], which can be used to implement [`Config`].
 	pub mod config_preludes {
-		use super::{inject_runtime_type, AccountInfo, BlakeTwo256, DaHeader, DefaultConfig};
-		use frame_support::{derive_impl, traits::ConstU32};
+		use super::{
+			inject_runtime_type, AccountInfo, BlakeTwo256, CommitmentScheme, DaHeader,
+			DefaultConfig,
+		};
+		use frame_support::{derive_impl, parameter_types, traits::ConstU32};
 
 		/// Provides a viable default config that can be used with
 		/// [`derive_impl`](`frame_support::derive_impl`) to derive a testing pallet config
@@ -282,6 +288,10 @@ pub mod pallet {
 		/// See `Test` in the `default-config` example pallet's `test.rs` for an example of
 		/// a downstream user of this particular `TestDefaultConfig`
 		pub struct TestDefaultConfig;
+
+		parameter_types! {
+			pub const DefaultDaCommitmentScheme: CommitmentScheme = CommitmentScheme::Fri;
+		}
 
 		#[frame_support::register_default_impl(TestDefaultConfig)]
 		impl DefaultConfig for TestDefaultConfig {
@@ -317,6 +327,7 @@ pub mod pallet {
 			type MaxDiffAppIdPerBlock = ConstU32<1_024>;
 			type MaxTxPerAppIdPerBlock = ConstU32<8_192>;
 			type HeaderExtensionDataFilter = ();
+			type DaCommitmentScheme = DefaultDaCommitmentScheme;
 		}
 
 		/// Default configurations of this pallet in a solo-chain environment.
@@ -416,6 +427,7 @@ pub mod pallet {
 			type MaxDiffAppIdPerBlock = ConstU32<1_024>;
 			type MaxTxPerAppIdPerBlock = ConstU32<8_192>;
 			type HeaderExtensionDataFilter = ();
+			type DaCommitmentScheme = DefaultDaCommitmentScheme;
 		}
 
 		/// Default configurations of this pallet in a relay-chain environment.
@@ -624,6 +636,10 @@ pub mod pallet {
 		/// a transaction is validated (see `CheckAppId` signed extension).
 		#[pallet::constant]
 		type MaxTxPerAppIdPerBlock: Get<u32>;
+
+		/// Commitment Scheme to be used
+		#[pallet::constant]
+		type DaCommitmentScheme: Get<CommitmentScheme>;
 	}
 
 	const STORAGE_VERSION: StorageVersion = StorageVersion::new(3);
@@ -1854,25 +1870,31 @@ impl<T: Config> Pallet<T> {
 		// Code beyond is custom added code for computing the extension.
 		//
 
-		let block_length = Self::block_length();
-
-		let header_extension_builder_data =
-			HeaderExtensionBuilderData::from_raw_extrinsics::<T::HeaderExtensionDataFilter>(
-				block_number,
-				&extrinsics,
-				block_length.cols.0,
-				block_length.rows.0,
-			);
+		let header_extension_builder_data = HeaderExtensionBuilderData::from_raw_extrinsics::<
+			T::HeaderExtensionDataFilter,
+		>(block_number, &extrinsics);
 		let extrinsics_root = extrinsics_data_root::<T::Hashing>(extrinsics);
 
 		let data_root = header_extension_builder_data.data_root();
-		let extension =
-			native::hosted_header_builder::da::HeaderExtensionBuilder::<T>::build_extension(
-				header_extension_builder_data.data_submissions,
-				data_root,
-				block_length,
-				HeaderVersion::V4,
-			);
+		let extension = match T::DaCommitmentScheme::get() {
+			CommitmentScheme::Kzg => {
+				let block_length = Self::block_length();
+				native::hosted_header_builder::da::HeaderExtensionBuilder::<T>::build_kzg_extension(
+					header_extension_builder_data.data_submissions,
+					data_root,
+					block_length,
+					KzgHeaderVersion::V4,
+				)
+			},
+			CommitmentScheme::Fri => {
+				native::hosted_header_builder::da::HeaderExtensionBuilder::<T>::build_fri_extension(
+					header_extension_builder_data.data_submissions,
+					data_root,
+					FriParamsVersion(0),
+					FriHeaderVersion::V1,
+				)
+			},
+		};
 
 		let header = <HeaderFor<T> as ExtendedHeader>::new(
 			number,

@@ -26,7 +26,7 @@ frame-support = { workspace = true, default-features = false }
 binary-merkle-tree = { workspace = true, default-features = false }
 
 # 3rd-party
-log.workspace = true
+log = { workspace = true, default-features = false }
 derive_more.workspace = true
 itertools = { workspace = true, default-features = false }
 
@@ -41,8 +41,9 @@ std = [
 	"binary-merkle-tree/std",
 	"codec/std",
 	"frame-support/std",
-	"sp-authority-discovery/std",
+	"log/std",
 	"sp-api/std",
+	"sp-authority-discovery/std",
 	"sp-core/std",
 	"sp-runtime-interface/std",
 	"sp-runtime/std",

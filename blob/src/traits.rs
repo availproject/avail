@@ -1,5 +1,6 @@
 use crate::utils::CommitmentQueueMessage;
 use crate::{BlobHandle, BlobNotification};
+use avail_core::header::extension::CommitmentScheme;
 use da_runtime::{apis::BlobApi, AccountId, UncheckedExtrinsic};
 use jsonrpsee::core::async_trait;
 use sc_client_api::{BlockBackend, HeaderBackend, StateBackend};
@@ -46,6 +47,8 @@ pub trait RuntimeApiT: Send + Sync {
 	fn account_nonce(&self, block_hash: H256, who: AccountId) -> Result<u32, ApiError>;
 
 	fn get_blob_vouch_fee_reserve(&self, block_hash: H256) -> Result<u128, ApiError>;
+
+	fn commitment_scheme(&self, block_hash: H256) -> Result<CommitmentScheme, ApiError>;
 }
 
 pub struct RuntimeClient<C, B>(Arc<C>, PhantomData<B>);
@@ -110,6 +113,10 @@ where
 		self.0
 			.runtime_api()
 			.get_blob_vouch_fee_reserve(block_hash.into())
+	}
+
+	fn commitment_scheme(&self, block_hash: H256) -> Result<CommitmentScheme, ApiError> {
+		self.0.runtime_api().commitement_scheme(block_hash.into())
 	}
 }
 
