@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 # avail-core = { path = "../../avail-core/core", default-features = false }
 # avail-rust = { package = "avail-rust-client", path = "../../avail-rust/client", default-features = false, features = ["native", "reqwest"] }
-avail-core = { git = "https://github.com/availproject/avail-core.git", rev = "92d64d4ea0d98a69532dccb692d779dd0ad38d68", default-features = false, features = [ "runtime"] }
+avail-core = { git = "https://github.com/availproject/avail-core.git", rev = "aaa537b8b5ea1ef43f8e13d5b67c0282fbc80808", default-features = false, features = [ "runtime"] }
 avail-rust = { package = "avail-rust-client", git = "https://github.com/availproject/avail-rust.git", rev = "498d7272961571db86106998f24fbd3c8bde4065", default-features = false, features = ["native", "reqwest"] }
 da-commitment = { path = "../da-commitment" }
 sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "ghali/infinity-da", default-features = false, features = ["std"] }

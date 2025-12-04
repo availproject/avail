@@ -41,7 +41,7 @@ fn build_fri_commitment_internal(
 	// Build PCS + FRI context
 	let pcs = FriBiniusPCS::new(cfg);
 	let ctx = pcs
-		.initialize_fri_context(&packed.packed_mle)
+		.initialize_fri_context::<B128>(packed.packed_mle.log_len())
 		.map_err(|e| FriDaCommitmentError::ContextInitFailed(e.to_string()))?;
 
 	// Commit to the blob MLE: returns a 32-byte digest in `commitment`
