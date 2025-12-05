@@ -48,11 +48,11 @@ use sp_core::{crypto::KeyTypeId, H256, U256};
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::traits::ExtrinsicCall;
 use sp_runtime::{
-	traits::{Block as BlockT, Extrinsic as ExtrinsicT, NumberFor},
+	traits::{Block as BlockT, NumberFor},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	AccountId32, ApplyExtrinsicResult, SaturatedConversion,
 };
-use sp_std::{borrow::Cow, vec::Vec};
+use sp_std::vec::Vec;
 use sp_version::RuntimeVersion;
 
 type RTExtractor = <Runtime as frame_system::Config>::HeaderExtensionDataFilter;

@@ -1,25 +1,25 @@
-use super::{Error, GCellBlock, GDataProof, GMultiProof, GProof, GRawScalar, GRow};
-// use avail_core::{AppId, BlockLengthColumns, BlockLengthRows};
-use core::num::NonZeroU16;
-use frame_system::{limits::BlockLength, native::hosted_header_builder::MIN_WIDTH};
-use kate::{ArkScalar, Seed};
-use kate_recovery::matrix::Dimensions;
-use sp_runtime::SaturatedConversion as _;
+// use super::{Error, GCellBlock, GDataProof, GMultiProof, GProof, GRawScalar, GRow};
+// // use avail_core::{AppId, BlockLengthColumns, BlockLengthRows};
+// use core::num::NonZeroU16;
+// use frame_system::{limits::BlockLength, native::hosted_header_builder::MIN_WIDTH};
+// use kate::{ArkScalar, Seed};
+// use kate_recovery::matrix::Dimensions;
+// use sp_runtime::SaturatedConversion as _;
 use sp_runtime_interface::{
-	pass_by::{AllocateAndReturnByCodec, PassFatPointerAndDecode},
+	// pass_by::{AllocateAndReturnByCodec, PassFatPointerAndDecode},
 	runtime_interface,
 };
-use sp_std::vec::Vec;
+// use sp_std::vec::Vec;
 
 // === std-only / host-only imports ==========================================
 
-#[cfg(not(substrate_runtime))]
-use kate::{
-	com::Cell,
-	couscous::multiproof_params,
-	gridgen::core::{AsBytes as _, EvaluationGrid as EGrid},
-	M1NoPrecomp,
-};
+// #[cfg(not(substrate_runtime))]
+// use kate::{
+// 	com::Cell,
+// 	couscous::multiproof_params,
+// 	gridgen::core::{AsBytes as _, EvaluationGrid as EGrid},
+// 	M1NoPrecomp,
+// };
 
 // #[cfg(not(substrate_runtime))]
 // static SRS: std::sync::OnceLock<M1NoPrecomp> = std::sync::OnceLock::new();

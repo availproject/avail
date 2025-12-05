@@ -80,7 +80,6 @@ impl frame_system::Config for Test {
 	type BlockHashCount = BlockHashCount;
 	type HeaderExtensionBuilder = HeaderExtensionBuilder<Test>;
 	type PalletInfo = PalletInfo;
-	type Randomness = TestRandomness<Test>;
 	type Extrinsic = Extrinsic;
 }
 

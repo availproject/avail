@@ -1,13 +1,13 @@
 use crate::constants::balances::ExistentialDeposit;
 use crate::constants::currency::deposit;
 use crate::{
-	constants, extensions, prod_or_fast, voter_bags, weights, AccountId, AccountIndex, Babe,
-	Balances, Block, BlockNumber, ElectionProviderMultiPhase, Everything, Hash, Header, Historical,
-	ImOnline, ImOnlineId, Index, Indices, Moment, NominationPools, Offences, OriginCaller,
-	PalletInfo, Preimage, ReserveIdentifier, Runtime, RuntimeCall, RuntimeEvent,
-	RuntimeFreezeReason, RuntimeHoldReason, RuntimeOrigin, RuntimeVersion, Session, SessionKeys,
-	Signature, SignedPayload, Staking, System, Timestamp, TransactionPayment, Treasury, TxPause,
-	UncheckedExtrinsic, VoterList, MINUTES, SLOT_DURATION, VERSION,
+	constants, prod_or_fast, voter_bags, weights, AccountId, AccountIndex, Babe, Balances, Block,
+	BlockNumber, ElectionProviderMultiPhase, Everything, Hash, Header, Historical, ImOnline,
+	ImOnlineId, Index, Indices, Moment, NominationPools, Offences, OriginCaller, PalletInfo,
+	Preimage, ReserveIdentifier, Runtime, RuntimeCall, RuntimeEvent, RuntimeFreezeReason,
+	RuntimeHoldReason, RuntimeOrigin, RuntimeVersion, Session, SessionKeys, Signature, Staking,
+	System, Timestamp, TransactionPayment, Treasury, TxPause, UncheckedExtrinsic, VoterList,
+	MINUTES, SLOT_DURATION, VERSION,
 };
 use avail_core::currency::{Balance, AVAIL, CENTS, NANO_AVAIL, PICO_AVAIL};
 use codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
@@ -20,19 +20,20 @@ use frame_support::{
 	pallet_prelude::{Get, Weight},
 	parameter_types,
 	traits::{
-		fungible::{Balanced, Credit, HoldConsideration, NativeOrWithId},
+		fungible::{Balanced, Credit, HoldConsideration},
 		tokens::{
 			imbalance::ResolveTo, pay::PayFromAccount, Imbalance, UnityAssetBalanceConversion,
 		},
-		ConstBool, ConstU32, Contains, Currency, EitherOf, EitherOfDiverse, EqualPrivilegeOnly,
-		InsideBoth, InstanceFilter, LinearStoragePrice, Nothing, OnUnbalanced,
+		ConstBool, ConstU32, Contains, Currency, EitherOfDiverse, EqualPrivilegeOnly, InsideBoth,
+		InstanceFilter, LinearStoragePrice, Nothing, OnUnbalanced,
 	},
 	weights::{constants::RocksDbWeight, ConstantMultiplier},
 	PalletId,
 };
-use frame_system::{limits::BlockLength, EnsureRoot, EnsureRootWithSuccess, EnsureWithSuccess};
+use frame_system::{limits::BlockLength, EnsureRoot, EnsureWithSuccess};
 use pallet_election_provider_multi_phase::{GeometricDepositBase, SolutionAccuracyOf};
 use pallet_identity::legacy::IdentityInfo;
+#[allow(deprecated)]
 use pallet_nomination_pools::adapter::TransferStake;
 use pallet_transaction_payment::{FungibleAdapter, Multiplier, TargetedFeeAdjustment};
 use pallet_treasury::TreasuryAccountId;
@@ -41,7 +42,7 @@ use sp_core::crypto::KeyTypeId;
 use sp_core::{ConstU64, RuntimeDebug};
 use sp_runtime::{
 	generic::Era,
-	traits::{self, BlakeTwo256, Bounded, Convert, IdentityLookup, OpaqueKeys},
+	traits::{self, BlakeTwo256, Bounded, Convert, OpaqueKeys},
 	FixedPointNumber, FixedU128, Perbill, Permill, Perquintill,
 };
 use sp_std::vec::Vec;
@@ -62,7 +63,6 @@ impl pallet_mandate::Config for Runtime {
 		pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCollective, 5, 7>,
 	>;
 	type RuntimeCall = RuntimeCall;
-	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = weights::pallet_mandate::WeightInfo<Runtime>;
 }
 
@@ -72,7 +72,6 @@ parameter_types! {
 
 impl pallet_vector::Config for Runtime {
 	type RuntimeCall = RuntimeCall;
-	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = weights::pallet_vector::WeightInfo<Runtime>;
 	type TimeProvider = pallet_timestamp::Pallet<Runtime>;
 	type Currency = Balances;
@@ -137,7 +136,6 @@ impl da_control::Config for Runtime {
 	type BlobVouchFeeReserve = constants::da::BlobVouchFeeReserve;
 	type ValidatorSet = Historical;
 	type ReportOffence = Offences;
-	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = weights::pallet_dactr::WeightInfo<Runtime>;
 }
 impl da_control::SessionDataProvider<<Runtime as frame_system::Config>::AccountId> for Runtime {
@@ -234,6 +232,7 @@ impl pallet_session::Config for Runtime {
 impl pallet_session::historical::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type FullIdentification = pallet_staking::Exposure<AccountId, Balance>;
+	#[allow(deprecated)]
 	type FullIdentificationOf = pallet_staking::ExposureOf<Runtime>;
 }
 
@@ -695,6 +694,7 @@ impl pallet_nomination_pools::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeFreezeReason = RuntimeFreezeReason;
 	type U256ToBalance = U256ToBalance;
+	#[allow(deprecated)]
 	type StakeAdapter = TransferStake<Runtime, Staking>;
 	type AdminOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,
@@ -972,7 +972,42 @@ where
 		account: Self::AccountId,
 		nonce: Self::Nonce,
 	) -> Option<<Self as frame_system::offchain::CreateTransactionBase<LocalCall>>::Extrinsic> {
-		todo!()
+		use sp_runtime::{traits::StaticLookup, SaturatedConversion as _};
+		let tip = 0;
+		// take the biggest period possible.
+		let period = BlockHashCount::get()
+			.checked_next_power_of_two()
+			.map(|c| c / 2)
+			.unwrap_or(2) as u64;
+		let current_block = System::block_number()
+			.saturated_into::<u64>()
+			// The `System::block_number` is initialized with `n+1`,
+			// so the actual block number is `n`.
+			.saturating_sub(1);
+		let era = Era::mortal(period, current_block);
+		let signed_extra: crate::SignedExtra = (
+			frame_system::CheckNonZeroSender::<Runtime>::new(),
+			frame_system::CheckSpecVersion::<Runtime>::new(),
+			frame_system::CheckTxVersion::<Runtime>::new(),
+			frame_system::CheckGenesis::<Runtime>::new(),
+			frame_system::CheckEra::<Runtime>::from(era),
+			frame_system::CheckNonce::<Runtime>::from(nonce),
+			frame_system::CheckWeight::<Runtime>::new(),
+			pallet_transaction_payment::ChargeTransactionPayment::<Runtime>::from(tip),
+			crate::extensions::check_batch_transactions::CheckBatchTransactions::<Runtime>::new(),
+		);
+
+		let raw_payload = crate::SignedPayload::new(call, signed_extra)
+			.map_err(|e| {
+				log::warn!("Unable to create signed payload: {:?}", e);
+			})
+			.ok()?;
+		let signature = raw_payload.using_encoded(|payload| C::sign(payload, public))?;
+		let address = Indices::unlookup(account);
+		let (call, signed_extra, _) = raw_payload.deconstruct();
+		let transaction =
+			UncheckedExtrinsic::new_signed(call, address, signature, signed_extra).into();
+		Some(transaction)
 	}
 }
 

@@ -1,5 +1,5 @@
 // use avail_core::app_extrinsic::AppExtrinsic;
-use sp_std::vec::Vec;
+// use sp_std::vec::Vec;
 
 pub static mut ENABLE_TEST_EXTENSION_FAILURE: bool = false;
 pub static mut ENABLE_TEST_GRID_FAILURE: bool = false;

@@ -331,8 +331,6 @@ pub mod pallet {
 			type MessageMappingStorageIndex = ConstU64<1>;
 			type AvailDomain = ConstU32<1>;
 			#[inject_runtime_type]
-			type RuntimeEvent = ();
-			#[inject_runtime_type]
 			type RuntimeCall = ();
 			type PalletId = BridgePalletId;
 		}
@@ -340,9 +338,6 @@ pub mod pallet {
 
 	#[pallet::config(with_default)]
 	pub trait Config: frame_system::Config {
-		/// Because this pallet emits events, it depends on the runtime's definition of an event.
-		#[pallet::no_default_bounds]
-		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// Because this pallet has dispatchables, it depends on the runtime's definition of a call.
 		#[pallet::no_default_bounds]
 		type RuntimeCall: Parameter

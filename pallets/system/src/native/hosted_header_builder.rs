@@ -2,7 +2,7 @@
 // More info about how runtime interfaces work: (https://docs.rs/sp-runtime-interface/latest/sp_runtime_interface/attr.runtime_interface.html
 // !!!!
 
-use crate::{limits::BlockLength, Config, LOG_TARGET};
+use crate::{limits::BlockLength, Config};
 use avail_base::header_extension::SubmittedData;
 use avail_core::HeaderVersion;
 use avail_core::{header::HeaderExtension, traits::ExtendedHeader};
@@ -11,9 +11,7 @@ pub use kate::{
 	Seed,
 };
 
-use frame_support::traits::Randomness;
 use sp_core::H256;
-use sp_runtime::traits::Hash;
 use sp_runtime_interface::{
 	pass_by::{AllocateAndReturnByCodec, PassFatPointerAndDecode},
 	runtime_interface,
