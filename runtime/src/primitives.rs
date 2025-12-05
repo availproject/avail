@@ -90,7 +90,6 @@ impl_opaque_keys! {
 	}
 }
 
-
 /// Decode runtime `UncheckedExtrinsic` from `OpaqueExtrinsic` following the
 /// `Compact(len) || inner_bytes` layout.
 pub fn opaque_to_unchecked(opaque: &OpaqueExtrinsic) -> Result<UncheckedExtrinsic, String> {
@@ -213,8 +212,12 @@ mod tests {
 			let signature: MultiSignature = Alice.sign(&payload).into();
 			assert!(signature.verify(&*payload, &alice));
 
-			let uxt: UncheckedExtrinsic =
-				UncheckedExtrinsic::new_signed(call.clone(), alice.clone().into(), signature, extra);
+			let uxt: UncheckedExtrinsic = UncheckedExtrinsic::new_signed(
+				call.clone(),
+				alice.clone().into(),
+				signature,
+				extra,
+			);
 
 			// Raw bytes: SCALE encoding of UncheckedExtrinsic.
 			let raw_bytes: Vec<u8> = uxt.encode();

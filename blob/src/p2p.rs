@@ -16,8 +16,8 @@ use futures::{future, FutureExt, StreamExt};
 use sc_client_api::BlockchainEvents;
 use sc_keystore::LocalKeystore;
 use sc_network::{
-	config::{IncomingRequest, NonDefaultSetConfig, RequestResponseConfig, Role},
-	NetworkService, NotificationService,
+	config::{IncomingRequest, NonDefaultSetConfig, Role},
+	NotificationService,
 };
 use sc_network::{service::traits::NetworkService as NetworkServiceT, NetworkBackend};
 use sc_network_gossip::GossipEngine;

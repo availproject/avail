@@ -1,4 +1,4 @@
-use da_runtime::{AccountId, Block, RuntimeGenesisConfig, SessionKeys, Signature};
+use da_runtime::{AccountId, Block, SessionKeys, Signature};
 use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use sc_chain_spec::ChainSpecExtension;
 use sc_service::Properties;

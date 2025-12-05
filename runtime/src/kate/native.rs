@@ -21,11 +21,11 @@ use kate::{
 	M1NoPrecomp,
 };
 
-#[cfg(not(substrate_runtime))]
-static SRS: std::sync::OnceLock<M1NoPrecomp> = std::sync::OnceLock::new();
+// #[cfg(not(substrate_runtime))]
+// static SRS: std::sync::OnceLock<M1NoPrecomp> = std::sync::OnceLock::new();
 
-#[cfg(not(substrate_runtime))]
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
+// #[cfg(not(substrate_runtime))]
+// use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
 /// Hosted functions to work with KZG / kate commitments from the node.
 ///
@@ -236,9 +236,9 @@ pub trait HostedKate {
 	// }
 }
 
-fn to_width_height(block_len: &BlockLength) -> (usize, usize) {
-	// even if we run on a u16 target this is fine
-	let width = block_len.cols.0.saturated_into();
-	let height = block_len.rows.0.saturated_into();
-	(width, height)
-}
+// fn to_width_height(block_len: &BlockLength) -> (usize, usize) {
+// 	// even if we run on a u16 target this is fine
+// 	let width = block_len.cols.0.saturated_into();
+// 	let height = block_len.rows.0.saturated_into();
+// 	(width, height)
+// }
