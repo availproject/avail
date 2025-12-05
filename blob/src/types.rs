@@ -5,7 +5,6 @@ use crate::{
 use codec::{Decode, Encode};
 use da_runtime::{apis::RuntimeApi, NodeBlock as Block};
 use parking_lot::Mutex;
-use sc_executor::NativeElseWasmExecutor;
 use sc_network::service::traits::NetworkService as NetworkServiceT;
 use sc_network::{PeerId, ProtocolName, ReputationChange};
 use sc_network_gossip::{MessageIntent, ValidationResult, Validator, ValidatorContext};
@@ -36,30 +35,31 @@ pub const BLOB_GOSSIP_PROTO: ProtocolName = ProtocolName::Static(BLOB_GOSSIP_PRO
 /// ExecutorDispatch and FullClient were put here cause we need it for blob service but we cannot have a circular dependency, clean later.
 /// Maybe put in avail base later.
 
-// Declare an instance of the native executor named `ExecutorDispatch`. Include the wasm binary as
-// the equivalent wasm code.
-pub struct ExecutorDispatch;
+/// Host functions required for da-runtime and Avail node.
+#[cfg(not(feature = "runtime-benchmarks"))]
+pub type HostFunctions = (
+	frame_system::native::hosted_header_builder::hosted_header_builder::HostFunctions,
+	avail_base::mem_tmp_storage::hosted_mem_tmp_storage::HostFunctions,
+	da_runtime::kate::native::hosted_kate::HostFunctions,
+	da_control::extensions::native::hosted_commitment_builder::HostFunctions,
+	sp_io::SubstrateHostFunctions,
+);
 
-impl sc_executor::NativeExecutionDispatch for ExecutorDispatch {
-	type ExtendHostFunctions = (
-		frame_benchmarking::benchmarking::HostFunctions,
-		frame_system::native::hosted_header_builder::hosted_header_builder::HostFunctions,
-		avail_base::mem_tmp_storage::hosted_mem_tmp_storage::HostFunctions,
-		da_runtime::kate::native::hosted_kate::HostFunctions,
-		da_control::extensions::native::hosted_commitment_builder::HostFunctions,
-	);
+#[cfg(feature = "runtime-benchmarks")]
+pub type HostFunctions = (
+	frame_benchmarking::benchmarking::HostFunctions,
+	frame_system::native::hosted_header_builder::hosted_header_builder::HostFunctions,
+	avail_base::mem_tmp_storage::hosted_mem_tmp_storage::HostFunctions,
+	da_runtime::kate::native::hosted_kate::HostFunctions,
+	da_control::extensions::native::hosted_commitment_builder::HostFunctions,
+	sp_io::SubstrateHostFunctions,
+);
 
-	fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-		da_runtime::apis::api::dispatch(method, data)
-	}
-
-	fn native_version() -> sc_executor::NativeVersion {
-		da_runtime::native_version()
-	}
-}
-
+/// A specialized `WasmExecutor` intended to use across substrate node. It provides all required
+/// HostFunctions.
+pub type RuntimeExecutor = sc_executor::WasmExecutor<HostFunctions>;
 /// The full client type definition.
-pub type FullClient = TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<ExecutorDispatch>>;
+pub type FullClient = TFullClient<Block, RuntimeApi, RuntimeExecutor>;
 
 /// The network gossip validator for blob service
 pub struct BlobGossipValidator {
