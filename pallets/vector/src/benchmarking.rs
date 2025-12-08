@@ -1,15 +1,14 @@
 use crate::{
-	state::Configuration, BalanceOf, Call, Config, ConfigurationStorage, ExecutionStateRoots,
-	FunctionIds, FunctionInput, FunctionOutput, FunctionProof, Headers, Pallet, ProofInput,
-	PublicValuesInput, RotateVerificationKey, StepVerificationKey, Updater, ValidProof,
+	state::Configuration, BalanceOf, BoundedVec, Call, Config, ConfigurationStorage,
+	ExecutionStateRoots, FunctionIds, FunctionInput, FunctionOutput, FunctionProof, Headers,
+	Pallet, ProofInput, PublicValuesInput, RotateVerificationKey, StepVerificationKey, Updater,
+	ValidProof,
 };
 use avail_core::data_proof::BOUNDED_DATA_MAX_LENGTH;
 use avail_core::data_proof::{AddressedMessage, Message};
-use frame_benchmarking::{
-	impl_benchmark_test_suite, v2::benchmarks, whitelisted_caller, BenchmarkError,
-};
+use frame_benchmarking::{v2::*, whitelisted_caller, BenchmarkError};
+use frame_support::traits::Currency;
 use frame_support::traits::DefensiveTruncateFrom;
-use frame_support::{traits::Currency, BoundedVec};
 use frame_system::RawOrigin;
 use hex_literal::hex;
 use sp_core::{Get, H256};

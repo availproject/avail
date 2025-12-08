@@ -120,6 +120,8 @@ impl pallet_identity::Config for Runtime {
 	type SubAccountDeposit = SubAccountDeposit;
 	type UsernameAuthorityOrigin = EnsureRoot<Self::AccountId>;
 	type WeightInfo = weights::pallet_identity::WeightInfo<Runtime>;
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = ();
 }
 
 impl da_control::Config for Runtime {
@@ -747,6 +749,8 @@ impl pallet_mmr::Config for Runtime {
 	type OnNewRoot = ();
 	type WeightInfo = ();
 	type BlockHashProvider = pallet_mmr::DefaultBlockHashProvider<Runtime>;
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = ();
 	const INDEXING_PREFIX: &'static [u8] = b"mmr";
 }
 

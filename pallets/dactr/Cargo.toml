@@ -75,6 +75,7 @@ std = [
 	"sp-runtime-interface/std",
 	"sp-runtime/std",
 	"sp-std/std",
+	"frame-benchmarking/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",

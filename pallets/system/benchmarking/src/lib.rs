@@ -20,6 +20,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg(feature = "runtime-benchmarks")]
 
+use avail_core::HeaderVersion;
 use codec::Encode;
 use frame_benchmarking::{impl_benchmark_test_suite, v2::*};
 use frame_support::{dispatch::DispatchClass, storage, traits::Get};
@@ -31,6 +32,8 @@ use sp_runtime::traits::Hash;
 use sp_std::{prelude::*, vec};
 
 mod mock;
+#[cfg(feature = "runtime-benchmarks")]
+const MAX_REMARK_B: u32 = 1024 * 1024; // 1 MiB just for weights
 
 pub struct Pallet<T: Config>(System<T>);
 pub trait Config: frame_system::Config {
@@ -59,9 +62,7 @@ mod benchmarks {
 	use super::*;
 
 	#[benchmark]
-	fn remark(
-		b: Linear<0, { *T::BlockLength::get().max.get(DispatchClass::Normal) as u32 }>,
-	) -> Result<(), BenchmarkError> {
+	fn remark(b: Linear<0, MAX_REMARK_B>) -> Result<(), BenchmarkError> {
 		let remark_message = vec![1; b as usize];
 		let caller = whitelisted_caller();
 
@@ -72,9 +73,7 @@ mod benchmarks {
 	}
 
 	#[benchmark]
-	fn remark_with_event(
-		b: Linear<0, { *T::BlockLength::get().max.get(DispatchClass::Normal) as u32 }>,
-	) -> Result<(), BenchmarkError> {
+	fn remark_with_event(b: Linear<0, MAX_REMARK_B>) -> Result<(), BenchmarkError> {
 		let remark_message = vec![1; b as usize];
 		let caller: T::AccountId = whitelisted_caller();
 		let hash = T::Hashing::hash(&remark_message[..]);
@@ -245,8 +244,12 @@ mod benchmarks {
 
 		#[block]
 		{
-			let _header =
-				T::HeaderExtensionBuilder::build(app_extrinsics, data_root, block_length, 0);
+			let _header = T::HeaderExtensionBuilder::build_extension(
+				app_extrinsics,
+				data_root,
+				block_length,
+				HeaderVersion::V4,
+			);
 		}
 
 		Ok(())
