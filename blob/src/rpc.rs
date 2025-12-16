@@ -1,5 +1,6 @@
 use crate::traits::CommitmentQueueApiT;
 use crate::types::BlobInfo;
+use crate::utils::get_babe_randomness_key;
 use crate::validation::{
 	commitment_validation, initial_validation, tx_validation, validate_fri_commitment,
 };
@@ -23,6 +24,7 @@ use crate::{
 use anyhow::Result;
 use avail_core::header::extension::CommitmentScheme;
 use avail_core::DataProof;
+use avail_fri::eval_utils::derive_seed_from_inputs;
 use avail_observability::metrics::BlobMetrics;
 use codec::{Decode, Encode};
 use da_commitment::build_kzg_commitments::build_polynomial_grid;
@@ -480,6 +482,21 @@ async fn check_rpc_store_blob(
 	}))
 }
 
+fn get_babe_randomness(
+	backend_client: &Arc<dyn BackendApiT>,
+	finalized_block_hash: H256,
+) -> RpcResult<[u8; 32]> {
+	let storage_key = get_babe_randomness_key();
+	let maybe_raw = backend_client
+		.storage(finalized_block_hash, &storage_key.0)
+		.map_err(|e| internal_err!("Storage query error: {e:?}"))?;
+	let raw = maybe_raw.ok_or(internal_err!("Randomness not found"))?;
+	let randomness =
+		<[u8; 32]>::decode(&mut &raw[..]).map_err(|e| internal_err!("Decode error: {e:?}"))?;
+
+	Ok(randomness)
+}
+
 fn get_dynamic_block_length(
 	backend_client: &Arc<dyn BackendApiT>,
 	finalized_block_hash: H256,
@@ -534,7 +551,7 @@ pub async fn submit_blob_main_task(
 	let max_blob_size = blob_params.max_blob_size as usize;
 
 	stop_watch.start("Initial Validation");
-	let (blob_hash, provided_commitment) =
+	let (blob_hash, provided_commitment, eval_point_seed, eval_claim) =
 		initial_validation(max_blob_size, &blob, &metadata_signed_transaction)
 			.map_err(|e| internal_err!("{}", e))?;
 	stop_watch.stop("Initial Validation");
@@ -606,12 +623,36 @@ pub async fn submit_blob_main_task(
 				.await
 			});
 
+			// ideally eval_point_seed and eval_claim should be None here for KZG, but we can let it pass for now
 			Ok(handle)
 		},
 
 		CommitmentScheme::Fri => {
+			// Check if the eval_point_seed and eval_claim are present for Fri
+			if eval_point_seed.is_none() || eval_claim.is_none() {
+				return Err(internal_err!(
+					"eval_point_seed and eval_claim must be present for Fri commitment scheme"
+				));
+			}
+
+			let eval_point_seed = eval_point_seed.expect("checked above; qed");
+			let eval_claim = eval_claim.expect("checked above; qed");
+			let babe_randomness =
+				get_babe_randomness(&friends.backend_client, finalized_block_hash)?;
+			let derived_eval_seed = derive_seed_from_inputs(&babe_randomness, &blob_hash.0);
+			if eval_point_seed != derived_eval_seed {
+				return Err(internal_err!(
+					"eval_point_seed does not match derived seed!"
+				));
+			}
 			stop_watch.start("Fri Commitment Validation");
-			if let Err(e) = validate_fri_commitment(blob_hash, &blob, &provided_commitment) {
+			if let Err(e) = validate_fri_commitment(
+				blob_hash,
+				&blob,
+				&provided_commitment,
+				&derived_eval_seed,
+				&eval_claim,
+			) {
 				stop_watch.stop("Fri Commitment Validation");
 				stop_watch.stop("Commitments (Total)");
 				return Err(internal_err!("{}", e));

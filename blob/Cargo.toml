@@ -7,6 +7,7 @@ edition = "2021"
 da-runtime = { workspace = true, default-features = false }
 da-control = { workspace = true, default-features = false }
 avail-core = { workspace = true, default-features = false }
+avail-fri = { workspace = true, default-features = false }
 pallet-staking = { workspace = true, default-features = false }
 sp-consensus-babe = { workspace = true, default-features = false }
 sc-transaction-pool = { workspace = true, default-features = false }
@@ -70,6 +71,7 @@ avail-rust = { package = "avail-rust-client", version = "0.4.0", default-feature
 default = ["std"]
 std = [
     "avail-core/std",
+    "avail-fri/std",
     "kate/std",
     "kate-recovery/std",
     "frame-benchmarking/std",

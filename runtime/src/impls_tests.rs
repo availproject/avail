@@ -737,6 +737,8 @@ mod measure_full_block_size {
 						blob_hash,
 						size: tx_size,
 						commitment: commitment.clone(),
+						eval_point_seed: None,
+						eval_claim: None,
 					},
 				);
 

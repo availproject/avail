@@ -123,6 +123,8 @@ fn filter_da_call(
 			blob_hash,
 			commitment,
 			size,
+			eval_point_seed: _,
+			eval_claim: _,
 		} => {
 			if commitment.is_empty() {
 				return None;

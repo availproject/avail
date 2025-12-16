@@ -151,6 +151,8 @@ fn submit_blob_metadata(data: Vec<u8>) -> Vec<u8> {
 		blob_hash,
 		size: data.len() as u64,
 		commitment,
+		eval_point_seed: None,
+		eval_claim: None,
 	}
 	.into();
 

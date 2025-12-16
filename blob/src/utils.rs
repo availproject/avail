@@ -562,6 +562,14 @@ pub fn verify_signed_blob_data(
 	Ok(valid)
 }
 
+pub fn get_babe_randomness_key() -> StorageKey {
+	let mut key = Vec::new();
+	key.extend(&twox_128(b"Babe"));
+	key.extend(&twox_128(b"Randomness"));
+	let storage_key = StorageKey(key);
+	storage_key
+}
+
 pub fn get_dynamic_blocklength_key() -> StorageKey {
 	let mut key = Vec::new();
 	key.extend(&twox_128(b"System"));

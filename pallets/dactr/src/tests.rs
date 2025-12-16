@@ -402,7 +402,9 @@ mod submit_blob_metadata {
 				AppId(1),
 				blob_hash,
 				size,
-				commitment
+				commitment,
+				None,
+				None,
 			));
 
 			let event = RuntimeEvent::DataAvailability(Event::SubmitBlobMetadataRequest {
@@ -427,6 +429,8 @@ mod submit_blob_metadata {
 				blob_hash,
 				size,
 				commitment,
+				None,
+				None,
 			);
 			assert_noop!(err, Error::CommitmentCannotBeEmpty);
 		})
@@ -446,6 +450,8 @@ mod submit_blob_metadata {
 				blob_hash,
 				size,
 				commitment,
+				None,
+				None,
 			);
 			assert_noop!(err, Error::DataCannotBeEmpty);
 		})
@@ -465,6 +471,8 @@ mod submit_blob_metadata {
 				blob_hash,
 				size,
 				commitment,
+				None,
+				None,
 			);
 			assert_noop!(err, Error::DataCannotBeEmpty);
 		})

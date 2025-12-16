@@ -616,6 +616,8 @@ mod tests {
 			blob_hash: H256::zero(),
 			size: 0,
 			commitment: Vec::new(),
+			eval_claim: None,
+			eval_point_seed: None,
 		})
 	}
 
