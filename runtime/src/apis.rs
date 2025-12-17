@@ -602,6 +602,7 @@ impl_runtime_apis! {
 			bool,
 			Option<String>,
 			Vec<(AccountId32, AuthorityDiscoveryId, String, Vec<u8>)>,
+			Option<Vec<u8>>,
 		)>, total_blob_size: u64) -> Vec<<Block as BlockT>::Extrinsic> {
 			let mut post_inherent_extrinsics: Vec<<Block as BlockT>::Extrinsic> = pallet_vector::Pallet::<Runtime>::create_inherent(&data)
 				.into_iter()

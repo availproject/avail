@@ -108,6 +108,13 @@ impl RuntimeApiT for DummyRuntimeApi {
 	fn get_blob_vouch_fee_reserve(&self, _block_hash: H256) -> Result<u128, ApiError> {
 		Ok(AVAIL)
 	}
+
+	fn commitment_scheme(
+		&self,
+		_block_hash: H256,
+	) -> Result<avail_core::header::extension::CommitmentScheme, ApiError> {
+		Ok(avail_core::header::extension::CommitmentScheme::Fri)
+	}
 }
 
 struct BuildTxOutput {
@@ -228,7 +235,7 @@ mod validation {
 			.bench_local_refs(|params| {
 				let runtime = tokio::runtime::Runtime::new().unwrap();
 				runtime.block_on(async {
-					avail_blob::validation::commitment_validation(
+					avail_blob::validation::validate_kzg_commitment(
 						tx.data_hash,
 						&params.0,
 						params.1.clone(),

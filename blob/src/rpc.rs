@@ -1,8 +1,8 @@
 use crate::traits::CommitmentQueueApiT;
-use crate::types::BlobInfo;
-use crate::utils::get_babe_randomness_key;
+use crate::types::{BlobInfo, FriData};
+use crate::utils::{designated_prover_index, get_babe_randomness_key, get_my_validator_id};
 use crate::validation::{
-	commitment_validation, initial_validation, tx_validation, validate_fri_commitment,
+	initial_validation, tx_validation, validate_fri_commitment, validate_kzg_commitment,
 };
 use crate::{
 	nonce_cache::NonceCache,
@@ -589,7 +589,7 @@ pub async fn submit_blob_main_task(
 			crate::telemetry::BlobSubmission::build_poly_grid(blob_hash, start, end);
 
 			stop_watch.start("Commitment Validation");
-			commitment_validation(blob_hash, &provided_commitment, grid, &commitment_queue)
+			validate_kzg_commitment(blob_hash, &provided_commitment, grid, &commitment_queue)
 				.await
 				.map_err(|e| internal_err!("{}", e))?;
 			stop_watch.stop("Commitment Validation");
@@ -617,6 +617,7 @@ pub async fn submit_blob_main_task(
 					blob,
 					blob_params,
 					provided_commitment,
+					None,
 					friends,
 					nonce_cache,
 				)
@@ -646,17 +647,20 @@ pub async fn submit_blob_main_task(
 				));
 			}
 			stop_watch.start("Fri Commitment Validation");
-			if let Err(e) = validate_fri_commitment(
+			let fri_eval_proof = match validate_fri_commitment(
 				blob_hash,
 				&blob,
 				&provided_commitment,
 				&derived_eval_seed,
 				&eval_claim,
 			) {
-				stop_watch.stop("Fri Commitment Validation");
-				stop_watch.stop("Commitments (Total)");
-				return Err(internal_err!("{}", e));
-			}
+				Ok(proof_bytes) => proof_bytes,
+				Err(e) => {
+					stop_watch.stop("Fri Commitment Validation");
+					stop_watch.stop("Commitments (Total)");
+					return Err(internal_err!("{}", e));
+				},
+			};
 			stop_watch.stop("Fri Commitment Validation");
 			stop_watch.stop("Commitments (Total)");
 
@@ -674,6 +678,11 @@ pub async fn submit_blob_main_task(
 			.map_err(|e| internal_err!("{}", e))?;
 
 			let blob = Arc::new(blob);
+			let fri_data = FriData {
+				eval_point_seed,
+				eval_claim,
+				fri_eval_proof: Some(fri_eval_proof),
+			};
 			let handle = task::spawn(async move {
 				submit_blob_background_task(
 					opaque_tx,
@@ -681,6 +690,7 @@ pub async fn submit_blob_main_task(
 					blob,
 					blob_params,
 					provided_commitment,
+					Some(fri_data),
 					friends,
 					nonce_cache,
 				)
@@ -698,6 +708,7 @@ async fn submit_blob_background_task(
 	blob: Arc<Vec<u8>>,
 	blob_params: BlobRuntimeParameters,
 	commitment: Vec<u8>,
+	fri_data: Option<FriData>,
 	friends: Friends,
 	nonce_cache: Arc<dyn NonceCacheApiT>,
 ) {
@@ -707,7 +718,8 @@ async fn submit_blob_background_task(
 		nonce_cache.commit(&who, nonce);
 	}
 
-	let stored = store_and_gossip_blob(blob_hash, blob, blob_params, commitment, &friends).await;
+	let stored =
+		store_and_gossip_blob(blob_hash, blob, blob_params, commitment, fri_data, &friends).await;
 	if stored.is_err() {
 		return;
 	}
@@ -739,6 +751,7 @@ pub async fn store_and_gossip_blob(
 	blob: Arc<Vec<u8>>,
 	blob_params: BlobRuntimeParameters,
 	commitment: Vec<u8>,
+	fri_data: Option<FriData>,
 	friends: &Friends,
 ) -> Result<(), ()> {
 	let mut stop_watch = SmartStopwatch::new("😍😍 STORE AND GOSSIP BLOB");
@@ -761,6 +774,19 @@ pub async fn store_and_gossip_blob(
 		},
 	};
 
+	let commitment_scheme = match friends
+		.runtime_client
+		.commitment_scheme(finalized_block_hash)
+	{
+		Ok(scheme) => scheme,
+		Err(e) => {
+			log::error!(
+				"Could not get commitment scheme from runtime at {:?}: {e:?}. Falling back to Fri.",
+				finalized_block_hash
+			);
+			CommitmentScheme::Fri
+		},
+	};
 	let mut blob_metadata = maybe_blob_metadata.unwrap_or_else(|| {
 		let blob_len = blob.len();
 
@@ -775,6 +801,10 @@ pub async fn store_and_gossip_blob(
 			nb_validators_per_blob: 0,
 			nb_validators_per_blob_threshold: 0,
 			storing_validator_list: Default::default(),
+			eval_point_seed: None,
+			eval_claim: None,
+			fri_eval_proof: None,
+			fri_eval_prover_index: None,
 		}
 	});
 
@@ -815,6 +845,41 @@ pub async fn store_and_gossip_blob(
 			return Err(());
 		},
 	};
+
+	if commitment_scheme == CommitmentScheme::Fri {
+		if fri_data.is_none() {
+			log::error!("Fri data must be available for Fri commitment scheme");
+			return Err(());
+		}
+		let fri_data = fri_data.expect("checked above; qed");
+		let prover_index =
+			designated_prover_index(&blob_hash, &finalized_block_hash, nb_validators_per_blob);
+
+		let (my_validator_id, _babe_key) = match get_my_validator_id(
+			&friends.externalities.keystore(),
+			friends.runtime_client.as_ref(),
+			finalized_block_hash,
+		) {
+			Ok(v) => v,
+			Err(e) => {
+				log::error!("No keys found while trying to get this node's id: {e}");
+				return Err(());
+			},
+		};
+		if storing_validators[prover_index as usize] == my_validator_id {
+			log::info!(
+				"I am the designated prover for blob {:?} including eval_proof? {}",
+				blob_hash,
+				fri_data.fri_eval_proof.is_some()
+			);
+			// I am the designated prover, maybe also do the sanity check whether we have the eval proof or not
+			blob_metadata.fri_eval_proof = fri_data.fri_eval_proof;
+			blob_metadata.fri_eval_prover_index = Some(prover_index);
+		}
+		blob_metadata.eval_point_seed = Some(fri_data.eval_point_seed);
+		blob_metadata.eval_claim = Some(fri_data.eval_claim);
+	}
+
 	blob_metadata.is_notified = true;
 	blob_metadata.expires_at = finalized_block_number.saturating_add(blob_params.temp_blob_ttl);
 	blob_metadata.finalized_block_hash = finalized_block_hash.into();
@@ -873,6 +938,10 @@ pub async fn store_and_gossip_blob(
 			original_peer_id: my_peer_id_base58.clone(),
 			finalized_block_hash: finalized_block_hash.into(),
 			finalized_block_number,
+			eval_point_seed: blob_metadata.eval_point_seed,
+			eval_claim: blob_metadata.eval_claim.clone(),
+			fri_eval_proof: blob_metadata.fri_eval_proof.clone(),
+			fri_eval_prover_index: blob_metadata.fri_eval_prover_index,
 		});
 
 	let gossip_cmd_sender = friends.externalities.gossip_cmd_sender();

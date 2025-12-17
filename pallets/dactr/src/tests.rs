@@ -493,6 +493,7 @@ mod submit_blob_txs_summary {
 				success: true,
 				reason: None,
 				ownership: Vec::new(),
+				eval_proof: None,
 			};
 			let s2 = crate::BlobTxSummaryRuntime {
 				hash: H256::random(),
@@ -500,6 +501,7 @@ mod submit_blob_txs_summary {
 				success: false,
 				reason: Some("example".into()),
 				ownership: Vec::new(),
+				eval_proof: None,
 			};
 
 			let total_blob_size: u64 = (2 * H256::random().0.len()) as u64;

@@ -68,6 +68,7 @@ decl_runtime_apis! {
 			bool,
 			Option<String>,
 			Vec<(sp_runtime::AccountId32, AuthorityId, String, Vec<u8>)>,
+			Option<Vec<u8>>,
 		)>, total_blob_size: u64) -> Vec<<Block as BlockT>::Extrinsic>;
 	}
 }

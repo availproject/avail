@@ -778,6 +778,7 @@ mod measure_full_block_size {
 							success: true,
 							reason: None,
 							ownership: ownership.clone(),
+							eval_proof: None,
 						});
 					},
 					Err(e) => match e {

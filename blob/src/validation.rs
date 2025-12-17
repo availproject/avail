@@ -3,9 +3,10 @@ use crate::{
 	traits::{NonceCacheApiT, RuntimeApiT},
 	utils::{extract_signer_and_nonce, CommitmentQueueMessage},
 };
+use avail_fri::FriProof;
 use avail_fri::{
 	core::{FriBiniusPCS, B128},
-	encoding::BytesEncoder,
+	encoding::{mle_dims_from_blob_size, BytesEncoder},
 	eval_utils::{derive_evaluation_point, eval_claim_from_bytes},
 	FriParamsVersion,
 };
@@ -118,7 +119,7 @@ pub fn tx_validation(
 	Ok(opaque_tx)
 }
 
-pub async fn commitment_validation(
+pub async fn validate_kzg_commitment(
 	hash: H256,
 	provided_commitment: &Vec<u8>,
 	grid: PolynomialGrid,
@@ -156,7 +157,7 @@ pub fn validate_fri_commitment(
 	provided_commitment: &[u8],
 	eval_point_seed: &[u8; 32],
 	eval_claim: &[u8; 16],
-) -> Result<(), String> {
+) -> Result<Vec<u8>, String> {
 	const FRI_COMMITMENT_SIZE: usize = 32;
 
 	if provided_commitment.len() != FRI_COMMITMENT_SIZE {
@@ -203,6 +204,32 @@ pub fn validate_fri_commitment(
 		.prove::<B128>(packed.packed_mle.clone(), &ctx, &commit_output, &eval_point)
 		.map_err(|e| e.to_string())?;
 
+	pcs.verify(&proof, eval_claim, &eval_point, &ctx)
+		.map_err(|e| e.to_string())?;
+	let proof_bytes = proof.transcript_bytes;
+	Ok(proof_bytes)
+}
+
+pub fn validate_fri_proof(
+	blob_size: usize,
+	eval_point_seed: &[u8; 32],
+	eval_claim: &[u8; 16],
+	eval_proof: &[u8],
+) -> Result<(), String> {
+	let params_version = FriParamsVersion(0);
+	let (log_len, n_vars) = mle_dims_from_blob_size(blob_size);
+	let cfg = params_version.to_config(n_vars);
+	let pcs = FriBiniusPCS::new(cfg);
+	let ctx = pcs
+		.initialize_fri_context::<B128>(log_len)
+		.map_err(|e| e.to_string())?;
+
+	let eval_point = derive_evaluation_point(*eval_point_seed, n_vars);
+	let eval_claim = eval_claim_from_bytes(eval_claim)
+		.map_err(|e| format!("Failed to deserialize evaluation claim: {}", e))?;
+	let proof = FriProof {
+		transcript_bytes: eval_proof.to_vec(),
+	};
 	pcs.verify(&proof, eval_claim, &eval_point, &ctx)
 		.map_err(|e| e.to_string())
 }
