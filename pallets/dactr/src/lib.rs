@@ -380,6 +380,7 @@ pub mod pallet {
 		pub fn submit_data(
 			_origin: OriginFor<T>,
 			_app_id: AppId,
+			#[allow(unused_variables)]
 			data: AppDataFor<T>,
 		) -> DispatchResultWithPostInfo {
 			Ok(().into())

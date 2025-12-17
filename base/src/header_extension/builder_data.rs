@@ -10,6 +10,7 @@ use derive_more::Constructor;
 use sp_core::H256;
 use sp_runtime::OpaqueExtrinsic;
 use sp_runtime_interface::pass_by::PassByCodec;
+use sp_std::collections::btree_map::BTreeMap;
 use sp_std::{iter::repeat, vec::Vec};
 
 #[derive(Constructor, Debug, Encode, Decode, Clone, PartialEq, Eq)]
@@ -18,13 +19,16 @@ pub struct BridgedData {
 	pub addr_msg: AddressedMessage,
 }
 
-#[derive(Debug, Constructor, Encode, Decode, PartialEq, Eq, Clone)]
+#[derive(Debug, Constructor, Encode, Decode, Default, PartialEq, Eq, Clone)]
 pub struct SubmittedData {
 	pub id: AppId,
 	pub tx_index: u32,
 	pub hash: H256,
 	pub size_bytes: u64,
 	pub commitments: Vec<u8>,
+	pub eval_point_seed: Option<[u8; 32]>,
+	pub eval_claim: Option<[u8; 16]>,
+	pub eval_proof: Option<Vec<u8>>,
 }
 
 impl GetAppId for SubmittedData {
@@ -45,6 +49,12 @@ pub struct HeaderExtensionBuilderData {
 	pub bridge_messages: Vec<BridgedData>,
 }
 
+#[derive(Clone, Debug, Default)]
+pub struct PostInherentInfo {
+	pub eval_proofs: BTreeMap<u32, Vec<u8>>,
+	pub failed: Vec<u32>,
+}
+
 impl HeaderExtensionBuilderData {
 	pub fn from_raw_extrinsics<F: HeaderExtensionDataFilter>(
 		block: u32,
@@ -62,12 +72,14 @@ impl HeaderExtensionBuilderData {
 		block: u32,
 		opaques: &[OpaqueExtrinsic],
 	) -> Self {
-		let failed_transactions = F::get_failed_transaction_ids(opaques);
+		let post_inherent_info = F::get_data_from_post_inherents(opaques);
 
 		let extracted_tx_datas: Vec<ExtractedTxData> = opaques
 			.into_iter()
 			.enumerate()
-			.filter_map(|(idx, opaque)| F::filter(&failed_transactions, opaque.clone(), block, idx))
+			.filter_map(|(idx, opaque)| {
+				F::filter(post_inherent_info.clone(), opaque.clone(), block, idx)
+			})
 			.collect();
 
 		HeaderExtensionBuilderData::from(extracted_tx_datas)
@@ -269,6 +281,7 @@ mod tests {
 				commitments: vec![],
 				size_bytes: 0,
 				hash: H256::from(keccak_256(&vec![1, 2, 3])),
+				..Default::default()
 			}],
 			bridge_messages: vec![],
 		};
@@ -287,6 +300,7 @@ mod tests {
 				hash: H256::from(keccak_256(&vec![1, 2, 3])),
 				size_bytes: 0,
 				commitments: vec![],
+				..Default::default()
 			}],
 			bridge_messages: vec![],
 		};
@@ -305,6 +319,7 @@ mod tests {
 				size_bytes: 0,
 				hash: H256::from(keccak_256(&vec![1, 2, 3])),
 				commitments: vec![],
+				..Default::default()
 			}],
 			bridge_messages: vec![],
 		};
@@ -320,6 +335,7 @@ mod tests {
 				size_bytes: 0,
 				hash: H256::from(keccak_256(&vec![1, 2, 3])),
 				commitments: vec![],
+				..Default::default()
 			},
 			SubmittedData {
 				id: AppId(1),
@@ -327,6 +343,7 @@ mod tests {
 				size_bytes: 0,
 				hash: H256::from(keccak_256(&vec![4, 5, 6])),
 				commitments: vec![],
+				..Default::default()
 			},
 			SubmittedData {
 				id: AppId(2),
@@ -334,6 +351,7 @@ mod tests {
 				size_bytes: 0,
 				hash: H256::from(keccak_256(&vec![7, 8, 9])),
 				commitments: vec![],
+				..Default::default()
 			},
 			SubmittedData {
 				id: AppId(1),
@@ -341,6 +359,7 @@ mod tests {
 				size_bytes: 0,
 				hash: H256::from(keccak_256(&vec![7, 8, 9])),
 				commitments: vec![],
+				..Default::default()
 			},
 		];
 

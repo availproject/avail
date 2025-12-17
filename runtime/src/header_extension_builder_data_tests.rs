@@ -22,7 +22,7 @@ use hex_literal::hex;
 use pallet_transaction_payment::ChargeTransactionPayment;
 use sp_core::keccak_256;
 use sp_core::H256;
-use sp_keyring::AccountKeyring::{Alice, Bob};
+use sp_keyring::AccountKeyring::Alice;
 use sp_runtime::traits::Keccak256;
 use sp_runtime::{
 	generic::Era,
