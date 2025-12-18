@@ -803,6 +803,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5d5dde061bd34119e902bbb2d9b90c5692635cf59fb91d582c2b68043f1b8293"
 
 [[package]]
+name = "array-util"
+version = "1.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7e509844de8f09b90a2c3444684a2b6695f4071360e13d2fda0af9f749cc2ed6"
+dependencies = [
+ "arrayvec 0.7.6",
+]
+
+[[package]]
 name = "arrayref"
 version = "0.3.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1088,6 +1097,7 @@ dependencies = [
  "async-channel 1.9.0",
  "avail-base",
  "avail-core",
+ "avail-fri",
  "avail-observability",
  "avail-rust-client",
  "base64 0.22.1",
@@ -1142,7 +1152,7 @@ dependencies = [
 [[package]]
 name = "avail-core"
 version = "0.6.2"
-source = "git+https://github.com/availproject/avail-core.git?rev=aaa537b8b5ea1ef43f8e13d5b67c0282fbc80808#aaa537b8b5ea1ef43f8e13d5b67c0282fbc80808"
+source = "git+https://github.com/availproject/avail-core.git?rev=d33781a3b7f6817105b88057b8754df86e69f385#d33781a3b7f6817105b88057b8754df86e69f385"
 dependencies = [
  "binary-merkle-tree",
  "blake2b_simd",
@@ -1176,7 +1186,7 @@ dependencies = [
 [[package]]
 name = "avail-fri"
 version = "0.1.0"
-source = "git+https://github.com/availproject/avail-core.git?rev=aaa537b8b5ea1ef43f8e13d5b67c0282fbc80808#aaa537b8b5ea1ef43f8e13d5b67c0282fbc80808"
+source = "git+https://github.com/availproject/avail-core.git?rev=d33781a3b7f6817105b88057b8754df86e69f385#d33781a3b7f6817105b88057b8754df86e69f385"
 dependencies = [
  "avail-core",
  "binius-field",
@@ -1184,7 +1194,10 @@ dependencies = [
  "binius-prover",
  "binius-transcript",
  "binius-verifier",
+ "blake2b_simd",
  "log",
+ "parity-scale-codec",
+ "rand_chacha 0.3.1",
 ]
 
 [[package]]
@@ -1533,7 +1546,7 @@ dependencies = [
 [[package]]
 name = "binius-core"
 version = "0.1.0"
-source = "git+https://github.com/binius-zk/binius64.git?rev=fe3e14a87dd59de1baf68505f98dc9cf7bf8595c#fe3e14a87dd59de1baf68505f98dc9cf7bf8595c"
+source = "git+https://github.com/binius-zk/binius64.git?rev=41cda4a3eeb3fcb57bcd324e20a0ffe0b653f896#41cda4a3eeb3fcb57bcd324e20a0ffe0b653f896"
 dependencies = [
  "binius-utils",
  "bytemuck",
@@ -1544,7 +1557,7 @@ dependencies = [
 [[package]]
 name = "binius-field"
 version = "0.1.0"
-source = "git+https://github.com/binius-zk/binius64.git?rev=fe3e14a87dd59de1baf68505f98dc9cf7bf8595c#fe3e14a87dd59de1baf68505f98dc9cf7bf8595c"
+source = "git+https://github.com/binius-zk/binius64.git?rev=41cda4a3eeb3fcb57bcd324e20a0ffe0b653f896#41cda4a3eeb3fcb57bcd324e20a0ffe0b653f896"
 dependencies = [
  "binius-utils",
  "bytemuck",
@@ -1558,7 +1571,7 @@ dependencies = [
 [[package]]
 name = "binius-math"
 version = "0.1.0"
-source = "git+https://github.com/binius-zk/binius64.git?rev=fe3e14a87dd59de1baf68505f98dc9cf7bf8595c#fe3e14a87dd59de1baf68505f98dc9cf7bf8595c"
+source = "git+https://github.com/binius-zk/binius64.git?rev=41cda4a3eeb3fcb57bcd324e20a0ffe0b653f896#41cda4a3eeb3fcb57bcd324e20a0ffe0b653f896"
 dependencies = [
  "binius-field",
  "binius-utils",
@@ -1574,7 +1587,7 @@ dependencies = [
 [[package]]
 name = "binius-prover"
 version = "0.1.0"
-source = "git+https://github.com/binius-zk/binius64.git?rev=fe3e14a87dd59de1baf68505f98dc9cf7bf8595c#fe3e14a87dd59de1baf68505f98dc9cf7bf8595c"
+source = "git+https://github.com/binius-zk/binius64.git?rev=41cda4a3eeb3fcb57bcd324e20a0ffe0b653f896#41cda4a3eeb3fcb57bcd324e20a0ffe0b653f896"
 dependencies = [
  "binius-core",
  "binius-field",
@@ -1597,7 +1610,7 @@ dependencies = [
 [[package]]
 name = "binius-transcript"
 version = "0.1.0"
-source = "git+https://github.com/binius-zk/binius64.git?rev=fe3e14a87dd59de1baf68505f98dc9cf7bf8595c#fe3e14a87dd59de1baf68505f98dc9cf7bf8595c"
+source = "git+https://github.com/binius-zk/binius64.git?rev=41cda4a3eeb3fcb57bcd324e20a0ffe0b653f896#41cda4a3eeb3fcb57bcd324e20a0ffe0b653f896"
 dependencies = [
  "auto_impl",
  "binius-field",
@@ -1611,8 +1624,9 @@ dependencies = [
 [[package]]
 name = "binius-utils"
 version = "0.1.0"
-source = "git+https://github.com/binius-zk/binius64.git?rev=fe3e14a87dd59de1baf68505f98dc9cf7bf8595c#fe3e14a87dd59de1baf68505f98dc9cf7bf8595c"
+source = "git+https://github.com/binius-zk/binius64.git?rev=41cda4a3eeb3fcb57bcd324e20a0ffe0b653f896#41cda4a3eeb3fcb57bcd324e20a0ffe0b653f896"
 dependencies = [
+ "array-util",
  "bytemuck",
  "bytes",
  "cfg-if",
@@ -1626,7 +1640,7 @@ dependencies = [
 [[package]]
 name = "binius-verifier"
 version = "0.1.0"
-source = "git+https://github.com/binius-zk/binius64.git?rev=fe3e14a87dd59de1baf68505f98dc9cf7bf8595c#fe3e14a87dd59de1baf68505f98dc9cf7bf8595c"
+source = "git+https://github.com/binius-zk/binius64.git?rev=41cda4a3eeb3fcb57bcd324e20a0ffe0b653f896#41cda4a3eeb3fcb57bcd324e20a0ffe0b653f896"
 dependencies = [
  "binius-core",
  "binius-field",
@@ -6086,7 +6100,7 @@ dependencies = [
 [[package]]
 name = "kate"
 version = "0.9.2"
-source = "git+https://github.com/availproject/avail-core.git?rev=aaa537b8b5ea1ef43f8e13d5b67c0282fbc80808#aaa537b8b5ea1ef43f8e13d5b67c0282fbc80808"
+source = "git+https://github.com/availproject/avail-core.git?rev=d33781a3b7f6817105b88057b8754df86e69f385#d33781a3b7f6817105b88057b8754df86e69f385"
 dependencies = [
  "avail-core",
  "derive_more 0.99.18",
@@ -6112,7 +6126,7 @@ dependencies = [
 [[package]]
 name = "kate-recovery"
 version = "0.10.0"
-source = "git+https://github.com/availproject/avail-core.git?rev=aaa537b8b5ea1ef43f8e13d5b67c0282fbc80808#aaa537b8b5ea1ef43f8e13d5b67c0282fbc80808"
+source = "git+https://github.com/availproject/avail-core.git?rev=d33781a3b7f6817105b88057b8754df86e69f385#d33781a3b7f6817105b88057b8754df86e69f385"
 dependencies = [
  "avail-core",
  "derive_more 0.99.18",
