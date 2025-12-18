@@ -1,12 +1,26 @@
 #![allow(dead_code)]
 
 use avail_rust::{avail_rust_core::rpc::blob::submit_blob, prelude::*};
-use avail_core::FriParamsVersion;
+// use avail_core::FriParamsVersion;
+use avail_fri::{
+	core::{FriBiniusPCS, B128},
+	encoding::BytesEncoder,
+	eval_utils::{derive_evaluation_point, derive_seed_from_inputs, eval_claim_to_bytes},
+	FriParamsVersion,
+};
 // use da_commitment::build_kzg_commitments::build_da_commitments;
-use da_commitment::build_fri_commitments::build_fri_da_commitment;
+// use da_commitment::build_fri_commitments::build_fri_da_commitment;
 // use kate::Seed;
 use sp_crypto_hashing::keccak_256;
 use sp_std::iter::repeat;
+
+pub struct BabeRandomness;
+impl StorageValue for BabeRandomness {
+	type VALUE = [u8; 32];
+
+	const PALLET_NAME: &str = "Babe";
+	const STORAGE_NAME: &str = "Randomness";
+}
 
 pub async fn run() -> Result<(), Error> {
 	println!("---------- START Submission ---------- ");
@@ -46,20 +60,61 @@ pub async fn run() -> Result<(), Error> {
 	let nonce = client.chain().account_nonce(signer.account_id()).await?;
 	println!("Nonce: {nonce}");
 
-	let mut blobs: Vec<(Vec<u8>, H256, Vec<u8>)> = Vec::new();
+	let mut blobs: Vec<(Vec<u8>, H256, Vec<u8>, Option<[u8; 32]>, Option<[u8; 16]>)> = Vec::new();
 	println!("---------- START Commitments generation ---------- ");
 	for i in 0..2 {
 		println!("---------- START Commitment generation {i} ---------- ");
 		let blob: Vec<u8> = repeat(byte).take(len - i).collect::<Vec<u8>>();
 		let blob_hash = H256::from(keccak_256(&blob));
 		// let commitments = build_da_commitments(&blob, 1024, 4096, Seed::default());
-		let commitments = build_fri_da_commitment(&blob, FriParamsVersion(0));
+		// let commitments = build_fri_da_commitment(&blob, FriParamsVersion(0));
+		let params_version = FriParamsVersion(0);
+		// Encode bytes → multilinear extension over B128
+		let encoder = BytesEncoder::<B128>::new();
+		let packed = encoder
+			.bytes_to_packed_mle(&blob)
+			.expect("Failed to encode blob to packed MLE");
+
+		let n_vars = packed.total_n_vars;
+
+		// Map version + n_vars → concrete FriParamsConfig
+		let cfg = params_version.to_config(n_vars);
+
+		// Build PCS + FRI context
+		let pcs = FriBiniusPCS::new(cfg);
+		let ctx = pcs
+			.initialize_fri_context::<B128>(packed.packed_mle.log_len())
+			.expect("Failed to initialize FRI context");
+
+		// Commit to the blob MLE: returns a 32-byte digest in `commitment`
+		let commit_output = pcs
+			.commit(&packed.packed_mle, &ctx)
+			.expect("Failed to commit to blob MLE");
+		let commitments = commit_output.commitment;
+		// fetch current epoch randomness from the chain & use it to derive eval point seed
+		let rpc_client = &client.rpc_client;
+		let babe_randomness = BabeRandomness::fetch(&rpc_client, None)
+			.await?
+			.expect("Babe Randomness should be available for every epoch except genesis era");
+		let eval_point_seed = derive_seed_from_inputs(&babe_randomness, &blob_hash.0);
+		let eval_point = derive_evaluation_point(eval_point_seed, n_vars);
+		let eval_claim = pcs
+			.calculate_evaluation_claim(&packed.packed_values, &eval_point)
+			.expect("Failed to calculate evaluation claim");
+		let eval_cliam_bytes = eval_claim_to_bytes(eval_claim);
 		println!("blob len = {:?}", blob.len());
 		println!("blob_hash = {:?}", blob_hash);
 		println!("commitments len = {:?}", commitments.len());
-		blobs.push((blob, blob_hash, commitments));
+		blobs.push((
+			blob,
+			blob_hash,
+			commitments,
+			Some(eval_point_seed),
+			Some(eval_cliam_bytes),
+		));
 	}
-	for (i, (blob, hash, commitments)) in blobs.into_iter().enumerate() {
+	for (i, (blob, hash, commitments, eval_point_seed, eval_claim)) in blobs.into_iter().enumerate()
+	{
 		println!("---------- START Submission {i} ---------- ");
 		let options = Options::default().nonce(nonce + i as u32);
 		let unsigned_tx = client.tx().data_availability().submit_blob_metadata(
@@ -67,6 +122,8 @@ pub async fn run() -> Result<(), Error> {
 			hash,
 			blob.len() as u64,
 			commitments,
+			eval_point_seed,
+			eval_claim,
 		);
 
 		let tx = unsigned_tx.sign(&signer, options).await.unwrap().encode();
