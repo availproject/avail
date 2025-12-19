@@ -2,6 +2,7 @@ use crate::{
 	utils::{zstd_compress, zstd_decompress},
 	LOG_TARGET,
 };
+use avail_core::AppId;
 use codec::{Decode, Encode};
 use da_runtime::{apis::RuntimeApi, NodeBlock as Block};
 use parking_lot::Mutex;
@@ -365,6 +366,61 @@ impl BlobTxSummary {
 				)
 			})
 			.collect()
+	}
+}
+
+/// A lightweight summary of blob to be used by LC's
+#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, TypeInfo, Serialize, Deserialize)]
+pub struct BlobSummary {
+	/// The hash of the blob
+	hash: BlobHash,
+	/// The transaction index in the block
+	tx_index: u32,
+	/// App id
+	app_id: AppId,
+	/// Size of the blob in bytes
+	size_bytes: u64,
+}
+
+impl BlobSummary {
+	pub fn new(hash: BlobHash, tx_index: u32, app_id: AppId, size_bytes: u64) -> Self {
+		Self {
+			hash,
+			tx_index,
+			app_id,
+			size_bytes,
+		}
+	}
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, TypeInfo, Serialize, Deserialize)]
+pub struct BlobEvalData {
+	eval_point_seed: [u8; 32],
+	eval_claim: [u8; 16],
+	eval_proof: Vec<u8>,
+}
+
+impl BlobEvalData {
+	pub fn new(eval_point_seed: [u8; 32], eval_claim: [u8; 16], eval_proof: Vec<u8>) -> Self {
+		Self {
+			eval_point_seed,
+			eval_claim,
+			eval_proof,
+		}
+	}
+}
+
+// probably should move to avail-fri
+#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, TypeInfo, Serialize, Deserialize)]
+pub struct SamplingProof {
+	index: u32,
+	cell: Vec<u8>,
+	proof: Vec<u8>,
+}
+
+impl SamplingProof {
+	pub fn new(index: u32, cell: Vec<u8>, proof: Vec<u8>) -> Self {
+		Self { index, cell, proof }
 	}
 }
 

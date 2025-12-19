@@ -1,5 +1,5 @@
 use crate::traits::CommitmentQueueApiT;
-use crate::types::{BlobInfo, FriData};
+use crate::types::{BlobEvalData, BlobInfo, BlobSummary, FriData, SamplingProof};
 use crate::utils::{designated_prover_index, get_babe_randomness_key, get_my_validator_id};
 use crate::validation::{
 	initial_validation, tx_validation, validate_fri_commitment, validate_kzg_commitment,
@@ -21,22 +21,24 @@ use crate::{
 	},
 	MAX_RPC_RETRIES,
 };
-use anyhow::Result;
+use avail_base::HeaderExtensionBuilderData;
 use avail_core::header::extension::CommitmentScheme;
-use avail_core::DataProof;
+use avail_core::{AppId, DataProof};
 use avail_fri::eval_utils::derive_seed_from_inputs;
+use avail_fri::{transcript_to_bytes, BytesEncoder, FriBiniusPCS, FriParamsVersion, B128};
 use avail_observability::metrics::BlobMetrics;
 use codec::{Decode, Encode};
 use da_commitment::build_kzg_commitments::build_polynomial_grid;
 use da_control::{BlobRuntimeParameters, Call};
 use da_runtime::apis::KateApi;
-use da_runtime::{RuntimeCall, UncheckedExtrinsic};
+use da_runtime::{Runtime, RuntimeCall, UncheckedExtrinsic};
 use frame_system::limits::BlockLength;
 use jsonrpsee::{
 	core::{async_trait, RpcResult},
 	proc_macros::rpc,
 	types::error::ErrorObject,
 };
+use parking_lot::Mutex;
 use sc_client_api::{BlockBackend, HeaderBackend, StateBackend};
 use sc_network::NetworkStateInfo;
 use sc_network::PeerId;
@@ -48,12 +50,25 @@ use sp_runtime::{
 	transaction_validity::TransactionSource,
 	AccountId32, SaturatedConversion,
 };
+use std::collections::HashMap;
 use std::{
 	marker::{PhantomData, Sync},
 	str::FromStr,
 	sync::Arc,
 };
 use tokio::task;
+
+/// Cached FRI state for a blob at a given block
+#[derive(Clone)]
+struct FriSamplingCacheEntry {
+	commit_output: Arc<avail_fri::FriCommitOutput<B128>>,
+	pcs: Arc<avail_fri::FriBiniusPCS>,
+}
+
+// block_hash, blob_hash
+type FriSamplingCacheKey = (H256, H256);
+
+type RTExtractor = <Runtime as frame_system::Config>::HeaderExtensionDataFilter;
 
 pub enum Error {
 	BlobError,
@@ -108,6 +123,31 @@ where
 
 	#[method(name = "blob_logStuff")]
 	async fn log_stuff(&self) -> RpcResult<()>;
+
+	#[method(name = "blob_getBlobsSummary")]
+	async fn get_blobs_summary(&self, at: Option<Block::Hash>) -> RpcResult<Vec<BlobSummary>>;
+
+	#[method(name = "blob_getBlobsByAppId")]
+	async fn get_blobs_by_appid(
+		&self,
+		app_id: AppId,
+		at: Option<Block::Hash>,
+	) -> RpcResult<Vec<H256>>;
+
+	#[method(name = "blob_getEvalData")]
+	async fn get_eval_data(
+		&self,
+		blob_hash: H256,
+		at: Option<Block::Hash>,
+	) -> RpcResult<BlobEvalData>;
+
+	#[method(name = "blob_getSamplingProof")]
+	async fn get_sampling_proof(
+		&self,
+		cells: Vec<u32>,
+		blob_hash: H256,
+		at: Option<Block::Hash>,
+	) -> RpcResult<Vec<SamplingProof>>;
 }
 
 pub struct BlobRpc<Pool, Block: BlockT, Backend> {
@@ -116,10 +156,15 @@ pub struct BlobRpc<Pool, Block: BlockT, Backend> {
 	blob_handle: Arc<BlobHandle<Block>>,
 	commitment_queue: Arc<CommitmentQueue>,
 	nonce_cache: Arc<NonceCache>,
+	fri_sampling_cache: Arc<Mutex<HashMap<FriSamplingCacheKey, FriSamplingCacheEntry>>>,
 	_block: PhantomData<Block>,
 }
 
-impl<Pool, Block: BlockT, Backend> BlobRpc<Pool, Block, Backend> {
+impl<Pool, Block: BlockT, Backend> BlobRpc<Pool, Block, Backend>
+where
+	H256: From<<Block as BlockT>::Hash>,
+	<Block as BlockT>::Hash: From<H256>,
+{
 	pub fn new(
 		blob_handle: Arc<BlobHandle<Block>>,
 		pool: Arc<Pool>,
@@ -135,8 +180,42 @@ impl<Pool, Block: BlockT, Backend> BlobRpc<Pool, Block, Backend> {
 			blob_handle,
 			commitment_queue: Arc::new(queue),
 			nonce_cache: Arc::new(NonceCache::new()),
+			fri_sampling_cache: Arc::new(Mutex::new(HashMap::new())),
 			_block: PhantomData,
 		}
+	}
+
+	fn at_or_best(&self, at: Option<Block::Hash>) -> Block::Hash {
+		at.unwrap_or_else(|| self.blob_handle.client.info().best_hash.into())
+	}
+
+	// The SubmittedData contains info about only succesfull blob from both BlobMetdata & BlobSummary post-inherent
+	fn load_da_submissions(
+		&self,
+		at: Block::Hash,
+	) -> RpcResult<Vec<avail_base::header_extension::SubmittedData>> {
+		let block = self
+			.blob_handle
+			.client
+			.block(at.into())
+			.map_err(|e| internal_err!("Failed to get block: {:?}", e))?
+			.ok_or_else(|| internal_err!("Block not found: {:?}", at))?
+			.block;
+
+		let extrinsics = block.extrinsics();
+		if extrinsics.len() < 2 {
+			return Err(internal_err!(
+				"Block does not contain post-inherent summary extrinsic"
+			));
+		}
+
+		Ok(
+			HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(
+				block.header.number,
+				&extrinsics,
+			)
+			.data_submissions,
+		)
 	}
 }
 
@@ -423,6 +502,140 @@ where
 		let _ = self.blob_handle.blob_database.log_all_entries();
 		Ok(())
 	}
+
+	async fn get_blobs_summary(&self, at: Option<Block::Hash>) -> RpcResult<Vec<BlobSummary>> {
+		let at = self.at_or_best(at);
+		let submissions = self.load_da_submissions(at)?;
+
+		Ok(submissions
+			.iter()
+			.map(|d| BlobSummary::new(d.hash, d.tx_index, d.id, d.size_bytes))
+			.collect())
+	}
+
+	async fn get_blobs_by_appid(
+		&self,
+		app_id: AppId,
+		at: Option<Block::Hash>,
+	) -> RpcResult<Vec<H256>> {
+		let at = self.at_or_best(at);
+		let submissions = self.load_da_submissions(at)?;
+
+		Ok(submissions
+			.iter()
+			.filter(|d| d.id == app_id)
+			.map(|d| d.hash)
+			.collect())
+	}
+
+	async fn get_eval_data(
+		&self,
+		blob_hash: H256,
+		at: Option<Block::Hash>,
+	) -> RpcResult<BlobEvalData> {
+		let at = self.at_or_best(at);
+		let submissions = self.load_da_submissions(at)?;
+
+		let d = submissions
+			.iter()
+			.find(|d| d.hash == blob_hash)
+			.ok_or_else(|| {
+				internal_err!(
+					"Blob submission data not found for blob {:?} in block {:?}",
+					blob_hash,
+					at
+				)
+			})?;
+
+		match (&d.eval_point_seed, &d.eval_claim, &d.eval_proof) {
+			(Some(seed), Some(claim), Some(proof)) => {
+				Ok(BlobEvalData::new(*seed, *claim, proof.clone()))
+			},
+			_ => Err(internal_err!(
+				"Blob {:?} does not contain eval data in block {:?}",
+				blob_hash,
+				at
+			)),
+		}
+	}
+
+	async fn get_sampling_proof(
+		&self,
+		cells: Vec<u32>,
+		blob_hash: H256,
+		at: Option<Block::Hash>,
+	) -> RpcResult<Vec<SamplingProof>> {
+		let at = self.at_or_best(at);
+		let cache_key = (at.into(), blob_hash);
+
+		if let Some(entry) = {
+			let cache = self.fri_sampling_cache.lock();
+			cache.get(&cache_key).cloned()
+		} {
+			return build_sampling_proofs(entry, cells);
+		}
+
+		let blob = self.get_blob(blob_hash, Some(at)).await?;
+
+		let encoder = BytesEncoder::<B128>::new();
+		let packed = encoder
+			.bytes_to_packed_mle(&blob.data)
+			.map_err(|e| internal_err!("bytes_to_packed_mle failed: {e}"))?;
+
+		let cfg = FriParamsVersion(0).to_config(packed.total_n_vars);
+		let pcs = Arc::new(FriBiniusPCS::new(cfg));
+
+		let ctx = pcs
+			.initialize_fri_context::<B128>(packed.packed_mle.log_len())
+			.map_err(|e| internal_err!("FRI ctx init failed: {e}"))?;
+
+		let commit_output = Arc::new(
+			pcs.commit(&packed.packed_mle, &ctx)
+				.map_err(|e| internal_err!("FRI commit failed: {e}"))?,
+		);
+
+		let entry = FriSamplingCacheEntry {
+			pcs: pcs.clone(),
+			commit_output: commit_output.clone(),
+		};
+
+		{
+			let mut cache = self.fri_sampling_cache.lock();
+			cache.insert(cache_key, entry.clone());
+		}
+
+		build_sampling_proofs(entry, cells)
+	}
+}
+
+fn build_sampling_proofs(
+	entry: FriSamplingCacheEntry,
+	cells: Vec<u32>,
+) -> RpcResult<Vec<SamplingProof>> {
+	let max = entry.commit_output.codeword.len();
+	if cells.iter().any(|&c| (c as usize) >= max) {
+		return Err(internal_err!("One or more cell indices out of bounds"));
+	}
+
+	let mut proofs = Vec::with_capacity(cells.len());
+
+	for &cell in &cells {
+		let idx = cell as usize;
+		let value = entry.commit_output.codeword[idx];
+
+		let transcript = entry
+			.pcs
+			.inclusion_proof::<B128>(&entry.commit_output.committed, idx)
+			.map_err(|e| internal_err!("Sampling proof failed: {e}"))?;
+
+		proofs.push(SamplingProof::new(
+			cell,
+			value.val().to_le_bytes().to_vec(),
+			transcript_to_bytes(&transcript),
+		));
+	}
+
+	Ok(proofs)
 }
 
 async fn check_rpc_store_blob(
