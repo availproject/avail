@@ -97,6 +97,34 @@ pub trait BlobApi<Block>
 where
 	Block: BlockT,
 {
+	/// Submits a data blob and its metadata transaction to the network.
+	///
+	/// This RPC performs the full client-side submission flow:
+	/// - validates the metadata transaction
+	/// - validates the blob size and commitment
+	/// - verifies (or generates) commitment-related proofs
+	/// - gossips the blob to designated blob owners
+	/// - submits the metadata transaction to the transaction pool
+	///
+	/// The blob data itself is **not** included on-chain. Only the metadata
+	/// transaction is submitted to the chain.
+	///
+	/// ### Parameters
+	/// - `metadata_signed_transaction`:
+	///   A SCALE-encoded, signed metadata transaction (base64-encoded),
+	///   typically a `submit_blob_metadata` call.
+	/// - `blob`:
+	///   The raw blob data (base64-encoded).
+	///
+	/// ### Returns
+	/// - `()` on successful submission.
+	///
+	/// ### Errors
+	/// - If the blob is empty or exceeds size limits.
+	/// - If the metadata transaction is invalid or expired.
+	/// - If the commitment or evaluation data is invalid.
+	/// - If commitment validation fails.
+	/// - If submission to the transaction pool fails.
 	#[method(name = "blob_submitBlob")]
 	async fn submit_blob(
 		&self,
@@ -104,16 +132,90 @@ where
 		blob: B64Param,
 	) -> RpcResult<()>;
 
+	/// Returns the full blob data for a given blob hash.
+	///
+	/// This RPC retrieves the blob either from local storage or
+	/// from the network, depending on availability.
+	///
+	/// The RPC operates in **two modes**:
+	///
+	/// ### Mode A: Block-scoped lookup
+	/// If `at` is provided:
+	/// - Blob ownership is derived from the DA post-inherent
+	///   in the specified block.
+	/// - The node attempts to fetch the blob from the
+	///   owners listed in that block.
+	///
+	/// ### Mode B: Storage-based lookup
+	/// If `at` is omitted:
+	/// - Blob ownership is derived from the local blob indexer.
+	/// - The node attempts to fetch the blob from known owners.
+	///
+	/// In both cases:
+	/// - If the blob exists locally, it is returned immediately.
+	/// - Otherwise, the node queries blob owners via p2p.
+	///
+	/// ### Parameters
+	/// - `blob_hash`: The hash of the blob to retrieve.
+	/// - `at`: Optional block hash.
+	///   - If provided, restricts lookup to blob ownership
+	///     recorded in that block.
+	///   - If omitted, uses locally indexed blob ownership.
+	///
+	/// ### Returns
+	/// - `Blob` containing:
+	///   - blob hash
+	///   - blob size
+	///   - raw blob data
+	///
+	/// ### Errors
+	/// - If the blob hash is unknown.
+	/// - If no owners are known for the blob.
+	/// - If all attempts to fetch the blob from owners fail.
+	/// - If the block specified by `at` cannot be found or decoded.
 	#[method(name = "blob_getBlob")]
-	/// This RPC will work in two different modes based on params passed:
-	/// if 'at' param is passed, it will try to get blob ownership from that block's blob tx summaries
-	/// if 'at' param is None, it will try to get blob ownership from storage's blob info
-	/// based on the blob ownership, it will try to get the blob from local storage or from p2p network
 	async fn get_blob(&self, blob_hash: H256, at: Option<Block::Hash>) -> RpcResult<Blob>;
 
+	/// Returns metadata and inclusion information for a blob.
+	///
+	/// This RPC queries the local blob indexer and returns information
+	/// about the block in which the blob was included and the validators
+	/// that claimed ownership of the blob.
+	///
+	/// This does **not** return the blob data itself.
+	///
+	/// ### Parameters
+	/// - `blob_hash`: The hash of the blob.
+	///
+	/// ### Returns
+	/// - `BlobInfo` containing:
+	///   - blob hash
+	///   - block hash and block number where the blob was included
+	///   - ownership information (validators who stored the blob)
+	///
+	/// ### Errors
+	/// - If the blob hash is unknown to the node.
 	#[method(name = "blob_getBlobInfo")]
 	async fn get_blob_info(&self, blob_hash: H256) -> RpcResult<BlobInfo>;
 
+	/// Returns a proof that a blob was included in a specific block.
+	///
+	/// The proof allows a verifier to verify that
+	/// the blob hash was included in the block's data root.
+	///
+	/// ### Parameters
+	/// - `blob_hash`: The hash of the blob.
+	/// - `at`: Optional block hash.
+	///   - If provided, the proof is generated against that block.
+	///   - If omitted, the node uses the local indexer to get the block where the blob
+	///     was included.
+	///
+	/// ### Returns
+	/// - `DataProof` proving inclusion of the blob in the block.
+	///
+	/// ### Errors
+	/// - If the blob is not found in the specified block.
+	/// - If the block cannot be retrieved or decoded.
 	#[method(name = "blob_inclusionProof")]
 	async fn inclusion_proof(
 		&self,
@@ -121,12 +223,53 @@ where
 		at: Option<Block::Hash>,
 	) -> RpcResult<DataProof>;
 
+	// TODO: feature-gate this RPC only for debugging & development
 	#[method(name = "blob_logStuff")]
 	async fn log_stuff(&self) -> RpcResult<()>;
 
+	/// Returns a summary of all successfully included blobs in a block.
+	///
+	/// The summary is derived from the DA post-inherent and does **not**
+	/// include heavy evaluation data (e.g. FRI proofs).
+	///
+	/// This is suitable for:
+	/// - Light Clients
+	/// - Custom Indexers
+	/// - Explorers
+	///
+	/// ### Parameters
+	/// - `at`: Optional block hash.
+	///   - If omitted, uses the node's best block.
+	///
+	/// ### Returns
+	/// - A list of `BlobSummary`, each containing:
+	///   - blob hash
+	///   - transaction index
+	///   - AppId
+	///   - blob size (bytes)
+	///
+	/// ### Errors
+	/// - If the block is not found.
+	/// - If the block does not contain a DA post-inherent.
 	#[method(name = "blob_getBlobsSummary")]
 	async fn get_blobs_summary(&self, at: Option<Block::Hash>) -> RpcResult<Vec<BlobSummary>>;
 
+	/// Returns all blob hashes associated with a given AppId in a block.
+	///
+	/// This RPC is a filtered view over `blob_getBlobsSummary`
+	/// and is useful for application-specific indexing.
+	///
+	/// ### Parameters
+	/// - `app_id`: The AppId to filter blobs by.
+	/// - `at`: Optional block hash.
+	///   - If omitted, uses the node's best block.
+	///
+	/// ### Returns
+	/// - A list of blob hashes associated with the given AppId.
+	///
+	/// ### Errors
+	/// - If the block is not found.
+	/// - If the block does not contain a DA post-inherent.
 	#[method(name = "blob_getBlobsByAppId")]
 	async fn get_blobs_by_appid(
 		&self,
@@ -134,6 +277,32 @@ where
 		at: Option<Block::Hash>,
 	) -> RpcResult<Vec<H256>>;
 
+	/// Returns FRI evaluation data for a blob in a block.
+	///
+	/// This RPC exposes the data required to verify the correctness
+	/// of the blob's FRI commitment:
+	/// - evaluation point seed
+	/// - evaluation claim
+	/// - evaluation proof
+	///
+	/// This data is included in the block body (post-inherent) and the BlobSummary extrinsic
+	/// and can be independently verified by Light Clients.
+	///
+	/// ### Parameters
+	/// - `blob_hash`: The hash of the blob.
+	/// - `at`: Optional block hash.
+	///   - If omitted, uses the node's best block.
+	///
+	/// ### Returns
+	/// - `BlobEvalData` containing:
+	///   - evaluation point seed
+	///   - evaluation claim
+	///   - evaluation proof bytes
+	///
+	/// ### Errors
+	/// - If the blob is not found in the block.
+	/// - If the blob does not contain evaluation data
+	///   (e.g. non-FRI or incomplete data).
 	#[method(name = "blob_getEvalData")]
 	async fn get_eval_data(
 		&self,
@@ -141,6 +310,31 @@ where
 		at: Option<Block::Hash>,
 	) -> RpcResult<BlobEvalData>;
 
+	/// Returns FRI sampling (inclusion) proofs for specific cells of a blob.
+	///
+	/// Each sampling proof allows a verifier to check that a specific
+	/// codeword cell belongs to the committed polynomial.
+	///
+	/// This RPC is intended for:
+	/// - Light Clients performing data availability sampling
+	/// - External verifiers auditing blob availability
+	///
+	/// ### Parameters
+	/// - `cells`: A list of codeword indices (`u32`) to sample.
+	/// - `blob_hash`: The hash of the blob.
+	/// - `at`: Optional block hash.
+	///   - If omitted, uses the node's best block.
+	///
+	/// ### Returns
+	/// - A list of `SamplingProof`, each containing:
+	///   - cell index
+	///   - cell value (16 bytes)
+	///   - serialized inclusion proof transcript
+	///
+	/// ### Errors
+	/// - If the blob cannot be retrieved.
+	/// - If any cell index is out of bounds.
+	/// - If proof generation fails.
 	#[method(name = "blob_getSamplingProof")]
 	async fn get_sampling_proof(
 		&self,
