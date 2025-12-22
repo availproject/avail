@@ -410,20 +410,6 @@ impl BlobEvalData {
 	}
 }
 
-// probably should move to avail-fri
-#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, TypeInfo, Serialize, Deserialize)]
-pub struct SamplingProof {
-	index: u32,
-	cell: Vec<u8>,
-	proof: Vec<u8>,
-}
-
-impl SamplingProof {
-	pub fn new(index: u32, cell: Vec<u8>, proof: Vec<u8>) -> Self {
-		Self { index, cell, proof }
-	}
-}
-
 /// Blob info used to store info about blobs which were included in blocks
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, TypeInfo, Serialize, Deserialize)]
 pub struct BlobInfo {

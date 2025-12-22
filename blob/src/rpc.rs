@@ -1,5 +1,5 @@
 use crate::traits::CommitmentQueueApiT;
-use crate::types::{BlobEvalData, BlobInfo, BlobSummary, FriData, SamplingProof};
+use crate::types::{BlobEvalData, BlobInfo, BlobSummary, FriData};
 use crate::utils::{designated_prover_index, get_babe_randomness_key, get_my_validator_id};
 use crate::validation::{
 	initial_validation, tx_validation, validate_fri_commitment, validate_kzg_commitment,
@@ -25,7 +25,7 @@ use avail_base::HeaderExtensionBuilderData;
 use avail_core::header::extension::CommitmentScheme;
 use avail_core::{AppId, DataProof};
 use avail_fri::eval_utils::derive_seed_from_inputs;
-use avail_fri::{transcript_to_bytes, BytesEncoder, FriBiniusPCS, FriParamsVersion, B128};
+use avail_fri::{transcript_to_bytes, BytesEncoder, FriBiniusPCS, FriParamsVersion, B128, SamplingProof};
 use avail_observability::metrics::BlobMetrics;
 use codec::{Decode, Encode};
 use da_commitment::build_kzg_commitments::build_polynomial_grid;

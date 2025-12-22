@@ -7,7 +7,7 @@ edition = "2021"
 da-runtime = { workspace = true, default-features = false }
 da-control = { workspace = true, default-features = false }
 avail-core = { workspace = true, default-features = false }
-avail-fri = { workspace = true, default-features = false }
+avail-fri = { workspace = true, default-features = false, features = ["serde"]}
 pallet-staking = { workspace = true, default-features = false }
 sp-consensus-babe = { workspace = true, default-features = false }
 sc-transaction-pool = { workspace = true, default-features = false }

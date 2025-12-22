@@ -669,7 +669,7 @@ dependencies = [
 [[package]]
 name = "avail-core"
 version = "0.6.2"
-source = "git+https://github.com/availproject/avail-core.git?rev=d33781a3b7f6817105b88057b8754df86e69f385#d33781a3b7f6817105b88057b8754df86e69f385"
+source = "git+https://github.com/availproject/avail-core.git?rev=5e786ae65302610b2db7df1c834b40f857cfa36a#5e786ae65302610b2db7df1c834b40f857cfa36a"
 dependencies = [
  "blake2b_simd",
  "bounded-collections",
@@ -693,9 +693,9 @@ dependencies = [
 [[package]]
 name = "avail-fri"
 version = "0.1.0"
-source = "git+https://github.com/availproject/avail-core.git?rev=d33781a3b7f6817105b88057b8754df86e69f385#d33781a3b7f6817105b88057b8754df86e69f385"
+source = "git+https://github.com/availproject/avail-core.git?rev=5e786ae65302610b2db7df1c834b40f857cfa36a#5e786ae65302610b2db7df1c834b40f857cfa36a"
 dependencies = [
- "avail-core 0.6.2 (git+https://github.com/availproject/avail-core.git?rev=d33781a3b7f6817105b88057b8754df86e69f385)",
+ "avail-core 0.6.2 (git+https://github.com/availproject/avail-core.git?rev=5e786ae65302610b2db7df1c834b40f857cfa36a)",
  "binius-field",
  "binius-math",
  "binius-prover",
