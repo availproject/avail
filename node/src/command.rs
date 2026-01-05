@@ -22,7 +22,7 @@ use avail_blob::types::FullClient;
 use avail_node::chains;
 use da_runtime::Block;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
-use sc_cli::{Result, SubstrateCli};
+use sc_cli::{Result, SubstrateCli, SyncMode};
 use sc_service::PartialComponents;
 #[cfg(feature = "try-runtime")]
 use {
@@ -97,7 +97,16 @@ pub fn run() -> Result<()> {
 		},
 		Some(Subcommand::LightClient(cmd)) => {
 			let runner = cli.create_runner(&cmd.run)?;
-			runner.run_node_until_exit(|config| async move {
+			runner.run_node_until_exit(|mut config| async move {
+				// Forcing fast-unsafe sync for LC (for local testing)
+				// For live networks, sync mode for lc should be warp
+				config.network.sync_mode = SyncMode::FastUnsafe.into();
+
+				log::info!(
+					"Light client mode: forcing sync mode to {:?}",
+					config.network.sync_mode
+				);
+
 				service::new_light_node(config, cmd).map_err(sc_cli::Error::Service)
 			})
 		},
