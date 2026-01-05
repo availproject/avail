@@ -134,6 +134,7 @@ pub fn build_fri_extension(
 				}
 
 				blobs.push(FriBlobCommitment {
+					blob_hash: s.hash,
 					size_bytes: s.size_bytes,
 					commitment: s.commitments,
 				});

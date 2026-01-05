@@ -25,7 +25,9 @@ use avail_base::HeaderExtensionBuilderData;
 use avail_core::header::extension::CommitmentScheme;
 use avail_core::{AppId, DataProof};
 use avail_fri::eval_utils::derive_seed_from_inputs;
-use avail_fri::{transcript_to_bytes, BytesEncoder, FriBiniusPCS, FriParamsVersion, B128, SamplingProof};
+use avail_fri::{
+	transcript_to_bytes, BytesEncoder, FriBiniusPCS, FriParamsVersion, SamplingProof, B128,
+};
 use avail_observability::metrics::BlobMetrics;
 use codec::{Decode, Encode};
 use da_commitment::build_kzg_commitments::build_polynomial_grid;

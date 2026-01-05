@@ -1152,7 +1152,7 @@ dependencies = [
 [[package]]
 name = "avail-core"
 version = "0.6.2"
-source = "git+https://github.com/availproject/avail-core.git?rev=5e786ae65302610b2db7df1c834b40f857cfa36a#5e786ae65302610b2db7df1c834b40f857cfa36a"
+source = "git+https://github.com/availproject/avail-core.git?rev=8d018ba7485406cf6f81ee97a8c0eb6238f65a59#8d018ba7485406cf6f81ee97a8c0eb6238f65a59"
 dependencies = [
  "binary-merkle-tree",
  "blake2b_simd",
@@ -1186,7 +1186,7 @@ dependencies = [
 [[package]]
 name = "avail-fri"
 version = "0.1.0"
-source = "git+https://github.com/availproject/avail-core.git?rev=5e786ae65302610b2db7df1c834b40f857cfa36a#5e786ae65302610b2db7df1c834b40f857cfa36a"
+source = "git+https://github.com/availproject/avail-core.git?rev=8d018ba7485406cf6f81ee97a8c0eb6238f65a59#8d018ba7485406cf6f81ee97a8c0eb6238f65a59"
 dependencies = [
  "avail-core",
  "binius-field",
@@ -1205,6 +1205,7 @@ dependencies = [
 name = "avail-node"
 version = "0.1.0"
 dependencies = [
+ "async-channel 1.9.0",
  "async-trait",
  "avail-base",
  "avail-blob",
@@ -1215,6 +1216,7 @@ dependencies = [
  "clap_complete",
  "da-control",
  "da-runtime",
+ "da-sampling",
  "frame-benchmarking",
  "frame-benchmarking-cli",
  "frame-system",
@@ -1315,7 +1317,7 @@ dependencies = [
  "scale-info",
  "serde",
  "serde_json",
- "thiserror 2.0.11",
+ "thiserror 2.0.17",
  "tokio",
 ]
 
@@ -1339,7 +1341,7 @@ dependencies = [
  "subxt-core",
  "subxt-rpcs",
  "subxt-signer",
- "thiserror 2.0.11",
+ "thiserror 2.0.17",
 ]
 
 [[package]]
@@ -1552,7 +1554,7 @@ dependencies = [
  "binius-utils",
  "bytemuck",
  "bytes",
- "thiserror 2.0.11",
+ "thiserror 2.0.17",
 ]
 
 [[package]]
@@ -1566,7 +1568,7 @@ dependencies = [
  "derive_more 0.99.18",
  "rand 0.9.2",
  "seq-macro",
- "thiserror 2.0.11",
+ "thiserror 2.0.17",
 ]
 
 [[package]]
@@ -1580,7 +1582,7 @@ dependencies = [
  "getset",
  "itertools 0.14.0",
  "rand 0.9.2",
- "thiserror 2.0.11",
+ "thiserror 2.0.17",
  "tracing",
  "uninit",
 ]
@@ -1604,7 +1606,7 @@ dependencies = [
  "getset",
  "itertools 0.14.0",
  "rand 0.9.2",
- "thiserror 2.0.11",
+ "thiserror 2.0.17",
  "tracing",
 ]
 
@@ -1618,7 +1620,7 @@ dependencies = [
  "binius-utils",
  "bytes",
  "digest 0.10.7",
- "thiserror 2.0.11",
+ "thiserror 2.0.17",
  "tracing",
 ]
 
@@ -1634,7 +1636,7 @@ dependencies = [
  "generic-array 0.14.7",
  "itertools 0.14.0",
  "rayon",
- "thiserror 2.0.11",
+ "thiserror 2.0.17",
  "trait-set",
 ]
 
@@ -1654,7 +1656,7 @@ dependencies = [
  "getset",
  "itertools 0.14.0",
  "sha2 0.10.8",
- "thiserror 2.0.11",
+ "thiserror 2.0.17",
  "tracing",
 ]
 
@@ -3029,6 +3031,32 @@ dependencies = [
  "sp-io",
  "sp-keyring",
  "sp-runtime",
+]
+
+[[package]]
+name = "da-sampling"
+version = "0.1.0"
+dependencies = [
+ "array-bytes 6.2.3",
+ "async-channel 1.9.0",
+ "avail-blob",
+ "avail-core",
+ "avail-fri",
+ "da-runtime",
+ "futures",
+ "hex",
+ "log",
+ "lru 0.7.8",
+ "prost 0.12.6",
+ "prost-build 0.12.6",
+ "rand 0.8.5",
+ "sc-chain-spec",
+ "sc-client-api",
+ "sc-network",
+ "sp-api",
+ "sp-core",
+ "sp-runtime",
+ "thiserror 2.0.17",
 ]
 
 [[package]]
@@ -6101,7 +6129,7 @@ dependencies = [
 [[package]]
 name = "kate"
 version = "0.9.2"
-source = "git+https://github.com/availproject/avail-core.git?rev=5e786ae65302610b2db7df1c834b40f857cfa36a#5e786ae65302610b2db7df1c834b40f857cfa36a"
+source = "git+https://github.com/availproject/avail-core.git?rev=8d018ba7485406cf6f81ee97a8c0eb6238f65a59#8d018ba7485406cf6f81ee97a8c0eb6238f65a59"
 dependencies = [
  "avail-core",
  "derive_more 0.99.18",
@@ -6127,7 +6155,7 @@ dependencies = [
 [[package]]
 name = "kate-recovery"
 version = "0.10.0"
-source = "git+https://github.com/availproject/avail-core.git?rev=5e786ae65302610b2db7df1c834b40f857cfa36a#5e786ae65302610b2db7df1c834b40f857cfa36a"
+source = "git+https://github.com/availproject/avail-core.git?rev=8d018ba7485406cf6f81ee97a8c0eb6238f65a59#8d018ba7485406cf6f81ee97a8c0eb6238f65a59"
 dependencies = [
  "avail-core",
  "derive_more 0.99.18",
@@ -8979,7 +9007,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8b7cafe60d6cf8e62e1b9b2ea516a089c008945bb5a275416789e7db0bc199dc"
 dependencies = [
  "memchr",
- "thiserror 2.0.11",
+ "thiserror 2.0.17",
  "ucd-trie",
 ]
 
@@ -9120,7 +9148,7 @@ dependencies = [
  "ark-std 0.4.0",
  "blst",
  "merlin",
- "thiserror 2.0.11",
+ "thiserror 2.0.17",
 ]
 
 [[package]]
@@ -9434,11 +9462,32 @@ dependencies = [
  "petgraph",
  "prettyplease 0.1.25",
  "prost 0.11.9",
- "prost-types",
+ "prost-types 0.11.9",
  "regex",
  "syn 1.0.109",
  "tempfile",
  "which",
+]
+
+[[package]]
+name = "prost-build"
+version = "0.12.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "22505a5c94da8e3b7c2996394d1c933236c4d743e81a410bcca4e6989fc066a4"
+dependencies = [
+ "bytes",
+ "heck 0.5.0",
+ "itertools 0.12.1",
+ "log",
+ "multimap",
+ "once_cell",
+ "petgraph",
+ "prettyplease 0.2.29",
+ "prost 0.12.6",
+ "prost-types 0.12.6",
+ "regex",
+ "syn 2.0.96",
+ "tempfile",
 ]
 
 [[package]]
@@ -9487,6 +9536,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "213622a1460818959ac1181aaeb2dc9c7f63df720db7d788b3e24eacd1983e13"
 dependencies = [
  "prost 0.11.9",
+]
+
+[[package]]
+name = "prost-types"
+version = "0.12.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9091c90b0a32608e984ff2fa4091273cbdd755d54935c51d520887f4a1dbd5b0"
+dependencies = [
+ "prost 0.12.6",
 ]
 
 [[package]]
@@ -9565,7 +9623,7 @@ dependencies = [
  "rustc-hash 2.1.0",
  "rustls 0.23.21",
  "socket2 0.5.8",
- "thiserror 2.0.11",
+ "thiserror 2.0.17",
  "tokio",
  "tracing",
 ]
@@ -9602,7 +9660,7 @@ dependencies = [
  "rustls 0.23.21",
  "rustls-pki-types",
  "slab",
- "thiserror 2.0.11",
+ "thiserror 2.0.17",
  "tinyvec",
  "tracing",
  "web-time",
@@ -10486,7 +10544,7 @@ dependencies = [
  "multihash-codetable",
  "parity-scale-codec",
  "prost 0.12.6",
- "prost-build",
+ "prost-build 0.11.9",
  "rand 0.8.5",
  "sc-client-api",
  "sc-network",
@@ -11026,7 +11084,7 @@ dependencies = [
  "libp2p-identity",
  "log",
  "prost 0.12.6",
- "prost-build",
+ "prost-build 0.11.9",
  "sc-client-api",
  "sc-network",
  "sp-blockchain",
@@ -11045,7 +11103,7 @@ dependencies = [
  "futures",
  "libp2p-identity",
  "parity-scale-codec",
- "prost-build",
+ "prost-build 0.11.9",
  "sc-consensus",
  "sp-consensus",
  "sp-consensus-grandpa",
@@ -11083,7 +11141,7 @@ dependencies = [
  "log",
  "parity-scale-codec",
  "prost 0.12.6",
- "prost-build",
+ "prost-build 0.11.9",
  "sc-client-api",
  "sc-network",
  "sp-blockchain",
@@ -11108,7 +11166,7 @@ dependencies = [
  "mockall",
  "parity-scale-codec",
  "prost 0.12.6",
- "prost-build",
+ "prost-build 0.11.9",
  "sc-client-api",
  "sc-consensus",
  "sc-network",
@@ -11562,7 +11620,7 @@ dependencies = [
  "scale-decode-derive",
  "scale-type-resolver",
  "smallvec",
- "thiserror 2.0.11",
+ "thiserror 2.0.17",
 ]
 
 [[package]]
@@ -11589,7 +11647,7 @@ dependencies = [
  "scale-encode-derive",
  "scale-type-resolver",
  "smallvec",
- "thiserror 2.0.11",
+ "thiserror 2.0.17",
 ]
 
 [[package]]
@@ -11653,7 +11711,7 @@ dependencies = [
  "scale-decode",
  "scale-encode",
  "scale-type-resolver",
- "thiserror 2.0.11",
+ "thiserror 2.0.17",
 ]
 
 [[package]]
@@ -13600,7 +13658,7 @@ dependencies = [
  "sha2 0.10.8",
  "sp1-build",
  "substrate-bn-succinct",
- "thiserror 2.0.11",
+ "thiserror 2.0.17",
 ]
 
 [[package]]
@@ -13937,7 +13995,7 @@ dependencies = [
  "serde_json",
  "sp-crypto-hashing 0.1.0",
  "subxt-metadata",
- "thiserror 2.0.11",
+ "thiserror 2.0.17",
  "tracing",
 ]
 
@@ -13952,7 +14010,7 @@ dependencies = [
  "serde",
  "serde_json",
  "smoldot-light",
- "thiserror 2.0.11",
+ "thiserror 2.0.17",
  "tokio",
  "tokio-stream",
  "tracing",
@@ -13970,7 +14028,7 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "sp-crypto-hashing 0.1.0",
- "thiserror 2.0.11",
+ "thiserror 2.0.17",
 ]
 
 [[package]]
@@ -13990,7 +14048,7 @@ dependencies = [
  "serde",
  "serde_json",
  "subxt-lightclient",
- "thiserror 2.0.11",
+ "thiserror 2.0.17",
  "tracing",
  "url",
 ]
@@ -14019,7 +14077,7 @@ dependencies = [
  "sha2 0.10.8",
  "sp-crypto-hashing 0.1.0",
  "subxt-core",
- "thiserror 2.0.11",
+ "thiserror 2.0.17",
  "zeroize",
 ]
 
@@ -14217,11 +14275,11 @@ dependencies = [
 
 [[package]]
 name = "thiserror"
-version = "2.0.11"
+version = "2.0.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d452f284b73e6d76dd36758a0c8684b1d5be31f92b89d07fd5822175732206fc"
+checksum = "f63587ca0f12b72a0600bcba1d40081f830876000bb46dd2337a3051618f4fc8"
 dependencies = [
- "thiserror-impl 2.0.11",
+ "thiserror-impl 2.0.17",
 ]
 
 [[package]]
@@ -14237,9 +14295,9 @@ dependencies = [
 
 [[package]]
 name = "thiserror-impl"
-version = "2.0.11"
+version = "2.0.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "26afc1baea8a989337eeb52b6e72a039780ce45c3edfcc9c5b9d112feeb173c2"
+checksum = "3ff15c8ecd7de3849db632e14d18d2571fa09dfc5ed93479bc4485c7a517c913"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -14868,7 +14926,7 @@ version = "11.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6ef1b7a6d914a34127ed8e1fa927eb7088903787bcded4fa3eef8f85ee1568be"
 dependencies = [
- "thiserror 2.0.11",
+ "thiserror 2.0.17",
  "ts-rs-macros",
 ]
 
