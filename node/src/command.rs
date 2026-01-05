@@ -95,6 +95,12 @@ pub fn run() -> Result<()> {
 				service::new_full(config, cli).map_err(sc_cli::Error::Service)
 			})
 		},
+		Some(Subcommand::LightClient(cmd)) => {
+			let runner = cli.create_runner(&cmd.run)?;
+			runner.run_node_until_exit(|config| async move {
+				service::new_light_node(config, cmd).map_err(sc_cli::Error::Service)
+			})
+		},
 		/*Some(Subcommand::Inspect(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 

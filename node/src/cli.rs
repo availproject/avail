@@ -16,6 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+use sc_cli::RunCmd;
 /// An overarching CLI command definition.
 #[derive(Debug, clap::Parser)]
 pub struct Cli {
@@ -130,4 +131,20 @@ pub enum Subcommand {
 
 	/// Db meta columns information.
 	ChainInfo(sc_cli::ChainInfoCmd),
+
+	/// Run the node as DA light client
+	LightClient(LightCmd),
+}
+
+#[derive(Debug, clap::Args)]
+pub struct LightCmd {
+	#[command(flatten)]
+	pub run: RunCmd,
+	/// Validate evaluation proof as well
+	#[arg(long)]
+	pub with_ev_proof: bool,
+
+	/// Number of samples per block (optional)
+	#[arg(long, default_value = "16")]
+	pub samples_per_blob: u32,
 }
