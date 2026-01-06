@@ -367,8 +367,8 @@ where
 
 		info!(
 			target: LOG_TARGET,
-			"✅ DA sampling verification PASSED for block {:?} via peer {:?}",
-			block_hash,
+			"✅ DA sampling verification PASSED for blob {:?} via peer {:?}",
+			blob.blob_hash,
 			peer
 		);
 

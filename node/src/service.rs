@@ -385,7 +385,7 @@ pub fn new_partial_light(
 	let telemetry = telemetry.map(|(worker, telemetry)| {
 		task_manager
 			.spawn_handle()
-			.spawn("telemetry", None, worker.run());
+			.spawn("telemetry", Some("light-node"), worker.run());
 		telemetry
 	});
 
@@ -560,6 +560,7 @@ pub fn new_full_base(
 		sync_service.clone(),
 		task_manager.spawn_handle(),
 		transaction_pool.clone(),
+		false,
 	);
 
 	let handler =
@@ -567,7 +568,7 @@ pub fn new_full_base(
 
 	task_manager
 		.spawn_handle()
-		.spawn("da-sampling-handler", Some("networking"), handler.run());
+		.spawn("da-sampling-handler", None, handler.run());
 
 	let basic_authorship_db = blob_handle.blob_database.clone();
 	let rpc_transaction_pool = transaction_pool.clone();
@@ -853,7 +854,7 @@ fn extend_metrics(prometheus: &Registry) -> Result<(), PrometheusError> {
 pub fn new_light_node(config: Configuration, _cmd: &LightCmd) -> Result<TaskManager, ServiceError> {
 	log::info!(target: LOG_TARGET, "Starting Avail DA Light Client");
 
-	let (blob_req_res_cfg, blob_req_receiver, blob_gossip_cfg, blob_gossip_service) =
+	let (blob_req_res_cfg, blob_req_receiver, _blob_gossip_cfg, blob_gossip_service) =
 		get_blob_p2p_config();
 
 	let grandpa_justification_period = 2400;
@@ -883,7 +884,6 @@ pub fn new_light_node(config: Configuration, _cmd: &LightCmd) -> Result<TaskMana
 		sc_consensus_grandpa::grandpa_peers_set_config(grandpa_protocol_name.clone());
 	net_config.add_notification_protocol(grandpa_protocol_config);
 	net_config.add_request_response_protocol(blob_req_res_cfg);
-	net_config.add_notification_protocol(blob_gossip_cfg);
 
 	let genesis_hash = client
 		.block_hash(0)
@@ -892,6 +892,7 @@ pub fn new_light_node(config: Configuration, _cmd: &LightCmd) -> Result<TaskMana
 		.expect("Genesis block exists; qed");
 
 	let spec = da_sampling::protocol_spec(genesis_hash.as_ref(), &config.chain_spec);
+	// Light clients can't serve DA sampling requests
 	let (tx, _rx) = async_channel::bounded(spec.inbound_queue);
 	let da_protocol_config = sc_network::request_responses::ProtocolConfig {
 		name: spec.protocol_name.clone(),
@@ -919,24 +920,26 @@ pub fn new_light_node(config: Configuration, _cmd: &LightCmd) -> Result<TaskMana
 			spawn_handle: task_manager.spawn_handle(),
 			import_queue,
 			block_announce_validator_builder: None,
+			// In an deployed network, light clients should ideally use warp sync.
 			warp_sync_params: Some(WarpSyncParams::WithProvider(warp_sync)),
 			block_relay: None,
 		})?;
 
+	// GRANDPA observer is needed for light clients to follow finality & is lighter than full voter
 	let grandpa_config = sc_consensus_grandpa::Config {
 		gossip_duration: Duration::from_millis(500),
 		justification_generation_period: 0, // observer never generates
 		name: Some(config.network.node_name.clone()),
 		observer_enabled: true,
 		keystore: None,
-		local_role: config.role.clone(), // should be Role::Light
+		local_role: config.role.clone(),
 		telemetry: None,
 		protocol_name: grandpa_protocol_name,
 	};
 
 	task_manager.spawn_essential_handle().spawn_blocking(
 		"grandpa-observer",
-		None,
+		Some("light-node"),
 		sc_consensus_grandpa::run_grandpa_observer(
 			grandpa_config,
 			grandpa_link,
@@ -957,6 +960,7 @@ pub fn new_light_node(config: Configuration, _cmd: &LightCmd) -> Result<TaskMana
 		sync_service.clone(),
 		task_manager.spawn_handle(),
 		transaction_pool.clone(),
+		true,
 	);
 
 	let sampler = DaSamplingDownloader::new(blob_handle.clone(), spec.protocol_name.clone());
@@ -964,7 +968,7 @@ pub fn new_light_node(config: Configuration, _cmd: &LightCmd) -> Result<TaskMana
 	let mut finalized_stream = client.finality_notification_stream();
 	task_manager
 		.spawn_essential_handle()
-		.spawn("da-sampling-lc", Some("da-light"), async move {
+		.spawn("da-sampling-lc", Some("light-node"), async move {
 			use futures::StreamExt;
 
 			while let Some(notification) = finalized_stream.next().await {

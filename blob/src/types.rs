@@ -450,6 +450,27 @@ pub enum BlobNotification {
 pub enum BlobRequestEnum {
 	BlobRequest(BlobRequest),
 	BlobQueryRequest(BlobQueryRequest),
+	BlobOwnershipsRequest(BlobOwnershipsRequest),
+}
+
+/// Request ownership information for multiple blobs
+#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
+pub struct BlobOwnershipsRequest {
+	/// Blob hashes whose ownership is requested
+	pub blob_hashes: Vec<BlobHash>,
+}
+
+/// Ownership information for requested blobs
+#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
+pub struct BlobOwnershipsResponse {
+	/// Ownership entries grouped by blob hash
+	pub blobs: Vec<BlobOwnershipInfo>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
+pub struct BlobOwnershipInfo {
+	pub blob_hash: BlobHash,
+	pub ownership: Vec<OwnershipEntry>,
 }
 
 /// Enum for different types of responses.
@@ -457,6 +478,7 @@ pub enum BlobRequestEnum {
 pub enum BlobResponseEnum {
 	BlobResponse(BlobResponse),
 	BlobQueryResponse(Option<Blob>),
+	BlobOwnershipsResponse(BlobOwnershipsResponse),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode)]
