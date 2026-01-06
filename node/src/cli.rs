@@ -144,7 +144,7 @@ pub struct LightCmd {
 	#[arg(long)]
 	pub with_ev_proof: bool,
 
-	/// Number of samples per block (optional)
+	/// Number of samples per blob
 	#[arg(long, default_value = "16")]
 	pub samples_per_blob: u32,
 }

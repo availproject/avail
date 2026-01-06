@@ -1,12 +1,4 @@
-use sp_core::H256;
 use std::io;
-
-#[derive(Clone, Debug)]
-pub struct SamplingContext {
-	pub block_hash: H256,
-	pub blob_hash: H256,
-	pub cell_indices: Vec<u32>,
-}
 
 pub struct DaSamplingProtocolSpec {
 	pub protocol_name: sc_network::types::ProtocolName,
@@ -19,35 +11,43 @@ pub struct DaSamplingProtocolSpec {
 /// DA sampling protocol errors
 #[derive(Debug, thiserror::Error)]
 pub enum SamplingError {
-	// #[error(transparent)]
-	// Client(#[from] sp_blockchain::Error),
-	#[error("Failed to send response.")]
+	/// Failed to send response back to requester (server-side)
+	#[error("Failed to send DA sampling response to peer")]
 	SendResponse,
 
-	#[error("Request failed: {0}")]
-	RequestFailure(String),
+	/// Generic request-level failure with context
+	#[error("DA sampling request failed: {reason}")]
+	RequestFailure { reason: String },
 
-	#[error("Response decode error: {0}")]
+	/// Failed to decode a sampling response
+	#[error("Failed to decode DA sampling response: {0}")]
 	ResponseDecode(#[from] prost::DecodeError),
 
-	#[error(transparent)]
+	/// Failed to encode request or response
+	#[error("Failed to encode DA sampling message: {0}")]
 	Encode(#[from] prost::EncodeError),
 
-	#[error(transparent)]
+	/// Underlying I/O error (network, channel, etc.)
+	#[error("I/O error during DA sampling: {0}")]
 	Io(#[from] io::Error),
 
-	#[error(transparent)]
+	/// Runtime API failure (block/blob lookup, etc.)
+	#[error("Runtime API error during DA sampling: {0}")]
 	Api(#[from] sp_api::ApiError),
 
-	#[error("Verification failed for blob")]
+	/// Cryptographic verification failed
+	#[error("DA sampling verification failed (invalid proof or corrupted data)")]
 	VerificationFailed,
 
-	#[error("Operation timed out")]
+	/// Request timed out waiting for peer response
+	#[error("DA sampling request timed out waiting for peer response")]
 	Timeout,
 
-	#[error("No peers available")]
+	/// No peers (or owners) available to serve the request
+	#[error("No eligible peers available for DA sampling")]
 	NoPeersAvailable,
 
-	#[error("Invalid cell length")]
-	InvalidCellLength,
+	/// Cell length is invalid (expected 16 bytes for B128)
+	#[error("Invalid cell length: expected 16 bytes, got {actual}")]
+	InvalidCellLength { actual: usize },
 }

@@ -9,7 +9,6 @@ pub mod types;
 
 pub use schema::v1::da_sampling::{CellProof, DaSamplingRequest, DaSamplingResponse};
 pub const DA_SAMPLING_PROTOCOL: &str = "/avail/da-sampling/1";
-const LOG_TARGET: &str = "da-sampling";
 
 use std::time::Duration;
 
@@ -46,7 +45,9 @@ pub fn protocol_spec(
 
 pub fn cellproof_to_samplingproof(p: CellProof) -> Result<SamplingProof, SamplingError> {
 	if p.cell.len() != 16 {
-		return Err(SamplingError::InvalidCellLength);
+		return Err(SamplingError::InvalidCellLength {
+			actual: p.cell.len(),
+		});
 	}
 
 	Ok(SamplingProof {

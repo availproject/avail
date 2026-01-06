@@ -1,8 +1,8 @@
+use std::collections::HashSet;
 use std::{str::FromStr, sync::Arc};
 
 use crate::{
 	response_to_samplingproofs, types::SamplingError, DaSamplingRequest, DaSamplingResponse,
-	LOG_TARGET,
 };
 use avail_blob::p2p::BlobHandle;
 use avail_core::{
@@ -14,7 +14,7 @@ use avail_core::{
 };
 use da_runtime::Header as DaHeader;
 use futures::channel::oneshot;
-use log::{info, warn};
+use log::{debug, error, info, trace, warn};
 use prost::Message;
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
@@ -27,6 +27,8 @@ use avail_fri::{
 	encoding::mle_dims_from_blob_size,
 	FriCommitment, FriParamsVersion,
 };
+
+const LOG_TARGET: &str = "da-sampling::client";
 
 pub struct DaSamplingDownloader<B>
 where
@@ -41,20 +43,41 @@ where
 	B: BlockT<Header = DaHeader, Hash = H256>,
 {
 	pub fn new(blob_handle: Arc<BlobHandle<B>>, protocol: ProtocolName) -> Self {
+		info!(
+			target: LOG_TARGET,
+			"Initializing DA sampling downloader with protocol {:?}",
+			protocol
+		);
 		Self {
 			blob_handle,
 			protocol,
 		}
 	}
+
 	pub async fn on_finalized(&self, header: B::Header) {
-		info!("Finalised block :{:?}", header.hash());
-		if header.extension.is_kzg() || !header.extension().has_da_commitments() {
+		debug!(
+			target: LOG_TARGET,
+			"🔍 Finalized block received: hash={:?}, number={}",
+			header.hash(),
+			header.number
+		);
+
+		if header.extension.is_kzg() {
+			trace!(target: LOG_TARGET, "⏭️ Skipping DA sampling: KZG block");
+			return;
+		}
+
+		if !header.extension().has_da_commitments() {
+			trace!(target: LOG_TARGET, "⏭️ Skipping DA sampling: no DA commitments");
 			return;
 		}
 
 		let extension = match &header.extension {
 			HeaderExtension::Fri(ext) => ext,
-			_ => return,
+			_ => {
+				trace!(target: LOG_TARGET, "⏭️ Skipping DA sampling: non-FRI extension");
+				return;
+			},
 		};
 
 		let blobs = match extension {
@@ -62,55 +85,157 @@ where
 		};
 
 		if blobs.is_empty() {
+			debug!(
+				target: LOG_TARGET,
+				"⏭️ Block {:?} has empty FRI blob list",
+				header.hash()
+			);
 			return;
 		}
 
+		// Randomly select ONE blob per block to sample from
 		let mut rng = StdRng::from_entropy();
-		let blob = &blobs[rng.gen_range(0..blobs.len())];
+		let blob_index = rng.gen_range(0..blobs.len());
+		let blob = &blobs[blob_index];
 
-		// TODO: temporary, we should use blob owners from local state
-		let peers = self.blob_handle.network.reserved_peers().await.unwrap();
-		// let owners = match self
-		// 	.blob_handle
-		// 	.blob_database
-		// 	.get_blob_ownerships(&blob.blob_hash)
-		// {
-		// 	Ok(o) if !o.is_empty() => o,
-		// 	Ok(_) => {
-		// 		log::error!(
-		// 			target: LOG_TARGET,
-		// 			"No owners found for blob {:?} in block {:?}, skipping sampling",
-		// 			blob.blob_hash,
-		// 			header.hash()
-		// 		);
-		// 		return;
-		// 	},
-		// 	Err(e) => {
-		// 		log::error!(
-		// 			target: LOG_TARGET,
-		// 			"Failed to fetch ownership for blob {:?}: {e}",
-		// 			blob.blob_hash
-		// 		);
-		// 		return;
-		// 	},
-		// };
+		info!(
+			target: LOG_TARGET,
+			"🎯 Selected blob_hash={:?} for sampling in block: {:?}",
+			blob.blob_hash,
+			header.hash(),
+		);
 
-		// for owner in owners {
-		// 	let peer_id = match PeerId::from_str(&owner.encoded_peer_id) {
-		// 		Ok(p) => p,
-		// 		Err(_) => return,
-		// 	};
-		// 	let _ = self.request_and_verify(peer_id, header.hash(), blob).await;
-		// }
-		for peer in peers {
-			let _ = self.request_and_verify(peer, header.hash(), blob).await;
+		let peers = self.get_blob_owners_or_peers(blob.blob_hash).await;
+		for (i, peer) in peers.iter().copied().enumerate() {
+			info!(
+				target: LOG_TARGET,
+				"🔁 Sampling attempt {} for block {:?} via peer {:?}",
+				i + 1,
+				header.hash(),
+				peer
+			);
+
+			match self.request_and_verify(peer, header.hash(), blob).await {
+				Ok(_) => {
+					info!(
+						target: LOG_TARGET,
+						"✅ DA sampling SUCCESS for block {:?} via peer {:?}",
+						header.hash(),
+						peer
+					);
+					return;
+				},
+				Err(e) => {
+					warn!(
+						target: LOG_TARGET,
+						"⚠️ DA sampling failed via peer {:?}: {:?}",
+						peer,
+						e
+					);
+				},
+			}
+		}
+
+		// TODO: What do we usually do on sampling failure?
+		error!(
+			target: LOG_TARGET,
+			"❌ DA sampling FAILED for block {:?}: all peers exhausted",
+			header.hash()
+		);
+	}
+
+	// Returns peer IDs to try for DA sampling:
+	/// 1. Blob owners from local DB (preferred)
+	/// 2. Reserved peers as fallback
+	async fn get_blob_owners_or_peers(&self, blob_hash: H256) -> Vec<PeerId> {
+		// Try getting blob_owners first
+		match self
+			.blob_handle
+			.blob_database
+			.get_blob_ownerships(&blob_hash)
+		{
+			Ok(owners) if !owners.is_empty() => {
+				let mut peer_ids = Vec::with_capacity(owners.len());
+
+				for owner in owners {
+					match PeerId::from_str(&owner.encoded_peer_id) {
+						Ok(peer_id) => peer_ids.push(peer_id),
+						Err(e) => warn!(
+							target: LOG_TARGET,
+							"⚠️ Invalid peer_id '{}' for blob {:?}: {e}",
+							owner.encoded_peer_id,
+							blob_hash
+						),
+					}
+				}
+
+				if !peer_ids.is_empty() {
+					debug!(
+						target: LOG_TARGET,
+						"📦 Using {} blob owners for blob {:?}",
+						peer_ids.len(),
+						blob_hash
+					);
+					return peer_ids;
+				}
+
+				warn!(
+					target: LOG_TARGET,
+					"⚠️ Blob {:?} has owners but none had valid PeerIds, falling back",
+					blob_hash
+				);
+			},
+
+			Ok(_) => {
+				warn!(
+					target: LOG_TARGET,
+					"⚠️ No owners recorded for blob {:?}, falling back to reserved peers",
+					blob_hash
+				);
+			},
+
+			Err(e) => {
+				error!(
+					target: LOG_TARGET,
+					"❌ Failed to fetch ownership for blob {:?}: {e}",
+					blob_hash
+				);
+			},
+		}
+
+		// Fallback to reserved peers
+		match self.blob_handle.network.reserved_peers().await {
+			Ok(peers) if !peers.is_empty() => {
+				debug!(
+					target: LOG_TARGET,
+					"🔁 Using {} reserved peers as fallback for blob {:?}",
+					peers.len(),
+					blob_hash
+				);
+				peers
+			},
+			_ => {
+				error!(
+					target: LOG_TARGET,
+					"❌ No peers available for DA sampling for blob {:?}",
+					blob_hash
+				);
+				Vec::new()
+			},
 		}
 	}
 
 	fn sample_cells(&self, max: u32) -> Vec<u32> {
 		let mut rng = StdRng::from_entropy();
-		let count = 16.min(max);
-		(0..count).map(|_| rng.gen_range(0..max)).collect()
+		let target = 16.min(max as usize);
+
+		let mut indices = HashSet::with_capacity(target);
+
+		while indices.len() < target {
+			indices.insert(rng.gen_range(0..max));
+		}
+
+		indices.into_iter().collect()
 	}
 
 	async fn request_and_verify(
@@ -119,7 +244,22 @@ where
 		block_hash: B::Hash,
 		blob: &FriBlobCommitment,
 	) -> Result<(), SamplingError> {
+		debug!(
+			target: LOG_TARGET,
+			"Preparing DA sampling request: block={:?}, blob={:?}",
+			block_hash,
+			blob.blob_hash
+		);
+
 		let (log_len, n_vars) = mle_dims_from_blob_size(blob.size_bytes as usize);
+
+		trace!(
+			target: LOG_TARGET,
+			"Derived FRI dimensions: log_len={}, n_vars={}",
+			log_len,
+			n_vars
+		);
+
 		let cells = self.sample_cells(log_len as u32);
 
 		let req = DaSamplingRequest {
@@ -128,10 +268,17 @@ where
 			cell_indices: cells.clone(),
 		};
 
-		let mut buf = Vec::new();
+		let mut buf = Vec::with_capacity(req.encoded_len());
 		req.encode(&mut buf)?;
 
 		let (tx, rx) = oneshot::channel();
+
+		trace!(
+			target: LOG_TARGET,
+			"📤 Sending DA sampling request to peer {:?} ({} cells)",
+			peer,
+			cells.len()
+		);
 
 		self.blob_handle.network.start_request(
 			peer,
@@ -145,15 +292,50 @@ where
 		let resp = match rx.await {
 			Ok(Ok(resp)) => resp,
 			Ok(Err(e)) => {
-				warn!(target: LOG_TARGET, "Request to {peer} failed: {e}");
-				return Err(SamplingError::RequestFailure(e.to_string()));
+				warn!(
+					target: LOG_TARGET,
+					"⚠️ Peer {:?} returned error response: {e}",
+					peer
+				);
+				return Err(SamplingError::RequestFailure {
+					reason: e.to_string(),
+				});
 			},
 			Err(_) => {
-				return Err(SamplingError::RequestFailure("channel closed".into()));
+				warn!(
+					target: LOG_TARGET,
+					"⚠️ DA sampling channel closed by peer {:?}",
+					peer
+				);
+				return Err(SamplingError::RequestFailure {
+					reason: "channel closed".into(),
+				});
 			},
 		};
 
 		let resp = DaSamplingResponse::decode(&*resp.0)?;
+		// do sanity check of responded cells
+		let requested: HashSet<u32> = cells.iter().copied().collect();
+		let returned: HashSet<u32> = resp.proofs.iter().map(|p| p.index).collect();
+
+		if requested != returned {
+			error!(
+				target: LOG_TARGET,
+				"❌ Sampling response mismatch from peer {peer}: requested={:?}, returned={:?}",
+				requested,
+				returned
+			);
+			return Err(SamplingError::RequestFailure {
+				reason: "server returned mismatched sampling indices".into(),
+			});
+		}
+
+		debug!(
+			target: LOG_TARGET,
+			"📤 Received {} sampling proofs from peer {:?}",
+			resp.proofs.len(),
+			peer
+		);
 
 		let params_version = FriParamsVersion(0);
 		let cfg = params_version.to_config(n_vars);
@@ -172,12 +354,24 @@ where
 		let commitment = FriCommitment { digest };
 
 		for proof in sampling_proofs {
+			trace!(
+				target: LOG_TARGET,
+				"🧪 Verifying inclusion proof at index {}",
+				proof.index
+			);
+
 			proof
 				.verify_b128(&pcs, &ctx, &commitment)
 				.map_err(|_| SamplingError::VerificationFailed)?;
 		}
 
-		info!(target: LOG_TARGET, "DA sampling verified for {:?}", block_hash);
+		info!(
+			target: LOG_TARGET,
+			"✅ DA sampling verification PASSED for block {:?} via peer {:?}",
+			block_hash,
+			peer
+		);
+
 		Ok(())
 	}
 }
