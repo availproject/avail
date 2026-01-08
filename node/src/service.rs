@@ -560,7 +560,6 @@ pub fn new_full_base(
 		sync_service.clone(),
 		task_manager.spawn_handle(),
 		transaction_pool.clone(),
-		false,
 	);
 
 	let handler =
@@ -960,7 +959,6 @@ pub fn new_light_node(config: Configuration, _cmd: &LightCmd) -> Result<TaskMana
 		sync_service.clone(),
 		task_manager.spawn_handle(),
 		transaction_pool.clone(),
-		true,
 	);
 
 	let sampler = DaSamplingDownloader::new(blob_handle.clone(), spec.protocol_name.clone());

@@ -22,7 +22,7 @@ use avail_blob::types::FullClient;
 use avail_node::chains;
 use da_runtime::Block;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
-use sc_cli::{Result, SubstrateCli, SyncMode};
+use sc_cli::{Result, Role, SubstrateCli, SyncMode};
 use sc_service::PartialComponents;
 #[cfg(feature = "try-runtime")]
 use {
@@ -101,6 +101,7 @@ pub fn run() -> Result<()> {
 				// Forcing fast-unsafe sync for LC (for local testing)
 				// For live networks, sync mode for lc should be warp
 				config.network.sync_mode = SyncMode::FastUnsafe.into();
+				config.role = Role::LightClient;
 
 				log::info!(
 					"Light client mode: forcing sync mode to {:?}",

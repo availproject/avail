@@ -80,8 +80,6 @@ where
 	pub client: Arc<FullClient>,
 	pub blob_database: Arc<dyn StorageApiT>,
 	pub role: Role,
-	// temp: until we add light_client role
-	pub is_light_node: bool,
 }
 
 impl<Block> BlobHandle<Block>
@@ -99,7 +97,6 @@ where
 		sync_service: Arc<SyncingService<Block>>,
 		spawn_handle: SpawnTaskHandle,
 		pool: Arc<Pool>,
-		is_light_node: bool,
 	) -> Arc<Self>
 	where
 		Pool: TransactionPool<Block = Block> + 'static,
@@ -115,7 +112,6 @@ where
 			gossip_cmd_sender,
 			blob_database,
 			role,
-			is_light_node,
 		};
 
 		blob_handle.start_blob_req_res(spawn_handle.clone(), req_receiver);
@@ -124,10 +120,10 @@ where
 		if blob_handle.role.is_authority() {
 			blob_handle.start_missing_validators_listener(spawn_handle.clone(), pool);
 		}
-		if is_light_node {
+		if matches!(blob_handle.role, Role::LightClient) {
 			blob_handle.start_blob_ownership_fetcher(spawn_handle);
 		} else {
-			// we dont need the blob_gossip service in light-node mode
+			// we only need the blob_gossip service in full-node mode
 			blob_handle.start_blob_gossip(
 				spawn_handle.clone(),
 				blob_gossip_service,
