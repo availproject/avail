@@ -87,6 +87,11 @@ impl SubstrateCli for Cli {
 pub fn run() -> Result<()> {
 	let cli = Cli::from_args();
 
+	// Validate configuration before starting any services
+	// This catches errors early and provides clear feedback to users
+	cli.validate()
+		.map_err(|e| sc_cli::Error::Input(e))?;
+
 	match &cli.subcommand {
 		None => {
 			let runner = cli.create_runner(&cli.run)?;
