@@ -77,6 +77,55 @@ fn grandpa_justification_period_bounds(s: &str) -> Result<u32, String> {
 	clap_num::number_range(s, 1, u32::MAX)
 }
 
+impl Cli {
+	/// Validates CLI parameters before node startup
+	///
+	/// This catches configuration errors early, before any services are started.
+	/// Failing fast prevents silent failures during operation.
+	pub fn validate(&self) -> Result<(), String> {
+		// Validate grandpa_justification_period
+		// Although clap enforces minimum of 1, we double-check for safety
+		if self.grandpa_justification_period == 0 {
+			return Err(
+				"grandpa_justification_period cannot be 0. Must be at least 1.".to_string(),
+			);
+		}
+
+		// Validate kate_max_cells_size
+		if self.kate_max_cells_size == 0 {
+			return Err("kate_max_cells_size cannot be 0. Must be at least 1.".to_string());
+		}
+
+		// Double-check upper bound (clap already enforces this, but defense in depth)
+		if self.kate_max_cells_size > 10_000 {
+			return Err(
+				"kate_max_cells_size cannot exceed 10,000 to prevent resource exhaustion."
+					.to_string(),
+			);
+		}
+
+		// Check for dangerous flag combinations
+		if self.unsafe_da_sync && self.run.validator {
+			return Err(
+				"Cannot use --unsafe-da-sync with --validator. \
+				Data availability checks are required for validators to maintain consensus."
+					.to_string(),
+			);
+		}
+
+		// Warn about Kate RPC metrics without Kate RPC enabled
+		// This is just a warning, not an error, so we log it
+		if self.kate_rpc_metrics_enabled && !self.kate_rpc_enabled {
+			log::warn!(
+				"Kate RPC metrics are enabled (--enable-kate-rpc-metrics) but Kate RPC is disabled. \
+				Consider enabling Kate RPC with --enable-kate-rpc to make metrics useful."
+			);
+		}
+
+		Ok(())
+	}
+}
+
 /// Possible subcommands of the main binary.
 #[allow(clippy::large_enum_variant)]
 #[derive(Debug, clap::Subcommand)]
