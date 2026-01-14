@@ -983,6 +983,7 @@ pub fn new_light_node(config: Configuration, _cmd: &LightCmd) -> Result<TaskMana
 		},
 	);
 
+	// For light clients, we spawn minimal tasks compared to full nodes.
 	let _rpc_handlers = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
 		config,
 		backend: backend.clone(),
