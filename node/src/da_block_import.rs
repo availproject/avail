@@ -174,9 +174,9 @@ where
 
 						avail_blob::validation::validate_fri_proof(
 							da.size_bytes as usize,
-							&da.eval_point_seed.unwrap(),
-							&da.eval_claim.unwrap(),
-							da.eval_proof.as_ref().unwrap(),
+							&da.eval_point_seed.expect("checked above; qed"),
+							&da.eval_claim.expect("checked above; qed"),
+							da.eval_proof.as_ref().expect("checked above; qed"),
 						)
 						.map_err(|e| {
 							ConsensusError::ClientImport(format!(
