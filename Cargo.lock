@@ -1205,7 +1205,6 @@ dependencies = [
 name = "avail-node"
 version = "0.1.0"
 dependencies = [
- "async-channel 1.9.0",
  "async-trait",
  "avail-base",
  "avail-blob",
@@ -1216,7 +1215,6 @@ dependencies = [
  "clap_complete",
  "da-control",
  "da-runtime",
- "da-sampling",
  "frame-benchmarking",
  "frame-benchmarking-cli",
  "frame-system",
@@ -3031,32 +3029,6 @@ dependencies = [
  "sp-io",
  "sp-keyring",
  "sp-runtime",
-]
-
-[[package]]
-name = "da-sampling"
-version = "0.1.0"
-dependencies = [
- "array-bytes 6.2.3",
- "async-channel 1.9.0",
- "avail-blob",
- "avail-core",
- "avail-fri",
- "da-runtime",
- "futures",
- "hex",
- "log",
- "lru 0.7.8",
- "prost 0.12.6",
- "prost-build 0.12.6",
- "rand 0.8.5",
- "sc-chain-spec",
- "sc-client-api",
- "sc-network",
- "sp-api",
- "sp-core",
- "sp-runtime",
- "thiserror 2.0.17",
 ]
 
 [[package]]
@@ -9462,32 +9434,11 @@ dependencies = [
  "petgraph",
  "prettyplease 0.1.25",
  "prost 0.11.9",
- "prost-types 0.11.9",
+ "prost-types",
  "regex",
  "syn 1.0.109",
  "tempfile",
  "which",
-]
-
-[[package]]
-name = "prost-build"
-version = "0.12.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "22505a5c94da8e3b7c2996394d1c933236c4d743e81a410bcca4e6989fc066a4"
-dependencies = [
- "bytes",
- "heck 0.5.0",
- "itertools 0.12.1",
- "log",
- "multimap",
- "once_cell",
- "petgraph",
- "prettyplease 0.2.29",
- "prost 0.12.6",
- "prost-types 0.12.6",
- "regex",
- "syn 2.0.96",
- "tempfile",
 ]
 
 [[package]]
@@ -9536,15 +9487,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "213622a1460818959ac1181aaeb2dc9c7f63df720db7d788b3e24eacd1983e13"
 dependencies = [
  "prost 0.11.9",
-]
-
-[[package]]
-name = "prost-types"
-version = "0.12.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9091c90b0a32608e984ff2fa4091273cbdd755d54935c51d520887f4a1dbd5b0"
-dependencies = [
- "prost 0.12.6",
 ]
 
 [[package]]
@@ -10544,7 +10486,7 @@ dependencies = [
  "multihash-codetable",
  "parity-scale-codec",
  "prost 0.12.6",
- "prost-build 0.11.9",
+ "prost-build",
  "rand 0.8.5",
  "sc-client-api",
  "sc-network",
@@ -11084,7 +11026,7 @@ dependencies = [
  "libp2p-identity",
  "log",
  "prost 0.12.6",
- "prost-build 0.11.9",
+ "prost-build",
  "sc-client-api",
  "sc-network",
  "sp-blockchain",
@@ -11103,7 +11045,7 @@ dependencies = [
  "futures",
  "libp2p-identity",
  "parity-scale-codec",
- "prost-build 0.11.9",
+ "prost-build",
  "sc-consensus",
  "sp-consensus",
  "sp-consensus-grandpa",
@@ -11141,7 +11083,7 @@ dependencies = [
  "log",
  "parity-scale-codec",
  "prost 0.12.6",
- "prost-build 0.11.9",
+ "prost-build",
  "sc-client-api",
  "sc-network",
  "sp-blockchain",
@@ -11166,7 +11108,7 @@ dependencies = [
  "mockall",
  "parity-scale-codec",
  "prost 0.12.6",
- "prost-build 0.11.9",
+ "prost-build",
  "sc-client-api",
  "sc-consensus",
  "sc-network",
