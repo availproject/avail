@@ -26,11 +26,10 @@ lru.workspace = true
 hex.workspace = true
 rand.workspace = true
 thiserror.workspace = true
-prost = "0.12"
-# oneshot = "0.1.11"
+prost.workspace = true
 
 [lints]
 workspace = true
 
 [build-dependencies]
-prost-build = "0.12"
+prost-build.workspace = true

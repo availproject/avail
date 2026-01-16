@@ -95,6 +95,8 @@ scale-info = { version = "2.5.0", default-features = false, features = ["derive"
 cfg-if = "1.0"
 impl-trait-for-tuples = "0.2.1"
 docify = "0.2.6"
+prost = "0.12"
+prost-build = "0.12"
 
 # Encryptions and hashing
 sha2 = { version = "0.10.8", default-features = false }
@@ -251,12 +253,9 @@ substrate-build-script-utils = { git = "https://github.com/availproject/polkadot
 sp-trie = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "8c9d5efafc7dfcaa4521ecac67c639a5a44b3cd3", default-features = false }
 sp-state-machine = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "8c9d5efafc7dfcaa4521ecac67c639a5a44b3cd3", default-features = false }
 
-
 sc-block-builder = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "8c9d5efafc7dfcaa4521ecac67c639a5a44b3cd3" }
 sc-proposer-metrics = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "8c9d5efafc7dfcaa4521ecac67c639a5a44b3cd3" }
 substrate-prometheus-endpoint = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "8c9d5efafc7dfcaa4521ecac67c639a5a44b3cd3" }
-# substrate-test-runtime-client = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "8c9d5efafc7dfcaa4521ecac67c639a5a44b3cd3" }
-
 
 # Patch from forked pallets
 [patch."https://github.com/availproject/polkadot-sdk.git"]
@@ -301,10 +300,7 @@ stable_sort_primitive = { level = "allow", priority = 2 }            # prefer st
 extra-unused-type-parameters = { level = "allow", priority = 2 }     # stylistic
 default_constructed_unit_structs = { level = "allow", priority = 2 } # stylistic
 
-
 ## CLI
-
-
 # The list of dependencies below (which can be both direct and indirect dependencies) are crates
 # that are suspected to be CPU-intensive, and that are unlikely to require debugging (as some of
 # their debug info might be missing) or to require to be frequently recompiled. We compile these
