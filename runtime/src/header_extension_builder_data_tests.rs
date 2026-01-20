@@ -21,7 +21,7 @@ use derive_more::Constructor;
 use hex_literal::hex;
 use pallet_transaction_payment::ChargeTransactionPayment;
 use sp_core::H256;
-use sp_keyring::AccountKeyring::{Alice, Bob};
+use sp_keyring::Sr25519Keyring::{Alice, Bob};
 use sp_runtime::traits::Keccak256;
 use sp_runtime::{
 	generic::Era,
@@ -105,8 +105,8 @@ where
 	verify_proof::<Keccak256, _, _>(
 		&root,
 		proof,
-		number_of_submitted_data as usize,
-		data_index as usize,
+		(number_of_submitted_data as usize).try_into().unwrap(),
+		(data_index as usize).try_into().unwrap(),
 		leaf,
 	)
 }
@@ -124,21 +124,14 @@ fn extra() -> SignedExtra {
 		CheckBatchTransactions::<Runtime>::new(),
 	)
 }
-fn additional_signed() -> <SignedExtra as SignedExtension>::AdditionalSigned {
-	let spec_ver = VERSION.spec_version;
-	let tx_ver = VERSION.transaction_version;
-	let genesis = H256::default();
-	let era = H256::repeat_byte(1);
-
-	((), spec_ver, tx_ver, genesis, era, (), (), (), ())
-}
 
 fn signed_extrinsic(function: RuntimeCall) -> Vec<u8> {
 	let extra = extra();
-	let additional = additional_signed();
 	let alice = Alice.to_account_id();
 
-	let payload = SignedPayload::from_raw(function.clone(), extra.clone(), additional).encode();
+	let payload = SignedPayload::new(function.clone(), extra.clone())
+		.unwrap()
+		.encode();
 	let signature: MultiSignature = Alice.sign(&payload).into();
 
 	assert!(signature.verify(&*payload, &alice));
@@ -519,9 +512,9 @@ mod bridge_tests {
 }
 
 mod data_root {
-	use frame_support::traits::DefensiveTruncateFrom;
+	use bounded_collections::BoundedVec;
+	// use frame_support::traits::DefensiveTruncateFrom;
 	use sp_core::keccak_256;
-	use sp_runtime::BoundedVec;
 
 	use super::*;
 
@@ -758,7 +751,7 @@ mod data_root {
 				hex!("ad79a34ee43ea39301b1f190558ea279122328ebd66b342a49a131ee5befd3b5");
 
 			let data = hex!("0000000000000000000000000000000000000000000000000000000000002b67");
-			let data = BoundedVec::defensive_truncate_from(data.to_vec());
+			let data = BoundedVec::truncate_from(data.to_vec());
 
 			let message = AddressedMessage {
 				message: Message::ArbitraryMessage(data),
@@ -784,7 +777,7 @@ mod data_root {
 			let expected_encoding = hex!("00000000000000000000000000000000000000000000000000000000000000200100000000000000000000000000000000000000000000000000000000000000681257bed628425a28b469114dc21a7c30205cfd0000000000000000000000003547517355657647456b6f7847444a5044576251694b4478714b6d675a3570470000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000e00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000d48656c6c6f2c20576f726c642100000000000000000000000000000000000000");
 			let expected_hash =
 				hex!("5774ba3f9618e2da3885b0e2853e4005c3e836625e8be0f69bf3d93f51fac58d");
-			let data = BoundedVec::defensive_truncate_from("Hello, World!".as_bytes().to_vec());
+			let data = BoundedVec::truncate_from("Hello, World!".as_bytes().to_vec());
 
 			let message = AddressedMessage {
 				message: Message::ArbitraryMessage(data),

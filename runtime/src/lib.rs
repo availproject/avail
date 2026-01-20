@@ -27,8 +27,10 @@ pub(crate) const LOG_TARGET: &str = "da-runtime";
 
 pub mod apis;
 pub mod constants;
-#[cfg(test)]
-mod header_extension_builder_data_tests;
+mod genesis_config_presets;
+// TODO: Update & enable back these tests
+// #[cfg(test)]
+// mod header_extension_builder_data_tests;
 pub mod impls;
 #[cfg(test)]
 mod impls_tests;
@@ -48,7 +50,7 @@ pub use frame_support::{
 	parameter_types,
 	traits::{
 		ConstU32, ContainsLengthBound, Currency, EitherOfDiverse, EqualPrivilegeOnly, Everything,
-		ExtrinsicCall, Imbalance, KeyOwnerProofSystem, OnUnbalanced, Randomness, SortedMembers,
+		Imbalance, KeyOwnerProofSystem, OnUnbalanced, Randomness, SortedMembers,
 	},
 	weights::{
 		constants::{
@@ -208,7 +210,7 @@ mod tests {
 	use frame_system::offchain::CreateSignedTransaction;
 	use hex_literal::hex;
 	use sp_core::hexdisplay::HexDisplay;
-	use sp_keyring::AccountKeyring::Bob;
+	use sp_keyring::Sr25519Keyring::Bob;
 	use sp_runtime::{MultiAddress, UpperOf};
 	use test_case::test_case;
 

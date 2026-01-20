@@ -457,7 +457,9 @@ pub mod fetch_events_v1 {
 
 pub mod fetch_extrinsics_v1 {
 	use super::*;
-	use avail_core::asdr::EXTRINSIC_FORMAT_VERSION;
+	// use avail_core::asdr::EXTRINSIC_FORMAT_VERSION;
+	// TODO: move this to appropriate place
+	const EXTRINSIC_FORMAT_VERSION: u8 = 4;
 	use codec::{Decode, Input};
 	use da_runtime::{Address, Signature, SignedExtra};
 	use serde::{Deserialize, Serialize};

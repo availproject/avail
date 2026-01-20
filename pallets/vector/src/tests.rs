@@ -243,9 +243,7 @@ fn test_fulfill_step_call_finality_not_met() {
 		Updater::<Test>::set(H256(TEST_SENDER_VEC));
 		SyncCommitteePoseidons::<Test>::insert(
 			931,
-			U256::from(hex!(
-				"0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df"
-			)),
+			U256::from("0x0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df"),
 		);
 
 		ConfigurationStorage::<Test>::set(Configuration {
@@ -618,9 +616,7 @@ fn test_fulfill_step_call() {
 
 		SyncCommitteePoseidons::<Test>::insert(
 			931,
-			U256::from(hex!(
-				"0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df"
-			)),
+			U256::from("0x0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df"),
 		);
 
 		ConfigurationStorage::<Test>::set(Configuration {
@@ -682,9 +678,7 @@ fn test_fulfill_step_call_wrong_poseidon() {
 		// current poseidon is not the same as the one in the valid proof
 		SyncCommitteePoseidons::<Test>::insert(
 			931,
-			U256::from(hex!(
-				"0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332da"
-			)),
+			U256::from("0x0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332da"),
 		);
 
 		ConfigurationStorage::<Test>::set(Configuration {
@@ -712,9 +706,7 @@ fn test_fulfill_step_call_slot_behind_head() {
 		Updater::<Test>::set(H256(TEST_SENDER_VEC));
 		SyncCommitteePoseidons::<Test>::insert(
 			931,
-			U256::from(hex!(
-				"0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df"
-			)),
+			U256::from("0x0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df"),
 		);
 
 		// move head forward
@@ -845,9 +837,7 @@ fn test_fulfill_step_call_verification_key_is_not_set() {
 
 		SyncCommitteePoseidons::<Test>::insert(
 			931,
-			U256::from(hex!(
-				"0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df"
-			)),
+			U256::from("0x0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df"),
 		);
 
 		ConfigurationStorage::<Test>::set(Configuration {

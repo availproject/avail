@@ -6,7 +6,7 @@ use ark_groth16::Proof;
 use ark_std::str::FromStr;
 use ark_std::string::String;
 use ark_std::string::ToString;
-use codec::{Decode, Encode, MaxEncodedLen};
+use codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use frame_support::{Deserialize, Serialize};
 use scale_info::TypeInfo;
 use sp_core::{H256, U256};
@@ -82,7 +82,18 @@ impl PublicSignals {
 }
 
 /// Configuration struct that holds basic pallet configuration.
-#[derive(Clone, Copy, Encode, Decode, Debug, PartialEq, Eq, TypeInfo, MaxEncodedLen)]
+#[derive(
+	Clone,
+	Copy,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	Debug,
+	PartialEq,
+	Eq,
+	TypeInfo,
+	MaxEncodedLen,
+)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Default)]
 pub struct Configuration {

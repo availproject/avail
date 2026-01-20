@@ -3,22 +3,20 @@
 use super::*;
 use crate::Pallet;
 use avail_base::HeaderExtensionBuilderData;
-use avail_core::{
-	asdr::AppUncheckedExtrinsic, AppExtrinsic, BlockLengthColumns, BlockLengthRows,
-	BLOCK_CHUNK_SIZE,
-};
-use codec::{Decode, Encode};
-use frame_benchmarking::{
-	impl_benchmark_test_suite, v1::BenchmarkError, v2::*, whitelisted_caller,
-};
+// use avail_core::{BlockLengthColumns, BlockLengthRows, HeaderVersion, BLOCK_CHUNK_SIZE};
+use codec::{Decode, DecodeWithMemTracking, Encode};
+use frame_benchmarking::{v1::BenchmarkError, v2::*, whitelisted_caller};
 use frame_support::traits::Get;
 use frame_system::{
-	limits::BlockLength, native::hosted_header_builder::hosted_header_builder, RawOrigin,
+	// limits::BlockLength, native::hosted_header_builder::hosted_header_builder,
+	Config as SystemConfig,
+	RawOrigin,
 };
 use kate::Seed;
 use scale_info::{StaticTypeInfo, TypeInfo};
 use sp_core::H256;
 use sp_runtime::{
+	generic::UncheckedExtrinsic,
 	traits::{Bounded, DispatchInfoOf, Dispatchable, SignedExtension},
 	transaction_validity::{TransactionValidity, TransactionValidityError},
 	Perbill,
@@ -27,13 +25,16 @@ use sp_std::{fmt::Debug, iter::repeat, vec, vec::Vec};
 
 use crate::pallet::Call as DACall;
 
-type RuntimeCallOf<T> = <T as frame_system::Config>::RuntimeCall;
+#[cfg(feature = "runtime-benchmarks")]
+const MAX_DATA_B: u32 = 1024 * 1024; // 1 MiB just for weights
 
-fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
+type RuntimeCallOf<T> = <T as SystemConfig>::RuntimeCall;
+
+fn assert_last_event<T: Config>(generic_event: <T as SystemConfig>::RuntimeEvent) {
 	frame_system::Pallet::<T>::assert_last_event(generic_event.into());
 }
 
-#[derive(PartialEq, Eq, Clone, Debug, Encode, Decode, TypeInfo)]
+#[derive(PartialEq, Eq, Clone, Debug, Encode, Decode, DecodeWithMemTracking, TypeInfo)]
 pub struct SignedExtensionUnused<
 	T: frame_system::Config + Send + Sync + pallet::Config + Debug + StaticTypeInfo,
 >(
@@ -123,43 +124,43 @@ where
 	};
 	let runtime_call: <T as frame_system::Config>::RuntimeCall = call.into();
 	let unchecked_extrinsic =
-		AppUncheckedExtrinsic::<(), RuntimeCallOf<T>, (), SignedExtensionUnused<T>>::new_unsigned(
+		UncheckedExtrinsic::<(), RuntimeCallOf<T>, (), SignedExtensionUnused<T>>::new_unsigned(
 			runtime_call,
 		);
 
 	unchecked_extrinsic.encode()
 }
 
-fn commitment_parameters<T: frame_system::Config + pallet::Config>(
-	rows: u32,
-	cols: u32,
-) -> (Vec<AppExtrinsic>, H256, BlockLength, u32, [u8; 32])
-where
-	T: frame_system::Config + pallet::Config,
-{
-	let seed = [0u8; 32];
-	let root = H256::zero();
-	let block_number: u32 = 0;
-	let data_length = T::MaxAppDataLength::get();
+// fn commitment_parameters<T: frame_system::Config + pallet::Config>(
+// 	rows: u32,
+// 	cols: u32,
+// ) -> (Vec<AppExtrinsic>, H256, BlockLength, u32, [u8; 32])
+// where
+// 	T: frame_system::Config + pallet::Config,
+// {
+// 	let seed = [0u8; 32];
+// 	let root = H256::zero();
+// 	let block_number: u32 = 0;
+// 	let data_length = T::MaxAppDataLength::get();
 
-	let rows = BlockLengthRows(prev_power_of_two(rows));
-	let cols = BlockLengthColumns(cols);
+// 	let rows = BlockLengthRows(prev_power_of_two(rows));
+// 	let cols = BlockLengthColumns(cols);
 
-	let mut nb_tx = 4; // Value set depending on MaxAppDataLength (512 kb) to reach 2 mb
-	let max_tx: u32 =
-		rows.0 * cols.0 * (BLOCK_CHUNK_SIZE.get().checked_sub(2).unwrap()) / data_length;
-	if nb_tx > max_tx {
-		nb_tx = max_tx;
-	}
+// 	let mut nb_tx = 4; // Value set depending on MaxAppDataLength (512 kb) to reach 2 mb
+// 	let max_tx: u32 =
+// 		rows.0 * cols.0 * (BLOCK_CHUNK_SIZE.get().checked_sub(2).unwrap()) / data_length;
+// 	if nb_tx > max_tx {
+// 		nb_tx = max_tx;
+// 	}
 
-	let block_length =
-		BlockLength::with_normal_ratio(rows, cols, BLOCK_CHUNK_SIZE, DA_DISPATCH_RATIO_PERBILL)
-			.unwrap();
-	let data: Vec<u8> = generate_bounded::<AppDataFor<T>>(data_length).to_vec();
-	let txs = vec![AppExtrinsic::from(data.to_vec()); nb_tx as usize];
+// 	let block_length =
+// 		BlockLength::with_normal_ratio(rows, cols, BLOCK_CHUNK_SIZE, DA_DISPATCH_RATIO_PERBILL)
+// 			.unwrap();
+// 	let data: Vec<u8> = generate_bounded::<AppDataFor<T>>(data_length).to_vec();
+// 	let txs = vec![AppExtrinsic::from(data.to_vec()); nb_tx as usize];
 
-	(txs, root, block_length, block_number, seed)
-}
+// 	(txs, root, block_length, block_number, seed)
+// }
 
 #[benchmarks(
 	where <T as frame_system::Config>::RuntimeCall: From<DACall<T>>, T: Send + Sync + Debug + StaticTypeInfo
@@ -203,7 +204,7 @@ mod benchmarks {
 	}
 
 	#[benchmark]
-	fn submit_data(i: Linear<1, { T::MaxAppDataLength::get() }>) -> Result<(), BenchmarkError> {
+	fn submit_data(i: Linear<1, MAX_DATA_B>) -> Result<(), BenchmarkError> {
 		let caller = whitelisted_caller::<T::AccountId>();
 		let origin = RawOrigin::Signed(caller.clone());
 		let data = generate_bounded::<AppDataFor<T>>(i);
@@ -239,7 +240,7 @@ mod benchmarks {
 	}
 
 	#[benchmark]
-	fn data_root(i: Linear<0, { T::MaxAppDataLength::get() }>) -> Result<(), BenchmarkError> {
+	fn data_root(i: Linear<0, MAX_DATA_B>) -> Result<(), BenchmarkError> {
 		let data = generate_bounded::<AppDataFor<T>>(i);
 		let opaque = submit_data_ext::<T>(data);
 
@@ -502,47 +503,47 @@ mod benchmarks {
 		Ok(())
 	}
 
-	#[benchmark(extra)]
-	fn commitment_builder_64(
-		i: Linear<32, { T::MaxBlockRows::get().0 }>,
-	) -> Result<(), BenchmarkError> {
-		let (txs, root, block_length, block_number, seed) = commitment_parameters::<T>(i, 64);
+	// #[benchmark(extra)]
+	// fn commitment_builder_64(
+	// 	i: Linear<32, { T::MaxBlockRows::get().0 }>,
+	// ) -> Result<(), BenchmarkError> {
+	// 	let (txs, root, block_length, header_version) = commitment_parameters::<T>(i, 64);
 
-		#[block]
-		{
-			hosted_header_builder::build(txs, root, block_length, block_number, seed);
-		}
+	// 	#[block]
+	// 	{
+	// 		hosted_header_builder::build_extension(txs, root, block_length, header_version);
+	// 	}
 
-		Ok(())
-	}
+	// 	Ok(())
+	// }
 
-	#[benchmark(extra)]
-	fn commitment_builder_128(
-		i: Linear<32, { T::MaxBlockRows::get().0 }>,
-	) -> Result<(), BenchmarkError> {
-		let (txs, root, block_length, block_number, seed) = commitment_parameters::<T>(i, 128);
+	// #[benchmark(extra)]
+	// fn commitment_builder_128(
+	// 	i: Linear<32, { T::MaxBlockRows::get().0 }>,
+	// ) -> Result<(), BenchmarkError> {
+	// 	let (txs, root, block_length, header_version) = commitment_parameters::<T>(i, 128);
 
-		#[block]
-		{
-			hosted_header_builder::build(txs, root, block_length, block_number, seed);
-		}
+	// 	#[block]
+	// 	{
+	// 		hosted_header_builder::build_extension(txs, root, block_length, header_version);
+	// 	}
 
-		Ok(())
-	}
+	// 	Ok(())
+	// }
 
-	#[benchmark(extra)]
-	fn commitment_builder_256(
-		i: Linear<32, { T::MaxBlockRows::get().0 }>,
-	) -> Result<(), BenchmarkError> {
-		let (txs, root, block_length, block_number, seed) = commitment_parameters::<T>(i, 256);
+	// #[benchmark(extra)]
+	// fn commitment_builder_256(
+	// 	i: Linear<32, { T::MaxBlockRows::get().0 }>,
+	// ) -> Result<(), BenchmarkError> {
+	// 	let (txs, root, block_length, header_version) = commitment_parameters::<T>(i, 256);
 
-		#[block]
-		{
-			hosted_header_builder::build(txs, root, block_length, block_number, seed);
-		}
+	// 	#[block]
+	// 	{
+	// 		hosted_header_builder::build_extension(txs, root, block_length, header_version);
+	// 	}
 
-		Ok(())
-	}
+	// 	Ok(())
+	// }
 
 	impl_benchmark_test_suite!(Pallet, crate::mock::new_benchmark_ext(), crate::mock::Test);
 }

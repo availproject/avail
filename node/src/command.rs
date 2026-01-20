@@ -24,11 +24,7 @@ use da_runtime::Block;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use sc_cli::{Result, SubstrateCli};
 use sc_service::PartialComponents;
-#[cfg(feature = "try-runtime")]
-use {
-	avail_blob::types::ExecutorDispatch, da_runtime::constants::time::SLOT_DURATION,
-	try_runtime_cli::block_building_info::substrate_info,
-};
+use sp_runtime::traits::HashingFor;
 
 use crate::{
 	cli::{Cli, Subcommand},
@@ -100,6 +96,10 @@ pub fn run() -> Result<()> {
 
 			runner.sync_run(|config| cmd.run::<Block, RuntimeApi, ExecutorDispatch>(config))
 		},*/
+		Some(Subcommand::ExportChainSpec(cmd)) => {
+			let chain_spec = cli.load_spec(&cmd.chain)?;
+			cmd.run(chain_spec)
+		},
 		Some(Subcommand::Benchmark(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 
@@ -115,12 +115,12 @@ pub fn run() -> Result<()> {
 									.into(),
 							);
 						}
-						cmd.run::<Block, (
+						cmd.run_with_spec::<HashingFor<Block>, (
 							frame_system::native::hosted_header_builder::hosted_header_builder::HostFunctions,
 							avail_base::mem_tmp_storage::hosted_mem_tmp_storage::HostFunctions,
 							da_runtime::kate::native::hosted_kate::HostFunctions,
 							da_control::extensions::native::hosted_commitment_builder::HostFunctions,
-						)>(config)
+						)>(Some(config.chain_spec))
 					},
 					BenchmarkCmd::Block(_cmd) => {
 						unimplemented!();
@@ -291,31 +291,6 @@ pub fn run() -> Result<()> {
 				Ok((cmd.run(client, backend, Some(aux_revert)), task_manager))
 			})
 		},
-		#[cfg(feature = "try-runtime")]
-		Some(Subcommand::TryRuntime(cmd)) => {
-			use sc_executor::{sp_wasm_interface::ExtendedHostFunctions, NativeExecutionDispatch};
-			let runner = cli.create_runner(cmd)?;
-			runner.async_run(|config| {
-				// we don't need any of the components of new_partial, just a runtime, or a task
-				// manager to do `async_run`.
-				let registry = config.prometheus_config.as_ref().map(|cfg| &cfg.registry);
-				let task_manager =
-					sc_service::TaskManager::new(config.tokio_handle.clone(), registry)
-						.map_err(|e| sc_cli::Error::Service(sc_service::Error::Prometheus(e)))?;
-				let info_provider = substrate_info(SLOT_DURATION);
-				Ok((
-					cmd.run::<Block, ExtendedHostFunctions<
-						sp_io::SubstrateHostFunctions,
-						<ExecutorDispatch as NativeExecutionDispatch>::ExtendHostFunctions,
-					>, _>(Some(info_provider)),
-					task_manager,
-				))
-			})
-		},
-		#[cfg(not(feature = "try-runtime"))]
-		Some(Subcommand::TryRuntime) => Err("TryRuntime wasn't enabled when building the node. \
-				You can enable it with `--features try-runtime`."
-			.into()),
 		Some(Subcommand::ChainInfo(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 			runner.sync_run(|config| cmd.run::<Block>(&config))

@@ -2,7 +2,7 @@ use crate::utils::CommitmentQueueMessage;
 use crate::{BlobHandle, BlobNotification};
 use da_runtime::{apis::BlobApi, AccountId, UncheckedExtrinsic};
 use jsonrpsee::core::async_trait;
-use sc_client_api::{BlockBackend, HeaderBackend, StateBackend};
+use sc_client_api::{BlockBackend, HeaderBackend, StateBackend, TrieCacheContext};
 use sc_keystore::LocalKeystore;
 use sc_network::{NetworkStateInfo, PeerId};
 use sc_service::Role;
@@ -133,7 +133,10 @@ where
 	C::State: StateBackend<HashingFor<B>>,
 {
 	fn storage(&self, at: H256, key: &[u8]) -> Result<Option<Vec<u8>>, String> {
-		let state = self.0.state_at(at.into()).map_err(|e| e.to_string())?;
+		let state = self
+			.0
+			.state_at(at.into(), TrieCacheContext::Untrusted)
+			.map_err(|e| e.to_string())?;
 		state.storage(key).map_err(|e| e.to_string())
 	}
 }

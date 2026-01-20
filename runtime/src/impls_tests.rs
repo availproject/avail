@@ -245,7 +245,7 @@ mod multiplier_tests {
 			let tx_len: usize = 512 * 1024; // 512 Kb data
 			let da_submission_weight = da_control::weight_helper::submit_data::<Runtime>(tx_len);
 			let dispatch_info = DispatchInfo {
-				weight: da_submission_weight,
+				call_weight: da_submission_weight,
 				pays_fee: Pays::Yes,
 				..Default::default()
 			};
@@ -427,7 +427,6 @@ mod tests {
 	};
 	use frame_system::{
 		mocking::MockUncheckedExtrinsic, native::hosted_header_builder::da::HeaderExtensionBuilder,
-		test_utils::TestRandomness,
 	};
 	use sp_runtime::{traits::IdentityLookup, BuildStorage, Perquintill};
 
@@ -463,12 +462,10 @@ mod tests {
 		type HeaderExtensionBuilder = HeaderExtensionBuilder<Test>;
 		type OnSetCode = ();
 		type PalletInfo = PalletInfo;
-		type Randomness = TestRandomness<Test>;
 		type RuntimeCall = RuntimeCall;
 		type RuntimeEvent = RuntimeEvent;
 		type RuntimeOrigin = RuntimeOrigin;
 		type HeaderExtensionDataFilter = ();
-
 		type Header = Header;
 		type Extrinsic = Extrinsic;
 		type MaxDiffAppIdPerBlock = ConstU32<1_024>;
@@ -493,6 +490,7 @@ mod tests {
 		type RuntimeHoldReason = ();
 		type RuntimeFreezeReason = ();
 		type WeightInfo = ();
+		type DoneSlashHandler = ();
 	}
 
 	parameter_types! {
@@ -503,13 +501,8 @@ mod tests {
 
 	impl pallet_treasury::Config for Test {
 		type Currency = pallet_balances::Pallet<Test>;
-		type ApproveOrigin = frame_system::EnsureRoot<AccountId>;
 		type RejectOrigin = frame_system::EnsureRoot<AccountId>;
 		type RuntimeEvent = RuntimeEvent;
-		type OnSlash = ();
-		type ProposalBond = ();
-		type ProposalBondMinimum = ();
-		type ProposalBondMaximum = ();
 		type SpendPeriod = ();
 		type Burn = ();
 		type BurnDestination = ();
@@ -518,7 +511,6 @@ mod tests {
 		type MaxApprovals = MaxApprovals;
 		type SpendOrigin = frame_support::traits::NeverEnsureOrigin<u128>;
 		type WeightInfo = ();
-
 		type AssetKind = ();
 		type Beneficiary = Self::AccountId;
 		type BeneficiaryLookup = IdentityLookup<Self::AccountId>;
@@ -527,6 +519,7 @@ mod tests {
 		type PayoutPeriod = ConstU32<0>;
 		#[cfg(feature = "runtime-benchmarks")]
 		type BenchmarkHelper = ();
+		type BlockNumberProvider = System;
 	}
 
 	pub struct OneAuthor;
@@ -658,7 +651,7 @@ mod measure_full_block_size {
 			.unwrap();
 
 		pallet_babe::GenesisConfig::<Runtime> {
-			epoch_config: Some(crate::constants::babe::GENESIS_EPOCH_CONFIG),
+			epoch_config: crate::constants::babe::GENESIS_EPOCH_CONFIG,
 			..Default::default()
 		}
 		.assimilate_storage(&mut t)
@@ -666,6 +659,7 @@ mod measure_full_block_size {
 
 		pallet_balances::GenesisConfig::<Runtime> {
 			balances: vec![(alice.clone(), 100_000_000 * AVAIL)],
+			..Default::default()
 		}
 		.assimilate_storage(&mut t)
 		.unwrap();

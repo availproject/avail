@@ -24,9 +24,6 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
-		/// The overarching event type.
-		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-
 		/// A sudo-able call.
 		type RuntimeCall: Parameter
 			+ UnfilteredDispatchable<RuntimeOrigin = Self::RuntimeOrigin>
@@ -48,7 +45,7 @@ pub mod pallet {
 		#[pallet::weight({
 			let dispatch_info = call.get_dispatch_info();
 			(
-				T::WeightInfo::mandate().saturating_add(dispatch_info.weight),
+				T::WeightInfo::mandate().saturating_add(dispatch_info.call_weight),
 				dispatch_info.class
 			)
 		})]

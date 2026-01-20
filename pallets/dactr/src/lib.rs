@@ -16,7 +16,7 @@ use frame_support::{
 	weights::Weight,
 };
 use frame_system::{limits::BlockLength, pallet::DynamicBlockLength};
-use sp_arithmetic::traits::{CheckedAdd, One, SaturatedConversion};
+use sp_arithmetic::traits::SaturatedConversion;
 use sp_core::H256;
 use sp_io::hashing::keccak_256;
 use sp_runtime::traits::Convert;
@@ -109,17 +109,11 @@ pub mod pallet {
 			type SessionDataProvider = ();
 			type BlobVouchFeeReserve = BlobVouchFeeReserve;
 			type WeightInfo = ();
-			#[inject_runtime_type]
-			type RuntimeEvent = ();
 		}
 	}
 
 	#[pallet::config(with_default)]
 	pub trait Config: frame_system::Config {
-		/// Pallet Event
-		#[pallet::no_default_bounds]
-		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-
 		/// Currency mechanism used for deposits.
 		#[pallet::no_default]
 		type Currency: ReservableCurrency<Self::AccountId>;

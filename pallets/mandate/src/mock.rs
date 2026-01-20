@@ -35,7 +35,6 @@ impl frame_system::Config for Test {
 		frame_system::native::hosted_header_builder::da::HeaderExtensionBuilder<Test>;
 	type OnSetCode = ();
 	type PalletInfo = PalletInfo;
-	type Randomness = frame_system::test_utils::TestRandomness<Test>;
 	type Extrinsic = Extrinsic;
 }
 
@@ -56,13 +55,15 @@ impl pallet_collective::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeOrigin = RuntimeOrigin;
 	type SetMembersOrigin = EnsureRoot<Self::AccountId>;
+	type DisapproveOrigin = EnsureRoot<Self::AccountId>;
+	type KillOrigin = EnsureRoot<Self::AccountId>;
+	type Consideration = ();
 	type WeightInfo = ();
 }
 
 impl pallet_mandate::Config for Test {
 	type ApprovedOrigin = EitherOf<EnsureRoot<AccountId>, HalfOfTechnicalCommittee>;
 	type RuntimeCall = RuntimeCall;
-	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 }
 

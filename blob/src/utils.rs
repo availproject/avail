@@ -20,6 +20,7 @@ use sp_authority_discovery::AuthorityId;
 use sp_core::sr25519::{Public, Signature};
 use sp_core::H256;
 use sp_core::{crypto::KeyTypeId, sr25519, twox_128};
+use sp_runtime::generic::Preamble;
 use sp_runtime::MultiAddress;
 use sp_runtime::{
 	key_types,
@@ -769,7 +770,10 @@ pub fn zstd_decompress(data: &[u8]) -> Result<Vec<u8>, std::io::Error> {
 }
 
 pub fn extract_signer_and_nonce(uxt: &UncheckedExtrinsic) -> Option<(AccountId32, u32)> {
-	let (address, _sig, extra) = uxt.signature.as_ref()?;
+	let (address, extra) = match &uxt.preamble {
+		Preamble::Signed(address, _sig, extra) => (address, extra),
+		_ => return None,
+	};
 
 	let who: AccountId32 = match address {
 		MultiAddress::Id(id) => id.clone(),
