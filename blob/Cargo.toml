@@ -65,7 +65,7 @@ zstd = { workspace = true }
 
 [dev-dependencies]
 divan = { version = "0.1" }
-avail-rust = { package = "avail-rust-client", version = "0.4.0", default-features = false, features = ["native", "reqwest", "next"] }
+# avail-rust = { package = "avail-rust-client", version = "0.4.0", default-features = false, features = ["native", "reqwest", "next"] }
 
 [features]
 default = [ "std" ]
@@ -97,6 +97,6 @@ std = [
 
 runtime-benchmarks = []
 
-[[bench]]
-name = "submit_data"
-harness = false
+# [[bench]]
+# name = "submit_data"
+# harness = false

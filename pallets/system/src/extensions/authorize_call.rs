@@ -114,7 +114,6 @@ where
 
 #[cfg(test)]
 mod tests {
-	use crate::test_utils::TestRandomness;
 	use crate::{self as frame_system, native::hosted_header_builder::da::BlockNumber};
 	use codec::Encode;
 	use frame_support::{
@@ -198,7 +197,7 @@ mod tests {
 
 	pub type TransactionExtension = (frame_system::AuthorizeCall<Runtime>,);
 
-	pub type Header = sp_runtime::generic::Header<u32, sp_runtime::traits::BlakeTwo256>;
+	// pub type Header = sp_runtime::generic::Header<u32, sp_runtime::traits::BlakeTwo256>;
 	pub type Block = avail_core::DaBlock<
 		avail_core::header::Header<BlockNumber, sp_runtime::traits::BlakeTwo256>,
 		UncheckedExtrinsic,
@@ -215,7 +214,6 @@ mod tests {
 		type Block = Block;
 		type HeaderExtensionBuilder =
 			frame_system::native::hosted_header_builder::da::HeaderExtensionBuilder<Runtime>;
-		type Randomness = TestRandomness<Runtime>;
 		type Extrinsic = UncheckedExtrinsic;
 	}
 

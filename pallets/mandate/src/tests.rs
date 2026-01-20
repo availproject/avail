@@ -1,8 +1,9 @@
 use frame_support::{assert_noop, assert_ok};
 use frame_system::RawOrigin;
+use pallet_collective::Members;
 
 use crate::{
-	mock::{new_test_ext, Mandate, RuntimeCall, RuntimeOrigin, System, TechnicalCommittee},
+	mock::{new_test_ext, Mandate, RuntimeCall, RuntimeOrigin, System, TechnicalCommittee, Test},
 	*,
 };
 
@@ -16,7 +17,7 @@ fn mandate_can_be_called_with_sudo() {
 		// Goal: Adding new members to TC via Mandate call.
 
 		// Checking. Making sure that we actually add new members.
-		let old_members = TechnicalCommittee::members();
+		let old_members = Members::<Test>::get();
 		let new_members = [ALICE, BOB, DAVID].to_vec();
 		assert_ne!(new_members, old_members);
 
@@ -33,7 +34,7 @@ fn mandate_can_be_called_with_sudo() {
 		assert_ok!(Mandate::mandate(o, call));
 
 		// Checking that the storage has changed
-		assert_eq!(TechnicalCommittee::members(), new_members);
+		assert_eq!(Members::<Test>::get(), new_members);
 
 		// Checking Events
 		System::assert_last_event(Event::RootOp { result: Ok(()) }.into());
@@ -72,7 +73,7 @@ fn mandate_can_be_called_with_technical_committee() {
 		assert_ok!(res);
 
 		// Checking that the storage has changed
-		assert_eq!(TechnicalCommittee::members(), new_members);
+		assert_eq!(Members::<Test>::get(), new_members);
 
 		// Checking Events
 		System::assert_has_event(Event::RootOp { result: Ok(()) }.into());
@@ -85,7 +86,7 @@ fn mandate_can_not_be_called_with_normal_signed_origins() {
 		// Goal: Adding new members to TC via Mandate call.
 
 		// Checking. Making sure that we actually add new members.
-		let old_members = TechnicalCommittee::members();
+		let old_members = Members::<Test>::get();
 		let new_members = [ALICE, BOB, DAVID].to_vec();
 		assert_ne!(new_members, old_members);
 

@@ -153,6 +153,7 @@ mod tests {
 				extension_weight: Weight::zero(),
 				class: DispatchClass::Normal,
 				pays_fee: Pays::Yes,
+				..Default::default()
 			};
 			let len = 0_usize;
 			let ext = (

@@ -114,7 +114,6 @@ impl frame_system::Config for Runtime {
 	type AccountData = u32;
 
 	type HeaderExtensionBuilder = HeaderExtensionBuilder<Runtime>;
-	type Randomness = TestRandomness<Runtime>;
 	type HeaderExtensionDataFilter = ();
 	type Extrinsic = UncheckedExtrinsic;
 	type MaxDiffAppIdPerBlock = ConstU32<1_024>;

@@ -332,7 +332,7 @@ impl<T: frame_system::Config> pallet_collective::WeightInfo for WeightInfo<T> {
 			.saturating_add(Weight::from_parts(0, 32).saturating_mul(p.into()))
 	}
 
-	fn kill(d: u32, p: u32, ) -> Weight {
+	fn kill(_d: u32, _p: u32, ) -> Weight {
 			todo!()
 		}
 

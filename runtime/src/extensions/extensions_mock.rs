@@ -13,7 +13,6 @@ use frame_support::{derive_impl, weights::IdentityFee};
 use frame_system::EnsureRoot;
 use frame_system::{
 	mocking::MockUncheckedExtrinsic, native::hosted_header_builder::da::HeaderExtensionBuilder,
-	test_utils::TestRandomness,
 };
 use pallet_transaction_payment::FungibleAdapter;
 use sp_core::ConstU32;
@@ -24,7 +23,6 @@ use sp_runtime::{AccountId32, BuildStorage};
 use sp_std::marker::PhantomData;
 
 use crate::Weight;
-use da_control::DefaultConfig;
 
 /// An unchecked extrinsic type to be used in tests.
 type Extrinsic = MockUncheckedExtrinsic<Test>;

@@ -399,7 +399,7 @@ impl<T: frame_system::Config> pallet_identity::WeightInfo for WeightInfo<T> {
 			todo!()
 		}
 
-	fn kill_username(p: u32, ) -> Weight {
+	fn kill_username(_p: u32, ) -> Weight {
 			todo!()
 		}
 
@@ -427,11 +427,11 @@ impl<T: frame_system::Config> pallet_identity::WeightInfo for WeightInfo<T> {
 			todo!()
 		}
 
-		fn set_username_for(p: u32, ) -> Weight {
+		fn set_username_for(_p: u32, ) -> Weight {
 				todo!()
 			}
 
-		fn remove_expired_approval(p: u32, ) -> Weight {
+		fn remove_expired_approval(_p: u32, ) -> Weight {
 				todo!()
 			}
 }

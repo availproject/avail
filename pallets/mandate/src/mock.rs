@@ -55,6 +55,9 @@ impl pallet_collective::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeOrigin = RuntimeOrigin;
 	type SetMembersOrigin = EnsureRoot<Self::AccountId>;
+	type DisapproveOrigin = EnsureRoot<Self::AccountId>;
+	type KillOrigin = EnsureRoot<Self::AccountId>;
+	type Consideration = ();
 	type WeightInfo = ();
 }
 

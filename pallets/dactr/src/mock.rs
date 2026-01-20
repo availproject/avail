@@ -8,7 +8,6 @@ use frame_support::{
 };
 use frame_system::{
 	mocking::MockUncheckedExtrinsic, native::hosted_header_builder::da::HeaderExtensionBuilder,
-	test_utils::TestRandomness,
 };
 use pallet_transaction_payment::FungibleAdapter;
 use sp_runtime::traits::Convert;
@@ -127,6 +126,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 
 	pallet_balances::GenesisConfig::<Test> {
 		balances: vec![(1, 10_000 * AVAIL), (2, 5_000 * AVAIL), (3, 1_000 * AVAIL)],
+		dev_accounts: None,
 	}
 	.assimilate_storage(&mut storage)
 	.unwrap();
@@ -154,6 +154,7 @@ pub fn new_benchmark_ext() -> sp_io::TestExternalities {
 
 	pallet_balances::GenesisConfig::<Test> {
 		balances: vec![(1, 10_000 * AVAIL), (2, 5_000 * AVAIL), (3, 1_000 * AVAIL)],
+		dev_accounts: None,
 	}
 	.assimilate_storage(&mut storage)
 	.unwrap();
