@@ -211,6 +211,7 @@ std = [
 	"sp-std/std",
 	"sp-transaction-pool/std",
 	"sp-version/std",
+	"serde_json/std",
 ]
 
 runtime-benchmarks = [
