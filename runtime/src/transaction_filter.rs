@@ -1,17 +1,16 @@
 use crate::{opaque_to_unchecked, unchecked_get_caller, AccountId, Runtime, RuntimeCall as Call};
 use avail_base::header_extension::{
-	BridgedData, ExtractedTxData, HeaderExtensionDataFilter, SubmittedData,
+	BridgedData, ExtractedTxData, HeaderExtensionDataFilter, PostInherentInfo, SubmittedData,
 };
 use avail_core::data_proof::{tx_uid, AddressedMessage};
 use sp_runtime::OpaqueExtrinsic;
 
 use da_control::Call as DACall;
-use kate::Seed;
 use pallet_multisig::Call as MultisigCall;
 use pallet_proxy::Call as ProxyCall;
 use pallet_vector::Call as VectorCall;
 use sp_core::H256;
-use sp_io::hashing::keccak_256;
+use sp_std::collections::btree_map::BTreeMap;
 use sp_std::vec::Vec;
 
 const MAX_FILTER_ITERATIONS: usize = 3;
@@ -20,12 +19,10 @@ const MAX_FILTER_ITERATIONS: usize = 3;
 /// Handles N levels of nesting in case those calls are wrapped in proxy / multisig calls.
 impl HeaderExtensionDataFilter for Runtime {
 	fn filter(
-		failed_transactions: &[u32],
+		post_inherent_info: PostInherentInfo,
 		opaque: OpaqueExtrinsic,
 		block: u32,
 		tx_index: usize,
-		cols: u32,
-		rows: u32,
 	) -> Option<ExtractedTxData> {
 		let res = opaque_to_unchecked(&opaque);
 		match res {
@@ -37,7 +34,7 @@ impl HeaderExtensionDataFilter for Runtime {
 				if nb_iterations > 0 {
 					match final_call {
 						Call::Vector(call) => filter_vector_call(
-							failed_transactions,
+							&post_inherent_info.failed,
 							maybe_caller.as_ref(),
 							call,
 							block,
@@ -48,14 +45,14 @@ impl HeaderExtensionDataFilter for Runtime {
 				} else {
 					match final_call {
 						Call::Vector(call) => filter_vector_call(
-							failed_transactions,
+							&post_inherent_info.failed,
 							maybe_caller.as_ref(),
 							call,
 							block,
 							tx_index,
 						),
 						Call::DataAvailability(call) => {
-							filter_da_call(call, tx_index, failed_transactions, cols, rows)
+							filter_da_call(call, tx_index, post_inherent_info)
 						},
 						_ => None,
 					}
@@ -70,11 +67,12 @@ impl HeaderExtensionDataFilter for Runtime {
 		}
 	}
 
-	fn get_failed_transaction_ids(opaques: &[OpaqueExtrinsic]) -> Vec<u32> {
-		let mut failed_tx = Vec::new();
+	fn get_data_from_post_inherents(opaques: &[OpaqueExtrinsic]) -> PostInherentInfo {
+		let mut failed = Vec::new();
+		let mut eval_proofs = BTreeMap::new();
 		let len = opaques.len();
 		if len == 0 {
-			return failed_tx;
+			return PostInherentInfo::default();
 		}
 
 		// Vector failed transactions
@@ -83,7 +81,7 @@ impl HeaderExtensionDataFilter for Runtime {
 				&unchecked_extrinsic.function
 			{
 				let failed_vector_tx = failed_txs.iter().map(|c| c.0).collect::<Vec<_>>();
-				failed_tx.extend(failed_vector_tx);
+				failed.extend(failed_vector_tx);
 			};
 		};
 
@@ -96,18 +94,22 @@ impl HeaderExtensionDataFilter for Runtime {
 					blob_txs_summary,
 				}) = &unchecked_extrinsic.function
 				{
-					let failed_tx_da: Vec<u32> = blob_txs_summary
-						.iter()
-						.filter(|summary| !summary.success)
-						.map(|summary| summary.tx_index)
-						.collect();
-
-					failed_tx.extend(failed_tx_da);
+					for summary in blob_txs_summary {
+						if let Some(proof) = &summary.eval_proof {
+							eval_proofs.insert(summary.tx_index, proof.clone());
+						}
+						if !summary.success {
+							failed.push(summary.tx_index);
+						}
+					}
 				};
 			}
 		}
 
-		failed_tx
+		PostInherentInfo {
+			failed,
+			eval_proofs,
+		}
 	}
 }
 
@@ -115,46 +117,48 @@ impl HeaderExtensionDataFilter for Runtime {
 fn filter_da_call(
 	call: &DACall<Runtime>,
 	tx_index: usize,
-	failed_transactions: &[u32],
-	cols: u32,
-	rows: u32,
+	post_inherent_info: PostInherentInfo,
 ) -> Option<ExtractedTxData> {
 	let tx_index = u32::try_from(tx_index).ok()?;
-	if failed_transactions.contains(&tx_index) {
+	if post_inherent_info.failed.contains(&tx_index) {
 		return None;
 	}
 
-	let (app_id, blob_hash, commitment) = match call {
+	let (app_id, blob_hash, size_bytes, commitment, eval_point_seed, eval_claim) = match call {
 		DACall::submit_blob_metadata {
 			app_id,
 			blob_hash,
 			commitment,
-			size: _,
+			size,
+			eval_point_seed,
+			eval_claim,
 		} => {
 			if commitment.is_empty() {
 				return None;
 			}
-			(*app_id, *blob_hash, commitment.clone())
-		},
-		DACall::submit_data { app_id, data } => {
-			if data.is_empty() {
-				return None;
-			}
-			let blob_hash = H256(keccak_256(data));
-			let commitment =
-				da_control::extensions::native::hosted_commitment_builder::build_da_commitments(
-					data,
-					cols,
-					rows,
-					Seed::default(),
-				);
-			(*app_id, blob_hash, commitment)
+			(
+				*app_id,
+				*blob_hash,
+				*size,
+				commitment.clone(),
+				*eval_point_seed,
+				*eval_claim,
+			)
 		},
 		_ => return None,
 	};
 
 	let tx_index = u32::try_from(tx_index).ok()?;
-	let submitted_data = Some(SubmittedData::new(app_id, tx_index, blob_hash, commitment));
+	let submitted_data = Some(SubmittedData::new(
+		app_id,
+		tx_index,
+		blob_hash,
+		size_bytes,
+		commitment,
+		eval_point_seed,
+		eval_claim,
+		post_inherent_info.eval_proofs.get(&tx_index).cloned(),
+	));
 
 	Some(ExtractedTxData {
 		submitted_data,

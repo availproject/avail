@@ -1,4 +1,4 @@
-use crate::traits::CommitmentQueueApiT;
+use crate::traits::{CommitmentQueueApiT, RuntimeApiT};
 use crate::{
 	store::StorageApiT,
 	types::{BlobHash, BlobMetadata, BlobSignatureData, BlobTxSummary, OwnershipEntry},
@@ -7,7 +7,7 @@ use anyhow::{anyhow, Context, Result};
 use avail_observability::metrics::BlobMetrics;
 use base64::Engine;
 use codec::{Decode, Encode};
-use da_commitment::build_da_commitments::build_commitments_from_polynomial_grid;
+use da_commitment::build_kzg_commitments::build_commitments_from_polynomial_grid;
 use da_control::{BlobRuntimeParameters, Call};
 use da_runtime::UncheckedExtrinsic;
 use da_runtime::{apis::BlobApi, RuntimeCall};
@@ -53,28 +53,24 @@ pub fn get_my_validator_public_account(
 }
 
 /// Get this node's Address
-pub fn get_my_validator_id<Block, Client>(
+pub fn get_my_validator_id(
 	keystore: &Arc<LocalKeystore>,
-	client: &Arc<Client>,
-	at: &[u8],
-) -> Option<(AccountId32, AuthorityId)>
-where
-	Block: BlockT,
-	Client: ProvideRuntimeApi<Block>,
-	Client::Api: BlobApi<Block>,
-{
-	let key_type = key_types::BABE;
+	runtime_client: &dyn RuntimeApiT,
+	at: H256,
+) -> Result<(AccountId32, AuthorityId), String> {
+	let Some((authority_id, key_type_id)) = get_my_validator_public_account(keystore) else {
+		return Err("Validator BABE key not found in keystore".into());
+	};
 
-	// Get keys from the keystore
-	let keys = keystore.sr25519_public_keys(key_type);
+	let owner_opt = runtime_client
+		.get_validator_from_key(at, key_type_id, authority_id.encode())
+		.map_err(|e| format!("runtime error: {e:?}"))?;
 
-	// Return None if no keys are in the keystore
-	if keys.len() == 0 {
-		return None;
-	}
-	let k = keys[keys.len() - 1];
+	let Some(validator_id) = owner_opt else {
+		return Err("No validator found for local BABE key".into());
+	};
 
-	get_validator_id_from_key(&k.into(), client, at)
+	Ok((validator_id, authority_id))
 }
 
 pub fn get_validator_id_from_key<Block, Client>(
@@ -124,6 +120,20 @@ where
 			Vec::new()
 		},
 	}
+}
+
+/// Deterministically select designated prover index for a blob.
+pub fn designated_prover_index(
+	blob_hash: &H256,
+	finalized_block_hash: &H256,
+	nb_validators_per_blob: u32,
+) -> u32 {
+	let mut input = [0u8; 64];
+	input[..32].copy_from_slice(finalized_block_hash.as_bytes());
+	input[32..].copy_from_slice(blob_hash.as_bytes());
+
+	let h = sp_core::blake2_256(&input);
+	u32::from_le_bytes(h[..4].try_into().unwrap()) % nb_validators_per_blob
 }
 
 /// Return the list of storing validators for a blob
@@ -449,6 +459,7 @@ fn get_block_tx_summary(
 		success: false,
 		reason: None,
 		ownership: Vec::new(),
+		eval_proof: None,
 	};
 
 	let (meta, ownerships) = match blob_metadata {
@@ -478,6 +489,8 @@ fn get_block_tx_summary(
 		blob_summary.reason = Some("Not enough validators vouched for this block".into());
 		return blob_summary;
 	}
+
+	blob_summary.eval_proof = meta.fri_eval_proof.clone();
 
 	blob_summary.success = true;
 
@@ -561,6 +574,14 @@ pub fn verify_signed_blob_data(
 
 	let valid = signature.verify(payload.as_slice(), &public);
 	Ok(valid)
+}
+
+pub fn get_babe_randomness_key() -> StorageKey {
+	let mut key = Vec::new();
+	key.extend(&twox_128(b"Babe"));
+	key.extend(&twox_128(b"Randomness"));
+	let storage_key = StorageKey(key);
+	storage_key
 }
 
 pub fn get_dynamic_blocklength_key() -> StorageKey {

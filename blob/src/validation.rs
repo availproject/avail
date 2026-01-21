@@ -3,8 +3,16 @@ use crate::{
 	traits::{NonceCacheApiT, RuntimeApiT},
 	utils::{extract_signer_and_nonce, CommitmentQueueMessage},
 };
+use avail_fri::FriProof;
+use avail_fri::{
+	core::{FriBiniusPCS, B128},
+	encoding::{mle_dims_from_blob_size, BytesEncoder},
+	eval_utils::{derive_evaluation_point, eval_claim_from_bytes},
+	FriParamsVersion,
+};
 use avail_observability::metrics::BlobMetrics;
 use codec::Decode;
+// use da_commitment::build_fri_commitments::build_fri_da_commitment;
 use da_control::Call;
 use da_runtime::RuntimeCall;
 use da_runtime::UncheckedExtrinsic;
@@ -18,7 +26,7 @@ pub fn initial_validation(
 	max_blob_size: usize,
 	blob: &[u8],
 	metadata: &[u8],
-) -> Result<(H256, Vec<u8>), String> {
+) -> Result<(H256, Vec<u8>, Option<[u8; 32]>, Option<[u8; 16]>), String> {
 	if blob.len() > max_blob_size {
 		return Err("blob is too big".into());
 	}
@@ -26,18 +34,28 @@ pub fn initial_validation(
 	let mut metadata = metadata;
 	let encoded_metadata_signed_transaction: UncheckedExtrinsic = Decode::decode(&mut metadata)
 		.map_err(|_| String::from("failed to decode concrete metadata call"))?;
-	let (provided_size, provided_blob_hash, provided_commitment) =
+	let (provided_size, provided_blob_hash, provided_commitment, eval_pont_seed, eval_claim) =
 		match encoded_metadata_signed_transaction.function {
 			RuntimeCall::DataAvailability(Call::submit_blob_metadata {
 				app_id: _,
 				size,
 				blob_hash,
 				commitment,
-			}) => (size as usize, blob_hash, commitment),
+				eval_point_seed,
+				eval_claim,
+			}) => (
+				size as usize,
+				blob_hash,
+				commitment,
+				eval_point_seed,
+				eval_claim,
+			),
 			_ => {
 				return Err("metadata extrinsic must be dataAvailability.submitBlobMetadata".into())
 			},
 		};
+
+	// TODO: do basic check like if the current commitment scheme is Fri, eval_point_seed and eval_claim must be present
 
 	// Check size
 	if provided_size != blob.len() {
@@ -53,7 +71,7 @@ pub fn initial_validation(
 		return Err(std::format!("submitted blob: {provided_blob_hash:?} does not correspond to generated blob {blob_hash:?}"));
 	}
 
-	Ok((blob_hash, provided_commitment))
+	Ok((blob_hash, provided_commitment, eval_pont_seed, eval_claim))
 }
 
 pub fn tx_validation(
@@ -101,7 +119,7 @@ pub fn tx_validation(
 	Ok(opaque_tx)
 }
 
-pub async fn commitment_validation(
+pub async fn validate_kzg_commitment(
 	hash: H256,
 	provided_commitment: &Vec<u8>,
 	grid: PolynomialGrid,
@@ -130,4 +148,88 @@ pub async fn commitment_validation(
 	}
 
 	Ok(())
+}
+
+/// Validate FRI commitment for the given blob and verify the evaluation proof for the given evaluation point and claim.
+pub fn validate_fri_commitment(
+	blob_hash: H256,
+	blob: &[u8],
+	provided_commitment: &[u8],
+	eval_point_seed: &[u8; 32],
+	eval_claim: &[u8; 16],
+) -> Result<Vec<u8>, String> {
+	const FRI_COMMITMENT_SIZE: usize = 32;
+
+	if provided_commitment.len() != FRI_COMMITMENT_SIZE {
+		return Err(format!(
+			"Fri commitment must be {} bytes, got {}",
+			FRI_COMMITMENT_SIZE,
+			provided_commitment.len()
+		));
+	}
+
+	// let expected = build_fri_da_commitment(blob, FriParamsVersion(0));
+	let params_version = FriParamsVersion(0);
+	// Encode bytes → multilinear extension over B128
+	let encoder = BytesEncoder::<B128>::new();
+	let packed = encoder
+		.bytes_to_packed_mle(blob)
+		.map_err(|e| e.to_string())?;
+
+	let n_vars = packed.total_n_vars;
+
+	// Map version + n_vars → concrete FriParamsConfig
+	let cfg = params_version.to_config(n_vars);
+
+	// Build PCS + FRI context
+	let pcs = FriBiniusPCS::new(cfg);
+	let ctx = pcs
+		.initialize_fri_context::<B128>(packed.packed_mle.log_len())
+		.map_err(|e| e.to_string())?;
+
+	// Commit to the blob MLE: returns a 32-byte digest in `commitment`
+	let commit_output = pcs
+		.commit(&packed.packed_mle, &ctx)
+		.map_err(|e| e.to_string())?;
+
+	if commit_output.commitment.as_slice() != provided_commitment {
+		return Err(format!("Fri commitment mismatch for blob {blob_hash:?}"));
+	}
+
+	let eval_point = derive_evaluation_point(*eval_point_seed, n_vars);
+	let eval_claim = eval_claim_from_bytes(eval_claim)
+		.map_err(|e| format!("Failed to deserialize evaluation claim: {}", e))?;
+
+	let proof = pcs
+		.prove::<B128>(packed.packed_mle.clone(), &ctx, &commit_output, &eval_point)
+		.map_err(|e| e.to_string())?;
+
+	pcs.verify(&proof, eval_claim, &eval_point, &ctx)
+		.map_err(|e| e.to_string())?;
+	let proof_bytes = proof.transcript_bytes;
+	Ok(proof_bytes)
+}
+
+pub fn validate_fri_proof(
+	blob_size: usize,
+	eval_point_seed: &[u8; 32],
+	eval_claim: &[u8; 16],
+	eval_proof: &[u8],
+) -> Result<(), String> {
+	let params_version = FriParamsVersion(0);
+	let (log_len, n_vars) = mle_dims_from_blob_size(blob_size);
+	let cfg = params_version.to_config(n_vars);
+	let pcs = FriBiniusPCS::new(cfg);
+	let ctx = pcs
+		.initialize_fri_context::<B128>(log_len)
+		.map_err(|e| e.to_string())?;
+
+	let eval_point = derive_evaluation_point(*eval_point_seed, n_vars);
+	let eval_claim = eval_claim_from_bytes(eval_claim)
+		.map_err(|e| format!("Failed to deserialize evaluation claim: {}", e))?;
+	let proof = FriProof {
+		transcript_bytes: eval_proof.to_vec(),
+	};
+	pcs.verify(&proof, eval_claim, &eval_point, &ctx)
+		.map_err(|e| e.to_string())
 }

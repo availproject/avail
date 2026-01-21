@@ -11,18 +11,21 @@ pub mod validation;
 
 use crate::{
 	p2p::BlobHandle,
+	traits::RuntimeClient,
 	types::{
 		Blob, BlobHash, BlobMetadata, BlobNotification, BlobQueryRequest, BlobReceived,
 		BlobReputationChange, BlobRequest, BlobRequestEnum, BlobResponse, BlobResponseEnum,
 		BlobSignatureData, BlobStored, OwnershipEntry, BLOB_REQ_PROTO,
 	},
 	utils::{
-		build_signature_payload, generate_base_index, get_active_validators, get_my_validator_id,
-		get_validator_id_from_key, get_validator_per_blob, sign_blob_data, validators_for_blob,
-		verify_signed_blob_data,
+		build_signature_payload, designated_prover_index, generate_base_index,
+		get_active_validators, get_my_validator_id, get_validator_id_from_key,
+		get_validator_per_blob, sign_blob_data, validators_for_blob, verify_signed_blob_data,
 	},
+	validation::{validate_fri_commitment, validate_fri_proof},
 };
 use anyhow::{anyhow, Result};
+use avail_core::header::extension::CommitmentScheme;
 use codec::{Decode, Encode};
 use da_control::BlobRuntimeParameters;
 use da_runtime::apis::BlobApi;
@@ -191,26 +194,82 @@ async fn handle_blob_received_notification<Block>(
 		},
 	};
 
-	// Get the existing blob or create a new one
-	let mut blob_meta = maybe_metadata.unwrap_or_else(|| BlobMetadata {
-		hash: blob_received.hash,
-		size: blob_received.size,
-		commitment: blob_received.commitment.clone(),
-		is_notified: true,
-		expires_at: 0,
-		finalized_block_hash: Default::default(),
-		finalized_block_number: 0,
-		nb_validators_per_blob: 0,
-		nb_validators_per_blob_threshold: 0,
-		storing_validator_list: Default::default(),
-	});
+	// If the eval_proof is received, validate it
+	if blob_received.fri_eval_proof.is_some() {
+		let eval_point_seed = match &blob_received.eval_point_seed {
+			Some(seed) => seed,
+			None => {
+				log::error!(target: LOG_TARGET, "Missing eval_point_seed for FRI blob");
+				return;
+			},
+		};
+		let eval_claim = match &blob_received.eval_claim {
+			Some(claim) => claim,
+			None => {
+				log::error!(target: LOG_TARGET, "Missing eval_claim for FRI blob");
+				return;
+			},
+		};
 
-	// If we already had the blob metadata but incomplete (is notified == false) we fill the missing data.
-	if !blob_meta.is_notified {
-		blob_meta.size = blob_received.size;
-		blob_meta.commitment = blob_received.commitment;
-		blob_meta.is_notified = true;
+		match validate_fri_proof(
+			blob_received.size as usize,
+			eval_point_seed,
+			eval_claim,
+			&blob_received
+				.fri_eval_proof
+				.as_ref()
+				.expect("checked above"),
+		) {
+			Ok(_) => {
+				log::info!(
+					target: LOG_TARGET,
+					"Successfully validated eval proof for blob: {:?}",
+					blob_received.hash
+				);
+			},
+			Err(e) => {
+				log::error!(target: LOG_TARGET, "FRI proof validation failed: {}", e);
+				return;
+			},
+		}
 	}
+
+	// Get the existing blob or create a new one
+	let mut blob_meta = if let Some(existing) = maybe_metadata {
+		let mut merged = existing;
+
+		// Fill missing notification data
+		if !merged.is_notified {
+			merged.size = blob_received.size;
+			merged.commitment = blob_received.commitment.clone();
+			merged.is_notified = true;
+		}
+
+		// allow enrichment with eval proof
+		if merged.fri_eval_proof.is_none() && blob_received.fri_eval_proof.is_some() {
+			merged.fri_eval_proof = blob_received.fri_eval_proof;
+			merged.fri_eval_prover_index = blob_received.fri_eval_prover_index;
+		}
+
+		merged
+	} else {
+		BlobMetadata {
+			hash: blob_received.hash,
+			size: blob_received.size,
+			commitment: blob_received.commitment.clone(),
+			is_notified: true,
+			expires_at: 0,
+			finalized_block_hash: Default::default(),
+			finalized_block_number: 0,
+			nb_validators_per_blob: 0,
+			nb_validators_per_blob_threshold: 0,
+			storing_validator_list: Default::default(),
+			eval_point_seed: blob_received.eval_point_seed,
+			eval_claim: blob_received.eval_claim,
+			fri_eval_proof: blob_received.fri_eval_proof,
+			fri_eval_prover_index: blob_received.fri_eval_prover_index,
+		}
+	};
 
 	// TODO Blob hack
 	let h: [u8; 32] = match announced_finalized_hash.encode().try_into() {
@@ -266,12 +325,12 @@ async fn handle_blob_received_notification<Block>(
 
 	let (my_validator_id, babe_key) = match get_my_validator_id(
 		&blob_handle.keystore,
-		&blob_handle.client,
-		&announced_finalized_hash.encode(),
+		Arc::new(RuntimeClient::new(blob_handle.client.clone())).as_ref(),
+		announced_finalized_hash,
 	) {
-		Some(v) => v,
-		None => {
-			log::error!(target: LOG_TARGET, "No keys found while trying to get this node's id");
+		Ok(v) => v,
+		Err(e) => {
+			log::error!(target: LOG_TARGET, "No keys found while trying to get this node's id: {e}");
 			return;
 		},
 	};
@@ -296,6 +355,17 @@ async fn handle_blob_received_notification<Block>(
 
 	let should_store_blob = storing_validators.contains(&my_validator_id);
 
+	let prover_index = designated_prover_index(
+		&blob_received.hash,
+		&blob_received.finalized_block_hash,
+		nb_validators_per_blob,
+	);
+
+	let should_send_proof = storing_validators
+		.get(prover_index as usize)
+		.map_or(false, |id| *id == my_validator_id);
+
+	let mut eval_proof: Option<Vec<u8>> = None;
 	blob_meta.storing_validator_list = storing_validators;
 
 	if should_store_blob {
@@ -392,6 +462,59 @@ async fn handle_blob_received_notification<Block>(
 				return;
 			}
 
+			// Do the commitment validation and other checks such whether eval_point_seed is correctly provided or not
+			// Also, generate the eval_proof if needed
+			let commitment_scheme = match blob_handle
+				.client
+				.runtime_api()
+				.commitement_scheme(blob_received.finalized_block_hash)
+			{
+				Ok(scheme) => scheme,
+				Err(e) => {
+					log::error!(
+						"Could not get commitment scheme from runtime at {:?}: {e:?}. Falling back to Fri.",
+						blob_received.finalized_block_hash
+					);
+					CommitmentScheme::Fri
+				},
+			};
+
+			match commitment_scheme {
+				CommitmentScheme::Kzg => {
+					todo!("KZG commitment validation")
+				},
+				CommitmentScheme::Fri => {
+					// Check if the eval_point_seed and eval_claim are present in the associated BlobMetadata tx
+					if blob_received.eval_point_seed.is_none() || blob_received.eval_claim.is_none()
+					{
+						log::error!(target: LOG_TARGET, "Missing eval_point_seed or eval_claim for FRI blob");
+						return;
+					}
+
+					let fri_eval_proof = match validate_fri_commitment(
+						blob_received.hash,
+						&blob_data,
+						&blob_received.commitment,
+						&blob_received.eval_point_seed.expect("checked above"),
+						&blob_received.eval_claim.expect("checked above"),
+					) {
+						Ok(proof_bytes) => proof_bytes,
+						Err(e) => {
+							log::error!(target: LOG_TARGET, "FRI commitment validation failed: {}", e);
+							return;
+						},
+					};
+
+					if should_send_proof {
+						// send the eval_proof with stored_blob notification & also update the local metadata with eval_proof
+						log::info!(target: LOG_TARGET, "Designated prover for blob {}, sending eval proof", blob_received.hash);
+						eval_proof = Some(fri_eval_proof);
+						blob_meta.fri_eval_proof = eval_proof.clone();
+						blob_meta.fri_eval_prover_index = Some(prover_index);
+					}
+				},
+			}
+
 			// Insert the blob in the store
 			if let Err(e) = blob_handle
 				.blob_database
@@ -420,6 +543,7 @@ async fn handle_blob_received_notification<Block>(
 			&blob_handle,
 			ownership,
 			announced_finalized_hash,
+			eval_proof,
 		)
 		.await;
 	}
@@ -730,19 +854,22 @@ pub async fn send_blob_stored_notification<Block>(
 	blob_handle: &BlobHandle<Block>,
 	ownership_entry: OwnershipEntry,
 	finalized_block_hash: H256,
+	eval_proof: Option<Vec<u8>>,
 ) where
 	Block: BlockT,
 {
 	let timer = std::time::Instant::now();
 	log::info!(
-		"BLOB - send_blob_stored_notification - START - {:?} - {:?}",
+		"BLOB - send_blob_stored_notification - START - {:?}: eval_proof?: {} - {:?}",
 		blob_hash,
+		eval_proof.is_some(),
 		timer.elapsed()
 	);
 	let blob_stored = BlobStored {
 		hash: blob_hash,
 		ownership_entry,
 		finalized_block_hash,
+		eval_proof,
 	};
 
 	if let Err(e) = blob_handle
@@ -767,8 +894,9 @@ async fn handle_blob_stored_notification<Block>(
 {
 	let timer = std::time::Instant::now();
 	log::info!(
-		"BLOB - handle_blob_stored_notification - START - {:?} - {:?}",
+		"BLOB - handle_blob_stored_notification - START - {:?}: eval_proof?: {} - {:?}",
 		blob_stored.hash,
+		blob_stored.eval_proof.is_some(),
 		timer.elapsed()
 	);
 	let is_authority = blob_handle.role.is_authority();
@@ -872,6 +1000,81 @@ async fn handle_blob_stored_notification<Block>(
 				);
 			};
 		}
+	}
+
+	// check if we have the blob metadata in our store, if yes, we can valiadate the eval proof and store it
+	if metadata_exists && blob_stored.eval_proof.is_some() {
+		let mut blob_metadata = match blob_handle
+			.blob_database
+			.get_blob_metadata(&blob_stored.hash)
+		{
+			Ok(Some(m)) => m,
+			Ok(None) => {
+				log::error!(
+					target: LOG_TARGET,
+					"Could not find blob metadata while trying to store eval proof for blob: {:?}",
+					blob_stored.hash
+				);
+				return;
+			},
+			Err(e) => {
+				log::error!(
+					target: LOG_TARGET,
+					"An error has occured while trying to get blob metadata from the store: {e}"
+				);
+				return;
+			},
+		};
+
+		match validate_fri_proof(
+			blob_metadata.size as usize,
+			&blob_metadata
+				.eval_point_seed
+				.as_ref()
+				.expect("should be present in metadata"),
+			&blob_metadata
+				.eval_claim
+				.as_ref()
+				.expect("should be present in metadata"),
+			blob_stored.eval_proof.as_ref().expect("checked above"),
+		) {
+			Ok(_) => {
+				log::info!(
+					target: LOG_TARGET,
+					"Successfully validated eval proof for blob: {:?}",
+					blob_stored.hash
+				);
+			},
+			Err(e) => {
+				log::error!(
+					target: LOG_TARGET,
+					"Failed to validate eval proof for blob {:?}: {}",
+					blob_stored.hash,
+					e
+				);
+				return;
+			},
+		};
+		blob_metadata.fri_eval_proof = blob_stored.eval_proof;
+
+		if let Err(e) = blob_handle
+			.blob_database
+			.insert_blob_metadata(&blob_metadata)
+		{
+			log::error!(
+				target: LOG_TARGET,
+				"An error has occured while trying to update eval_proof to blob metadata in the store: {e}"
+			);
+		}
+	}
+	// if we received a notification with eval_proof but no metadata, we do nothing for now so just log it
+	// TODO: handle this case better, maybe queue it for later processing
+	else if !metadata_exists && blob_stored.eval_proof.is_some() {
+		log::warn!(
+			target: LOG_TARGET,
+			"Received eval_proof for blob {:?} but no metadata found, skipping for now",
+			blob_stored.hash
+		);
 	}
 
 	log::info!(

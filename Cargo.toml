@@ -32,10 +32,12 @@ homepage = "https://www.availproject.org/"
 
 
 [workspace.dependencies]
-avail-core = { git = "https://github.com/availproject/avail-core.git", rev = "b591f8d2a8868fd782b133fcd028a22ddd597293", default-features = false, features = [ "runtime"] }
-kate = { git = "https://github.com/availproject/avail-core", rev = "b591f8d2a8868fd782b133fcd028a22ddd597293", default-features = false }
-kate-recovery = { git = "https://github.com/availproject/avail-core", rev = "b591f8d2a8868fd782b133fcd028a22ddd597293", default-features = false  }
+avail-core = { git = "https://github.com/availproject/avail-core.git", rev = "93a52cd542b13a4d500c5e9febf93af6b1668498", default-features = false, features = [ "runtime"] }
+avail-fri = { git = "https://github.com/availproject/avail-core.git", rev = "93a52cd542b13a4d500c5e9febf93af6b1668498", default-features = false }
+kate = { git = "https://github.com/availproject/avail-core", rev = "93a52cd542b13a4d500c5e9febf93af6b1668498", default-features = false }
+kate-recovery = { git = "https://github.com/availproject/avail-core", rev = "93a52cd542b13a4d500c5e9febf93af6b1668498", default-features = false  }
 # avail-core = { path = "../avail-core/core", default-features = false, features = [ "runtime"] }
+# avail-fri = { path = "../avail-core/fri", default-features = false }
 # kate = { path = "../avail-core/kate/", default-features = false }
 # kate-recovery = { path = "../avail-core/kate/recovery/", default-features = false}
 
@@ -65,7 +67,7 @@ iai-callgrind = "0.7.3"
 divan = "0.1.11"
 
 # Logging and testing
-log = "0.4.20"
+log = { version = "0.4.20", default-features = false }
 test-case = "1.2.3"
 hex = "0.4"
 const-hex = { version = "1.14.1", default-features = false, features = ["alloc"] }
@@ -260,8 +262,8 @@ frame-system = { path = "pallets/system" }
 frame-system-benchmarking = { path = "pallets/system/benchmarking" }
 frame-system-rpc-runtime-api = { path = "pallets/system/rpc/runtime-api" }
 
-[patch."https://github.com/paritytech/polkadot-sdk"]
-sp-crypto-ec-utils = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "ff3c47f6c3f52c0b1b919bc56cd3108c17cce822" }
+# [patch."https://github.com/paritytech/polkadot-sdk"]
+# sp-crypto-ec-utils = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "ff3c47f6c3f52c0b1b919bc56cd3108c17cce822" }
 
 [patch.crates-io]
 # Other stuff
@@ -363,3 +365,4 @@ zeroize = { opt-level = 3 }
 [profile.release]
 # Substrate runtime requires unwinding.
 panic = "unwind"
+lto = "thin"

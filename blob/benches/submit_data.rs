@@ -8,8 +8,8 @@ use avail_blob::traits::*;
 use avail_blob::types::CompressedBlob;
 use avail_blob::utils::CommitmentQueue;
 use avail_rust::prelude::*;
-use da_commitment::build_da_commitments;
-use da_commitment::build_da_commitments::build_da_commitments;
+use da_commitment::build_kzg_commitments;
+use da_commitment::build_kzg_commitments::build_da_commitments;
 use da_runtime::AccountId;
 use da_runtime::UncheckedExtrinsic;
 use da_runtime::AVAIL;
@@ -107,6 +107,13 @@ impl RuntimeApiT for DummyRuntimeApi {
 
 	fn get_blob_vouch_fee_reserve(&self, _block_hash: H256) -> Result<u128, ApiError> {
 		Ok(AVAIL)
+	}
+
+	fn commitment_scheme(
+		&self,
+		_block_hash: H256,
+	) -> Result<avail_core::header::extension::CommitmentScheme, ApiError> {
+		Ok(avail_core::header::extension::CommitmentScheme::Fri)
 	}
 }
 
@@ -215,7 +222,7 @@ mod validation {
 		let queue: Arc<dyn CommitmentQueueApiT> = Arc::new(queue);
 
 		// grid & Commitment
-		let grid = build_da_commitments::build_polynomial_grid(
+		let grid = build_kzg_commitments::build_polynomial_grid(
 			&*tx.data,
 			DEFAULT_ROWS,
 			DEFAULT_COLS,
@@ -228,7 +235,7 @@ mod validation {
 			.bench_local_refs(|params| {
 				let runtime = tokio::runtime::Runtime::new().unwrap();
 				runtime.block_on(async {
-					avail_blob::validation::commitment_validation(
+					avail_blob::validation::validate_kzg_commitment(
 						tx.data_hash,
 						&params.0,
 						params.1.clone(),
@@ -246,7 +253,7 @@ mod validation {
 		let tx = build_transaction(data);
 
 		bencher.with_inputs(|| &tx).bench_local_refs(|tx| {
-			build_da_commitments::build_polynomial_grid(
+			build_kzg_commitments::build_polynomial_grid(
 				&*tx.data,
 				DEFAULT_ROWS,
 				DEFAULT_COLS,

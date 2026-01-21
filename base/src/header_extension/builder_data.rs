@@ -9,6 +9,7 @@ use codec::{Decode, Encode};
 use derive_more::Constructor;
 use sp_core::H256;
 use sp_runtime::OpaqueExtrinsic;
+use sp_std::collections::btree_map::BTreeMap;
 use sp_std::{iter::repeat, vec::Vec};
 
 #[derive(Constructor, Debug, Encode, Decode, Clone, PartialEq, Eq)]
@@ -17,12 +18,16 @@ pub struct BridgedData {
 	pub addr_msg: AddressedMessage,
 }
 
-#[derive(Debug, Constructor, Encode, Decode, PartialEq, Eq, Clone)]
+#[derive(Debug, Constructor, Encode, Decode, Default, PartialEq, Eq, Clone)]
 pub struct SubmittedData {
 	pub id: AppId,
 	pub tx_index: u32,
 	pub hash: H256,
+	pub size_bytes: u64,
 	pub commitments: Vec<u8>,
+	pub eval_point_seed: Option<[u8; 32]>,
+	pub eval_claim: Option<[u8; 16]>,
+	pub eval_proof: Option<Vec<u8>>,
 }
 
 impl GetAppId for SubmittedData {
@@ -43,34 +48,36 @@ pub struct HeaderExtensionBuilderData {
 	pub bridge_messages: Vec<BridgedData>,
 }
 
+#[derive(Clone, Debug, Default)]
+pub struct PostInherentInfo {
+	pub eval_proofs: BTreeMap<u32, Vec<u8>>,
+	pub failed: Vec<u32>,
+}
+
 impl HeaderExtensionBuilderData {
 	pub fn from_raw_extrinsics<F: HeaderExtensionDataFilter>(
 		block: u32,
 		extrinsics: &[Vec<u8>],
-		cols: u32,
-		rows: u32,
 	) -> Self {
 		let opaques: Vec<OpaqueExtrinsic> = extrinsics
 			.iter()
 			.filter_map(|e| OpaqueExtrinsic::from_bytes(e).ok())
 			.collect();
 
-		Self::from_opaque_extrinsics::<F>(block, &opaques, cols, rows)
+		Self::from_opaque_extrinsics::<F>(block, &opaques)
 	}
 
 	pub fn from_opaque_extrinsics<F: HeaderExtensionDataFilter>(
 		block: u32,
 		opaques: &[OpaqueExtrinsic],
-		cols: u32,
-		rows: u32,
 	) -> Self {
-		let failed_transactions = F::get_failed_transaction_ids(opaques);
+		let post_inherent_info = F::get_data_from_post_inherents(opaques);
 
 		let extracted_tx_datas: Vec<ExtractedTxData> = opaques
 			.into_iter()
 			.enumerate()
 			.filter_map(|(idx, opaque)| {
-				F::filter(&failed_transactions, opaque.clone(), block, idx, cols, rows)
+				F::filter(post_inherent_info.clone(), opaque.clone(), block, idx)
 			})
 			.collect();
 
@@ -259,8 +266,7 @@ mod tests {
 	#[test]
 	fn test_from_raw_extrinsics() {
 		let extrinsics: Vec<Vec<u8>> = vec![vec![1, 2, 3], vec![4, 5, 6]];
-		let builder_data =
-			HeaderExtensionBuilderData::from_raw_extrinsics::<()>(1, &extrinsics, 1024, 4096);
+		let builder_data = HeaderExtensionBuilderData::from_raw_extrinsics::<()>(1, &extrinsics);
 		assert_eq!(builder_data.data_submissions.len(), 0);
 		assert_eq!(builder_data.bridge_messages.len(), 0);
 	}
@@ -272,7 +278,9 @@ mod tests {
 				id: AppId::default(),
 				tx_index: 0,
 				commitments: vec![],
+				size_bytes: 0,
 				hash: H256::from(keccak_256(&vec![1, 2, 3])),
+				..Default::default()
 			}],
 			bridge_messages: vec![],
 		};
@@ -289,7 +297,9 @@ mod tests {
 				id: AppId::default(),
 				tx_index: 0,
 				hash: H256::from(keccak_256(&vec![1, 2, 3])),
+				size_bytes: 0,
 				commitments: vec![],
+				..Default::default()
 			}],
 			bridge_messages: vec![],
 		};
@@ -305,8 +315,10 @@ mod tests {
 			data_submissions: vec![SubmittedData {
 				id: AppId::default(),
 				tx_index: 0,
+				size_bytes: 0,
 				hash: H256::from(keccak_256(&vec![1, 2, 3])),
 				commitments: vec![],
+				..Default::default()
 			}],
 			bridge_messages: vec![],
 		};
@@ -319,26 +331,34 @@ mod tests {
 			SubmittedData {
 				id: AppId(3),
 				tx_index: 0,
+				size_bytes: 0,
 				hash: H256::from(keccak_256(&vec![1, 2, 3])),
 				commitments: vec![],
+				..Default::default()
 			},
 			SubmittedData {
 				id: AppId(1),
 				tx_index: 1,
+				size_bytes: 0,
 				hash: H256::from(keccak_256(&vec![4, 5, 6])),
 				commitments: vec![],
+				..Default::default()
 			},
 			SubmittedData {
 				id: AppId(2),
 				tx_index: 2,
+				size_bytes: 0,
 				hash: H256::from(keccak_256(&vec![7, 8, 9])),
 				commitments: vec![],
+				..Default::default()
 			},
 			SubmittedData {
 				id: AppId(1),
 				tx_index: 3,
+				size_bytes: 0,
 				hash: H256::from(keccak_256(&vec![7, 8, 9])),
 				commitments: vec![],
+				..Default::default()
 			},
 		];
 

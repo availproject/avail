@@ -1,6 +1,9 @@
 use crate::traits::CommitmentQueueApiT;
-use crate::types::BlobInfo;
-use crate::validation::{commitment_validation, initial_validation, tx_validation};
+use crate::types::{BlobEvalData, BlobInfo, BlobSummary, FriData};
+use crate::utils::{designated_prover_index, get_babe_randomness_key, get_my_validator_id};
+use crate::validation::{
+	initial_validation, tx_validation, validate_fri_commitment, validate_kzg_commitment,
+};
 use crate::{
 	nonce_cache::NonceCache,
 	p2p::BlobHandle,
@@ -18,20 +21,26 @@ use crate::{
 	},
 	MAX_RPC_RETRIES,
 };
-use anyhow::Result;
-use avail_core::DataProof;
+use avail_base::HeaderExtensionBuilderData;
+use avail_core::header::extension::CommitmentScheme;
+use avail_core::{AppId, DataProof};
+use avail_fri::eval_utils::derive_seed_from_inputs;
+use avail_fri::{
+	transcript_to_bytes, BytesEncoder, FriBiniusPCS, FriParamsVersion, SamplingProof, B128,
+};
 use avail_observability::metrics::BlobMetrics;
 use codec::{Decode, Encode};
-use da_commitment::build_da_commitments::build_polynomial_grid;
+use da_commitment::build_kzg_commitments::build_polynomial_grid;
 use da_control::{BlobRuntimeParameters, Call};
 use da_runtime::apis::KateApi;
-use da_runtime::{RuntimeCall, UncheckedExtrinsic};
+use da_runtime::{Runtime, RuntimeCall, UncheckedExtrinsic};
 use frame_system::limits::BlockLength;
 use jsonrpsee::{
 	core::{async_trait, RpcResult},
 	proc_macros::rpc,
 	types::error::ErrorObject,
 };
+use parking_lot::Mutex;
 use sc_client_api::{BlockBackend, HeaderBackend, StateBackend};
 use sc_network::NetworkStateInfo;
 use sc_network::PeerId;
@@ -43,12 +52,25 @@ use sp_runtime::{
 	transaction_validity::TransactionSource,
 	AccountId32, SaturatedConversion,
 };
+use std::collections::HashMap;
 use std::{
 	marker::{PhantomData, Sync},
 	str::FromStr,
 	sync::Arc,
 };
 use tokio::task;
+
+/// Cached FRI state for a blob at a given block
+#[derive(Clone)]
+struct FriSamplingCacheEntry {
+	commit_output: Arc<avail_fri::FriCommitOutput<B128>>,
+	pcs: Arc<avail_fri::FriBiniusPCS>,
+}
+
+// block_hash, blob_hash
+type FriSamplingCacheKey = (H256, H256);
+
+type RTExtractor = <Runtime as frame_system::Config>::HeaderExtensionDataFilter;
 
 pub enum Error {
 	BlobError,
@@ -77,6 +99,34 @@ pub trait BlobApi<Block>
 where
 	Block: BlockT,
 {
+	/// Submits a data blob and its metadata transaction to the network.
+	///
+	/// This RPC performs the full client-side submission flow:
+	/// - validates the metadata transaction
+	/// - validates the blob size and commitment
+	/// - verifies (or generates) commitment-related proofs
+	/// - gossips the blob to designated blob owners
+	/// - submits the metadata transaction to the transaction pool
+	///
+	/// The blob data itself is **not** included on-chain. Only the metadata
+	/// transaction is submitted to the chain.
+	///
+	/// ### Parameters
+	/// - `metadata_signed_transaction`:
+	///   A SCALE-encoded, signed metadata transaction (base64-encoded),
+	///   typically a `submit_blob_metadata` call.
+	/// - `blob`:
+	///   The raw blob data (base64-encoded).
+	///
+	/// ### Returns
+	/// - `()` on successful submission.
+	///
+	/// ### Errors
+	/// - If the blob is empty or exceeds size limits.
+	/// - If the metadata transaction is invalid or expired.
+	/// - If the commitment or evaluation data is invalid.
+	/// - If commitment validation fails.
+	/// - If submission to the transaction pool fails.
 	#[method(name = "blob_submitBlob")]
 	async fn submit_blob(
 		&self,
@@ -84,16 +134,90 @@ where
 		blob: B64Param,
 	) -> RpcResult<()>;
 
+	/// Returns the full blob data for a given blob hash.
+	///
+	/// This RPC retrieves the blob either from local storage or
+	/// from the network, depending on availability.
+	///
+	/// The RPC operates in **two modes**:
+	///
+	/// ### Mode A: Block-scoped lookup
+	/// If `at` is provided:
+	/// - Blob ownership is derived from the DA post-inherent
+	///   in the specified block.
+	/// - The node attempts to fetch the blob from the
+	///   owners listed in that block.
+	///
+	/// ### Mode B: Storage-based lookup
+	/// If `at` is omitted:
+	/// - Blob ownership is derived from the local blob indexer.
+	/// - The node attempts to fetch the blob from known owners.
+	///
+	/// In both cases:
+	/// - If the blob exists locally, it is returned immediately.
+	/// - Otherwise, the node queries blob owners via p2p.
+	///
+	/// ### Parameters
+	/// - `blob_hash`: The hash of the blob to retrieve.
+	/// - `at`: Optional block hash.
+	///   - If provided, restricts lookup to blob ownership
+	///     recorded in that block.
+	///   - If omitted, uses locally indexed blob ownership.
+	///
+	/// ### Returns
+	/// - `Blob` containing:
+	///   - blob hash
+	///   - blob size
+	///   - raw blob data
+	///
+	/// ### Errors
+	/// - If the blob hash is unknown.
+	/// - If no owners are known for the blob.
+	/// - If all attempts to fetch the blob from owners fail.
+	/// - If the block specified by `at` cannot be found or decoded.
 	#[method(name = "blob_getBlob")]
-	/// This RPC will work in two different modes based on params passed:
-	/// if 'at' param is passed, it will try to get blob ownership from that block's blob tx summaries
-	/// if 'at' param is None, it will try to get blob ownership from storage's blob info
-	/// based on the blob ownership, it will try to get the blob from local storage or from p2p network
 	async fn get_blob(&self, blob_hash: H256, at: Option<Block::Hash>) -> RpcResult<Blob>;
 
+	/// Returns metadata and inclusion information for a blob.
+	///
+	/// This RPC queries the local blob indexer and returns information
+	/// about the block in which the blob was included and the validators
+	/// that claimed ownership of the blob.
+	///
+	/// This does **not** return the blob data itself.
+	///
+	/// ### Parameters
+	/// - `blob_hash`: The hash of the blob.
+	///
+	/// ### Returns
+	/// - `BlobInfo` containing:
+	///   - blob hash
+	///   - block hash and block number where the blob was included
+	///   - ownership information (validators who stored the blob)
+	///
+	/// ### Errors
+	/// - If the blob hash is unknown to the node.
 	#[method(name = "blob_getBlobInfo")]
 	async fn get_blob_info(&self, blob_hash: H256) -> RpcResult<BlobInfo>;
 
+	/// Returns a proof that a blob was included in a specific block.
+	///
+	/// The proof allows a verifier to verify that
+	/// the blob hash was included in the block's data root.
+	///
+	/// ### Parameters
+	/// - `blob_hash`: The hash of the blob.
+	/// - `at`: Optional block hash.
+	///   - If provided, the proof is generated against that block.
+	///   - If omitted, the node uses the local indexer to get the block where the blob
+	///     was included.
+	///
+	/// ### Returns
+	/// - `DataProof` proving inclusion of the blob in the block.
+	///
+	/// ### Errors
+	/// - If the blob is not found in the specified block.
+	/// - If the block cannot be retrieved or decoded.
 	#[method(name = "blob_inclusionProof")]
 	async fn inclusion_proof(
 		&self,
@@ -101,8 +225,125 @@ where
 		at: Option<Block::Hash>,
 	) -> RpcResult<DataProof>;
 
+	// TODO: feature-gate this RPC only for debugging & development
 	#[method(name = "blob_logStuff")]
 	async fn log_stuff(&self) -> RpcResult<()>;
+
+	/// Returns a summary of all successfully included blobs in a block.
+	///
+	/// The summary is derived from the DA post-inherent and does **not**
+	/// include heavy evaluation data (e.g. FRI proofs).
+	///
+	/// This is suitable for:
+	/// - Light Clients
+	/// - Custom Indexers
+	/// - Explorers
+	///
+	/// ### Parameters
+	/// - `at`: Optional block hash.
+	///   - If omitted, uses the node's best block.
+	///
+	/// ### Returns
+	/// - A list of `BlobSummary`, each containing:
+	///   - blob hash
+	///   - transaction index
+	///   - AppId
+	///   - blob size (bytes)
+	///
+	/// ### Errors
+	/// - If the block is not found.
+	/// - If the block does not contain a DA post-inherent.
+	#[method(name = "blob_getBlobsSummary")]
+	async fn get_blobs_summary(&self, at: Option<Block::Hash>) -> RpcResult<Vec<BlobSummary>>;
+
+	/// Returns all blob hashes associated with a given AppId in a block.
+	///
+	/// This RPC is a filtered view over `blob_getBlobsSummary`
+	/// and is useful for application-specific indexing.
+	///
+	/// ### Parameters
+	/// - `app_id`: The AppId to filter blobs by.
+	/// - `at`: Optional block hash.
+	///   - If omitted, uses the node's best block.
+	///
+	/// ### Returns
+	/// - A list of blob hashes associated with the given AppId.
+	///
+	/// ### Errors
+	/// - If the block is not found.
+	/// - If the block does not contain a DA post-inherent.
+	#[method(name = "blob_getBlobsByAppId")]
+	async fn get_blobs_by_appid(
+		&self,
+		app_id: AppId,
+		at: Option<Block::Hash>,
+	) -> RpcResult<Vec<H256>>;
+
+	/// Returns FRI evaluation data for a blob in a block.
+	///
+	/// This RPC exposes the data required to verify the correctness
+	/// of the blob's FRI commitment:
+	/// - evaluation point seed
+	/// - evaluation claim
+	/// - evaluation proof
+	///
+	/// This data is included in the block body (post-inherent) and the BlobSummary extrinsic
+	/// and can be independently verified by Light Clients.
+	///
+	/// ### Parameters
+	/// - `blob_hash`: The hash of the blob.
+	/// - `at`: Optional block hash.
+	///   - If omitted, uses the node's best block.
+	///
+	/// ### Returns
+	/// - `BlobEvalData` containing:
+	///   - evaluation point seed
+	///   - evaluation claim
+	///   - evaluation proof bytes
+	///
+	/// ### Errors
+	/// - If the blob is not found in the block.
+	/// - If the blob does not contain evaluation data
+	///   (e.g. non-FRI or incomplete data).
+	#[method(name = "blob_getEvalData")]
+	async fn get_eval_data(
+		&self,
+		blob_hash: H256,
+		at: Option<Block::Hash>,
+	) -> RpcResult<BlobEvalData>;
+
+	/// Returns FRI sampling (inclusion) proofs for specific cells of a blob.
+	///
+	/// Each sampling proof allows a verifier to check that a specific
+	/// codeword cell belongs to the committed polynomial.
+	///
+	/// This RPC is intended for:
+	/// - Light Clients performing data availability sampling
+	/// - External verifiers auditing blob availability
+	///
+	/// ### Parameters
+	/// - `cells`: A list of codeword indices (`u32`) to sample.
+	/// - `blob_hash`: The hash of the blob.
+	/// - `at`: Optional block hash.
+	///   - If omitted, uses the node's best block.
+	///
+	/// ### Returns
+	/// - A list of `SamplingProof`, each containing:
+	///   - cell index
+	///   - cell value (16 bytes)
+	///   - serialized inclusion proof transcript
+	///
+	/// ### Errors
+	/// - If the blob cannot be retrieved.
+	/// - If any cell index is out of bounds.
+	/// - If proof generation fails.
+	#[method(name = "blob_getSamplingProof")]
+	async fn get_sampling_proof(
+		&self,
+		cells: Vec<u32>,
+		blob_hash: H256,
+		at: Option<Block::Hash>,
+	) -> RpcResult<Vec<SamplingProof>>;
 }
 
 pub struct BlobRpc<Pool, Block: BlockT, Backend> {
@@ -111,10 +352,15 @@ pub struct BlobRpc<Pool, Block: BlockT, Backend> {
 	blob_handle: Arc<BlobHandle<Block>>,
 	commitment_queue: Arc<CommitmentQueue>,
 	nonce_cache: Arc<NonceCache>,
+	fri_sampling_cache: Arc<Mutex<HashMap<FriSamplingCacheKey, FriSamplingCacheEntry>>>,
 	_block: PhantomData<Block>,
 }
 
-impl<Pool, Block: BlockT, Backend> BlobRpc<Pool, Block, Backend> {
+impl<Pool, Block: BlockT, Backend> BlobRpc<Pool, Block, Backend>
+where
+	H256: From<<Block as BlockT>::Hash>,
+	<Block as BlockT>::Hash: From<H256>,
+{
 	pub fn new(
 		blob_handle: Arc<BlobHandle<Block>>,
 		pool: Arc<Pool>,
@@ -130,8 +376,42 @@ impl<Pool, Block: BlockT, Backend> BlobRpc<Pool, Block, Backend> {
 			blob_handle,
 			commitment_queue: Arc::new(queue),
 			nonce_cache: Arc::new(NonceCache::new()),
+			fri_sampling_cache: Arc::new(Mutex::new(HashMap::new())),
 			_block: PhantomData,
 		}
+	}
+
+	fn at_or_best(&self, at: Option<Block::Hash>) -> Block::Hash {
+		at.unwrap_or_else(|| self.blob_handle.client.info().best_hash.into())
+	}
+
+	// The SubmittedData contains info about only succesfull blob from both BlobMetdata & BlobSummary post-inherent
+	fn load_da_submissions(
+		&self,
+		at: Block::Hash,
+	) -> RpcResult<Vec<avail_base::header_extension::SubmittedData>> {
+		let block = self
+			.blob_handle
+			.client
+			.block(at.into())
+			.map_err(|e| internal_err!("Failed to get block: {:?}", e))?
+			.ok_or_else(|| internal_err!("Block not found: {:?}", at))?
+			.block;
+
+		let extrinsics = block.extrinsics();
+		if extrinsics.len() < 2 {
+			return Err(internal_err!(
+				"Block does not contain post-inherent summary extrinsic"
+			));
+		}
+
+		Ok(
+			HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(
+				block.header.number,
+				&extrinsics,
+			)
+			.data_submissions,
+		)
 	}
 }
 
@@ -422,6 +702,140 @@ where
 		let _ = self.blob_handle.blob_database.log_all_entries();
 		Ok(())
 	}
+
+	async fn get_blobs_summary(&self, at: Option<Block::Hash>) -> RpcResult<Vec<BlobSummary>> {
+		let at = self.at_or_best(at);
+		let submissions = self.load_da_submissions(at)?;
+
+		Ok(submissions
+			.iter()
+			.map(|d| BlobSummary::new(d.hash, d.tx_index, d.id, d.size_bytes))
+			.collect())
+	}
+
+	async fn get_blobs_by_appid(
+		&self,
+		app_id: AppId,
+		at: Option<Block::Hash>,
+	) -> RpcResult<Vec<H256>> {
+		let at = self.at_or_best(at);
+		let submissions = self.load_da_submissions(at)?;
+
+		Ok(submissions
+			.iter()
+			.filter(|d| d.id == app_id)
+			.map(|d| d.hash)
+			.collect())
+	}
+
+	async fn get_eval_data(
+		&self,
+		blob_hash: H256,
+		at: Option<Block::Hash>,
+	) -> RpcResult<BlobEvalData> {
+		let at = self.at_or_best(at);
+		let submissions = self.load_da_submissions(at)?;
+
+		let d = submissions
+			.iter()
+			.find(|d| d.hash == blob_hash)
+			.ok_or_else(|| {
+				internal_err!(
+					"Blob submission data not found for blob {:?} in block {:?}",
+					blob_hash,
+					at
+				)
+			})?;
+
+		match (&d.eval_point_seed, &d.eval_claim, &d.eval_proof) {
+			(Some(seed), Some(claim), Some(proof)) => {
+				Ok(BlobEvalData::new(*seed, *claim, proof.clone()))
+			},
+			_ => Err(internal_err!(
+				"Blob {:?} does not contain eval data in block {:?}",
+				blob_hash,
+				at
+			)),
+		}
+	}
+
+	async fn get_sampling_proof(
+		&self,
+		cells: Vec<u32>,
+		blob_hash: H256,
+		at: Option<Block::Hash>,
+	) -> RpcResult<Vec<SamplingProof>> {
+		let at = self.at_or_best(at);
+		let cache_key = (at.into(), blob_hash);
+
+		if let Some(entry) = {
+			let cache = self.fri_sampling_cache.lock();
+			cache.get(&cache_key).cloned()
+		} {
+			return build_sampling_proofs(entry, cells);
+		}
+
+		let blob = self.get_blob(blob_hash, Some(at)).await?;
+
+		let encoder = BytesEncoder::<B128>::new();
+		let packed = encoder
+			.bytes_to_packed_mle(&blob.data)
+			.map_err(|e| internal_err!("bytes_to_packed_mle failed: {e}"))?;
+
+		let cfg = FriParamsVersion(0).to_config(packed.total_n_vars);
+		let pcs = Arc::new(FriBiniusPCS::new(cfg));
+
+		let ctx = pcs
+			.initialize_fri_context::<B128>(packed.packed_mle.log_len())
+			.map_err(|e| internal_err!("FRI ctx init failed: {e}"))?;
+
+		let commit_output = Arc::new(
+			pcs.commit(&packed.packed_mle, &ctx)
+				.map_err(|e| internal_err!("FRI commit failed: {e}"))?,
+		);
+
+		let entry = FriSamplingCacheEntry {
+			pcs: pcs.clone(),
+			commit_output: commit_output.clone(),
+		};
+
+		{
+			let mut cache = self.fri_sampling_cache.lock();
+			cache.insert(cache_key, entry.clone());
+		}
+
+		build_sampling_proofs(entry, cells)
+	}
+}
+
+fn build_sampling_proofs(
+	entry: FriSamplingCacheEntry,
+	cells: Vec<u32>,
+) -> RpcResult<Vec<SamplingProof>> {
+	let max = entry.commit_output.codeword.len();
+	if cells.iter().any(|&c| (c as usize) >= max) {
+		return Err(internal_err!("One or more cell indices out of bounds"));
+	}
+
+	let mut proofs = Vec::with_capacity(cells.len());
+
+	for &cell in &cells {
+		let idx = cell as usize;
+		let value = entry.commit_output.codeword[idx];
+
+		let transcript = entry
+			.pcs
+			.inclusion_proof::<B128>(&entry.commit_output.committed, idx)
+			.map_err(|e| internal_err!("Sampling proof failed: {e}"))?;
+
+		proofs.push(SamplingProof::new(
+			cell,
+			value.val().to_le_bytes().to_vec(),
+			transcript_to_bytes(&transcript),
+		));
+	}
+
+	Ok(proofs)
 }
 
 async fn check_rpc_store_blob(
@@ -481,6 +895,21 @@ async fn check_rpc_store_blob(
 	}))
 }
 
+fn get_babe_randomness(
+	backend_client: &Arc<dyn BackendApiT>,
+	finalized_block_hash: H256,
+) -> RpcResult<[u8; 32]> {
+	let storage_key = get_babe_randomness_key();
+	let maybe_raw = backend_client
+		.storage(finalized_block_hash, &storage_key.0)
+		.map_err(|e| internal_err!("Storage query error: {e:?}"))?;
+	let raw = maybe_raw.ok_or(internal_err!("Randomness not found"))?;
+	let randomness =
+		<[u8; 32]>::decode(&mut &raw[..]).map_err(|e| internal_err!("Decode error: {e:?}"))?;
+
+	Ok(randomness)
+}
+
 fn get_dynamic_block_length(
 	backend_client: &Arc<dyn BackendApiT>,
 	finalized_block_hash: H256,
@@ -514,6 +943,17 @@ pub async fn submit_blob_main_task(
 	let best_hash = client_info.best_hash;
 	let finalized_block_hash = client_info.finalized_hash;
 
+	let commitment_scheme = match runtime_client.commitment_scheme(best_hash) {
+		Ok(scheme) => scheme,
+		Err(e) => {
+			log::error!(
+				"Could not get commitment scheme from runtime at {:?}: {e:?}. Falling back to Fri.",
+				best_hash
+			);
+			CommitmentScheme::Fri
+		},
+	};
+
 	let blob_params = match runtime_client.get_blob_runtime_parameters(finalized_block_hash) {
 		Ok(p) => p,
 		Err(e) => {
@@ -524,8 +964,8 @@ pub async fn submit_blob_main_task(
 	let max_blob_size = blob_params.max_blob_size as usize;
 
 	stop_watch.start("Initial Validation");
-	let (blob_hash, provided_commitment) =
-		initial_validation(max_blob_size as usize, &blob, &metadata_signed_transaction)
+	let (blob_hash, provided_commitment, eval_point_seed, eval_claim) =
+		initial_validation(max_blob_size, &blob, &metadata_signed_transaction)
 			.map_err(|e| internal_err!("{}", e))?;
 	stop_watch.stop("Initial Validation");
 	stop_watch.add_extra_information(std::format!("Blob Hash: {:?}", blob_hash));
@@ -545,61 +985,134 @@ pub async fn submit_blob_main_task(
 	.map_err(|e| internal_err!("{}", e))?;
 	stop_watch.stop("TX validation");
 
-	// Commitment Validation can take a long time.
 	stop_watch.start("Commitments (Total)");
-	let (cols, rows) = get_dynamic_block_length(&friends.backend_client, finalized_block_hash)?;
-	let blob = Arc::new(blob);
 
-	let start = crate::utils::get_current_timestamp_ms();
-	stop_watch.start("Polynominal Grid Gen.");
-	let grid = build_polynomial_grid(&*blob, cols, rows, Default::default());
-	stop_watch.stop("Polynominal Grid Gen.");
-	let end = crate::utils::get_current_timestamp_ms();
-	// Telemetry
-	crate::telemetry::BlobSubmission::build_poly_grid(blob_hash, start, end);
+	match commitment_scheme {
+		CommitmentScheme::Kzg => {
+			let (cols, rows) =
+				get_dynamic_block_length(&friends.backend_client, finalized_block_hash)?;
+			let blob = Arc::new(blob);
 
-	stop_watch.start("Commitment Validation");
-	commitment_validation(blob_hash, &provided_commitment, grid, &commitment_queue)
-		.await
-		.map_err(|e| internal_err!("{}", e))?;
-	stop_watch.stop("Commitment Validation");
+			let start = crate::utils::get_current_timestamp_ms();
+			stop_watch.start("Polynominal Grid Gen.");
+			let grid = build_polynomial_grid(&*blob, cols, rows, Default::default());
+			stop_watch.stop("Polynominal Grid Gen.");
+			let end = crate::utils::get_current_timestamp_ms();
+			// Telemetry
+			crate::telemetry::BlobSubmission::build_poly_grid(blob_hash, start, end);
 
-	stop_watch.stop("Commitments (Total)");
+			stop_watch.start("Commitment Validation");
+			validate_kzg_commitment(blob_hash, &provided_commitment, grid, &commitment_queue)
+				.await
+				.map_err(|e| internal_err!("{}", e))?;
+			stop_watch.stop("Commitment Validation");
 
-	// Because Commitment Validation can take a long time
-	// the moment it is done minutes can pass.
-	// Let's check once more to see if the transactions is still valid
-	//
-	// TODO Blob we might remove this
-	let client_info = friends.externalities.client_info();
-	let best_hash = client_info.best_hash;
+			stop_watch.stop("Commitments (Total)");
 
-	let _ = tx_validation(
-		best_hash,
-		&metadata_signed_transaction,
-		blob_params.min_transaction_validity,
-		blob_params.max_transaction_validity,
-		&runtime_client,
-		&nonce_cache,
-	)
-	.map_err(|e| internal_err!("{}", e))?;
+			// After potentially long work, re-validate tx
+			let client_info = friends.externalities.client_info();
+			let best_hash = client_info.best_hash;
 
-	// From this point, the transaction should not fail as the user has done everything correctly
-	// We will spawn a task to finish the work and instantly return to the user.
-	let handle = task::spawn(async move {
-		submit_blob_background_task(
-			opaque_tx,
-			blob_hash,
-			blob,
-			blob_params,
-			provided_commitment,
-			friends,
-			nonce_cache,
-		)
-		.await
-	});
+			let _ = tx_validation(
+				best_hash,
+				&metadata_signed_transaction,
+				blob_params.min_transaction_validity,
+				blob_params.max_transaction_validity,
+				&runtime_client,
+				&nonce_cache,
+			)
+			.map_err(|e| internal_err!("{}", e))?;
 
-	Ok(handle)
+			let handle = task::spawn(async move {
+				submit_blob_background_task(
+					opaque_tx,
+					blob_hash,
+					blob,
+					blob_params,
+					provided_commitment,
+					None,
+					friends,
+					nonce_cache,
+				)
+				.await
+			});
+
+			// ideally eval_point_seed and eval_claim should be None here for KZG, but we can let it pass for now
+			Ok(handle)
+		},
+
+		CommitmentScheme::Fri => {
+			// Check if the eval_point_seed and eval_claim are present for Fri
+			if eval_point_seed.is_none() || eval_claim.is_none() {
+				return Err(internal_err!(
+					"eval_point_seed and eval_claim must be present for Fri commitment scheme"
+				));
+			}
+
+			let eval_point_seed = eval_point_seed.expect("checked above; qed");
+			let eval_claim = eval_claim.expect("checked above; qed");
+			let babe_randomness =
+				get_babe_randomness(&friends.backend_client, finalized_block_hash)?;
+			let derived_eval_seed = derive_seed_from_inputs(&babe_randomness, &blob_hash.0);
+			if eval_point_seed != derived_eval_seed {
+				return Err(internal_err!(
+					"eval_point_seed does not match derived seed!"
+				));
+			}
+			stop_watch.start("Fri Commitment Validation");
+			let fri_eval_proof = match validate_fri_commitment(
+				blob_hash,
+				&blob,
+				&provided_commitment,
+				&derived_eval_seed,
+				&eval_claim,
+			) {
+				Ok(proof_bytes) => proof_bytes,
+				Err(e) => {
+					stop_watch.stop("Fri Commitment Validation");
+					stop_watch.stop("Commitments (Total)");
+					return Err(internal_err!("{}", e));
+				},
+			};
+			stop_watch.stop("Fri Commitment Validation");
+			stop_watch.stop("Commitments (Total)");
+
+			let client_info = friends.externalities.client_info();
+			let best_hash = client_info.best_hash;
+
+			let _ = tx_validation(
+				best_hash,
+				&metadata_signed_transaction,
+				blob_params.min_transaction_validity,
+				blob_params.max_transaction_validity,
+				&runtime_client,
+				&nonce_cache,
+			)
+			.map_err(|e| internal_err!("{}", e))?;
+
+			let blob = Arc::new(blob);
+			let fri_data = FriData {
+				eval_point_seed,
+				eval_claim,
+				fri_eval_proof: Some(fri_eval_proof),
+			};
+			let handle = task::spawn(async move {
+				submit_blob_background_task(
+					opaque_tx,
+					blob_hash,
+					blob,
+					blob_params,
+					provided_commitment,
+					Some(fri_data),
+					friends,
+					nonce_cache,
+				)
+				.await
+			});
+
+			Ok(handle)
+		},
+	}
 }
 
 async fn submit_blob_background_task(
@@ -608,6 +1121,7 @@ async fn submit_blob_background_task(
 	blob: Arc<Vec<u8>>,
 	blob_params: BlobRuntimeParameters,
 	commitment: Vec<u8>,
+	fri_data: Option<FriData>,
 	friends: Friends,
 	nonce_cache: Arc<dyn NonceCacheApiT>,
 ) {
@@ -617,7 +1131,8 @@ async fn submit_blob_background_task(
 		nonce_cache.commit(&who, nonce);
 	}
 
-	let stored = store_and_gossip_blob(blob_hash, blob, blob_params, commitment, &friends).await;
+	let stored =
+		store_and_gossip_blob(blob_hash, blob, blob_params, commitment, fri_data, &friends).await;
 	if stored.is_err() {
 		return;
 	}
@@ -649,6 +1164,7 @@ pub async fn store_and_gossip_blob(
 	blob: Arc<Vec<u8>>,
 	blob_params: BlobRuntimeParameters,
 	commitment: Vec<u8>,
+	fri_data: Option<FriData>,
 	friends: &Friends,
 ) -> Result<(), ()> {
 	let mut stop_watch = SmartStopwatch::new("😍😍 STORE AND GOSSIP BLOB");
@@ -671,6 +1187,19 @@ pub async fn store_and_gossip_blob(
 		},
 	};
 
+	let commitment_scheme = match friends
+		.runtime_client
+		.commitment_scheme(finalized_block_hash)
+	{
+		Ok(scheme) => scheme,
+		Err(e) => {
+			log::error!(
+				"Could not get commitment scheme from runtime at {:?}: {e:?}. Falling back to Fri.",
+				finalized_block_hash
+			);
+			CommitmentScheme::Fri
+		},
+	};
 	let mut blob_metadata = maybe_blob_metadata.unwrap_or_else(|| {
 		let blob_len = blob.len();
 
@@ -685,6 +1214,10 @@ pub async fn store_and_gossip_blob(
 			nb_validators_per_blob: 0,
 			nb_validators_per_blob_threshold: 0,
 			storing_validator_list: Default::default(),
+			eval_point_seed: None,
+			eval_claim: None,
+			fri_eval_proof: None,
+			fri_eval_prover_index: None,
 		}
 	});
 
@@ -725,6 +1258,41 @@ pub async fn store_and_gossip_blob(
 			return Err(());
 		},
 	};
+
+	if commitment_scheme == CommitmentScheme::Fri {
+		if fri_data.is_none() {
+			log::error!("Fri data must be available for Fri commitment scheme");
+			return Err(());
+		}
+		let fri_data = fri_data.expect("checked above; qed");
+		let prover_index =
+			designated_prover_index(&blob_hash, &finalized_block_hash, nb_validators_per_blob);
+
+		let (my_validator_id, _babe_key) = match get_my_validator_id(
+			&friends.externalities.keystore(),
+			friends.runtime_client.as_ref(),
+			finalized_block_hash,
+		) {
+			Ok(v) => v,
+			Err(e) => {
+				log::error!("No keys found while trying to get this node's id: {e}");
+				return Err(());
+			},
+		};
+		if storing_validators[prover_index as usize] == my_validator_id {
+			log::info!(
+				"I am the designated prover for blob {:?} including eval_proof? {}",
+				blob_hash,
+				fri_data.fri_eval_proof.is_some()
+			);
+			// I am the designated prover, maybe also do the sanity check whether we have the eval proof or not
+			blob_metadata.fri_eval_proof = fri_data.fri_eval_proof;
+			blob_metadata.fri_eval_prover_index = Some(prover_index);
+		}
+		blob_metadata.eval_point_seed = Some(fri_data.eval_point_seed);
+		blob_metadata.eval_claim = Some(fri_data.eval_claim);
+	}
+
 	blob_metadata.is_notified = true;
 	blob_metadata.expires_at = finalized_block_number.saturating_add(blob_params.temp_blob_ttl);
 	blob_metadata.finalized_block_hash = finalized_block_hash.into();
@@ -783,6 +1351,10 @@ pub async fn store_and_gossip_blob(
 			original_peer_id: my_peer_id_base58.clone(),
 			finalized_block_hash: finalized_block_hash.into(),
 			finalized_block_number,
+			eval_point_seed: blob_metadata.eval_point_seed,
+			eval_claim: blob_metadata.eval_claim.clone(),
+			fri_eval_proof: blob_metadata.fri_eval_proof.clone(),
+			fri_eval_prover_index: blob_metadata.fri_eval_prover_index,
 		});
 
 	let gossip_cmd_sender = friends.externalities.gossip_cmd_sender();

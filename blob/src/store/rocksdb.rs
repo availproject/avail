@@ -54,7 +54,13 @@ impl Default for RocksdbBlobStore {
 impl StorageApiT for RocksdbBlobStore {
 	fn insert_blob_metadata(&self, blob_metadata: &BlobMetadata) -> Result<()> {
 		if let Some(existing) = self.get_blob_metadata(&blob_metadata.hash).ok().flatten() {
-			if existing.is_notified {
+			// existing already has eval proof
+			if existing.fri_eval_proof.is_some() {
+				return Ok(());
+			}
+
+			// existing has no eval proof AND incoming also has no eval proof
+			if existing.is_notified && blob_metadata.fri_eval_proof.is_none() {
 				return Ok(());
 			}
 		}

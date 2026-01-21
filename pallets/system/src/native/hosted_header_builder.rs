@@ -1,11 +1,22 @@
-// !!!!
-// More info about how runtime interfaces work: (https://docs.rs/sp-runtime-interface/latest/sp_runtime_interface/attr.runtime_interface.html
-// !!!!
+//! Runtime interface and abstraction for building DA header extensions.
+//!
+//! More info about runtime interfaces:
+//! https://docs.rs/sp-runtime-interface/latest/sp_runtime_interface/attr.runtime_interface.html
 
 use crate::{limits::BlockLength, Config};
 use avail_base::header_extension::SubmittedData;
-use avail_core::HeaderVersion;
-use avail_core::{header::HeaderExtension, traits::ExtendedHeader};
+use avail_core::{
+	header::{
+		extension::{
+			fri::FriHeaderVersion,
+			kzg::KzgHeaderVersion,
+		},
+		HeaderExtension,
+	},
+	traits::ExtendedHeader,
+	FriParamsVersion,
+};
+
 pub use kate::{
 	metrics::{IgnoreMetrics, Metrics},
 	Seed,
@@ -20,76 +31,109 @@ use sp_std::vec::Vec;
 
 pub const MIN_WIDTH: usize = 4;
 
-pub mod da {
-	use core::marker::PhantomData;
+/// Trait used by the runtime to build the DA header extension.
+///
+/// This is a thin abstraction over the host call exposed via
+/// the `HostedHeaderBuilder` runtime interface.
+pub trait HeaderExtensionBuilder {
+	type Header: ExtendedHeader<Extension = HeaderExtension>;
 
-	use avail_base::header_extension::SubmittedData;
-	use avail_core::header::{Header as DaHeader, HeaderExtension};
+	/// Build the KZG header extension.
+	fn build_kzg_extension(
+		submitted: Vec<SubmittedData>,
+		data_root: H256,
+		block_length: BlockLength,
+		kzg_version: KzgHeaderVersion,
+	) -> HeaderExtension;
+
+	/// Build the FRI header extension.
+	fn build_fri_extension(
+		submitted: Vec<SubmittedData>,
+		data_root: H256,
+		params_version: FriParamsVersion,
+		fri_version: FriHeaderVersion,
+	) -> HeaderExtension;
+}
+
+/// Runtime-side DA header builder.
+pub mod da {
+	use super::*;
+	use avail_core::header::Header as DaHeader;
+	use core::marker::PhantomData;
 	use sp_runtime::traits::BlakeTwo256;
 
-	use super::*;
-
-	pub type Hash = sp_core::H256;
 	pub type BlockNumber = u32;
 
-	/// avail-node Header builder.
+	/// Runtime-facing header extension builder.
 	pub struct HeaderExtensionBuilder<T: Config>(PhantomData<T>);
 
 	impl<T: Config> super::HeaderExtensionBuilder for HeaderExtensionBuilder<T> {
 		type Header = DaHeader<BlockNumber, BlakeTwo256>;
 
 		#[inline]
-		fn build_extension(
+		fn build_kzg_extension(
 			submitted: Vec<SubmittedData>,
 			data_root: H256,
 			block_length: BlockLength,
-			version: HeaderVersion,
+			kzg_version: KzgHeaderVersion,
 		) -> HeaderExtension {
-			super::hosted_header_builder::build_extension(
+			super::hosted_header_builder::build_kzg_extension(
 				submitted,
 				data_root,
 				block_length,
-				version,
+				kzg_version,
 			)
+			.into()
+		}
+
+		#[inline]
+		fn build_fri_extension(
+			submitted: Vec<SubmittedData>,
+			data_root: H256,
+			params_version: FriParamsVersion,
+			fri_version: FriHeaderVersion,
+		) -> HeaderExtension {
+			super::hosted_header_builder::build_fri_extension(
+				submitted,
+				data_root,
+				params_version,
+				fri_version,
+			)
+			.into()
 		}
 	}
 }
 
-/// Trait for header builder.
-pub trait HeaderExtensionBuilder {
-	type Header: ExtendedHeader<Extension = HeaderExtension>;
-
-	/// Creates the header using the given parameters.
-	fn build_extension(
-		app_extrinsics: Vec<SubmittedData>,
-		data_root: H256,
-		block_length: BlockLength,
-		version: HeaderVersion,
-	) -> HeaderExtension;
-}
-
-/// Hosted function to build the header using `kate` commitments.
+/// Runtime interface forwarding header construction to the host.
+///
+/// The actual implementation lives in `crate::native::build_extension`.
 #[runtime_interface]
 pub trait HostedHeaderBuilder {
-	fn build_extension(
+	fn build_kzg_extension(
 		submitted: PassFatPointerAndDecode<Vec<SubmittedData>>,
 		data_root: PassFatPointerAndDecode<H256>,
 		block_length: PassFatPointerAndDecode<BlockLength>,
-		version: PassFatPointerAndDecode<HeaderVersion>,
+		kzg_version: PassFatPointerAndDecode<KzgHeaderVersion>,
 	) -> AllocateAndReturnByCodec<HeaderExtension> {
-		#[cfg(feature = "std")]
-		{
-			return crate::native::build_extension_v2::build_extension_v4(
-				submitted.to_vec(),
-				data_root,
-				block_length,
-				version,
-			);
-		}
+		crate::native::build_extension::build_kzg_extension(
+			submitted.to_vec(),
+			data_root,
+			block_length,
+			kzg_version,
+		)
+	}
 
-		#[cfg(not(feature = "std"))]
-		{
-			return HeaderExtension::get_faulty_header(data_root, version);
-		}
+	fn build_fri_extension(
+		submitted: PassFatPointerAndDecode<Vec<SubmittedData>>,
+		data_root: PassFatPointerAndDecode<H256>,
+		params_version: PassFatPointerAndDecode<FriParamsVersion>,
+		fri_version: PassFatPointerAndDecode<FriHeaderVersion>,
+	) -> AllocateAndReturnByCodec<HeaderExtension> {
+		crate::native::build_extension::build_fri_extension(
+			submitted.to_vec(),
+			data_root,
+			params_version,
+			fri_version,
+		)
 	}
 }

@@ -2,6 +2,7 @@ use crate::{
 	utils::{zstd_compress, zstd_decompress},
 	LOG_TARGET,
 };
+use avail_core::AppId;
 use codec::{Decode, Encode};
 use da_runtime::{apis::RuntimeApi, NodeBlock as Block};
 use parking_lot::Mutex;
@@ -193,6 +194,25 @@ pub struct BlobMetadata {
 	pub finalized_block_number: u64,
 	/// The list of storing validators
 	pub storing_validator_list: Vec<AccountId32>,
+	/// Evaluation point seed for FRI blobs
+	pub eval_point_seed: Option<[u8; 32]>,
+	/// Evaluation claim for FRI blobs
+	pub eval_claim: Option<[u8; 16]>,
+	/// Evaluation proof for FRI blobs
+	pub fri_eval_proof: Option<Vec<u8>>,
+	/// Index of the designated prover among storing_validator_list (maybe we dont need to store this?)
+	pub fri_eval_prover_index: Option<u32>,
+}
+
+/// FriData will store Fri scheme related data for blob
+#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, Serialize, Deserialize)]
+pub struct FriData {
+	/// Evaluation point seed
+	pub eval_point_seed: [u8; 32],
+	/// Evaluation claim for specific eval point
+	pub eval_claim: [u8; 16],
+	/// Evaluation proof for specific eval point
+	pub fri_eval_proof: Option<Vec<u8>>,
 }
 
 /// Blob object that will get store by each validator
@@ -224,6 +244,14 @@ pub struct BlobReceived {
 	pub finalized_block_hash: H256,
 	/// The finalized block number for other nodes reference
 	pub finalized_block_number: u64,
+	/// Evaluation point seed for FRI blobs
+	pub eval_point_seed: Option<[u8; 32]>,
+	/// Evaluation claim for FRI blobs
+	pub eval_claim: Option<[u8; 16]>,
+	/// Evaluation proof for FRI blobs
+	pub fri_eval_proof: Option<Vec<u8>>,
+	/// Index of the designated prover among storing_validator_list
+	pub fri_eval_prover_index: Option<u32>,
 }
 
 /// Structure for the request when a blob is requested from a validator
@@ -253,6 +281,8 @@ pub struct BlobStored {
 	pub ownership_entry: OwnershipEntry,
 	/// The finalized block hash for other nodes reference
 	pub finalized_block_hash: H256,
+	/// Evaluation proof
+	pub eval_proof: Option<Vec<u8>>,
 }
 
 /// Structure for the signature that validator sends when sending notification / requests
@@ -288,6 +318,8 @@ pub struct BlobTxSummary {
 	pub reason: Option<String>,
 	/// The vector of ownership entries
 	pub ownership: Vec<OwnershipEntry>,
+	/// Evaluation proof for FRI
+	pub eval_proof: Option<Vec<u8>>,
 }
 impl BlobTxSummary {
 	pub fn convert_to_primitives(
@@ -303,6 +335,7 @@ impl BlobTxSummary {
 			String,      // Encoded Peer id
 			Vec<u8>,     // Signature
 		)>,
+		Option<Vec<u8>>, // Evaluation proof
 	)> {
 		input
 			.into_iter()
@@ -326,9 +359,51 @@ impl BlobTxSummary {
 					summary.success,
 					summary.reason,
 					ownership,
+					summary.eval_proof,
 				)
 			})
 			.collect()
+	}
+}
+
+/// A lightweight summary of blob to be used by LC's
+#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, TypeInfo, Serialize, Deserialize)]
+pub struct BlobSummary {
+	/// The hash of the blob
+	hash: BlobHash,
+	/// The transaction index in the block
+	tx_index: u32,
+	/// App id
+	app_id: AppId,
+	/// Size of the blob in bytes
+	size_bytes: u64,
+}
+
+impl BlobSummary {
+	pub fn new(hash: BlobHash, tx_index: u32, app_id: AppId, size_bytes: u64) -> Self {
+		Self {
+			hash,
+			tx_index,
+			app_id,
+			size_bytes,
+		}
+	}
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, TypeInfo, Serialize, Deserialize)]
+pub struct BlobEvalData {
+	eval_point_seed: [u8; 32],
+	eval_claim: [u8; 16],
+	eval_proof: Vec<u8>,
+}
+
+impl BlobEvalData {
+	pub fn new(eval_point_seed: [u8; 32], eval_claim: [u8; 16], eval_proof: Vec<u8>) -> Self {
+		Self {
+			eval_point_seed,
+			eval_claim,
+			eval_proof,
+		}
 	}
 }
 

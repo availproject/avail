@@ -7,6 +7,7 @@ edition = "2021"
 da-runtime = { workspace = true, default-features = false }
 da-control = { workspace = true, default-features = false }
 avail-core = { workspace = true, default-features = false }
+avail-fri = { workspace = true, default-features = false, features = ["serde"]}
 pallet-staking = { workspace = true, default-features = false }
 sp-consensus-babe = { workspace = true, default-features = false }
 sc-transaction-pool = { workspace = true, default-features = false }
@@ -72,6 +73,7 @@ default = [ "std" ]
 std = [
 	"avail-base/std",
 	"avail-core/std",
+	"avail-fri/std",
 	"codec/std",
 	"da-commitment/std",
 	"da-control/std",
@@ -89,7 +91,6 @@ std = [
 	"sp-api/std",
 	"sp-authority-discovery/std",
 	"sp-core/std",
-	"sp-io/std",
 	"sp-runtime/std",
 	"sp-std/std",
 	"sp-transaction-pool/std",

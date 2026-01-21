@@ -11,10 +11,14 @@ use avail_blob::{
 };
 use avail_core::{
 	ensure,
-	header::{extension as he, HeaderExtension},
-	kate::COMMITMENT_SIZE,
-	kate_commitment as kc, AppId, BlockLengthColumns, BlockLengthRows, DataLookup, HeaderVersion,
-	BLOCK_CHUNK_SIZE,
+	header::{
+		extension::{
+			fri::{FriHeader, FriHeaderVersion},
+			kzg::{KzgHeader, KzgHeaderVersion},
+		},
+		HeaderExtension,
+	},
+	BlockLengthColumns, BlockLengthRows, BLOCK_CHUNK_SIZE,
 };
 use avail_observability::metrics::avail::{MetricObserver, ObserveKind};
 use da_control::BlobTxSummaryRuntime;
@@ -22,9 +26,8 @@ use da_runtime::{
 	apis::{DataAvailApi, ExtensionBuilder},
 	Header as DaHeader, Runtime,
 };
-use frame_system::limits::BlockLength;
-use sp_runtime::OpaqueExtrinsic;
-
+use frame_system::limits::{BlockLength, BlockLengthError};
+use frame_system::native::build_extension;
 use sc_consensus::{
 	block_import::{BlockCheckParams, BlockImport as BlockImportT, BlockImportParams},
 	ImportResult,
@@ -34,7 +37,8 @@ use sp_blockchain::HeaderBackend;
 use sp_consensus::{BlockOrigin, Error as ConsensusError};
 use sp_core::H256;
 use sp_runtime::traits::Block as BlockT;
-use std::{marker::PhantomData, sync::Arc, time::Instant};
+use sp_runtime::OpaqueExtrinsic;
+use std::{marker::PhantomData, sync::Arc};
 
 type RTExtractor = <Runtime as frame_system::Config>::HeaderExtensionDataFilter;
 
@@ -66,8 +70,8 @@ where
 			client,
 			inner,
 			unsafe_da_sync,
-			_block: PhantomData,
 			blob_store,
+			_block: PhantomData,
 		}
 	}
 
@@ -75,93 +79,127 @@ where
 		&self,
 		block: &BlockImportParams<B>,
 	) -> Result<(), ConsensusError> {
-		let err = block_doesnt_contain_vector_post_inherent();
+		let body = block
+			.body
+			.as_ref()
+			.ok_or_else(block_doesnt_contain_vector_post_inherent)?;
 
-		let maybe_body = block.body.as_ref();
-		let Some(body) = maybe_body else {
-			return Err(err);
-		};
-
-		let Some(last_extrinsic) = body.last() else {
-			return Err(err);
-		};
+		let last = body
+			.last()
+			.ok_or_else(block_doesnt_contain_vector_post_inherent)?;
 
 		let parent_hash = <B as BlockT>::Hash::from(block.header.parent_hash);
 		let api = self.client.runtime_api();
 
-		let Ok(found) = api.check_if_extrinsic_is_vector_post_inherent(parent_hash, last_extrinsic)
-		else {
-			return Err(err);
-		};
+		let found = api
+			.check_if_extrinsic_is_vector_post_inherent(parent_hash, last)
+			.map_err(|_| block_doesnt_contain_vector_post_inherent())?;
 
-		ensure!(found, err);
-
+		ensure!(found, block_doesnt_contain_vector_post_inherent());
 		Ok(())
 	}
 
-	// Now this ALWAYS runs and returns the decoded summaries (if any)
-	// by calling the new runtime API that both checks and decodes the
-	// DA post-inherent.
-	fn ensure_before_last_extrinsic_is_blob_summary_tx(
+	fn extract_blob_summaries(
 		&self,
 		block: &BlockImportParams<B>,
 	) -> Result<Vec<BlobTxSummaryRuntime>, ConsensusError> {
-		let err = block_doesnt_contain_da_post_inherent();
+		let body = block
+			.body
+			.as_ref()
+			.ok_or_else(block_doesnt_contain_da_post_inherent)?;
 
-		let maybe_body = block.body.as_ref();
-		let Some(body) = maybe_body else {
-			return Err(err);
-		};
-
-		let Some(da_summary_extrinsic) = body.get(body.len().wrapping_sub(2)) else {
-			return Err(err);
-		};
+		let da_xt = body
+			.get(body.len().wrapping_sub(2))
+			.ok_or_else(block_doesnt_contain_da_post_inherent)?;
 
 		let parent_hash = <B as BlockT>::Hash::from(block.header.parent_hash);
 		let api = self.client.runtime_api();
 
-		let Ok(extracted) = api.extract_post_inherent_summaries(parent_hash, da_summary_extrinsic)
-		else {
-			return Err(err);
-		};
+		let extracted = api
+			.extract_post_inherent_summaries(parent_hash, da_xt)
+			.map_err(|_| block_doesnt_contain_da_post_inherent())?;
 
-		ensure!(extracted.is_some(), err);
-
-		Ok(extracted.expect("Checked above; qed"))
+		ensure!(extracted.is_some(), block_doesnt_contain_da_post_inherent());
+		Ok(extracted.expect("checked above; qed"))
 	}
 
 	fn ensure_valid_header_extension(
 		&self,
 		block: &BlockImportParams<B>,
+		extracted: &HeaderExtensionBuilderData,
+		skip_sync: bool,
 	) -> Result<(), ConsensusError> {
-		let block_len = extension_block_len(&block.header.extension);
-		let extrinsics = || block.body.clone().unwrap_or_default();
+		let extrinsics = block.body.clone().unwrap_or_default();
 		let block_number: u32 = block.header.number;
 		let parent_hash = <B as BlockT>::Hash::from(block.header.parent_hash);
 		let api = self.client.runtime_api();
 
-		// Calculate data root and extension.
+		let block_length = extension_block_len(&block.header.extension)?;
 		let data_root = api
-			.build_data_root(parent_hash, block_number, extrinsics())
+			.build_data_root(parent_hash, block_number, extrinsics.clone())
 			.map_err(data_root_fail)?;
-		let version = block.header.extension.get_header_version();
+		let submitted_blobs = extracted.data_submissions.clone();
+		let regenerated_extension = match &block.header.extension {
+			HeaderExtension::Kzg(kzg_hdr) => {
+				let kzg_version = match kzg_hdr {
+					KzgHeader::V4(_) => KzgHeaderVersion::V4,
+				};
 
-		let extension = match version {
-			// Since V3 has AppExtrinsics which is derived from the AppId SignedExtension, We cant support it GOING FORWARD
-			HeaderVersion::V3 => todo!(),
-			HeaderVersion::V4 => build_extension_with_comms(
-				extrinsics(),
-				data_root,
-				block_len,
-				block_number,
-				block.header.extension.get_header_version(),
-			)?,
+				build_extension::build_kzg_extension(
+					submitted_blobs,
+					data_root,
+					block_length,
+					kzg_version,
+				)
+			},
+
+			HeaderExtension::Fri(fri_hdr) => {
+				// Extract params_version + version from the header itself
+				let (params_version, fri_version) = match fri_hdr {
+					FriHeader::V1(inner) => (inner.params_version, FriHeaderVersion::V1),
+				};
+
+				// Verify FRI proofs unless syncing
+				if !skip_sync {
+					for da in submitted_blobs.iter() {
+						if da.eval_point_seed.is_none()
+							|| da.eval_claim.is_none()
+							|| da.eval_proof.is_none()
+						{
+							return Err(ConsensusError::ClientImport(format!(
+								"Missing FRI proof data for blob {:?}",
+								da.hash
+							)));
+						}
+
+						avail_blob::validation::validate_fri_proof(
+							da.size_bytes as usize,
+							&da.eval_point_seed.expect("checked above; qed"),
+							&da.eval_claim.expect("checked above; qed"),
+							da.eval_proof.as_ref().expect("checked above; qed"),
+						)
+						.map_err(|e| {
+							ConsensusError::ClientImport(format!(
+								"FRI proof validation failed for blob {:?}: {e}",
+								da.hash
+							))
+						})?;
+					}
+				}
+
+				build_extension::build_fri_extension(
+					submitted_blobs,
+					data_root,
+					params_version,
+					fri_version,
+				)
+			},
 		};
 
 		// Check equality between calculated and imported extensions.
 		ensure!(
-			block.header.extension == extension,
-			extension_mismatch(&block.header.extension, &extension)
+			block.header.extension == regenerated_extension,
+			extension_mismatch(&block.header.extension, &regenerated_extension)
 		);
 		Ok(())
 	}
@@ -192,18 +230,21 @@ where
 		);
 		let skip_sync = self.unsafe_da_sync && is_sync;
 
-		// Always extract blob summaries (if any) from DA post-inherent extrinsic.
-		// we know that it will add small overheasd but simplifies the code flow.
-		let pre_extracted_summaries =
-			self.ensure_before_last_extrinsic_is_blob_summary_tx(&block)?;
+		let blob_summaries = self.extract_blob_summaries(&block)?;
+
+		let extrinsics = block.body.clone().unwrap_or_default();
+		let extracted = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(
+			block.header.number,
+			&extrinsics,
+		);
 
 		if !is_own && !skip_sync && !block.with_state() {
 			self.ensure_last_extrinsic_is_failed_send_message_txs(&block)?;
-			self.ensure_valid_header_extension(&block)?;
+			self.ensure_valid_header_extension(&block, &extracted, skip_sync)?;
 		}
 
-		let candidate_block_number: u32 = block.header.number;
-		let candidate_block_hash = block.post_hash();
+		let block_number: u32 = block.header.number;
+		let block_hash = block.post_hash();
 
 		// Next import block stage & metrics
 		let result = self.inner.import_block(block).await;
@@ -211,10 +252,10 @@ where
 		// On successful import of block, write to our blob indexer.
 		if let Ok(ImportResult::Imported(_imported)) = &result {
 			// filter out successful blobs only and collect BlobInfo entries
-			let mut blob_infos: Vec<BlobInfo> = Vec::new();
+			let mut blob_infos = Vec::new();
 
-			for s in pre_extracted_summaries.iter().filter(|s| s.success) {
-				let ownership_entries: Vec<OwnershipEntry> = s
+			for s in blob_summaries.iter().filter(|s| s.success) {
+				let ownership = s
 					.ownership
 					.iter()
 					.map(|(a, b, c, d)| OwnershipEntry {
@@ -225,83 +266,21 @@ where
 					})
 					.collect();
 
-				let blob_info = BlobInfo {
+				blob_infos.push(BlobInfo {
 					hash: s.hash,
-					block_hash: candidate_block_hash,
-					block_number: candidate_block_number,
-					ownership: ownership_entries,
-				};
-
-				blob_infos.push(blob_info);
+					block_hash,
+					block_number,
+					ownership,
+				});
 			}
 
-			// If there are none, skip DB work and logs
-			if blob_infos.is_empty() {
-				log::debug!(
-					"No successful blob summaries to write for block #{}/{}",
-					candidate_block_number,
-					candidate_block_hash
-				);
-			} else {
-				// Batch insert per-block history (blob_by_hash_block + blob_by_block)
-				let write_start = std::time::Instant::now();
-				let mut written_history = 0usize;
-				if let Err(e) = self
+			if !blob_infos.is_empty() {
+				let _ = self
 					.blob_store
-					.insert_blob_infos_by_block_batch(&blob_infos)
-				{
-					log::warn!(
-						"Failed batch insert_blob_infos_by_block_batch for block #{}/{}: {}",
-						candidate_block_number,
-						candidate_block_hash,
-						e
-					);
-				} else {
-					written_history = blob_infos.len();
-				}
-				let history_ns = write_start.elapsed().as_nanos();
-
-				// Append pending pending_by_block
-				let pending_start = std::time::Instant::now();
-				let mut written_pending = 0usize;
-				if let Err(e) = self
+					.insert_blob_infos_by_block_batch(&blob_infos);
+				let _ = self
 					.blob_store
-					.append_pending_blob_infos_batch(&candidate_block_hash, &blob_infos)
-				{
-					log::warn!(
-						"Failed append_pending_blob_infos_batch for block #{}/{}: {}",
-						candidate_block_number,
-						candidate_block_hash,
-						e
-					);
-				} else {
-					written_pending = blob_infos.len();
-				}
-				let pending_ns = pending_start.elapsed().as_nanos();
-
-				// Logging aggregated stats
-				if written_history > 0 || written_pending > 0 {
-					let total_written = std::cmp::max(written_history, written_pending);
-					let total_ns = history_ns + pending_ns;
-					let avg_us = (total_ns as f64 / total_written as f64) / 1_000.0_f64;
-					log::info!(
-						"⏱️ Persisted {} BlobInfo entries for block #{}/{} (history={}, pending={}), total_time = {} ms, avg = {:.3} µs",
-						total_written,
-						candidate_block_number,
-						candidate_block_hash,
-						written_history,
-						written_pending,
-						(total_ns as f64) / 1_000_000.0_f64,
-						avg_us
-					);
-				} else {
-					log::warn!(
-						"Attempted writes for blob_info in block #{}/{} took total {} ms (all failed)",
-						candidate_block_number,
-						candidate_block_hash,
-						((history_ns + pending_ns) as f64) / 1_000_000.0_f64
-					);
-				}
+					.append_pending_blob_infos_batch(&block_hash, &blob_infos);
 			}
 		}
 
@@ -325,164 +304,43 @@ impl<B, C, I: Clone> Clone for BlockImport<B, C, I> {
 	}
 }
 
-/// builds header extension by regenerating the commitments for DA txs
-fn build_extension_with_comms(
-	extrinsics: Vec<OpaqueExtrinsic>,
-	data_root: H256,
-	block_length: BlockLength,
-	block_number: u32,
-	version: HeaderVersion,
-) -> Result<HeaderExtension, ConsensusError> {
-	let timer_total = Instant::now();
-	let timer_app_ext = Instant::now();
-	let app_extrinsics = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(
-		block_number,
-		&extrinsics,
-		block_length.cols.0,
-		block_length.rows.0,
-	)
-	.data_submissions;
-	log::info!(
-		"⏱️ Extracting app extrinsics took {:?}",
-		timer_app_ext.elapsed()
-	);
-	log::info!("Ext length: {}", extrinsics.len());
+fn extension_block_len(extension: &HeaderExtension) -> Result<BlockLength, ConsensusError> {
+	match extension {
+		HeaderExtension::Kzg(kzg_hdr) => {
+			let (rows, cols) = match kzg_hdr {
+				KzgHeader::V4(ext) => (ext.rows() as u32, ext.cols() as u32),
+			};
 
-	// Blocks with non-DA extrinsics will have empty commitments
-	if app_extrinsics.is_empty() {
-		log::info!(
-			"✅ No DA extrinsics, returning empty header. Total time: {:?}",
-			timer_total.elapsed()
-		);
-		return Ok(HeaderExtension::get_empty_header(data_root, version));
-	}
-
-	let max_columns = block_length.cols.0 as usize;
-	if max_columns == 0 {
-		log::info!(
-			"⚠️ Max columns = 0, returning empty header. Total time: {:?}",
-			timer_total.elapsed()
-		);
-		return Ok(HeaderExtension::get_empty_header(data_root, version));
-	}
-
-	let timer_commitment_prep = Instant::now();
-	let total_commitments_len: usize = app_extrinsics
-		.iter()
-		.map(|da_call| da_call.commitments.len())
-		.sum();
-	let mut commitment = Vec::with_capacity(total_commitments_len);
-
-	let mut app_rows: Vec<(AppId, usize)> = Vec::with_capacity(app_extrinsics.len());
-
-	for da_call in app_extrinsics.iter() {
-		// Commitments from blob submission where checked
-		// Commitments from regular submit data are computed by the node
-		commitment.extend(da_call.commitments.clone());
-		let rows_taken = da_call.commitments.len() / COMMITMENT_SIZE;
-
-		// Update app_rows
-		app_rows.push((da_call.id, rows_taken));
-	}
-	log::info!(
-		"⏱️ Collecting commitments + app_rows took {:?}",
-		timer_commitment_prep.elapsed()
-	);
-
-	let timer_lookup = Instant::now();
-	let app_lookup = DataLookup::from_id_and_len_iter(app_rows.clone().into_iter())
-		.map_err(|_| data_lookup_failed())?;
-	log::info!("⏱️ Building DataLookup took {:?}", timer_lookup.elapsed());
-
-	let timer_padding = Instant::now();
-	let original_rows = app_lookup.len();
-	let padded_rows = original_rows.next_power_of_two();
-	if padded_rows > original_rows {
-		let (_, padded_row_commitment) =
-			kate::gridgen::core::get_pregenerated_row_and_commitment(max_columns)
-				.map_err(|_| pregenerated_comms_failed())?;
-		commitment = commitment
-			.into_iter()
-			.chain(
-				std::iter::repeat_n(
-					padded_row_commitment,
-					(padded_rows - original_rows) as usize,
-				)
-				.flatten(),
+			BlockLength::with_normal_ratio(
+				BlockLengthRows(rows),
+				BlockLengthColumns(cols),
+				BLOCK_CHUNK_SIZE,
+				sp_runtime::Perbill::from_percent(90),
 			)
-			.collect();
+			.map_err(block_contains_invalid_block_length)
+		},
+		HeaderExtension::Fri(_) => Ok(BlockLength::default()),
 	}
-	log::info!("⏱️ Padding commitments took {:?}", timer_padding.elapsed());
-
-	let timer_kate = Instant::now();
-	let commitment = kc::v3::KateCommitment::new(
-		padded_rows.try_into().unwrap_or_default(),
-		max_columns.try_into().unwrap_or_default(),
-		data_root,
-		commitment,
-	);
-	log::info!("⏱️ Building KateCommitment took {:?}", timer_kate.elapsed());
-
-	log::info!(
-		"✅ Finished build_extension_with_comms in {:?}",
-		timer_total.elapsed()
-	);
-
-	Ok(he::v4::HeaderExtension {
-		app_lookup,
-		commitment,
-	}
-	.into())
 }
 
-/// Calculate block length from `extension`.
-fn extension_block_len(extension: &HeaderExtension) -> BlockLength {
-	BlockLength::with_normal_ratio(
-		BlockLengthRows(extension.rows() as u32),
-		BlockLengthColumns(extension.cols() as u32),
-		BLOCK_CHUNK_SIZE,
-		sp_runtime::Perbill::from_percent(90),
-	)
-	.expect("Valid BlockLength at genesis .qed")
-}
-
-fn extension_mismatch(imported: &HeaderExtension, generated: &HeaderExtension) -> ConsensusError {
-	let msg =
-		format!("DA Extension does NOT match\nExpected: {imported:#?}\nGenerated:{generated:#?}");
-	ConsensusError::ClientImport(msg)
-}
-
-// fn commitments_mismatch(tx_id: u32) -> ConsensusError {
-// 	let msg = format!("DA Commitments does NOT match for tx_id: {tx_id}.");
-// 	ConsensusError::ClientImport(msg)
-// }
-
-fn pregenerated_comms_failed() -> ConsensusError {
-	let msg = "Failed to get pregenerated rows & commitments.".to_string();
-	ConsensusError::ClientImport(msg)
-}
-
-fn data_lookup_failed() -> ConsensusError {
-	let msg = "Failed to construct DataLookup.".to_string();
-	ConsensusError::ClientImport(msg)
+fn extension_mismatch(a: &HeaderExtension, b: &HeaderExtension) -> ConsensusError {
+	ConsensusError::ClientImport(format!(
+		"DA extension mismatch\nExpected: {a:#?}\nGenerated: {b:#?}"
+	))
 }
 
 fn data_root_fail(e: ApiError) -> ConsensusError {
-	let msg = format!("Data root cannot be calculated: {e:?}");
-	ConsensusError::ClientImport(msg)
+	ConsensusError::ClientImport(format!("Data root build failed: {e:?}"))
 }
 
-// fn build_ext_fail(e: ApiError) -> ConsensusError {
-// 	let msg = format!("Build extension fails due to: {e:?}");
-// 	ConsensusError::ClientImport(msg)
-// }
-
 fn block_doesnt_contain_vector_post_inherent() -> ConsensusError {
-	let msg = "Block does not contain vector post inherent".to_string();
-	ConsensusError::ClientImport(msg)
+	ConsensusError::ClientImport("Missing vector post inherent".into())
 }
 
 fn block_doesnt_contain_da_post_inherent() -> ConsensusError {
-	let msg = "Block does not contain da post inherent".to_string();
-	ConsensusError::ClientImport(msg)
+	ConsensusError::ClientImport("Missing DA post inherent".into())
+}
+
+fn block_contains_invalid_block_length(err: BlockLengthError) -> ConsensusError {
+	ConsensusError::ClientImport(format!("Invalid block length: {err:?}"))
 }

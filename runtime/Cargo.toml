@@ -25,7 +25,7 @@ pallet-vector = { workspace = true, default-features = false }
 
 # External
 static_assertions.workspace = true
-log.workspace = true
+log = { workspace = true, default-features = false }
 hex-literal.workspace = true
 rayon = { workspace = true, optional = true }
 serde = { workspace = true, optional = true, features = ["derive"] }
@@ -35,7 +35,7 @@ derive_more.workspace = true
 
 # Substrate
 scale-info = { workspace = true, default-features = false, features = [ "derive" ] }
-codec = { package = "parity-scale-codec", version = "3", default-features = false, features = [ "derive", ] }
+codec = { package = "parity-scale-codec", version = "3", default-features = false, features = [ "derive", "max-encoded-len"] }
 binary-merkle-tree = { workspace = true, default-features = false }
 
 ## primitives
@@ -107,6 +107,7 @@ frame-system-benchmarking = { workspace = true, default-features = false, option
 substrate-wasm-builder = { workspace = true, default-features = false }
 
 [dev-dependencies]
+da-commitment.workspace = true
 bounded-collections.workspace = true
 test-case.workspace = true
 hex.workspace = true
@@ -192,6 +193,7 @@ std = [
 	"rayon",
 	"scale-info/std",
 	"serde",
+	"serde_json/std",
 	"sp-api/std",
 	"sp-authority-discovery/std",
 	"sp-block-builder/std",

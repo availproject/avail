@@ -18,7 +18,6 @@ use frame_support::{
 use frame_system::{limits::BlockLength, pallet::DynamicBlockLength};
 use sp_arithmetic::traits::SaturatedConversion;
 use sp_core::H256;
-use sp_io::hashing::keccak_256;
 use sp_runtime::traits::Convert;
 use sp_runtime::Perbill;
 use sp_std::{mem::replace, vec, vec::Vec};
@@ -371,28 +370,12 @@ pub mod pallet {
 			DispatchClass::Normal,
 			SubmitDataFeeModifier::<T>::get()
 		))]
+		/// TODO: Remove this. Currently no-op
 		pub fn submit_data(
-			origin: OriginFor<T>,
-			app_id: AppId,
-			data: AppDataFor<T>,
+			_origin: OriginFor<T>,
+			_app_id: AppId,
+			#[allow(unused_variables)] data: AppDataFor<T>,
 		) -> DispatchResultWithPostInfo {
-			let who = ensure_signed(origin)?;
-			ensure!(
-				app_id < Self::peek_next_application_id(),
-				Error::<T>::InvalidAppId
-			);
-			ensure!(!data.is_empty(), Error::<T>::DataCannotBeEmpty);
-			ensure!(
-				!BlobRuntimeParams::<T>::get().disable_old_da_submission,
-				Error::<T>::OldDaSubmissionDisabled
-			);
-
-			let data_hash = keccak_256(&data);
-			Self::deposit_event(Event::DataSubmitted {
-				who,
-				data_hash: H256(data_hash),
-			});
-
 			Ok(().into())
 		}
 
@@ -510,6 +493,8 @@ pub mod pallet {
 			blob_hash: H256,
 			size: u64,
 			commitment: Vec<u8>,
+			_eval_point_seed: Option<[u8; 32]>,
+			_eval_claim: Option<[u8; 16]>,
 		) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
 			ensure!(

@@ -1,36 +1,15 @@
-// use super::kate::{Error as RTKateError, GDataProof, GRow};
 use crate::LOG_TARGET;
 use crate::{
-	constants,
-	// kate::{GCellBlock, GMultiProof},
-	mmr,
-	version::VERSION,
-	AccountId,
-	AuthorityDiscovery,
-	Babe,
-	Block,
-	BlockNumber,
-	EpochDuration,
-	Executive,
-	Grandpa,
-	Historical,
-	Index,
-	InherentDataExt,
-	Mmr,
-	NominationPools,
-	OpaqueMetadata,
-	Runtime,
-	RuntimeCall,
-	RuntimeGenesisConfig,
-	SessionKeys,
-	Staking,
-	System,
+	constants, mmr, version::VERSION, AccountId, AuthorityDiscovery, Babe, Block, BlockNumber,
+	EpochDuration, Executive, Grandpa, Historical, Index, InherentDataExt, Mmr, NominationPools,
+	OpaqueMetadata, Runtime, RuntimeCall, RuntimeGenesisConfig, SessionKeys, Staking, System,
 	TransactionPayment,
 };
 use avail_base::{HeaderExtensionBuilderData, ProvidePostInherent};
 use avail_core::{
 	currency::Balance,
 	data_proof::{DataProof, ProofResponse, SubTrie},
+	header::extension::CommitmentScheme,
 	header::HeaderExtension,
 };
 use sp_runtime::OpaqueExtrinsic;
@@ -72,7 +51,6 @@ decl_runtime_apis! {
 			block_length: BlockLength,
 			block_number: u32,
 		) -> HeaderExtension;
-
 		fn build_data_root(block: u32, extrinsics: Vec<OpaqueExtrinsic>) -> H256;
 		fn check_if_extrinsic_is_vector_post_inherent(uxt: &<Block as BlockT>::Extrinsic) -> bool;
 		fn check_if_extrinsic_is_da_post_inherent(uxt: &<Block as BlockT>::Extrinsic) -> bool;
@@ -108,6 +86,9 @@ decl_runtime_apis! {
 
 		/// Get the blob vouch fee reserve amount
 		fn get_blob_vouch_fee_reserve() -> u128;
+
+		/// Get teh commitment_scheme active in the Runtime
+		fn commitement_scheme() -> CommitmentScheme;
 	}
 }
 
@@ -460,10 +441,7 @@ impl_runtime_apis! {
 	#[api_version(4)]
 	impl crate::apis::ExtensionBuilder<Block> for Runtime {
 		fn build_data_root(block: u32, extrinsics: Vec<OpaqueExtrinsic>) -> H256  {
-			let bl = frame_system::Pallet::<Runtime>::block_length();
-			let cols = bl.cols.0;
-			let rows = bl.rows.0;
-			HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block, &extrinsics, cols, rows).data_root()
+			HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block, &extrinsics).data_root()
 		}
 
 		fn build_extension(
@@ -559,14 +537,15 @@ impl_runtime_apis! {
 		fn get_blob_vouch_fee_reserve() -> u128 {
 			crate::constants::da::BlobVouchFeeReserve::get()
 		}
+
+		fn commitement_scheme() -> CommitmentScheme {
+			<Runtime as frame_system::Config>::DaCommitmentScheme::get()
+		}
 	}
 
 	impl crate::apis::KateApi<Block> for Runtime {
 		fn data_proof(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, tx_idx: u32) -> Option<ProofResponse> {
-			let bl = frame_system::Pallet::<Runtime>::block_length();
-			let cols = bl.cols.0;
-			let rows = bl.rows.0;
-			let data = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block_number, &extrinsics, cols, rows);
+			let data = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block_number, &extrinsics);
 			let (leaf_idx, sub_trie) = data.leaf_idx(tx_idx)?;
 			log::trace!(
 				target: LOG_TARGET,
@@ -595,8 +574,7 @@ impl_runtime_apis! {
 		}
 
 		fn inclusion_proof(extrinsics: Vec<OpaqueExtrinsic>, blob_hash: H256) -> Option<DataProof> {
-			// TODO: block_number, rows & cols has no significance in this case, should be refactored later
-			let builder_data = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(0, &extrinsics, 0, 0);
+			let builder_data = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(0, &extrinsics);
 
 			let (leaf_idx, sub_trie) = builder_data.leaf_idx_by_hash(blob_hash)?;
 
@@ -643,9 +621,8 @@ impl_runtime_apis! {
 			bool,
 			Option<String>,
 			Vec<(AccountId32, AuthorityDiscoveryId, String, Vec<u8>)>,
-		)>,
-		total_blob_size: u64,
-	) -> Vec<<Block as BlockT>::Extrinsic> {
+			Option<Vec<u8>>,
+		)>, total_blob_size: u64) -> Vec<<Block as BlockT>::Extrinsic> {
 		// 1. Vector pallet post-inherent extrinsics (unsigned, bare)
 		let mut post_inherent_extrinsics: Vec<<Block as BlockT>::Extrinsic> =
 			pallet_vector::Pallet::<Runtime>::create_inherent(&data)
