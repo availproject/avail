@@ -1,5 +1,5 @@
 use frame_support::{derive_impl, parameter_types, traits::ConstU64, PalletId};
-use frame_system::{native::hosted_header_builder::da, test_utils::TestRandomness};
+use frame_system::native::hosted_header_builder::da;
 use hex_literal::hex;
 use primitive_types::H256;
 use sp_runtime::{
@@ -184,7 +184,6 @@ impl frame_system::Config for Test {
 	type HeaderExtensionBuilder = da::HeaderExtensionBuilder<Test>;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type PalletInfo = PalletInfo;
-	type Randomness = TestRandomness<Test>;
 	type Header = Header;
 	type Extrinsic = Extrinsic;
 }
@@ -227,6 +226,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 
 	pallet_balances::GenesisConfig::<Test> {
 		balances: vec![(Bridge::account_id(), 2_000 * 1000000000000000000)],
+		..Default::default()
 	}
 	.assimilate_storage(&mut t)
 	.unwrap();

@@ -42,7 +42,7 @@ fn test_can_verify_eip_1186_proofs() {
 	let account = Account::decode(&Rlp::new(&result)).unwrap();
 
 	// some assertions about the account data in the state root.
-	assert_eq!(account.balance, U256::from(&hex!("4ef05b2fe9d8c8")[..]));
+	assert_eq!(account.balance, U256::from("0x4ef05b2fe9d8c8"));
 	assert_eq!(
 		account.code_hash,
 		H256::from(hex!("c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470"))

@@ -29,12 +29,13 @@ log = { workspace = true, default-features = false }
 hex-literal.workspace = true
 rayon = { workspace = true, optional = true }
 serde = { workspace = true, optional = true, features = ["derive"] }
+serde_json = { workspace = true, features = ["alloc", "arbitrary_precision"] }
 thiserror-no-std.workspace = true
 derive_more.workspace = true
 
 # Substrate
 scale-info = { workspace = true, default-features = false, features = [ "derive" ] }
-codec = { package = "parity-scale-codec", version = "3", default-features = false, features = [ "derive", ] }
+codec = { package = "parity-scale-codec", version = "3", default-features = false, features = [ "derive", "max-encoded-len"] }
 binary-merkle-tree = { workspace = true, default-features = false }
 
 ## primitives
@@ -107,6 +108,7 @@ substrate-wasm-builder = { workspace = true, default-features = false }
 
 [dev-dependencies]
 da-commitment.workspace = true
+bounded-collections.workspace = true
 test-case.workspace = true
 hex.workspace = true
 hex-literal.workspace = true
@@ -191,6 +193,7 @@ std = [
 	"rayon",
 	"scale-info/std",
 	"serde",
+	"serde_json/std",
 	"sp-api/std",
 	"sp-authority-discovery/std",
 	"sp-block-builder/std",

@@ -1,5 +1,6 @@
 #![cfg(test)]
 
+use codec::DecodeWithMemTracking;
 use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::pallet_prelude::RuntimeDebug;
 use frame_support::parameter_types;
@@ -12,7 +13,6 @@ use frame_support::{derive_impl, weights::IdentityFee};
 use frame_system::EnsureRoot;
 use frame_system::{
 	mocking::MockUncheckedExtrinsic, native::hosted_header_builder::da::HeaderExtensionBuilder,
-	test_utils::TestRandomness,
 };
 use pallet_transaction_payment::FungibleAdapter;
 use sp_core::ConstU32;
@@ -23,7 +23,6 @@ use sp_runtime::{AccountId32, BuildStorage};
 use sp_std::marker::PhantomData;
 
 use crate::Weight;
-use da_control::DefaultConfig;
 
 /// An unchecked extrinsic type to be used in tests.
 type Extrinsic = MockUncheckedExtrinsic<Test>;
@@ -86,7 +85,6 @@ impl frame_system::Config for Test {
 	type Block = Block;
 	type HeaderExtensionBuilder = HeaderExtensionBuilder<Test>;
 	type PalletInfo = PalletInfo;
-	type Randomness = TestRandomness<Test>;
 	type Extrinsic = Extrinsic;
 	type AccountId = AccountId32;
 	type Lookup = sp_runtime::traits::IdentityLookup<AccountId32>;
@@ -156,6 +154,7 @@ parameter_types! {
 	PartialOrd,
 	Encode,
 	Decode,
+	DecodeWithMemTracking,
 	RuntimeDebug,
 	MaxEncodedLen,
 	scale_info::TypeInfo,
@@ -203,6 +202,7 @@ impl pallet_proxy::Config for Test {
 	type CallHasher = BlakeTwo256;
 	type AnnouncementDepositBase = AnnouncementDepositBase;
 	type AnnouncementDepositFactor = AnnouncementDepositFactor;
+	type BlockNumberProvider = System;
 }
 
 parameter_types! {
@@ -221,6 +221,7 @@ impl pallet_scheduler::Config for Test {
 	type RuntimeOrigin = RuntimeOrigin;
 	type ScheduleOrigin = EnsureRoot<AccountId32>;
 	type WeightInfo = ();
+	type BlockNumberProvider = System;
 }
 
 parameter_types! {
@@ -258,6 +259,7 @@ impl pallet_multisig::Config for Test {
 	type MaxSignatories = ConstU32<100>;
 	#[doc = " Weight information for extrinsics in this pallet."]
 	type WeightInfo = ();
+	type BlockNumberProvider = System;
 }
 
 fn u8_to_account_id(value: u8) -> AccountId32 {
@@ -277,6 +279,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 
 	pallet_balances::GenesisConfig::<Test> {
 		balances: vec![(alice.clone(), 1_000_000u64)],
+		..Default::default()
 	}
 	.assimilate_storage(&mut storage)
 	.unwrap();

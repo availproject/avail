@@ -23,7 +23,7 @@ use sp_runtime::{
 	BuildStorage, Perbill,
 };
 
-use crate::{self as frame_system, test_utils::TestRandomness, *};
+use crate::{self as frame_system, *};
 
 type Extrinsic = mocking::MockUncheckedExtrinsic<Test>;
 type BlockNumber = u32;
@@ -42,14 +42,14 @@ const MAX_BLOCK_WEIGHT: Weight = Weight::from_parts(1024, u64::MAX);
 
 parameter_types! {
 	pub Version: RuntimeVersion = RuntimeVersion {
-		spec_name: sp_version::create_runtime_str!("test"),
-		impl_name: sp_version::create_runtime_str!("system-test"),
+		spec_name: sp_version::Cow::Borrowed("test"),
+		impl_name: sp_version::Cow::Borrowed("system-test"),
 		authoring_version: 1,
 		spec_version: 1,
 		impl_version: 1,
 		apis: sp_version::create_apis_vec!([]),
 		transaction_version: 1,
-		state_version: 1,
+		system_version: 1,
 	};
 	pub const DbWeight: RuntimeDbWeight = RuntimeDbWeight {
 		read: 10,
@@ -114,7 +114,7 @@ impl Config for Test {
 	type AccountData = u32;
 	type HeaderExtensionBuilder =
 		frame_system::native::hosted_header_builder::da::HeaderExtensionBuilder<Test>;
-	type Randomness = TestRandomness<Test>;
+	// type Randomness = TestRandomness<Test>;
 	type Header = Header;
 	type HeaderExtensionDataFilter = ();
 	type Extrinsic = Extrinsic;

@@ -7,12 +7,11 @@ use kate::gridgen::core::CellBlock;
 use avail_core::data_proof::DataProof;
 use codec::{Decode, Encode};
 use core::num::TryFromIntError;
-pub use runtime::{grid, multiproof, proof};
+// pub use runtime::{grid, multiproof, proof};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_core::{H256, U256};
-use sp_runtime_interface::pass_by::{PassByCodec, PassByInner};
 use sp_std::vec::Vec;
 use thiserror_no_std::Error;
 
@@ -23,7 +22,7 @@ pub type GRawScalar = U256;
 pub type GRow = Vec<GRawScalar>;
 pub type GDataProof = (GRawScalar, GProof);
 pub type GMultiProof = (Vec<GRawScalar>, GProof);
-#[derive(Encode, Decode, TypeInfo, PassByCodec, Debug, Clone)]
+#[derive(Encode, Decode, TypeInfo, Debug, Clone)]
 #[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
 pub struct GCellBlock {
 	pub start_x: u32,
@@ -47,7 +46,7 @@ impl GCellBlock {
 /// # NOTE
 /// `Serde` requires a custom implementation for `GProof` due to the array size (greater than `[T;32]`).
 /// In this case, we transform into a `Vec<u8>` as intermediate step to serialize/deserialize.
-#[derive(Encode, Decode, PartialEq, Eq, TypeInfo, PassByInner, Debug, Clone, Copy)]
+#[derive(Encode, Decode, PartialEq, Eq, TypeInfo, Debug, Clone, Copy)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "std", serde(try_from = "Vec<u8>", into = "Vec<u8>"))]
 pub struct GProof([u8; 48]);
@@ -71,7 +70,7 @@ impl TryFrom<Vec<u8>> for GProof {
 	}
 }
 
-#[derive(Error, Encode, Decode, TypeInfo, PassByCodec, Debug)]
+#[derive(Error, Encode, Decode, TypeInfo, Debug)]
 pub enum Error {
 	#[error("Invalid integer conversion")]
 	TryFromInt,
@@ -113,7 +112,7 @@ impl From<KateAppRowError> for Error {
 	}
 }
 
-#[derive(Encode, Decode, TypeInfo, PassByCodec, Debug, Clone)]
+#[derive(Encode, Decode, TypeInfo, Debug, Clone)]
 #[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
 #[cfg_attr(feature = "std", serde(rename_all = "camelCase"))]
 pub struct InclusionProof {

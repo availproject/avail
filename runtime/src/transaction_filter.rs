@@ -35,7 +35,7 @@ impl HeaderExtensionDataFilter for Runtime {
 					match final_call {
 						Call::Vector(call) => filter_vector_call(
 							&post_inherent_info.failed,
-							maybe_caller,
+							maybe_caller.as_ref(),
 							call,
 							block,
 							tx_index,
@@ -46,7 +46,7 @@ impl HeaderExtensionDataFilter for Runtime {
 					match final_call {
 						Call::Vector(call) => filter_vector_call(
 							&post_inherent_info.failed,
-							maybe_caller,
+							maybe_caller.as_ref(),
 							call,
 							block,
 							tx_index,
@@ -58,9 +58,10 @@ impl HeaderExtensionDataFilter for Runtime {
 					}
 				}
 			},
-			Err(_e) => {
+			Err(e) => {
 				// ideally we should not reach heer
 				// TODO: add logs
+				log::error!("failed to convert opaque to uxt: {:?}", e);
 				None
 			},
 		}

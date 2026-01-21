@@ -27,6 +27,7 @@ binary-merkle-tree = { workspace = true, default-features = false }
 
 # 3rd-party
 log = { workspace = true, default-features = false }
+parking_lot = { workspace = true, optional = true }
 derive_more.workspace = true
 itertools = { workspace = true, default-features = false }
 
@@ -42,6 +43,7 @@ std = [
 	"codec/std",
 	"frame-support/std",
 	"log/std",
+	"parking_lot",
 	"sp-api/std",
 	"sp-authority-discovery/std",
 	"sp-core/std",

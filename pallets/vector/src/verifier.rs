@@ -263,8 +263,7 @@ pub fn decode_proof(
 
 /// encode_packed implements abi.encodePacked function for poseidon hash.
 pub fn encode_packed(poseidon: U256, slot: u64) -> Vec<u8> {
-	let bytes: &mut [u8; 32] = &mut [0u8; 32];
-	poseidon.to_big_endian(bytes);
+	let bytes: [u8; 32] = poseidon.to_big_endian();
 	let slot_bytes = slot.to_be_bytes();
 	let mut result = bytes.to_vec();
 	result.extend_from_slice(slot_bytes.as_slice());

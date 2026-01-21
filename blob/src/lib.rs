@@ -31,10 +31,10 @@ use da_control::BlobRuntimeParameters;
 use da_runtime::apis::BlobApi;
 use futures::channel::oneshot;
 use sc_client_api::HeaderBackend;
+use sc_network::service::traits::NetworkService as NetworkServiceT;
 use sc_network::{
 	config::{IncomingRequest, OutgoingResponse},
-	IfDisconnected, NetworkPeers, NetworkRequest, NetworkService, NetworkStateInfo, ObservedRole,
-	PeerId,
+	IfDisconnected, NetworkPeers, NetworkRequest, NetworkStateInfo, ObservedRole, PeerId,
 };
 use sp_api::ProvideRuntimeApi;
 use sp_core::H256;
@@ -667,14 +667,14 @@ where
 						log::error!(target: LOG_TARGET,
 							"Invalid response in send blob request, expected BlobResponse");
 						BlobReputationChange::MalformedResponse
-							.report(&blob_handle.network, &target_peer);
+							.report::<Block>(&blob_handle.network, &target_peer);
 						break;
 					},
 					Err(err) => {
 						log::error!(target: LOG_TARGET,
 							"Failed to decode Blob response ({} bytes): {:?}", data.len(), err);
 						BlobReputationChange::MalformedResponse
-							.report(&blob_handle.network, &target_peer);
+							.report::<Block>(&blob_handle.network, &target_peer);
 						break;
 					},
 				}
@@ -720,7 +720,7 @@ where
 pub fn handle_incoming_blob_request<Block: BlockT>(
 	request: IncomingRequest,
 	blob_database: &dyn StorageApiT,
-	network: &Arc<NetworkService<Block, Block::Hash>>,
+	network: &Arc<dyn NetworkServiceT>,
 ) where
 	Block: BlockT,
 {
@@ -1087,7 +1087,7 @@ async fn handle_blob_stored_notification<Block>(
 pub async fn send_blob_query_request<Block>(
 	hash: BlobHash,
 	target_peer: PeerId,
-	network: &Arc<NetworkService<Block, Block::Hash>>,
+	network: &Arc<dyn NetworkServiceT>,
 ) -> Result<Option<Blob>>
 where
 	Block: BlockT,
