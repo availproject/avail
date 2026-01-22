@@ -15,6 +15,7 @@ members = [
 	"blob",
 	"da-commitment",
 	"observability",
+	"da-sampling",
 ]
 
 exclude = [
@@ -43,6 +44,7 @@ kate-recovery = { path = "../avail-core/kate/recovery/", default-features = fals
 
 avail-base = { path = "base", default-features = false }
 da-commitment = { path = "da-commitment", default-features = false }
+da-sampling = { path = "da-sampling", default-features = false }
 da-control = { path = "pallets/dactr", default-features = false }
 pallet-mandate = { path = "pallets/mandate", default-features = false }
 pallet-vector = { path = "pallets/vector", default-features = false }
@@ -73,6 +75,7 @@ hex = "0.4"
 const-hex = { version = "1.14.1", default-features = false, features = ["alloc"] }
 env_logger = "0.9.1"
 thiserror-no-std = "2.0.2"
+thiserror = "2.0.17"
 
 # Futures, async and multi-threading
 futures = "0.3.21"
@@ -93,6 +96,8 @@ scale-info = { version = "2.5.0", default-features = false, features = ["derive"
 cfg-if = "1.0"
 impl-trait-for-tuples = "0.2.1"
 docify = "0.2.6"
+prost = "0.12"
+prost-build = "0.12"
 
 # Encryptions and hashing
 sha2 = { version = "0.10.8", default-features = false }

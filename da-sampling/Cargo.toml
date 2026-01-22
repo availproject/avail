@@ -1,0 +1,35 @@
+[package]
+name = "da-sampling"
+version = "0.1.0"
+authors.workspace = true
+edition.workspace = true
+repository.workspace = true
+license.workspace = true
+homepage.workspace = true
+
+[dependencies]
+avail-blob.workspace = true
+avail-core.workspace = true
+avail-fri.workspace = true
+da-runtime.workspace = true
+array-bytes.workspace = true
+async-channel.workspace = true
+sp-core.workspace = true
+sp-runtime.workspace = true
+sc-client-api.workspace = true
+sp-api.workspace = true
+sc-network.workspace = true
+sc-chain-spec.workspace = true
+futures.workspace = true
+log.workspace = true
+lru.workspace = true
+hex.workspace = true
+rand.workspace = true
+thiserror.workspace = true
+prost.workspace = true
+
+[lints]
+workspace = true
+
+[build-dependencies]
+prost-build.workspace = true
