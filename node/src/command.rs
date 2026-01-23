@@ -22,7 +22,7 @@ use avail_blob::types::FullClient;
 use avail_node::chains;
 use da_runtime::Block;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
-use sc_cli::{Result, SubstrateCli};
+use sc_cli::{Result, Role, SubstrateCli, SyncMode};
 use sc_service::PartialComponents;
 use sp_runtime::traits::HashingFor;
 
@@ -89,6 +89,31 @@ pub fn run() -> Result<()> {
 			let runner = cli.create_runner(&cli.run)?;
 			runner.run_node_until_exit(|config| async move {
 				service::new_full(config, cli).map_err(sc_cli::Error::Service)
+			})
+		},
+		Some(Subcommand::LightClient(cmd)) => {
+			let runner = cli.create_runner(&cmd.run)?;
+			runner.run_node_until_exit(|mut config| async move {
+				// Forcing fast-unsafe sync for LC (for local testing)
+				// For live networks, sync mode for lc should be warp
+				config.network.sync_mode = SyncMode::FastUnsafe.into();
+				config.role = Role::LightClient;
+
+				log::info!(
+					"Light client mode: forcing sync mode to {:?}",
+					config.network.sync_mode
+				);
+
+				match config.network.network_backend {
+					sc_network::config::NetworkBackendType::Libp2p => {
+						service::new_light_node::<sc_network::NetworkWorker<_, _>>(config, cli)
+							.map_err(sc_cli::Error::Service)
+					},
+					sc_network::config::NetworkBackendType::Litep2p => {
+						service::new_light_node::<sc_network::Litep2pNetworkBackend>(config, cli)
+							.map_err(sc_cli::Error::Service)
+					},
+				}
 			})
 		},
 		/*Some(Subcommand::Inspect(cmd)) => {
