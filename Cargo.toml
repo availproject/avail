@@ -33,14 +33,14 @@ homepage = "https://www.availproject.org/"
 
 
 [workspace.dependencies]
-# avail-core = { git = "https://github.com/availproject/avail-core.git", rev = "93a52cd542b13a4d500c5e9febf93af6b1668498", default-features = false, features = [ "runtime"] }
-# avail-fri = { git = "https://github.com/availproject/avail-core.git", rev = "93a52cd542b13a4d500c5e9febf93af6b1668498", default-features = false }
-# kate = { git = "https://github.com/availproject/avail-core", rev = "93a52cd542b13a4d500c5e9febf93af6b1668498", default-features = false }
-# kate-recovery = { git = "https://github.com/availproject/avail-core", rev = "93a52cd542b13a4d500c5e9febf93af6b1668498", default-features = false  }
-avail-core = { path = "../avail-core/core", default-features = false, features = [ "runtime"] }
-avail-fri = { path = "../avail-core/fri", default-features = false }
-kate = { path = "../avail-core/kate/", default-features = false }
-kate-recovery = { path = "../avail-core/kate/recovery/", default-features = false}
+avail-core = { git = "https://github.com/availproject/avail-core.git", rev = "d29564b21dca74912ae86e03da2190ea2c543636", default-features = false, features = [ "runtime"] }
+avail-fri = { git = "https://github.com/availproject/avail-core.git", rev = "d29564b21dca74912ae86e03da2190ea2c543636", default-features = false }
+kate = { git = "https://github.com/availproject/avail-core", rev = "d29564b21dca74912ae86e03da2190ea2c543636", default-features = false }
+kate-recovery = { git = "https://github.com/availproject/avail-core", rev = "d29564b21dca74912ae86e03da2190ea2c543636", default-features = false  }
+# avail-core = { path = "../avail-core/core", default-features = false, features = [ "runtime"] }
+# avail-fri = { path = "../avail-core/fri", default-features = false }
+# kate = { path = "../avail-core/kate/", default-features = false }
+# kate-recovery = { path = "../avail-core/kate/recovery/", default-features = false}
 
 avail-base = { path = "base", default-features = false }
 da-commitment = { path = "da-commitment", default-features = false }
