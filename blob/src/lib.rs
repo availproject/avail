@@ -13,9 +13,10 @@ use crate::{
 	p2p::BlobHandle,
 	traits::RuntimeClient,
 	types::{
-		Blob, BlobHash, BlobMetadata, BlobNotification, BlobQueryRequest, BlobReceived,
-		BlobReputationChange, BlobRequest, BlobRequestEnum, BlobResponse, BlobResponseEnum,
-		BlobSignatureData, BlobStored, OwnershipEntry, BLOB_REQ_PROTO,
+		Blob, BlobHash, BlobMetadata, BlobNotification, BlobOwnershipInfo, BlobOwnershipsRequest,
+		BlobOwnershipsResponse, BlobQueryRequest, BlobReceived, BlobReputationChange, BlobRequest,
+		BlobRequestEnum, BlobResponse, BlobResponseEnum, BlobSignatureData, BlobStored,
+		OwnershipEntry, BLOB_REQ_PROTO,
 	},
 	utils::{
 		build_signature_payload, designated_prover_index, generate_base_index,
@@ -34,7 +35,7 @@ use sc_client_api::HeaderBackend;
 use sc_network::service::traits::NetworkService as NetworkServiceT;
 use sc_network::{
 	config::{IncomingRequest, OutgoingResponse},
-	IfDisconnected, NetworkPeers, NetworkRequest, NetworkStateInfo, ObservedRole, PeerId,
+	IfDisconnected, NetworkRequest, NetworkStateInfo, PeerId,
 };
 use sp_api::ProvideRuntimeApi;
 use sp_core::H256;
@@ -720,26 +721,27 @@ where
 pub fn handle_incoming_blob_request<Block: BlockT>(
 	request: IncomingRequest,
 	blob_database: &dyn StorageApiT,
-	network: &Arc<dyn NetworkServiceT>,
+	_network: &Arc<dyn NetworkServiceT>,
 ) where
 	Block: BlockT,
 {
 	let data = request.payload;
 	let response_tx = request.pending_response;
-	let peer_id = request.peer;
-	let role = network.peer_role(peer_id, Vec::new());
-	if role != Some(ObservedRole::Authority) {
-		log::error!(
-			target: LOG_TARGET,
-			"Not answering to {peer_id:?} as it's not an authority.",
-		);
-		let _ = response_tx.send(OutgoingResponse {
-			result: Err(()),
-			reputation_changes: vec![BlobReputationChange::InvalidRole.reputation_change()],
-			sent_feedback: None,
-		});
-		return;
-	}
+	// TODO: re-enable the role check if required
+	// let peer_id = request.peer;
+	// let role = network.peer_role(peer_id, Vec::new());
+	// if role != Some(ObservedRole::Authority) {
+	// 	log::error!(
+	// 		target: LOG_TARGET,
+	// 		"Not answering to {peer_id:?} as it's not an authority.",
+	// 	);
+	// 	let _ = response_tx.send(OutgoingResponse {
+	// 		result: Err(()),
+	// 		reputation_changes: vec![BlobReputationChange::InvalidRole.reputation_change()],
+	// 		sent_feedback: None,
+	// 	});
+	// 	return;
+	// }
 
 	let mut buf: &[u8] = &data;
 	match BlobRequestEnum::decode(&mut buf) {
@@ -749,6 +751,9 @@ pub fn handle_incoming_blob_request<Block: BlockT>(
 			},
 			BlobRequestEnum::BlobQueryRequest(blob_query_request) => {
 				process_blob_query_request(blob_query_request, blob_database, response_tx);
+			},
+			BlobRequestEnum::BlobOwnershipsRequest(req) => {
+				process_blob_ownerships_request(req, blob_database, response_tx);
 			},
 		},
 		Err(err) => {
@@ -1188,6 +1193,85 @@ pub fn process_blob_query_request(
 	log::info!(
 		"BLOB - process_blob_query_request - END - {:?} - {:?}",
 		blob_query_request.hash,
+		timer.elapsed()
+	);
+}
+
+fn process_blob_ownerships_request(
+	req: BlobOwnershipsRequest,
+	blob_database: &dyn StorageApiT,
+	response_tx: oneshot::Sender<OutgoingResponse>,
+) {
+	let timer = std::time::Instant::now();
+	log::info!(
+		target: LOG_TARGET,
+		"🧾 Processing BlobOwnershipsRequest ({} blobs)",
+		req.blob_hashes.len()
+	);
+
+	if req.blob_hashes.is_empty() {
+		log::warn!(
+			target: LOG_TARGET,
+			"Received empty BlobOwnershipsRequest"
+		);
+		let _ = response_tx.send(OutgoingResponse {
+			result: Ok(
+				BlobResponseEnum::BlobOwnershipsResponse(BlobOwnershipsResponse {
+					blobs: Vec::new(),
+				})
+				.encode(),
+			),
+			reputation_changes: BlobReputationChange::no_change(),
+			sent_feedback: None,
+		});
+		return;
+	}
+
+	let mut out = Vec::new();
+
+	for blob_hash in req.blob_hashes {
+		match blob_database.get_blob_ownerships(&blob_hash) {
+			Ok(ownership) if !ownership.is_empty() => {
+				out.push(BlobOwnershipInfo {
+					blob_hash,
+					ownership,
+				});
+			},
+			Ok(_) => {
+				log::debug!(
+					target: LOG_TARGET,
+					"No ownership info for blob {:?}",
+					blob_hash
+				);
+			},
+			Err(e) => {
+				log::warn!(
+					target: LOG_TARGET,
+					"Failed to fetch ownership for blob {:?}: {e}",
+					blob_hash
+				);
+			},
+		}
+	}
+
+	let resp = BlobResponseEnum::BlobOwnershipsResponse(BlobOwnershipsResponse { blobs: out });
+
+	let res = OutgoingResponse {
+		result: Ok(resp.encode()),
+		reputation_changes: BlobReputationChange::no_change(),
+		sent_feedback: None,
+	};
+
+	if let Err(e) = response_tx.send(res) {
+		log::error!(
+			target: LOG_TARGET,
+			"Failed to send BlobOwnershipsResponse: {e:?}"
+		);
+	}
+
+	log::info!(
+		target: LOG_TARGET,
+		"✅ BlobOwnershipsRequest handled in {:?}",
 		timer.elapsed()
 	);
 }

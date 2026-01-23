@@ -28,12 +28,15 @@ use avail_blob::types::FullClient;
 use codec::Encode;
 use da_runtime::extensions::check_batch_transactions::CheckBatchTransactions;
 use da_runtime::{apis::RuntimeApi, BlockNumber, NodeBlock as Block, Runtime};
+use da_sampling::client::DaSamplingDownloader;
 use frame_benchmarking_cli::SUBSTRATE_REFERENCE_HARDWARE;
 use frame_system_rpc_runtime_api::AccountNonceApi;
 use futures::prelude::*;
 use jsonrpsee::RpcModule;
 use pallet_transaction_payment::ChargeTransactionPayment;
+use sc_client_api::BlockchainEvents;
 use sc_client_api::{Backend, BlockBackend};
+use sc_consensus::{BlockImportParams, Verifier};
 use sc_consensus_babe::{self, SlotProportion};
 use sc_network::{service::traits::NetworkService, Event, NetworkBackend, NetworkEventStream};
 use sc_network_sync::SyncingService;
@@ -45,6 +48,8 @@ use sp_api::ProvideRuntimeApi;
 use sp_consensus_babe::inherents::BabeCreateInherentDataProviders;
 use sp_core::crypto::Pair;
 use sp_core::traits::SpawnNamed;
+use sp_runtime::traits::Header;
+use sp_runtime::DigestItem;
 use sp_runtime::{generic::Era, traits::Block as BlockT, SaturatedConversion};
 use std::time::Duration;
 use std::{path::Path, sync::Arc};
@@ -348,6 +353,104 @@ pub fn new_partial(
 	})
 }
 
+pub fn new_partial_light(
+	config: &Configuration,
+	grandpa_justification_period: u32,
+) -> Result<
+	sc_service::PartialComponents<
+		FullClient,
+		FullBackend,
+		FullSelectChain,
+		sc_consensus::DefaultImportQueue<Block>,
+		TransactionPool,
+		(
+			sc_consensus_grandpa::LinkHalf<Block, FullClient, FullSelectChain>,
+			sc_consensus_grandpa::SharedVoterState,
+			Option<Telemetry>,
+			Arc<dyn StorageApiT>,
+		),
+	>,
+	ServiceError,
+> {
+	let telemetry = config
+		.telemetry_endpoints
+		.clone()
+		.filter(|x| !x.is_empty())
+		.map(|endpoints| -> Result<_, sc_telemetry::Error> {
+			let worker = sc_telemetry::TelemetryWorker::new(16)?;
+			let telemetry = worker.handle().new_telemetry(endpoints);
+			Ok((worker, telemetry))
+		})
+		.transpose()?;
+
+	let executor = sc_service::new_wasm_executor(&config.executor);
+
+	let (client, backend, keystore_container, task_manager) =
+		sc_service::new_full_parts::<Block, RuntimeApi, _>(
+			config,
+			telemetry.as_ref().map(|(_, t)| t.handle()),
+			executor,
+		)?;
+	let client = Arc::new(client);
+
+	let telemetry = telemetry.map(|(worker, telemetry)| {
+		task_manager
+			.spawn_handle()
+			.spawn("telemetry", Some("light-node"), worker.run());
+		telemetry
+	});
+
+	let select_chain = sc_consensus::LongestChain::new(backend.clone());
+
+	let transaction_pool = Arc::from(
+		sc_transaction_pool::Builder::new(
+			task_manager.spawn_essential_handle(),
+			client.clone(),
+			false.into(),
+		)
+		.with_options(config.transaction_pool.clone())
+		.with_prometheus(config.prometheus_registry())
+		.build(),
+	);
+
+	let (grandpa_block_import, grandpa_link) = sc_consensus_grandpa::block_import(
+		client.clone(),
+		grandpa_justification_period,
+		&(client.clone() as Arc<_>),
+		select_chain.clone(),
+		telemetry.as_ref().map(|t| t.handle()),
+	)?;
+	let justification_import = grandpa_block_import.clone();
+
+	// No BABE importing
+	let import_queue = sc_consensus::BasicQueue::new(
+		DummyVerifier,
+		Box::new(grandpa_block_import.clone()),
+		Some(Box::new(justification_import)),
+		&task_manager.spawn_essential_handle(),
+		config.prometheus_registry(),
+	);
+	let blob_db_path = config.base_path.path().join("blob_database");
+
+	let blob_database: Arc<dyn StorageApiT> = Arc::new(
+		RocksdbBlobStore::open(&blob_db_path)
+			.map_err(|e| ServiceError::Other(format!("open blob_database: {e}")))?,
+	);
+
+	let shared_voter_state = sc_consensus_grandpa::SharedVoterState::empty();
+
+	Ok(sc_service::PartialComponents {
+		client,
+		backend,
+		task_manager,
+		keystore_container,
+		select_chain,
+		import_queue,
+		transaction_pool,
+		other: (grandpa_link, shared_voter_state, telemetry, blob_database),
+	})
+}
+
 /// Result of [`new_full_base`].
 pub struct NewFullBase {
 	/// The task manager of the node.
@@ -445,6 +548,24 @@ pub fn new_full_base<N: NetworkBackend<Block, <Block as BlockT>::Hash>>(
 	// Add our blob protocols to the network config
 	net_config.add_request_response_protocol(blob_req_res_cfg);
 	net_config.add_notification_protocol(blob_gossip_cfg);
+	let genesis_hash = client
+		.block_hash(0)
+		.ok()
+		.flatten()
+		.expect("Genesis block exists; qed");
+	let spec = da_sampling::protocol_spec(genesis_hash.as_ref(), &config.chain_spec);
+
+	let (tx, rx) = async_channel::bounded(spec.inbound_queue);
+
+	let da_protocol_config = N::request_response_config(
+		spec.protocol_name.clone(),
+		vec![],
+		spec.max_request_size,
+		spec.max_response_size,
+		spec.request_timeout,
+		Some(tx),
+	);
+	net_config.add_request_response_protocol(da_protocol_config);
 
 	let warp_sync = Arc::new(sc_consensus_grandpa::warp_proof::NetworkProvider::new(
 		backend.clone(),
@@ -466,7 +587,6 @@ pub fn new_full_base<N: NetworkBackend<Block, <Block as BlockT>::Hash>>(
 			metrics,
 		})?;
 
-	// === Initialize blob module ===
 	let blob_handle = BlobHandle::new(
 		config.role.clone(),
 		blob_database.clone(),
@@ -479,6 +599,13 @@ pub fn new_full_base<N: NetworkBackend<Block, <Block as BlockT>::Hash>>(
 		task_manager.spawn_handle(),
 		transaction_pool.clone(),
 	);
+
+	let handler =
+		da_sampling::server::DaSamplingRequestHandler::<Block>::new(blob_handle.clone(), rx);
+
+	task_manager
+		.spawn_handle()
+		.spawn("da-sampling-handler", None, handler.run());
 
 	let basic_authorship_db = blob_handle.blob_database.clone();
 	let rpc_transaction_pool = transaction_pool.clone();
@@ -497,7 +624,6 @@ pub fn new_full_base<N: NetworkBackend<Block, <Block as BlockT>::Hash>>(
 
 			Ok(io)
 		};
-	// === END Initialize blob module ===
 
 	task_manager.spawn_handle().spawn(
 		"finality_promoter",
@@ -771,9 +897,228 @@ pub fn new_full(config: Configuration, cli: Cli) -> Result<TaskManager, ServiceE
 	Ok(task_manager)
 }
 
+/// Builds a new service for a light client
+pub fn new_light_node<N: NetworkBackend<Block, <Block as BlockT>::Hash>>(
+	config: Configuration,
+	_cli: Cli,
+) -> Result<TaskManager, ServiceError> {
+	log::info!(target: LOG_TARGET, "Starting Avail DA Light Client");
+	let metrics = N::register_notification_metrics(
+		config.prometheus_config.as_ref().map(|cfg| &cfg.registry),
+	);
+	let mut net_config = sc_network::config::FullNetworkConfiguration::<_, _, N>::new(
+		&config.network,
+		config
+			.prometheus_config
+			.as_ref()
+			.map(|cfg| cfg.registry.clone()),
+	);
+	let peer_store_handle = net_config.peer_store_handle();
+	let (blob_req_res_cfg, blob_req_receiver, _blob_gossip_cfg, blob_gossip_service) =
+		get_blob_p2p_config::<Block, N>(metrics.clone(), Arc::clone(&peer_store_handle));
+
+	let grandpa_justification_period = 2400;
+
+	let sc_service::PartialComponents {
+		client,
+		backend,
+		mut task_manager,
+		import_queue,
+		keystore_container,
+		transaction_pool,
+		other: (grandpa_link, _shared_voter_state, mut telemetry, blob_database),
+		..
+	} = new_partial_light(&config, grandpa_justification_period)?;
+
+	let grandpa_protocol_name = sc_consensus_grandpa::protocol_standard_name(
+		&client
+			.block_hash(0)
+			.ok()
+			.flatten()
+			.expect("Genesis block exists; qed"),
+		&config.chain_spec,
+	);
+	let (grandpa_protocol_config, grandpa_notification_service) =
+		sc_consensus_grandpa::grandpa_peers_set_config::<Block, N>(
+			grandpa_protocol_name.clone(),
+			metrics.clone(),
+			Arc::clone(&peer_store_handle),
+		);
+	net_config.add_notification_protocol(grandpa_protocol_config);
+	net_config.add_request_response_protocol(blob_req_res_cfg);
+
+	let genesis_hash = client
+		.block_hash(0)
+		.ok()
+		.flatten()
+		.expect("Genesis block exists; qed");
+
+	let spec = da_sampling::protocol_spec(genesis_hash.as_ref(), &config.chain_spec);
+	// Light clients can't serve DA sampling requests
+	let (tx, _rx) = async_channel::bounded(spec.inbound_queue);
+	let da_protocol_config = N::request_response_config(
+		spec.protocol_name.clone(),
+		vec![],
+		spec.max_request_size,
+		spec.max_response_size,
+		spec.request_timeout,
+		Some(tx),
+	);
+	net_config.add_request_response_protocol(da_protocol_config);
+
+	let warp_sync = Arc::new(sc_consensus_grandpa::warp_proof::NetworkProvider::new(
+		backend.clone(),
+		grandpa_link.shared_authority_set().clone(),
+		Vec::default(),
+	));
+
+	let (network, system_rpc_tx, tx_handler_controller, sync_service) =
+		sc_service::build_network(sc_service::BuildNetworkParams {
+			config: &config,
+			net_config,
+			client: client.clone(),
+			transaction_pool: transaction_pool.clone(),
+			spawn_handle: task_manager.spawn_handle(),
+			import_queue,
+			block_announce_validator_builder: None,
+			// In an deployed network, light clients should ideally use warp sync.
+			warp_sync_config: Some(WarpSyncConfig::WithProvider(warp_sync)),
+			block_relay: None,
+			metrics,
+		})?;
+
+	// GRANDPA observer is needed for light clients to follow finality & is lighter than full voter
+	let grandpa_config = sc_consensus_grandpa::Config {
+		gossip_duration: Duration::from_millis(500),
+		justification_generation_period: 0, // observer never generates
+		name: Some(config.network.node_name.clone()),
+		observer_enabled: true,
+		keystore: None,
+		local_role: config.role.clone(),
+		telemetry: None,
+		protocol_name: grandpa_protocol_name,
+	};
+	task_manager.spawn_essential_handle().spawn_blocking(
+		"grandpa-observer",
+		Some("light-node"),
+		sc_consensus_grandpa::run_grandpa_observer(
+			grandpa_config,
+			grandpa_link,
+			network.clone(),
+			Arc::new(sync_service.clone()),
+			grandpa_notification_service,
+		)?,
+	);
+
+	let blob_handle = BlobHandle::new(
+		config.role.clone(),
+		blob_database.clone(),
+		blob_gossip_service,
+		blob_req_receiver,
+		network.clone(),
+		client.clone(),
+		keystore_container.local_keystore(),
+		sync_service.clone(),
+		task_manager.spawn_handle(),
+		transaction_pool.clone(),
+	);
+
+	let sampler = DaSamplingDownloader::new(blob_handle.clone(), spec.protocol_name.clone());
+
+	let mut finalized_stream = client.finality_notification_stream();
+	task_manager
+		.spawn_essential_handle()
+		.spawn("da-sampling-lc", Some("light-node"), async move {
+			use futures::StreamExt;
+
+			while let Some(notification) = finalized_stream.next().await {
+				let header = notification.header;
+				sampler.on_finalized(header).await;
+			}
+		});
+
+	let dummy_rpc_builder = Box::new(
+		|_spawn_handle: Arc<dyn SpawnNamed>|
+			-> Result<jsonrpsee::RpcModule<()>, sc_service::Error> {
+			Ok(jsonrpsee::RpcModule::new(()))
+		}
+	);
+
+	// For light clients, we spawn minimal tasks compared to full nodes.
+	let _rpc_handlers = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
+		config,
+		backend: backend.clone(),
+		client: client.clone(),
+		keystore: keystore_container.keystore(),
+		network: network.clone(),
+		rpc_builder: dummy_rpc_builder,
+		transaction_pool: transaction_pool.clone(),
+		task_manager: &mut task_manager,
+		system_rpc_tx,
+		tx_handler_controller,
+		sync_service: sync_service.clone(),
+		telemetry: telemetry.as_mut(),
+	})?;
+
+	log::info!(
+		target: LOG_TARGET,
+		"Avail Light Client started"
+	);
+
+	Ok(task_manager)
+}
+
 fn extend_metrics(prometheus: &Registry) -> Result<(), PrometheusError> {
 	use avail_observability::metrics::{AvailMetrics, AVAIL_METRICS};
 
 	AVAIL_METRICS.get_or_try_init(|| AvailMetrics::new(prometheus))?;
 	Ok(())
+}
+
+/// A verifier that blindly accepts all blocks.
+pub struct DummyVerifier;
+
+#[async_trait::async_trait]
+impl<B: BlockT> Verifier<B> for DummyVerifier {
+	async fn verify(
+		&self,
+		mut block: BlockImportParams<B>,
+	) -> Result<BlockImportParams<B>, String> {
+		let mut new_logs = Vec::new();
+		let mut babe_seal = None;
+		let hash = block.header.hash();
+
+		for log in block.header.digest().logs().iter() {
+			match log {
+				DigestItem::PreRuntime(engine_id, _data)
+					if *engine_id == sp_consensus_babe::BABE_ENGINE_ID =>
+				{
+					new_logs.push(log.clone());
+				},
+
+				DigestItem::Seal(engine_id, _)
+					if *engine_id == sp_consensus_babe::BABE_ENGINE_ID =>
+				{
+					babe_seal = Some(log.clone());
+				},
+
+				_ => new_logs.push(log.clone()),
+			}
+		}
+
+		// Replace header digest
+		block.header.digest_mut().logs = new_logs;
+
+		// Push BABE seal to post_digests to avoid runtime mismatch caused in execute_block
+		if let Some(seal) = babe_seal {
+			block.post_digests.push(seal);
+		}
+
+		block.post_hash = Some(hash);
+		// to avoid incomplete import pipeline, we need some fork_choice
+		block.fork_choice = Some(sc_consensus::ForkChoiceStrategy::LongestChain);
+		// to avoid executing block & storing the state
+		block.state_action = sc_consensus::StateAction::Skip;
+		Ok(block)
+	}
 }

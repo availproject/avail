@@ -4,26 +4,36 @@ use crate::{
 	decode_blob_notification, handle_incoming_blob_request,
 	slashing::check_missing_validators,
 	store::StorageApiT,
-	types::{BlobGossipValidator, BlobNotification, FullClient, BLOB_GOSSIP_PROTO, BLOB_REQ_PROTO},
+	types::{
+		BlobGossipValidator, BlobNotification, BlobOwnershipInfo, BlobOwnershipsRequest,
+		BlobRequestEnum, BlobResponseEnum, FullClient, BLOB_GOSSIP_PROTO, BLOB_REQ_PROTO,
+	},
 	BLOB_EXPIRATION_CHECK_PERIOD, CONCURRENT_REQUESTS, LOG_TARGET, NOTIFICATION_MAX_SIZE,
 	NOTIF_QUEUE_SIZE, REQUEST_MAX_SIZE, REQUEST_TIMEOUT_SECONDS, REQ_RES_QUEUE_SIZE,
 	RESPONSE_MAX_SIZE,
 };
 use async_channel::Receiver;
-use codec::Encode;
+use avail_core::{
+	header::{extension::fri::FriHeader, HeaderExtension},
+	traits::ExtendedHeader,
+};
+use codec::{Decode, Encode};
 use core::marker::PhantomData;
 use futures::{future, FutureExt, StreamExt};
 use sc_client_api::BlockchainEvents;
 use sc_keystore::LocalKeystore;
 use sc_network::{
 	config::{IncomingRequest, NonDefaultSetConfig, Role},
-	NotificationService,
+	IfDisconnected, NotificationService, PeerId,
 };
-use sc_network::{service::traits::NetworkService as NetworkServiceT, NetworkBackend};
+use sc_network::{
+	service::traits::NetworkService as NetworkServiceT, NetworkBackend, NetworkRequest,
+};
 use sc_network_gossip::GossipEngine;
 use sc_network_sync::SyncingService;
 use sc_service::SpawnTaskHandle;
 use sc_transaction_pool_api::TransactionPool;
+use sp_core::H256;
 use sp_runtime::{
 	traits::{Block as BlockT, Hash as HashT, Header as HeaderT},
 	SaturatedConversion,
@@ -128,16 +138,22 @@ where
 		};
 
 		blob_handle.start_blob_req_res(spawn_handle.clone(), req_receiver);
-		blob_handle.start_blob_gossip(
-			spawn_handle.clone(),
-			blob_gossip_service,
-			sync_service,
-			gossip_cmd_receiver,
-		);
+
 		blob_handle.start_blob_cleaning_service(spawn_handle.clone());
 
 		if blob_handle.role.is_authority() {
-			blob_handle.start_missing_validators_listener(spawn_handle, pool);
+			blob_handle.start_missing_validators_listener(spawn_handle.clone(), pool);
+		}
+		if matches!(blob_handle.role, Role::LightClient) {
+			blob_handle.start_blob_ownership_fetcher(spawn_handle);
+		} else {
+			// we only need the blob_gossip service in full-node mode
+			blob_handle.start_blob_gossip(
+				spawn_handle.clone(),
+				blob_gossip_service,
+				sync_service,
+				gossip_cmd_receiver,
+			);
 		}
 
 		Arc::new(blob_handle)
@@ -277,4 +293,169 @@ where
 			check_missing_validators(client, keystore, blob_database, pool).await;
 		});
 	}
+
+	fn start_blob_ownership_fetcher(&self, spawn_handle: SpawnTaskHandle) {
+		let client = self.client.clone();
+		let network = self.network.clone();
+		let blob_db = self.blob_database.clone();
+
+		spawn_handle.spawn("blob-ownership-fetcher", Some("light-node"), async move {
+			let mut import_stream = client.import_notification_stream();
+
+			while let Some(notification) = import_stream.next().await {
+				let header = notification.header;
+
+				if !header.extension().has_da_commitments() {
+					continue;
+				}
+
+				let blobs = match header.extension() {
+					HeaderExtension::Fri(FriHeader::V1(ext)) => &ext.blobs,
+					_ => continue,
+				};
+
+				let missing: Vec<H256> = blobs
+					.iter()
+					.map(|b| b.blob_hash)
+					.filter(|h| {
+						blob_db
+							.get_blob_ownerships(h)
+							.map(|o| o.is_empty())
+							.unwrap_or(true)
+					})
+					.collect();
+
+				if missing.is_empty() {
+					continue;
+				}
+
+				log::debug!(
+					target: LOG_TARGET,
+					"🔍 Block #{}: requesting ownership for {} blobs",
+					header.number(),
+					missing.len()
+				);
+
+				match request_blob_ownership_from_peers::<Block>(
+					&network.clone(),
+					missing.clone(),
+					Duration::from_secs(3),
+				)
+				.await
+				{
+					Ok(ownerships) => {
+						for info in ownerships {
+							for entry in info.ownership {
+								if let Err(e) =
+									blob_db.insert_blob_ownership(&info.blob_hash, &entry)
+								{
+									log::warn!(
+										target: LOG_TARGET,
+										"Failed to store ownership for {:?}: {e}",
+										info.blob_hash
+									);
+								}
+							}
+						}
+					},
+					Err(e) => {
+						log::warn!(
+							target: LOG_TARGET,
+							"❌ Ownership fetch failed at block #{}: {e}",
+							header.number()
+						);
+					},
+				}
+			}
+		});
+	}
+}
+
+/// Request blob ownership info for a set of blobs from connected peers.
+pub async fn request_blob_ownership_from_peers<Block: BlockT>(
+	network: &Arc<dyn NetworkServiceT>,
+	blob_hashes: Vec<H256>,
+	timeout: Duration,
+) -> Result<Vec<BlobOwnershipInfo>, String> {
+	if blob_hashes.is_empty() {
+		return Ok(Vec::new());
+	}
+
+	let state = network
+		.network_state()
+		.await
+		.map_err(|_| "Failed to fetch network state".to_string())?;
+
+	let peers: Vec<PeerId> = state
+		.connected_peers
+		.keys()
+		.filter_map(|k| k.parse::<PeerId>().ok())
+		.collect();
+
+	if peers.is_empty() {
+		return Err("No connected peers available for blob ownership request".into());
+	}
+
+	log::debug!(
+		target: LOG_TARGET,
+		"📡 Requesting ownership for {} blobs from {} peers",
+		blob_hashes.len(),
+		peers.len()
+	);
+
+	let req =
+		BlobRequestEnum::BlobOwnershipsRequest(BlobOwnershipsRequest { blob_hashes }).encode();
+
+	for peer in peers {
+		log::debug!(
+			target: LOG_TARGET,
+			"📤 Sending BlobOwnershipsRequest to peer {peer}"
+		);
+
+		let fut = network.request(
+			peer.clone(),
+			BLOB_REQ_PROTO,
+			req.clone(),
+			None,
+			IfDisconnected::TryConnect,
+		);
+
+		let data = match tokio::time::timeout(timeout, fut).await {
+			Ok(Ok((data, _))) => data,
+			Ok(Err(e)) => {
+				log::warn!(target: LOG_TARGET, "❌ Peer {peer} error: {e}");
+				continue;
+			},
+			Err(_) => {
+				log::warn!(target: LOG_TARGET, "⏱️ Peer {peer} timed out");
+				continue;
+			},
+		};
+
+		let mut buf: &[u8] = &data;
+		match BlobResponseEnum::decode(&mut buf) {
+			Ok(BlobResponseEnum::BlobOwnershipsResponse(resp)) => {
+				log::info!(
+					target: LOG_TARGET,
+					"✅ Received ownership for {} blobs from peer {peer}",
+					resp.blobs.len()
+				);
+				return Ok(resp.blobs);
+			},
+			Ok(other) => {
+				log::warn!(
+					target: LOG_TARGET,
+					"⚠️ Unexpected response from {peer}: {other:?}"
+				);
+			},
+			Err(e) => {
+				log::warn!(
+					target: LOG_TARGET,
+					"❌ Failed to decode ownership response from {peer}: {e}"
+				);
+			},
+		}
+	}
+
+	Err("All peers failed to provide blob ownership info".into())
 }

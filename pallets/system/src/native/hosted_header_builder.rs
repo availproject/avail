@@ -7,10 +7,7 @@ use crate::{limits::BlockLength, Config};
 use avail_base::header_extension::SubmittedData;
 use avail_core::{
 	header::{
-		extension::{
-			fri::FriHeaderVersion,
-			kzg::KzgHeaderVersion,
-		},
+		extension::{fri::FriHeaderVersion, kzg::KzgHeaderVersion},
 		HeaderExtension,
 	},
 	traits::ExtendedHeader,

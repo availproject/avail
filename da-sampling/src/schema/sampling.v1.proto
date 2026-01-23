@@ -1,0 +1,32 @@
+// NOTE:
+// - block_hash MUST refer to a finalized block
+// - proofs are validated against commitments in that block header
+
+syntax = "proto3";
+
+package api.v1.sampling;
+
+// Request for DA sampling proof for a given blob_hash at given block_hash
+message DaSamplingRequest {
+  bytes block_hash = 1;        // 32 bytes
+  bytes blob_hash  = 2;        // 32 bytes
+  repeated uint32 cell_indices = 3;
+}
+
+// A single proof for a cell.
+message CellProof {
+    /// Index of the codeword
+    uint32 index = 1;
+
+	// Canonical B128 value, LE-encoded (16 bytes)
+	bytes cell = 2;
+
+	// Serialized inclusion proof transcript
+	bytes proof = 3;
+}
+
+// Response to `DaSamplingRequest`.
+message DaSamplingResponse {
+	// List of cell proofs.
+	repeated CellProof proofs = 1;
+}
