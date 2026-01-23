@@ -1038,11 +1038,11 @@ pub fn new_light_node<N: NetworkBackend<Block, <Block as BlockT>::Hash>>(
 		});
 
 	let dummy_rpc_builder = Box::new(
-    |_spawn_handle: Arc<dyn SpawnNamed>|
-        -> Result<jsonrpsee::RpcModule<()>, sc_service::Error> {
-        Ok(jsonrpsee::RpcModule::new(()))
-    }
-);
+		|_spawn_handle: Arc<dyn SpawnNamed>|
+			-> Result<jsonrpsee::RpcModule<()>, sc_service::Error> {
+			Ok(jsonrpsee::RpcModule::new(()))
+		}
+	);
 
 	// For light clients, we spawn minimal tasks compared to full nodes.
 	let _rpc_handlers = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
