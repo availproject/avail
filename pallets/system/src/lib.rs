@@ -96,6 +96,7 @@
 //! extensions included in a chain.
 
 #![cfg_attr(not(feature = "std"), no_std)]
+#![allow(unexpected_cfgs)]
 #![warn(unused_extern_crates)]
 
 use avail_base::{HeaderExtensionBuilderData, HeaderExtensionDataFilter};
