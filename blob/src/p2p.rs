@@ -23,7 +23,7 @@ use futures::{future, FutureExt, StreamExt};
 use sc_client_api::BlockchainEvents;
 use sc_keystore::LocalKeystore;
 use sc_network::{
-	config::{IncomingRequest, NonDefaultSetConfig, Role},
+	config::{IncomingRequest, Role},
 	IfDisconnected, NotificationService, PeerId,
 };
 use sc_network::{
@@ -60,24 +60,17 @@ pub fn get_blob_p2p_config<B: BlockT, N: NetworkBackend<B, <B as BlockT>::Hash>>
 	);
 
 	// Get blob gossip protocol config
-	let (_peerset_cfg, blob_gossip_service) = NonDefaultSetConfig::new(
-		BLOB_GOSSIP_PROTO,
-		Vec::default(),
-		NOTIFICATION_MAX_SIZE,
-		None,
-		Default::default(),
-	);
-
-	let (blob_gossip_cfg, _) = N::notification_config(
+	let (blob_gossip_cfg, blob_gossip_service) = N::notification_config(
 		BLOB_GOSSIP_PROTO,
 		Vec::new(),
 		NOTIFICATION_MAX_SIZE,
 		None,
 		sc_network::config::SetConfig {
-			in_peers: 0,
-			out_peers: 0,
+			// TODO: Wire these values to actual node config
+			in_peers: 100,
+			out_peers: 100,
 			reserved_nodes: Vec::new(),
-			non_reserved_mode: sc_network::config::NonReservedPeerMode::Deny,
+			non_reserved_mode: sc_network::config::NonReservedPeerMode::Accept,
 		},
 		metrics,
 		peer_store_handle,
