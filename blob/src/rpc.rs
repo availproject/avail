@@ -1268,26 +1268,20 @@ pub async fn store_and_gossip_blob(
 		let prover_index =
 			designated_prover_index(&blob_hash, &finalized_block_hash, nb_validators_per_blob);
 
-		let (my_validator_id, _babe_key) = match get_my_validator_id(
+		if let Ok((my_validator_id, _babe_key)) = get_my_validator_id(
 			&friends.externalities.keystore(),
 			friends.runtime_client.as_ref(),
 			finalized_block_hash,
 		) {
-			Ok(v) => v,
-			Err(e) => {
-				log::error!("No keys found while trying to get this node's id: {e}");
-				return Err(());
-			},
-		};
-		if storing_validators[prover_index as usize] == my_validator_id {
-			log::info!(
-				"I am the designated prover for blob {:?} including eval_proof? {}",
-				blob_hash,
-				fri_data.fri_eval_proof.is_some()
-			);
-			// I am the designated prover, maybe also do the sanity check whether we have the eval proof or not
-			blob_metadata.fri_eval_proof = fri_data.fri_eval_proof;
-			blob_metadata.fri_eval_prover_index = Some(prover_index);
+			if storing_validators[prover_index as usize] == my_validator_id {
+				log::info!(
+					"I am the designated prover for blob {:?} including eval_proof? {}",
+					blob_hash,
+					fri_data.fri_eval_proof.is_some()
+				);
+				blob_metadata.fri_eval_proof = fri_data.fri_eval_proof;
+				blob_metadata.fri_eval_prover_index = Some(prover_index);
+			}
 		}
 		blob_metadata.eval_point_seed = Some(fri_data.eval_point_seed);
 		blob_metadata.eval_claim = Some(fri_data.eval_claim);
