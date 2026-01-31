@@ -188,3 +188,12 @@ There you can learn how to:
 - Build Avail Node for different Linux flavours
 - Find out what node synchronization options are available
 - Running Avail Benchmarks
+
+## License
+
+This project contains source files under multiple open source licenses.
+
+- Most of the code is licensed under the Apache License 2.0.
+- Some files that derive from Substrate may be under the GNU General Public License v3.0.
+
+See the `LICENSE-APACHE2` and `LICENSE-GPL3` files in the repository root for full text. For license details on specific files, check the license header at the top of each source file.
