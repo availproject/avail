@@ -680,7 +680,7 @@ mod tests {
 	}
 
 	fn validate(call: RuntimeCall) -> TransactionValidity {
-		let extrinsic = UncheckedExtrinsic::<u32, RuntimeCall, (), ()>::new_unsigned(call.clone());
+		let extrinsic = UncheckedExtrinsic::<u32, RuntimeCall, (), ()>::new_bare(call.clone());
 		let len = extrinsic.encoded_size();
 		new_test_ext()
 			.execute_with(|| CheckBatchTransactions::<Test>::new().do_validate(&call, len))

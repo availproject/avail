@@ -794,7 +794,7 @@ mod measure_full_block_size {
 					blob_txs_summary,
 				},
 			);
-			let post_inherent_tx = UncheckedExtrinsic::new_unsigned(post_inherent_call);
+			let post_inherent_tx = UncheckedExtrinsic::new_bare(post_inherent_call);
 			Executive::apply_extrinsic(post_inherent_tx)
 				.unwrap()
 				.unwrap();

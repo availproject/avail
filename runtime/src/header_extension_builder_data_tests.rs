@@ -193,7 +193,7 @@ fn bridge_fungible_msg(asset_id: H256, amount: u128) -> Vec<u8> {
 fn bridge_failed_send_message_txs(failed_txs: Vec<u32>) -> Vec<u8> {
 	let failed_txs: Vec<Compact<u32>> = failed_txs.into_iter().map(|i| Compact::from(i)).collect();
 	let function = VectorCall::failed_send_message_txs { failed_txs }.into();
-	UncheckedExtrinsic::new_unsigned(function).encode()
+	UncheckedExtrinsic::new_bare(function).encode()
 }
 
 fn empty_root() -> H256 {

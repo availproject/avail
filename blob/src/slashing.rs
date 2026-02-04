@@ -172,7 +172,7 @@ fn create_blob_offence(
 fn create_unsigned_extrinsics(calls: Vec<RuntimeCall>) -> Vec<UncheckedExtrinsic> {
 	let txs = calls
 		.iter()
-		.map(|x| UncheckedExtrinsic::new_unsigned(x.clone()))
+		.map(|x| UncheckedExtrinsic::new_bare(x.clone()))
 		.collect();
 
 	txs

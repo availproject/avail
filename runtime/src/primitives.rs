@@ -165,7 +165,7 @@ mod tests {
 		.into();
 
 		// Build the UncheckedExtrinsic as unsigned using the proper constructor.
-		let uxt: UncheckedExtrinsic = UncheckedExtrinsic::new_unsigned(call.clone());
+		let uxt: UncheckedExtrinsic = UncheckedExtrinsic::new_bare(call.clone());
 
 		// Raw bytes: SCALE encoding of UncheckedExtrinsic (no extra wrapper).
 		let raw_bytes: Vec<u8> = uxt.encode();
