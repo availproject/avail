@@ -206,7 +206,8 @@ impl pallet_proxy::Config for Test {
 }
 
 parameter_types! {
-	pub MaximumSchedulerWeight: Weight = (Perbill::from_percent(80) * 1).into();
+	pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
+		crate::constants::system::RuntimeBlockWeights::get().max_block;
 	pub const MaxScheduledPerBlock: u32 = 50;
 }
 
