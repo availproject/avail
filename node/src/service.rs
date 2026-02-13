@@ -853,7 +853,7 @@ fn extend_metrics(prometheus: &Registry) -> Result<(), PrometheusError> {
 pub fn new_light_node(config: Configuration, _cmd: &LightCmd) -> Result<TaskManager, ServiceError> {
 	log::info!(target: LOG_TARGET, "Starting Avail DA Light Client");
 
-	let (blob_req_res_cfg, blob_req_receiver, _blob_gossip_cfg, blob_gossip_service) =
+	let (blob_req_res_cfg, blob_req_receiver, blob_gossip_cfg, blob_gossip_service) =
 		get_blob_p2p_config();
 
 	let grandpa_justification_period = 2400;
@@ -883,6 +883,8 @@ pub fn new_light_node(config: Configuration, _cmd: &LightCmd) -> Result<TaskMana
 		sc_consensus_grandpa::grandpa_peers_set_config(grandpa_protocol_name.clone());
 	net_config.add_notification_protocol(grandpa_protocol_config);
 	net_config.add_request_response_protocol(blob_req_res_cfg);
+	// Light node subscribes to eval_claims topic for DAS verification
+	net_config.add_notification_protocol(blob_gossip_cfg);
 
 	let genesis_hash = client
 		.block_hash(0)

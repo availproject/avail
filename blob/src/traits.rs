@@ -1,3 +1,4 @@
+use crate::types::EvalClaimsMessage;
 use crate::utils::CommitmentQueueMessage;
 use crate::{BlobHandle, BlobNotification};
 use avail_core::header::extension::CommitmentScheme;
@@ -196,6 +197,9 @@ pub trait ExternalitiesT: Send + Sync {
 	fn keystore(&self) -> &Arc<LocalKeystore>;
 
 	fn gossip_cmd_sender(&self) -> &async_channel::Sender<BlobNotification>;
+
+	/// Optional sender for eval claims topic (full nodes only). Used to publish eval claim + proof for light nodes.
+	fn eval_claims_cmd_sender(&self) -> Option<&async_channel::Sender<EvalClaimsMessage>>;
 }
 
 #[derive(Debug, Default, Clone)]
@@ -262,6 +266,10 @@ where
 
 	fn gossip_cmd_sender(&self) -> &async_channel::Sender<BlobNotification> {
 		&self.blob_handle.gossip_cmd_sender
+	}
+
+	fn eval_claims_cmd_sender(&self) -> Option<&async_channel::Sender<EvalClaimsMessage>> {
+		self.blob_handle.eval_claims_cmd_sender.as_ref()
 	}
 }
 
