@@ -33,6 +33,9 @@ pub const BLOB_REQ_PROTO: ProtocolName = ProtocolName::Static(BLOB_REQ_PROTO_STR
 pub const BLOB_GOSSIP_PROTO_STR: &str = "/avail/blob/gossip/1";
 pub const BLOB_GOSSIP_PROTO: ProtocolName = ProtocolName::Static(BLOB_GOSSIP_PROTO_STR);
 
+/// Topic name for eval claims + evaluation proofs (sidecar / p2p); light nodes query this for DAS verification.
+pub const EVAL_CLAIMS_TOPIC: &[u8] = b"avail/eval_claims/1";
+
 /// ExecutorDispatch and FullClient were put here cause we need it for blob service but we cannot have a circular dependency, clean later.
 /// Maybe put in avail base later.
 
@@ -82,20 +85,17 @@ impl<B: BlockT> Validator<B> for BlobGossipValidator {
 		_sender: &PeerId,
 		data: &[u8],
 	) -> ValidationResult<<B as BlockT>::Hash> {
-		// Some pre-checks that will avoid flooding the network with bad information
-		// This means the peer won't get penalize "officially", but it keeps the network light
 		let mut input = &data[..];
-		match BlobNotification::decode(&mut input) {
-			Ok(_) => { /* We can process it*/ },
-			Err(_) => {
-				return ValidationResult::Discard;
-			},
+		let topic: B::Hash = if BlobNotification::decode(&mut input).is_ok() {
+			HashingFor::<B>::hash(b"blob_topic")
+		} else if EvalClaimsMessage::decode(&mut &data[..]).is_ok() {
+			HashingFor::<B>::hash(EVAL_CLAIMS_TOPIC)
+		} else {
+			return ValidationResult::Discard;
 		};
 
 		let h = H256::from(blake2_256(data));
 		self.live.lock().insert(h, Instant::now() + self.ttl);
-		let topic: B::Hash = HashingFor::<B>::hash(b"blob_topic");
-
 		ValidationResult::ProcessAndKeep(topic)
 	}
 
@@ -405,6 +405,22 @@ impl BlobEvalData {
 			eval_proof,
 		}
 	}
+}
+
+/// Message for the eval claims gossipsub topic: per-blob eval claim + proof for light nodes to verify against header.
+/// Replaces carrying this data in the block body; light client can query from topic and verify.
+#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, TypeInfo, Serialize, Deserialize)]
+pub struct EvalClaimsMessage {
+	/// Block hash this eval data belongs to
+	pub block_hash: H256,
+	/// Blob hash (identifies the blob in the block)
+	pub blob_hash: BlobHash,
+	/// Evaluation point seed for FRI
+	pub eval_point_seed: [u8; 32],
+	/// Evaluation claim (16 bytes)
+	pub eval_claim: [u8; 16],
+	/// FRI evaluation proof (to verify against header commitment)
+	pub eval_proof: Vec<u8>,
 }
 
 /// Blob info used to store info about blobs which were included in blocks

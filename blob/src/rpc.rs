@@ -1357,6 +1357,30 @@ pub async fn store_and_gossip_blob(
 		log::error!("internal channel closed: {e}");
 		return Err(());
 	}
+
+	// Publish eval claim + proof to sidecar topic so light nodes can verify against header
+	if let (Some(seed), Some(claim), Some(proof)) = (
+		blob_metadata.eval_point_seed,
+		blob_metadata.eval_claim.as_ref(),
+		blob_metadata.fri_eval_proof.as_ref(),
+	) {
+		if let Some(eval_sender) = friends.externalities.eval_claims_cmd_sender() {
+			let eval_msg = avail_blob::types::EvalClaimsMessage {
+				block_hash: finalized_block_hash.into(),
+				blob_hash: b_hash,
+				eval_point_seed: seed,
+				eval_claim: *claim,
+				eval_proof: proof.clone(),
+			};
+			if let Err(e) = eval_sender.try_send(eval_msg) {
+				log::warn!(
+					target: crate::LOG_TARGET,
+					"Failed to send eval claims to topic: {e}"
+				);
+			}
+		}
+	}
+
 	log::info!(
 		"BLOB - RPC submit_blob - bg:task - After gossiping blob notif - {:?}",
 		blob_hash,

@@ -365,6 +365,34 @@ where
 				.map_err(|_| SamplingError::VerificationFailed)?;
 		}
 
+		// Optionally verify FRI proof using eval data from p2p/sidecar topic (per diagram: verify against header)
+		if let Some(eval_data) = self
+			.blob_handle
+			.get_eval_data_for_blob(block_hash, blob.blob_hash)
+		{
+			match avail_blob::validation::validate_fri_proof(
+				blob.size_bytes as usize,
+				&eval_data.eval_point_seed,
+				&eval_data.eval_claim,
+				&eval_data.eval_proof,
+			) {
+				Ok(()) => {
+					info!(
+						target: LOG_TARGET,
+						"✅ FRI proof verification PASSED for blob {:?} (eval data from topic)",
+						blob.blob_hash
+					);
+				},
+				Err(e) => {
+					warn!(
+						target: LOG_TARGET,
+						"⚠️ FRI proof verification failed for blob {:?}: {e}",
+						blob.blob_hash
+					);
+				},
+			}
+		}
+
 		info!(
 			target: LOG_TARGET,
 			"✅ DA sampling verification PASSED for blob {:?} via peer {:?}",
