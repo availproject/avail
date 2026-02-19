@@ -6,8 +6,8 @@ use crate::{
 	store::StorageApiT,
 	types::{
 		BlobGossipValidator, BlobHash, BlobNotification, BlobOwnershipInfo, BlobOwnershipsRequest,
-		BlobRequestEnum, BlobResponseEnum, EvalClaimsMessage, FullClient, BLOB_TOPIC,
-		EVAL_CLAIMS_TOPIC, BLOB_GOSSIP_PROTO, BLOB_REQ_PROTO,
+		BlobRequestEnum, BlobResponseEnum, EvalClaimsMessage, FullClient, BLOB_GOSSIP_PROTO,
+		BLOB_REQ_PROTO, BLOB_TOPIC, EVAL_CLAIMS_TOPIC,
 	},
 	BLOB_EXPIRATION_CHECK_PERIOD, CONCURRENT_REQUESTS, LOG_TARGET, NOTIFICATION_MAX_SIZE,
 	NOTIF_QUEUE_SIZE, REQUEST_MAX_SIZE, REQUEST_TIMEOUT_SECONDS, REQ_RES_QUEUE_SIZE,
@@ -21,6 +21,7 @@ use avail_core::{
 use codec::{Decode, Encode};
 use core::marker::PhantomData;
 use futures::{future, FutureExt, StreamExt};
+use parking_lot::Mutex;
 use sc_client_api::BlockchainEvents;
 use sc_keystore::LocalKeystore;
 use sc_network::{
@@ -40,7 +41,6 @@ use sp_runtime::{
 	SaturatedConversion,
 };
 use std::collections::HashMap;
-use parking_lot::Mutex;
 
 pub fn get_blob_p2p_config<B: BlockT, N: NetworkBackend<B, <B as BlockT>::Hash>>(
 	metrics: sc_network::service::NotificationMetrics,
@@ -143,7 +143,8 @@ where
 			if matches!(role, Role::LightClient) {
 				(None, None, Some(Arc::new(Mutex::new(HashMap::new()))))
 			} else {
-				let (tx, rx) = async_channel::bounded::<EvalClaimsMessage>(NOTIF_QUEUE_SIZE as usize);
+				let (tx, rx) =
+					async_channel::bounded::<EvalClaimsMessage>(NOTIF_QUEUE_SIZE as usize);
 				set_global_eval_sender(tx.clone());
 				(Some(tx), Some(rx), None)
 			};
@@ -169,11 +170,7 @@ where
 		}
 		if matches!(blob_handle.role, Role::LightClient) {
 			blob_handle.start_blob_ownership_fetcher(spawn_handle.clone());
-			blob_handle.start_eval_claims_listener(
-				spawn_handle,
-				blob_gossip_service,
-				sync_service,
-			);
+			blob_handle.start_eval_claims_listener(spawn_handle, blob_gossip_service, sync_service);
 		} else {
 			blob_handle.start_blob_gossip(
 				spawn_handle.clone(),
@@ -232,8 +229,7 @@ where
 			None,
 		);
 
-		let blob_topic =
-			<<Block::Header as HeaderT>::Hashing as HashT>::hash(BLOB_TOPIC);
+		let blob_topic = <<Block::Header as HeaderT>::Hashing as HashT>::hash(BLOB_TOPIC);
 		let eval_claims_topic =
 			<<Block::Header as HeaderT>::Hashing as HashT>::hash(EVAL_CLAIMS_TOPIC);
 		let incoming_receiver = gossip_engine.messages_for(blob_topic);
@@ -335,7 +331,9 @@ where
 					let cache = cache.clone();
 					async move {
 						if notification.sender.is_some() {
-							if let Ok(msg) = EvalClaimsMessage::decode(&mut &notification.message[..]) {
+							if let Ok(msg) =
+								EvalClaimsMessage::decode(&mut &notification.message[..])
+							{
 								cache.lock().insert(msg.blob_hash, msg);
 							}
 						}

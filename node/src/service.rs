@@ -21,11 +21,11 @@
 
 use crate::finality_watcher::finality_promoter;
 use crate::{cli::Cli, cli::Subcommand, rpc as node_rpc};
-use avail_core::AppId;
 use avail_blob::p2p::{get_blob_p2p_config, BlobHandle};
 use avail_blob::rpc::{BlobApiServer, BlobRpc};
 use avail_blob::store::{RocksdbBlobStore, StorageApiT};
 use avail_blob::types::FullClient;
+use avail_core::AppId;
 use codec::Encode;
 use da_runtime::extensions::check_batch_transactions::CheckBatchTransactions;
 use da_runtime::{apis::RuntimeApi, BlockNumber, NodeBlock as Block, Runtime};
