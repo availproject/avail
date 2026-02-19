@@ -4,6 +4,7 @@
 /// to Babe and Grandpa.
 /// It double-checks the **extension header** which contains the `Kate Commitment` and `Data
 /// Root`.
+use async_channel::TrySendError;
 use avail_base::HeaderExtensionBuilderData;
 use avail_blob::{
 	p2p::global_eval_sender,
@@ -185,16 +186,6 @@ where
 								da.hash
 							))
 						})?;
-						if let Some(tx) = global_eval_sender() {
-							let msg = EvalClaimsMessage {
-								app_id: da.id,
-								blob_hash: da.hash,
-								eval_point_seed: da.eval_point_seed.expect("checked above; qed"),
-								eval_claim: da.eval_claim.expect("checked above; qed"),
-								eval_proof: da.eval_proof.clone().expect("checked above; qed"),
-							};
-							let _ = tx.try_send(msg);
-						}
 					}
 				}
 
@@ -213,6 +204,47 @@ where
 			extension_mismatch(&block.header.extension, &regenerated_extension)
 		);
 		Ok(())
+	}
+
+	fn publish_eval_claims(&self, block_hash: H256, extracted: &HeaderExtensionBuilderData) {
+		let Some(eval_sender) = global_eval_sender() else {
+			return;
+		};
+
+		for da in &extracted.data_submissions {
+			let (Some(eval_point_seed), Some(eval_claim), Some(eval_proof)) =
+				(da.eval_point_seed, da.eval_claim, da.eval_proof.clone())
+			else {
+				continue;
+			};
+
+			let msg = EvalClaimsMessage {
+				block_hash,
+				app_id: da.id,
+				blob_hash: da.hash,
+				eval_point_seed,
+				eval_claim,
+				eval_proof,
+			};
+
+			match eval_sender.try_send(msg) {
+				Ok(()) => {},
+				Err(TrySendError::Full(_)) => {
+					log::warn!(
+						"Eval claims channel full, dropping eval claims for block {:?}, blob {:?}",
+						block_hash,
+						da.hash
+					);
+				},
+				Err(TrySendError::Closed(_)) => {
+					log::warn!(
+						"Eval claims channel closed, dropping eval claims for block {:?}, blob {:?}",
+						block_hash,
+						da.hash
+					);
+				},
+			}
+		}
 	}
 }
 
@@ -260,8 +292,12 @@ where
 		// Next import block stage & metrics
 		let result = self.inner.import_block(block).await;
 
-		// On successful import of block, write to our blob indexer.
+		// On successful import of block, write to our blob indexer and publish eval claims.
 		if let Ok(ImportResult::Imported(_imported)) = &result {
+			if !is_sync {
+				self.publish_eval_claims(block_hash, &extracted);
+			}
+
 			// filter out successful blobs only and collect BlobInfo entries
 			let mut blob_infos = Vec::new();
 
