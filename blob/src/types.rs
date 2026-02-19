@@ -33,6 +33,9 @@ pub const BLOB_REQ_PROTO: ProtocolName = ProtocolName::Static(BLOB_REQ_PROTO_STR
 pub const BLOB_GOSSIP_PROTO_STR: &str = "/avail/blob/gossip/1";
 pub const BLOB_GOSSIP_PROTO: ProtocolName = ProtocolName::Static(BLOB_GOSSIP_PROTO_STR);
 
+pub const BLOB_TOPIC: &[u8] = b"blob_topic";
+pub const EVAL_CLAIMS_TOPIC: &[u8] = b"avail/eval_claims/1";
+
 /// ExecutorDispatch and FullClient were put here cause we need it for blob service but we cannot have a circular dependency, clean later.
 /// Maybe put in avail base later.
 
@@ -82,20 +85,17 @@ impl<B: BlockT> Validator<B> for BlobGossipValidator {
 		_sender: &PeerId,
 		data: &[u8],
 	) -> ValidationResult<<B as BlockT>::Hash> {
-		// Some pre-checks that will avoid flooding the network with bad information
-		// This means the peer won't get penalize "officially", but it keeps the network light
 		let mut input = &data[..];
-		match BlobNotification::decode(&mut input) {
-			Ok(_) => { /* We can process it*/ },
-			Err(_) => {
-				return ValidationResult::Discard;
-			},
+		let topic: B::Hash = if BlobNotification::decode(&mut input).is_ok() {
+			HashingFor::<B>::hash(BLOB_TOPIC)
+		} else if EvalClaimsMessage::decode(&mut &data[..]).is_ok() {
+			HashingFor::<B>::hash(EVAL_CLAIMS_TOPIC)
+		} else {
+			return ValidationResult::Discard;
 		};
 
 		let h = H256::from(blake2_256(data));
 		self.live.lock().insert(h, Instant::now() + self.ttl);
-		let topic: B::Hash = HashingFor::<B>::hash(b"blob_topic");
-
 		ValidationResult::ProcessAndKeep(topic)
 	}
 
@@ -207,7 +207,7 @@ pub struct BlobMetadata {
 /// FriData will store Fri scheme related data for blob
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, Serialize, Deserialize)]
 pub struct FriData {
-	/// Evaluation point seed
+	pub app_id: AppId,
 	pub eval_point_seed: [u8; 32],
 	/// Evaluation claim for specific eval point
 	pub eval_claim: [u8; 16],
@@ -405,6 +405,16 @@ impl BlobEvalData {
 			eval_proof,
 		}
 	}
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, TypeInfo, Serialize, Deserialize)]
+pub struct EvalClaimsMessage {
+	pub block_hash: H256,
+	pub app_id: AppId,
+	pub blob_hash: BlobHash,
+	pub eval_point_seed: [u8; 32],
+	pub eval_claim: [u8; 16],
+	pub eval_proof: Vec<u8>,
 }
 
 /// Blob info used to store info about blobs which were included in blocks

@@ -964,7 +964,7 @@ pub async fn submit_blob_main_task(
 	let max_blob_size = blob_params.max_blob_size as usize;
 
 	stop_watch.start("Initial Validation");
-	let (blob_hash, provided_commitment, eval_point_seed, eval_claim) =
+	let (app_id, blob_hash, provided_commitment, eval_point_seed, eval_claim) =
 		initial_validation(max_blob_size, &blob, &metadata_signed_transaction)
 			.map_err(|e| internal_err!("{}", e))?;
 	stop_watch.stop("Initial Validation");
@@ -1092,6 +1092,7 @@ pub async fn submit_blob_main_task(
 
 			let blob = Arc::new(blob);
 			let fri_data = FriData {
+				app_id,
 				eval_point_seed,
 				eval_claim,
 				fri_eval_proof: Some(fri_eval_proof),
@@ -1357,6 +1358,7 @@ pub async fn store_and_gossip_blob(
 		log::error!("internal channel closed: {e}");
 		return Err(());
 	}
+
 	log::info!(
 		"BLOB - RPC submit_blob - bg:task - After gossiping blob notif - {:?}",
 		blob_hash,
