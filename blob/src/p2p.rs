@@ -86,7 +86,8 @@ pub fn get_blob_p2p_config<B: BlockT, N: NetworkBackend<B, <B as BlockT>::Hash>>
 	)
 }
 
-pub type EvalClaimsCache = Arc<Mutex<HashMap<BlobHash, EvalClaimsMessage>>>;
+/// Cache key for eval claims: (block_hash, blob_hash).
+pub type EvalClaimsCache = Arc<Mutex<HashMap<(H256, BlobHash), EvalClaimsMessage>>>;
 
 static GLOBAL_EVAL_SENDER: once_cell::sync::OnceCell<async_channel::Sender<EvalClaimsMessage>> =
 	once_cell::sync::OnceCell::new();
@@ -291,10 +292,14 @@ where
 		});
 	}
 
-	pub fn get_eval_data_for_blob(&self, blob_hash: H256) -> Option<EvalClaimsMessage> {
+	pub fn get_eval_data_for_blob(
+		&self,
+		block_hash: H256,
+		blob_hash: H256,
+	) -> Option<EvalClaimsMessage> {
 		self.eval_claims_cache
 			.as_ref()
-			.and_then(|c| c.lock().get(&blob_hash).cloned())
+			.and_then(|c| c.lock().get(&(block_hash, blob_hash)).cloned())
 	}
 
 	/// Light node: subscribe to eval_claims topic and cache messages for verification against header.
@@ -334,7 +339,14 @@ where
 							if let Ok(msg) =
 								EvalClaimsMessage::decode(&mut &notification.message[..])
 							{
-								cache.lock().insert(msg.blob_hash, msg);
+								log::info!(
+									target: LOG_TARGET,
+									"Received eval claims message for block {:?}, blob {:?}, app_id {:?}",
+									msg.block_hash,
+									msg.blob_hash,
+									msg.app_id
+								);
+								cache.lock().insert((msg.block_hash, msg.blob_hash), msg);
 							}
 						}
 					}

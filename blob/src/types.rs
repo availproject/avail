@@ -409,6 +409,7 @@ impl BlobEvalData {
 
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, TypeInfo, Serialize, Deserialize)]
 pub struct EvalClaimsMessage {
+	pub block_hash: H256,
 	pub app_id: AppId,
 	pub blob_hash: BlobHash,
 	pub eval_point_seed: [u8; 32],
