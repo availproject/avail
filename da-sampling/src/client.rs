@@ -36,21 +36,58 @@ where
 {
 	blob_handle: Arc<BlobHandle<B>>,
 	protocol: ProtocolName,
+	config: DaSamplingConfig,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct DaSamplingConfig {
+	pub samples_per_blob: u32,
+	pub with_ev_proof: bool,
+	pub app_id: Option<u32>,
+}
+
+impl Default for DaSamplingConfig {
+	fn default() -> Self {
+		Self {
+			samples_per_blob: 16,
+			with_ev_proof: false,
+			app_id: None,
+		}
+	}
 }
 
 impl<B> DaSamplingDownloader<B>
 where
 	B: BlockT<Header = DaHeader, Hash = H256>,
 {
-	pub fn new(blob_handle: Arc<BlobHandle<B>>, protocol: ProtocolName) -> Self {
+	pub fn new(
+		blob_handle: Arc<BlobHandle<B>>,
+		protocol: ProtocolName,
+		config: DaSamplingConfig,
+	) -> Self {
 		info!(
 			target: LOG_TARGET,
 			"Initializing DA sampling downloader with protocol {:?}",
 			protocol
 		);
+		if let Some(app_id) = config.app_id {
+			info!(
+				target: LOG_TARGET,
+				"⚠️ app_id={} filtering is not yet supported; sampling all app_ids",
+				app_id
+			);
+		}
+
+		if config.with_ev_proof {
+			info!(
+				target: LOG_TARGET,
+				"⚠️ Evaluation proof verification is enabled but not yet implemented",
+			);
+		}
 		Self {
 			blob_handle,
 			protocol,
+			config,
 		}
 	}
 
@@ -227,7 +264,7 @@ where
 
 	fn sample_cells(&self, max: u32) -> Vec<u32> {
 		let mut rng = StdRng::from_entropy();
-		let target = 16.min(max as usize);
+		let target = (self.config.samples_per_blob as usize).min(max as usize);
 
 		let mut indices = HashSet::with_capacity(target);
 
@@ -364,6 +401,8 @@ where
 				.verify_b128(&pcs, &ctx, &commitment)
 				.map_err(|_| SamplingError::VerificationFailed)?;
 		}
+
+		// TODO: Based on eval_proof options, verify evaluation proof if provided
 
 		info!(
 			target: LOG_TARGET,
