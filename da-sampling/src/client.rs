@@ -403,6 +403,38 @@ where
 		}
 
 		// TODO: Based on eval_proof options, verify evaluation proof if provided
+		if let Some(eval_data) = self
+			.blob_handle
+			.get_eval_data_for_blob(block_hash, blob.blob_hash)
+		{
+			match avail_blob::validation::validate_fri_proof(
+				blob.size_bytes as usize,
+				&eval_data.eval_point_seed,
+				&eval_data.eval_claim,
+				&eval_data.eval_proof,
+			) {
+				Ok(()) => {
+					info!(
+						target: LOG_TARGET,
+						"✅ Proof verification PASSED for blob {:?} (eval data from topic)",
+						blob.blob_hash
+					);
+				},
+				Err(e) => {
+					warn!(
+						target: LOG_TARGET,
+						"❌ Proof verification failed for blob {:?}: {e}",
+						blob.blob_hash
+					);
+				},
+			}
+		} else {
+			warn!(
+				target: LOG_TARGET,
+				"⚠️ No eval data available for blob {:?}, skipping FRI proof verification",
+				blob.blob_hash
+			);
+		}
 
 		info!(
 			target: LOG_TARGET,

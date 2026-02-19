@@ -914,7 +914,7 @@ pub fn new_light_node<N: NetworkBackend<Block, <Block as BlockT>::Hash>>(
 			.map(|cfg| cfg.registry.clone()),
 	);
 	let peer_store_handle = net_config.peer_store_handle();
-	let (blob_req_res_cfg, blob_req_receiver, _blob_gossip_cfg, blob_gossip_service) =
+	let (blob_req_res_cfg, blob_req_receiver, blob_gossip_cfg, blob_gossip_service) =
 		get_blob_p2p_config::<Block, N>(metrics.clone(), Arc::clone(&peer_store_handle));
 
 	let grandpa_justification_period = 2400;
@@ -946,6 +946,8 @@ pub fn new_light_node<N: NetworkBackend<Block, <Block as BlockT>::Hash>>(
 		);
 	net_config.add_notification_protocol(grandpa_protocol_config);
 	net_config.add_request_response_protocol(blob_req_res_cfg);
+	// Light node subscribes to eval_claims topic for DAS verification
+	net_config.add_notification_protocol(blob_gossip_cfg);
 
 	let genesis_hash = client
 		.block_hash(0)
