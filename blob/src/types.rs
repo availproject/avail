@@ -33,7 +33,7 @@ pub const BLOB_REQ_PROTO: ProtocolName = ProtocolName::Static(BLOB_REQ_PROTO_STR
 pub const BLOB_GOSSIP_PROTO_STR: &str = "/avail/blob/gossip/1";
 pub const BLOB_GOSSIP_PROTO: ProtocolName = ProtocolName::Static(BLOB_GOSSIP_PROTO_STR);
 
-/// Topic name for eval claims + evaluation proofs (sidecar / p2p); light nodes query this for DAS verification.
+pub const BLOB_TOPIC: &[u8] = b"blob_topic";
 pub const EVAL_CLAIMS_TOPIC: &[u8] = b"avail/eval_claims/1";
 
 /// ExecutorDispatch and FullClient were put here cause we need it for blob service but we cannot have a circular dependency, clean later.
@@ -87,7 +87,7 @@ impl<B: BlockT> Validator<B> for BlobGossipValidator {
 	) -> ValidationResult<<B as BlockT>::Hash> {
 		let mut input = &data[..];
 		let topic: B::Hash = if BlobNotification::decode(&mut input).is_ok() {
-			HashingFor::<B>::hash(b"blob_topic")
+			HashingFor::<B>::hash(BLOB_TOPIC)
 		} else if EvalClaimsMessage::decode(&mut &data[..]).is_ok() {
 			HashingFor::<B>::hash(EVAL_CLAIMS_TOPIC)
 		} else {
@@ -207,7 +207,7 @@ pub struct BlobMetadata {
 /// FriData will store Fri scheme related data for blob
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, Serialize, Deserialize)]
 pub struct FriData {
-	/// Evaluation point seed
+	pub app_id: AppId,
 	pub eval_point_seed: [u8; 32],
 	/// Evaluation claim for specific eval point
 	pub eval_claim: [u8; 16],
@@ -407,19 +407,12 @@ impl BlobEvalData {
 	}
 }
 
-/// Message for the eval claims gossipsub topic: per-blob eval claim + proof for light nodes to verify against header.
-/// Replaces carrying this data in the block body; light client can query from topic and verify.
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, TypeInfo, Serialize, Deserialize)]
 pub struct EvalClaimsMessage {
-	/// Block hash this eval data belongs to
-	pub block_hash: H256,
-	/// Blob hash (identifies the blob in the block)
+	pub app_id: AppId,
 	pub blob_hash: BlobHash,
-	/// Evaluation point seed for FRI
 	pub eval_point_seed: [u8; 32],
-	/// Evaluation claim (16 bytes)
 	pub eval_claim: [u8; 16],
-	/// FRI evaluation proof (to verify against header commitment)
 	pub eval_proof: Vec<u8>,
 }
 

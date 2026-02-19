@@ -5,9 +5,9 @@ use crate::{
 	slashing::check_missing_validators,
 	store::StorageApiT,
 	types::{
-		BlobGossipValidator, BlobNotification, BlobOwnershipInfo, BlobOwnershipsRequest,
-		BlobRequestEnum, BlobResponseEnum, EvalClaimsMessage, FullClient, EVAL_CLAIMS_TOPIC,
-		BLOB_GOSSIP_PROTO, BLOB_REQ_PROTO,
+		BlobGossipValidator, BlobHash, BlobNotification, BlobOwnershipInfo, BlobOwnershipsRequest,
+		BlobRequestEnum, BlobResponseEnum, EvalClaimsMessage, FullClient, BLOB_TOPIC,
+		EVAL_CLAIMS_TOPIC, BLOB_GOSSIP_PROTO, BLOB_REQ_PROTO,
 	},
 	BLOB_EXPIRATION_CHECK_PERIOD, CONCURRENT_REQUESTS, LOG_TARGET, NOTIFICATION_MAX_SIZE,
 	NOTIF_QUEUE_SIZE, REQUEST_MAX_SIZE, REQUEST_TIMEOUT_SECONDS, REQ_RES_QUEUE_SIZE,
@@ -86,8 +86,18 @@ pub fn get_blob_p2p_config<B: BlockT, N: NetworkBackend<B, <B as BlockT>::Hash>>
 	)
 }
 
-/// Cache key for eval claims: (block_hash, blob_hash).
-pub type EvalClaimsCache = Arc<Mutex<HashMap<(H256, H256), EvalClaimsMessage>>>;
+pub type EvalClaimsCache = Arc<Mutex<HashMap<BlobHash, EvalClaimsMessage>>>;
+
+static GLOBAL_EVAL_SENDER: once_cell::sync::OnceCell<async_channel::Sender<EvalClaimsMessage>> =
+	once_cell::sync::OnceCell::new();
+
+pub fn set_global_eval_sender(sender: async_channel::Sender<EvalClaimsMessage>) {
+	let _ = GLOBAL_EVAL_SENDER.set(sender);
+}
+
+pub fn global_eval_sender() -> Option<async_channel::Sender<EvalClaimsMessage>> {
+	GLOBAL_EVAL_SENDER.get().cloned()
+}
 
 #[derive(Clone)]
 pub struct BlobHandle<Block>
@@ -98,7 +108,6 @@ where
 	pub gossip_cmd_sender: async_channel::Sender<BlobNotification>,
 	/// Sender for eval claims topic (full nodes only). When `Some`, publishing to eval_claims topic is enabled.
 	pub eval_claims_cmd_sender: Option<async_channel::Sender<EvalClaimsMessage>>,
-	/// Cache of eval claims from gossipsub (light nodes only). Key: (block_hash, blob_hash).
 	pub eval_claims_cache: Option<EvalClaimsCache>,
 	pub keystore: Arc<LocalKeystore>,
 	pub client: Arc<FullClient>,
@@ -135,6 +144,7 @@ where
 				(None, None, Some(Arc::new(Mutex::new(HashMap::new()))))
 			} else {
 				let (tx, rx) = async_channel::bounded::<EvalClaimsMessage>(NOTIF_QUEUE_SIZE as usize);
+				set_global_eval_sender(tx.clone());
 				(Some(tx), Some(rx), None)
 			};
 
@@ -223,7 +233,7 @@ where
 		);
 
 		let blob_topic =
-			<<Block::Header as HeaderT>::Hashing as HashT>::hash("blob_topic".as_bytes());
+			<<Block::Header as HeaderT>::Hashing as HashT>::hash(BLOB_TOPIC);
 		let eval_claims_topic =
 			<<Block::Header as HeaderT>::Hashing as HashT>::hash(EVAL_CLAIMS_TOPIC);
 		let incoming_receiver = gossip_engine.messages_for(blob_topic);
@@ -285,16 +295,10 @@ where
 		});
 	}
 
-	/// Light node: get eval claim + proof for (block_hash, blob_hash) from the gossipsub cache.
-	/// Returns `Some` if we received an `EvalClaimsMessage` on the eval_claims topic for this blob.
-	pub fn get_eval_data_for_blob(
-		&self,
-		block_hash: H256,
-		blob_hash: H256,
-	) -> Option<EvalClaimsMessage> {
+	pub fn get_eval_data_for_blob(&self, blob_hash: H256) -> Option<EvalClaimsMessage> {
 		self.eval_claims_cache
 			.as_ref()
-			.and_then(|c| c.lock().get(&(block_hash, blob_hash)).cloned())
+			.and_then(|c| c.lock().get(&blob_hash).cloned())
 	}
 
 	/// Light node: subscribe to eval_claims topic and cache messages for verification against header.
@@ -332,7 +336,7 @@ where
 					async move {
 						if notification.sender.is_some() {
 							if let Ok(msg) = EvalClaimsMessage::decode(&mut &notification.message[..]) {
-								cache.lock().insert((msg.block_hash, msg.blob_hash), msg);
+								cache.lock().insert(msg.blob_hash, msg);
 							}
 						}
 					}

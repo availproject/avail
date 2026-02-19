@@ -26,7 +26,7 @@ pub fn initial_validation(
 	max_blob_size: usize,
 	blob: &[u8],
 	metadata: &[u8],
-) -> Result<(H256, Vec<u8>, Option<[u8; 32]>, Option<[u8; 16]>), String> {
+) -> Result<(avail_core::AppId, H256, Vec<u8>, Option<[u8; 32]>, Option<[u8; 16]>), String> {
 	if blob.len() > max_blob_size {
 		return Err("blob is too big".into());
 	}
@@ -34,16 +34,17 @@ pub fn initial_validation(
 	let mut metadata = metadata;
 	let encoded_metadata_signed_transaction: UncheckedExtrinsic = Decode::decode(&mut metadata)
 		.map_err(|_| String::from("failed to decode concrete metadata call"))?;
-	let (provided_size, provided_blob_hash, provided_commitment, eval_pont_seed, eval_claim) =
+	let (app_id, provided_size, provided_blob_hash, provided_commitment, eval_pont_seed, eval_claim) =
 		match encoded_metadata_signed_transaction.function {
 			RuntimeCall::DataAvailability(Call::submit_blob_metadata {
-				app_id: _,
+				app_id,
 				size,
 				blob_hash,
 				commitment,
 				eval_point_seed,
 				eval_claim,
 			}) => (
+				app_id,
 				size as usize,
 				blob_hash,
 				commitment,
@@ -71,7 +72,7 @@ pub fn initial_validation(
 		return Err(std::format!("submitted blob: {provided_blob_hash:?} does not correspond to generated blob {blob_hash:?}"));
 	}
 
-	Ok((blob_hash, provided_commitment, eval_pont_seed, eval_claim))
+	Ok((app_id, blob_hash, provided_commitment, eval_pont_seed, eval_claim))
 }
 
 pub fn tx_validation(

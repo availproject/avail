@@ -11,6 +11,7 @@ use avail_core::{
 		HeaderExtension,
 	},
 	traits::extended_header::ExtendedHeader,
+	AppId,
 };
 use da_runtime::Header as DaHeader;
 use futures::channel::oneshot;
@@ -36,13 +37,19 @@ where
 {
 	blob_handle: Arc<BlobHandle<B>>,
 	protocol: ProtocolName,
+	/// If Some(id), only run FRI eval proof verification for blobs with this app_id (from sidecar).
+	verify_eval_app_id: Option<AppId>,
 }
 
 impl<B> DaSamplingDownloader<B>
 where
 	B: BlockT<Header = DaHeader, Hash = H256>,
 {
-	pub fn new(blob_handle: Arc<BlobHandle<B>>, protocol: ProtocolName) -> Self {
+	pub fn new(
+		blob_handle: Arc<BlobHandle<B>>,
+		protocol: ProtocolName,
+		verify_eval_app_id: Option<AppId>,
+	) -> Self {
 		info!(
 			target: LOG_TARGET,
 			"Initializing DA sampling downloader with protocol {:?}",
@@ -51,6 +58,7 @@ where
 		Self {
 			blob_handle,
 			protocol,
+			verify_eval_app_id,
 		}
 	}
 
@@ -366,11 +374,10 @@ where
 		}
 
 		// Optionally verify FRI proof using eval data from p2p/sidecar topic (per diagram: verify against header)
-		if let Some(eval_data) = self
-			.blob_handle
-			.get_eval_data_for_blob(block_hash, blob.blob_hash)
-		{
-			match avail_blob::validation::validate_fri_proof(
+		if let Some(eval_data) = self.blob_handle.get_eval_data_for_blob(blob.blob_hash) {
+			let should_verify = self.verify_eval_app_id.map_or(true, |id| id == eval_data.app_id);
+			if should_verify {
+				match avail_blob::validation::validate_fri_proof(
 				blob.size_bytes as usize,
 				&eval_data.eval_point_seed,
 				&eval_data.eval_claim,
@@ -390,6 +397,7 @@ where
 						blob.blob_hash
 					);
 				},
+			}
 			}
 		}
 

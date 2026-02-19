@@ -6,8 +6,9 @@
 /// Root`.
 use avail_base::HeaderExtensionBuilderData;
 use avail_blob::{
+	p2p::global_eval_sender,
 	store::StorageApiT,
-	types::{BlobInfo, OwnershipEntry},
+	types::{BlobInfo, EvalClaimsMessage, OwnershipEntry},
 };
 use avail_core::{
 	ensure,
@@ -184,6 +185,16 @@ where
 								da.hash
 							))
 						})?;
+						if let Some(tx) = global_eval_sender() {
+							let msg = EvalClaimsMessage {
+								app_id: da.id,
+								blob_hash: da.hash,
+								eval_point_seed: da.eval_point_seed.expect("checked above; qed"),
+								eval_claim: da.eval_claim.expect("checked above; qed"),
+								eval_proof: da.eval_proof.clone().expect("checked above; qed"),
+							};
+							let _ = tx.try_send(msg);
+						}
 					}
 				}
 
