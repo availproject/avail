@@ -20,12 +20,11 @@
 #![allow(dead_code)]
 
 use crate::finality_watcher::finality_promoter;
-use crate::{cli::Cli, cli::Subcommand, rpc as node_rpc};
+use crate::{cli::Cli, rpc as node_rpc};
 use avail_blob::p2p::{get_blob_p2p_config, BlobHandle};
 use avail_blob::rpc::{BlobApiServer, BlobRpc};
 use avail_blob::store::{RocksdbBlobStore, StorageApiT};
 use avail_blob::types::FullClient;
-use avail_core::AppId;
 use codec::Encode;
 use da_runtime::extensions::check_batch_transactions::CheckBatchTransactions;
 use da_runtime::{apis::RuntimeApi, BlockNumber, NodeBlock as Block, Runtime};
@@ -901,13 +900,9 @@ pub fn new_full(config: Configuration, cli: Cli) -> Result<TaskManager, ServiceE
 /// Builds a new service for a light client
 pub fn new_light_node<N: NetworkBackend<Block, <Block as BlockT>::Hash>>(
 	config: Configuration,
-	cli: Cli,
+	_cli: Cli,
 ) -> Result<TaskManager, ServiceError> {
 	log::info!(target: LOG_TARGET, "Starting Avail DA Light Client");
-	let verify_eval_app_id = match &cli.subcommand {
-		Some(Subcommand::LightClient(cmd)) => cmd.verify_eval_app_id.map(AppId),
-		_ => None,
-	};
 	let metrics = N::register_notification_metrics(
 		config.prometheus_config.as_ref().map(|cfg| &cfg.registry),
 	);
@@ -1030,11 +1025,7 @@ pub fn new_light_node<N: NetworkBackend<Block, <Block as BlockT>::Hash>>(
 		transaction_pool.clone(),
 	);
 
-	let sampler = DaSamplingDownloader::new(
-		blob_handle.clone(),
-		spec.protocol_name.clone(),
-		verify_eval_app_id,
-	);
+	let sampler = DaSamplingDownloader::new(blob_handle.clone(), spec.protocol_name.clone());
 
 	let mut finalized_stream = client.finality_notification_stream();
 	task_manager

@@ -143,8 +143,4 @@ pub struct LightCmd {
 	/// Number of samples per blob
 	#[arg(long, default_value = "16")]
 	pub samples_per_blob: u32,
-
-	/// If set, only verify eval proofs for this app ID
-	#[arg(long, value_name = "appID")]
-	pub verify_eval_app_id: Option<u32>,
 }
