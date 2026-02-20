@@ -73,7 +73,7 @@ where
 		if let Some(app_id) = config.app_id {
 			info!(
 				target: LOG_TARGET,
-				"⚠️ app_id={} filtering is not yet supported; sampling all app_ids",
+				"⚙️  DA sampling is enabled for app_id {} only",
 				app_id
 			);
 		}
@@ -81,7 +81,7 @@ where
 		if config.with_ev_proof {
 			info!(
 				target: LOG_TARGET,
-				"⚠️ Evaluation proof verification is enabled but not yet implemented",
+				"⚙️  Evaluation proof verification is enabled",
 			);
 		}
 		Self {
@@ -130,9 +130,26 @@ where
 			return;
 		}
 
+		let blob_indices = if let Some(app_id) = self.config.app_id {
+			let indices = self.get_app_id_blob_indices(header.hash(), blobs, app_id);
+			if indices.is_empty() {
+				debug!(
+					target: LOG_TARGET,
+					"⏭️ No blobs matched app_id={} in block {:?}",
+					app_id,
+					header.hash()
+				);
+				return;
+			}
+			indices
+		} else {
+			(0..blobs.len()).collect()
+		};
+
 		// Randomly select ONE blob per block to sample from
 		let mut rng = StdRng::from_entropy();
-		let blob_index = rng.gen_range(0..blobs.len());
+		let selected_index = rng.gen_range(0..blob_indices.len());
+		let blob_index = blob_indices[selected_index];
 		let blob = &blobs[blob_index];
 
 		info!(
@@ -173,12 +190,30 @@ where
 			}
 		}
 
-		// TODO: What do we usually do on sampling failure?
 		error!(
 			target: LOG_TARGET,
 			"❌ DA sampling FAILED for block {:?}: all peers exhausted",
 			header.hash()
 		);
+	}
+
+	// Ideally having app_id in the header would be best, for now using eval data to filter blobs by app_id (if configured)
+	fn get_app_id_blob_indices(
+		&self,
+		block_hash: H256,
+		blobs: &[FriBlobCommitment],
+		app_id: u32,
+	) -> Vec<usize> {
+		blobs
+			.iter()
+			.enumerate()
+			.filter_map(|(idx, blob)| {
+				self.blob_handle
+					.get_eval_data_for_blob(block_hash, blob.blob_hash)
+					.filter(|eval_data| eval_data.app_id.0 == app_id)
+					.map(|_| idx)
+			})
+			.collect()
 	}
 
 	// Returns peer IDs to try for DA sampling:
@@ -402,38 +437,53 @@ where
 				.map_err(|_| SamplingError::VerificationFailed)?;
 		}
 
-		// TODO: Based on eval_proof options, verify evaluation proof if provided
-		if let Some(eval_data) = self
-			.blob_handle
-			.get_eval_data_for_blob(block_hash, blob.blob_hash)
-		{
-			match avail_blob::validation::validate_fri_proof(
-				blob.size_bytes as usize,
-				&eval_data.eval_point_seed,
-				&eval_data.eval_claim,
-				&eval_data.eval_proof,
-			) {
-				Ok(()) => {
-					info!(
+		if self.config.with_ev_proof {
+			if let Some(eval_data) = self
+				.blob_handle
+				.get_eval_data_for_blob(block_hash, blob.blob_hash)
+			{
+				let app_match = self
+					.config
+					.app_id
+					.map_or(true, |id| eval_data.app_id.0 == id);
+				if !app_match {
+					debug!(
 						target: LOG_TARGET,
-						"✅ Proof verification PASSED for blob {:?} (eval data from topic)",
-						blob.blob_hash
+						"Skipping eval-proof verification for blob {:?}: app_id mismatch (configured {:?}, received {})",
+						blob.blob_hash,
+						self.config.app_id,
+						eval_data.app_id.0
 					);
-				},
-				Err(e) => {
-					warn!(
-						target: LOG_TARGET,
-						"❌ Proof verification failed for blob {:?}: {e}",
-						blob.blob_hash
-					);
-				},
+				} else {
+					match avail_blob::validation::validate_fri_proof(
+						blob.size_bytes as usize,
+						&eval_data.eval_point_seed,
+						&eval_data.eval_claim,
+						&eval_data.eval_proof,
+					) {
+						Ok(()) => {
+							info!(
+								target: LOG_TARGET,
+								"✅ Proof verification PASSED for blob {:?} (eval data from topic)",
+								blob.blob_hash
+							);
+						},
+						Err(e) => {
+							warn!(
+								target: LOG_TARGET,
+								"❌ Proof verification failed for blob {:?}: {e}",
+								blob.blob_hash
+							);
+						},
+					}
+				}
+			} else {
+				warn!(
+					target: LOG_TARGET,
+					"⚠️ No eval data available for blob {:?}, skipping FRI proof verification",
+					blob.blob_hash
+				);
 			}
-		} else {
-			warn!(
-				target: LOG_TARGET,
-				"⚠️ No eval data available for blob {:?}, skipping FRI proof verification",
-				blob.blob_hash
-			);
 		}
 
 		info!(

@@ -341,7 +341,7 @@ where
 							{
 								log::info!(
 									target: LOG_TARGET,
-									"Received eval claims message for block {:?}, blob {:?}, app_id {:?}",
+									"✅ Received eval claims message for block {:?}, blob {:?}, app_id {:?}",
 									msg.block_hash,
 									msg.blob_hash,
 									msg.app_id
