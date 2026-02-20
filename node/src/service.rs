@@ -900,7 +900,7 @@ pub fn new_full(config: Configuration, cli: Cli) -> Result<TaskManager, ServiceE
 /// Builds a new service for a light client
 pub fn new_light_node<N: NetworkBackend<Block, <Block as BlockT>::Hash>>(
 	config: Configuration,
-	_cli: Cli,
+	cli: Cli,
 ) -> Result<TaskManager, ServiceError> {
 	log::info!(target: LOG_TARGET, "Starting Avail DA Light Client");
 	let metrics = N::register_notification_metrics(
@@ -1025,7 +1025,20 @@ pub fn new_light_node<N: NetworkBackend<Block, <Block as BlockT>::Hash>>(
 		transaction_pool.clone(),
 	);
 
-	let sampler = DaSamplingDownloader::new(blob_handle.clone(), spec.protocol_name.clone());
+	let sampling_config = match &cli.subcommand {
+		Some(crate::cli::Subcommand::LightClient(cmd)) => da_sampling::client::DaSamplingConfig {
+			samples_per_blob: cmd.samples_per_blob,
+			with_ev_proof: cmd.with_ev_proof,
+			app_id: cmd.app_id,
+		},
+		_ => da_sampling::client::DaSamplingConfig::default(),
+	};
+
+	let sampler = DaSamplingDownloader::new(
+		blob_handle.clone(),
+		spec.protocol_name.clone(),
+		sampling_config,
+	);
 
 	let mut finalized_stream = client.finality_notification_stream();
 	task_manager

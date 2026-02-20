@@ -36,21 +36,58 @@ where
 {
 	blob_handle: Arc<BlobHandle<B>>,
 	protocol: ProtocolName,
+	config: DaSamplingConfig,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct DaSamplingConfig {
+	pub samples_per_blob: u32,
+	pub with_ev_proof: bool,
+	pub app_id: Option<u32>,
+}
+
+impl Default for DaSamplingConfig {
+	fn default() -> Self {
+		Self {
+			samples_per_blob: 16,
+			with_ev_proof: false,
+			app_id: None,
+		}
+	}
 }
 
 impl<B> DaSamplingDownloader<B>
 where
 	B: BlockT<Header = DaHeader, Hash = H256>,
 {
-	pub fn new(blob_handle: Arc<BlobHandle<B>>, protocol: ProtocolName) -> Self {
+	pub fn new(
+		blob_handle: Arc<BlobHandle<B>>,
+		protocol: ProtocolName,
+		config: DaSamplingConfig,
+	) -> Self {
 		info!(
 			target: LOG_TARGET,
 			"Initializing DA sampling downloader with protocol {:?}",
 			protocol
 		);
+		if let Some(app_id) = config.app_id {
+			info!(
+				target: LOG_TARGET,
+				"⚙️  DA sampling is enabled for app_id {} only",
+				app_id
+			);
+		}
+
+		if config.with_ev_proof {
+			info!(
+				target: LOG_TARGET,
+				"⚙️  Evaluation proof verification is enabled",
+			);
+		}
 		Self {
 			blob_handle,
 			protocol,
+			config,
 		}
 	}
 
@@ -93,9 +130,26 @@ where
 			return;
 		}
 
+		let blob_indices = if let Some(app_id) = self.config.app_id {
+			let indices = self.get_app_id_blob_indices(header.hash(), blobs, app_id);
+			if indices.is_empty() {
+				debug!(
+					target: LOG_TARGET,
+					"⏭️ No blobs matched app_id={} in block {:?}",
+					app_id,
+					header.hash()
+				);
+				return;
+			}
+			indices
+		} else {
+			(0..blobs.len()).collect()
+		};
+
 		// Randomly select ONE blob per block to sample from
 		let mut rng = StdRng::from_entropy();
-		let blob_index = rng.gen_range(0..blobs.len());
+		let selected_index = rng.gen_range(0..blob_indices.len());
+		let blob_index = blob_indices[selected_index];
 		let blob = &blobs[blob_index];
 
 		info!(
@@ -136,12 +190,30 @@ where
 			}
 		}
 
-		// TODO: What do we usually do on sampling failure?
 		error!(
 			target: LOG_TARGET,
 			"❌ DA sampling FAILED for block {:?}: all peers exhausted",
 			header.hash()
 		);
+	}
+
+	// Ideally having app_id in the header would be best, for now using eval data to filter blobs by app_id (if configured)
+	fn get_app_id_blob_indices(
+		&self,
+		block_hash: H256,
+		blobs: &[FriBlobCommitment],
+		app_id: u32,
+	) -> Vec<usize> {
+		blobs
+			.iter()
+			.enumerate()
+			.filter_map(|(idx, blob)| {
+				self.blob_handle
+					.get_eval_data_for_blob(block_hash, blob.blob_hash)
+					.filter(|eval_data| eval_data.app_id.0 == app_id)
+					.map(|_| idx)
+			})
+			.collect()
 	}
 
 	// Returns peer IDs to try for DA sampling:
@@ -227,7 +299,7 @@ where
 
 	fn sample_cells(&self, max: u32) -> Vec<u32> {
 		let mut rng = StdRng::from_entropy();
-		let target = 16.min(max as usize);
+		let target = (self.config.samples_per_blob as usize).min(max as usize);
 
 		let mut indices = HashSet::with_capacity(target);
 
@@ -365,38 +437,53 @@ where
 				.map_err(|_| SamplingError::VerificationFailed)?;
 		}
 
-		// Optionally verify FRI proof using eval data from p2p/sidecar topic (per diagram: verify against header)
-		if let Some(eval_data) = self
-			.blob_handle
-			.get_eval_data_for_blob(block_hash, blob.blob_hash)
-		{
-			match avail_blob::validation::validate_fri_proof(
-				blob.size_bytes as usize,
-				&eval_data.eval_point_seed,
-				&eval_data.eval_claim,
-				&eval_data.eval_proof,
-			) {
-				Ok(()) => {
-					info!(
+		if self.config.with_ev_proof {
+			if let Some(eval_data) = self
+				.blob_handle
+				.get_eval_data_for_blob(block_hash, blob.blob_hash)
+			{
+				let app_match = self
+					.config
+					.app_id
+					.map_or(true, |id| eval_data.app_id.0 == id);
+				if !app_match {
+					debug!(
 						target: LOG_TARGET,
-						"✅ Proof verification PASSED for blob {:?} (eval data from topic)",
-						blob.blob_hash
+						"Skipping eval-proof verification for blob {:?}: app_id mismatch (configured {:?}, received {})",
+						blob.blob_hash,
+						self.config.app_id,
+						eval_data.app_id.0
 					);
-				},
-				Err(e) => {
-					warn!(
-						target: LOG_TARGET,
-						"❌ Proof verification failed for blob {:?}: {e}",
-						blob.blob_hash
-					);
-				},
+				} else {
+					match avail_blob::validation::validate_fri_proof(
+						blob.size_bytes as usize,
+						&eval_data.eval_point_seed,
+						&eval_data.eval_claim,
+						&eval_data.eval_proof,
+					) {
+						Ok(()) => {
+							info!(
+								target: LOG_TARGET,
+								"✅ Proof verification PASSED for blob {:?} (eval data from topic)",
+								blob.blob_hash
+							);
+						},
+						Err(e) => {
+							warn!(
+								target: LOG_TARGET,
+								"❌ Proof verification failed for blob {:?}: {e}",
+								blob.blob_hash
+							);
+						},
+					}
+				}
+			} else {
+				warn!(
+					target: LOG_TARGET,
+					"⚠️ No eval data available for blob {:?}, skipping FRI proof verification",
+					blob.blob_hash
+				);
 			}
-		} else {
-			warn!(
-				target: LOG_TARGET,
-				"⚠️ No eval data available for blob {:?}, skipping FRI proof verification",
-				blob.blob_hash
-			);
 		}
 
 		info!(

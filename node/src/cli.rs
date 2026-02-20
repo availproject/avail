@@ -143,4 +143,8 @@ pub struct LightCmd {
 	/// Number of samples per blob
 	#[arg(long, default_value = "16")]
 	pub samples_per_blob: u32,
+
+	/// Only sample blobs with given app_id
+	#[arg(long)]
+	pub app_id: Option<u32>,
 }
