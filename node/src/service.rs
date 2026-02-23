@@ -38,6 +38,7 @@ use sc_client_api::BlockchainEvents;
 use sc_client_api::{Backend, BlockBackend};
 use sc_consensus::{BlockImportParams, Verifier};
 use sc_consensus_babe::{self, SlotProportion};
+use sc_consensus_grandpa::{BeforeBestBlockBy, ThreeQuartersOfTheUnfinalizedChain};
 use sc_network::{service::traits::NetworkService, Event, NetworkBackend, NetworkEventStream};
 use sc_network_sync::SyncingService;
 use sc_network_sync::WarpSyncConfig;
@@ -795,6 +796,10 @@ pub fn new_full_base<N: NetworkBackend<Block, <Block as BlockT>::Hash>>(
 	};
 
 	if enable_grandpa {
+		let voting_rule = sc_consensus_grandpa::VotingRulesBuilder::new()
+			.add(BeforeBestBlockBy(2u32.into()))
+			.add(ThreeQuartersOfTheUnfinalizedChain)
+			.build();
 		let grandpa_config = sc_consensus_grandpa::GrandpaParams {
 			config: grandpa_config,
 			link: grandpa_link,
@@ -802,7 +807,7 @@ pub fn new_full_base<N: NetworkBackend<Block, <Block as BlockT>::Hash>>(
 			notification_service: grandpa_notification_service,
 			sync: Arc::new(sync_service.clone()),
 			telemetry: telemetry.as_ref().map(|x| x.handle()),
-			voting_rule: sc_consensus_grandpa::VotingRulesBuilder::default().build(),
+			voting_rule,
 			prometheus_registry,
 			shared_voter_state,
 			offchain_tx_pool_factory: OffchainTransactionPoolFactory::new(transaction_pool.clone()),
