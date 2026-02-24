@@ -267,9 +267,6 @@ frame-system = { path = "pallets/system" }
 frame-system-benchmarking = { path = "pallets/system/benchmarking" }
 frame-system-rpc-runtime-api = { path = "pallets/system/rpc/runtime-api" }
 
-# [patch."https://github.com/paritytech/polkadot-sdk"]
-# sp-crypto-ec-utils = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "2f44d2f9ddc3f352f2e5a5bc4710349914c086a6" }
-
 [patch.crates-io]
 # Other stuff
 uint = { git = "https://github.com/paritytech/parity-common.git", tag = "uint-v0.9.5" }
