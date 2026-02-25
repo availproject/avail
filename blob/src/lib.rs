@@ -27,6 +27,7 @@ use crate::{
 };
 use anyhow::{anyhow, Result};
 use avail_core::header::extension::CommitmentScheme;
+use avail_fri::FriParamsVersion;
 use codec::{Decode, Encode};
 use da_control::BlobRuntimeParameters;
 use da_runtime::apis::BlobApi;
@@ -214,6 +215,8 @@ async fn handle_blob_received_notification<Block>(
 
 		match validate_fri_proof(
 			blob_received.size as usize,
+			FriParamsVersion(0),
+			&blob_received.commitment,
 			eval_point_seed,
 			eval_claim,
 			&blob_received
@@ -1033,6 +1036,8 @@ async fn handle_blob_stored_notification<Block>(
 
 		match validate_fri_proof(
 			blob_metadata.size as usize,
+			FriParamsVersion(0),
+			&blob_metadata.commitment,
 			&blob_metadata
 				.eval_point_seed
 				.as_ref()

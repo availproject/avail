@@ -467,6 +467,8 @@ where
 				} else {
 					match avail_blob::validation::validate_fri_proof(
 						blob.size_bytes as usize,
+						FriParamsVersion(0),
+						&blob.commitment,
 						&eval_data.eval_point_seed,
 						&eval_data.eval_claim,
 						&eval_data.eval_proof,

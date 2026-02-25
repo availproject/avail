@@ -8,7 +8,7 @@ use avail_fri::{
 	core::{FriBiniusPCS, B128},
 	encoding::{mle_dims_from_blob_size, BytesEncoder},
 	eval_utils::{derive_evaluation_point, eval_claim_from_bytes},
-	FriParamsVersion,
+	transcript_from_bytes, FriParamsVersion,
 };
 use avail_observability::metrics::BlobMetrics;
 use codec::Decode;
@@ -232,11 +232,32 @@ pub fn validate_fri_commitment(
 
 pub fn validate_fri_proof(
 	blob_size: usize,
+	params_version: FriParamsVersion,
+	expected_commitment: &[u8],
 	eval_point_seed: &[u8; 32],
 	eval_claim: &[u8; 16],
 	eval_proof: &[u8],
 ) -> Result<(), String> {
-	let params_version = FriParamsVersion(0);
+	const FRI_COMMITMENT_SIZE: usize = 32;
+
+	if expected_commitment.len() != FRI_COMMITMENT_SIZE {
+		return Err(format!(
+			"Fri commitment must be {} bytes, got {}",
+			FRI_COMMITMENT_SIZE,
+			expected_commitment.len()
+		));
+	}
+
+	let mut transcript = transcript_from_bytes(eval_proof.to_vec());
+	let retrieved_commitment: [u8; 32] = transcript
+		.message()
+		.read()
+		.map_err(|e| format!("Failed to read commitment from transcript: {}", e))?;
+
+	if retrieved_commitment.as_slice() != expected_commitment {
+		return Err("FRI proof commitment does not match blob commitment".into());
+	}
+
 	let (log_len, n_vars) = mle_dims_from_blob_size(blob_size);
 	let cfg = params_version.to_config(n_vars);
 	let pcs = FriBiniusPCS::new(cfg);

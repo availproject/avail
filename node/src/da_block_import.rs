@@ -176,6 +176,8 @@ where
 
 						avail_blob::validation::validate_fri_proof(
 							da.size_bytes as usize,
+							params_version,
+							&da.commitments,
 							&da.eval_point_seed.expect("checked above; qed"),
 							&da.eval_claim.expect("checked above; qed"),
 							da.eval_proof.as_ref().expect("checked above; qed"),
