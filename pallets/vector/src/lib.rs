@@ -16,7 +16,7 @@ use frame_support::{
 };
 use sp_core::H256;
 use sp_runtime::SaturatedConversion;
-use sp_std::{vec, vec::Vec};
+use sp_std::vec::Vec;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
