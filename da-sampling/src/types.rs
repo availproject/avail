@@ -47,7 +47,7 @@ pub enum SamplingError {
 	#[error("No eligible peers available for DA sampling")]
 	NoPeersAvailable,
 
-	/// Cell length is invalid (expected 16 bytes for B128)
-	#[error("Invalid cell length: expected 16 bytes, got {actual}")]
+	/// Cell length is invalid (expected non-empty multiple of 16 bytes for B128 cells)
+	#[error("Invalid cell length: expected non-empty multiple of 16 bytes, got {actual}")]
 	InvalidCellLength { actual: usize },
 }
