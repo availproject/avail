@@ -65,6 +65,8 @@ use tokio::task;
 struct FriSamplingCacheEntry {
 	commit_output: Arc<avail_fri::FriCommitOutput<B128>>,
 	pcs: Arc<avail_fri::FriBiniusPCS>,
+	log_batch_size: usize,
+	leaf_count: usize,
 }
 
 // block_hash, blob_hash
@@ -767,12 +769,24 @@ where
 	) -> RpcResult<Vec<SamplingProof>> {
 		let at = self.at_or_best(at);
 		let cache_key = (at.into(), blob_hash);
+		let submissions = self.load_da_submissions(at)?;
+		let expected_commitment = submissions
+			.iter()
+			.find(|d| d.hash == blob_hash)
+			.map(|d| d.commitments.clone())
+			.ok_or_else(|| {
+				internal_err!(
+					"Blob submission data not found for blob {:?} in block {:?}",
+					blob_hash,
+					at
+				)
+			})?;
 
 		if let Some(entry) = {
 			let cache = self.fri_sampling_cache.lock();
 			cache.get(&cache_key).cloned()
 		} {
-			return build_sampling_proofs(entry, cells);
+			return build_sampling_proofs(entry, cells, &expected_commitment);
 		}
 
 		let blob = self.get_blob(blob_hash, Some(at)).await?;
@@ -793,10 +807,19 @@ where
 			pcs.commit(&packed.packed_mle, &ctx)
 				.map_err(|e| internal_err!("FRI commit failed: {e}"))?,
 		);
+		let log_batch_size = ctx.fri_params.log_batch_size();
+		let leaf_count = 1usize
+			<< (ctx
+				.fri_params
+				.rs_code()
+				.log_len()
+				.saturating_sub(log_batch_size));
 
 		let entry = FriSamplingCacheEntry {
 			pcs: pcs.clone(),
 			commit_output: commit_output.clone(),
+			log_batch_size,
+			leaf_count,
 		};
 
 		{
@@ -804,16 +827,22 @@ where
 			cache.insert(cache_key, entry.clone());
 		}
 
-		build_sampling_proofs(entry, cells)
+		build_sampling_proofs(entry, cells, &expected_commitment)
 	}
 }
 
 fn build_sampling_proofs(
 	entry: FriSamplingCacheEntry,
 	cells: Vec<u32>,
+	expected_commitment: &[u8],
 ) -> RpcResult<Vec<SamplingProof>> {
-	let max = entry.commit_output.codeword.len();
-	if cells.iter().any(|&c| (c as usize) >= max) {
+	if entry.commit_output.commitment.as_slice() != expected_commitment {
+		return Err(internal_err!(
+			"Blob commitment mismatch between block submission and local blob data"
+		));
+	}
+
+	if cells.iter().any(|&c| (c as usize) >= entry.leaf_count) {
 		return Err(internal_err!("One or more cell indices out of bounds"));
 	}
 
@@ -821,16 +850,27 @@ fn build_sampling_proofs(
 
 	for &cell in &cells {
 		let idx = cell as usize;
-		let value = entry.commit_output.codeword[idx];
+		let sampled_values = entry
+			.commit_output
+			.codeword
+			.to_ref()
+			.chunk(entry.log_batch_size, idx)
+			.iter_scalars()
+			.collect::<Vec<_>>();
 
 		let transcript = entry
 			.pcs
 			.inclusion_proof::<B128>(&entry.commit_output.committed, idx)
 			.map_err(|e| internal_err!("Sampling proof failed: {e}"))?;
 
+		let mut cell_bytes = Vec::with_capacity(sampled_values.len() * 16);
+		for value in sampled_values {
+			cell_bytes.extend_from_slice(&value.val().to_le_bytes());
+		}
+
 		proofs.push(SamplingProof::new(
 			cell,
-			value.val().to_le_bytes().to_vec(),
+			cell_bytes,
 			transcript_to_bytes(&transcript),
 		));
 	}
