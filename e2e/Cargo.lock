@@ -634,7 +634,7 @@ dependencies = [
 [[package]]
 name = "avail-core"
 version = "0.6.2"
-source = "git+https://github.com/availproject/avail-core.git?rev=3e43d2dec6a9198c23e302ce07e44d3737b178da#3e43d2dec6a9198c23e302ce07e44d3737b178da"
+source = "git+https://github.com/availproject/avail-core.git?rev=538a4493607d28c40688b7153929860312feec05#538a4493607d28c40688b7153929860312feec05"
 dependencies = [
  "binary-merkle-tree 16.1.0 (git+https://github.com/availproject/polkadot-sdk?rev=2f44d2f9ddc3f352f2e5a5bc4710349914c086a6)",
  "blake2b_simd",
@@ -665,9 +665,9 @@ dependencies = [
 [[package]]
 name = "avail-fri"
 version = "0.1.0"
-source = "git+https://github.com/availproject/avail-core.git?rev=3e43d2dec6a9198c23e302ce07e44d3737b178da#3e43d2dec6a9198c23e302ce07e44d3737b178da"
+source = "git+https://github.com/availproject/avail-core.git?rev=538a4493607d28c40688b7153929860312feec05#538a4493607d28c40688b7153929860312feec05"
 dependencies = [
- "avail-core 0.6.2 (git+https://github.com/availproject/avail-core.git?rev=3e43d2dec6a9198c23e302ce07e44d3737b178da)",
+ "avail-core 0.6.2 (git+https://github.com/availproject/avail-core.git?rev=538a4493607d28c40688b7153929860312feec05)",
  "binius-field",
  "binius-iop",
  "binius-math",

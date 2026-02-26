@@ -3,15 +3,14 @@ use crate::{
 	traits::{NonceCacheApiT, RuntimeApiT},
 	utils::{extract_signer_and_nonce, CommitmentQueueMessage},
 };
-use avail_fri::FriProof;
 use avail_fri::{
 	core::{FriBiniusPCS, B128},
 	encoding::{mle_dims_from_blob_size, BytesEncoder},
 	eval_utils::{derive_evaluation_point, eval_claim_from_bytes},
-	transcript_from_bytes, FriParamsVersion,
+	transcript_from_bytes, FriEvalProofBundle, FriParamsVersion,
 };
 use avail_observability::metrics::BlobMetrics;
-use codec::Decode;
+use codec::{Decode, Encode};
 // use da_commitment::build_fri_commitments::build_fri_da_commitment;
 use da_control::Call;
 use da_runtime::RuntimeCall;
@@ -21,6 +20,19 @@ use sp_core::keccak_256;
 use sp_core::H256;
 use sp_runtime::transaction_validity::TransactionSource;
 use std::sync::Arc;
+
+const EXTRA_QUERY_DOMAIN_SEP: &[u8] = b"fri-extra-query-v1";
+
+fn derive_extra_query_index(blob_hash: H256, commitment: &[u8], leaf_count: usize) -> usize {
+	let mut preimage = Vec::with_capacity(32 + commitment.len() + EXTRA_QUERY_DOMAIN_SEP.len());
+	preimage.extend_from_slice(blob_hash.as_bytes());
+	preimage.extend_from_slice(commitment);
+	preimage.extend_from_slice(EXTRA_QUERY_DOMAIN_SEP);
+	let hash = keccak_256(&preimage);
+	let mut arr = [0u8; 8];
+	arr.copy_from_slice(&hash[..8]);
+	(u64::from_le_bytes(arr) as usize) % leaf_count
+}
 
 pub fn initial_validation(
 	max_blob_size: usize,
@@ -220,13 +232,24 @@ pub fn validate_fri_commitment(
 	let eval_claim = eval_claim_from_bytes(eval_claim)
 		.map_err(|e| format!("Failed to deserialize evaluation claim: {}", e))?;
 
-	let proof = pcs
-		.prove::<B128>(packed.packed_mle.clone(), &ctx, &commit_output, &eval_point)
+	let (terminate_codeword, query_prover, proof) = pcs
+		.prove_with_openings::<B128>(packed.packed_mle.clone(), &ctx, &commit_output, &eval_point)
+		.map_err(|e| e.to_string())?;
+	let log_batch_size = ctx.fri_params.log_batch_size();
+	let leaf_count = 1usize
+		<< (ctx
+			.fri_params
+			.rs_code()
+			.log_len()
+			.saturating_sub(log_batch_size));
+	let extra_index = derive_extra_query_index(blob_hash, provided_commitment, leaf_count);
+	let bundle = pcs
+		.build_eval_proof_bundle(&proof, &terminate_codeword, &query_prover, extra_index)
 		.map_err(|e| e.to_string())?;
 
-	pcs.verify(&proof, eval_claim, &eval_point, &ctx)
+	pcs.verify_eval_proof_bundle(&bundle, eval_claim, &eval_point, &ctx)
 		.map_err(|e| e.to_string())?;
-	let proof_bytes = proof.transcript_bytes;
+	let proof_bytes = bundle.encode();
 	Ok(proof_bytes)
 }
 
@@ -248,7 +271,8 @@ pub fn validate_fri_proof(
 		));
 	}
 
-	let mut transcript = transcript_from_bytes(eval_proof.to_vec());
+	let bundle = FriEvalProofBundle::decode(&mut &eval_proof[..]).map_err(|e| e.to_string())?;
+	let mut transcript = transcript_from_bytes(bundle.eval_proof.clone());
 	let retrieved_commitment: [u8; 32] = transcript
 		.message()
 		.read()
@@ -268,9 +292,6 @@ pub fn validate_fri_proof(
 	let eval_point = derive_evaluation_point(*eval_point_seed, n_vars);
 	let eval_claim = eval_claim_from_bytes(eval_claim)
 		.map_err(|e| format!("Failed to deserialize evaluation claim: {}", e))?;
-	let proof = FriProof {
-		transcript_bytes: eval_proof.to_vec(),
-	};
-	pcs.verify(&proof, eval_claim, &eval_point, &ctx)
+	pcs.verify_eval_proof_bundle(&bundle, eval_claim, &eval_point, &ctx)
 		.map_err(|e| e.to_string())
 }
