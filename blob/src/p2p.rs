@@ -417,14 +417,26 @@ where
 					continue;
 				}
 
-				let blobs = match header.extension() {
-					HeaderExtension::Fri(FriHeader::V1(ext)) => &ext.blobs,
-					_ => continue,
+				let block_hash = header.hash();
+				let infos = match blob_db.list_blob_infos_by_block(&block_hash) {
+					Ok(infos) => infos,
+					Err(e) => {
+						log::warn!(
+							target: LOG_TARGET,
+							"⚠️ Failed to list BlobInfo entries for block {:?}: {e}",
+							block_hash
+						);
+						continue;
+					},
 				};
 
-				let missing: Vec<H256> = blobs
+				if infos.is_empty() {
+					continue;
+				}
+
+				let missing: Vec<H256> = infos
 					.iter()
-					.map(|b| b.blob_hash)
+					.map(|info| info.hash)
 					.filter(|h| {
 						blob_db
 							.get_blob_ownerships(h)

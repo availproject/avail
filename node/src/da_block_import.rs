@@ -160,35 +160,6 @@ where
 				let (params_version, fri_version) = match fri_hdr {
 					FriHeader::V1(inner) => (inner.params_version, FriHeaderVersion::V1),
 				};
-
-				// Verify FRI proofs unless syncing
-				if !skip_sync {
-					for da in submitted_blobs.iter() {
-						if da.eval_point_seed.is_none()
-							|| da.eval_claim.is_none()
-							|| da.eval_proof.is_none()
-						{
-							return Err(ConsensusError::ClientImport(format!(
-								"Missing FRI proof data for blob {:?}",
-								da.hash
-							)));
-						}
-
-						avail_blob::validation::validate_fri_proof(
-							da.size_bytes as usize,
-							&da.eval_point_seed.expect("checked above; qed"),
-							&da.eval_claim.expect("checked above; qed"),
-							da.eval_proof.as_ref().expect("checked above; qed"),
-						)
-						.map_err(|e| {
-							ConsensusError::ClientImport(format!(
-								"FRI proof validation failed for blob {:?}: {e}",
-								da.hash
-							))
-						})?;
-					}
-				}
-
 				build_extension::build_fri_extension(
 					submitted_blobs,
 					data_root,
