@@ -10,6 +10,7 @@ use crate::{
 	MINUTES, SLOT_DURATION, VERSION,
 };
 use avail_core::currency::{Balance, AVAIL, CENTS, NANO_AVAIL, PICO_AVAIL};
+use avail_core::FriParamsVersion;
 use codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use constants::time::DAYS;
 use frame_election_provider_support::{
@@ -945,6 +946,12 @@ impl frame_system::Config for Runtime {
 	type Header = Header;
 	type MaxDiffAppIdPerBlock = ConstU32<1_024>;
 	type MaxTxPerAppIdPerBlock = ConstU32<8_192>;
+
+	// Runtime source of truth for FRI params version. This is storage-backed in
+	// da-control and can be updated via governance.
+	fn da_fri_params_version() -> FriParamsVersion {
+		da_control::Pallet::<Runtime>::fri_params_version()
+	}
 }
 
 impl<C> frame_system::offchain::CreateTransactionBase<C> for Runtime

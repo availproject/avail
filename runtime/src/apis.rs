@@ -11,6 +11,7 @@ use avail_core::{
 	data_proof::{DataProof, ProofResponse, SubTrie},
 	header::extension::CommitmentScheme,
 	header::HeaderExtension,
+	FriParamsVersion,
 };
 use sp_runtime::OpaqueExtrinsic;
 
@@ -80,6 +81,9 @@ decl_runtime_apis! {
 
 		/// Return blob runtime parameters.
 		fn get_blob_runtime_parameters() -> da_control::BlobRuntimeParameters;
+
+		/// Return active FRI params version.
+		fn get_fri_params_version() -> FriParamsVersion;
 
 		/// Expose accounts nonce
 		fn account_nonce(who: AccountId32) -> u32;
@@ -528,6 +532,10 @@ impl_runtime_apis! {
 
 		fn get_blob_runtime_parameters() -> da_control::BlobRuntimeParameters {
 			da_control::Pallet::<Runtime>::blob_runtime_parameters()
+		}
+
+		fn get_fri_params_version() -> FriParamsVersion {
+			da_control::Pallet::<Runtime>::fri_params_version()
 		}
 
 		fn account_nonce(who: AccountId32) -> u32 {

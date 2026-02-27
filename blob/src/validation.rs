@@ -187,6 +187,7 @@ pub fn validate_fri_commitment(
 	blob_hash: H256,
 	blob: &[u8],
 	provided_commitment: &[u8],
+	params_version: FriParamsVersion,
 	eval_point_seed: &[u8; 32],
 	eval_claim: &[u8; 16],
 ) -> Result<Vec<u8>, String> {
@@ -200,8 +201,7 @@ pub fn validate_fri_commitment(
 		));
 	}
 
-	// let expected = build_fri_da_commitment(blob, FriParamsVersion(0));
-	let params_version = FriParamsVersion(0);
+	// let expected = build_fri_da_commitment(blob, params_version);
 	// Encode bytes → multilinear extension over B128
 	let encoder = BytesEncoder::<B128>::new();
 	let packed = encoder

@@ -1,10 +1,13 @@
 use crate::{CellProof, DaSamplingRequest, DaSamplingResponse};
 use avail_blob::p2p::BlobHandle;
+use da_runtime::apis::BlobApi as _;
 use prost::Message;
+use sc_client_api::HeaderBackend;
 use sc_network::{
 	request_responses::{IncomingRequest, OutgoingResponse},
 	PeerId,
 };
+use sp_api::ProvideRuntimeApi;
 use sp_core::H256;
 use sp_runtime::traits::Block as BlockT;
 
@@ -149,7 +152,24 @@ where
 			.bytes_to_packed_mle(&blob.data)
 			.map_err(|e| e.to_string())?;
 
-		let cfg = FriParamsVersion(0).to_config(packed.total_n_vars);
+		let at_hash = self.blob_handle.client.info().best_hash;
+		let params_version = match self
+			.blob_handle
+			.client
+			.runtime_api()
+			.get_fri_params_version(at_hash)
+		{
+			Ok(v) => v,
+			Err(e) => {
+				warn!(
+					target: LOG_TARGET,
+					"Failed to fetch FRI params version at {:?}: {e:?}. Falling back to V0",
+					at_hash
+				);
+				FriParamsVersion::V0
+			},
+		};
+		let cfg = params_version.to_config(packed.total_n_vars);
 		let pcs = Arc::new(FriBiniusPCS::new(cfg));
 
 		let ctx = pcs

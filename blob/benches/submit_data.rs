@@ -115,6 +115,13 @@ impl RuntimeApiT for DummyRuntimeApi {
 	) -> Result<avail_core::header::extension::CommitmentScheme, ApiError> {
 		Ok(avail_core::header::extension::CommitmentScheme::Fri)
 	}
+
+	fn get_fri_params_version(
+		&self,
+		_block_hash: H256,
+	) -> Result<avail_fri::FriParamsVersion, ApiError> {
+		Ok(avail_fri::FriParamsVersion::V0)
+	}
 }
 
 struct BuildTxOutput {

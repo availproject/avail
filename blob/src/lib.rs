@@ -172,6 +172,21 @@ async fn handle_blob_received_notification<Block>(
 			BlobRuntimeParameters::default()
 		},
 	};
+	let fri_params_version = match blob_handle
+		.client
+		.runtime_api()
+		.get_fri_params_version(finalized_hash)
+	{
+		Ok(v) => v,
+		Err(e) => {
+			log::error!(
+				target: LOG_TARGET,
+				"Could not get FRI params version from runtime at {:?}: {e:?}. Falling back to V0.",
+				finalized_hash
+			);
+			FriParamsVersion::V0
+		},
+	};
 
 	if blob_received.size > (blob_runtime_params.max_blob_size + 1024) {
 		log::error!(target: LOG_TARGET, "Invalid blob size");
@@ -215,7 +230,7 @@ async fn handle_blob_received_notification<Block>(
 
 		match validate_fri_proof(
 			blob_received.size as usize,
-			FriParamsVersion(0),
+			fri_params_version,
 			&blob_received.commitment,
 			eval_point_seed,
 			eval_claim,
@@ -499,6 +514,7 @@ async fn handle_blob_received_notification<Block>(
 						blob_received.hash,
 						&blob_data,
 						&blob_received.commitment,
+						fri_params_version,
 						&blob_received.eval_point_seed.expect("checked above"),
 						&blob_received.eval_claim.expect("checked above"),
 					) {
@@ -914,6 +930,21 @@ async fn handle_blob_stored_notification<Block>(
 	}
 
 	let finalized_hash = blob_stored.finalized_block_hash;
+	let fri_params_version = match blob_handle
+		.client
+		.runtime_api()
+		.get_fri_params_version(finalized_hash)
+	{
+		Ok(v) => v,
+		Err(e) => {
+			log::error!(
+				target: LOG_TARGET,
+				"Could not get FRI params version from runtime at {:?}: {e:?}. Falling back to V0.",
+				finalized_hash
+			);
+			FriParamsVersion::V0
+		},
+	};
 	let Some((address, _)) = get_validator_id_from_key(
 		&blob_stored.ownership_entry.babe_key,
 		&blob_handle.client,
@@ -1036,7 +1067,7 @@ async fn handle_blob_stored_notification<Block>(
 
 		match validate_fri_proof(
 			blob_metadata.size as usize,
-			FriParamsVersion(0),
+			fri_params_version,
 			&blob_metadata.commitment,
 			&blob_metadata
 				.eval_point_seed

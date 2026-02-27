@@ -32,7 +32,7 @@ use avail_observability::metrics::BlobMetrics;
 use codec::{Decode, Encode};
 use da_commitment::build_kzg_commitments::build_polynomial_grid;
 use da_control::{BlobRuntimeParameters, Call};
-use da_runtime::apis::KateApi;
+use da_runtime::apis::{BlobApi as _, KateApi};
 use da_runtime::{Runtime, RuntimeCall, UncheckedExtrinsic};
 use frame_system::limits::BlockLength;
 use jsonrpsee::{
@@ -796,7 +796,13 @@ where
 			.bytes_to_packed_mle(&blob.data)
 			.map_err(|e| internal_err!("bytes_to_packed_mle failed: {e}"))?;
 
-		let cfg = FriParamsVersion(0).to_config(packed.total_n_vars);
+		let params_version = self
+			.blob_handle
+			.client
+			.runtime_api()
+			.get_fri_params_version(at.into())
+			.map_err(|e| internal_err!("failed to get FRI params version from runtime: {e:?}"))?;
+		let cfg = params_version.to_config(packed.total_n_vars);
 		let pcs = Arc::new(FriBiniusPCS::new(cfg));
 
 		let ctx = pcs
@@ -1001,6 +1007,16 @@ pub async fn submit_blob_main_task(
 			BlobRuntimeParameters::default()
 		},
 	};
+	let fri_params_version = match runtime_client.get_fri_params_version(finalized_block_hash) {
+		Ok(v) => v,
+		Err(e) => {
+			log::error!(
+				"Could not get FRI params version from runtime at {:?}: {e:?}. Falling back to V0.",
+				finalized_block_hash
+			);
+			FriParamsVersion::V0
+		},
+	};
 	let max_blob_size = blob_params.max_blob_size as usize;
 
 	stop_watch.start("Initial Validation");
@@ -1104,6 +1120,7 @@ pub async fn submit_blob_main_task(
 				blob_hash,
 				&blob,
 				&provided_commitment,
+				fri_params_version,
 				&derived_eval_seed,
 				&eval_claim,
 			) {

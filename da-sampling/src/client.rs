@@ -117,8 +117,8 @@ where
 			},
 		};
 
-		let blobs = match extension {
-			FriHeader::V1(ext) => &ext.blobs,
+		let (blobs, params_version) = match extension {
+			FriHeader::V1(ext) => (&ext.blobs, ext.params_version),
 		};
 
 		if blobs.is_empty() {
@@ -169,7 +169,10 @@ where
 				peer
 			);
 
-			match self.request_and_verify(peer, header.hash(), blob).await {
+			match self
+				.request_and_verify(peer, header.hash(), blob, params_version)
+				.await
+			{
 				Ok(_) => {
 					info!(
 						target: LOG_TARGET,
@@ -315,6 +318,7 @@ where
 		peer: PeerId,
 		block_hash: B::Hash,
 		blob: &FriBlobCommitment,
+		params_version: FriParamsVersion,
 	) -> Result<(), SamplingError> {
 		debug!(
 			target: LOG_TARGET,
@@ -332,7 +336,7 @@ where
 			n_vars
 		);
 
-		let cfg = FriParamsVersion(0).to_config(n_vars);
+		let cfg = params_version.to_config(n_vars);
 		let pcs = FriBiniusPCS::new(cfg);
 		let ctx = pcs
 			.initialize_fri_context::<B128>(log_len)
@@ -467,7 +471,7 @@ where
 				} else {
 					match avail_blob::validation::validate_fri_proof(
 						blob.size_bytes as usize,
-						FriParamsVersion(0),
+						params_version,
 						&blob.commitment,
 						&eval_data.eval_point_seed,
 						&eval_data.eval_claim,
