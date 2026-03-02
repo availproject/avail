@@ -1,10 +1,13 @@
 use crate::{CellProof, DaSamplingRequest, DaSamplingResponse};
 use avail_blob::p2p::BlobHandle;
+use da_runtime::apis::BlobApi as _;
 use prost::Message;
+use sc_client_api::HeaderBackend;
 use sc_network::{
 	request_responses::{IncomingRequest, OutgoingResponse},
 	PeerId,
 };
+use sp_api::ProvideRuntimeApi;
 use sp_core::H256;
 use sp_runtime::traits::Block as BlockT;
 
@@ -148,17 +151,25 @@ where
 		let packed = encoder
 			.bytes_to_packed_mle(&blob.data)
 			.map_err(|e| e.to_string())?;
-		let codeword_len = packed.packed_mle.len();
-		for &idx in &req.cell_indices {
-			if idx as usize >= codeword_len {
-				return Err(format!(
-					"invalid sampling request: index {} >= codeword_len {}",
-					idx, codeword_len
-				));
-			}
-		}
 
-		let cfg = FriParamsVersion(0).to_config(packed.total_n_vars);
+		let at_hash = self.blob_handle.client.info().best_hash;
+		let params_version = match self
+			.blob_handle
+			.client
+			.runtime_api()
+			.get_fri_params_version(at_hash)
+		{
+			Ok(v) => v,
+			Err(e) => {
+				warn!(
+					target: LOG_TARGET,
+					"Failed to fetch FRI params version at {:?}: {e:?}. Falling back to V0",
+					at_hash
+				);
+				FriParamsVersion::V0
+			},
+		};
+		let cfg = params_version.to_config(packed.total_n_vars);
 		let pcs = Arc::new(FriBiniusPCS::new(cfg));
 
 		let ctx = pcs
@@ -169,6 +180,23 @@ where
 			pcs.commit(&packed.packed_mle, &ctx)
 				.map_err(|e| e.to_string())?,
 		);
+
+		let log_batch_size = ctx.fri_params.log_batch_size();
+		let leaf_count = 1usize
+			<< (ctx
+				.fri_params
+				.rs_code()
+				.log_len()
+				.saturating_sub(log_batch_size));
+
+		for &idx in &req.cell_indices {
+			if idx as usize >= leaf_count {
+				return Err(format!(
+					"invalid sampling request: index {} >= leaf_count {}",
+					idx, leaf_count
+				));
+			}
+		}
 
 		debug!(
 			target: LOG_TARGET,
@@ -187,14 +215,25 @@ where
 					idx
 				);
 
-				let value = commit_output.codeword[idx as usize];
+				let sampled_values = commit_output
+					.codeword
+					.to_ref()
+					.chunk(log_batch_size, idx as usize)
+					.iter_scalars()
+					.collect::<Vec<_>>();
+
+				let mut cell_bytes = Vec::with_capacity(sampled_values.len() * 16);
+				for value in sampled_values {
+					cell_bytes.extend_from_slice(&value.val().to_le_bytes());
+				}
+
 				let transcript = pcs
 					.inclusion_proof::<B128>(&commit_output.committed, idx as usize)
 					.map_err(|e| e.to_string())?;
 
 				Ok(CellProof {
 					index: idx,
-					cell: value.val().to_le_bytes().to_vec(),
+					cell: cell_bytes,
 					proof: transcript_to_bytes(&transcript),
 				})
 			})

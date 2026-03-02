@@ -44,7 +44,7 @@ pub fn protocol_spec(
 }
 
 pub fn cellproof_to_samplingproof(p: CellProof) -> Result<SamplingProof, SamplingError> {
-	if p.cell.len() != 16 {
+	if p.cell.is_empty() || !p.cell.len().is_multiple_of(16) {
 		return Err(SamplingError::InvalidCellLength {
 			actual: p.cell.len(),
 		});
