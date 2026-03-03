@@ -318,7 +318,8 @@ pub mod pallet {
 	/// Default implementations of [`DefaultConfig`], which can be used to implement [`Config`].
 	pub mod config_preludes {
 		use super::{
-			inject_runtime_type, AccountInfo, BlakeTwo256, CommitmentScheme, DaHeader, DefaultConfig,
+			inject_runtime_type, AccountInfo, BlakeTwo256, CommitmentScheme, DaHeader,
+			DefaultConfig,
 		};
 		use frame_support::{derive_impl, parameter_types, traits::ConstU32};
 
