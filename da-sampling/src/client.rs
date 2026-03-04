@@ -6,7 +6,7 @@ use crate::{
 };
 use avail_blob::p2p::BlobHandle;
 use avail_core::{
-	header::extension::fri::FriHeader,
+	header::extension::{fri::FriHeader, HeaderExtension},
 	header::extension::fri_v1::FriBlobCommitment,
 	traits::extended_header::ExtendedHeader,
 	Keccak256,
@@ -110,6 +110,14 @@ where
 			return;
 		}
 
+		let params_version = match &header.extension {
+			HeaderExtension::Fri(FriHeader::V1(ext)) => ext.params_version,
+			_ => {
+				trace!(target: LOG_TARGET, "⏭️ Skipping DA sampling: non-FRI extension");
+				return;
+			},
+		};
+
 		let block_hash = header.hash();
 		let blobs = self.get_fri_blobs_for_block(block_hash);
 
@@ -184,7 +192,10 @@ where
 				peer
 			);
 
-			match self.request_and_verify(peer, block_hash, blob).await {
+			match self
+				.request_and_verify(peer, block_hash, blob, params_version)
+				.await
+			{
 				Ok(_) => {
 					info!(
 						target: LOG_TARGET,
