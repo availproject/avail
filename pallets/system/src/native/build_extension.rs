@@ -9,7 +9,10 @@ use avail_base::header_extension::SubmittedData;
 use avail_core::FriParamsVersion;
 use avail_core::{
 	header::extension as he, kate::COMMITMENT_SIZE, kate_commitment as kc, AppId, DataLookup,
+	Keccak256,
 };
+use binary_merkle_tree::merkle_root;
+use codec::Encode;
 use he::fri::{FriHeader, FriHeaderVersion};
 use he::fri_v1::{FriBlobCommitment, HeaderExtension as FriV1HeaderExtension};
 use he::{
@@ -119,32 +122,38 @@ pub fn build_fri_extension(
 		return HeaderExtension::get_empty_fri(data_root, fri_version);
 	}
 
-	// Just do some sanitary check, as we cant actually check teh commitments here
+	for (idx, s) in submitted.iter().enumerate() {
+		if s.commitments.len() != 32 {
+			log::error!(
+				"Fri header: expected 32-byte commitment for blob #{idx}, got {} bytes",
+				s.commitments.len()
+			);
+			return HeaderExtension::get_faulty_fri(data_root, fri_version);
+		}
+	}
+
+	let blob_count: u32 = submitted.len().try_into().unwrap_or(u32::MAX);
+
+	let blob_meta_leaves: Vec<Vec<u8>> = submitted
+		.iter()
+		.map(|s| {
+			FriBlobCommitment {
+				blob_hash: s.hash,
+				size_bytes: s.size_bytes,
+				commitment: s.commitments.clone(),
+			}
+			.encode()
+		})
+		.collect();
+
+	let blob_meta_root = merkle_root::<Keccak256, _>(blob_meta_leaves);
+
 	let fri_v1 = match fri_version {
-		FriHeaderVersion::V1 => {
-			let mut blobs: Vec<FriBlobCommitment> = Vec::with_capacity(submitted.len());
-
-			for (idx, s) in submitted.into_iter().enumerate() {
-				if s.commitments.len() != 32 {
-					log::error!(
-						"Fri header: expected 32-byte commitment for blob #{idx}, got {} bytes",
-						s.commitments.len()
-					);
-					return HeaderExtension::get_faulty_fri(data_root, fri_version);
-				}
-
-				blobs.push(FriBlobCommitment {
-					blob_hash: s.hash,
-					size_bytes: s.size_bytes,
-					commitment: s.commitments,
-				});
-			}
-
-			FriV1HeaderExtension {
-				blobs,
-				data_root,
-				params_version,
-			}
+		FriHeaderVersion::V1 => FriV1HeaderExtension {
+			blob_count,
+			data_root,
+			blob_meta_root,
+			params_version,
 		},
 	};
 

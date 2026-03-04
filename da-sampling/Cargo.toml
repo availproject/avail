@@ -14,6 +14,8 @@ avail-fri.workspace = true
 da-runtime.workspace = true
 array-bytes.workspace = true
 async-channel.workspace = true
+binary-merkle-tree.workspace = true
+codec = { package = "parity-scale-codec", version = "3.6.1", features = ["derive"] }
 sp-core.workspace = true
 sp-runtime.workspace = true
 sc-client-api.workspace = true

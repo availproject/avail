@@ -33,10 +33,10 @@ homepage = "https://www.availproject.org/"
 
 
 [workspace.dependencies]
-avail-core = { git = "https://github.com/availproject/avail-core.git", rev = "df3ec48d0b86ad4e5a1607d4c4d128d7a2f641d2", default-features = false, features = [ "runtime"] }
-avail-fri = { git = "https://github.com/availproject/avail-core.git", rev = "df3ec48d0b86ad4e5a1607d4c4d128d7a2f641d2", default-features = false }
-kate = { git = "https://github.com/availproject/avail-core", rev = "df3ec48d0b86ad4e5a1607d4c4d128d7a2f641d2", default-features = false }
-kate-recovery = { git = "https://github.com/availproject/avail-core", rev = "df3ec48d0b86ad4e5a1607d4c4d128d7a2f641d2", default-features = false  }
+avail-core = { git = "https://github.com/availproject/avail-core.git", rev = "374267ecfc57a5d85ca8b06ddf8b86233ea8195a", default-features = false, features = [ "runtime"] }
+avail-fri = { git = "https://github.com/availproject/avail-core.git", rev = "374267ecfc57a5d85ca8b06ddf8b86233ea8195a", default-features = false }
+kate = { git = "https://github.com/availproject/avail-core", rev = "374267ecfc57a5d85ca8b06ddf8b86233ea8195a", default-features = false }
+kate-recovery = { git = "https://github.com/availproject/avail-core", rev = "374267ecfc57a5d85ca8b06ddf8b86233ea8195a", default-features = false  }
 # avail-core = { path = "../avail-core/core", default-features = false, features = [ "runtime"] }
 # avail-fri = { path = "../avail-core/fri", default-features = false }
 # kate = { path = "../avail-core/kate/", default-features = false }

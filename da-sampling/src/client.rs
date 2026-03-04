@@ -6,12 +6,13 @@ use crate::{
 };
 use avail_blob::p2p::BlobHandle;
 use avail_core::{
-	header::{
-		extension::{fri::FriHeader, fri_v1::FriBlobCommitment},
-		HeaderExtension,
-	},
+	header::extension::{fri::FriHeader, HeaderExtension},
+	header::extension::fri_v1::FriBlobCommitment,
 	traits::extended_header::ExtendedHeader,
+	Keccak256,
 };
+use binary_merkle_tree::merkle_root;
+use codec::Encode;
 use da_runtime::Header as DaHeader;
 use futures::channel::oneshot;
 use log::{debug, error, info, trace, warn};
@@ -109,35 +110,57 @@ where
 			return;
 		}
 
-		let extension = match &header.extension {
-			HeaderExtension::Fri(ext) => ext,
+		let params_version = match &header.extension {
+			HeaderExtension::Fri(FriHeader::V1(ext)) => ext.params_version,
 			_ => {
 				trace!(target: LOG_TARGET, "⏭️ Skipping DA sampling: non-FRI extension");
 				return;
 			},
 		};
 
-		let (blobs, params_version) = match extension {
-			FriHeader::V1(ext) => (&ext.blobs, ext.params_version),
-		};
+		let block_hash = header.hash();
+		let blobs = self.get_fri_blobs_for_block(block_hash);
 
 		if blobs.is_empty() {
 			debug!(
 				target: LOG_TARGET,
-				"⏭️ Block {:?} has empty FRI blob list",
-				header.hash()
+				"⏭️ Block {:?} has no FRI blobs recorded in sidecar",
+				block_hash
 			);
 			return;
 		}
 
+		let expected_root = header.extension.blob_meta_root();
+		if expected_root != H256::zero() {
+			let leaves: Vec<Vec<u8>> = blobs.iter().map(|b| b.encode()).collect();
+			let computed_root = merkle_root::<Keccak256, _>(leaves);
+
+			if computed_root != expected_root {
+				error!(
+					target: LOG_TARGET,
+					"❌ blob_meta_root mismatch for block {:?}: header={:?}, computed={:?}",
+					block_hash,
+					expected_root,
+					computed_root
+				);
+				return;
+			}
+
+			debug!(
+				target: LOG_TARGET,
+				"✅ blob_meta_root verified for block {:?}",
+				block_hash
+			);
+		}
+
 		let blob_indices = if let Some(app_id) = self.config.app_id {
-			let indices = self.get_app_id_blob_indices(header.hash(), blobs, app_id);
+			let indices = self.get_app_id_blob_indices(block_hash, &blobs, app_id);
 			if indices.is_empty() {
 				debug!(
 					target: LOG_TARGET,
 					"⏭️ No blobs matched app_id={} in block {:?}",
 					app_id,
-					header.hash()
+					block_hash
 				);
 				return;
 			}
@@ -156,7 +179,7 @@ where
 			target: LOG_TARGET,
 			"🎯 Selected blob_hash={:?} for sampling in block: {:?}",
 			blob.blob_hash,
-			header.hash(),
+			block_hash,
 		);
 
 		let peers = self.get_blob_owners_or_peers(blob.blob_hash).await;
@@ -165,19 +188,19 @@ where
 				target: LOG_TARGET,
 				"🔁 Sampling attempt {} for block {:?} via peer {:?}",
 				i + 1,
-				header.hash(),
+				block_hash,
 				peer
 			);
 
 			match self
-				.request_and_verify(peer, header.hash(), blob, params_version)
+				.request_and_verify(peer, block_hash, blob, params_version)
 				.await
 			{
 				Ok(_) => {
 					info!(
 						target: LOG_TARGET,
 						"✅ DA sampling SUCCESS for block {:?} via peer {:?}",
-						header.hash(),
+						block_hash,
 						peer
 					);
 					return;
@@ -196,11 +219,11 @@ where
 		error!(
 			target: LOG_TARGET,
 			"❌ DA sampling FAILED for block {:?}: all peers exhausted",
-			header.hash()
+			block_hash
 		);
 	}
 
-	// Ideally having app_id in the header would be best, for now using eval data to filter blobs by app_id (if configured)
+	// We use eval-sidecar data to filter blobs by app_id (if configured).
 	fn get_app_id_blob_indices(
 		&self,
 		block_hash: H256,
@@ -217,6 +240,61 @@ where
 					.map(|_| idx)
 			})
 			.collect()
+	}
+
+	fn get_fri_blobs_for_block(&self, block_hash: H256) -> Vec<FriBlobCommitment> {
+		let infos = match self
+			.blob_handle
+			.blob_database
+			.list_blob_infos_by_block(&block_hash)
+		{
+			Ok(infos) => infos,
+			Err(e) => {
+				error!(
+					target: LOG_TARGET,
+					"❌ Failed to list BlobInfo entries for block {:?}: {e}",
+					block_hash
+				);
+				return Vec::new();
+			},
+		};
+
+		if infos.is_empty() {
+			return Vec::new();
+		}
+
+		let mut blobs = Vec::with_capacity(infos.len());
+
+		for info in infos {
+			let meta = match self.blob_handle.blob_database.get_blob_metadata(&info.hash) {
+				Ok(Some(meta)) => meta,
+				Ok(None) => {
+					warn!(
+						target: LOG_TARGET,
+						"⚠️ Missing BlobMetadata for blob {:?} in block {:?}, skipping",
+						info.hash,
+						block_hash
+					);
+					continue;
+				},
+				Err(e) => {
+					error!(
+						target: LOG_TARGET,
+						"❌ Failed to fetch BlobMetadata for blob {:?}: {e}",
+						info.hash
+					);
+					continue;
+				},
+			};
+
+			blobs.push(FriBlobCommitment {
+				blob_hash: info.hash,
+				size_bytes: meta.size,
+				commitment: meta.commitment.clone(),
+			});
+		}
+
+		blobs
 	}
 
 	// Returns peer IDs to try for DA sampling:
