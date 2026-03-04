@@ -119,32 +119,26 @@ pub fn build_fri_extension(
 		return HeaderExtension::get_empty_fri(data_root, fri_version);
 	}
 
-	// Just do some sanitary check, as we cant actually check teh commitments here
+	for (idx, s) in submitted.iter().enumerate() {
+		if s.commitments.len() != 32 {
+			log::error!(
+				"Fri header: expected 32-byte commitment for blob #{idx}, got {} bytes",
+				s.commitments.len()
+			);
+			return HeaderExtension::get_faulty_fri(data_root, fri_version);
+		}
+	}
+
+	let blob_count: u32 = submitted
+		.len()
+		.try_into()
+		.unwrap_or(u32::MAX);
+
 	let fri_v1 = match fri_version {
-		FriHeaderVersion::V1 => {
-			let mut blobs: Vec<FriBlobCommitment> = Vec::with_capacity(submitted.len());
-
-			for (idx, s) in submitted.into_iter().enumerate() {
-				if s.commitments.len() != 32 {
-					log::error!(
-						"Fri header: expected 32-byte commitment for blob #{idx}, got {} bytes",
-						s.commitments.len()
-					);
-					return HeaderExtension::get_faulty_fri(data_root, fri_version);
-				}
-
-				blobs.push(FriBlobCommitment {
-					blob_hash: s.hash,
-					size_bytes: s.size_bytes,
-					commitment: s.commitments,
-				});
-			}
-
-			FriV1HeaderExtension {
-				blobs,
-				data_root,
-				params_version,
-			}
+		FriHeaderVersion::V1 => FriV1HeaderExtension {
+			blob_count,
+			data_root,
+			params_version,
 		},
 	};
 
