@@ -129,10 +129,7 @@ pub fn build_fri_extension(
 		}
 	}
 
-	let blob_count: u32 = submitted
-		.len()
-		.try_into()
-		.unwrap_or(u32::MAX);
+	let blob_count: u32 = submitted.len().try_into().unwrap_or(u32::MAX);
 
 	let fri_v1 = match fri_version {
 		FriHeaderVersion::V1 => FriV1HeaderExtension {

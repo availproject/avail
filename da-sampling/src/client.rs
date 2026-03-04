@@ -5,7 +5,9 @@ use crate::{
 	response_to_samplingproofs, types::SamplingError, DaSamplingRequest, DaSamplingResponse,
 };
 use avail_blob::p2p::BlobHandle;
-use avail_core::{header::extension::fri_v1::FriBlobCommitment, traits::extended_header::ExtendedHeader};
+use avail_core::{
+	header::extension::fri_v1::FriBlobCommitment, traits::extended_header::ExtendedHeader,
+};
 use da_runtime::Header as DaHeader;
 use futures::channel::oneshot;
 use log::{debug, error, info, trace, warn};
@@ -225,11 +227,7 @@ where
 		let mut blobs = Vec::with_capacity(infos.len());
 
 		for info in infos {
-			let meta = match self
-				.blob_handle
-				.blob_database
-				.get_blob_metadata(&info.hash)
-			{
+			let meta = match self.blob_handle.blob_database.get_blob_metadata(&info.hash) {
 				Ok(Some(meta)) => meta,
 				Ok(None) => {
 					warn!(
