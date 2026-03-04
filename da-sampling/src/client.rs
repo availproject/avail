@@ -6,8 +6,13 @@ use crate::{
 };
 use avail_blob::p2p::BlobHandle;
 use avail_core::{
-	header::extension::fri_v1::FriBlobCommitment, traits::extended_header::ExtendedHeader,
+	header::extension::fri::FriHeader,
+	header::extension::fri_v1::FriBlobCommitment,
+	traits::extended_header::ExtendedHeader,
+	Keccak256,
 };
+use binary_merkle_tree::merkle_root;
+use codec::Encode;
 use da_runtime::Header as DaHeader;
 use futures::channel::oneshot;
 use log::{debug, error, info, trace, warn};
@@ -115,6 +120,29 @@ where
 				block_hash
 			);
 			return;
+		}
+
+		let expected_root = header.extension.blob_meta_root();
+		if expected_root != H256::zero() {
+			let leaves: Vec<Vec<u8>> = blobs.iter().map(|b| b.encode()).collect();
+			let computed_root = merkle_root::<Keccak256, _>(leaves);
+
+			if computed_root != expected_root {
+				error!(
+					target: LOG_TARGET,
+					"❌ blob_meta_root mismatch for block {:?}: header={:?}, computed={:?}",
+					block_hash,
+					expected_root,
+					computed_root
+				);
+				return;
+			}
+
+			debug!(
+				target: LOG_TARGET,
+				"✅ blob_meta_root verified for block {:?}",
+				block_hash
+			);
 		}
 
 		let blob_indices = if let Some(app_id) = self.config.app_id {
