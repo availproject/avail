@@ -4,8 +4,8 @@
 #![recursion_limit = "256"]
 
 use avail_core::{
-	currency::Balance, AppId, BlockLengthColumns, BlockLengthRows, BLOCK_CHUNK_SIZE,
-	DA_DISPATCH_RATIO, NORMAL_DISPATCH_RATIO,
+	currency::Balance, AppId, BlockLengthColumns, BlockLengthRows, FriParamsVersion,
+	BLOCK_CHUNK_SIZE, DA_DISPATCH_RATIO, NORMAL_DISPATCH_RATIO,
 };
 use codec::{Compact, CompactLen as _, Encode};
 use frame_support::ensure;
@@ -199,6 +199,17 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn blob_runtime_parameters)]
 	pub type BlobRuntimeParams<T: Config> = StorageValue<_, BlobRuntimeParameters, ValueQuery>;
+
+	#[pallet::type_value]
+	pub fn DefaultFriParamsVersion<T: Config>() -> FriParamsVersion {
+		FriParamsVersion::V0
+	}
+
+	/// Store active FRI params version used by runtime/header builder.
+	#[pallet::storage]
+	#[pallet::getter(fn fri_params_version)]
+	pub type FriParamsVersionStorage<T: Config> =
+		StorageValue<_, FriParamsVersion, ValueQuery, DefaultFriParamsVersion<T>>;
 
 	/// Era wide blob offences
 	#[pallet::storage]
@@ -726,6 +737,22 @@ pub mod pallet {
 
 			Ok(().into())
 		}
+
+		#[pallet::call_index(11)]
+		#[pallet::weight(T::WeightInfo::set_blob_runtime_parameters())]
+		pub fn set_fri_params_version(
+			origin: OriginFor<T>,
+			params_version: FriParamsVersion,
+		) -> DispatchResultWithPostInfo {
+			ensure_root(origin)?;
+			ensure!(
+				params_version == FriParamsVersion::V0,
+				Error::<T>::UnsupportedFriParamsVersion
+			);
+			FriParamsVersionStorage::<T>::put(params_version);
+			Self::deposit_event(Event::FriParamsVersionSet { params_version });
+			Ok(().into())
+		}
 	}
 
 	#[pallet::validate_unsigned]
@@ -837,6 +864,9 @@ pub mod pallet {
 		SubmitBlobMetadataFeeModifierSet {
 			value: DispatchFeeModifier,
 		},
+		FriParamsVersionSet {
+			params_version: FriParamsVersion,
+		},
 		BlobOffenceReported {
 			who: T::AccountId,
 			offence_key: OffenceKey,
@@ -896,6 +926,8 @@ pub mod pallet {
 		OldDaSubmissionDisabled,
 		/// The vouch threshold cannot be zero.
 		InvalidVouchThreshold,
+		/// Attempted to set a FRI params version that is not supported by this runtime.
+		UnsupportedFriParamsVersion,
 		/// Attempted to register an invalid offence key.
 		InvalidOffenceKey,
 		/// Provided voucher session is invalid.

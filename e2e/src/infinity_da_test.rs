@@ -62,13 +62,13 @@ pub async fn run() -> Result<(), Error> {
 
 	let mut blobs: Vec<(Vec<u8>, H256, Vec<u8>, Option<[u8; 32]>, Option<[u8; 16]>)> = Vec::new();
 	println!("---------- START Commitments generation ---------- ");
-	for i in 0..2 {
+	for i in 0..1 {
 		println!("---------- START Commitment generation {i} ---------- ");
 		let blob: Vec<u8> = repeat(byte).take(len - i).collect::<Vec<u8>>();
 		let blob_hash = H256::from(keccak_256(&blob));
 		// let commitments = build_da_commitments(&blob, 1024, 4096, Seed::default());
-		// let commitments = build_fri_da_commitment(&blob, FriParamsVersion(0));
-		let params_version = FriParamsVersion(0);
+		// let commitments = build_fri_da_commitment(&blob, FriParamsVersion::V0);
+		let params_version = FriParamsVersion::V0;
 		// Encode bytes → multilinear extension over B128
 		let encoder = BytesEncoder::<B128>::new();
 		let packed = encoder
@@ -90,7 +90,7 @@ pub async fn run() -> Result<(), Error> {
 		let commit_output = pcs
 			.commit(&packed.packed_mle, &ctx)
 			.expect("Failed to commit to blob MLE");
-		let commitments = commit_output.commitment;
+		let commitments = commit_output.commitment.to_vec();
 		// fetch current epoch randomness from the chain & use it to derive eval point seed
 		let rpc_client = &client.rpc_client;
 		let babe_randomness = BabeRandomness::fetch(&rpc_client, None)

@@ -385,6 +385,7 @@ where
 		peer: PeerId,
 		block_hash: B::Hash,
 		blob: &FriBlobCommitment,
+		params_version: FriParamsVersion,
 	) -> Result<(), SamplingError> {
 		debug!(
 			target: LOG_TARGET,
@@ -402,7 +403,21 @@ where
 			n_vars
 		);
 
-		let cells = self.sample_cells(log_len as u32);
+		let cfg = params_version.to_config(n_vars);
+		let pcs = FriBiniusPCS::new(cfg);
+		let ctx = pcs
+			.initialize_fri_context::<B128>(log_len)
+			.map_err(|_| SamplingError::VerificationFailed)?;
+
+		let log_batch_size = ctx.fri_params.log_batch_size();
+		let leaf_count = 1u32
+			<< (ctx
+				.fri_params
+				.rs_code()
+				.log_len()
+				.saturating_sub(log_batch_size) as u32);
+
+		let cells = self.sample_cells(leaf_count);
 
 		let req = DaSamplingRequest {
 			block_hash: block_hash.as_ref().to_vec(),
@@ -479,13 +494,6 @@ where
 			peer
 		);
 
-		let params_version = FriParamsVersion(0);
-		let cfg = params_version.to_config(n_vars);
-		let pcs = FriBiniusPCS::new(cfg);
-		let ctx = pcs
-			.initialize_fri_context::<B128>(log_len)
-			.map_err(|_| SamplingError::VerificationFailed)?;
-
 		let sampling_proofs = response_to_samplingproofs(resp.proofs)?;
 		let digest: [u8; 32] = blob
 			.commitment
@@ -493,7 +501,10 @@ where
 			.try_into()
 			.map_err(|_| SamplingError::VerificationFailed)?;
 
-		let commitment = FriCommitment { digest };
+		let commitment = FriCommitment {
+			digest,
+			depth: ctx.fri_params.rs_code().log_len(),
+		};
 
 		for proof in sampling_proofs {
 			trace!(
@@ -527,6 +538,8 @@ where
 				} else {
 					match avail_blob::validation::validate_fri_proof(
 						blob.size_bytes as usize,
+						params_version,
+						&blob.commitment,
 						&eval_data.eval_point_seed,
 						&eval_data.eval_claim,
 						&eval_data.eval_proof,

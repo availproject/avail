@@ -103,7 +103,6 @@ use avail_base::{HeaderExtensionBuilderData, HeaderExtensionDataFilter};
 use avail_core::header::extension::fri::FriHeaderVersion;
 use avail_core::header::extension::kzg::KzgHeaderVersion;
 use avail_core::header::extension::CommitmentScheme;
-use avail_core::FriParamsVersion;
 use avail_core::{
 	ensure,
 	header::{Header as DaHeader, HeaderExtension},
@@ -111,7 +110,9 @@ use avail_core::{
 };
 
 extern crate alloc;
+extern crate self as frame_system;
 use alloc::{borrow::Cow, boxed::Box, vec, vec::Vec};
+pub use avail_core::FriParamsVersion;
 
 use codec::{Decode, DecodeWithMemTracking, Encode, EncodeLike, FullCodec, MaxEncodedLen};
 use frame_support::migrations::MultiStepMigrator;
@@ -370,6 +371,11 @@ pub mod pallet {
 			type MaxTxPerAppIdPerBlock = ConstU32<8_192>;
 			type HeaderExtensionDataFilter = ();
 			type DaCommitmentScheme = DefaultDaCommitmentScheme;
+			// Default/test fallback only. Real runtimes should override this and source the
+			// params version from runtime state from DA pallet.
+			fn da_fri_params_version() -> frame_system::FriParamsVersion {
+				frame_system::FriParamsVersion::V0
+			}
 			type SingleBlockMigrations = ();
 			type MultiBlockMigrator = ();
 			type PreInherents = ();
@@ -478,6 +484,11 @@ pub mod pallet {
 			type MaxTxPerAppIdPerBlock = ConstU32<8_192>;
 			type HeaderExtensionDataFilter = ();
 			type DaCommitmentScheme = DefaultDaCommitmentScheme;
+			// Default/test fallback only. Real runtimes should override this and source the
+			// params version from runtime state (e.g. a governance-controlled pallet).
+			fn da_fri_params_version() -> frame_system::FriParamsVersion {
+				frame_system::FriParamsVersion::V0
+			}
 			type SingleBlockMigrations = ();
 			type MultiBlockMigrator = ();
 			type PreInherents = ();
@@ -704,6 +715,8 @@ pub mod pallet {
 		/// Commitment Scheme to be used
 		#[pallet::constant]
 		type DaCommitmentScheme: Get<CommitmentScheme>;
+		/// Runtime-selected FRI params version (can be storage-backed in runtime impl).
+		fn da_fri_params_version() -> frame_system::FriParamsVersion;
 		/// All migrations that should run in the next runtime upgrade.
 		///
 		/// These used to be formerly configured in `Executive`. Parachains need to ensure that
@@ -2124,7 +2137,7 @@ impl<T: Config> Pallet<T> {
 				native::hosted_header_builder::da::HeaderExtensionBuilder::<T>::build_fri_extension(
 					header_extension_builder_data.data_submissions,
 					data_root,
-					FriParamsVersion(0),
+					T::da_fri_params_version(),
 					FriHeaderVersion::V1,
 				)
 			},

@@ -49,7 +49,7 @@ fn build_fri_commitment_internal(
 		.commit(&packed.packed_mle, &ctx)
 		.map_err(|e| FriDaCommitmentError::CommitFailed(e.to_string()))?;
 
-	Ok(commit_output.commitment)
+	Ok(commit_output.commitment.to_vec())
 }
 
 /// Build commitment using Fri PCS with given version configuration
