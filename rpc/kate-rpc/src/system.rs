@@ -346,9 +346,10 @@ pub mod fetch_events {
 
 pub mod fetch_extrinsics {
 	use super::*;
-	// use avail_core::asdr::EXTRINSIC_FORMAT_VERSION;
 	// TODO: move this to appropriate place
 	const EXTRINSIC_FORMAT_VERSION: u8 = 4;
+	const MAX_INDICES_COUNT: usize = 50;
+
 	use codec::{Decode, Input};
 	use da_runtime::{Address, Signature, SignedExtra};
 	use serde::{Deserialize, Serialize};
@@ -406,10 +407,10 @@ pub mod fetch_extrinsics {
 		pub fn is_valid(&self) -> bool {
 			match self {
 				ExtrinsicFilter::All => true,
-				ExtrinsicFilter::TxHash(items) => items.len() < 30,
-				ExtrinsicFilter::TxIndex(items) => items.len() < 30,
-				ExtrinsicFilter::Pallet(items) => items.len() < 30,
-				ExtrinsicFilter::PalletCall(items) => items.len() < 30,
+				ExtrinsicFilter::TxHash(items) => items.len() <= MAX_INDICES_COUNT,
+				ExtrinsicFilter::TxIndex(items) => items.len() <= MAX_INDICES_COUNT,
+				ExtrinsicFilter::Pallet(items) => items.len() <= MAX_INDICES_COUNT,
+				ExtrinsicFilter::PalletCall(items) => items.len() <= MAX_INDICES_COUNT,
 			}
 		}
 
