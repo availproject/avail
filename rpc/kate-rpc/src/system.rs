@@ -32,9 +32,6 @@ pub trait Api {
 		options: Option<fetch_extrinsics_v1::Options>,
 	) -> RpcResult<fetch_extrinsics_v1::ApiResult>;
 
-	#[method(name = "system_latestBlockInfo")]
-	async fn latest_block_info(&self, use_best_block: Option<bool>) -> RpcResult<types::BlockInfo>;
-
 	#[method(name = "system_latestChainInfo")]
 	async fn latest_chain_info(&self) -> RpcResult<types::ChainInfo>;
 
@@ -235,22 +232,6 @@ where
 		Ok(found_extrinsics)
 	}
 
-	async fn latest_block_info(&self, use_best_block: Option<bool>) -> RpcResult<types::BlockInfo> {
-		let info = self.client.info();
-		let use_best_block = use_best_block.unwrap_or(true);
-		if use_best_block {
-			return Ok(types::BlockInfo {
-				hash: info.best_hash.into(),
-				height: info.best_number.into(),
-			});
-		}
-
-		Ok(types::BlockInfo {
-			hash: info.finalized_hash.into(),
-			height: info.finalized_number.into(),
-		})
-	}
-
 	async fn latest_chain_info(&self) -> RpcResult<types::ChainInfo> {
 		let info = self.client.info();
 		return Ok(types::ChainInfo {
@@ -275,101 +256,12 @@ pub mod types {
 	use super::*;
 
 	#[derive(Clone, serde::Serialize, serde::Deserialize)]
-	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-	#[cfg_attr(feature = "ts", ts(export, export_to = "Types.ts"))]
-	pub struct BlockInfo {
-		#[cfg_attr(feature = "ts", ts(as = "String"))]
-		pub hash: H256,
-		pub height: u32,
-	}
-
-	#[derive(Clone, serde::Serialize, serde::Deserialize)]
-	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-	#[cfg_attr(feature = "ts", ts(export, export_to = "Types.ts"))]
 	pub struct ChainInfo {
-		#[cfg_attr(feature = "ts", ts(as = "String"))]
 		pub best_hash: H256,
 		pub best_height: u32,
-		#[cfg_attr(feature = "ts", ts(as = "String"))]
 		pub finalized_hash: H256,
 		pub finalized_height: u32,
-		#[cfg_attr(feature = "ts", ts(as = "String"))]
 		pub genesis_hash: H256,
-	}
-
-	#[cfg(feature = "ts")]
-	pub mod ts_types {
-		use super::*;
-
-		#[allow(dead_code)]
-		#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-		#[cfg_attr(feature = "ts", ts(export, export_to = "Types.ts"))]
-		struct RpcRequestBlockInfo {
-			id: u32,
-			jsonrpc: String,
-			method: String,
-			params: (bool,),
-		}
-
-		#[allow(dead_code)]
-		#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-		#[cfg_attr(feature = "ts", ts(export, export_to = "Types.ts"))]
-		struct RpcResponseBlockInfo {
-			jsonrpc: String,
-			result: Option<BlockInfo>,
-			error: Option<Error>,
-			id: u32,
-		}
-
-		#[allow(dead_code)]
-		#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-		#[cfg_attr(feature = "ts", ts(export, export_to = "Types.ts"))]
-		struct RpcRequestChainInfo {
-			id: u32,
-			jsonrpc: String,
-			method: String,
-			params: (),
-		}
-
-		#[allow(dead_code)]
-		#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-		#[cfg_attr(feature = "ts", ts(export, export_to = "Types.ts"))]
-		struct RpcResponseChainInfo {
-			jsonrpc: String,
-			result: Option<ChainInfo>,
-			error: Option<Error>,
-			id: u32,
-		}
-
-		#[allow(dead_code)]
-		#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-		#[cfg_attr(feature = "ts", ts(export, export_to = "Types.ts"))]
-		struct RpcRequestBlockNumber {
-			id: u32,
-			jsonrpc: String,
-			method: String,
-			#[cfg_attr(feature = "ts", ts(as = "(String,)"))]
-			params: (H256,),
-		}
-
-		#[allow(dead_code)]
-		#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-		#[cfg_attr(feature = "ts", ts(export, export_to = "Types.ts"))]
-		struct RpcResponseBlockNumber {
-			jsonrpc: String,
-			result: Option<u32>,
-			error: Option<Error>,
-			id: u32,
-		}
-
-		#[allow(dead_code)]
-		#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-		#[cfg_attr(feature = "ts", ts(export, export_to = "Types.ts"))]
-		pub struct Error {
-			code: i32,
-			message: String,
-			data: Option<String>,
-		}
 	}
 }
 
@@ -380,35 +272,7 @@ pub mod fetch_events_v1 {
 	};
 	pub type ApiResult = Vec<GroupedRuntimeEvents>;
 
-	#[cfg(feature = "ts")]
-	pub mod ts_types {
-		use super::super::types::ts_types::Error;
-		use super::*;
-
-		#[allow(dead_code)]
-		#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-		#[cfg_attr(feature = "ts", ts(export, export_to = "FetchEvents.ts"))]
-		struct RpcRequest {
-			id: u32,
-			jsonrpc: String,
-			method: String,
-			params: (String, Option<Options>),
-		}
-
-		#[allow(dead_code)]
-		#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-		#[cfg_attr(feature = "ts", ts(export, export_to = "FetchEvents.ts"))]
-		struct RpcResponse {
-			jsonrpc: String,
-			result: Option<Vec<GroupedRuntimeEvents>>,
-			error: Option<Error>,
-			id: u32,
-		}
-	}
-
 	#[derive(Clone, serde::Serialize, serde::Deserialize)]
-	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchEvents.ts"))]
 	pub struct GroupedRuntimeEvents {
 		pub phase: frame_system::Phase,
 		pub events: Vec<RuntimeEvent>,
@@ -433,8 +297,6 @@ pub mod fetch_events_v1 {
 	}
 
 	#[derive(Clone, serde::Serialize, serde::Deserialize)]
-	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchEvents.ts"))]
 	pub struct RuntimeEvent {
 		pub index: u32,
 		// (Pallet Id, Event Id)
@@ -468,38 +330,9 @@ pub mod fetch_extrinsics_v1 {
 
 	pub type ApiResult = Vec<ExtrinsicInformation>;
 
-	#[cfg(feature = "ts")]
-	pub mod ts_types {
-		use super::super::types::ts_types::Error;
-		use super::*;
-
-		#[allow(dead_code)]
-		#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-		#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
-		struct RpcRequest {
-			id: u32,
-			jsonrpc: String,
-			method: String,
-			params: (BlockId, Option<Options>),
-		}
-
-		#[allow(dead_code)]
-		#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-		#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
-		struct RpcResponse {
-			jsonrpc: String,
-			result: Option<Vec<ExtrinsicInformation>>,
-			error: Option<Error>,
-			id: u32,
-		}
-	}
-
 	#[derive(Clone, Serialize, Deserialize)]
-	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
 	pub struct ExtrinsicInformation {
 		pub encoded: Option<String>,
-		#[cfg_attr(feature = "ts", ts(as = "String"))]
 		pub tx_hash: H256,
 		pub tx_index: u32,
 		pub pallet_id: u8,
@@ -508,27 +341,20 @@ pub mod fetch_extrinsics_v1 {
 	}
 
 	#[derive(Clone, Copy, Serialize, Deserialize)]
-	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
 	pub enum BlockId {
 		/// Identify by block header hash.
-		#[cfg_attr(feature = "ts", ts(as = "String"))]
 		Hash(H256),
 		/// Identify by block number.
 		Number(u32),
 	}
 
 	#[derive(Default, Clone, Serialize, Deserialize)]
-	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
 	pub struct Options {
 		pub filter: Option<Filter>,
 		pub encode_selector: Option<EncodeSelector>,
 	}
 
 	#[derive(Clone, Serialize, Deserialize)]
-	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
 	#[repr(u8)]
 	pub enum EncodeSelector {
 		None = 0,
@@ -559,19 +385,14 @@ pub mod fetch_extrinsics_v1 {
 	}
 
 	#[derive(Default, Clone, Serialize, Deserialize)]
-	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
 	pub struct Filter {
 		pub transaction: Option<TransactionFilterOptions>,
 		pub signature: Option<SignatureFilterOptions>,
 	}
 
 	#[derive(Clone, Serialize, Deserialize)]
-	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
 	pub enum TransactionFilterOptions {
 		All,
-		#[cfg_attr(feature = "ts", ts(as = "Vec<String>"))]
 		TxHash(Vec<H256>),
 		TxIndex(Vec<u32>),
 		Pallet(Vec<u8>),
@@ -632,8 +453,6 @@ pub mod fetch_extrinsics_v1 {
 	}
 
 	#[derive(Default, Clone, Serialize, Deserialize)]
-	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
 	pub struct SignatureFilterOptions {
 		pub ss58_address: Option<String>,
 		pub app_id: Option<u32>,
@@ -677,8 +496,6 @@ pub mod fetch_extrinsics_v1 {
 	}
 
 	#[derive(Clone, Serialize, Deserialize)]
-	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
 	pub struct TransactionSignature {
 		pub ss58_address: Option<String>,
 		pub nonce: u32,
