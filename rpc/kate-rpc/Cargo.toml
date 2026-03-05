@@ -21,6 +21,7 @@ const-hex.workspace = true
 # 3rd party
 jsonrpsee.workspace = true
 log.workspace = true
+parking_lot.workspace = true
 
 # Substrate
 sp-api = { workspace = true, default-features = false }

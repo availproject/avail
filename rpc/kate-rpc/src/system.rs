@@ -1,20 +1,18 @@
-use codec::Encode;
+use codec::{Compact, Decode, Encode};
 use frame_system_rpc_runtime_api::SystemEventsApi;
 use jsonrpsee::{
 	core::{async_trait, RpcResult},
 	proc_macros::rpc,
 	types::error::ErrorObject,
 };
+use parking_lot::Mutex;
 use sc_client_api::BlockBackend;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_core::{Blake2Hasher, Hasher, H256};
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 use sp_runtime::OpaqueExtrinsic;
-use std::{
-	marker::PhantomData,
-	sync::{Arc, Mutex},
-};
+use std::{marker::PhantomData, sync::Arc};
 
 #[rpc(client, server)]
 pub trait Api {
@@ -30,16 +28,19 @@ pub trait Api {
 	async fn fetch_extrinsics(
 		&self,
 		block_id: types::BlockId,
-		tx_filter: Option<fetch_extrinsics::ExtrinsicFilter>,
+		allow_list: Option<Vec<fetch_extrinsics::AllowedExtrinsic>>,
 		sig_filter: Option<fetch_extrinsics::SignatureFilter>,
 		data_format: Option<fetch_extrinsics::DataFormat>,
 	) -> RpcResult<fetch_extrinsics::Extrinsics>;
 
 	#[method(name = "custom_chainInfo")]
-	async fn latest_chain_info(&self) -> RpcResult<types::ChainInfo>;
+	async fn fetch_chain_info(&self) -> RpcResult<types::ChainInfo>;
 
 	#[method(name = "custom_blockNumber")]
-	async fn block_get_block_number(&self, hash: H256) -> RpcResult<Option<u32>>;
+	async fn fetch_block_number(&self, hash: H256) -> RpcResult<Option<u32>>;
+
+	#[method(name = "custom_blockTimestamp")]
+	async fn fetch_block_timestamp(&self, block_id: types::BlockId) -> RpcResult<u64>;
 }
 
 pub struct Rpc<C, Block>
@@ -151,20 +152,23 @@ where
 	async fn fetch_extrinsics(
 		&self,
 		block_id: types::BlockId,
-		ext_filter: Option<fetch_extrinsics::ExtrinsicFilter>,
+		allow_list: Option<Vec<fetch_extrinsics::AllowedExtrinsic>>,
 		sig_filter: Option<fetch_extrinsics::SignatureFilter>,
 		data_format: Option<fetch_extrinsics::DataFormat>,
 	) -> RpcResult<fetch_extrinsics::Extrinsics> {
-		use fetch_extrinsics::{DataFormat, Extrinsic, ExtrinsicFilter};
+		use fetch_extrinsics::{AllowedExtrinsic, DataFormat, Extrinsic};
 		use types::BlockId;
+		const MAX_INDICES_COUNT: usize = 30;
 
-		let tx_filter = ext_filter.unwrap_or_default();
 		let sig_filter = sig_filter.unwrap_or_default();
 		let data_format = data_format.unwrap_or_default();
 
-		if !tx_filter.is_valid() {
-			return Err(Error::InvalidInput
-				.into_error_object(String::from("Transaction filter: Invalid input")));
+		if let Some(allow_list) = &allow_list {
+			if allow_list.len() > MAX_INDICES_COUNT {
+				return Err(Error::InvalidInput.into_error_object(String::from(
+					"Allow list: Invalid input. Cannot have more than 30 items",
+				)));
+			}
 		}
 
 		if !sig_filter.is_valid() {
@@ -186,34 +190,54 @@ where
 				hash.into()
 			},
 		};
-		let Ok(mut cache) = self.block_cache.lock() else {
-			return Err(Error::Other.into_error_object(String::from("failed to lock mutex")));
-		};
 
-		let cached_block = match cache.block(block_hash) {
-			Some(block) => block,
-			None => {
-				let block = fetch_extrinsics::cache_block::<C, Block>(&self.client, block_hash)?;
-				cache.insert(block_hash, block)
-			},
-		};
-
-		let transactions = cached_block.transactions();
-		let mut found_extrinsics = match &tx_filter {
-			ExtrinsicFilter::All => Vec::with_capacity(transactions.len()),
-			ExtrinsicFilter::TxHash(list) => Vec::with_capacity(list.len()),
-			ExtrinsicFilter::TxIndex(list) => Vec::with_capacity(list.len()),
-			_ => Vec::new(),
-		};
-		for tx in transactions.iter() {
-			if !tx_filter.filter_in_tx_index(tx.index) || !tx_filter.filter_in_tx_hash(tx.tx_hash) {
-				continue;
+		let block = {
+			let mut cache = self.block_cache.lock();
+			match cache.block(block_hash) {
+				Some(block) => block.clone(),
+				None => {
+					let block =
+						fetch_extrinsics::cache_block::<C, Block>(&self.client, block_hash)?;
+					cache.insert(block_hash, block).clone()
+				},
 			}
+		};
 
-			if !tx_filter.filter_in_pallet(tx.dispatch_index.0)
-				|| !tx_filter.filter_in_pallet_call(tx.dispatch_index)
-			{
-				continue;
+		let transactions = &block.0;
+		let mut allowed_extrinsics = Vec::new();
+
+		for tx in transactions.iter() {
+			// Check if it is allowed
+			if let Some(allow_list) = &allow_list {
+				let mut allowed = false;
+
+				for rule in allow_list.iter() {
+					match rule {
+						AllowedExtrinsic::TxIndex(index) if *index == tx.index => {
+							allowed = true;
+							break;
+						},
+						AllowedExtrinsic::TxHash(hash) if *hash == tx.tx_hash => {
+							allowed = true;
+							break;
+						},
+						AllowedExtrinsic::Pallet(pallet) if *pallet == tx.pallet_id => {
+							allowed = true;
+							break;
+						},
+						AllowedExtrinsic::PalletCall(index)
+							if *index == (tx.pallet_id, tx.variant_id) =>
+						{
+							allowed = true;
+							break;
+						},
+						_ => (),
+					};
+				}
+
+				if !allowed {
+					continue;
+				}
 			}
 
 			if !sig_filter.filter_in(&tx.signature) {
@@ -222,39 +246,31 @@ where
 
 			let data = match data_format {
 				DataFormat::None => String::new(),
-				DataFormat::Call => tx.tx_encoded[tx.call_start_pos..].to_string(),
-				DataFormat::Extrinsic => tx.tx_encoded.clone(),
+				DataFormat::Call => tx.data[tx.call_start_pos..].to_string(),
+				DataFormat::Extrinsic => tx.data.clone(),
 			};
 
-			let ext_info = Extrinsic {
+			let ext = Extrinsic {
 				data,
 				tx_hash: tx.tx_hash,
 				tx_index: tx.index,
-				pallet_id: tx.dispatch_index.0,
-				call_id: tx.dispatch_index.1,
+				pallet_id: tx.pallet_id,
+				variant_id: tx.variant_id,
 				signature: tx.signature.clone(),
 			};
-			found_extrinsics.push(ext_info);
 
-			if let ExtrinsicFilter::TxIndex(list) = &tx_filter {
-				if found_extrinsics.len() >= list.len() {
-					break;
-				}
-			}
-
-			if let ExtrinsicFilter::TxHash(list) = &tx_filter {
-				if found_extrinsics.len() >= list.len() {
-					break;
-				}
-			}
+			allowed_extrinsics.push(ext);
 		}
 
-		cache.promote_block(block_hash);
+		{
+			let mut cache = self.block_cache.lock();
+			cache.promote_block(block_hash);
+		}
 
-		Ok(found_extrinsics)
+		Ok(allowed_extrinsics)
 	}
 
-	async fn latest_chain_info(&self) -> RpcResult<types::ChainInfo> {
+	async fn fetch_chain_info(&self) -> RpcResult<types::ChainInfo> {
 		let info = self.client.info();
 		return Ok(types::ChainInfo {
 			best_hash: info.best_hash.into(),
@@ -265,12 +281,66 @@ where
 		});
 	}
 
-	async fn block_get_block_number(&self, hash: H256) -> RpcResult<Option<u32>> {
+	async fn fetch_block_number(&self, hash: H256) -> RpcResult<Option<u32>> {
 		let result = self
 			.client
 			.block_number_from_id(&sp_runtime::generic::BlockId::Hash(hash.into()))
 			.map_err(|err| Error::Other.into_error_object(err.to_string()))?;
 		Ok(result.map(|x| x.into()))
+	}
+
+	async fn fetch_block_timestamp(&self, block_id: types::BlockId) -> RpcResult<u64> {
+		use types::BlockId;
+
+		const TIMESTAMP_SET_PALLET_ID: u8 = 3;
+		const TIMESTAMP_SET_VARIANT_ID: u8 = 3;
+
+		let block_hash = match block_id {
+			BlockId::Hash(h) => h,
+			BlockId::Number(n) => {
+				let hash = match self.client.block_hash(n.into()) {
+					Ok(ok) => ok,
+					Err(err) => return Err(Error::NoBlockFound.into_error_object(err.to_string())),
+				};
+				let Some(hash) = hash else {
+					return Err(Error::NoBlockFound
+						.into_error_object(String::from("Failed to find block hash")));
+				};
+				hash.into()
+			},
+		};
+
+		let block = {
+			let mut cache = self.block_cache.lock();
+			match cache.block(block_hash) {
+				Some(block) => block.clone(),
+				None => {
+					let block =
+						fetch_extrinsics::cache_block::<C, Block>(&self.client, block_hash)?;
+					cache.insert(block_hash, block).clone()
+				},
+			}
+		};
+
+		let Some(ext) = block.0.get(0) else {
+			return Ok(0);
+		};
+
+		if ext.pallet_id != TIMESTAMP_SET_PALLET_ID || ext.variant_id != TIMESTAMP_SET_VARIANT_ID {
+			return Ok(0);
+		}
+
+		let Ok(input) = const_hex::decode(&ext.data[ext.call_start_pos..]) else {
+			return Ok(0);
+		};
+
+		let mut inp = &input[2..];
+
+		let Ok(timestamp) = Compact::<u64>::decode(&mut inp) else {
+			return Ok(0);
+		};
+
+		Ok(timestamp.0)
 	}
 }
 
@@ -348,7 +418,6 @@ pub mod fetch_extrinsics {
 	use super::*;
 	// TODO: move this to appropriate place
 	const EXTRINSIC_FORMAT_VERSION: u8 = 4;
-	const MAX_INDICES_COUNT: usize = 50;
 
 	use codec::{Decode, Input};
 	use da_runtime::{Address, Signature, SignedExtra};
@@ -364,7 +433,7 @@ pub mod fetch_extrinsics {
 		pub tx_hash: H256,
 		pub tx_index: u32,
 		pub pallet_id: u8,
-		pub call_id: u8,
+		pub variant_id: u8,
 		pub signature: Option<TransactionSignature>,
 	}
 
@@ -393,61 +462,12 @@ pub mod fetch_extrinsics {
 		}
 	}
 
-	#[derive(Clone, Default, Serialize, Deserialize)]
-	pub enum ExtrinsicFilter {
-		#[default]
-		All,
-		TxHash(Vec<H256>),
-		TxIndex(Vec<u32>),
-		Pallet(Vec<u8>),
-		PalletCall(Vec<(u8, u8)>),
-	}
-
-	impl ExtrinsicFilter {
-		pub fn is_valid(&self) -> bool {
-			match self {
-				ExtrinsicFilter::All => true,
-				ExtrinsicFilter::TxHash(items) => items.len() <= MAX_INDICES_COUNT,
-				ExtrinsicFilter::TxIndex(items) => items.len() <= MAX_INDICES_COUNT,
-				ExtrinsicFilter::Pallet(items) => items.len() <= MAX_INDICES_COUNT,
-				ExtrinsicFilter::PalletCall(items) => items.len() <= MAX_INDICES_COUNT,
-			}
-		}
-
-		pub fn is_tx_hash(&self) -> bool {
-			match self {
-				Self::TxHash(_) => true,
-				_ => false,
-			}
-		}
-
-		pub fn filter_in_pallet(&self, value: u8) -> bool {
-			let ExtrinsicFilter::Pallet(list) = self else {
-				return true;
-			};
-			list.contains(&value)
-		}
-
-		pub fn filter_in_pallet_call(&self, value: (u8, u8)) -> bool {
-			let ExtrinsicFilter::PalletCall(list) = self else {
-				return true;
-			};
-			list.contains(&value)
-		}
-
-		pub fn filter_in_tx_hash(&self, value: H256) -> bool {
-			let ExtrinsicFilter::TxHash(list) = self else {
-				return true;
-			};
-			list.contains(&value)
-		}
-
-		pub fn filter_in_tx_index(&self, value: u32) -> bool {
-			let ExtrinsicFilter::TxIndex(list) = self else {
-				return true;
-			};
-			list.contains(&value)
-		}
+	#[derive(Clone, Serialize, Deserialize)]
+	pub enum AllowedExtrinsic {
+		TxHash(H256),
+		TxIndex(u32),
+		Pallet(u8),
+		PalletCall((u8, u8)),
 	}
 
 	#[derive(Default, Clone, Serialize, Deserialize)]
@@ -528,33 +548,29 @@ pub mod fetch_extrinsics {
 		}
 	}
 
+	#[derive(Clone)]
 	pub struct CachedTransaction {
 		pub index: u32,
 		pub signature: Option<TransactionSignature>,
-		pub dispatch_index: (u8, u8),
+		pub pallet_id: u8,
+		pub variant_id: u8,
 		pub tx_hash: H256,
 		// This is the whole tx encoded together with signature and call
-		pub tx_encoded: String,
+		pub data: String,
 		// position from where the call starts in the encoded transaction
 		pub call_start_pos: usize,
 	}
 
-	#[derive(Default)]
-	pub struct CachedBlock {
-		transactions: Vec<CachedTransaction>,
-	}
+	#[derive(Default, Clone)]
+	pub struct CachedBlock(pub Vec<CachedTransaction>);
 
 	impl CachedBlock {
 		pub fn new(transactions: Vec<CachedTransaction>) -> Self {
-			Self { transactions }
-		}
-
-		pub fn transactions(&self) -> &Vec<CachedTransaction> {
-			&self.transactions
+			Self(transactions)
 		}
 
 		pub fn insert(&mut self, value: CachedTransaction) {
-			self.transactions.push(value);
+			self.0.push(value);
 		}
 	}
 
@@ -666,10 +682,9 @@ pub mod fetch_extrinsics {
 			let Some(pallet_id) = ext_inner.get(call_start_pos) else {
 				continue;
 			};
-			let Some(call_id) = ext_inner.get(call_start_pos + 1) else {
+			let Some(variant_id) = ext_inner.get(call_start_pos + 1) else {
 				continue;
 			};
-			let dispatch_index = (*pallet_id, *call_id);
 
 			// build tx_encoded and tx_hash using ext_inner
 			let (tx_encoded, tx_hash) = {
@@ -687,9 +702,10 @@ pub mod fetch_extrinsics {
 			let tx = CachedTransaction {
 				index: index as u32,
 				signature,
-				dispatch_index,
+				pallet_id: *pallet_id,
+				variant_id: *variant_id,
 				tx_hash,
-				tx_encoded,
+				data: tx_encoded,
 				call_start_pos: encoded_call_start_pos,
 			};
 			cached_transactions.push(tx)

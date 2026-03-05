@@ -47,7 +47,7 @@ pub mod system_events_api {
 	pub mod fetch_events {
 		use super::*;
 
-		pub const MAX_INDICES_COUNT: usize = 50;
+		pub const MAX_INDICES_COUNT: usize = 30;
 		pub const ERROR_INVALID_INPUTS: u8 = 1;
 
 		pub type Events = Result<Vec<PhaseEvents>, u8>;
