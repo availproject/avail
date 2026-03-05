@@ -18,24 +18,25 @@ use std::{
 
 #[rpc(client, server)]
 pub trait Api {
-	#[method(name = "system_fetchEventsV1")]
-	async fn fetch_events_v1(
+	#[method(name = "custom_events")]
+	async fn fetch_events(
 		&self,
-		at: H256,
-		options: Option<fetch_events_v1::Options>,
-	) -> RpcResult<fetch_events_v1::ApiResult>;
+		block_id: types::BlockId,
+		filter: fetch_events::Filter,
+		fetch_data: bool,
+	) -> RpcResult<fetch_events::Events>;
 
-	#[method(name = "system_fetchExtrinsicsV1")]
-	async fn fetch_extrinsics_v1(
+	#[method(name = "custom_extrinsics")]
+	async fn fetch_extrinsics(
 		&self,
-		block_id: fetch_extrinsics_v1::BlockId,
-		options: Option<fetch_extrinsics_v1::Options>,
-	) -> RpcResult<fetch_extrinsics_v1::ApiResult>;
+		block_id: types::BlockId,
+		options: Option<fetch_extrinsics::Options>,
+	) -> RpcResult<fetch_extrinsics::ApiResult>;
 
-	#[method(name = "system_latestChainInfo")]
+	#[method(name = "custom_chainInfo")]
 	async fn latest_chain_info(&self) -> RpcResult<types::ChainInfo>;
 
-	#[method(name = "system_getBlockNumber")]
+	#[method(name = "custom_blockNumber")]
 	async fn block_get_block_number(&self, hash: H256) -> RpcResult<Option<u32>>;
 }
 
@@ -46,7 +47,7 @@ where
 	Block: BlockT,
 {
 	pub client: Arc<C>,
-	pub block_cache: Arc<Mutex<fetch_extrinsics_v1::Cache>>,
+	pub block_cache: Arc<Mutex<fetch_extrinsics::Cache>>,
 	_phantom: PhantomData<Block>,
 }
 impl<C, Block> Rpc<C, Block>
@@ -60,7 +61,7 @@ where
 	pub fn new(client: Arc<C>) -> Self {
 		Self {
 			client,
-			block_cache: Arc::new(Mutex::new(fetch_extrinsics_v1::Cache::new(5))),
+			block_cache: Arc::new(Mutex::new(fetch_extrinsics::Cache::new(5))),
 			_phantom: PhantomData,
 		}
 	}
@@ -107,33 +108,49 @@ where
 	<<Block as BlockT>::Header as HeaderT>::Number: From<u32>,
 	<<Block as BlockT>::Header as HeaderT>::Number: Into<u32>,
 {
-	async fn fetch_events_v1(
+	async fn fetch_events(
 		&self,
-		at: H256,
-		options: Option<fetch_events_v1::Options>,
-	) -> RpcResult<fetch_events_v1::ApiResult> {
-		use fetch_events_v1::GroupedRuntimeEvents;
+		block_id: types::BlockId,
+		filter: fetch_events::Filter,
+		fetch_data: bool,
+	) -> RpcResult<fetch_events::Events> {
+		use fetch_events::PhaseEvents;
+
+		let block_hash = match block_id {
+			types::BlockId::Hash(hash) => hash,
+			types::BlockId::Number(number) => {
+				let hash = match self.client.block_hash(number.into()) {
+					Ok(ok) => ok,
+					Err(err) => return Err(Error::NoBlockFound.into_error_object(err.to_string())),
+				};
+				let Some(hash) = hash else {
+					return Err(Error::NoBlockFound
+						.into_error_object(String::from("Failed to find block hash")));
+				};
+				hash.into()
+			},
+		};
 
 		let runtime_api = self.client.runtime_api();
 		let result = runtime_api
-			.fetch_events_v1(at.into(), options.unwrap_or_default())
+			.fetch_events(block_hash.into(), filter, fetch_data)
 			.map_err(|x| Error::RuntimeApi.into_error_object(x.to_string()))?;
 
 		match result {
-			Ok(res) => Ok(res.into_iter().map(GroupedRuntimeEvents::from).collect()),
+			Ok(res) => Ok(res.into_iter().map(PhaseEvents::from).collect()),
 			Err(code) => Err(Error::InvalidInput
 				.into_error_object(std::format!("Runtime Api Error Code: {code}"))),
 		}
 	}
 
-	async fn fetch_extrinsics_v1(
+	async fn fetch_extrinsics(
 		&self,
-		block_id: fetch_extrinsics_v1::BlockId,
-		options: Option<fetch_extrinsics_v1::Options>,
-	) -> RpcResult<fetch_extrinsics_v1::ApiResult> {
-		use fetch_extrinsics_v1::{
-			BlockId, EncodeSelector, ExtrinsicInformation, TransactionFilterOptions,
-		};
+		block_id: types::BlockId,
+		options: Option<fetch_extrinsics::Options>,
+	) -> RpcResult<fetch_extrinsics::ApiResult> {
+		use fetch_extrinsics::{EncodeSelector, ExtrinsicInformation, TransactionFilterOptions};
+		use types::BlockId;
+
 		let options = options.unwrap_or_default();
 		let filter = options.filter.unwrap_or_default();
 		let tx_filter = filter.transaction.unwrap_or_default();
@@ -171,7 +188,7 @@ where
 		let cached_block = match cache.block(block_hash) {
 			Some(block) => block,
 			None => {
-				let block = fetch_extrinsics_v1::cache_block::<C, Block>(&self.client, block_hash)?;
+				let block = fetch_extrinsics::cache_block::<C, Block>(&self.client, block_hash)?;
 				cache.insert(block_hash, block)
 			},
 		};
@@ -263,22 +280,29 @@ pub mod types {
 		pub finalized_height: u32,
 		pub genesis_hash: H256,
 	}
+
+	#[derive(Clone, Copy, serde::Serialize, serde::Deserialize)]
+	pub enum BlockId {
+		/// Identify by block header hash.
+		Hash(H256),
+		/// Identify by block number.
+		Number(u32),
+	}
 }
 
-pub mod fetch_events_v1 {
-	pub use frame_system_rpc_runtime_api::system_events_api::fetch_events_v1::{
-		GroupedRuntimeEvents as RuntimeGroupedRuntimeEvents, Options,
-		RuntimeEvent as RuntimeRuntimeEvent,
+pub mod fetch_events {
+	pub use frame_system_rpc_runtime_api::system_events_api::fetch_events::{
+		Filter, PhaseEvents as RuntimeGroupedRuntimeEvents, RuntimeEvent as RuntimeRuntimeEvent,
 	};
-	pub type ApiResult = Vec<GroupedRuntimeEvents>;
+	pub type Events = Vec<PhaseEvents>;
 
 	#[derive(Clone, serde::Serialize, serde::Deserialize)]
-	pub struct GroupedRuntimeEvents {
+	pub struct PhaseEvents {
 		pub phase: frame_system::Phase,
 		pub events: Vec<RuntimeEvent>,
 	}
 
-	impl GroupedRuntimeEvents {
+	impl PhaseEvents {
 		pub fn new(phase: frame_system::Phase) -> Self {
 			Self {
 				phase,
@@ -287,7 +311,7 @@ pub mod fetch_events_v1 {
 		}
 	}
 
-	impl From<RuntimeGroupedRuntimeEvents> for GroupedRuntimeEvents {
+	impl From<RuntimeGroupedRuntimeEvents> for PhaseEvents {
 		fn from(value: RuntimeGroupedRuntimeEvents) -> Self {
 			Self {
 				phase: value.phase,
@@ -301,8 +325,7 @@ pub mod fetch_events_v1 {
 		pub index: u32,
 		// (Pallet Id, Event Id)
 		pub emitted_index: (u8, u8),
-		pub encoded: Option<String>,
-		pub decoded: Option<String>,
+		pub data: Option<String>,
 	}
 
 	impl From<RuntimeRuntimeEvent> for RuntimeEvent {
@@ -310,14 +333,13 @@ pub mod fetch_events_v1 {
 			Self {
 				index: value.index,
 				emitted_index: value.emitted_index,
-				encoded: value.encoded.map(const_hex::encode),
-				decoded: value.decoded.map(const_hex::encode),
+				data: value.data.map(const_hex::encode),
 			}
 		}
 	}
 }
 
-pub mod fetch_extrinsics_v1 {
+pub mod fetch_extrinsics {
 	use super::*;
 	// use avail_core::asdr::EXTRINSIC_FORMAT_VERSION;
 	// TODO: move this to appropriate place
@@ -338,14 +360,6 @@ pub mod fetch_extrinsics_v1 {
 		pub pallet_id: u8,
 		pub call_id: u8,
 		pub signature: Option<TransactionSignature>,
-	}
-
-	#[derive(Clone, Copy, Serialize, Deserialize)]
-	pub enum BlockId {
-		/// Identify by block header hash.
-		Hash(H256),
-		/// Identify by block number.
-		Number(u32),
 	}
 
 	#[derive(Default, Clone, Serialize, Deserialize)]
@@ -704,7 +718,7 @@ pub mod fetch_extrinsics_v1 {
 
 #[cfg(test)]
 mod test {
-	use super::fetch_extrinsics_v1::*;
+	use super::fetch_extrinsics::*;
 	use sp_core::H256;
 
 	#[test]

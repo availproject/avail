@@ -18,6 +18,7 @@ use sp_runtime::OpaqueExtrinsic;
 use frame_support::genesis_builder_helper::{build_state, get_preset};
 use frame_support::{traits::KeyOwnerProofSystem, weights::Weight};
 use frame_system::limits::BlockLength;
+use frame_system_rpc_runtime_api::system_events_api::fetch_events;
 use pallet_nomination_pools::PoolId;
 use pallet_transaction_payment::{FeeDetails, RuntimeDispatchInfo};
 use scale_info::prelude::string::String;
@@ -260,20 +261,16 @@ impl_runtime_apis! {
 	}
 
 	impl frame_system_rpc_runtime_api::SystemEventsApi<Block> for Runtime {
-		fn fetch_events_v1(options: frame_system_rpc_runtime_api::system_events_api::fetch_events_v1::Options) -> frame_system_rpc_runtime_api::system_events_api::fetch_events_v1::ApiResult {
+		fn fetch_events(filter: fetch_events::Filter, fetch_data: bool) -> fetch_events::Events {
 			use sp_std::vec;
-			use frame_system_rpc_runtime_api::system_events_api::fetch_events_v1::{RuntimeEvent, GroupedRuntimeEvents, ERROR_INVALID_INPUTS};
+			use frame_system_rpc_runtime_api::system_events_api::fetch_events::{RuntimeEvent, PhaseEvents, ERROR_INVALID_INPUTS};
 			use codec::Encode;
 
-			let filter = options.filter.unwrap_or_default();
 			if !filter.is_valid() {
 				return Err(ERROR_INVALID_INPUTS);
 			}
 
-			let enable_encoding = options.enable_encoding.unwrap_or(false);
-			let enable_decoding = options.enable_decoding.unwrap_or(false);
-
-			let mut result: Vec<GroupedRuntimeEvents> = Vec::new();
+			let mut result: Vec<PhaseEvents> = Vec::new();
 			let all_events = System::read_events_no_consensus();
 			for (position, event) in all_events.enumerate() {
 				if !filter.should_allow(event.phase) {
@@ -286,14 +283,13 @@ impl_runtime_apis! {
 				}
 
 				let emitted_index: (u8, u8) = (encoded[0], encoded[1]);
-				let encoded = enable_encoding.then_some(encoded);
-				let decoded = enable_decoding.then(|| decode_runtime_event_v1(&event.event)).flatten();
+				let encoded = fetch_data.then_some(encoded);
 
-				let ev = RuntimeEvent::new(position as u32, emitted_index, encoded, decoded);
+				let ev = RuntimeEvent::new(position as u32, emitted_index, encoded);
 				if let Some(entry) = result.iter_mut().find(|x| x.phase == event.phase) {
 					entry.events.push(ev);
 				} else {
-					result.push(GroupedRuntimeEvents {phase: event.phase, events: vec![ev]});
+					result.push(PhaseEvents {phase: event.phase, events: vec![ev]});
 				};
 			}
 
@@ -785,71 +781,4 @@ impl_runtime_apis! {
 			crate::genesis_config_presets::preset_names()
 		}
 	}
-}
-
-fn decode_runtime_event_v1(event: &super::RuntimeEvent) -> Option<Vec<u8>> {
-	use super::*;
-	use codec::Encode;
-
-	match event {
-		RuntimeEvent::Sudo(e) => match e {
-			pallet_sudo::Event::<Runtime>::Sudid { sudo_result } => {
-				let mut event_data = Vec::<u8>::new();
-				sudo_result.is_ok().encode_to(&mut event_data);
-
-				return Some(event_data);
-			},
-			pallet_sudo::Event::<Runtime>::SudoAsDone { sudo_result } => {
-				let mut event_data = Vec::<u8>::new();
-				sudo_result.is_ok().encode_to(&mut event_data);
-
-				return Some(event_data);
-			},
-			_ => (),
-		},
-		RuntimeEvent::Multisig(e) => {
-			if let pallet_multisig::Event::<Runtime>::MultisigExecuted {
-				multisig,
-				call_hash,
-				result: x,
-				..
-			} = e
-			{
-				let mut event_data = Vec::<u8>::new();
-				multisig.encode_to(&mut event_data);
-				call_hash.encode_to(&mut event_data);
-				x.is_ok().encode_to(&mut event_data);
-
-				return Some(event_data);
-			}
-		},
-		RuntimeEvent::Proxy(e) => {
-			if let pallet_proxy::Event::<Runtime>::ProxyExecuted { result, .. } = e {
-				let mut event_data = Vec::<u8>::new();
-				result.is_ok().encode_to(&mut event_data);
-
-				return Some(event_data);
-			}
-		},
-		RuntimeEvent::Scheduler(e) => {
-			if let pallet_scheduler::Event::<Runtime>::Dispatched { result, .. } = e {
-				let mut event_data = Vec::<u8>::new();
-				result.is_ok().encode_to(&mut event_data);
-
-				return Some(event_data);
-			}
-		},
-		RuntimeEvent::DataAvailability(e) => {
-			if let da_control::Event::<Runtime>::DataSubmitted { who, data_hash } = e {
-				let mut event_data = Vec::<u8>::new();
-				who.encode_to(&mut event_data);
-				data_hash.encode_to(&mut event_data);
-
-				return Some(event_data);
-			}
-		},
-		_ => (),
-	};
-
-	None
 }
