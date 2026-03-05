@@ -1301,6 +1301,7 @@ dependencies = [
  "log",
  "parity-scale-codec",
  "rand_chacha 0.3.1",
+ "rayon",
  "serde",
 ]
 
