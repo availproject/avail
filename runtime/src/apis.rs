@@ -261,7 +261,7 @@ impl_runtime_apis! {
 	}
 
 	impl frame_system_rpc_runtime_api::SystemEventsApi<Block> for Runtime {
-		fn fetch_events(filter: fetch_events::Filter, fetch_data: bool) -> fetch_events::Events {
+		fn fetch_events(filter: fetch_events::AllowedEvents, fetch_data: bool) -> fetch_events::Events {
 			use sp_std::vec;
 			use frame_system_rpc_runtime_api::system_events_api::fetch_events::{RuntimeEvent, PhaseEvents, ERROR_INVALID_INPUTS};
 			use codec::Encode;
@@ -278,14 +278,14 @@ impl_runtime_apis! {
 				}
 
 				let encoded = event.event.encode();
-				if encoded.len() <2 {
+				if encoded.len() < 2 {
 					continue
 				}
 
-				let emitted_index: (u8, u8) = (encoded[0], encoded[1]);
+				let (pallet_id, variant_id): (u8, u8) = (encoded[0], encoded[1]);
 				let data = fetch_data.then_some(encoded).unwrap_or(Vec::new());
 
-				let ev = RuntimeEvent::new(position as u32, emitted_index, data);
+				let ev = RuntimeEvent::new(position as u32, pallet_id, variant_id, data);
 				if let Some(entry) = result.iter_mut().find(|x| x.phase == event.phase) {
 					entry.events.push(ev);
 				} else {

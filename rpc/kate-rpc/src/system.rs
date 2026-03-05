@@ -20,7 +20,7 @@ pub trait Api {
 	async fn fetch_events(
 		&self,
 		block_id: types::BlockId,
-		filter: Option<fetch_events::Filter>,
+		allow_list: Option<fetch_events::AllowedEvents>,
 		fetch_data: Option<bool>,
 	) -> RpcResult<fetch_events::Events>;
 
@@ -114,7 +114,7 @@ where
 	async fn fetch_events(
 		&self,
 		block_id: types::BlockId,
-		filter: Option<fetch_events::Filter>,
+		filter: Option<fetch_events::AllowedEvents>,
 		fetch_data: Option<bool>,
 	) -> RpcResult<fetch_events::Events> {
 		use fetch_events::PhaseEvents;
@@ -367,7 +367,8 @@ pub mod types {
 
 pub mod fetch_events {
 	pub use frame_system_rpc_runtime_api::system_events_api::fetch_events::{
-		Filter, PhaseEvents as RuntimeGroupedRuntimeEvents, RuntimeEvent as RuntimeRuntimeEvent,
+		AllowedEvents, PhaseEvents as RuntimeGroupedRuntimeEvents,
+		RuntimeEvent as RuntimeRuntimeEvent,
 	};
 	pub type Events = Vec<PhaseEvents>;
 
@@ -398,8 +399,8 @@ pub mod fetch_events {
 	#[derive(Clone, serde::Serialize, serde::Deserialize)]
 	pub struct RuntimeEvent {
 		pub index: u32,
-		// (Pallet Id, Event Id)
-		pub emitted_index: (u8, u8),
+		pub pallet_id: u8,
+		pub variant_id: u8,
 		pub data: String,
 	}
 
@@ -407,7 +408,8 @@ pub mod fetch_events {
 		fn from(value: RuntimeRuntimeEvent) -> Self {
 			Self {
 				index: value.index,
-				emitted_index: value.emitted_index,
+				pallet_id: value.pallet_id,
+				variant_id: value.variant_id,
 				data: const_hex::encode(value.data),
 			}
 		}

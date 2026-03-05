@@ -37,7 +37,7 @@ sp_api::decl_runtime_apis! {
 
 	pub trait SystemEventsApi
 	{
-		fn fetch_events(filter: fetch_events::Filter, fetch_data: bool) -> fetch_events::Events;
+		fn fetch_events(filter: fetch_events::AllowedEvents, fetch_data: bool) -> fetch_events::Events;
 	}
 }
 
@@ -55,7 +55,7 @@ pub mod system_events_api {
 		#[derive(Clone, Default, scale_info::TypeInfo, codec::Decode, codec::Encode)]
 		#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 		#[repr(u8)]
-		pub enum Filter {
+		pub enum AllowedEvents {
 			#[default]
 			All = 0,
 			OnlyExtrinsics = 1,
@@ -63,7 +63,7 @@ pub mod system_events_api {
 			Only(Vec<u32>) = 3,
 		}
 
-		impl Filter {
+		impl AllowedEvents {
 			pub fn is_valid(&self) -> bool {
 				match self {
 					Self::Only(list) => list.len() <= MAX_INDICES_COUNT,
@@ -110,16 +110,17 @@ pub mod system_events_api {
 		#[derive(Clone, scale_info::TypeInfo, codec::Decode, codec::Encode)]
 		pub struct RuntimeEvent {
 			pub index: u32,
-			// (Pallet Id, Event Id)
-			pub emitted_index: (u8, u8),
+			pub pallet_id: u8,
+			pub variant_id: u8,
 			pub data: Vec<u8>,
 		}
 
 		impl RuntimeEvent {
-			pub fn new(index: u32, emitted_index: (u8, u8), data: Vec<u8>) -> Self {
+			pub fn new(index: u32, pallet_id: u8, variant_id: u8, data: Vec<u8>) -> Self {
 				Self {
 					index,
-					emitted_index,
+					pallet_id,
+					variant_id,
 					data,
 				}
 			}
