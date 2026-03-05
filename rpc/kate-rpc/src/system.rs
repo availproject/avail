@@ -1,4 +1,7 @@
-use codec::Encode;
+use codec::{Compact, Decode, Encode};
+use da_runtime::Preamble;
+use fetch_events::AllowedEvents;
+use fetch_extrinsics::{AllowedExtrinsic, DataFormat, Extrinsic, Extrinsics, SignatureFilter};
 use frame_system_rpc_runtime_api::SystemEventsApi;
 use jsonrpsee::{
 	core::{async_trait, RpcResult},
@@ -9,37 +12,40 @@ use sc_client_api::BlockBackend;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_core::{Blake2Hasher, Hasher, H256};
-use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 use sp_runtime::OpaqueExtrinsic;
-use std::{
-	marker::PhantomData,
-	sync::{Arc, Mutex},
+use sp_runtime::{
+	traits::{Block as BlockT, Header as HeaderT},
+	MultiAddress,
 };
+use std::{marker::PhantomData, sync::Arc};
 
 #[rpc(client, server)]
 pub trait Api {
-	#[method(name = "system_fetchEventsV1")]
-	async fn fetch_events_v1(
+	#[method(name = "custom_events")]
+	async fn events(
 		&self,
-		at: H256,
-		options: Option<fetch_events_v1::Options>,
-	) -> RpcResult<fetch_events_v1::ApiResult>;
+		at: types::BlockId,
+		allow_list: AllowedEvents,
+		fetch_data: bool,
+	) -> RpcResult<fetch_events::Events>;
 
-	#[method(name = "system_fetchExtrinsicsV1")]
-	async fn fetch_extrinsics_v1(
+	#[method(name = "custom_extrinsics")]
+	async fn extrinsics(
 		&self,
-		block_id: fetch_extrinsics_v1::BlockId,
-		options: Option<fetch_extrinsics_v1::Options>,
-	) -> RpcResult<fetch_extrinsics_v1::ApiResult>;
+		at: types::BlockId,
+		allow_list: Option<Vec<AllowedExtrinsic>>,
+		sig_filter: SignatureFilter,
+		data_format: DataFormat,
+	) -> RpcResult<Extrinsics>;
 
-	#[method(name = "system_latestBlockInfo")]
-	async fn latest_block_info(&self, use_best_block: Option<bool>) -> RpcResult<types::BlockInfo>;
+	#[method(name = "custom_chainInfo")]
+	async fn chain_info(&self) -> RpcResult<types::ChainInfo>;
 
-	#[method(name = "system_latestChainInfo")]
-	async fn latest_chain_info(&self) -> RpcResult<types::ChainInfo>;
+	#[method(name = "custom_blockNumber")]
+	async fn block_number(&self, hash: H256) -> RpcResult<Option<u32>>;
 
-	#[method(name = "system_getBlockNumber")]
-	async fn block_get_block_number(&self, hash: H256) -> RpcResult<Option<u32>>;
+	#[method(name = "custom_blockTimestamp")]
+	async fn block_timestamp(&self, block_id: types::BlockId) -> RpcResult<u64>;
 }
 
 pub struct Rpc<C, Block>
@@ -49,7 +55,6 @@ where
 	Block: BlockT,
 {
 	pub client: Arc<C>,
-	pub block_cache: Arc<Mutex<fetch_extrinsics_v1::Cache>>,
 	_phantom: PhantomData<Block>,
 }
 impl<C, Block> Rpc<C, Block>
@@ -63,7 +68,6 @@ where
 	pub fn new(client: Arc<C>) -> Self {
 		Self {
 			client,
-			block_cache: Arc::new(Mutex::new(fetch_extrinsics_v1::Cache::new(5))),
 			_phantom: PhantomData,
 		}
 	}
@@ -110,50 +114,60 @@ where
 	<<Block as BlockT>::Header as HeaderT>::Number: From<u32>,
 	<<Block as BlockT>::Header as HeaderT>::Number: Into<u32>,
 {
-	async fn fetch_events_v1(
+	async fn events(
 		&self,
-		at: H256,
-		options: Option<fetch_events_v1::Options>,
-	) -> RpcResult<fetch_events_v1::ApiResult> {
-		use fetch_events_v1::GroupedRuntimeEvents;
+		block_id: types::BlockId,
+		filter: fetch_events::AllowedEvents,
+		fetch_data: bool,
+	) -> RpcResult<fetch_events::Events> {
+		use fetch_events::PhaseEvents;
+
+		let block_hash = match block_id {
+			types::BlockId::Hash(hash) => hash,
+			types::BlockId::Number(number) => {
+				let hash = match self.client.block_hash(number.into()) {
+					Ok(ok) => ok,
+					Err(err) => return Err(Error::NoBlockFound.into_error_object(err.to_string())),
+				};
+				let Some(hash) = hash else {
+					return Err(Error::NoBlockFound
+						.into_error_object(String::from("Failed to find block hash")));
+				};
+				hash.into()
+			},
+		};
 
 		let runtime_api = self.client.runtime_api();
 		let result = runtime_api
-			.fetch_events_v1(at.into(), options.unwrap_or_default())
+			.fetch_events(block_hash.into(), filter, fetch_data)
 			.map_err(|x| Error::RuntimeApi.into_error_object(x.to_string()))?;
 
 		match result {
-			Ok(res) => Ok(res.into_iter().map(GroupedRuntimeEvents::from).collect()),
+			Ok(res) => Ok(res.into_iter().map(PhaseEvents::from).collect()),
 			Err(code) => Err(Error::InvalidInput
 				.into_error_object(std::format!("Runtime Api Error Code: {code}"))),
 		}
 	}
 
-	async fn fetch_extrinsics_v1(
+	async fn extrinsics(
 		&self,
-		block_id: fetch_extrinsics_v1::BlockId,
-		options: Option<fetch_extrinsics_v1::Options>,
-	) -> RpcResult<fetch_extrinsics_v1::ApiResult> {
-		use fetch_extrinsics_v1::{
-			BlockId, EncodeSelector, ExtrinsicInformation, TransactionFilterOptions,
-		};
-		let options = options.unwrap_or_default();
-		let filter = options.filter.unwrap_or_default();
-		let tx_filter = filter.transaction.unwrap_or_default();
-		let sig_filter = filter.signature.unwrap_or_default();
-		let encode_selector = options.encode_selector.unwrap_or_default();
+		at: types::BlockId,
+		allow_list: Option<Vec<AllowedExtrinsic>>,
+		sig_filter: SignatureFilter,
+		data_format: DataFormat,
+	) -> RpcResult<Extrinsics> {
+		use types::BlockId;
+		const MAX_INDICES_COUNT: usize = 30;
 
-		if !tx_filter.is_valid() {
-			return Err(Error::InvalidInput
-				.into_error_object(String::from("Transaction filter: Invalid input")));
+		if let Some(allow_list) = &allow_list {
+			if allow_list.len() > MAX_INDICES_COUNT {
+				return Err(Error::InvalidInput.into_error_object(String::from(
+					"Allow list: Invalid input. Cannot have more than 30 items",
+				)));
+			}
 		}
 
-		if !sig_filter.is_valid() {
-			return Err(Error::InvalidInput
-				.into_error_object(String::from("Signature filter: Invalid input")));
-		}
-
-		let block_hash = match block_id {
+		let block_hash = match at {
 			BlockId::Hash(h) => h,
 			BlockId::Number(n) => {
 				let hash = match self.client.block_hash(n.into()) {
@@ -167,91 +181,109 @@ where
 				hash.into()
 			},
 		};
-		let Ok(mut cache) = self.block_cache.lock() else {
-			return Err(Error::Other.into_error_object(String::from("failed to lock mutex")));
-		};
 
-		let cached_block = match cache.block(block_hash) {
-			Some(block) => block,
-			None => {
-				let block = fetch_extrinsics_v1::cache_block::<C, Block>(&self.client, block_hash)?;
-				cache.insert(block_hash, block)
+		let block_body = match self.client.block_body(block_hash.into()) {
+			Ok(x) => x,
+			Err(e) => {
+				return Err(Error::Other.into_error_object(e.to_string()));
 			},
 		};
 
-		let transactions = cached_block.transactions();
-		let mut found_extrinsics = match &tx_filter {
-			TransactionFilterOptions::All => Vec::with_capacity(transactions.len()),
-			TransactionFilterOptions::TxHash(list) => Vec::with_capacity(list.len()),
-			TransactionFilterOptions::TxIndex(list) => Vec::with_capacity(list.len()),
-			_ => Vec::new(),
+		let Some(block_body) = block_body else {
+			return Ok(Vec::new());
 		};
-		for tx in transactions.iter() {
-			if !tx_filter.filter_in_tx_index(tx.index) || !tx_filter.filter_in_tx_hash(tx.tx_hash) {
-				continue;
-			}
 
-			if !tx_filter.filter_in_pallet(tx.dispatch_index.0)
-				|| !tx_filter.filter_in_pallet_call(tx.dispatch_index)
-			{
-				continue;
-			}
+		let (allowed_indices, allowed_hashes, allowed_pallets, allowed_calls) =
+			allowed_extrinsics_to_parts(allow_list);
 
-			if !sig_filter.filter_in(&tx.signature) {
-				continue;
-			}
-
-			let encoded = match encode_selector {
-				EncodeSelector::None => None,
-				EncodeSelector::Call => Some(tx.tx_encoded[tx.call_start_pos..].to_string()),
-				EncodeSelector::Extrinsic => Some(tx.tx_encoded.clone()),
-			};
-
-			let ext_info = ExtrinsicInformation {
-				encoded,
-				tx_hash: tx.tx_hash,
-				tx_index: tx.index,
-				pallet_id: tx.dispatch_index.0,
-				call_id: tx.dispatch_index.1,
-				signature: tx.signature.clone(),
-			};
-			found_extrinsics.push(ext_info);
-
-			if let TransactionFilterOptions::TxIndex(list) = &tx_filter {
-				if found_extrinsics.len() >= list.len() {
-					break;
+		let mut returned_extrinsics = Vec::new();
+		for (ext_index, opaque) in block_body.into_iter().enumerate() {
+			let ext_index = ext_index as u32;
+			// Filter Indices
+			if let Some(allowed) = &allowed_indices {
+				if !allowed.contains(&ext_index) {
+					continue;
 				}
 			}
 
-			if let TransactionFilterOptions::TxHash(list) = &tx_filter {
-				if found_extrinsics.len() >= list.len() {
-					break;
+			let transparent = TransparentOpaque::from_opaque(&opaque)?;
+
+			let mut account_id = None;
+			let mut nonce = None;
+			if let Some((address, _, extended)) = transparent.preamble.to_signed() {
+				nonce = Some(extended.5 .0);
+				if let MultiAddress::Id(id) = address {
+					account_id = Some(id);
 				}
 			}
+
+			if let Some(allowed_address) = &sig_filter.account_id {
+				let Some(account) = account_id.as_ref() else {
+					continue;
+				};
+				let address = std::format!("{}", account);
+				if allowed_address.as_str() != address.as_str() {
+					continue;
+				}
+			}
+
+			if let Some(allowed_nonce) = &sig_filter.nonce {
+				let Some(nonce) = nonce.as_ref() else {
+					continue;
+				};
+				if *allowed_nonce != *nonce {
+					continue;
+				}
+			}
+
+			// Filter Pallets
+			if let Some(allowed) = &allowed_pallets {
+				if !allowed.contains(&transparent.pallet_id) {
+					continue;
+				}
+			}
+
+			// Filter Calls
+			if let Some(allowed) = &allowed_calls {
+				if !allowed.contains(&(transparent.pallet_id, transparent.variant_id)) {
+					continue;
+				}
+			}
+
+			let ext_hash = Blake2Hasher::hash(&transparent.bytes);
+
+			// Filter Hashes
+			if let Some(allowed) = &allowed_hashes {
+				if !allowed.contains(&ext_hash) {
+					continue;
+				}
+			}
+
+			let data = match data_format {
+				DataFormat::None => String::new(),
+				DataFormat::Call => {
+					const_hex::encode(&transparent.bytes[transparent.call_start_pos..])
+				},
+				DataFormat::Extrinsic => const_hex::encode(transparent.bytes),
+			};
+
+			let ext = Extrinsic {
+				data,
+				ext_hash,
+				ext_index,
+				pallet_id: transparent.pallet_id,
+				variant_id: transparent.variant_id,
+				account_id,
+				nonce,
+			};
+
+			returned_extrinsics.push(ext);
 		}
 
-		cache.promote_block(block_hash);
-
-		Ok(found_extrinsics)
+		Ok(returned_extrinsics)
 	}
 
-	async fn latest_block_info(&self, use_best_block: Option<bool>) -> RpcResult<types::BlockInfo> {
-		let info = self.client.info();
-		let use_best_block = use_best_block.unwrap_or(true);
-		if use_best_block {
-			return Ok(types::BlockInfo {
-				hash: info.best_hash.into(),
-				height: info.best_number.into(),
-			});
-		}
-
-		Ok(types::BlockInfo {
-			hash: info.finalized_hash.into(),
-			height: info.finalized_number.into(),
-		})
-	}
-
-	async fn latest_chain_info(&self) -> RpcResult<types::ChainInfo> {
+	async fn chain_info(&self) -> RpcResult<types::ChainInfo> {
 		let info = self.client.info();
 		return Ok(types::ChainInfo {
 			best_hash: info.best_hash.into(),
@@ -262,159 +294,203 @@ where
 		});
 	}
 
-	async fn block_get_block_number(&self, hash: H256) -> RpcResult<Option<u32>> {
+	async fn block_number(&self, hash: H256) -> RpcResult<Option<u32>> {
 		let result = self
 			.client
 			.block_number_from_id(&sp_runtime::generic::BlockId::Hash(hash.into()))
 			.map_err(|err| Error::Other.into_error_object(err.to_string()))?;
 		Ok(result.map(|x| x.into()))
 	}
+
+	async fn block_timestamp(&self, at: types::BlockId) -> RpcResult<u64> {
+		const TIMESTAMP_SET_PALLET_ID: u8 = 3;
+		const TIMESTAMP_SET_VARIANT_ID: u8 = 0;
+
+		let block_hash = match at {
+			types::BlockId::Hash(h) => h,
+			types::BlockId::Number(n) => {
+				let hash = match self.client.block_hash(n.into()) {
+					Ok(ok) => ok,
+					Err(err) => return Err(Error::NoBlockFound.into_error_object(err.to_string())),
+				};
+				let Some(hash) = hash else {
+					return Err(Error::NoBlockFound
+						.into_error_object(String::from("Failed to find block hash")));
+				};
+				hash.into()
+			},
+		};
+
+		let block_body = match self.client.block_body(block_hash.into()) {
+			Ok(x) => x,
+			Err(e) => {
+				return Err(Error::Other.into_error_object(e.to_string()));
+			},
+		};
+
+		let Some(block_body) = block_body else {
+			return Ok(0);
+		};
+
+		let Some(opaque) = block_body.get(0) else {
+			return Ok(0);
+		};
+
+		let transparent = TransparentOpaque::from_opaque(opaque)?;
+
+		if (transparent.pallet_id != TIMESTAMP_SET_PALLET_ID)
+			|| (transparent.variant_id != TIMESTAMP_SET_VARIANT_ID)
+		{
+			return Ok(0);
+		}
+
+		let Ok(timestamp) =
+			Compact::<u64>::decode(&mut &transparent.bytes[transparent.call_start_pos + 2..])
+		else {
+			return Ok(0);
+		};
+
+		Ok(timestamp.0)
+	}
+}
+
+struct TransparentOpaque {
+	pub bytes: Vec<u8>,
+	pub call_start_pos: usize,
+	pub pallet_id: u8,
+	pub variant_id: u8,
+	pub preamble: Preamble,
+}
+
+impl TransparentOpaque {
+	pub fn from_opaque<'a>(opaque: &OpaqueExtrinsic) -> Result<TransparentOpaque, ErrorObject<'a>> {
+		let bytes = opaque.encode();
+		let mut iter = bytes.as_slice();
+		let _ = match Compact::<u32>::decode(&mut iter) {
+			Ok(x) => x,
+			Err(e) => {
+				return Err(Error::Other.into_error_object(e.to_string()));
+			},
+		};
+		let preamble = match Preamble::decode(&mut iter) {
+			Ok(p) => p,
+			Err(e) => {
+				return Err(Error::Other.into_error_object(e.to_string()));
+			},
+		};
+
+		let call_start_pos = bytes.len().saturating_sub(iter.len());
+		let pallet_id = *bytes
+			.get(call_start_pos)
+			.ok_or(Error::Other.into_error_object(String::from("Invalid extrinsic found.")))?;
+		let variant_id = *bytes
+			.get(call_start_pos + 1)
+			.ok_or(Error::Other.into_error_object(String::from("Invalid extrinsic found.")))?;
+
+		let res = TransparentOpaque {
+			bytes,
+			call_start_pos,
+			pallet_id,
+			variant_id,
+			preamble,
+		};
+		Ok(res)
+	}
+}
+
+fn allowed_extrinsics_to_parts(
+	list: Option<Vec<AllowedExtrinsic>>,
+) -> (
+	Option<Vec<u32>>,
+	Option<Vec<H256>>,
+	Option<Vec<u8>>,
+	Option<Vec<(u8, u8)>>,
+) {
+	let Some(list) = list else {
+		return (None, None, None, None);
+	};
+
+	let mut allowed_indices: Option<Vec<u32>> = None;
+	let mut allowed_hashes: Option<Vec<H256>> = None;
+	let mut allowed_pallets: Option<Vec<u8>> = None;
+	let mut allowed_calls: Option<Vec<(u8, u8)>> = None;
+
+	for allowed in list {
+		match allowed {
+			AllowedExtrinsic::TxHash(x) => {
+				if let Some(hashes) = allowed_hashes.as_mut() {
+					hashes.push(x);
+				} else {
+					allowed_hashes = Some(vec![x])
+				}
+			},
+			AllowedExtrinsic::TxIndex(x) => {
+				if let Some(items) = allowed_indices.as_mut() {
+					items.push(x);
+				} else {
+					allowed_indices = Some(vec![x])
+				}
+			},
+			AllowedExtrinsic::Pallet(x) => {
+				if let Some(items) = allowed_pallets.as_mut() {
+					items.push(x);
+				} else {
+					allowed_pallets = Some(vec![x])
+				}
+			},
+			AllowedExtrinsic::PalletCall(x) => {
+				if let Some(items) = allowed_calls.as_mut() {
+					items.push(x);
+				} else {
+					allowed_calls = Some(vec![x])
+				}
+			},
+		}
+	}
+
+	(
+		allowed_indices,
+		allowed_hashes,
+		allowed_pallets,
+		allowed_calls,
+	)
 }
 
 pub mod types {
 	use super::*;
 
 	#[derive(Clone, serde::Serialize, serde::Deserialize)]
-	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-	#[cfg_attr(feature = "ts", ts(export, export_to = "Types.ts"))]
-	pub struct BlockInfo {
-		#[cfg_attr(feature = "ts", ts(as = "String"))]
-		pub hash: H256,
-		pub height: u32,
-	}
-
-	#[derive(Clone, serde::Serialize, serde::Deserialize)]
-	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-	#[cfg_attr(feature = "ts", ts(export, export_to = "Types.ts"))]
 	pub struct ChainInfo {
-		#[cfg_attr(feature = "ts", ts(as = "String"))]
 		pub best_hash: H256,
 		pub best_height: u32,
-		#[cfg_attr(feature = "ts", ts(as = "String"))]
 		pub finalized_hash: H256,
 		pub finalized_height: u32,
-		#[cfg_attr(feature = "ts", ts(as = "String"))]
 		pub genesis_hash: H256,
 	}
 
-	#[cfg(feature = "ts")]
-	pub mod ts_types {
-		use super::*;
-
-		#[allow(dead_code)]
-		#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-		#[cfg_attr(feature = "ts", ts(export, export_to = "Types.ts"))]
-		struct RpcRequestBlockInfo {
-			id: u32,
-			jsonrpc: String,
-			method: String,
-			params: (bool,),
-		}
-
-		#[allow(dead_code)]
-		#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-		#[cfg_attr(feature = "ts", ts(export, export_to = "Types.ts"))]
-		struct RpcResponseBlockInfo {
-			jsonrpc: String,
-			result: Option<BlockInfo>,
-			error: Option<Error>,
-			id: u32,
-		}
-
-		#[allow(dead_code)]
-		#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-		#[cfg_attr(feature = "ts", ts(export, export_to = "Types.ts"))]
-		struct RpcRequestChainInfo {
-			id: u32,
-			jsonrpc: String,
-			method: String,
-			params: (),
-		}
-
-		#[allow(dead_code)]
-		#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-		#[cfg_attr(feature = "ts", ts(export, export_to = "Types.ts"))]
-		struct RpcResponseChainInfo {
-			jsonrpc: String,
-			result: Option<ChainInfo>,
-			error: Option<Error>,
-			id: u32,
-		}
-
-		#[allow(dead_code)]
-		#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-		#[cfg_attr(feature = "ts", ts(export, export_to = "Types.ts"))]
-		struct RpcRequestBlockNumber {
-			id: u32,
-			jsonrpc: String,
-			method: String,
-			#[cfg_attr(feature = "ts", ts(as = "(String,)"))]
-			params: (H256,),
-		}
-
-		#[allow(dead_code)]
-		#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-		#[cfg_attr(feature = "ts", ts(export, export_to = "Types.ts"))]
-		struct RpcResponseBlockNumber {
-			jsonrpc: String,
-			result: Option<u32>,
-			error: Option<Error>,
-			id: u32,
-		}
-
-		#[allow(dead_code)]
-		#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-		#[cfg_attr(feature = "ts", ts(export, export_to = "Types.ts"))]
-		pub struct Error {
-			code: i32,
-			message: String,
-			data: Option<String>,
-		}
+	#[derive(Clone, Copy, serde::Serialize, serde::Deserialize)]
+	pub enum BlockId {
+		/// Identify by block header hash.
+		Hash(H256),
+		/// Identify by block number.
+		Number(u32),
 	}
 }
 
-pub mod fetch_events_v1 {
-	pub use frame_system_rpc_runtime_api::system_events_api::fetch_events_v1::{
-		GroupedRuntimeEvents as RuntimeGroupedRuntimeEvents, Options,
+pub mod fetch_events {
+	pub use frame_system_rpc_runtime_api::system_events_api::fetch_events::{
+		AllowedEvents, PhaseEvents as RuntimeGroupedRuntimeEvents,
 		RuntimeEvent as RuntimeRuntimeEvent,
 	};
-	pub type ApiResult = Vec<GroupedRuntimeEvents>;
-
-	#[cfg(feature = "ts")]
-	pub mod ts_types {
-		use super::super::types::ts_types::Error;
-		use super::*;
-
-		#[allow(dead_code)]
-		#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-		#[cfg_attr(feature = "ts", ts(export, export_to = "FetchEvents.ts"))]
-		struct RpcRequest {
-			id: u32,
-			jsonrpc: String,
-			method: String,
-			params: (String, Option<Options>),
-		}
-
-		#[allow(dead_code)]
-		#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-		#[cfg_attr(feature = "ts", ts(export, export_to = "FetchEvents.ts"))]
-		struct RpcResponse {
-			jsonrpc: String,
-			result: Option<Vec<GroupedRuntimeEvents>>,
-			error: Option<Error>,
-			id: u32,
-		}
-	}
+	pub type Events = Vec<PhaseEvents>;
 
 	#[derive(Clone, serde::Serialize, serde::Deserialize)]
-	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchEvents.ts"))]
-	pub struct GroupedRuntimeEvents {
+	pub struct PhaseEvents {
 		pub phase: frame_system::Phase,
 		pub events: Vec<RuntimeEvent>,
 	}
 
-	impl GroupedRuntimeEvents {
+	impl PhaseEvents {
 		pub fn new(phase: frame_system::Phase) -> Self {
 			Self {
 				phase,
@@ -423,7 +499,7 @@ pub mod fetch_events_v1 {
 		}
 	}
 
-	impl From<RuntimeGroupedRuntimeEvents> for GroupedRuntimeEvents {
+	impl From<RuntimeGroupedRuntimeEvents> for PhaseEvents {
 		fn from(value: RuntimeGroupedRuntimeEvents) -> Self {
 			Self {
 				phase: value.phase,
@@ -433,511 +509,81 @@ pub mod fetch_events_v1 {
 	}
 
 	#[derive(Clone, serde::Serialize, serde::Deserialize)]
-	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchEvents.ts"))]
 	pub struct RuntimeEvent {
 		pub index: u32,
-		// (Pallet Id, Event Id)
-		pub emitted_index: (u8, u8),
-		pub encoded: Option<String>,
-		pub decoded: Option<String>,
+		pub pallet_id: u8,
+		pub variant_id: u8,
+		pub data: String,
 	}
 
 	impl From<RuntimeRuntimeEvent> for RuntimeEvent {
 		fn from(value: RuntimeRuntimeEvent) -> Self {
 			Self {
 				index: value.index,
-				emitted_index: value.emitted_index,
-				encoded: value.encoded.map(const_hex::encode),
-				decoded: value.decoded.map(const_hex::encode),
+				pallet_id: value.pallet_id,
+				variant_id: value.variant_id,
+				data: const_hex::encode(value.data),
 			}
 		}
 	}
 }
 
-pub mod fetch_extrinsics_v1 {
+pub mod fetch_extrinsics {
 	use super::*;
-	// use avail_core::asdr::EXTRINSIC_FORMAT_VERSION;
-	// TODO: move this to appropriate place
-	const EXTRINSIC_FORMAT_VERSION: u8 = 4;
-	use codec::{Decode, Input};
-	use da_runtime::{Address, Signature, SignedExtra};
+
+	use da_runtime::AccountId;
 	use serde::{Deserialize, Serialize};
-	use sp_runtime::MultiAddress;
-	type SignaturePayload = (Address, Signature, SignedExtra);
 
-	pub type ApiResult = Vec<ExtrinsicInformation>;
-
-	#[cfg(feature = "ts")]
-	pub mod ts_types {
-		use super::super::types::ts_types::Error;
-		use super::*;
-
-		#[allow(dead_code)]
-		#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-		#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
-		struct RpcRequest {
-			id: u32,
-			jsonrpc: String,
-			method: String,
-			params: (BlockId, Option<Options>),
-		}
-
-		#[allow(dead_code)]
-		#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-		#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
-		struct RpcResponse {
-			jsonrpc: String,
-			result: Option<Vec<ExtrinsicInformation>>,
-			error: Option<Error>,
-			id: u32,
-		}
-	}
+	pub type Extrinsics = Vec<Extrinsic>;
 
 	#[derive(Clone, Serialize, Deserialize)]
-	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
-	pub struct ExtrinsicInformation {
-		pub encoded: Option<String>,
-		#[cfg_attr(feature = "ts", ts(as = "String"))]
-		pub tx_hash: H256,
-		pub tx_index: u32,
+	pub struct Extrinsic {
+		pub data: String,
+		pub ext_hash: H256,
+		pub ext_index: u32,
 		pub pallet_id: u8,
-		pub call_id: u8,
-		pub signature: Option<TransactionSignature>,
+		pub variant_id: u8,
+		pub account_id: Option<AccountId>,
+		pub nonce: Option<u32>,
 	}
 
-	#[derive(Clone, Copy, Serialize, Deserialize)]
-	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
-	pub enum BlockId {
-		/// Identify by block header hash.
-		#[cfg_attr(feature = "ts", ts(as = "String"))]
-		Hash(H256),
-		/// Identify by block number.
-		Number(u32),
-	}
-
-	#[derive(Default, Clone, Serialize, Deserialize)]
-	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
-	pub struct Options {
-		pub filter: Option<Filter>,
-		pub encode_selector: Option<EncodeSelector>,
-	}
-
-	#[derive(Clone, Serialize, Deserialize)]
-	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
+	#[derive(Clone, Default, Copy, Serialize, Deserialize)]
 	#[repr(u8)]
-	pub enum EncodeSelector {
+	pub enum DataFormat {
 		None = 0,
 		Call = 1,
+		#[default]
 		Extrinsic = 2,
 	}
 
-	impl EncodeSelector {
+	impl DataFormat {
 		pub fn is_call(&self) -> bool {
 			match self {
-				EncodeSelector::Call => true,
+				DataFormat::Call => true,
 				_ => false,
 			}
 		}
 
 		pub fn is_extrinsic(&self) -> bool {
 			match self {
-				EncodeSelector::Extrinsic => true,
+				DataFormat::Extrinsic => true,
 				_ => false,
 			}
 		}
-	}
-
-	impl Default for EncodeSelector {
-		fn default() -> Self {
-			Self::Extrinsic
-		}
-	}
-
-	#[derive(Default, Clone, Serialize, Deserialize)]
-	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
-	pub struct Filter {
-		pub transaction: Option<TransactionFilterOptions>,
-		pub signature: Option<SignatureFilterOptions>,
 	}
 
 	#[derive(Clone, Serialize, Deserialize)]
-	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
-	pub enum TransactionFilterOptions {
-		All,
-		#[cfg_attr(feature = "ts", ts(as = "Vec<String>"))]
-		TxHash(Vec<H256>),
-		TxIndex(Vec<u32>),
-		Pallet(Vec<u8>),
-		PalletCall(Vec<(u8, u8)>),
-	}
-
-	impl TransactionFilterOptions {
-		pub fn is_valid(&self) -> bool {
-			match self {
-				TransactionFilterOptions::All => true,
-				TransactionFilterOptions::TxHash(items) => items.len() < 30,
-				TransactionFilterOptions::TxIndex(items) => items.len() < 30,
-				TransactionFilterOptions::Pallet(items) => items.len() < 30,
-				TransactionFilterOptions::PalletCall(items) => items.len() < 30,
-			}
-		}
-
-		pub fn is_tx_hash(&self) -> bool {
-			match self {
-				Self::TxHash(_) => true,
-				_ => false,
-			}
-		}
-
-		pub fn filter_in_pallet(&self, value: u8) -> bool {
-			let TransactionFilterOptions::Pallet(list) = self else {
-				return true;
-			};
-			list.contains(&value)
-		}
-
-		pub fn filter_in_pallet_call(&self, value: (u8, u8)) -> bool {
-			let TransactionFilterOptions::PalletCall(list) = self else {
-				return true;
-			};
-			list.contains(&value)
-		}
-
-		pub fn filter_in_tx_hash(&self, value: H256) -> bool {
-			let TransactionFilterOptions::TxHash(list) = self else {
-				return true;
-			};
-			list.contains(&value)
-		}
-
-		pub fn filter_in_tx_index(&self, value: u32) -> bool {
-			let TransactionFilterOptions::TxIndex(list) = self else {
-				return true;
-			};
-			list.contains(&value)
-		}
-	}
-
-	impl Default for TransactionFilterOptions {
-		fn default() -> Self {
-			Self::All
-		}
+	pub enum AllowedExtrinsic {
+		TxHash(H256),
+		TxIndex(u32),
+		Pallet(u8),
+		PalletCall((u8, u8)),
 	}
 
 	#[derive(Default, Clone, Serialize, Deserialize)]
-	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
-	pub struct SignatureFilterOptions {
-		pub ss58_address: Option<String>,
-		pub app_id: Option<u32>,
+	pub struct SignatureFilter {
+		// SS58 address
+		pub account_id: Option<String>,
 		pub nonce: Option<u32>,
-	}
-
-	impl SignatureFilterOptions {
-		pub fn is_valid(&self) -> bool {
-			if self.ss58_address.as_ref().is_some_and(|x| x.len() > 100) {
-				return false;
-			}
-
-			true
-		}
-		pub fn filter_in(&self, signature: &Option<TransactionSignature>) -> bool {
-			if !self.filter_in_ss58_address(signature.as_ref().and_then(|x| x.ss58_address.clone()))
-			{
-				return false;
-			}
-
-			if !self.filter_in_nonce(signature.as_ref().map(|x| x.nonce)) {
-				return false;
-			}
-
-			true
-		}
-
-		pub fn filter_in_ss58_address(&self, value: Option<String>) -> bool {
-			if self.ss58_address.is_none() {
-				return true;
-			}
-			self.ss58_address == value
-		}
-
-		pub fn filter_in_nonce(&self, value: Option<u32>) -> bool {
-			if self.nonce.is_none() {
-				return true;
-			}
-			self.nonce == value
-		}
-	}
-
-	#[derive(Clone, Serialize, Deserialize)]
-	#[cfg_attr(feature = "ts", derive(ts_rs::TS))]
-	#[cfg_attr(feature = "ts", ts(export, export_to = "FetchExtrinsics.ts"))]
-	pub struct TransactionSignature {
-		pub ss58_address: Option<String>,
-		pub nonce: u32,
-		// pub app_id: u32,
-		pub mortality: Option<(u64, u64)>,
-	}
-
-	impl TransactionSignature {
-		pub fn from_signature_payload(sig: &Option<SignaturePayload>) -> Option<Self> {
-			let Some(sig) = sig else {
-				return None;
-			};
-
-			let ss58_address = if let MultiAddress::Id(id) = &sig.0 {
-				Some(std::format!("{}", id))
-			} else {
-				None
-			};
-			let nonce = sig.2 .5 .0;
-			// let app_id = sig.2 .8 .0 .0;
-			let mortality = match sig.2 .4 .0 {
-				sp_runtime::generic::Era::Immortal => None,
-				sp_runtime::generic::Era::Mortal(x, y) => Some((x, y)),
-			};
-
-			let value = Self {
-				ss58_address,
-				nonce,
-				// app_id: *app_id,
-				mortality,
-			};
-			Some(value)
-		}
-	}
-
-	pub struct CachedTransaction {
-		pub index: u32,
-		pub signature: Option<TransactionSignature>,
-		pub dispatch_index: (u8, u8),
-		pub tx_hash: H256,
-		// This is the whole tx encoded together with signature and call
-		pub tx_encoded: String,
-		// position from where the call starts in the encoded transaction
-		pub call_start_pos: usize,
-	}
-
-	#[derive(Default)]
-	pub struct CachedBlock {
-		transactions: Vec<CachedTransaction>,
-	}
-
-	impl CachedBlock {
-		pub fn new(transactions: Vec<CachedTransaction>) -> Self {
-			Self { transactions }
-		}
-
-		pub fn transactions(&self) -> &Vec<CachedTransaction> {
-			&self.transactions
-		}
-
-		pub fn insert(&mut self, value: CachedTransaction) {
-			self.transactions.push(value);
-		}
-	}
-
-	pub struct Cache {
-		pub(crate) blocks: Vec<(H256, CachedBlock)>,
-		max_size: u32,
-	}
-
-	impl Cache {
-		pub fn new(max_size: u32) -> Self {
-			Self {
-				blocks: Vec::new(),
-				max_size,
-			}
-		}
-
-		pub fn promote_block(&mut self, block_hash: H256) {
-			if self.blocks.is_empty() {
-				return;
-			}
-
-			if let Some(first) = self.blocks.last() {
-				if first.0 == block_hash {
-					return;
-				}
-			}
-
-			let stop = self.blocks.len() - 1;
-			let mut i = 0;
-			while i < stop {
-				if self.blocks[i].0 == block_hash {
-					self.blocks.swap(i, i + 1);
-				}
-
-				i += 1;
-			}
-		}
-
-		pub fn block(&self, block_hash: H256) -> Option<&CachedBlock> {
-			self.blocks.iter().find(|x| x.0 == block_hash).map(|x| &x.1)
-		}
-
-		pub fn insert(&mut self, hash: H256, value: CachedBlock) -> &CachedBlock {
-			if self.blocks.len() >= self.max_size as usize && !self.blocks.is_empty() {
-				self.blocks.remove(0);
-			}
-			self.blocks.push((hash, value));
-			&self.blocks.last().expect("Just added it").1
-		}
-	}
-
-	/// Recover the inner `Vec<u8>` from a `sp_runtime::OpaqueExtrinsic`.
-	/// Returns `None` if something goes wrong (decode error) — the caller can decide to continue.
-	fn opaque_into_inner_bytes(ext: &OpaqueExtrinsic) -> Option<Vec<u8>> {
-		// Encode the wrapper (SCALE), then decode into Vec<u8> to recover the original inner Vec<u8>.
-		// This avoids accessing the private field `0`.
-		let encoded = ext.encode();
-		Vec::<u8>::decode(&mut &encoded[..]).ok()
-	}
-
-	pub fn cache_block<'a, C, Block>(client: &C, block_hash: H256) -> RpcResult<CachedBlock>
-	where
-		C: BlockBackend<Block>,
-		Block: BlockT<Extrinsic = OpaqueExtrinsic>,
-		<Block as BlockT>::Hash: From<H256> + Into<H256>,
-		<<Block as BlockT>::Header as HeaderT>::Number: From<u32>,
-	{
-		let opaque_extrinsics = match client.block_body(block_hash.into()) {
-			Ok(x) => x,
-			Err(err) => return Err(Error::NoBlockFound.into_error_object(err.to_string())),
-		};
-		let Some(opaque_extrinsics) = opaque_extrinsics else {
-			return Err(Error::NoBlockFound.into_error_object(String::from("No block found")));
-		};
-
-		let mut cached_transactions: Vec<CachedTransaction> =
-			Vec::with_capacity(opaque_extrinsics.len());
-
-		for (index, ext) in opaque_extrinsics.iter().enumerate() {
-			let ext_inner = match opaque_into_inner_bytes(ext) {
-				Some(b) => b,
-				None => continue,
-			};
-
-			let ext_slice = &mut ext_inner.as_slice();
-
-			// read version byte
-			let Ok(version_byte) = ext_slice.read_byte() else {
-				continue;
-			};
-
-			let is_signed = version_byte & 0b1000_0000 != 0;
-			let version = version_byte & 0b0111_1111;
-			if version != EXTRINSIC_FORMAT_VERSION {
-				continue;
-			}
-
-			// parse signature payload if signed
-			let signature = if is_signed {
-				let Ok(signature) = SignaturePayload::decode(ext_slice) else {
-					continue;
-				};
-				Some(signature)
-			} else {
-				None
-			};
-			let call_start_pos = ext_inner.len() - ext_slice.len();
-			let call_length = ext_slice.len();
-			let Some(pallet_id) = ext_inner.get(call_start_pos) else {
-				continue;
-			};
-			let Some(call_id) = ext_inner.get(call_start_pos + 1) else {
-				continue;
-			};
-			let dispatch_index = (*pallet_id, *call_id);
-
-			// build tx_encoded and tx_hash using ext_inner
-			let (tx_encoded, tx_hash) = {
-				let mut encoded: Vec<u8> = Vec::with_capacity(ext_inner.len() + 4);
-				codec::Compact::<u32>(ext_inner.len() as u32).encode_to(&mut encoded);
-				encoded.extend_from_slice(&ext_inner);
-
-				let tx_hash = Blake2Hasher::hash(&encoded);
-				(const_hex::encode(encoded), tx_hash)
-			};
-
-			let signature = TransactionSignature::from_signature_payload(&signature);
-			let encoded_call_start_pos = tx_encoded.len().saturating_sub(call_length * 2);
-
-			let tx = CachedTransaction {
-				index: index as u32,
-				signature,
-				dispatch_index,
-				tx_hash,
-				tx_encoded,
-				call_start_pos: encoded_call_start_pos,
-			};
-			cached_transactions.push(tx)
-		}
-
-		Ok(CachedBlock::new(cached_transactions))
-	}
-}
-
-#[cfg(test)]
-mod test {
-	use super::fetch_extrinsics_v1::*;
-	use sp_core::H256;
-
-	#[test]
-	fn cache_test() {
-		let mut cache = Cache::new(3);
-		assert_eq!(cache.blocks.len(), 0);
-
-		let hash_01 = H256::random();
-		let hash_02 = H256::random();
-		let hash_03 = H256::random();
-		cache.insert(hash_01, CachedBlock::default());
-		cache.insert(hash_02, CachedBlock::default());
-		cache.insert(hash_03, CachedBlock::default());
-
-		assert!(cache.block(hash_01).is_some());
-		assert!(cache.block(hash_02).is_some());
-		assert!(cache.block(hash_03).is_some());
-
-		assert_eq!(cache.blocks.len(), 3);
-		assert_eq!(cache.blocks[0].0, hash_01);
-		assert_eq!(cache.blocks[1].0, hash_02);
-		assert_eq!(cache.blocks[2].0, hash_03);
-
-		// Adding one more should remove the first hash
-		let hash_04 = H256::random();
-		cache.insert(hash_04, CachedBlock::default());
-
-		assert_eq!(cache.blocks.len(), 3);
-		assert_eq!(cache.blocks[0].0, hash_02);
-		assert_eq!(cache.blocks[1].0, hash_03);
-		assert_eq!(cache.blocks[2].0, hash_04);
-
-		// The order should change if a block is promoted
-		cache.promote_block(hash_02);
-
-		assert_eq!(cache.blocks.len(), 3);
-		assert_eq!(cache.blocks[0].0, hash_03);
-		assert_eq!(cache.blocks[1].0, hash_04);
-		assert_eq!(cache.blocks[2].0, hash_02);
-
-		// Adding back hash_01 should remove hash_03
-		cache.insert(hash_01, CachedBlock::default());
-
-		assert_eq!(cache.blocks.len(), 3);
-		assert_eq!(cache.blocks[0].0, hash_04);
-		assert_eq!(cache.blocks[1].0, hash_02);
-		assert_eq!(cache.blocks[2].0, hash_01);
-
-		assert!(cache.block(hash_04).is_some());
-		assert!(cache.block(hash_02).is_some());
-		assert!(cache.block(hash_01).is_some());
 	}
 }

@@ -4,7 +4,7 @@ use codec::{Decode, Encode};
 use scale_info::prelude::{format, string::String};
 
 use sp_runtime::{
-	generic::{self, Preamble},
+	generic::{self},
 	impl_opaque_keys,
 	traits::{BlakeTwo256, IdentifyAccount, Verify},
 	MultiAddress, MultiSignature, OpaqueExtrinsic,
@@ -37,6 +37,8 @@ pub type Header = DaHeader<BlockNumber, BlakeTwo256>;
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic =
 	sp_runtime::generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
+/// !!!Must be the same as UncheckedExtrinsic!!!!
+pub type Preamble = sp_runtime::generic::Preamble<Address, Signature, SignedExtra>;
 /// DA Block type as expected by this runtime.
 pub type Block = avail_core::DaBlock<Header, UncheckedExtrinsic>;
 /// Block type for the node
