@@ -1,5 +1,7 @@
 use codec::{Compact, Decode, Encode};
 use da_runtime::Preamble;
+use fetch_events::AllowedEvents;
+use fetch_extrinsics::{AllowedExtrinsic, DataFormat, Extrinsic, Extrinsics, SignatureFilter};
 use frame_system_rpc_runtime_api::SystemEventsApi;
 use jsonrpsee::{
 	core::{async_trait, RpcResult},
@@ -17,15 +19,13 @@ use sp_runtime::{
 };
 use std::{marker::PhantomData, sync::Arc};
 
-use crate::system::fetch_extrinsics::{AllowedExtrinsic, TransactionSignature};
-
 #[rpc(client, server)]
 pub trait Api {
 	#[method(name = "custom_events")]
 	async fn events(
 		&self,
 		at: types::BlockId,
-		allow_list: fetch_events::AllowedEvents,
+		allow_list: AllowedEvents,
 		fetch_data: bool,
 	) -> RpcResult<fetch_events::Events>;
 
@@ -33,10 +33,10 @@ pub trait Api {
 	async fn extrinsics(
 		&self,
 		at: types::BlockId,
-		allow_list: Option<Vec<fetch_extrinsics::AllowedExtrinsic>>,
-		sig_filter: fetch_extrinsics::SignatureFilter,
-		data_format: fetch_extrinsics::DataFormat,
-	) -> RpcResult<fetch_extrinsics::Extrinsics>;
+		allow_list: Option<Vec<AllowedExtrinsic>>,
+		sig_filter: SignatureFilter,
+		data_format: DataFormat,
+	) -> RpcResult<Extrinsics>;
 
 	#[method(name = "custom_chainInfo")]
 	async fn chain_info(&self) -> RpcResult<types::ChainInfo>;
@@ -152,11 +152,10 @@ where
 	async fn extrinsics(
 		&self,
 		at: types::BlockId,
-		allow_list: Option<Vec<fetch_extrinsics::AllowedExtrinsic>>,
-		sig_filter: fetch_extrinsics::SignatureFilter,
-		data_format: fetch_extrinsics::DataFormat,
-	) -> RpcResult<fetch_extrinsics::Extrinsics> {
-		use fetch_extrinsics::{DataFormat, Extrinsic};
+		allow_list: Option<Vec<AllowedExtrinsic>>,
+		sig_filter: SignatureFilter,
+		data_format: DataFormat,
+	) -> RpcResult<Extrinsics> {
 		use types::BlockId;
 		const MAX_INDICES_COUNT: usize = 30;
 
@@ -209,34 +208,30 @@ where
 
 			let transparent = TransparentOpaque::from_opaque(&opaque)?;
 
-			let signature = if let Some((address, _, extended)) = transparent.preamble.to_signed() {
-				let nonce = extended.5 .0;
-				let account_id = match address {
-					MultiAddress::Id(id) => Some(id),
-					_ => None,
-				};
-				Some(TransactionSignature { account_id, nonce })
-			} else {
-				None
-			};
+			let mut account_id = None;
+			let mut nonce = None;
+			if let Some((address, _, extended)) = transparent.preamble.to_signed() {
+				nonce = Some(extended.5 .0);
+				if let MultiAddress::Id(id) = address {
+					account_id = Some(id);
+				}
+			}
 
-			if let Some(allowed_address) = &sig_filter.ss58_address {
-				if let Some(account) = signature.as_ref().map(|x| x.account_id.clone()).flatten() {
-					let address = std::format!("{}", account);
-					if allowed_address.as_str() != address {
-						continue;
-					}
-				} else {
+			if let Some(allowed_address) = &sig_filter.account_id {
+				let Some(account) = account_id.as_ref() else {
+					continue;
+				};
+				let address = std::format!("{}", account);
+				if allowed_address.as_str() != address.as_str() {
 					continue;
 				}
 			}
 
 			if let Some(allowed_nonce) = &sig_filter.nonce {
-				if let Some(nonce) = signature.as_ref().map(|x| x.nonce) {
-					if *allowed_nonce != nonce {
-						continue;
-					}
-				} else {
+				let Some(nonce) = nonce.as_ref() else {
+					continue;
+				};
+				if *allowed_nonce != *nonce {
 					continue;
 				}
 			}
@@ -278,7 +273,8 @@ where
 				ext_index,
 				pallet_id: transparent.pallet_id,
 				variant_id: transparent.variant_id,
-				signature,
+				account_id,
+				nonce,
 			};
 
 			returned_extrinsics.push(ext);
@@ -547,7 +543,8 @@ pub mod fetch_extrinsics {
 		pub ext_index: u32,
 		pub pallet_id: u8,
 		pub variant_id: u8,
-		pub signature: Option<TransactionSignature>,
+		pub account_id: Option<AccountId>,
+		pub nonce: Option<u32>,
 	}
 
 	#[derive(Clone, Default, Copy, Serialize, Deserialize)]
@@ -585,13 +582,8 @@ pub mod fetch_extrinsics {
 
 	#[derive(Default, Clone, Serialize, Deserialize)]
 	pub struct SignatureFilter {
-		pub ss58_address: Option<String>,
+		// SS58 address
+		pub account_id: Option<String>,
 		pub nonce: Option<u32>,
-	}
-
-	#[derive(Debug, Clone, Serialize, Deserialize)]
-	pub struct TransactionSignature {
-		pub account_id: Option<AccountId>,
-		pub nonce: u32,
 	}
 }
