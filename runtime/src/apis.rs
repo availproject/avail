@@ -283,9 +283,9 @@ impl_runtime_apis! {
 				}
 
 				let emitted_index: (u8, u8) = (encoded[0], encoded[1]);
-				let encoded = fetch_data.then_some(encoded);
+				let data = fetch_data.then_some(encoded).unwrap_or(Vec::new());
 
-				let ev = RuntimeEvent::new(position as u32, emitted_index, encoded);
+				let ev = RuntimeEvent::new(position as u32, emitted_index, data);
 				if let Some(entry) = result.iter_mut().find(|x| x.phase == event.phase) {
 					entry.events.push(ev);
 				} else {

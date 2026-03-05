@@ -22,16 +22,18 @@ pub trait Api {
 	async fn fetch_events(
 		&self,
 		block_id: types::BlockId,
-		filter: fetch_events::Filter,
-		fetch_data: bool,
+		filter: Option<fetch_events::Filter>,
+		fetch_data: Option<bool>,
 	) -> RpcResult<fetch_events::Events>;
 
 	#[method(name = "custom_extrinsics")]
 	async fn fetch_extrinsics(
 		&self,
 		block_id: types::BlockId,
-		options: Option<fetch_extrinsics::Options>,
-	) -> RpcResult<fetch_extrinsics::ApiResult>;
+		tx_filter: Option<fetch_extrinsics::ExtrinsicFilter>,
+		sig_filter: Option<fetch_extrinsics::SignatureFilter>,
+		data_format: Option<fetch_extrinsics::DataFormat>,
+	) -> RpcResult<fetch_extrinsics::Extrinsics>;
 
 	#[method(name = "custom_chainInfo")]
 	async fn latest_chain_info(&self) -> RpcResult<types::ChainInfo>;
@@ -111,10 +113,13 @@ where
 	async fn fetch_events(
 		&self,
 		block_id: types::BlockId,
-		filter: fetch_events::Filter,
-		fetch_data: bool,
+		filter: Option<fetch_events::Filter>,
+		fetch_data: Option<bool>,
 	) -> RpcResult<fetch_events::Events> {
 		use fetch_events::PhaseEvents;
+
+		let filter = filter.unwrap_or_default();
+		let fetch_data = fetch_data.unwrap_or(true);
 
 		let block_hash = match block_id {
 			types::BlockId::Hash(hash) => hash,
@@ -146,16 +151,16 @@ where
 	async fn fetch_extrinsics(
 		&self,
 		block_id: types::BlockId,
-		options: Option<fetch_extrinsics::Options>,
-	) -> RpcResult<fetch_extrinsics::ApiResult> {
-		use fetch_extrinsics::{EncodeSelector, ExtrinsicInformation, TransactionFilterOptions};
+		ext_filter: Option<fetch_extrinsics::ExtrinsicFilter>,
+		sig_filter: Option<fetch_extrinsics::SignatureFilter>,
+		data_format: Option<fetch_extrinsics::DataFormat>,
+	) -> RpcResult<fetch_extrinsics::Extrinsics> {
+		use fetch_extrinsics::{DataFormat, Extrinsic, ExtrinsicFilter};
 		use types::BlockId;
 
-		let options = options.unwrap_or_default();
-		let filter = options.filter.unwrap_or_default();
-		let tx_filter = filter.transaction.unwrap_or_default();
-		let sig_filter = filter.signature.unwrap_or_default();
-		let encode_selector = options.encode_selector.unwrap_or_default();
+		let tx_filter = ext_filter.unwrap_or_default();
+		let sig_filter = sig_filter.unwrap_or_default();
+		let data_format = data_format.unwrap_or_default();
 
 		if !tx_filter.is_valid() {
 			return Err(Error::InvalidInput
@@ -195,9 +200,9 @@ where
 
 		let transactions = cached_block.transactions();
 		let mut found_extrinsics = match &tx_filter {
-			TransactionFilterOptions::All => Vec::with_capacity(transactions.len()),
-			TransactionFilterOptions::TxHash(list) => Vec::with_capacity(list.len()),
-			TransactionFilterOptions::TxIndex(list) => Vec::with_capacity(list.len()),
+			ExtrinsicFilter::All => Vec::with_capacity(transactions.len()),
+			ExtrinsicFilter::TxHash(list) => Vec::with_capacity(list.len()),
+			ExtrinsicFilter::TxIndex(list) => Vec::with_capacity(list.len()),
 			_ => Vec::new(),
 		};
 		for tx in transactions.iter() {
@@ -215,14 +220,14 @@ where
 				continue;
 			}
 
-			let encoded = match encode_selector {
-				EncodeSelector::None => None,
-				EncodeSelector::Call => Some(tx.tx_encoded[tx.call_start_pos..].to_string()),
-				EncodeSelector::Extrinsic => Some(tx.tx_encoded.clone()),
+			let data = match data_format {
+				DataFormat::None => String::new(),
+				DataFormat::Call => tx.tx_encoded[tx.call_start_pos..].to_string(),
+				DataFormat::Extrinsic => tx.tx_encoded.clone(),
 			};
 
-			let ext_info = ExtrinsicInformation {
-				encoded,
+			let ext_info = Extrinsic {
+				data,
 				tx_hash: tx.tx_hash,
 				tx_index: tx.index,
 				pallet_id: tx.dispatch_index.0,
@@ -231,13 +236,13 @@ where
 			};
 			found_extrinsics.push(ext_info);
 
-			if let TransactionFilterOptions::TxIndex(list) = &tx_filter {
+			if let ExtrinsicFilter::TxIndex(list) = &tx_filter {
 				if found_extrinsics.len() >= list.len() {
 					break;
 				}
 			}
 
-			if let TransactionFilterOptions::TxHash(list) = &tx_filter {
+			if let ExtrinsicFilter::TxHash(list) = &tx_filter {
 				if found_extrinsics.len() >= list.len() {
 					break;
 				}
@@ -325,7 +330,7 @@ pub mod fetch_events {
 		pub index: u32,
 		// (Pallet Id, Event Id)
 		pub emitted_index: (u8, u8),
-		pub data: Option<String>,
+		pub data: String,
 	}
 
 	impl From<RuntimeRuntimeEvent> for RuntimeEvent {
@@ -333,7 +338,7 @@ pub mod fetch_events {
 			Self {
 				index: value.index,
 				emitted_index: value.emitted_index,
-				data: value.data.map(const_hex::encode),
+				data: const_hex::encode(value.data),
 			}
 		}
 	}
@@ -350,11 +355,11 @@ pub mod fetch_extrinsics {
 	use sp_runtime::MultiAddress;
 	type SignaturePayload = (Address, Signature, SignedExtra);
 
-	pub type ApiResult = Vec<ExtrinsicInformation>;
+	pub type Extrinsics = Vec<Extrinsic>;
 
 	#[derive(Clone, Serialize, Deserialize)]
-	pub struct ExtrinsicInformation {
-		pub encoded: Option<String>,
+	pub struct Extrinsic {
+		pub data: String,
 		pub tx_hash: H256,
 		pub tx_index: u32,
 		pub pallet_id: u8,
@@ -362,50 +367,34 @@ pub mod fetch_extrinsics {
 		pub signature: Option<TransactionSignature>,
 	}
 
-	#[derive(Default, Clone, Serialize, Deserialize)]
-	pub struct Options {
-		pub filter: Option<Filter>,
-		pub encode_selector: Option<EncodeSelector>,
-	}
-
-	#[derive(Clone, Serialize, Deserialize)]
+	#[derive(Clone, Default, Copy, Serialize, Deserialize)]
 	#[repr(u8)]
-	pub enum EncodeSelector {
+	pub enum DataFormat {
 		None = 0,
 		Call = 1,
+		#[default]
 		Extrinsic = 2,
 	}
 
-	impl EncodeSelector {
+	impl DataFormat {
 		pub fn is_call(&self) -> bool {
 			match self {
-				EncodeSelector::Call => true,
+				DataFormat::Call => true,
 				_ => false,
 			}
 		}
 
 		pub fn is_extrinsic(&self) -> bool {
 			match self {
-				EncodeSelector::Extrinsic => true,
+				DataFormat::Extrinsic => true,
 				_ => false,
 			}
 		}
 	}
 
-	impl Default for EncodeSelector {
-		fn default() -> Self {
-			Self::Extrinsic
-		}
-	}
-
-	#[derive(Default, Clone, Serialize, Deserialize)]
-	pub struct Filter {
-		pub transaction: Option<TransactionFilterOptions>,
-		pub signature: Option<SignatureFilterOptions>,
-	}
-
-	#[derive(Clone, Serialize, Deserialize)]
-	pub enum TransactionFilterOptions {
+	#[derive(Clone, Default, Serialize, Deserialize)]
+	pub enum ExtrinsicFilter {
+		#[default]
 		All,
 		TxHash(Vec<H256>),
 		TxIndex(Vec<u32>),
@@ -413,14 +402,14 @@ pub mod fetch_extrinsics {
 		PalletCall(Vec<(u8, u8)>),
 	}
 
-	impl TransactionFilterOptions {
+	impl ExtrinsicFilter {
 		pub fn is_valid(&self) -> bool {
 			match self {
-				TransactionFilterOptions::All => true,
-				TransactionFilterOptions::TxHash(items) => items.len() < 30,
-				TransactionFilterOptions::TxIndex(items) => items.len() < 30,
-				TransactionFilterOptions::Pallet(items) => items.len() < 30,
-				TransactionFilterOptions::PalletCall(items) => items.len() < 30,
+				ExtrinsicFilter::All => true,
+				ExtrinsicFilter::TxHash(items) => items.len() < 30,
+				ExtrinsicFilter::TxIndex(items) => items.len() < 30,
+				ExtrinsicFilter::Pallet(items) => items.len() < 30,
+				ExtrinsicFilter::PalletCall(items) => items.len() < 30,
 			}
 		}
 
@@ -432,48 +421,42 @@ pub mod fetch_extrinsics {
 		}
 
 		pub fn filter_in_pallet(&self, value: u8) -> bool {
-			let TransactionFilterOptions::Pallet(list) = self else {
+			let ExtrinsicFilter::Pallet(list) = self else {
 				return true;
 			};
 			list.contains(&value)
 		}
 
 		pub fn filter_in_pallet_call(&self, value: (u8, u8)) -> bool {
-			let TransactionFilterOptions::PalletCall(list) = self else {
+			let ExtrinsicFilter::PalletCall(list) = self else {
 				return true;
 			};
 			list.contains(&value)
 		}
 
 		pub fn filter_in_tx_hash(&self, value: H256) -> bool {
-			let TransactionFilterOptions::TxHash(list) = self else {
+			let ExtrinsicFilter::TxHash(list) = self else {
 				return true;
 			};
 			list.contains(&value)
 		}
 
 		pub fn filter_in_tx_index(&self, value: u32) -> bool {
-			let TransactionFilterOptions::TxIndex(list) = self else {
+			let ExtrinsicFilter::TxIndex(list) = self else {
 				return true;
 			};
 			list.contains(&value)
 		}
 	}
 
-	impl Default for TransactionFilterOptions {
-		fn default() -> Self {
-			Self::All
-		}
-	}
-
 	#[derive(Default, Clone, Serialize, Deserialize)]
-	pub struct SignatureFilterOptions {
+	pub struct SignatureFilter {
 		pub ss58_address: Option<String>,
 		pub app_id: Option<u32>,
 		pub nonce: Option<u32>,
 	}
 
-	impl SignatureFilterOptions {
+	impl SignatureFilter {
 		pub fn is_valid(&self) -> bool {
 			if self.ss58_address.as_ref().is_some_and(|x| x.len() > 100) {
 				return false;
@@ -513,7 +496,6 @@ pub mod fetch_extrinsics {
 	pub struct TransactionSignature {
 		pub ss58_address: Option<String>,
 		pub nonce: u32,
-		// pub app_id: u32,
 		pub mortality: Option<(u64, u64)>,
 	}
 

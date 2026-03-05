@@ -52,20 +52,15 @@ pub mod system_events_api {
 
 		pub type Events = Result<Vec<PhaseEvents>, u8>;
 
-		#[derive(Clone, scale_info::TypeInfo, codec::Decode, codec::Encode)]
+		#[derive(Clone, Default, scale_info::TypeInfo, codec::Decode, codec::Encode)]
 		#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 		#[repr(u8)]
 		pub enum Filter {
+			#[default]
 			All = 0,
 			OnlyExtrinsics = 1,
 			OnlyNonExtrinsics = 2,
 			Only(Vec<u32>) = 3,
-		}
-
-		impl Default for Filter {
-			fn default() -> Self {
-				Self::All
-			}
 		}
 
 		impl Filter {
@@ -117,15 +112,15 @@ pub mod system_events_api {
 			pub index: u32,
 			// (Pallet Id, Event Id)
 			pub emitted_index: (u8, u8),
-			pub data: Option<Vec<u8>>,
+			pub data: Vec<u8>,
 		}
 
 		impl RuntimeEvent {
-			pub fn new(index: u32, emitted_index: (u8, u8), encoded: Option<Vec<u8>>) -> Self {
+			pub fn new(index: u32, emitted_index: (u8, u8), data: Vec<u8>) -> Self {
 				Self {
 					index,
 					emitted_index,
-					data: encoded,
+					data,
 				}
 			}
 		}
