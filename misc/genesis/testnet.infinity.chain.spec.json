@@ -3,10 +3,10 @@
   "id": "avail_infinity_testnet_network",
   "chainType": "Live",
   "bootNodes": [
-    "/dns/bootnode-infinity-001.avail.so/tcp/30333/p2p/12D3KooWEa6jAEvZSw4hXAkcvSADdJ9n5yzC9cLjzxAZx42ZqAmL",
-    "/dns/bootnode-infinity-002.avail.so/tcp/30333/p2p/12D3KooWPopT6wXbkTSPZA8z2AzqWhTBMCJYfpbMLfFkYS9Ysj6t",
-    "/dns/bootnode-infinity-003.avail.so/tcp/30333/p2p/12D3KooWHbHdFH9Uo46Y3o8p1CVPsmHw3EYAi2XqvezjgqGF6GrY",
-    "/dns/bootnode-infinity-004.avail.so/tcp/30333/p2p/12D3KooWMvJKWBH3dUyty4ogk7LkUUNbwAzZgDaWpgL8Mm9ebzwm"
+    "/dns/bootnode-infinity-001.avail.so/tcp/30333/p2p/12D3KooWSsy5V2bLq1pPJH6LDonGaTSNg9mzdNjPF1cGyyoH4S8S",
+    "/dns/bootnode-infinity-002.avail.so/tcp/30333/p2p/12D3KooWSGdTNfh9tvSTFdV3Xkgv8VhVBmZQxz3Vf3TRL13tnQ4Z",
+    "/dns/bootnode-infinity-003.avail.so/tcp/30333/p2p/12D3KooWMY6yHu3b83GBADky8FmkTjS6EFnkaSK9av5w736RVnM9",
+    "/dns/bootnode-infinity-004.avail.so/tcp/30333/p2p/12D3KooWKUxKnVNy2PCYkXM2kbPogFo9UwpCx7haCnTyUZfgGhyh"
   ],
   "telemetryEndpoints": [
     [
