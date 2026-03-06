@@ -4,7 +4,7 @@ FROM debian:12.12-slim AS builder
 
 # Install needed packages
 RUN apt update -y && \
-    apt install build-essential git clang curl libssl-dev llvm libudev-dev make cmake protobuf-compiler -y
+    apt install build-essential git clang curl libssl-dev llvm libudev-dev make cmake protobuf-compiler libclang-dev -y
 
 WORKDIR "/da/src"
 
