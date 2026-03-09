@@ -20,7 +20,7 @@ const NUM_CHUNKS: usize = (BLOCK_SIZE / TX_MAX_SIZE) as usize;
 const TAG: &str = "MAX_BLOCK_SUBMIT";
 
 pub async fn run() -> Result<(), Error> {
-	let client = Client::new(LOCAL_ENDPOINT).await?;
+	let client = Client::connect(LOCAL_ENDPOINT).await?;
 
 	let alice = alice();
 	let options = Options::new();
@@ -31,12 +31,15 @@ pub async fn run() -> Result<(), Error> {
 		.tx()
 		.data_availability()
 		.submit_data(5, vec![0; TX_MAX_SIZE]);
-	let res = tx.sign_and_submit(&alice, options).await?;
-	let receipt = res.receipt(true).await.unwrap();
-	assert!(receipt.is_some());
+	let res = tx.submit(&alice, options).await?;
+	let _receipt = res.receipt(BlockQueryMode::Finalized).await?;
 
 	// Testing if we can fit NUM_CHUNKS * GROUP_TX_MAX_SIZE bytes into a block.
-	let mut nonce = client.chain().account_nonce(alice.account_id()).await?;
+	let alice_account_id = alice.public_key().to_account_id();
+	let mut nonce = client
+		.chain()
+		.account_nonce(alice_account_id.clone())
+		.await?;
 	let tx = client
 		.tx()
 		.data_availability()
@@ -46,7 +49,7 @@ pub async fn run() -> Result<(), Error> {
 	let mut submitted_txs = Vec::with_capacity(NUM_CHUNKS);
 	// Execute Txs
 	for _ in 0..NUM_CHUNKS {
-		let hash = tx.sign_and_submit(&alice, options.nonce(nonce)).await?;
+		let hash = tx.submit(&alice, options.nonce(nonce)).await?;
 		nonce += 1;
 		submitted_txs.push(hash);
 	}
@@ -60,7 +63,7 @@ pub async fn run() -> Result<(), Error> {
 	// Get details
 	// let mut expected_block_id = None;
 	for submitted_tx in submitted_txs {
-		let receipt = submitted_tx.receipt(true).await.unwrap().unwrap();
+		let receipt = submitted_tx.receipt(BlockQueryMode::Finalized).await?;
 		// if expected_block_id.is_none() {
 		// 	expected_block_id = Some(receipt.block_ref)
 		// }

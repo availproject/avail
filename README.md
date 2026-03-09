@@ -48,46 +48,51 @@ cargo run --locked --release -- --chain mainnet -d ./output
 ```
 This command compiles and runs the Avail Node connected to the Mainnet Network.
 
+For CPU-specific build optimizations (recommended for FRI PCS), you can build with:
+```bash
+export RUSTFLAGS="-C target-cpu=native"
 ```
-2025-03-05 11:39:57 Avail Node    
-2025-03-05 11:39:57 ✌️  version 2.3.0-6c6b8912fd3    
-2025-03-05 11:39:57 ❤️  by Avail Project <info@availproject.org>, 2017-2025    
-2025-03-05 11:39:57 📋 Chain specification: Avail Development Network    
-2025-03-05 11:39:57 🏷  Node name: spotty-ducks-6306    
-2025-03-05 11:39:57 👤 Role: AUTHORITY    
-2025-03-05 11:39:57 💾 Database: ParityDb at /tmp/substratebYqXut/chains/avail_development_network/paritydb/full    
-2025-03-05 11:39:58 [0] 💸 generated 1 npos voters, 1 from validators and 0 nominators    
-2025-03-05 11:39:58 [0] 💸 generated 1 npos targets    
-2025-03-05 11:39:59 🔨 Initializing Genesis block/state (state: 0x9da9…1c2f, header-hash: 0x61c9…7794)    
-2025-03-05 11:39:59 👴 Loading GRANDPA authority set from genesis on what appears to be first startup.    
-2025-03-05 11:39:59 👶 Creating empty BABE epoch changes on what appears to be first startup.    
-2025-03-05 11:39:59 🏷  Local node identity is: 12D3KooWDCNjiaVbFL4BGYkbkxHwqJjhDNAxvBuxNdCAB4HDuYjA    
-2025-03-05 11:39:59 Prometheus metrics extended with avail metrics    
-2025-03-05 11:39:59 💻 Operating system: linux    
-2025-03-05 11:39:59 💻 CPU architecture: x86_64    
-2025-03-05 11:39:59 💻 Target environment: gnu    
-2025-03-05 11:39:59 💻 CPU: 13th Gen Intel(R) Core(TM) i7-13700K    
-2025-03-05 11:39:59 💻 CPU cores: 16    
-2025-03-05 11:39:59 💻 Memory: 31865MB    
-2025-03-05 11:39:59 💻 Kernel: 6.12.11-200.fc41.x86_64    
-2025-03-05 11:39:59 💻 Linux distribution: Fedora Linux 41 (Workstation Edition)    
-2025-03-05 11:39:59 💻 Virtual machine: no    
-2025-03-05 11:39:59 📦 Highest known block at #0    
-2025-03-05 11:39:59 〽️ Prometheus exporter started at 127.0.0.1:9615    
-2025-03-05 11:39:59 Running JSON-RPC server: addr=127.0.0.1:9944, allowed origins=["*"]    
-2025-03-05 11:39:59 🏁 CPU score: 1.36 GiBs    
-2025-03-05 11:39:59 🏁 Memory score: 22.37 GiBs    
-2025-03-05 11:39:59 🏁 Disk score (seq. writes): 6.14 GiBs    
-2025-03-05 11:39:59 🏁 Disk score (rand. writes): 2.85 GiBs    
-2025-03-05 11:39:59 👶 Starting BABE Authorship worker    
-2025-03-05 11:39:59 👾 Transaction State RPC is disabled.    
-2025-03-05 11:40:00 🙌 Starting consensus session on top of parent 0x61c9895168e742c62022ead30858a478820596c5be64c127bd8ea1bc97787794    
-2025-03-05 11:40:00 🎁 Prepared block for proposing at 1 (2 ms) [hash: 0x9dc9d52f64711be9e75b382877daf7ea6dbd5cb86e0db0819de49c58fafe0470; parent_hash: 0x61c9…7794; extrinsics (2): [0x1adc…1873, 0x92cd…f218]    
-2025-03-05 11:40:00 🔖 Pre-sealed block for proposal at 1. Hash now 0x34eab3565337a7370d4320aac02f7e3a3c14a440585bf029f871845f116a8810, previously 0x9dc9d52f64711be9e75b382877daf7ea6dbd5cb86e0db0819de49c58fafe0470.    
-2025-03-05 11:40:00 👶 New epoch 0 launching at block 0x34ea…8810 (block slot 87058560 >= start slot 87058560).    
-2025-03-05 11:40:00 👶 Next epoch starts at slot 87059280    
-2025-03-05 11:40:00 ✨ Imported #1 (0x34ea…8810)    
-2025-03-05 11:40:04 💤 Idle (0 peers), best: #1 (0x34ea…8810), finalized #0 (0x61c9…7794), ⬇ 0 ⬆ 0   
+
+```
+2025-03-05 11:39:57 Avail Node
+2025-03-05 11:39:57 ✌️  version 2.3.0-6c6b8912fd3
+2025-03-05 11:39:57 ❤️  by Avail Project <info@availproject.org>, 2017-2025
+2025-03-05 11:39:57 📋 Chain specification: Avail Development Network
+2025-03-05 11:39:57 🏷  Node name: spotty-ducks-6306
+2025-03-05 11:39:57 👤 Role: AUTHORITY
+2025-03-05 11:39:57 💾 Database: ParityDb at /tmp/substratebYqXut/chains/avail_development_network/paritydb/full
+2025-03-05 11:39:58 [0] 💸 generated 1 npos voters, 1 from validators and 0 nominators
+2025-03-05 11:39:58 [0] 💸 generated 1 npos targets
+2025-03-05 11:39:59 🔨 Initializing Genesis block/state (state: 0x9da9…1c2f, header-hash: 0x61c9…7794)
+2025-03-05 11:39:59 👴 Loading GRANDPA authority set from genesis on what appears to be first startup.
+2025-03-05 11:39:59 👶 Creating empty BABE epoch changes on what appears to be first startup.
+2025-03-05 11:39:59 🏷  Local node identity is: 12D3KooWDCNjiaVbFL4BGYkbkxHwqJjhDNAxvBuxNdCAB4HDuYjA
+2025-03-05 11:39:59 Prometheus metrics extended with avail metrics
+2025-03-05 11:39:59 💻 Operating system: linux
+2025-03-05 11:39:59 💻 CPU architecture: x86_64
+2025-03-05 11:39:59 💻 Target environment: gnu
+2025-03-05 11:39:59 💻 CPU: 13th Gen Intel(R) Core(TM) i7-13700K
+2025-03-05 11:39:59 💻 CPU cores: 16
+2025-03-05 11:39:59 💻 Memory: 31865MB
+2025-03-05 11:39:59 💻 Kernel: 6.12.11-200.fc41.x86_64
+2025-03-05 11:39:59 💻 Linux distribution: Fedora Linux 41 (Workstation Edition)
+2025-03-05 11:39:59 💻 Virtual machine: no
+2025-03-05 11:39:59 📦 Highest known block at #0
+2025-03-05 11:39:59 〽️ Prometheus exporter started at 127.0.0.1:9615
+2025-03-05 11:39:59 Running JSON-RPC server: addr=127.0.0.1:9944, allowed origins=["*"]
+2025-03-05 11:39:59 🏁 CPU score: 1.36 GiBs
+2025-03-05 11:39:59 🏁 Memory score: 22.37 GiBs
+2025-03-05 11:39:59 🏁 Disk score (seq. writes): 6.14 GiBs
+2025-03-05 11:39:59 🏁 Disk score (rand. writes): 2.85 GiBs
+2025-03-05 11:39:59 👶 Starting BABE Authorship worker
+2025-03-05 11:39:59 👾 Transaction State RPC is disabled.
+2025-03-05 11:40:00 🙌 Starting consensus session on top of parent 0x61c9895168e742c62022ead30858a478820596c5be64c127bd8ea1bc97787794
+2025-03-05 11:40:00 🎁 Prepared block for proposing at 1 (2 ms) [hash: 0x9dc9d52f64711be9e75b382877daf7ea6dbd5cb86e0db0819de49c58fafe0470; parent_hash: 0x61c9…7794; extrinsics (2): [0x1adc…1873, 0x92cd…f218]
+2025-03-05 11:40:00 🔖 Pre-sealed block for proposal at 1. Hash now 0x34eab3565337a7370d4320aac02f7e3a3c14a440585bf029f871845f116a8810, previously 0x9dc9d52f64711be9e75b382877daf7ea6dbd5cb86e0db0819de49c58fafe0470.
+2025-03-05 11:40:00 👶 New epoch 0 launching at block 0x34ea…8810 (block slot 87058560 >= start slot 87058560).
+2025-03-05 11:40:00 👶 Next epoch starts at slot 87059280
+2025-03-05 11:40:00 ✨ Imported #1 (0x34ea…8810)
+2025-03-05 11:40:04 💤 Idle (0 peers), best: #1 (0x34ea…8810), finalized #0 (0x61c9…7794), ⬇ 0 ⬆ 0
 ```
 
 ### Supported Chains
@@ -100,6 +105,11 @@ cargo run --locked --release -- --dev
 #### Testnet Turing
 ```bash
 cargo run --locked --release -- --chain turing
+```
+
+#### Testnet Infinity
+```bash
+cargo run --locked --release -- --chain infinity
 ```
 
 #### Mainnet
@@ -156,9 +166,9 @@ To enable Kate RPC you need to pass `--enable-kate-rpc` flag when executing the 
 
 --kate-max-cells-size <KATE_MAX_CELLS_SIZE>
     The maximum number of cells that can be requested in one go.
-    
+
     Max size cannot exceed 10_000
-    
+
     [default: 64]
 ```
 
@@ -171,9 +181,9 @@ deno run -A ./examples/deno/benchmarks/query_proof.ts && deno run -A ./examples/
 
 ### Header Builder
 ```bash
-# Option 1: for time measurement 
+# Option 1: for time measurement
 cargo bench --bench header_kate_commitment_cri
-# Option 2: for time measurement 
+# Option 2: for time measurement
 cargo bench --bench header_kate_commitment_divan
 # Option 1: for instructions, cache and main memory hits
 cargo bench --bench header_kate_commitment_iai_callgrind

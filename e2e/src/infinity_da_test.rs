@@ -1,6 +1,10 @@
 #![allow(dead_code)]
 
-use avail_rust::{avail_rust_core::rpc::blob::submit_blob, prelude::*};
+use avail_rust::{
+	avail_rust_core::rpc::{blob::submit_blob, chain},
+	prelude::*,
+	transaction_options::{Mortality, MortalityOption},
+};
 // use avail_core::FriParamsVersion;
 use avail_fri::{
 	core::{FriBiniusPCS, B128},
@@ -8,6 +12,7 @@ use avail_fri::{
 	eval_utils::{derive_evaluation_point, derive_seed_from_inputs, eval_claim_to_bytes},
 	FriParamsVersion,
 };
+use codec::Encode;
 // use da_commitment::build_kzg_commitments::build_da_commitments;
 // use da_commitment::build_fri_commitments::build_fri_da_commitment;
 // use kate::Seed;
@@ -37,7 +42,8 @@ pub async fn run() -> Result<(), Error> {
 		"http://127.0.0.1:9947"
 	};
 
-	let client = Client::new(local_endpoint).await?;
+	let client = Client::connect(local_endpoint).await?;
+	println!("RPC endpoint: {local_endpoint}");
 	let signer = if mode == 1 {
 		alice()
 	} else if mode == 2 {
@@ -57,8 +63,21 @@ pub async fn run() -> Result<(), Error> {
 		b'D'
 	};
 
-	let nonce = client.chain().account_nonce(signer.account_id()).await?;
+	let signer_account_id = signer.public_key().to_account_id();
+	let nonce = client
+		.chain()
+		.account_nonce(signer_account_id.clone())
+		.await?;
 	println!("Nonce: {nonce}");
+	let finalized_hash = chain::get_finalized_head(&client.rpc_client).await?;
+	let finalized_header = chain::get_header(&client.rpc_client, Some(finalized_hash))
+		.await?
+		.expect("finalized header should be available");
+	let mortality = MortalityOption::Full(Mortality::new(
+		32,
+		finalized_hash,
+		finalized_header.number,
+	));
 
 	let mut blobs: Vec<(Vec<u8>, H256, Vec<u8>, Option<[u8; 32]>, Option<[u8; 16]>)> = Vec::new();
 	println!("---------- START Commitments generation ---------- ");
@@ -116,7 +135,9 @@ pub async fn run() -> Result<(), Error> {
 	for (i, (blob, hash, commitments, eval_point_seed, eval_claim)) in blobs.into_iter().enumerate()
 	{
 		println!("---------- START Submission {i} ---------- ");
-		let options = Options::default().nonce(nonce + i as u32);
+		let options = Options::default()
+			.nonce(nonce + i as u32)
+			.mortality(mortality);
 		let unsigned_tx = client.tx().data_availability().submit_blob_metadata(
 			5,
 			hash,
@@ -126,7 +147,14 @@ pub async fn run() -> Result<(), Error> {
 			eval_claim,
 		);
 
-		let tx = unsigned_tx.sign(&signer, options).await.unwrap().encode();
+		let signed = match unsigned_tx.sign(&signer, options).await {
+			Ok(v) => v,
+			Err(e) => {
+				eprintln!("sign() failed: {e:?}");
+				return Err(e);
+			},
+		};
+		let tx = signed.encode();
 
 		if let Err(e) = submit_blob(&client.rpc_client, &tx, &blob).await {
 			println!("An error has occured: {e}");
