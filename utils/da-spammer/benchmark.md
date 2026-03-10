@@ -37,7 +37,6 @@ Useful one-shot SSH checks before the benchmark:
 ```bash
 hostname
 git --version
-cargo --version
 curl -H 'Content-Type: application/json' -d '{"id":1,"jsonrpc":"2.0","method":"system_health","params":[]}' http://127.0.0.1:8546
 ```
 
@@ -47,6 +46,8 @@ Do this once on each machine.
 
 ```bash
 git clone https://github.com/availproject/avail.git
+git fetch
+git checkout ghali/infinity-da
 cd avail/utils/da-spammer
 cargo build --release
 ```
@@ -93,7 +94,6 @@ Operational consequences:
 ### Single account
 
 ```bash
-cd avail/utils/da-spammer
 ./target/release/da-spammer \
   --account alice \
   --size-mb 31 \
@@ -106,7 +106,6 @@ cd avail/utils/da-spammer
 ### Sybil mode
 
 ```bash
-cd avail/utils/da-spammer
 ./target/release/da-spammer \
   --account alice \
   --sybil 10 \
