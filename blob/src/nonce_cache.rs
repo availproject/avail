@@ -60,4 +60,19 @@ impl NonceCacheApiT for NonceCache {
 			},
 		}
 	}
+
+	fn clear(&self, who: &AccountId32) {
+		match self.inner.lock() {
+			Ok(mut cache) => {
+				cache.remove(who);
+			},
+			Err(e) => {
+				log::warn!(
+					"NonceCache: failed to clear cache for account={} (error={})",
+					who,
+					e
+				);
+			},
+		}
+	}
 }

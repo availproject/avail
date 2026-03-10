@@ -65,6 +65,8 @@ impl NonceCacheApiT for DummyNonceCache {
 	}
 
 	fn commit(&self, _who: &AccountId32, _tx_nonce: u32) {}
+
+	fn clear(&self, _who: &AccountId32) {}
 }
 
 pub struct DummyRuntimeApi;
@@ -213,6 +215,7 @@ mod validation {
 					u64::MAX,
 					&params.1,
 					&params.2,
+					true,
 				)
 				.expect("Ok")
 			});

@@ -24,7 +24,6 @@ use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	mocking::{MockDaBlock, MockUncheckedExtrinsic},
 	native::hosted_header_builder::da::HeaderExtensionBuilder,
-	test_utils::TestRandomness,
 };
 use sp_core::H256;
 use sp_runtime::{
@@ -34,14 +33,11 @@ use sp_runtime::{
 
 #[frame_support::pallet]
 mod module {
-	use frame_support::pallet_prelude::*;
-
 	#[pallet::pallet]
 	pub struct Pallet<T>(_);
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
-		type RuntimeEvent: From<Event> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 	}
 
 	#[pallet::event]
@@ -121,7 +117,6 @@ impl frame_system::Config for Runtime {
 }
 
 impl module::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
 }
 
 fn new_test_ext() -> sp_io::TestExternalities {
