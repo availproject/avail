@@ -1,112 +1,68 @@
 # DA Spammer
 
-Rust CLI to stress-test data availability on an [Avail](https://www.availproject.org/) node by preparing blobs, building commitments, and submitting `submit_blob_metadata + blob` as signed extrinsics. The tool connects to an Avail HTTP RPC endpoint and logs per-transaction progress.
+`da-spammer` is a single Rust CLI for stressing Avail DA blob submission.
 
----
+It supports:
+- single-account mode
+- sybil mode with many derived accounts
+- optional precomputation of blobs before submission
+- bounded in-flight submission concurrency
 
-## ✨ Features
-
-Shared
-
-- Connects to an Avail node via RPC (default: `http://127.0.0.1:8546`)
-- Computes KZG commitments for each blob
-- Rotates `app_id` (`i % 5`) for submissions
-- Verbose logging (nonce, app_id, tx size, etc.)
-- Uses a pool of RPC clients to overlap metadata generation and submissions
-
-**`da-spammer`**
-
-- Uses one or more dev accounts (`Alice`, `Bob`, `Charlie`, `Dave`, `Eve`, `Ferdie`, `One`, `Two`)
-- Configurable blob size (1-31 MiB) and submission count
-- Optional staged delays between submissions (`warmup`, `subsequent`)
-- Payload can be generated in-memory or loaded from disk (`--file`); sprinkles random bytes by default, disable via `--randomize-disabled`
-
----
-
-## ⚡ Requirements
-
-- Rust (>= 1.70 recommended)
-- A running Avail node exposing HTTP RPC at the endpoint you plan to use  
-  (for local testing: `http://127.0.0.1:8546`)
-
----
-
-## 🔧 Build
+## Build
 
 ```bash
-cargo build --release
+cargo build --release -p da-spammer
 ```
 
-Artifacts:
-
-- `./target/release/da-spammer`
-
----
-
-## 🚀 Usage
-
-### 1) `da-spammer` (single account)
-
-```bash
-cargo run --release --bin da-spammer -- --accounts alice
-```
-
-**Flags**
-
-- `-a, --accounts <alice|bob|charlie|dave|eve|ferdie|one|two>[,...]` (optional; comma-separated, defaults to `alice` if omitted)
-- `-s, --size-mb <1..31>` (default: `31`)
-- `--count <1..1000>` (default: `50`)
-- `-e, --endpoint <URL>` (default: `http://127.0.0.1:8546`)
-- `-w, --warmup-delay <ms>` (default: `0`; additional sleep before the second submit)
-- `--subsequent-delay <ms>` (default: `750`; additional sleep before every submit after the second; 750ms is the probable optimal delay for ONE account)
-- `-r, --randomize-disabled` (flag; disable the default random byte sprinkling)
-- `-f, --file <path>` (optional; use contents of `path` as the payload source)
-
-**Full explicit example**
-
-```bash
-./target/release/da-spammer \
-  --accounts alice,bob \
-  --size-mb 16 \
-  --count 10 \
-  --endpoint http://127.0.0.1:8546 \
-  --warmup-delay 1000 \
-  --subsequent-delay 250 \
-  --file ./payload.bin \
-  --randomize-disabled
-```
-
-- Accounts: Alice, Bob (round-robin signer selection)
-- Blob size: 16 MiB
-- Transactions: 10
-- Blob content: first 16 MiB of `./payload.bin`
-- RPC endpoint: local node
-- Randomization disabled; delays applied after first and subsequent submissions
-
-**Small / default example**
+Binary:
 
 ```bash
 ./target/release/da-spammer
 ```
 
-- Account: Alice (default)
-- Blob size: 31 MiB (default)
-- Transactions: 50 (default)
-- Blob content: zeroed buffer with sprinkled random bytes
-- RPC endpoint: `http://127.0.0.1:8546`
-- Delays: no warmup/subsequent delay (all default to `0`)
+## Main Flags
 
----
+- `--account <alice|bob|charlie|dave|eve|ferdie|one|two>`: sender in normal mode, funder/root in sybil mode
+- `--endpoint <url>`: RPC endpoint, default `http://127.0.0.1:8546`
+- `--size-mb <n>`: blob size in MiB, `1..=31`
+- `--count <n>`: number of submissions, `1..=1000`
+- `--prepare <n>`: how many transactions to prepare ahead; `0` means on-the-fly
+- `--in-flight <n>`: max concurrent submissions
+- `--sybil <n>`: number of deterministic sender accounts; `1` means normal mode
 
-## 📝 Notes & Tips
+## Modes
 
-- **Random bytes**: By default the payload is zeroed and a handful of positions are randomized; use `--randomize-disabled` to keep the payload untouched.
-- **Timing controls**: Combine `--warmup-delay` and `--subsequent-delay` to pace transactions.
-- **External payloads**: If you pass `--file`, make sure the file has at least `size_mb * 1024 * 1024` bytes; only the first chunk of that size is used (and may be randomized).
-- **Client pool**: The binary instantiates multiple RPC clients to keep submissions flowing; adjust node-side rate limits accordingly.
+### Single account
 
----
+Uses one dev account and submits `count` blobs with nonce ordering preserved.
 
-## 📜 License
+```bash
+./target/release/da-spammer \
+  --account alice \
+  --endpoint http://127.0.0.1:9944 \
+  --size-mb 16 \
+  --count 200 \
+  --prepare 32 \
+  --in-flight 8
+```
 
-MIT (or your preferred license)
+### Sybil mode
+
+Derives `n` deterministic accounts from the chosen root account, funds them if needed, then submits round-robin across them.
+
+```bash
+./target/release/da-spammer \
+  --account alice \
+  --sybil 10 \
+  --endpoint http://127.0.0.1:8546 \
+  --size-mb 8 \
+  --count 200 \
+  --prepare 50 \
+  --in-flight 10
+```
+
+## Notes
+
+- Sybil accounts are derived from `//<Root>//da-spammer//<index>`.
+- In sybil mode, accounts below the minimum balance are topped up automatically.
+- The tool prints per-tx results and a final summary with success, failures, bytes submitted, and average submit time.

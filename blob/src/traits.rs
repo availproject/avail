@@ -293,4 +293,5 @@ pub trait CommitmentQueueApiT: Send + Sync {
 pub trait NonceCacheApiT: Send + Sync {
 	fn check(&self, who: &AccountId32, onchain_nonce: u32, tx_nonce: u32) -> Result<(), String>;
 	fn commit(&self, who: &AccountId32, tx_nonce: u32);
+	fn clear(&self, who: &AccountId32);
 }

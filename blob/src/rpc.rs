@@ -1037,16 +1037,24 @@ pub async fn submit_blob_main_task(
 		blob_params.max_transaction_validity,
 		&runtime_client,
 		&nonce_cache,
+		true,
 	)
 	.map_err(|e| internal_err!("{}", e))?;
 	stop_watch.stop("TX validation");
+
+	if let Some((who, nonce)) = extract_signer_and_nonce(&opaque_tx) {
+		nonce_cache.commit(&who, nonce);
+	}
 
 	stop_watch.start("Commitments (Total)");
 
 	match commitment_scheme {
 		CommitmentScheme::Kzg => {
-			let (cols, rows) =
-				get_dynamic_block_length(&friends.backend_client, finalized_block_hash)?;
+			let (cols, rows) = get_dynamic_block_length(&friends.backend_client, finalized_block_hash)
+				.map_err(|e| {
+					clear_reserved_nonce(&nonce_cache, &opaque_tx);
+					e
+				})?;
 			let blob = Arc::new(blob);
 
 			let start = crate::utils::get_current_timestamp_ms();
@@ -1060,7 +1068,10 @@ pub async fn submit_blob_main_task(
 			stop_watch.start("Commitment Validation");
 			validate_kzg_commitment(blob_hash, &provided_commitment, grid, &commitment_queue)
 				.await
-				.map_err(|e| internal_err!("{}", e))?;
+				.map_err(|e| {
+					clear_reserved_nonce(&nonce_cache, &opaque_tx);
+					internal_err!("{}", e)
+				})?;
 			stop_watch.stop("Commitment Validation");
 
 			stop_watch.stop("Commitments (Total)");
@@ -1076,8 +1087,12 @@ pub async fn submit_blob_main_task(
 				blob_params.max_transaction_validity,
 				&runtime_client,
 				&nonce_cache,
+				false,
 			)
-			.map_err(|e| internal_err!("{}", e))?;
+			.map_err(|e| {
+				clear_reserved_nonce(&nonce_cache, &opaque_tx);
+				internal_err!("{}", e)
+			})?;
 
 			let handle = task::spawn(async move {
 				submit_blob_background_task(
@@ -1100,6 +1115,7 @@ pub async fn submit_blob_main_task(
 		CommitmentScheme::Fri => {
 			// Check if the eval_point_seed and eval_claim are present for Fri
 			if eval_point_seed.is_none() || eval_claim.is_none() {
+				clear_reserved_nonce(&nonce_cache, &opaque_tx);
 				return Err(internal_err!(
 					"eval_point_seed and eval_claim must be present for Fri commitment scheme"
 				));
@@ -1108,9 +1124,13 @@ pub async fn submit_blob_main_task(
 			let eval_point_seed = eval_point_seed.expect("checked above; qed");
 			let eval_claim = eval_claim.expect("checked above; qed");
 			let babe_randomness =
-				get_babe_randomness(&friends.backend_client, finalized_block_hash)?;
+				get_babe_randomness(&friends.backend_client, finalized_block_hash).map_err(|e| {
+					clear_reserved_nonce(&nonce_cache, &opaque_tx);
+					e
+				})?;
 			let derived_eval_seed = derive_seed_from_inputs(&babe_randomness, &blob_hash.0);
 			if eval_point_seed != derived_eval_seed {
+				clear_reserved_nonce(&nonce_cache, &opaque_tx);
 				return Err(internal_err!(
 					"eval_point_seed does not match derived seed!"
 				));
@@ -1126,6 +1146,7 @@ pub async fn submit_blob_main_task(
 			) {
 				Ok(proof_bytes) => proof_bytes,
 				Err(e) => {
+					clear_reserved_nonce(&nonce_cache, &opaque_tx);
 					stop_watch.stop("Fri Commitment Validation");
 					stop_watch.stop("Commitments (Total)");
 					return Err(internal_err!("{}", e));
@@ -1144,8 +1165,12 @@ pub async fn submit_blob_main_task(
 				blob_params.max_transaction_validity,
 				&runtime_client,
 				&nonce_cache,
+				false,
 			)
-			.map_err(|e| internal_err!("{}", e))?;
+			.map_err(|e| {
+				clear_reserved_nonce(&nonce_cache, &opaque_tx);
+				internal_err!("{}", e)
+			})?;
 
 			let blob = Arc::new(blob);
 			let fri_data = FriData {
@@ -1185,13 +1210,14 @@ async fn submit_blob_background_task(
 ) {
 	let blob_len = blob.len();
 
-	if let Some((who, nonce)) = extract_signer_and_nonce(&opaque_tx) {
-		nonce_cache.commit(&who, nonce);
-	}
+	let signer = extract_signer_and_nonce(&opaque_tx);
 
 	let stored =
 		store_and_gossip_blob(blob_hash, blob, blob_params, commitment, fri_data, &friends).await;
 	if stored.is_err() {
+		if let Some((who, _)) = signer.as_ref() {
+			nonce_cache.clear(who);
+		}
 		return;
 	}
 
@@ -1203,6 +1229,9 @@ async fn submit_blob_background_task(
 		.submit_one(best_hash, TransactionSource::External, opaque_tx)
 		.await
 	{
+		if let Some((who, _)) = signer.as_ref() {
+			nonce_cache.clear(who);
+		}
 		log::error!("tx-pool error: {e}")
 	}
 
@@ -1215,6 +1244,15 @@ async fn submit_blob_background_task(
 	BlobMetrics::inc_submissions_added_to_pool_total();
 	BlobMetrics::inc_submissions_blob_size_pool_total(blob_len as u64);
 	crate::telemetry::BlobSubmission::added_to_pool(blob_hash);
+}
+
+fn clear_reserved_nonce(
+	nonce_cache: &Arc<dyn NonceCacheApiT>,
+	opaque_tx: &UncheckedExtrinsic,
+) {
+	if let Some((who, _)) = extract_signer_and_nonce(opaque_tx) {
+		nonce_cache.clear(&who);
+	}
 }
 
 pub async fn store_and_gossip_blob(

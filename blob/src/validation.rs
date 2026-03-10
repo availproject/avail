@@ -113,6 +113,7 @@ pub fn tx_validation(
 	max_transaction_validity: u64,
 	runtime_client: &Arc<dyn RuntimeApiT>,
 	nonce_cache: &Arc<dyn NonceCacheApiT>,
+	check_future_nonce_cache: bool,
 ) -> Result<UncheckedExtrinsic, String> {
 	let mut metadata = metadata;
 
@@ -144,8 +145,10 @@ pub fn tx_validation(
 		.account_nonce(at, who.clone())
 		.map_err(|e| std::format!("failed to read on-chain nonce: {e:?}"))?;
 
-	if let Err(reason) = nonce_cache.check(&who, onchain_nonce, tx_nonce) {
-		return Err(std::format!("nonce check failed: {}", reason));
+	if check_future_nonce_cache {
+		if let Err(reason) = nonce_cache.check(&who, onchain_nonce, tx_nonce) {
+			return Err(std::format!("nonce check failed: {}", reason));
+		}
 	}
 
 	Ok(opaque_tx)
