@@ -37,8 +37,7 @@ mod module {
 	pub struct Pallet<T>(_);
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config {
-	}
+	pub trait Config: frame_system::Config {}
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
@@ -116,8 +115,7 @@ impl frame_system::Config for Runtime {
 	type MaxTxPerAppIdPerBlock = ConstU32<8_192>;
 }
 
-impl module::Config for Runtime {
-}
+impl module::Config for Runtime {}
 
 fn new_test_ext() -> sp_io::TestExternalities {
 	frame_system::GenesisConfig::<Runtime>::default()

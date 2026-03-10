@@ -1050,11 +1050,13 @@ pub async fn submit_blob_main_task(
 
 	match commitment_scheme {
 		CommitmentScheme::Kzg => {
-			let (cols, rows) = get_dynamic_block_length(&friends.backend_client, finalized_block_hash)
-				.map_err(|e| {
-					clear_reserved_nonce(&nonce_cache, &opaque_tx);
-					e
-				})?;
+			let (cols, rows) =
+				get_dynamic_block_length(&friends.backend_client, finalized_block_hash).map_err(
+					|e| {
+						clear_reserved_nonce(&nonce_cache, &opaque_tx);
+						e
+					},
+				)?;
 			let blob = Arc::new(blob);
 
 			let start = crate::utils::get_current_timestamp_ms();
@@ -1124,10 +1126,12 @@ pub async fn submit_blob_main_task(
 			let eval_point_seed = eval_point_seed.expect("checked above; qed");
 			let eval_claim = eval_claim.expect("checked above; qed");
 			let babe_randomness =
-				get_babe_randomness(&friends.backend_client, finalized_block_hash).map_err(|e| {
-					clear_reserved_nonce(&nonce_cache, &opaque_tx);
-					e
-				})?;
+				get_babe_randomness(&friends.backend_client, finalized_block_hash).map_err(
+					|e| {
+						clear_reserved_nonce(&nonce_cache, &opaque_tx);
+						e
+					},
+				)?;
 			let derived_eval_seed = derive_seed_from_inputs(&babe_randomness, &blob_hash.0);
 			if eval_point_seed != derived_eval_seed {
 				clear_reserved_nonce(&nonce_cache, &opaque_tx);
@@ -1246,10 +1250,7 @@ async fn submit_blob_background_task(
 	crate::telemetry::BlobSubmission::added_to_pool(blob_hash);
 }
 
-fn clear_reserved_nonce(
-	nonce_cache: &Arc<dyn NonceCacheApiT>,
-	opaque_tx: &UncheckedExtrinsic,
-) {
+fn clear_reserved_nonce(nonce_cache: &Arc<dyn NonceCacheApiT>, opaque_tx: &UncheckedExtrinsic) {
 	if let Some((who, _)) = extract_signer_and_nonce(opaque_tx) {
 		nonce_cache.clear(&who);
 	}

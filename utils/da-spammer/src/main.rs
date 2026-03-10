@@ -336,6 +336,13 @@ async fn submit_once(
 ) -> SubmitResult {
 	let started = Instant::now();
 	let app_id = (prepared.index % APP_ID_SHARDS) as u32;
+	println!(
+		"  submit tx={} acct#{} nonce={} size={}B",
+		prepared.index,
+		prepared.account_idx,
+		nonce,
+		prepared.blob.len()
+	);
 
 	let unsigned = client.tx().data_availability().submit_blob_metadata(
 		app_id,
@@ -364,27 +371,54 @@ async fn submit_once(
 	};
 
 	match submit_blob(&client.rpc_client, &tx_bytes, &prepared.blob).await {
-		Ok(_) => SubmitResult {
-			index: prepared.index,
-			account_idx: prepared.account_idx,
-			nonce,
-			blob_len: prepared.blob.len(),
-			elapsed: started.elapsed(),
-			err: None,
-		},
-		Err(err) => {
-			let err_s = err.to_string();
+		Ok(_) => {
+			let elapsed = started.elapsed();
+			println!(
+				"  submit-ok tx={} acct#{} nonce={} size={}B elapsed={:.2?}",
+				prepared.index,
+				prepared.account_idx,
+				nonce,
+				prepared.blob.len(),
+				elapsed
+			);
 			SubmitResult {
 				index: prepared.index,
 				account_idx: prepared.account_idx,
 				nonce,
 				blob_len: prepared.blob.len(),
-				elapsed: started.elapsed(),
-				err: if is_already_imported(&err_s) {
-					None
-				} else {
-					Some(explain_submit_error(err_s))
-				},
+				elapsed,
+				err: None,
+			}
+		},
+		Err(err) => {
+			let err_s = err.to_string();
+			let elapsed = started.elapsed();
+			if is_already_imported(&err_s) {
+				println!(
+					"  submit-ok tx={} acct#{} nonce={} size={}B elapsed={:.2?} already-imported",
+					prepared.index,
+					prepared.account_idx,
+					nonce,
+					prepared.blob.len(),
+					elapsed
+				);
+				SubmitResult {
+					index: prepared.index,
+					account_idx: prepared.account_idx,
+					nonce,
+					blob_len: prepared.blob.len(),
+					elapsed,
+					err: None,
+				}
+			} else {
+				SubmitResult {
+					index: prepared.index,
+					account_idx: prepared.account_idx,
+					nonce,
+					blob_len: prepared.blob.len(),
+					elapsed,
+					err: Some(explain_submit_error(err_s)),
+				}
 			}
 		},
 	}
@@ -530,11 +564,6 @@ fn print_result(result: &SubmitResult) {
 		eprintln!(
 			"  x tx={} acct#{} nonce={} err={}",
 			result.index, result.account_idx, result.nonce, err
-		);
-	} else {
-		println!(
-			"  ok tx={} acct#{} nonce={} size={}B elapsed={:.2?}",
-			result.index, result.account_idx, result.nonce, result.blob_len, result.elapsed
 		);
 	}
 }

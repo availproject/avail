@@ -110,9 +110,9 @@ Operational consequences:
   --account alice \
   --sybil 10 \
   --size-mb 31 \
-  --count 100 \
-  --prepare 20 \
-  --in-flight 20 \
+  --count 20 \
+  --prepare 5 \
+  --in-flight 10 \
   --endpoint http://127.0.0.1:8546 | tee spammer-sybil.log
 ```
 
@@ -182,3 +182,45 @@ Copy this section and fill it in for each run.
 - Biggest block in range:
 - Commands:
 - Observations:
+
+### RESULTS
+
+#### Run #1 [2026-03-10]
+
+- Number of machines used: 4 vals + A FN
+- Mode: single-account
+- Blob size per blob: [31]
+- Block range: [63019-63061]
+- Biggest block in range:[63026]
+- Commands: `./target/release/da-spammer --account alice --size-mb 31 --count 100 --prepare 30 --in-flight 30`
+- Observations: Max block of 570MB (17 txs), mostly between 12 to 16 submissions per block. No failures.
+
+#### Run #2 [2026-03-10]
+
+- Number of machines used: 4 vals + A FN
+- Mode: single-account
+- Blob size per blob: [20]
+- Block range: [63160-63236]
+- Biggest block in range:[63219|63176]
+- Commands: `./target/release/da-spammer --account alice --size-mb 20 --count 200 --prepare 30 --in-flight 30`
+- Observations: Max block of 356MB (17 txs), mostly between 12 to 16 submissions per block. No failures. Same amount of transactions per block compared to 31 blobs.
+
+#### Run #3 [2026-03-10]
+
+- Number of machines used: 4 vals + A FN
+- Mode: Sybil 5 accounts
+- Blob size per blob: [31]
+- Block range: [63289-63330]
+- Biggest block in range:[63318]
+- Commands: `./target/release/da-spammer --account alice --sybil 5 --size-mb 31 --count 100 --prepare 30 --in-flight 30`
+- Observations: Max block of 570MB (17 txs), mostly between 12 to 16 submissions per block. No failures. Same amount of transactions per block compared to before. The goal is to find why we are capped at 17 transactions no matter what.
+
+#### Run #4 [2026-03-10]
+
+- Number of machines used: 4 vals + A FN
+- Mode: single-account
+- Blob size per blob: [31]
+- Block range: [63367-63388]
+- Biggest block in range:[63383]
+- Commands: `./target/release/da-spammer --account alice --size-mb 31 --count 50 --prepare 50 --in-flight 50`
+- Observations: Max block of 520MB (16 txs), We are still capped somehow even if we prepare everything upfront.
