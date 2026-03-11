@@ -19,6 +19,19 @@ use codec::Encode;
 use sp_crypto_hashing::keccak_256;
 use sp_std::iter::repeat;
 
+const EXTRA_QUERY_DOMAIN_SEP: &[u8] = b"fri-extra-query-v1";
+
+fn derive_extra_query_index(blob_hash: H256, commitment: &[u8], leaf_count: usize) -> usize {
+	let mut preimage = Vec::with_capacity(32 + commitment.len() + EXTRA_QUERY_DOMAIN_SEP.len());
+	preimage.extend_from_slice(blob_hash.as_bytes());
+	preimage.extend_from_slice(commitment);
+	preimage.extend_from_slice(EXTRA_QUERY_DOMAIN_SEP);
+	let hash = keccak_256(&preimage);
+	let mut arr = [0u8; 8];
+	arr.copy_from_slice(&hash[..8]);
+	(u64::from_le_bytes(arr) as usize) % leaf_count
+}
+
 pub struct BabeRandomness;
 impl StorageValue for BabeRandomness {
 	type VALUE = [u8; 32];
@@ -73,13 +86,17 @@ pub async fn run() -> Result<(), Error> {
 	let finalized_header = chain::get_header(&client.rpc_client, Some(finalized_hash))
 		.await?
 		.expect("finalized header should be available");
-	let mortality = MortalityOption::Full(Mortality::new(
-		32,
-		finalized_hash,
-		finalized_header.number,
-	));
+	let mortality =
+		MortalityOption::Full(Mortality::new(32, finalized_hash, finalized_header.number));
 
-	let mut blobs: Vec<(Vec<u8>, H256, Vec<u8>, Option<[u8; 32]>, Option<[u8; 16]>)> = Vec::new();
+	let mut blobs: Vec<(
+		Vec<u8>,
+		H256,
+		Vec<u8>,
+		Option<[u8; 32]>,
+		Option<[u8; 16]>,
+		Option<Vec<u8>>,
+	)> = Vec::new();
 	println!("---------- START Commitments generation ---------- ");
 	for i in 0..1 {
 		println!("---------- START Commitment generation {i} ---------- ");
@@ -121,18 +138,41 @@ pub async fn run() -> Result<(), Error> {
 			.calculate_evaluation_claim(&packed.packed_values, &eval_point)
 			.expect("Failed to calculate evaluation claim");
 		let eval_cliam_bytes = eval_claim_to_bytes(eval_claim);
+		let (terminate_codeword, query_prover, proof) = pcs
+			.prove_with_openings::<B128>(
+				packed.packed_mle.clone(),
+				&ctx,
+				&commit_output,
+				&eval_point,
+			)
+			.expect("Failed to generate FRI openings");
+		let log_batch_size = ctx.fri_params.log_batch_size();
+		let leaf_count = 1usize
+			<< (ctx
+				.fri_params
+				.rs_code()
+				.log_len()
+				.saturating_sub(log_batch_size));
+		let extra_index = derive_extra_query_index(blob_hash, &commitments, leaf_count);
+		let eval_proof = pcs
+			.build_eval_proof_bundle(&proof, &terminate_codeword, &query_prover, extra_index)
+			.expect("Failed to build eval proof bundle")
+			.encode();
 		println!("blob len = {:?}", blob.len());
 		println!("blob_hash = {:?}", blob_hash);
 		println!("commitments len = {:?}", commitments.len());
+		println!("eval_proof len = {:?}", eval_proof.len());
 		blobs.push((
 			blob,
 			blob_hash,
 			commitments,
 			Some(eval_point_seed),
 			Some(eval_cliam_bytes),
+			Some(eval_proof),
 		));
 	}
-	for (i, (blob, hash, commitments, eval_point_seed, eval_claim)) in blobs.into_iter().enumerate()
+	for (i, (blob, hash, commitments, eval_point_seed, eval_claim, eval_proof)) in
+		blobs.into_iter().enumerate()
 	{
 		println!("---------- START Submission {i} ---------- ");
 		let options = Options::default()
@@ -145,6 +185,7 @@ pub async fn run() -> Result<(), Error> {
 			commitments,
 			eval_point_seed,
 			eval_claim,
+			eval_proof,
 		);
 
 		let signed = match unsigned_tx.sign(&signer, options).await {
