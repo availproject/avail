@@ -3118,6 +3118,7 @@ dependencies = [
  "log",
  "primitive-types 0.13.1",
  "thiserror-no-std",
+ "tracing",
 ]
 
 [[package]]

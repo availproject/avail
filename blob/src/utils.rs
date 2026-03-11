@@ -230,6 +230,7 @@ where
 	get_validator_per_blob_inner(blob_params, nb_validators)
 }
 
+#[tracing::instrument(name = "get_validator_per_blob_inner", skip_all)]
 pub fn get_validator_per_blob_inner(
 	blob_params: BlobRuntimeParameters,
 	nb_validators: u32,

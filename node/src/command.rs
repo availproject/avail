@@ -90,9 +90,9 @@ pub fn run() -> Result<()> {
 		None => {
 			let runner = cli.create_runner_with_logger_hook(&cli.run, |builder, _| {
 				let params = OtelParams {
-					endpoint_traces: Some("http://localhost:4318/v1/traces".into()),
-					endpoint_metrics: Some("http://localhost:4318/v1/metrics".into()),
-					endpoint_logs: Some("http://localhost:4318/v1/logs".into()),
+					endpoint_traces: cli.otel_traces_endpoint.clone(),
+					endpoint_metrics: cli.otel_metrics_endpoint.clone(),
+					endpoint_logs: cli.otel_logs_endpoint.clone(),
 					service_name: env!("CARGO_CRATE_NAME").into(),
 					service_version: env!("CARGO_PKG_VERSION").into(),
 				};

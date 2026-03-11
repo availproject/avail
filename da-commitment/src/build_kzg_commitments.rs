@@ -28,6 +28,7 @@ pub enum DaCommitmentsError {
 	CommitmentSerializationFailed(String),
 }
 
+#[tracing::instrument(name = "build_grid", skip_all)]
 fn build_grid(
 	data: &[u8],
 	max_width: usize,
@@ -40,6 +41,7 @@ fn build_grid(
 	Ok(grid)
 }
 
+#[tracing::instrument(name = "build_polynomial_grid", skip_all)]
 pub fn build_polynomial_grid(
 	data: &[u8],
 	max_width: usize,
@@ -61,6 +63,7 @@ pub fn build_polynomial_grid(
 	poly_grid
 }
 
+#[tracing::instrument(name = "build_commitments_from_polynomial_grid", skip_all)]
 pub fn build_commitments_from_polynomial_grid(grid: PolynomialGrid) -> Vec<u8> {
 	let pmp = PMP.get_or_init(multiproof_params);
 
@@ -81,6 +84,7 @@ pub fn build_commitments_from_polynomial_grid(grid: PolynomialGrid) -> Vec<u8> {
 	commitment
 }
 
+#[tracing::instrument(name = "build_commitment", skip_all)]
 fn build_commitment(grid: EvaluationGrid) -> Result<Vec<u8>, DaCommitmentsError> {
 	let pmp = PMP.get_or_init(multiproof_params);
 
@@ -108,6 +112,7 @@ fn build_commitment(grid: EvaluationGrid) -> Result<Vec<u8>, DaCommitmentsError>
 	Ok(commitment)
 }
 
+#[tracing::instrument(name = "build_da_commitments", skip_all)]
 pub fn build_da_commitments(
 	data: &[u8],
 	max_width: usize,

@@ -496,6 +496,7 @@ pub enum CompressedBlob {
 }
 
 impl CompressedBlob {
+	#[tracing::instrument(name = "compression.new_nocompression", skip_all)]
 	pub fn new_nocompression(blob: Vec<u8>) -> Self {
 		Self::Nocompression(blob)
 	}
@@ -505,11 +506,13 @@ impl CompressedBlob {
 	// to compress goes up sopmewhat exponentially
 	//
 	// Level 3 is ultra fast but still provides pretty good compression rate
+	#[tracing::instrument(name = "compression.new_zstd_compressed", skip_all)]
 	pub fn new_zstd_compressed(blob: &[u8], level: i32) -> Result<Self, std::io::Error> {
 		let out = zstd_compress(blob, level)?;
 		Ok(Self::Zstd(out))
 	}
 
+	#[tracing::instrument(name = "compression.new_zstd_compress_with_fallback", skip_all)]
 	pub fn new_zstd_compress_with_fallback(blob: &[u8]) -> CompressedBlob {
 		match CompressedBlob::new_zstd_compressed(blob, 3) {
 			Ok(zstd_compressed) => zstd_compressed,
