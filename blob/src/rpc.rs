@@ -430,6 +430,11 @@ where
 	<Block as BlockT>::Extrinsic: From<UncheckedExtrinsic>,
 	H256: From<<Pool as sc_transaction_pool_api::TransactionPool>::Hash>,
 {
+
+	#[tracing::instrument(
+		name = "blob.submit",
+		skip_all,
+	)]
 	async fn submit_blob(
 		&self,
 		metadata_signed_transaction: B64Param,
@@ -837,6 +842,10 @@ where
 	}
 }
 
+#[tracing::instrument(
+	name = "blob.sampling_proofs",
+	skip_all,
+)]
 fn build_sampling_proofs(
 	entry: FriSamplingCacheEntry,
 	cells: Vec<u32>,
@@ -973,6 +982,10 @@ fn get_dynamic_block_length(
 	Ok((cols, rows))
 }
 
+#[tracing::instrument(
+	name = "blob.submit.main_task",
+	skip_all,
+)]
 pub async fn submit_blob_main_task(
 	commitment_queue: Arc<dyn CommitmentQueueApiT>,
 	metadata_signed_transaction: Vec<u8>,
@@ -1302,6 +1315,10 @@ fn handle_fri_submission(
 	})
 }
 
+#[tracing::instrument(
+	name = "blob.submit.background_task",
+	skip_all,
+)]
 async fn submit_blob_background_task(
 	opaque_tx: UncheckedExtrinsic,
 	blob_hash: H256,
@@ -1356,6 +1373,10 @@ fn clear_reserved_nonce(nonce_cache: &Arc<dyn NonceCacheApiT>, opaque_tx: &Unche
 	}
 }
 
+#[tracing::instrument(
+	name = "blob.store_and_gossip",
+	skip_all,
+)]
 pub async fn store_and_gossip_blob(
 	blob_hash: H256,
 	blob: Arc<Vec<u8>>,
@@ -1564,6 +1585,10 @@ pub async fn store_and_gossip_blob(
 	Ok(())
 }
 
+#[tracing::instrument(
+	name = "blob.store",
+	skip_all,
+)]
 fn store_new_blob(
 	blob_hash: H256,
 	blob: Arc<Vec<u8>>,

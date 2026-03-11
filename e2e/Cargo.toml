@@ -9,15 +9,15 @@ edition = "2021"
 # avail-core = { path = "../../avail-core/core", default-features = false, features = [ "runtime"] }
 # avail-fri = { path = "../../avail-core/fri", default-features = false, features = ["std"] }
 # avail-rust = { package = "avail-rust-client", path = "../../avail-rust/client", default-features = false, features = ["native", "reqwest"] }
-# avail-core = { git = "https://github.com/availproject/avail-core.git", rev = "df3ec48d0b86ad4e5a1607d4c4d128d7a2f641d2", default-features = false, features = [ "runtime"] }
-avail-fri = { git = "https://github.com/availproject/avail-core.git", rev = "df3ec48d0b86ad4e5a1607d4c4d128d7a2f641d2", default-features = false, features = ["std"] }
+# avail-core = { git = "https://github.com/availproject/avail-core.git", rev = "d3b3526166e53c51b9631425565d09f49f888d2d", default-features = false, features = [ "runtime"] }
+avail-fri = { git = "https://github.com/availproject/avail-core.git", rev = "d3b3526166e53c51b9631425565d09f49f888d2d", default-features = false, features = ["std"] }
 avail-rust = { package = "avail-rust-client", git = "https://github.com/availproject/avail-rust.git", rev = "65b3d86c1f85e68387eeda8ae91cdcba9d2e2683", default-features = false, features = ["native", "reqwest"] }
 sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", branch = "ghali/infinity-da", default-features = false, features = ["std"] }
 kate = { git = "https://github.com/availproject/avail-core", branch = "ghali/infinity-da", default-features = false, features = ["std"] }
-hex = "0.4"
+const-hex = "1.18"
 codec = { package = "parity-scale-codec", version = "3", default-features = false }
-sp-crypto-hashing = { version = "0.1.0", default-features = false }
+sp-crypto-hashing = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "99bd7a8bd6bd6b1440e5eec056e8f32cd3898f4b", default-features = false }
 
 # Other
-serde = { version = "1.0.195", default-features = false, features = [ "derive", "alloc" ] }
+serde = { version = "1", default-features = false, features = [ "derive", "alloc" ] }
 tokio = { version = "1.45.1", features = ["sync", "fs", "macros", "rt-multi-thread"] }

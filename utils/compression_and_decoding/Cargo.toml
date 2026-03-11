@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-const-hex = { version = "1.16.0" }
+const-hex = { version = "1.18.0" }
 bzip2 = { version = "0.6.0" }
 zstd = { version = "0.13.3" }
 base64 = { version = "0.22.1" }

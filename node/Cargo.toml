@@ -47,6 +47,7 @@ serde_json = { workspace = true, features = ["arbitrary_precision"] }
 async-trait.workspace = true
 tokio = { version = "1.43.0", features = ["sync", "fs", "macros", "rt-multi-thread"] }
 
+
 # Substrate
 ## Primitives
 sc-cli = { workspace = true, default-features = false }
@@ -89,6 +90,8 @@ sc-sync-state-rpc = { workspace = true, default-features = false }
 sp-api = { workspace = true, default-features = false }
 sc-sysinfo = { workspace = true, default-features = false }
 sc-network-sync = { workspace = true, default-features = false }
+sc-tracing = { workspace = true, default-features = false }
+tracing = { workspace = true }
 
 # FRAME
 pallet-im-online = { workspace = true, default-features = false }
@@ -115,7 +118,6 @@ clap_complete = { workspace = true, optional = true }
 frame-benchmarking-cli = { workspace = true, optional = true }
 
 [dev-dependencies]
-sp-tracing = { workspace = true, default-features = false }
 tempfile.workspace = true
 
 [features]

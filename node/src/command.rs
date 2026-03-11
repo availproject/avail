@@ -22,6 +22,7 @@ use avail_blob::types::FullClient;
 use avail_node::chains;
 use da_runtime::Block;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
+use sc_tracing::logging::internal_utils::OtelParams;
 use sc_cli::{Result, Role, SubstrateCli, SyncMode};
 use sc_service::PartialComponents;
 use sp_runtime::traits::HashingFor;
@@ -87,7 +88,18 @@ pub fn run() -> Result<()> {
 
 	match &cli.subcommand {
 		None => {
-			let runner = cli.create_runner(&cli.run)?;
+			let runner = cli.create_runner_with_logger_hook(&cli.run, |builder, _| {
+				let params = OtelParams {
+					endpoint_traces: Some("http://localhost:4318/v1/traces".into()),
+					endpoint_metrics: Some("http://localhost:4318/v1/metrics".into()),
+					endpoint_logs: Some("http://localhost:4318/v1/logs".into()),
+					service_name: env!("CARGO_CRATE_NAME").into(),
+					service_version: env!("CARGO_PKG_VERSION").into(),
+				};
+
+				builder.with_otel(params);
+			})?;
+
 			runner.run_node_until_exit(|config| async move {
 				service::new_full(config, cli).map_err(sc_cli::Error::Service)
 			})

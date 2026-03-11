@@ -118,8 +118,8 @@ where
 			target: LOG_TARGET,
 			"📦 Decoded request from {:?}: block={}, blob={}, cells={}",
 			peer,
-			hex::encode(&req.block_hash),
-			hex::encode(&req.blob_hash),
+			const_hex::encode_prefixed(&req.block_hash),
+			const_hex::encode_prefixed(&req.blob_hash),
 			req.cell_indices.len()
 		);
 
