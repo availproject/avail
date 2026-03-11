@@ -1070,6 +1070,8 @@ impl<T: Config> Pallet<T> {
 
 pub mod weight_helper {
 
+	use avail_base::MAX_BLOB_TXS_PER_BLOCK;
+
 	use super::*;
 
 	/// Weight for `dataAvailability::submit_data`.
@@ -1126,6 +1128,18 @@ pub mod weight_helper {
 		u32::try_from(len).ok()
 	}
 
+	fn estimated_post_inherent_summary_size(blob_size_bytes: u64) -> u64 {
+		// Based on empiric results tuned up a little.
+		match blob_size_bytes {
+			0..=1_048_576 => 340 * 1024,
+			1_048_577..=2_097_152 => 400 * 1024,
+			2_097_153..=4_194_304 => 450 * 1024,
+			4_194_305..=8_388_608 => 520 * 1024,
+			8_388_609..=16_777_216 => 580 * 1024,
+			_ => 660 * 1024,
+		}
+	}
+
 	/// Weight for `dataAvailability::submit_blob_metadata`.
 	pub fn submit_blob_metadata<T: Config>(data_len: u64) -> Weight {
 		/* Compute regular substrate weight. */
@@ -1152,8 +1166,19 @@ pub mod weight_helper {
 		let ref_time = data_ratio * max_weight_normal_ratio;
 		let da_weight = Weight::from_parts(ref_time, regular_weight.proof_size());
 
-		// We return the biggest value between the regular weight and da weight.
-		// I cannot think of a case where regular weight > da weight.
-		da_weight.max(regular_weight)
+		// Compute weight based on projected post-inherent summary growth.
+		let max_blob_tx_in_block: u64 = MAX_BLOB_TXS_PER_BLOCK.saturated_into();
+		let max_eval_proof_size = estimated_post_inherent_summary_size(31 * 1024 * 1024);
+		let estimated_max_call_size = max_blob_tx_in_block.saturating_mul(max_eval_proof_size); // This is an estimate, to tweak it, we need to answer the question, what max size do we want to allow for the DA Blob post-inherent extrinsic.
+		let projected_post_inherent_size = estimated_post_inherent_summary_size(data_len);
+		let post_inherent_ratio =
+			Perbill::from_rational(projected_post_inherent_size, estimated_max_call_size);
+		let post_inherent_ref_time = post_inherent_ratio * max_weight_normal_ratio;
+		let post_inherent_weight =
+			Weight::from_parts(post_inherent_ref_time, regular_weight.proof_size());
+
+		// Keep the most conservative estimate across the regular dispatch cost, the payload size
+		// itself, and the future DA post-inherent summary footprint.
+		da_weight.max(regular_weight).max(post_inherent_weight)
 	}
 }
