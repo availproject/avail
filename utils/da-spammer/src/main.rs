@@ -13,6 +13,8 @@ use sp_crypto_hashing::keccak_256;
 use std::{
 	collections::BTreeMap,
 	error::Error,
+	fs,
+	path::PathBuf,
 	sync::{
 		atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
 		Arc,
@@ -29,6 +31,7 @@ use tokio::{
 const DEFAULT_ENDPOINT: &str = "http://127.0.0.1:8546";
 const DEFAULT_SIZE_MB: usize = 31;
 const MAX_SIZE_MB: usize = 31;
+const MAX_PAYLOAD_BYTES: usize = MAX_SIZE_MB * 1024 * 1024;
 const DEFAULT_COUNT: usize = 50;
 const MAX_COUNT: usize = 1000;
 const DEFAULT_IN_FLIGHT: usize = 4;
@@ -49,8 +52,12 @@ struct Args {
 	account: String,
 
 	/// Payload size in MiB [1..=31]
-	#[arg(long, default_value_t = DEFAULT_SIZE_MB)]
-	size_mb: usize,
+	#[arg(long)]
+	size_mb: Option<usize>,
+
+	/// Use a file as the payload template
+	#[arg(long)]
+	file: Option<PathBuf>,
 
 	/// Total submitted transactions [1..=1000]
 	#[arg(long, default_value_t = DEFAULT_COUNT)]
@@ -131,8 +138,13 @@ fn validate_account(value: &str) -> Result<String, String> {
 }
 
 fn validate_args(args: &Args) -> Result<(), Box<dyn Error>> {
-	if !(1..=MAX_SIZE_MB).contains(&args.size_mb) {
-		return Err(format!("--size-mb must be within 1..={MAX_SIZE_MB}").into());
+	if args.file.is_some() && args.size_mb.is_some() {
+		return Err("--file and --size-mb are mutually exclusive".into());
+	}
+	if let Some(size_mb) = args.size_mb {
+		if !(1..=MAX_SIZE_MB).contains(&size_mb) {
+			return Err(format!("--size-mb must be within 1..={MAX_SIZE_MB}").into());
+		}
 	}
 	if args.count == 0 || args.count > MAX_COUNT {
 		return Err(format!("--count must be within 1..={MAX_COUNT}").into());
@@ -207,22 +219,65 @@ fn fill_byte(run_salt: u64, unique_id: u64, account_idx: usize) -> u8 {
 	}
 }
 
+fn mutate_file_blob(
+	blob: &mut [u8],
+	index: usize,
+	run_salt: u64,
+	unique_id: u64,
+) {
+	if blob.is_empty() {
+		return;
+	}
+
+	if blob.len() >= 16 {
+		blob[..8].copy_from_slice(&run_salt.to_le_bytes());
+		blob[8..16].copy_from_slice(&unique_id.to_le_bytes());
+	} else if blob.len() >= 8 {
+		blob[..8].copy_from_slice(&unique_id.to_le_bytes());
+	} else {
+		blob[0] = blob[0].wrapping_add((index % 255) as u8);
+	}
+}
+
+fn load_file_blob(path: &PathBuf) -> Result<Vec<u8>, Box<dyn Error>> {
+	let mut blob = fs::read(path)?;
+	if blob.is_empty() {
+		return Err("--file must not be empty".into());
+	}
+	if blob.len() > MAX_PAYLOAD_BYTES {
+		blob.truncate(MAX_PAYLOAD_BYTES);
+	}
+	Ok(blob)
+}
+
 fn prepare_tx(
 	index: usize,
 	account_idx: usize,
 	len_bytes: usize,
+	file_blob: Option<Arc<Vec<u8>>>,
 	run_salt: u64,
 	unique_id: u64,
 	babe_randomness: [u8; 32],
 ) -> Result<PreparedTx, String> {
-	let mut blob = vec![fill_byte(run_salt, unique_id, account_idx); len_bytes];
-	if len_bytes >= 16 {
-		blob[..8].copy_from_slice(&run_salt.to_le_bytes());
-		blob[8..16].copy_from_slice(&unique_id.to_le_bytes());
-	} else if len_bytes >= 8 {
-		blob[..8].copy_from_slice(&unique_id.to_le_bytes());
+	let blob = if let Some(file_blob) = file_blob {
+		let mut blob = (*file_blob).clone();
+		mutate_file_blob(&mut blob, index, run_salt, unique_id);
+		blob
 	} else {
-		blob[0] = blob[0].wrapping_add((index % 255) as u8);
+		let mut blob = vec![fill_byte(run_salt, unique_id, account_idx); len_bytes];
+		if len_bytes >= 16 {
+			blob[..8].copy_from_slice(&run_salt.to_le_bytes());
+			blob[8..16].copy_from_slice(&unique_id.to_le_bytes());
+		} else if len_bytes >= 8 {
+			blob[..8].copy_from_slice(&unique_id.to_le_bytes());
+		} else {
+			blob[0] = blob[0].wrapping_add((index % 255) as u8);
+		}
+		blob
+	};
+
+	if blob.is_empty() {
+		return Err("payload must not be empty".into());
 	}
 
 	let blob_hash = H256::from(keccak_256(&blob));
@@ -267,6 +322,7 @@ fn prepare_tx_with_logs(
 	index: usize,
 	account_idx: usize,
 	len_bytes: usize,
+	file_blob: Option<Arc<Vec<u8>>>,
 	run_salt: u64,
 	unique_id: u64,
 	babe_randomness: [u8; 32],
@@ -276,6 +332,7 @@ fn prepare_tx_with_logs(
 		index,
 		account_idx,
 		len_bytes,
+		file_blob,
 		run_salt,
 		unique_id,
 		babe_randomness,
@@ -583,6 +640,7 @@ async fn execute_submissions(
 	client: Arc<Client>,
 	senders: Vec<SenderState>,
 	len_bytes: usize,
+	file_blob: Option<Arc<Vec<u8>>>,
 ) -> Result<Arc<Stats>, Box<dyn Error>> {
 	let stats = Arc::new(Stats::default());
 	let cancelled = Arc::new(AtomicBool::new(false));
@@ -658,11 +716,13 @@ async fn execute_submissions(
 			let unique_id = index as u64;
 			let prepared = match tokio::task::spawn_blocking({
 				let randomness = babe_randomness;
+				let file_blob = file_blob.clone();
 				move || {
 					prepare_tx_with_logs(
 						index,
 						account_idx,
 						len_bytes,
+						file_blob,
 						run_salt,
 						unique_id,
 						randomness,
@@ -739,12 +799,14 @@ async fn execute_submissions(
 				let randomness = babe_randomness;
 				let account_idx = index % sender_count;
 				let unique_id = index as u64;
+				let file_blob = file_blob.clone();
 				prepare_set.spawn(async move {
 					let prepared = tokio::task::spawn_blocking(move || {
 						prepare_tx_with_logs(
 							index,
 							account_idx,
 							len_bytes,
+							file_blob,
 							run_salt,
 							unique_id,
 							randomness,
@@ -882,11 +944,26 @@ async fn main() -> Result<(), Box<dyn Error>> {
 	})
 	.expect("failed setting Ctrl-C handler");
 
-	let len_bytes = args.size_mb * 1024 * 1024;
+	let file_blob = match &args.file {
+		Some(path) => Some(Arc::new(load_file_blob(path)?)),
+		None => None,
+	};
+	let len_bytes = file_blob
+		.as_ref()
+		.map(|blob| blob.len())
+		.unwrap_or_else(|| args.size_mb.unwrap_or(DEFAULT_SIZE_MB) * 1024 * 1024);
 	println!("========== Avail DA Spammer New ==========");
 	println!("Endpoint      : {}", args.endpoint);
 	println!("Account       : {}", args.account);
-	println!("Blob size     : {} MiB ({} bytes)", args.size_mb, len_bytes);
+	if let Some(path) = &args.file {
+		println!("Blob source   : file {}", path.display());
+	} else {
+		println!(
+			"Blob source   : generated {} MiB payload",
+			args.size_mb.unwrap_or(DEFAULT_SIZE_MB)
+		);
+	}
+	println!("Blob size     : {} bytes", len_bytes);
 	println!("Count         : {}", args.count);
 	println!("Sybil         : {}", args.sybil);
 	println!(
@@ -907,7 +984,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 	println!("First sender  : {}", &senders[0].account_id);
 
 	let started = Instant::now();
-	let stats = execute_submissions(&args, client, senders, len_bytes).await?;
+	let stats = execute_submissions(&args, client, senders, len_bytes, file_blob).await?;
 
 	let attempted = stats.attempted.load(Ordering::Relaxed);
 	let ok = stats.ok.load(Ordering::Relaxed);
