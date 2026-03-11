@@ -23,6 +23,7 @@ pub enum FriDaCommitmentError {
 	CommitFailed(String),
 }
 
+#[tracing::instrument(name = "build_fri_commitment_internal", skip_all)]
 fn build_fri_commitment_internal(
 	data: &[u8],
 	params_version: FriParamsVersion,
@@ -53,6 +54,7 @@ fn build_fri_commitment_internal(
 }
 
 /// Build commitment using Fri PCS with given version configuration
+#[tracing::instrument(name = "build_fri_da_commitment", skip_all)]
 pub fn build_fri_da_commitment(data: &[u8], params_version: FriParamsVersion) -> FriDaCommitment {
 	match build_fri_commitment_internal(data, params_version) {
 		Ok(c) => c,

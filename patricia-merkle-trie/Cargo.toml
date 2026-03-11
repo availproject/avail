@@ -19,7 +19,7 @@ rlp = { workspace = true, default-features = false }
 tiny-keccak = { workspace = true,  optional = true }
 
 [dev-dependencies]
-hex.workspace = true
+const-hex.workspace = true
 hex-literal.workspace = true
 primitive-types = { workspace = true, features = ["rlp"] }
 rlp-derive.workspace = true

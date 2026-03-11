@@ -51,7 +51,7 @@ impl NonceCacheApiT for NonceCache {
 				cache.insert(who.clone(), tx_nonce, BLOB_FUTURE_NONCE_CACHE_TTL);
 			},
 			Err(e) => {
-				log::warn!(
+				tracing::warn!(
 					"NonceCache: failed to lock cache for account={} nonce={} (error={})",
 					who,
 					tx_nonce,
@@ -67,7 +67,7 @@ impl NonceCacheApiT for NonceCache {
 				cache.remove(who);
 			},
 			Err(e) => {
-				log::warn!(
+				tracing::warn!(
 					"NonceCache: failed to clear cache for account={} (error={})",
 					who,
 					e

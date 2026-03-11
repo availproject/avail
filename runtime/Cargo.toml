@@ -110,8 +110,7 @@ substrate-wasm-builder = { workspace = true, default-features = false }
 da-commitment.workspace = true
 bounded-collections.workspace = true
 test-case.workspace = true
-hex.workspace = true
-hex-literal.workspace = true
+const-hex.workspace = true
 serde_json.workspace = true
 sp-keyring = { workspace = true, default-features = false }
 env_logger.workspace = true

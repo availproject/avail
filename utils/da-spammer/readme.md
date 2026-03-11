@@ -25,7 +25,7 @@ Binary:
 - `--account <alice|bob|charlie|dave|eve|ferdie|one|two>`: sender in normal mode, funder/root in sybil mode
 - `--endpoint <url>`: RPC endpoint, default `http://127.0.0.1:8546`
 - `--size-mb <n>`: blob size in MiB, `1..=31`
-- `--file <path>`: use file contents as the blob payload template (exclusive to size-mb)
+- `--file <path>`: use file contents as the blob payload template
 - `--count <n>`: number of submissions, `1..=1000`
 - `--prepare <n>`: how many transactions to prepare ahead; `0` means on-the-fly
 - `--in-flight <n>`: max concurrent submissions

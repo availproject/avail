@@ -149,6 +149,14 @@ where
 		}
 	}
 
+	#[tracing::instrument(
+		name = "http.request",
+		skip_all,
+		fields(
+			http.method = "POST",
+			http.route = "/extrinsics"
+		)
+	)]
 	async fn extrinsics(
 		&self,
 		at: types::BlockId,

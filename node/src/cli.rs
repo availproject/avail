@@ -69,6 +69,18 @@ pub struct Cli {
 	/// This parameter can be used to update the network name and id of the `dev` and `dev_tri` chains.
 	#[arg(long)]
 	pub network_name: Option<String>,
+
+	/// OTEL Traces Endpoint
+	#[arg(long)]
+	pub otel_traces_endpoint: Option<String>,
+
+	/// OTEL Logs Endpoint
+	#[arg(long)]
+	pub otel_logs_endpoint: Option<String>,
+
+	/// OTEL Metrics Endpoint
+	#[arg(long)]
+	pub otel_metrics_endpoint: Option<String>,
 }
 
 fn kate_max_cells_size_upper_bound(s: &str) -> Result<usize, String> {

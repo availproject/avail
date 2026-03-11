@@ -127,7 +127,7 @@ impl StorageApiT for DoubleRocksdbBlobStore {
 				let mut slice = data.as_slice();
 				let decoded = Blob::decode(&mut slice)
 					.map_err(|_| anyhow!("failed to decode blob from the blob store"))?;
-				log::info!(
+				tracing::info!(
 					"GET_BLOB[Double] - Decoding took - {:?} - hash: {:?}",
 					timer.elapsed(),
 					hash
@@ -144,7 +144,7 @@ impl StorageApiT for DoubleRocksdbBlobStore {
 		// Try cache first
 		if let Ok(cache) = self.cache.lock() {
 			if let Some(cached) = cache.get(hash).cloned() {
-				log::info!(
+				tracing::info!(
 					"GET_RAW_BLOB[Double] - CACHE HIT - {:?} - hash: {:?}",
 					timer.elapsed(),
 					hash
@@ -165,7 +165,7 @@ impl StorageApiT for DoubleRocksdbBlobStore {
 			}
 		}
 
-		log::info!(
+		tracing::info!(
 			"GET_RAW_BLOB[Double] - CACHE MISS - {:?} - hash: {:?}",
 			timer.elapsed(),
 			hash
@@ -333,7 +333,7 @@ impl StorageApiT for DoubleRocksdbBlobStore {
 					expired_blobs.push(hash);
 				}
 			} else {
-				log::warn!(target: LOG_TARGET, "[Double] Failed to decode blob metadata for key {:?}", key);
+				tracing::warn!(target: LOG_TARGET, "[Double] Failed to decode blob metadata for key {:?}", key);
 			}
 		}
 
@@ -354,7 +354,7 @@ impl StorageApiT for DoubleRocksdbBlobStore {
 					expired_ownerships.push(hash);
 				}
 			} else {
-				log::warn!(target: LOG_TARGET, "[Double] Failed to decode blob ownership expiry for key {:?}", key);
+				tracing::warn!(target: LOG_TARGET, "[Double] Failed to decode blob ownership expiry for key {:?}", key);
 			}
 		}
 		if !expired_ownerships.is_empty() {
@@ -365,17 +365,17 @@ impl StorageApiT for DoubleRocksdbBlobStore {
 	}
 
 	fn log_all_entries(&self) -> Result<()> {
-		log::info!(target: LOG_TARGET, "--- [Double] Logging all entries ---");
+		tracing::info!(target: LOG_TARGET, "--- [Double] Logging all entries ---");
 
 		// Blob Metadatas (meta db)
-		log::info!(target: LOG_TARGET, "--- [Double] Blob Metadatas ---");
+		tracing::info!(target: LOG_TARGET, "--- [Double] Blob Metadatas ---");
 		for (_key, value) in self
 			.db_meta
 			.iter(Self::COL_BLOB_METADATA)
 			.filter_map(Result::ok)
 		{
 			if let Ok(blob_metadata) = BlobMetadata::decode(&mut value.as_slice()) {
-				log::info!(
+				tracing::info!(
 					target: LOG_TARGET,
 					"Blob: hash={:?}, size={}, commitments_len={}, is_notified={}, nb_val_per_blob={}, expires_at={}",
 					blob_metadata.hash,
@@ -386,12 +386,12 @@ impl StorageApiT for DoubleRocksdbBlobStore {
 					blob_metadata.expires_at,
 				);
 			} else {
-				log::warn!(target: LOG_TARGET, "[Double] Failed to decode a blob metadata entry");
+				tracing::warn!(target: LOG_TARGET, "[Double] Failed to decode a blob metadata entry");
 			}
 		}
 
 		// Blob Ownerships (meta db)
-		log::info!(target: LOG_TARGET, "--- [Double] Blob Ownerships ---");
+		tracing::info!(target: LOG_TARGET, "--- [Double] Blob Ownerships ---");
 		for (key, value) in self
 			.db_meta
 			.iter(Self::COL_BLOB_OWNERSHIP)
@@ -401,15 +401,15 @@ impl StorageApiT for DoubleRocksdbBlobStore {
 				const BLOB_HASH_LEN: usize = 32;
 				if key.len() >= BLOB_HASH_LEN {
 					let hash = BlobHash::from_slice(&key[..BLOB_HASH_LEN]);
-					log::info!(target: LOG_TARGET, "Blob Ownership: hash={:?}, ownership={:?}", hash, o.address);
+					tracing::info!(target: LOG_TARGET, "Blob Ownership: hash={:?}, ownership={:?}", hash, o.address);
 				}
 			} else {
-				log::warn!(target: LOG_TARGET, "[Double] Failed to decode an ownership entry");
+				tracing::warn!(target: LOG_TARGET, "[Double] Failed to decode an ownership entry");
 			}
 		}
 
 		// Blob Retries (meta db)
-		log::info!(target: LOG_TARGET, "--- [Double] Blob Retries ---");
+		tracing::info!(target: LOG_TARGET, "--- [Double] Blob Retries ---");
 		for (key, value) in self
 			.db_meta
 			.iter(Self::COL_BLOB_RETRY)
@@ -417,20 +417,20 @@ impl StorageApiT for DoubleRocksdbBlobStore {
 		{
 			if let Ok(count) = u16::decode(&mut value.as_slice()) {
 				let hash = BlobHash::from_slice(&key);
-				log::info!(target: LOG_TARGET, "Blob Retry: hash={:?}, count={}", hash, count);
+				tracing::info!(target: LOG_TARGET, "Blob Retry: hash={:?}, count={}", hash, count);
 			} else {
-				log::warn!(target: LOG_TARGET, "[Double] Failed to decode a retry entry");
+				tracing::warn!(target: LOG_TARGET, "[Double] Failed to decode a retry entry");
 			}
 		}
 
 		// Raw Blobs (blob db) — list presence by key
-		log::info!(target: LOG_TARGET, "--- [Double] Blob Keys ---");
+		tracing::info!(target: LOG_TARGET, "--- [Double] Blob Keys ---");
 		for (key, _value) in self.db_blob.iter(Self::COL_BLOB).filter_map(Result::ok) {
 			let hash = BlobHash::from_slice(&key);
-			log::info!(target: LOG_TARGET, "Blob present: hash={:?}", hash);
+			tracing::info!(target: LOG_TARGET, "Blob present: hash={:?}", hash);
 		}
 
-		log::info!(target: LOG_TARGET, "--- [Double] End of blob store log ---");
+		tracing::info!(target: LOG_TARGET, "--- [Double] End of blob store log ---");
 		Ok(())
 	}
 

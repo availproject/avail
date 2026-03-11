@@ -98,7 +98,7 @@ where
 						.await;
 					},
 					Err(e) => {
-						log::error!(target: LOG_TARGET, "Could not decode peer id from Blob received notification: {e}");
+						tracing::error!(target: LOG_TARGET, "Could not decode peer id from Blob received notification: {e}");
 					},
 				}
 			},
@@ -107,7 +107,7 @@ where
 			},
 		},
 		Err(err) => {
-			log::error!(
+			tracing::error!(
 				target: LOG_TARGET,
 				"Failed to decode Blob notification ({} bytes): {:?}",
 				data.len(),
@@ -125,7 +125,7 @@ async fn handle_blob_received_notification<Block>(
 	Block: BlockT,
 {
 	let timer = std::time::Instant::now();
-	log::info!(
+	tracing::info!(
 		"BLOB - handle_blob_received_notification - START - {:?} - {:?}",
 		blob_received.hash,
 		timer.elapsed()
@@ -143,12 +143,12 @@ async fn handle_blob_received_notification<Block>(
 		.client
 		.hash(announced_finalized_number.saturated_into())
 	else {
-		log::error!(target: LOG_TARGET, "Could not get announced block hash from backend");
+		tracing::error!(target: LOG_TARGET, "Could not get announced block hash from backend");
 		return;
 	};
 
 	if finalized_hash.encode() != announced_finalized_hash.encode() {
-		log::error!(target: LOG_TARGET, "Invalid finalized block hash.");
+		tracing::error!(target: LOG_TARGET, "Invalid finalized block hash.");
 		return;
 	}
 
@@ -157,7 +157,7 @@ async fn handle_blob_received_notification<Block>(
 	if announced_finalized_number > finalized_block_number
 		|| finalized_block_number - announced_finalized_number > NOTIFICATION_EXPIRATION_PERIOD
 	{
-		log::error!(target: LOG_TARGET, "Invalid announced finalized block number.");
+		tracing::error!(target: LOG_TARGET, "Invalid announced finalized block number.");
 		return;
 	}
 
@@ -168,7 +168,7 @@ async fn handle_blob_received_notification<Block>(
 	{
 		Ok(p) => p,
 		Err(e) => {
-			log::error!("Could not get blob_params: {e:?}");
+			tracing::error!("Could not get blob_params: {e:?}");
 			BlobRuntimeParameters::default()
 		},
 	};
@@ -179,7 +179,7 @@ async fn handle_blob_received_notification<Block>(
 	{
 		Ok(v) => v,
 		Err(e) => {
-			log::error!(
+			tracing::error!(
 				target: LOG_TARGET,
 				"Could not get FRI params version from runtime at {:?}: {e:?}. Falling back to V0.",
 				finalized_hash
@@ -189,7 +189,7 @@ async fn handle_blob_received_notification<Block>(
 	};
 
 	if blob_received.size > (blob_runtime_params.max_blob_size + 1024) {
-		log::error!(target: LOG_TARGET, "Invalid blob size");
+		tracing::error!(target: LOG_TARGET, "Invalid blob size");
 		return;
 	}
 
@@ -206,7 +206,7 @@ async fn handle_blob_received_notification<Block>(
 	{
 		Ok(maybe_meta) => maybe_meta,
 		Err(e) => {
-			log::error!("Failed to check data from blob storage: {e}");
+			tracing::error!("Failed to check data from blob storage: {e}");
 			return;
 		},
 	};
@@ -216,14 +216,14 @@ async fn handle_blob_received_notification<Block>(
 		let eval_point_seed = match &blob_received.eval_point_seed {
 			Some(seed) => seed,
 			None => {
-				log::error!(target: LOG_TARGET, "Missing eval_point_seed for FRI blob");
+				tracing::error!(target: LOG_TARGET, "Missing eval_point_seed for FRI blob");
 				return;
 			},
 		};
 		let eval_claim = match &blob_received.eval_claim {
 			Some(claim) => claim,
 			None => {
-				log::error!(target: LOG_TARGET, "Missing eval_claim for FRI blob");
+				tracing::error!(target: LOG_TARGET, "Missing eval_claim for FRI blob");
 				return;
 			},
 		};
@@ -240,14 +240,14 @@ async fn handle_blob_received_notification<Block>(
 				.expect("checked above"),
 		) {
 			Ok(_) => {
-				log::info!(
+				tracing::info!(
 					target: LOG_TARGET,
 					"Successfully validated eval proof for blob: {:?}",
 					blob_received.hash
 				);
 			},
 			Err(e) => {
-				log::error!(target: LOG_TARGET, "FRI proof validation failed: {}", e);
+				tracing::error!(target: LOG_TARGET, "FRI proof validation failed: {}", e);
 				return;
 			},
 		}
@@ -294,7 +294,7 @@ async fn handle_blob_received_notification<Block>(
 	let h: [u8; 32] = match announced_finalized_hash.encode().try_into() {
 		Ok(x) => x,
 		Err(_) => {
-			log::error!("Failed to convert announced_finalized_hash to H256");
+			tracing::error!("Failed to convert announced_finalized_hash to H256");
 			return;
 		},
 	};
@@ -314,7 +314,7 @@ async fn handle_blob_received_notification<Block>(
 			&blob_handle.client,
 			&announced_finalized_hash.encode(),
 		) else {
-			log::error!("Could not get expected address from signer");
+			tracing::error!("Could not get expected address from signer");
 			return;
 		};
 		let expected_payload = build_signature_payload(
@@ -331,11 +331,11 @@ async fn handle_blob_received_notification<Block>(
 		) {
 			Ok(true) => {},
 			Ok(false) => {
-				log::error!("invalid signature");
+				tracing::error!("invalid signature");
 				return;
 			},
 			Err(err) => {
-				log::error!("verify error signature error {err}");
+				tracing::error!("verify error signature error {err}");
 				return;
 			},
 		}
@@ -349,7 +349,7 @@ async fn handle_blob_received_notification<Block>(
 	) {
 		Ok(v) => v,
 		Err(e) => {
-			log::error!(target: LOG_TARGET, "No keys found while trying to get this node's id: {e}");
+			tracing::error!(target: LOG_TARGET, "No keys found while trying to get this node's id: {e}");
 			return;
 		},
 	};
@@ -367,7 +367,7 @@ async fn handle_blob_received_notification<Block>(
 				blob_meta.finalized_block_hash,
 				e
 			);
-			log::error!("{}", err);
+			tracing::error!("{}", err);
 			return;
 		},
 	};
@@ -399,7 +399,7 @@ async fn handle_blob_received_notification<Block>(
 		let signature = match sign_blob_data(&blob_handle.keystore, signature_payload) {
 			Ok(s) => s.signature,
 			Err(e) => {
-				log::error!(target: LOG_TARGET, "An error has occured while trying to sign data, exiting the function: {e}");
+				tracing::error!(target: LOG_TARGET, "An error has occured while trying to sign data, exiting the function: {e}");
 				return;
 			},
 		};
@@ -408,7 +408,7 @@ async fn handle_blob_received_notification<Block>(
 			.blob_database
 			.get_blob_ownership(&blob_received.hash, &my_validator_id.encode())
 		else {
-			log::error!(
+			tracing::error!(
 				target: LOG_TARGET,
 				"Could not read the db for ownership for hash {}",
 				blob_meta.hash,
@@ -454,7 +454,7 @@ async fn handle_blob_received_notification<Block>(
 			)
 			.await
 			else {
-				log::error!(
+				tracing::error!(
 					target: LOG_TARGET,
 					"An error occured while trying to request a blob {}",
 					blob_meta.hash,
@@ -466,7 +466,7 @@ async fn handle_blob_received_notification<Block>(
 			let blob_data = match blob_response.blob.data() {
 				Ok(x) => x,
 				Err(_) => {
-					log::error!(
+					tracing::error!(
 						target: LOG_TARGET,
 						"Failed to decompress blob. Hash: blob {}",
 						blob_meta.hash,
@@ -477,7 +477,7 @@ async fn handle_blob_received_notification<Block>(
 
 			// Actually check the real blob size
 			if blob_data.len() > (blob_runtime_params.max_blob_size + 1024) as usize {
-				log::error!(target: LOG_TARGET, "Invalid blob size");
+				tracing::error!(target: LOG_TARGET, "Invalid blob size");
 				return;
 			}
 
@@ -490,7 +490,7 @@ async fn handle_blob_received_notification<Block>(
 			{
 				Ok(scheme) => scheme,
 				Err(e) => {
-					log::error!(
+					tracing::error!(
 						"Could not get commitment scheme from runtime at {:?}: {e:?}. Falling back to Fri.",
 						blob_received.finalized_block_hash
 					);
@@ -506,7 +506,7 @@ async fn handle_blob_received_notification<Block>(
 					// Check if the eval_point_seed and eval_claim are present in the associated BlobMetadata tx
 					if blob_received.eval_point_seed.is_none() || blob_received.eval_claim.is_none()
 					{
-						log::error!(target: LOG_TARGET, "Missing eval_point_seed or eval_claim for FRI blob");
+						tracing::error!(target: LOG_TARGET, "Missing eval_point_seed or eval_claim for FRI blob");
 						return;
 					}
 
@@ -520,14 +520,14 @@ async fn handle_blob_received_notification<Block>(
 					) {
 						Ok(proof_bytes) => proof_bytes,
 						Err(e) => {
-							log::error!(target: LOG_TARGET, "FRI commitment validation failed: {}", e);
+							tracing::error!(target: LOG_TARGET, "FRI commitment validation failed: {}", e);
 							return;
 						},
 					};
 
 					if should_send_proof {
 						// send the eval_proof with stored_blob notification & also update the local metadata with eval_proof
-						log::info!(target: LOG_TARGET, "Designated prover for blob {}, sending eval proof", blob_received.hash);
+						tracing::info!(target: LOG_TARGET, "Designated prover for blob {}, sending eval proof", blob_received.hash);
 						eval_proof = Some(fri_eval_proof);
 						blob_meta.fri_eval_proof = eval_proof.clone();
 						blob_meta.fri_eval_prover_index = Some(prover_index);
@@ -540,7 +540,7 @@ async fn handle_blob_received_notification<Block>(
 				.blob_database
 				.insert_blob(&blob_response.hash, &blob_response.blob)
 			{
-				log::error!(
+				tracing::error!(
 					target: LOG_TARGET,
 					"An error occured while trying to store blob {}: {}",
 					blob_meta.hash,
@@ -569,7 +569,7 @@ async fn handle_blob_received_notification<Block>(
 	}
 
 	if let Err(e) = blob_handle.blob_database.insert_blob_metadata(&blob_meta) {
-		log::error!(
+		tracing::error!(
 			target: LOG_TARGET,
 			"An error occured while trying to store blob metadata {}: {}",
 			blob_meta.hash,
@@ -582,7 +582,7 @@ async fn handle_blob_received_notification<Block>(
 			.blob_database
 			.insert_blob_ownership(&blob_received.hash, &o)
 		{
-			log::error!(
+			tracing::error!(
 				target: LOG_TARGET,
 				"An error occured while trying to store blob metadata {}: {}",
 				blob_meta.hash,
@@ -596,7 +596,7 @@ async fn handle_blob_received_notification<Block>(
 		.blob_database
 		.remove_blob_ownership_expiry(&blob_meta.hash)
 	{
-		log::error!(
+		tracing::error!(
 			target: LOG_TARGET,
 			"An error occured while trying to remove blob ownership expiry {}: {}",
 			blob_meta.hash,
@@ -604,7 +604,7 @@ async fn handle_blob_received_notification<Block>(
 		)
 	}
 
-	log::info!(
+	tracing::info!(
 		"BLOB - handle_blob_received_notification - END - {:?} - {:?}",
 		blob_received.hash,
 		timer.elapsed()
@@ -623,7 +623,7 @@ where
 	Block: BlockT,
 {
 	let timer = std::time::Instant::now();
-	log::info!(
+	tracing::info!(
 		"BLOB - send_blob_request - START - {:?} - {:?}",
 		blob_hash,
 		timer.elapsed()
@@ -632,7 +632,7 @@ where
 	let signature_data = match sign_blob_data(&blob_handle.keystore, signature_payload) {
 		Ok(s) => s,
 		Err(e) => {
-			log::error!(target: LOG_TARGET, "An error has occured while trying to sign data, exiting the function: {e}");
+			tracing::error!(target: LOG_TARGET, "An error has occured while trying to sign data, exiting the function: {e}");
 			return None;
 		},
 	};
@@ -676,7 +676,7 @@ where
 				let mut buf: &[u8] = &data;
 				match BlobResponseEnum::decode(&mut buf) {
 					Ok(BlobResponseEnum::BlobResponse(blob_response)) => {
-						log::info!(
+						tracing::info!(
 							"BLOB - send_blob_request - END - {:?} - {:?}",
 							blob_hash,
 							timer.elapsed()
@@ -684,14 +684,14 @@ where
 						return Some(blob_response);
 					},
 					Ok(_other) => {
-						log::error!(target: LOG_TARGET,
+						tracing::error!(target: LOG_TARGET,
 							"Invalid response in send blob request, expected BlobResponse");
 						BlobReputationChange::MalformedResponse
 							.report::<Block>(&blob_handle.network, &target_peer);
 						break;
 					},
 					Err(err) => {
-						log::error!(target: LOG_TARGET,
+						tracing::error!(target: LOG_TARGET,
 							"Failed to decode Blob response ({} bytes): {:?}", data.len(), err);
 						BlobReputationChange::MalformedResponse
 							.report::<Block>(&blob_handle.network, &target_peer);
@@ -709,7 +709,7 @@ where
 					target_peer.to_base58(),
 					false,
 				);
-				log::error!(target: LOG_TARGET,
+				tracing::error!(target: LOG_TARGET,
 					"An error has occured while trying to send blob request {blob_hash:?} (attempt {}/{}): {e}",
 					attempt + 1,
 					MAX_REQUEST_RETRIES
@@ -719,7 +719,7 @@ where
 					let sleep_timer = tokio::time::Instant::now();
 					let backoff_secs = 2;
 					tokio::time::sleep(Duration::from_secs(backoff_secs)).await;
-					log::info!(
+					tracing::info!(
 						"Finished sleeping for next blob request {blob_hash:?}: sleep time: {:?}",
 						sleep_timer.elapsed()
 					);
@@ -729,7 +729,7 @@ where
 		}
 	}
 
-	log::info!(
+	tracing::info!(
 		"BLOB - send_blob_request - END with errors - {:?} - {:?}",
 		blob_hash,
 		timer.elapsed()
@@ -750,7 +750,7 @@ pub fn handle_incoming_blob_request<Block: BlockT>(
 	// let peer_id = request.peer;
 	// let role = network.peer_role(peer_id, Vec::new());
 	// if role != Some(ObservedRole::Authority) {
-	// 	log::error!(
+	// 	tracing::error!(
 	// 		target: LOG_TARGET,
 	// 		"Not answering to {peer_id:?} as it's not an authority.",
 	// 	);
@@ -776,7 +776,7 @@ pub fn handle_incoming_blob_request<Block: BlockT>(
 			},
 		},
 		Err(err) => {
-			log::error!(
+			tracing::error!(
 				target: LOG_TARGET,
 				"Failed to decode Blob request ({} bytes): {:?}",
 				data.len(),
@@ -797,7 +797,7 @@ fn process_blob_request(
 	response_tx: oneshot::Sender<OutgoingResponse>,
 ) {
 	let timer = std::time::Instant::now();
-	log::info!(
+	tracing::info!(
 		"BLOB - process_blob_request - START - {:?} - {:?}",
 		blob_request.hash,
 		timer.elapsed()
@@ -806,7 +806,7 @@ fn process_blob_request(
 	match verify_signed_blob_data(blob_request.signature_data.clone(), expected_payload) {
 		Ok(valid) => {
 			if !valid {
-				log::error!(target: LOG_TARGET, "An error has occured in process_blob_request: Invalid signature");
+				tracing::error!(target: LOG_TARGET, "An error has occured in process_blob_request: Invalid signature");
 				let _ = response_tx.send(OutgoingResponse {
 					result: Err(()),
 					reputation_changes: vec![
@@ -818,7 +818,7 @@ fn process_blob_request(
 			}
 		},
 		Err(e) => {
-			log::error!(target: LOG_TARGET, "An error has occured while checking the signature: {e}");
+			tracing::error!(target: LOG_TARGET, "An error has occured while checking the signature: {e}");
 			let _ = response_tx.send(OutgoingResponse {
 				result: Err(()),
 				reputation_changes: BlobReputationChange::no_change(), // Might be our fault
@@ -832,7 +832,7 @@ fn process_blob_request(
 		Ok(b) => match b {
 			Some(b) => b,
 			None => {
-				log::error!(target: LOG_TARGET, "Blob not found in store");
+				tracing::error!(target: LOG_TARGET, "Blob not found in store");
 				let _ = response_tx.send(OutgoingResponse {
 					result: Err(()),
 					reputation_changes: BlobReputationChange::no_change(), // Might be our fault
@@ -842,7 +842,7 @@ fn process_blob_request(
 			},
 		},
 		Err(e) => {
-			log::error!(target: LOG_TARGET, "Could not get blob from store: {e}");
+			tracing::error!(target: LOG_TARGET, "Could not get blob from store: {e}");
 			let _ = response_tx.send(OutgoingResponse {
 				result: Err(()),
 				reputation_changes: BlobReputationChange::no_change(), // Might be our fault
@@ -864,9 +864,9 @@ fn process_blob_request(
 	};
 
 	if let Err(e) = response_tx.send(res) {
-		log::error!(target: LOG_TARGET, "An error has occured in process_blob_request: {e:?}");
+		tracing::error!(target: LOG_TARGET, "An error has occured in process_blob_request: {e:?}");
 	}
-	log::info!(
+	tracing::info!(
 		"BLOB - process_blob_request - END - {:?} - {:?}",
 		blob_request.hash,
 		timer.elapsed()
@@ -883,7 +883,7 @@ pub async fn send_blob_stored_notification<Block>(
 	Block: BlockT,
 {
 	let timer = std::time::Instant::now();
-	log::info!(
+	tracing::info!(
 		"BLOB - send_blob_stored_notification - START - {:?}: eval_proof?: {} - {:?}",
 		blob_hash,
 		eval_proof.is_some(),
@@ -901,9 +901,9 @@ pub async fn send_blob_stored_notification<Block>(
 		.send(BlobNotification::BlobStored(blob_stored))
 		.await
 	{
-		log::error!(target: LOG_TARGET, "Could not send BlobStored notification: {e}")
+		tracing::error!(target: LOG_TARGET, "Could not send BlobStored notification: {e}")
 	}
-	log::info!(
+	tracing::info!(
 		"BLOB - send_blob_stored_notification - END - {:?} - {:?}",
 		blob_hash,
 		timer.elapsed()
@@ -917,7 +917,7 @@ async fn handle_blob_stored_notification<Block>(
 	Block: BlockT,
 {
 	let timer = std::time::Instant::now();
-	log::info!(
+	tracing::info!(
 		"BLOB - handle_blob_stored_notification - START - {:?}: eval_proof?: {} - {:?}",
 		blob_stored.hash,
 		blob_stored.eval_proof.is_some(),
@@ -937,7 +937,7 @@ async fn handle_blob_stored_notification<Block>(
 	{
 		Ok(v) => v,
 		Err(e) => {
-			log::error!(
+			tracing::error!(
 				target: LOG_TARGET,
 				"Could not get FRI params version from runtime at {:?}: {e:?}. Falling back to V0.",
 				finalized_hash
@@ -950,7 +950,7 @@ async fn handle_blob_stored_notification<Block>(
 		&blob_handle.client,
 		&finalized_hash.encode(),
 	) else {
-		log::error!("Could not find address associated to babe key");
+		tracing::error!("Could not find address associated to babe key");
 		return;
 	};
 	let expected_payload = build_signature_payload(
@@ -966,12 +966,12 @@ async fn handle_blob_stored_notification<Block>(
 	) {
 		Ok(valid) => {
 			if !valid {
-				log::error!(target: LOG_TARGET, "An error has occured in handle_blob_stored_notification: Invalid signature");
+				tracing::error!(target: LOG_TARGET, "An error has occured in handle_blob_stored_notification: Invalid signature");
 				return;
 			}
 		},
 		Err(e) => {
-			log::error!(target: LOG_TARGET, "An error has occured while checking the signature: {e}");
+			tracing::error!(target: LOG_TARGET, "An error has occured while checking the signature: {e}");
 			return;
 		},
 	}
@@ -980,7 +980,7 @@ async fn handle_blob_stored_notification<Block>(
 		.blob_database
 		.insert_blob_ownership(&blob_stored.hash, &blob_stored.ownership_entry)
 	{
-		log::error!(
+		tracing::error!(
 			target: LOG_TARGET,
 			"An error has occured while trying to save blob ownership in the store: {e}"
 		);
@@ -992,7 +992,7 @@ async fn handle_blob_stored_notification<Block>(
 	{
 		Ok(v) => v,
 		Err(e) => {
-			log::error!(
+			tracing::error!(
 				target: LOG_TARGET,
 				"An error has occured while trying to check metadata existence in the store: {e}"
 			);
@@ -1024,7 +1024,7 @@ async fn handle_blob_stored_notification<Block>(
 			{
 				Ok(p) => p,
 				Err(e) => {
-					log::error!("Could not get blob_params: {e:?}");
+					tracing::error!("Could not get blob_params: {e:?}");
 					BlobRuntimeParameters::default()
 				},
 			};
@@ -1033,7 +1033,7 @@ async fn handle_blob_stored_notification<Block>(
 				.blob_database
 				.insert_blob_ownership_expiry(&blob_stored.hash, expires_at)
 			{
-				log::error!(
+				tracing::error!(
 					target: LOG_TARGET,
 					"An error has occured while trying to store ownership expiry in the store: {e}"
 				);
@@ -1049,7 +1049,7 @@ async fn handle_blob_stored_notification<Block>(
 		{
 			Ok(Some(m)) => m,
 			Ok(None) => {
-				log::error!(
+				tracing::error!(
 					target: LOG_TARGET,
 					"Could not find blob metadata while trying to store eval proof for blob: {:?}",
 					blob_stored.hash
@@ -1057,7 +1057,7 @@ async fn handle_blob_stored_notification<Block>(
 				return;
 			},
 			Err(e) => {
-				log::error!(
+				tracing::error!(
 					target: LOG_TARGET,
 					"An error has occured while trying to get blob metadata from the store: {e}"
 				);
@@ -1080,14 +1080,14 @@ async fn handle_blob_stored_notification<Block>(
 			blob_stored.eval_proof.as_ref().expect("checked above"),
 		) {
 			Ok(_) => {
-				log::info!(
+				tracing::info!(
 					target: LOG_TARGET,
 					"Successfully validated eval proof for blob: {:?}",
 					blob_stored.hash
 				);
 			},
 			Err(e) => {
-				log::error!(
+				tracing::error!(
 					target: LOG_TARGET,
 					"Failed to validate eval proof for blob {:?}: {}",
 					blob_stored.hash,
@@ -1102,7 +1102,7 @@ async fn handle_blob_stored_notification<Block>(
 			.blob_database
 			.insert_blob_metadata(&blob_metadata)
 		{
-			log::error!(
+			tracing::error!(
 				target: LOG_TARGET,
 				"An error has occured while trying to update eval_proof to blob metadata in the store: {e}"
 			);
@@ -1111,14 +1111,14 @@ async fn handle_blob_stored_notification<Block>(
 	// if we received a notification with eval_proof but no metadata, we do nothing for now so just log it
 	// TODO: handle this case better, maybe queue it for later processing
 	else if !metadata_exists && blob_stored.eval_proof.is_some() {
-		log::warn!(
+		tracing::warn!(
 			target: LOG_TARGET,
 			"Received eval_proof for blob {:?} but no metadata found, skipping for now",
 			blob_stored.hash
 		);
 	}
 
-	log::info!(
+	tracing::info!(
 		"BLOB - handle_blob_stored_notification - END - {:?} - {:?}",
 		blob_stored.hash,
 		timer.elapsed()
@@ -1134,7 +1134,7 @@ where
 	Block: BlockT,
 {
 	let timer = std::time::Instant::now();
-	log::info!(
+	tracing::info!(
 		"BLOB - send_blob_query_request - START - {:?} - {:?}",
 		hash,
 		timer.elapsed()
@@ -1157,7 +1157,7 @@ where
 			match BlobResponseEnum::decode(&mut buf) {
 				Ok(response) => match response {
 					BlobResponseEnum::BlobQueryResponse(blob_query_response) => {
-						log::info!(
+						tracing::info!(
 							"BLOB - send_blob_query_request - END - {:?} - {:?}",
 							hash,
 							timer.elapsed()
@@ -1191,7 +1191,7 @@ pub fn process_blob_query_request(
 	response_tx: oneshot::Sender<OutgoingResponse>,
 ) {
 	let timer = std::time::Instant::now();
-	log::info!(
+	tracing::info!(
 		"BLOB - process_blob_query_request - START - {:?} - {:?}",
 		blob_query_request.hash,
 		timer.elapsed()
@@ -1206,7 +1206,7 @@ pub fn process_blob_query_request(
 			}),
 		},
 		Err(e) => {
-			log::error!("Could not get a blob for the requester RPC: {e}");
+			tracing::error!("Could not get a blob for the requester RPC: {e}");
 			let res = OutgoingResponse {
 				result: Err(()),
 				reputation_changes: BlobReputationChange::no_change(),
@@ -1224,9 +1224,9 @@ pub fn process_blob_query_request(
 	};
 
 	if let Err(e) = response_tx.send(res) {
-		log::error!(target: LOG_TARGET, "An error has occured while trying to return a blob to requester: {e:?}")
+		tracing::error!(target: LOG_TARGET, "An error has occured while trying to return a blob to requester: {e:?}")
 	};
-	log::info!(
+	tracing::info!(
 		"BLOB - process_blob_query_request - END - {:?} - {:?}",
 		blob_query_request.hash,
 		timer.elapsed()
@@ -1239,14 +1239,14 @@ fn process_blob_ownerships_request(
 	response_tx: oneshot::Sender<OutgoingResponse>,
 ) {
 	let timer = std::time::Instant::now();
-	log::info!(
+	tracing::info!(
 		target: LOG_TARGET,
 		"🧾 Processing BlobOwnershipsRequest ({} blobs)",
 		req.blob_hashes.len()
 	);
 
 	if req.blob_hashes.is_empty() {
-		log::warn!(
+		tracing::warn!(
 			target: LOG_TARGET,
 			"Received empty BlobOwnershipsRequest"
 		);
@@ -1274,14 +1274,14 @@ fn process_blob_ownerships_request(
 				});
 			},
 			Ok(_) => {
-				log::debug!(
+				tracing::debug!(
 					target: LOG_TARGET,
 					"No ownership info for blob {:?}",
 					blob_hash
 				);
 			},
 			Err(e) => {
-				log::warn!(
+				tracing::warn!(
 					target: LOG_TARGET,
 					"Failed to fetch ownership for blob {:?}: {e}",
 					blob_hash
@@ -1299,13 +1299,13 @@ fn process_blob_ownerships_request(
 	};
 
 	if let Err(e) = response_tx.send(res) {
-		log::error!(
+		tracing::error!(
 			target: LOG_TARGET,
 			"Failed to send BlobOwnershipsResponse: {e:?}"
 		);
 	}
 
-	log::info!(
+	tracing::info!(
 		target: LOG_TARGET,
 		"✅ BlobOwnershipsRequest handled in {:?}",
 		timer.elapsed()

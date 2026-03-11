@@ -86,7 +86,7 @@ where
 	let key_type = key_types::BABE;
 
 	let Some(at) = Block::Hash::decode(&mut &*at).ok() else {
-		log::error!("Could not convert bytes to at hash");
+		tracing::error!("Could not convert bytes to at hash");
 		return None;
 	};
 	if let Ok(owner_opt) =
@@ -110,13 +110,13 @@ where
 	Client::Api: BlobApi<Block>,
 {
 	let Some(at) = Block::Hash::decode(&mut &*at).ok() else {
-		log::error!("Could not convert bytes to 'at' hash");
+		tracing::error!("Could not convert bytes to 'at' hash");
 		return Vec::new();
 	};
 	match client.runtime_api().get_active_validators(at.clone()) {
 		Ok(validators) => validators,
 		Err(e) => {
-			log::error!("Failed to fetch active validators at {:?}: {:?}", at, e);
+			tracing::error!("Failed to fetch active validators at {:?}: {:?}", at, e);
 			Vec::new()
 		},
 	}
@@ -217,19 +217,20 @@ where
 	Client::Api: BlobApi<Block>,
 {
 	let Some(at) = Block::Hash::decode(&mut &*at).ok() else {
-		log::error!("Could not convert bytes to 'at' hash");
+		tracing::error!("Could not convert bytes to 'at' hash");
 		return (nb_validators, nb_validators);
 	};
 	let blob_params = match client.runtime_api().get_blob_runtime_parameters(at) {
 		Ok(p) => p,
 		Err(e) => {
-			log::error!("Could get blob runtime params: {e:?}");
+			tracing::error!("Could get blob runtime params: {e:?}");
 			return (nb_validators, nb_validators);
 		},
 	};
 	get_validator_per_blob_inner(blob_params, nb_validators)
 }
 
+#[tracing::instrument(name = "get_validator_per_blob_inner", skip_all)]
 pub fn get_validator_per_blob_inner(
 	blob_params: BlobRuntimeParameters,
 	nb_validators: u32,
@@ -291,7 +292,7 @@ where
 	match blob_database.get_blob_metadata(blob_hash) {
 		Ok(Some(meta)) => {
 			let Ok(ownerships) = blob_database.get_blob_ownerships(&blob_hash) else {
-				log::error!("Failed to read from db");
+				tracing::error!("Failed to read from db");
 				should_submit = check_retries_for_blob(client, blob_hash, blob_database);
 				return (should_submit, is_submit_blob_metadata);
 			};
@@ -331,7 +332,7 @@ where
 				{
 					Ok(p) => p,
 					Err(e) => {
-						log::error!("Could not get blob_params: {e:?}");
+						tracing::error!("Could not get blob_params: {e:?}");
 						BlobRuntimeParameters::default()
 					},
 				};
@@ -395,7 +396,7 @@ where
 	{
 		Ok(p) => p,
 		Err(e) => {
-			log::error!("Could not get blob_params: {e:?}");
+			tracing::error!("Could not get blob_params: {e:?}");
 			BlobRuntimeParameters::default()
 		},
 	};
@@ -403,14 +404,14 @@ where
 	if tried <= blob_runtime_params.max_blob_retry_before_discarding {
 		// bump retry count and wait
 		let _ = blob_database.insert_blob_retry(blob_hash, tried + 1);
-		log::info!(
+		tracing::info!(
 			"BLOB - RPC check_retries_for_blob - it lives - {:?}",
 			blob_hash
 		);
 		false
 	} else {
 		// give up: submit to get it dropped quickly
-		log::info!(
+		tracing::info!(
 			"BLOB - RPC check_retries_for_blob - it dies - {:?}",
 			blob_hash
 		);
@@ -673,7 +674,7 @@ impl Drop for SmartStopwatch {
 			}
 		}
 
-		log::info!("{}", msg)
+		tracing::info!("{}", msg)
 	}
 }
 
@@ -735,7 +736,7 @@ impl CommitmentQueue {
 			BlobMetrics::observe_commitment_build_time_duration(
 				(end.saturating_sub(start)) as f64 / 1000f64,
 			);
-			log::info!("{}", rx.capacity());
+			tracing::info!("{}", rx.capacity());
 			BlobMetrics::set_queue_capacity(rx.capacity() as u64);
 		}
 	}

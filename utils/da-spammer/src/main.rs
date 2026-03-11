@@ -5,8 +5,7 @@ use avail_fri::{
 	eval_utils::{derive_evaluation_point, derive_seed_from_inputs, eval_claim_to_bytes},
 	FriParamsVersion,
 };
-use avail_rust::codec::Encode;
-use avail_rust::{avail_rust_core::rpc::blob::submit_blob, prelude::*};
+use avail_rust::{prelude::*};
 use clap::Parser;
 use rayon::ThreadPoolBuilder;
 use sp_crypto_hashing::keccak_256;
@@ -138,9 +137,6 @@ fn validate_account(value: &str) -> Result<String, String> {
 }
 
 fn validate_args(args: &Args) -> Result<(), Box<dyn Error>> {
-	if args.file.is_some() && args.size_mb.is_some() {
-		return Err("--file and --size-mb are mutually exclusive".into());
-	}
 	if let Some(size_mb) = args.size_mb {
 		if !(1..=MAX_SIZE_MB).contains(&size_mb) {
 			return Err(format!("--size-mb must be within 1..={MAX_SIZE_MB}").into());
@@ -401,33 +397,19 @@ async fn submit_once(
 		prepared.blob.len()
 	);
 
-	let unsigned = client.tx().data_availability().submit_blob_metadata(
+	let result = client.blob().submit_blob_and_blob_metadata(
 		app_id,
 		prepared.hash,
 		prepared.blob.len() as u64,
 		prepared.commitment.clone(),
 		Some(prepared.seed),
 		Some(prepared.claim),
-	);
+		&signer,
+		Options::new().app_id(app_id).nonce(nonce),
+		&prepared.blob
+	).await;
 
-	let tx_bytes = match unsigned
-		.sign(&signer, Options::default().app_id(app_id).nonce(nonce))
-		.await
-	{
-		Ok(tx) => tx.encode(),
-		Err(err) => {
-			return SubmitResult {
-				index: prepared.index,
-				account_idx: prepared.account_idx,
-				nonce,
-				blob_len: prepared.blob.len(),
-				elapsed: started.elapsed(),
-				err: Some(format!("sign error: {err}")),
-			};
-		},
-	};
-
-	match submit_blob(&client.rpc_client, &tx_bytes, &prepared.blob).await {
+	match result {
 		Ok(_) => {
 			let elapsed = started.elapsed();
 			println!(
@@ -948,10 +930,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 		Some(path) => Some(Arc::new(load_file_blob(path)?)),
 		None => None,
 	};
-	let len_bytes = file_blob
-		.as_ref()
-		.map(|blob| blob.len())
-		.unwrap_or_else(|| args.size_mb.unwrap_or(DEFAULT_SIZE_MB) * 1024 * 1024);
+	let len_bytes = args.size_mb.unwrap_or(DEFAULT_SIZE_MB) * 1024 * 1024;
 	println!("========== Avail DA Spammer New ==========");
 	println!("Endpoint      : {}", args.endpoint);
 	println!("Account       : {}", args.account);
@@ -977,7 +956,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 	println!("In-flight     : {}", args.in_flight);
 	println!("Workers       : {}", threads);
 
-	let client = Arc::new(Client::connect(&args.endpoint).await?);
+	let client = Arc::new(Client::connect(args.endpoint.as_str()).await?);
 	let senders = build_senders(&client, &args).await?;
 
 	println!("Sender count  : {}", senders.len());

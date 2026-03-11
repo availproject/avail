@@ -17,7 +17,7 @@ use crate::{
 	utils::{
 		build_signature_payload, extract_signer_and_nonce, generate_base_index,
 		get_dynamic_blocklength_key, get_my_validator_public_account, get_validator_per_blob_inner,
-		sign_blob_data, validators_for_blob, B64Param, CommitmentQueue, SmartStopwatch,
+		sign_blob_data, validators_for_blob, B64Param, CommitmentQueue,
 	},
 	MAX_RPC_RETRIES,
 };
@@ -59,6 +59,7 @@ use std::{
 	sync::Arc,
 };
 use tokio::task;
+use tracing::Instrument;
 
 /// Cached FRI state for a blob at a given block
 #[derive(Clone)]
@@ -430,6 +431,7 @@ where
 	<Block as BlockT>::Extrinsic: From<UncheckedExtrinsic>,
 	H256: From<<Pool as sc_transaction_pool_api::TransactionPool>::Hash>,
 {
+	#[tracing::instrument(name = "blob.submit", skip_all)]
 	async fn submit_blob(
 		&self,
 		metadata_signed_transaction: B64Param,
@@ -454,7 +456,6 @@ where
 			database: self.blob_handle.blob_database.clone(),
 		};
 
-		let now = std::time::Instant::now();
 		let result = submit_blob_main_task(
 			self.commitment_queue.clone(),
 			metadata_signed_transaction.0,
@@ -463,17 +464,16 @@ where
 			self.nonce_cache.clone(),
 		)
 		.await;
-		let elapsed = now.elapsed();
 
 		// Metrics
 		BlobMetrics::inc_submissions_valid_total();
-		BlobMetrics::observe_submission_rpc_duration(elapsed.as_millis() as f64 / 1000f64);
 
 		result?;
 
 		Ok(())
 	}
 
+	#[tracing::instrument(name = "get_blob", skip_all)]
 	async fn get_blob(&self, blob_hash: H256, at: Option<Block::Hash>) -> RpcResult<Blob> {
 		// get the blob owners peer_id's
 		let peer_ids: Vec<String> = if let Some(at_hash) = at {
@@ -565,7 +565,7 @@ where
 
 		// If blob exists locally, return immediately
 		if let Ok(Some(blob)) = self.blob_handle.blob_database.get_blob(&blob_hash) {
-			log::info!("Blob found in local storage: {:?}", blob_hash);
+			tracing::info!("Blob found in local storage: {:?}", blob_hash);
 			return Ok(blob);
 		}
 
@@ -591,7 +591,7 @@ where
 			match PeerId::from_str(encoded_peer_id) {
 				Ok(peer_id) => {
 					if peer_id == my_peer_id {
-						log::warn!(
+						tracing::warn!(
 							"Attempt {}/{}: skipping self peer_id {} we've already tried locally",
 							attempt + 1,
 							MAX_RPC_RETRIES,
@@ -608,7 +608,7 @@ where
 					{
 						Ok(Some(blob)) => return Ok(blob),
 						Ok(None) => {
-							log::warn!(
+							tracing::warn!(
 								"Attempt {}/{}: owner {} returned no blob",
 								attempt + 1,
 								MAX_RPC_RETRIES,
@@ -616,7 +616,7 @@ where
 							);
 						},
 						Err(e) => {
-							log::warn!(
+							tracing::warn!(
 								"Attempt {}/{}: RPC error from {}: {:?}",
 								attempt + 1,
 								MAX_RPC_RETRIES,
@@ -627,7 +627,7 @@ where
 					}
 				},
 				Err(e) => {
-					log::warn!(
+					tracing::warn!(
 						"Attempt {}/{}: invalid peer_id '{}' : {:?}",
 						attempt + 1,
 						MAX_RPC_RETRIES,
@@ -644,6 +644,7 @@ where
 		))
 	}
 
+	#[tracing::instrument(name = "get_blob_info", skip_all)]
 	async fn get_blob_info(&self, blob_hash: H256) -> RpcResult<BlobInfo> {
 		self.blob_handle
 			.blob_database
@@ -652,6 +653,7 @@ where
 			.ok_or_else(|| internal_err!("Blob info not found for hash: {:?}", blob_hash))
 	}
 
+	#[tracing::instrument(name = "inclusion_proof", skip_all)]
 	async fn inclusion_proof(
 		&self,
 		blob_hash: H256,
@@ -700,11 +702,13 @@ where
 			})
 	}
 
+	#[tracing::instrument(name = "log_stuff", skip_all)]
 	async fn log_stuff(&self) -> RpcResult<()> {
 		let _ = self.blob_handle.blob_database.log_all_entries();
 		Ok(())
 	}
 
+	#[tracing::instrument(name = "get_blobs_summary", skip_all)]
 	async fn get_blobs_summary(&self, at: Option<Block::Hash>) -> RpcResult<Vec<BlobSummary>> {
 		let at = self.at_or_best(at);
 		let submissions = self.load_da_submissions(at)?;
@@ -715,6 +719,7 @@ where
 			.collect())
 	}
 
+	#[tracing::instrument(name = "get_blobs_by_appid", skip_all)]
 	async fn get_blobs_by_appid(
 		&self,
 		app_id: AppId,
@@ -730,6 +735,7 @@ where
 			.collect())
 	}
 
+	#[tracing::instrument(name = "get_eval_data", skip_all)]
 	async fn get_eval_data(
 		&self,
 		blob_hash: H256,
@@ -761,6 +767,7 @@ where
 		}
 	}
 
+	#[tracing::instrument(name = "get_sampling_proof", skip_all)]
 	async fn get_sampling_proof(
 		&self,
 		cells: Vec<u32>,
@@ -837,6 +844,7 @@ where
 	}
 }
 
+#[tracing::instrument(name = "blob.sampling_proofs", skip_all)]
 fn build_sampling_proofs(
 	entry: FriSamplingCacheEntry,
 	cells: Vec<u32>,
@@ -884,6 +892,7 @@ fn build_sampling_proofs(
 	Ok(proofs)
 }
 
+#[tracing::instrument(name = "check_rpc_store_blob", skip_all)]
 async fn check_rpc_store_blob(
 	blob_metadata: &BlobMetadata,
 	my_encoded_peer_id: String,
@@ -941,6 +950,7 @@ async fn check_rpc_store_blob(
 	}))
 }
 
+#[tracing::instrument(name = "get_babe_randomness", skip_all)]
 fn get_babe_randomness(
 	backend_client: &Arc<dyn BackendApiT>,
 	finalized_block_hash: H256,
@@ -973,6 +983,7 @@ fn get_dynamic_block_length(
 	Ok((cols, rows))
 }
 
+#[tracing::instrument(name = "blob.submit.main_task", skip_all)]
 pub async fn submit_blob_main_task(
 	commitment_queue: Arc<dyn CommitmentQueueApiT>,
 	metadata_signed_transaction: Vec<u8>,
@@ -980,8 +991,6 @@ pub async fn submit_blob_main_task(
 	friends: Friends,
 	nonce_cache: Arc<dyn NonceCacheApiT>,
 ) -> RpcResult<tokio::task::JoinHandle<()>> {
-	let mut stop_watch = SmartStopwatch::new("😍 Submit Blob Main Task");
-
 	let runtime_client = friends.runtime_client.clone();
 
 	// Get client info
@@ -992,7 +1001,7 @@ pub async fn submit_blob_main_task(
 	let commitment_scheme = match runtime_client.commitment_scheme(best_hash) {
 		Ok(scheme) => scheme,
 		Err(e) => {
-			log::error!(
+			tracing::error!(
 				"Could not get commitment scheme from runtime at {:?}: {e:?}. Falling back to Fri.",
 				best_hash
 			);
@@ -1003,14 +1012,14 @@ pub async fn submit_blob_main_task(
 	let blob_params = match runtime_client.get_blob_runtime_parameters(finalized_block_hash) {
 		Ok(p) => p,
 		Err(e) => {
-			log::error!("Could not get blob_params: {e:?}");
+			tracing::error!("Could not get blob_params: {e:?}");
 			BlobRuntimeParameters::default()
 		},
 	};
 	let fri_params_version = match runtime_client.get_fri_params_version(finalized_block_hash) {
 		Ok(v) => v,
 		Err(e) => {
-			log::error!(
+			tracing::error!(
 				"Could not get FRI params version from runtime at {:?}: {e:?}. Falling back to V0.",
 				finalized_block_hash
 			);
@@ -1019,17 +1028,12 @@ pub async fn submit_blob_main_task(
 	};
 	let max_blob_size = blob_params.max_blob_size as usize;
 
-	stop_watch.start("Initial Validation");
 	let (app_id, blob_hash, provided_commitment, eval_point_seed, eval_claim) =
 		initial_validation(max_blob_size, &blob, &metadata_signed_transaction)
 			.map_err(|e| internal_err!("{}", e))?;
-	stop_watch.stop("Initial Validation");
-	stop_watch.add_extra_information(std::format!("Blob Hash: {:?}", blob_hash));
 
-	// Telemetry
-	crate::telemetry::BlobSubmission::submission_tracked(blob_hash, blob.len());
+	tracing::info!(block_hash = ?blob_hash, blob_size = blob.len(), "Blob passed initial validation");
 
-	stop_watch.start("TX validation");
 	let opaque_tx = tx_validation(
 		best_hash,
 		&metadata_signed_transaction,
@@ -1040,14 +1044,12 @@ pub async fn submit_blob_main_task(
 		true,
 	)
 	.map_err(|e| internal_err!("{}", e))?;
-	stop_watch.stop("TX validation");
 
 	if let Some((who, nonce)) = extract_signer_and_nonce(&opaque_tx) {
 		nonce_cache.commit(&who, nonce);
 	}
 
-	stop_watch.start("Commitments (Total)");
-
+	let parent = tracing::Span::current();
 	match commitment_scheme {
 		CommitmentScheme::Kzg => {
 			let (cols, rows) =
@@ -1060,21 +1062,27 @@ pub async fn submit_blob_main_task(
 			let blob = Arc::new(blob);
 
 			// ideally eval_point_seed and eval_claim should be None here for KZG, but we can let it pass for now
-			Ok(handle_kzg_submission(
-				stop_watch,
-				commitment_queue,
-				metadata_signed_transaction,
-				opaque_tx,
-				blob_hash,
-				blob,
-				blob_params,
-				provided_commitment,
-				friends,
-				nonce_cache,
-				runtime_client,
-				cols,
-				rows,
-			))
+			Ok(tokio::spawn(async move {
+				let result = handle_kzg_submission(
+					commitment_queue,
+					metadata_signed_transaction,
+					opaque_tx,
+					blob_hash,
+					blob,
+					blob_params,
+					provided_commitment,
+					friends,
+					nonce_cache,
+					runtime_client,
+					cols,
+					rows,
+				)
+				.instrument(parent)
+				.await;
+				if let Err(e) = result {
+					tracing::error!(error = ?e, "handle_fri_submission error.");
+				}
+			}))
 		},
 
 		CommitmentScheme::Fri => {
@@ -1103,29 +1111,36 @@ pub async fn submit_blob_main_task(
 				));
 			}
 
-			Ok(handle_fri_submission(
-				stop_watch,
-				metadata_signed_transaction,
-				opaque_tx,
-				app_id,
-				blob_hash,
-				blob,
-				blob_params,
-				provided_commitment,
-				friends,
-				nonce_cache,
-				runtime_client,
-				fri_params_version,
-				eval_point_seed,
-				eval_claim,
-				derived_eval_seed,
-			))
+			Ok(tokio::spawn(async move {
+				let result = handle_fri_submission(
+					metadata_signed_transaction,
+					opaque_tx,
+					app_id,
+					blob_hash,
+					blob,
+					blob_params,
+					provided_commitment,
+					friends,
+					nonce_cache,
+					runtime_client,
+					fri_params_version,
+					eval_point_seed,
+					eval_claim,
+					derived_eval_seed,
+				)
+				.instrument(parent)
+				.await;
+
+				if let Err(e) = result {
+					tracing::error!(error = ?e, "handle_fri_submission error.");
+				}
+			}))
 		},
 	}
 }
 
-fn handle_kzg_submission(
-	mut stop_watch: SmartStopwatch,
+#[tracing::instrument(name = "handle_kzg_submission", skip_all)]
+async fn handle_kzg_submission(
 	commitment_queue: Arc<dyn CommitmentQueueApiT>,
 	metadata_signed_transaction: Vec<u8>,
 	opaque_tx: UncheckedExtrinsic,
@@ -1138,82 +1153,72 @@ fn handle_kzg_submission(
 	runtime_client: Arc<dyn RuntimeApiT>,
 	cols: usize,
 	rows: usize,
-) -> tokio::task::JoinHandle<()> {
-	task::spawn(async move {
-		let result: RpcResult<()> = async {
-			let blob_for_grid = blob.clone();
-			let start = crate::utils::get_current_timestamp_ms();
-			stop_watch.start("Polynominal Grid Gen.");
-			let grid = task::spawn_blocking(move || {
-				build_polynomial_grid(blob_for_grid.as_slice(), cols, rows, Default::default())
-			})
-			.await
-			.map_err(|e| {
-				clear_reserved_nonce(&nonce_cache, &opaque_tx);
-				internal_err!(
-					"KZG polynomial grid generation task failed for blob {:?}: {}",
-					blob_hash,
-					e
-				)
-			})?;
-			stop_watch.stop("Polynominal Grid Gen.");
-			let end = crate::utils::get_current_timestamp_ms();
-			// Telemetry
-			crate::telemetry::BlobSubmission::build_poly_grid(blob_hash, start, end);
+) -> anyhow::Result<()> {
+	tracing::info!(block_hash = ?blob_hash, blob_size = blob.len(), "Blob handle kzg submission");
 
-			stop_watch.start("Commitment Validation");
-			validate_kzg_commitment(blob_hash, &provided_commitment, grid, &commitment_queue)
-				.await
-				.map_err(|e| {
-					clear_reserved_nonce(&nonce_cache, &opaque_tx);
-					internal_err!("{}", e)
-				})?;
-			stop_watch.stop("Commitment Validation");
+	let blob_for_grid = blob.clone();
 
-			stop_watch.stop("Commitments (Total)");
-
-			// After potentially long work, re-validate tx
-			let client_info = friends.externalities.client_info();
-			let best_hash = client_info.best_hash;
-
-			let _ = tx_validation(
-				best_hash,
-				&metadata_signed_transaction,
-				blob_params.min_transaction_validity,
-				blob_params.max_transaction_validity,
-				&runtime_client,
-				&nonce_cache,
-				false,
-			)
-			.map_err(|e| {
-				clear_reserved_nonce(&nonce_cache, &opaque_tx);
-				internal_err!("{}", e)
-			})?;
-
-			submit_blob_background_task(
-				opaque_tx,
-				blob_hash,
-				blob,
-				blob_params,
-				provided_commitment,
-				None,
-				friends,
-				nonce_cache,
-			)
-			.await;
-
-			Ok(())
-		}
-		.await;
-
-		if let Err(e) = result {
-			log::error!("{e}");
-		}
+	let parent = tracing::Span::current();
+	let grid_span = tracing::info_span!(
+		parent: &parent,
+		"build_polynomial_grid_blocking"
+	);
+	let grid = task::spawn_blocking(move || {
+		let _enter = grid_span.enter();
+		build_polynomial_grid(blob_for_grid.as_slice(), cols, rows, Default::default())
 	})
+	.await
+	.map_err(|e| {
+		clear_reserved_nonce(&nonce_cache, &opaque_tx);
+		internal_err!(
+			"KZG polynomial grid generation task failed for blob {:?}: {}",
+			blob_hash,
+			e
+		)
+	})?;
+
+	validate_kzg_commitment(blob_hash, &provided_commitment, grid, &commitment_queue)
+		.await
+		.map_err(|e| {
+			clear_reserved_nonce(&nonce_cache, &opaque_tx);
+			internal_err!("{}", e)
+		})?;
+
+	// After potentially long work, re-validate tx
+	let client_info = friends.externalities.client_info();
+	let best_hash = client_info.best_hash;
+
+	let _ = tx_validation(
+		best_hash,
+		&metadata_signed_transaction,
+		blob_params.min_transaction_validity,
+		blob_params.max_transaction_validity,
+		&runtime_client,
+		&nonce_cache,
+		false,
+	)
+	.map_err(|e| {
+		clear_reserved_nonce(&nonce_cache, &opaque_tx);
+		internal_err!("{}", e)
+	})?;
+
+	submit_blob_background_task(
+		opaque_tx,
+		blob_hash,
+		blob,
+		blob_params,
+		provided_commitment,
+		None,
+		friends,
+		nonce_cache,
+	)
+	.await;
+
+	Ok(())
 }
 
-fn handle_fri_submission(
-	mut stop_watch: SmartStopwatch,
+#[tracing::instrument(name = "handle_fri_submission", skip_all)]
+async fn handle_fri_submission(
 	metadata_signed_transaction: Vec<u8>,
 	opaque_tx: UncheckedExtrinsic,
 	app_id: AppId,
@@ -1228,80 +1233,76 @@ fn handle_fri_submission(
 	eval_point_seed: [u8; 32],
 	eval_claim: [u8; 16],
 	derived_eval_seed: [u8; 32],
-) -> tokio::task::JoinHandle<()> {
-	task::spawn(async move {
-		let result: RpcResult<()> = async {
-			let blob = Arc::new(blob);
-			let blob_for_validation = blob.clone();
-			let commitment_for_validation = provided_commitment.clone();
+) -> anyhow::Result<()> {
+	tracing::info!(block_hash = ?blob_hash, blob_size = blob.len(), "Blob handle fri submission");
 
-			stop_watch.start("Fri Commitment Validation");
-			let fri_eval_proof = task::spawn_blocking(move || {
-				validate_fri_commitment(
-					blob_hash,
-					blob_for_validation.as_slice(),
-					&commitment_for_validation,
-					fri_params_version,
-					&derived_eval_seed,
-					&eval_claim,
-				)
-			})
-			.await
-			.expect("Fri commitment validation task panicked")
-			.map_err(|e| {
-				clear_reserved_nonce(&nonce_cache, &opaque_tx);
-				stop_watch.stop("Fri Commitment Validation");
-				stop_watch.stop("Commitments (Total)");
-				internal_err!("{}", e)
-			})?;
-			stop_watch.stop("Fri Commitment Validation");
-			stop_watch.stop("Commitments (Total)");
+	let blob = Arc::new(blob);
+	let blob_for_validation = blob.clone();
+	let commitment_for_validation = provided_commitment.clone();
 
-			let client_info = friends.externalities.client_info();
-			let best_hash = client_info.best_hash;
+	let parent = tracing::Span::current();
+	let validation_span = tracing::info_span!(
+		parent: &parent,
+		"validate_fri_commitment_blocking"
+	);
+	let fri_eval_proof = task::spawn_blocking(move || {
+		let _enter = validation_span.enter();
 
-			let _ = tx_validation(
-				best_hash,
-				&metadata_signed_transaction,
-				blob_params.min_transaction_validity,
-				blob_params.max_transaction_validity,
-				&runtime_client,
-				&nonce_cache,
-				false,
-			)
-			.map_err(|e| {
-				clear_reserved_nonce(&nonce_cache, &opaque_tx);
-				internal_err!("{}", e)
-			})?;
-
-			let fri_data = FriData {
-				app_id,
-				eval_point_seed,
-				eval_claim,
-				fri_eval_proof: Some(fri_eval_proof),
-			};
-			submit_blob_background_task(
-				opaque_tx,
-				blob_hash,
-				blob,
-				blob_params,
-				provided_commitment,
-				Some(fri_data),
-				friends,
-				nonce_cache,
-			)
-			.await;
-
-			Ok(())
-		}
-		.await;
-
-		if let Err(e) = result {
-			log::error!("{e}");
-		}
+		validate_fri_commitment(
+			blob_hash,
+			blob_for_validation.as_slice(),
+			&commitment_for_validation,
+			fri_params_version,
+			&derived_eval_seed,
+			&eval_claim,
+		)
 	})
+	.await
+	.expect("Fri commitment validation task panicked")
+	.map_err(|e| {
+		clear_reserved_nonce(&nonce_cache, &opaque_tx);
+		internal_err!("{}", e)
+	})?;
+
+	let client_info = friends.externalities.client_info();
+	let best_hash = client_info.best_hash;
+
+	let _ = tx_validation(
+		best_hash,
+		&metadata_signed_transaction,
+		blob_params.min_transaction_validity,
+		blob_params.max_transaction_validity,
+		&runtime_client,
+		&nonce_cache,
+		false,
+	)
+	.map_err(|e| {
+		clear_reserved_nonce(&nonce_cache, &opaque_tx);
+		internal_err!("{}", e)
+	})?;
+
+	let fri_data = FriData {
+		app_id,
+		eval_point_seed,
+		eval_claim,
+		fri_eval_proof: Some(fri_eval_proof),
+	};
+	submit_blob_background_task(
+		opaque_tx,
+		blob_hash,
+		blob,
+		blob_params,
+		provided_commitment,
+		Some(fri_data),
+		friends,
+		nonce_cache,
+	)
+	.await;
+
+	Ok(())
 }
 
+#[tracing::instrument(name = "blob.submit.background_task", skip_all)]
 async fn submit_blob_background_task(
 	opaque_tx: UncheckedExtrinsic,
 	blob_hash: H256,
@@ -1312,8 +1313,9 @@ async fn submit_blob_background_task(
 	friends: Friends,
 	nonce_cache: Arc<dyn NonceCacheApiT>,
 ) {
-	let blob_len = blob.len();
+	tracing::info!(block_hash = ?blob_hash, blob_size = blob.len(), "Submit blob background task started.");
 
+	let blob_len = blob.len();
 	let signer = extract_signer_and_nonce(&opaque_tx);
 
 	let stored =
@@ -1336,13 +1338,8 @@ async fn submit_blob_background_task(
 		if let Some((who, _)) = signer.as_ref() {
 			nonce_cache.clear(who);
 		}
-		log::error!("tx-pool error: {e}")
+		tracing::error!("tx-pool error: {e}")
 	}
-
-	log::info!(
-		"BLOB - RPC submit_blob - bg:task - After Submitting to pool - {:?}",
-		blob_hash,
-	);
 
 	// Metrics and Telemetry
 	BlobMetrics::inc_submissions_added_to_pool_total();
@@ -1356,6 +1353,7 @@ fn clear_reserved_nonce(nonce_cache: &Arc<dyn NonceCacheApiT>, opaque_tx: &Unche
 	}
 }
 
+#[tracing::instrument(name = "blob.submit.store_and_gossip", skip_all)]
 pub async fn store_and_gossip_blob(
 	blob_hash: H256,
 	blob: Arc<Vec<u8>>,
@@ -1364,9 +1362,6 @@ pub async fn store_and_gossip_blob(
 	fri_data: Option<FriData>,
 	friends: &Friends,
 ) -> Result<(), ()> {
-	let mut stop_watch = SmartStopwatch::new("😍😍 STORE AND GOSSIP BLOB");
-	stop_watch.add_extra_information(std::format!("Blob Hash: {:?}", blob_hash));
-
 	let client_info = friends.externalities.client_info();
 	let finalized_block_hash = client_info.finalized_hash;
 	let finalized_block_number = client_info.finalized_height as u64;
@@ -1379,7 +1374,7 @@ pub async fn store_and_gossip_blob(
 	let maybe_blob_metadata = match friends.database.get_blob_metadata(&blob_hash) {
 		Ok(m) => m,
 		Err(e) => {
-			log::error!("Failed to get data from blob storage: {e}");
+			tracing::error!("Failed to get data from blob storage: {e}");
 			return Err(());
 		},
 	};
@@ -1390,7 +1385,7 @@ pub async fn store_and_gossip_blob(
 	{
 		Ok(scheme) => scheme,
 		Err(e) => {
-			log::error!(
+			tracing::error!(
 				"Could not get commitment scheme from runtime at {:?}: {e:?}. Falling back to Fri.",
 				finalized_block_hash
 			);
@@ -1431,7 +1426,7 @@ pub async fn store_and_gossip_blob(
 				finalized_block_hash,
 				e
 			);
-			log::error!("{}", err);
+			tracing::error!("{}", err);
 			return Err(());
 		},
 	};
@@ -1451,14 +1446,14 @@ pub async fn store_and_gossip_blob(
 				finalized_block_hash,
 				e
 			);
-			log::error!("{}", err);
+			tracing::error!("{}", err);
 			return Err(());
 		},
 	};
 
 	if commitment_scheme == CommitmentScheme::Fri {
 		if fri_data.is_none() {
-			log::error!("Fri data must be available for Fri commitment scheme");
+			tracing::error!("Fri data must be available for Fri commitment scheme");
 			return Err(());
 		}
 		let fri_data = fri_data.expect("checked above; qed");
@@ -1471,7 +1466,7 @@ pub async fn store_and_gossip_blob(
 			finalized_block_hash,
 		) {
 			if storing_validators[prover_index as usize] == my_validator_id {
-				log::info!(
+				tracing::info!(
 					"I am the designated prover for blob {:?} including eval_proof? {}",
 					blob_hash,
 					fri_data.fri_eval_proof.is_some()
@@ -1503,7 +1498,7 @@ pub async fn store_and_gossip_blob(
 	{
 		Ok(o) => o,
 		Err(e) => {
-			log::error!("could not check if rpc should store blob: {e}");
+			tracing::error!("could not check if rpc should store blob: {e}");
 			return Err(());
 		},
 	};
@@ -1527,10 +1522,7 @@ pub async fn store_and_gossip_blob(
 		&blob_metadata,
 		&friends.database,
 		&maybe_ownership,
-		&mut stop_watch,
 	);
-
-	stop_watch.start("Gossiping");
 
 	// Announce the blob to the network -------------------
 	let blob_received_notification: BlobNotification =
@@ -1551,29 +1543,26 @@ pub async fn store_and_gossip_blob(
 	let gossip_cmd_sender = friends.externalities.gossip_cmd_sender();
 
 	if let Err(e) = gossip_cmd_sender.send(blob_received_notification).await {
-		log::error!("internal channel closed: {e}");
+		tracing::error!("internal channel closed: {e}");
 		return Err(());
 	}
 
-	log::info!(
+	tracing::info!(
 		"BLOB - RPC submit_blob - bg:task - After gossiping blob notif - {:?}",
 		blob_hash,
 	);
-	stop_watch.stop("Gossiping");
 
 	Ok(())
 }
 
+#[tracing::instrument(name = "blob.store", skip_all)]
 fn store_new_blob(
 	blob_hash: H256,
 	blob: Arc<Vec<u8>>,
 	blob_metadata: &BlobMetadata,
 	database: &Arc<dyn StorageApiT>,
 	maybe_ownership: &Option<OwnershipEntry>,
-	stop_watch: &mut SmartStopwatch,
 ) {
-	stop_watch.start("Storing Blob");
-
 	// Arc::unwrap_or_clone will correctly unwrap as this is the only instance
 	let blob = Blob {
 		blob_hash,
@@ -1582,44 +1571,33 @@ fn store_new_blob(
 	};
 
 	if let Some(o) = maybe_ownership {
-		log::info!(
+		tracing::info!(
 			"BLOB - RPC submit_blob - bg:task - I Should store - {:?}",
 			blob_hash,
 		);
 		if let Err(e) = database.insert_blob_ownership(&blob_hash, o) {
-			log::error!("failed to insert blob ownership into store: {e}");
+			tracing::error!("failed to insert blob ownership into store: {e}");
 		}
 	}
 
 	// Store the blob in the store -------------------
 	if let Err(e) = database.insert_blob_metadata(blob_metadata) {
-		log::error!("failed to insert blob metadata into store: {e}");
+		tracing::error!("failed to insert blob metadata into store: {e}");
 	}
-	log::info!(
+	tracing::info!(
 		"BLOB - RPC submit_blob - bg:task - After inserting metadata - {:?}",
 		blob_hash,
 	);
 
-	stop_watch.start("Compression");
 	let compressed_blob = CompressedBlob::new_zstd_compress_with_fallback(&blob.data);
-	let duration = stop_watch.stop("Compression");
 
-	// Telemetry
-	crate::telemetry::BlobSubmission::compression(
-		blob_hash,
-		compressed_blob.raw_data().len(),
-		duration,
-	);
-
-	stop_watch.add_extra_information(std::format!(
-		"Compresion rate: {}",
-		blob.data.len() as f32 / compressed_blob.raw_data().len() as f32
-	));
+	let compresion_rate = blob.data.len() as f32 / compressed_blob.raw_data().len() as f32;
+	tracing::info!(compresion_rate);
 
 	if let Err(e) = database.insert_blob(&blob.blob_hash, &compressed_blob) {
-		log::error!("failed to insert blob into store: {e}");
+		tracing::error!("failed to insert blob into store: {e}");
 	}
-	log::info!(
+	tracing::info!(
 		"BLOB - RPC submit_blob - bg:task - After inserting blob - {:?}",
 		blob_hash,
 	);

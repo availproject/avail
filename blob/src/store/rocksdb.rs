@@ -138,7 +138,7 @@ impl StorageApiT for RocksdbBlobStore {
 					size: raw.len().saturated_into(),
 					data: std::sync::Arc::new(raw).to_vec(),
 				};
-				log::info!(
+				tracing::info!(
 					"GET_BLOB - Reconstruction took - {:?} - hash: {:?}",
 					timer.elapsed(),
 					hash
@@ -154,7 +154,7 @@ impl StorageApiT for RocksdbBlobStore {
 		// Try to read from cache
 		if let Ok(cache) = self.cache.lock() {
 			if let Some(cached) = cache.get(hash).cloned() {
-				log::info!(
+				tracing::info!(
 					"GET_RAW_BLOB - CACHE HIT - {:?} - hash: {:?}",
 					timer.elapsed(),
 					hash
@@ -178,7 +178,7 @@ impl StorageApiT for RocksdbBlobStore {
 			}
 		}
 
-		log::info!(
+		tracing::info!(
 			"GET_RAW_BLOB - CACHE MISS - {:?} - hash: {:?}",
 			timer.elapsed(),
 			hash
@@ -331,7 +331,7 @@ impl StorageApiT for RocksdbBlobStore {
 					expired_blobs.push(hash);
 				}
 			} else {
-				log::warn!(
+				tracing::warn!(
 					target: LOG_TARGET,
 					"Failed to decode blob metadata for key {:?}",
 					key
@@ -355,7 +355,7 @@ impl StorageApiT for RocksdbBlobStore {
 					expired_ownerships.push(hash);
 				}
 			} else {
-				log::warn!(
+				tracing::warn!(
 					target: LOG_TARGET,
 					"Failed to decode blob ownership expiry for key {:?}",
 					key
@@ -370,13 +370,13 @@ impl StorageApiT for RocksdbBlobStore {
 	}
 
 	fn log_all_entries(&self) -> Result<()> {
-		log::info!(target: LOG_TARGET, "--- Logging all entries in the blob store ---");
+		tracing::info!(target: LOG_TARGET, "--- Logging all entries in the blob store ---");
 
 		// Log Blob Metadata
-		log::info!(target: LOG_TARGET, "--- Blob Metadatas ---");
+		tracing::info!(target: LOG_TARGET, "--- Blob Metadatas ---");
 		for (_key, value) in self.db.iter(Self::COL_BLOB_METADATA).filter_map(Result::ok) {
 			if let Ok(blob_metadata) = BlobMetadata::decode(&mut value.as_slice()) {
-				log::info!(
+				tracing::info!(
 					target: LOG_TARGET,
 					"Blob: hash={:?}, size={}, commitments_len={}, is_notified={}, nb_val_per_blob={}, expires_at={}",
 					blob_metadata.hash,
@@ -390,7 +390,7 @@ impl StorageApiT for RocksdbBlobStore {
 		}
 
 		// Log Blob Retries
-		log::info!(target: LOG_TARGET, "--- Blob Ownerships ---");
+		tracing::info!(target: LOG_TARGET, "--- Blob Ownerships ---");
 		for (key, value) in self
 			.db
 			.iter(Self::COL_BLOB_OWNERSHIP)
@@ -402,20 +402,20 @@ impl StorageApiT for RocksdbBlobStore {
 					continue;
 				}
 				let hash = BlobHash::from_slice(&key[..BLOB_HASH_LEN]);
-				log::info!(target: LOG_TARGET, "Blob Ownership: hash={:?}, ownership={:?}", hash, o.address);
+				tracing::info!(target: LOG_TARGET, "Blob Ownership: hash={:?}, ownership={:?}", hash, o.address);
 			}
 		}
 
 		// Log Blob Retries
-		log::info!(target: LOG_TARGET, "--- Blob Retries ---");
+		tracing::info!(target: LOG_TARGET, "--- Blob Retries ---");
 		for (key, value) in self.db.iter(Self::COL_BLOB_RETRY).filter_map(Result::ok) {
 			if let Ok(count) = u16::decode(&mut value.as_slice()) {
 				let hash = BlobHash::from_slice(&key);
-				log::info!(target: LOG_TARGET, "Blob Retry: hash={:?}, count={}", hash, count);
+				tracing::info!(target: LOG_TARGET, "Blob Retry: hash={:?}, count={}", hash, count);
 			}
 		}
 
-		log::info!(target: LOG_TARGET, "--- End of blob store log ---");
+		tracing::info!(target: LOG_TARGET, "--- End of blob store log ---");
 		Ok(())
 	}
 

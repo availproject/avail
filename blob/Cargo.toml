@@ -17,7 +17,7 @@ kate = { workspace = true, default-features = false }
 kate-recovery = { workspace = true, default-features = false }
 avail-observability = { workspace = true }
 
-tokio = { version = "1.43.0", features = [
+tokio = { version = "1.50.0", features = [
     "sync",
     "fs",
     "macros",
@@ -55,7 +55,6 @@ kvdb-rocksdb = { workspace = true, default-features = false }
 tempfile = { workspace = true }
 jsonrpsee = { workspace = true }
 futures = { workspace = true }
-log = { workspace = true }
 async-channel = { workspace = true }
 once_cell = { workspace = true }
 clap = { workspace = true }
@@ -63,6 +62,7 @@ anyhow = "1.0"
 ttl_cache = "0.5.1"
 base64 = { workspace = true }
 zstd = { workspace = true }
+tracing = { workspace = true }
 
 [dev-dependencies]
 divan = { version = "0.1" }
@@ -83,7 +83,6 @@ std = [
 	"futures/std",
 	"kate-recovery/std",
 	"kate/std",
-	"log/std",
 	"once_cell/std",
 	"sc-executor/std",
 	"scale-info/std",

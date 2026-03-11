@@ -24,6 +24,7 @@ use da_runtime::Block;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 use sc_cli::{Result, Role, SubstrateCli, SyncMode};
 use sc_service::PartialComponents;
+use sc_tracing::logging::internal_utils::OtelParams;
 use sp_runtime::traits::HashingFor;
 
 use crate::{
@@ -87,7 +88,18 @@ pub fn run() -> Result<()> {
 
 	match &cli.subcommand {
 		None => {
-			let runner = cli.create_runner(&cli.run)?;
+			let runner = cli.create_runner_with_logger_hook(&cli.run, |builder, _| {
+				let params = OtelParams {
+					endpoint_traces: cli.otel_traces_endpoint.clone(),
+					endpoint_metrics: cli.otel_metrics_endpoint.clone(),
+					endpoint_logs: cli.otel_logs_endpoint.clone(),
+					service_name: env!("CARGO_CRATE_NAME").into(),
+					service_version: env!("CARGO_PKG_VERSION").into(),
+				};
+
+				builder.with_otel(params);
+			})?;
+
 			runner.run_node_until_exit(|config| async move {
 				service::new_full(config, cli).map_err(sc_cli::Error::Service)
 			})
