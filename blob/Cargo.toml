@@ -55,7 +55,6 @@ kvdb-rocksdb = { workspace = true, default-features = false }
 tempfile = { workspace = true }
 jsonrpsee = { workspace = true }
 futures = { workspace = true }
-log = { workspace = true }
 async-channel = { workspace = true }
 once_cell = { workspace = true }
 clap = { workspace = true }
@@ -84,7 +83,6 @@ std = [
 	"futures/std",
 	"kate-recovery/std",
 	"kate/std",
-	"log/std",
 	"once_cell/std",
 	"sc-executor/std",
 	"scale-info/std",

@@ -264,7 +264,7 @@ pub async fn check_missing_validators<Pool, Block>(
 
 		// Return if for some reason the address is not found
 		let Some(my_address) = my_address.clone() else {
-			log::warn!("Could not get validator address for missing-validators-listener");
+			tracing::warn!("Could not get validator address for missing-validators-listener");
 			continue;
 		};
 
@@ -273,7 +273,7 @@ pub async fn check_missing_validators<Pool, Block>(
 		let nb_offence_deposits =
 			check_has_sufficient_balance(&client, imported_block.hash, &my_address);
 		if nb_offence_deposits == 0 {
-			log::warn!("Validator has not enough balance to register an offence if needed for missing-validators-listener.");
+			tracing::warn!("Validator has not enough balance to register an offence if needed for missing-validators-listener.");
 			continue;
 		}
 
@@ -282,7 +282,7 @@ pub async fn check_missing_validators<Pool, Block>(
 			match get_blob_summary_runtime(&client, imported_block.hash) {
 				Ok(s) => s,
 				Err(e) => {
-					log::warn!(
+					tracing::warn!(
 						"Could not get blob_txs_summary at hash {:?}: {:?}",
 						imported_block.hash,
 						e
@@ -430,14 +430,14 @@ pub async fn check_missing_validators<Pool, Block>(
 		let offence_len = offence_to_create.len() as u128;
 		if offence_len > 0 {
 			if nb_offence_deposits < offence_len {
-				log::warn!("Validator has not enough balance to register {:?} offences needed for missing-validators-listener.", offence_len);
+				tracing::warn!("Validator has not enough balance to register {:?} offences needed for missing-validators-listener.", offence_len);
 				continue;
 			}
 
 			let author = match get_finalized_block_author(&client, imported_block.hash) {
 				Ok(a) => a,
 				Err(e) => {
-					log::warn!(
+					tracing::warn!(
 						"Could not get block author at hash: {:?} - {:?}",
 						imported_block.hash,
 						e
@@ -446,7 +446,7 @@ pub async fn check_missing_validators<Pool, Block>(
 				},
 			};
 			let Some(author) = author else {
-				log::warn!("No block author at hash: {:?}", imported_block.hash);
+				tracing::warn!("No block author at hash: {:?}", imported_block.hash);
 				continue;
 			};
 
@@ -482,7 +482,7 @@ pub async fn check_missing_validators<Pool, Block>(
 				match Decode::decode(&mut best_hash.encode().as_slice()) {
 					Ok(h) => h,
 					Err(e) => {
-						log::error!("Hash decode into pool Block::Hash failed: {:?}", e);
+						tracing::error!("Hash decode into pool Block::Hash failed: {:?}", e);
 						continue;
 					},
 				};
@@ -495,7 +495,7 @@ pub async fn check_missing_validators<Pool, Block>(
 
 			for res in results {
 				if let Err(e) = res {
-					log::error!("Failed to submit: {e:?}");
+					tracing::error!("Failed to submit: {e:?}");
 				}
 			}
 		}

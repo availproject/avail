@@ -339,7 +339,7 @@ where
 							if let Ok(msg) =
 								EvalClaimsMessage::decode(&mut &notification.message[..])
 							{
-								log::info!(
+								tracing::info!(
 									target: LOG_TARGET,
 									"✅ Received eval claims message for block {:?}, blob {:?}, app_id {:?}",
 									msg.block_hash,
@@ -377,7 +377,7 @@ where
 					})
 					.await
 					{
-						log::warn!(target: LOG_TARGET, "cleanup join error: {e}");
+						tracing::warn!(target: LOG_TARGET, "cleanup join error: {e}");
 					}
 				}
 			}
@@ -437,7 +437,7 @@ where
 					continue;
 				}
 
-				log::debug!(
+				tracing::debug!(
 					target: LOG_TARGET,
 					"🔍 Block #{}: requesting ownership for {} blobs",
 					header.number(),
@@ -457,7 +457,7 @@ where
 								if let Err(e) =
 									blob_db.insert_blob_ownership(&info.blob_hash, &entry)
 								{
-									log::warn!(
+									tracing::warn!(
 										target: LOG_TARGET,
 										"Failed to store ownership for {:?}: {e}",
 										info.blob_hash
@@ -467,7 +467,7 @@ where
 						}
 					},
 					Err(e) => {
-						log::warn!(
+						tracing::warn!(
 							target: LOG_TARGET,
 							"❌ Ownership fetch failed at block #{}: {e}",
 							header.number()
@@ -504,7 +504,7 @@ pub async fn request_blob_ownership_from_peers<Block: BlockT>(
 		return Err("No connected peers available for blob ownership request".into());
 	}
 
-	log::debug!(
+	tracing::debug!(
 		target: LOG_TARGET,
 		"📡 Requesting ownership for {} blobs from {} peers",
 		blob_hashes.len(),
@@ -515,7 +515,7 @@ pub async fn request_blob_ownership_from_peers<Block: BlockT>(
 		BlobRequestEnum::BlobOwnershipsRequest(BlobOwnershipsRequest { blob_hashes }).encode();
 
 	for peer in peers {
-		log::debug!(
+		tracing::debug!(
 			target: LOG_TARGET,
 			"📤 Sending BlobOwnershipsRequest to peer {peer}"
 		);
@@ -531,11 +531,11 @@ pub async fn request_blob_ownership_from_peers<Block: BlockT>(
 		let data = match tokio::time::timeout(timeout, fut).await {
 			Ok(Ok((data, _))) => data,
 			Ok(Err(e)) => {
-				log::warn!(target: LOG_TARGET, "❌ Peer {peer} error: {e}");
+				tracing::warn!(target: LOG_TARGET, "❌ Peer {peer} error: {e}");
 				continue;
 			},
 			Err(_) => {
-				log::warn!(target: LOG_TARGET, "⏱️ Peer {peer} timed out");
+				tracing::warn!(target: LOG_TARGET, "⏱️ Peer {peer} timed out");
 				continue;
 			},
 		};
@@ -543,7 +543,7 @@ pub async fn request_blob_ownership_from_peers<Block: BlockT>(
 		let mut buf: &[u8] = &data;
 		match BlobResponseEnum::decode(&mut buf) {
 			Ok(BlobResponseEnum::BlobOwnershipsResponse(resp)) => {
-				log::info!(
+				tracing::info!(
 					target: LOG_TARGET,
 					"✅ Received ownership for {} blobs from peer {peer}",
 					resp.blobs.len()
@@ -551,13 +551,13 @@ pub async fn request_blob_ownership_from_peers<Block: BlockT>(
 				return Ok(resp.blobs);
 			},
 			Ok(other) => {
-				log::warn!(
+				tracing::warn!(
 					target: LOG_TARGET,
 					"⚠️ Unexpected response from {peer}: {other:?}"
 				);
 			},
 			Err(e) => {
-				log::warn!(
+				tracing::warn!(
 					target: LOG_TARGET,
 					"❌ Failed to decode ownership response from {peer}: {e}"
 				);

@@ -153,7 +153,7 @@ impl BlobReputationChange {
 	}
 
 	pub fn reputation_change(self) -> ReputationChange {
-		log::warn!("Issuing reputation change: {}", self.reason_str());
+		tracing::warn!("Issuing reputation change: {}", self.reason_str());
 		ReputationChange::new(self.penalty(), self.reason_str())
 	}
 
@@ -514,7 +514,7 @@ impl CompressedBlob {
 		match CompressedBlob::new_zstd_compressed(blob, 3) {
 			Ok(zstd_compressed) => zstd_compressed,
 			Err(_) => {
-				log::warn!(target: LOG_TARGET, "🈵 Failed to compress data. Fallbacking to non-compression");
+				tracing::warn!(target: LOG_TARGET, "🈵 Failed to compress data. Fallbacking to non-compression");
 				CompressedBlob::new_nocompression(blob.to_vec())
 			},
 		}

@@ -262,10 +262,7 @@ where
 	type Error = ConsensusError;
 
 	/// It verifies that header extension (Kate commitment & data root) is properly calculated.
-	#[tracing::instrument(
-		name = "block.import",
-		skip_all,
-	)]
+	#[tracing::instrument(name = "block.import", skip_all)]
 	async fn import_block(&self, block: BlockImportParams<B>) -> Result<ImportResult, Self::Error> {
 		let _metric_observer = MetricObserver::new(ObserveKind::ImportBlockTotalExecutionTime);
 

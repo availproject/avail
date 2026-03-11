@@ -430,11 +430,7 @@ where
 	<Block as BlockT>::Extrinsic: From<UncheckedExtrinsic>,
 	H256: From<<Pool as sc_transaction_pool_api::TransactionPool>::Hash>,
 {
-
-	#[tracing::instrument(
-		name = "blob.submit",
-		skip_all,
-	)]
+	#[tracing::instrument(name = "blob.submit", skip_all)]
 	async fn submit_blob(
 		&self,
 		metadata_signed_transaction: B64Param,
@@ -570,7 +566,7 @@ where
 
 		// If blob exists locally, return immediately
 		if let Ok(Some(blob)) = self.blob_handle.blob_database.get_blob(&blob_hash) {
-			log::info!("Blob found in local storage: {:?}", blob_hash);
+			tracing::info!("Blob found in local storage: {:?}", blob_hash);
 			return Ok(blob);
 		}
 
@@ -596,7 +592,7 @@ where
 			match PeerId::from_str(encoded_peer_id) {
 				Ok(peer_id) => {
 					if peer_id == my_peer_id {
-						log::warn!(
+						tracing::warn!(
 							"Attempt {}/{}: skipping self peer_id {} we've already tried locally",
 							attempt + 1,
 							MAX_RPC_RETRIES,
@@ -613,7 +609,7 @@ where
 					{
 						Ok(Some(blob)) => return Ok(blob),
 						Ok(None) => {
-							log::warn!(
+							tracing::warn!(
 								"Attempt {}/{}: owner {} returned no blob",
 								attempt + 1,
 								MAX_RPC_RETRIES,
@@ -621,7 +617,7 @@ where
 							);
 						},
 						Err(e) => {
-							log::warn!(
+							tracing::warn!(
 								"Attempt {}/{}: RPC error from {}: {:?}",
 								attempt + 1,
 								MAX_RPC_RETRIES,
@@ -632,7 +628,7 @@ where
 					}
 				},
 				Err(e) => {
-					log::warn!(
+					tracing::warn!(
 						"Attempt {}/{}: invalid peer_id '{}' : {:?}",
 						attempt + 1,
 						MAX_RPC_RETRIES,
@@ -842,10 +838,7 @@ where
 	}
 }
 
-#[tracing::instrument(
-	name = "blob.sampling_proofs",
-	skip_all,
-)]
+#[tracing::instrument(name = "blob.sampling_proofs", skip_all)]
 fn build_sampling_proofs(
 	entry: FriSamplingCacheEntry,
 	cells: Vec<u32>,
@@ -982,10 +975,7 @@ fn get_dynamic_block_length(
 	Ok((cols, rows))
 }
 
-#[tracing::instrument(
-	name = "blob.submit.main_task",
-	skip_all,
-)]
+#[tracing::instrument(name = "blob.submit.main_task", skip_all)]
 pub async fn submit_blob_main_task(
 	commitment_queue: Arc<dyn CommitmentQueueApiT>,
 	metadata_signed_transaction: Vec<u8>,
@@ -1005,7 +995,7 @@ pub async fn submit_blob_main_task(
 	let commitment_scheme = match runtime_client.commitment_scheme(best_hash) {
 		Ok(scheme) => scheme,
 		Err(e) => {
-			log::error!(
+			tracing::error!(
 				"Could not get commitment scheme from runtime at {:?}: {e:?}. Falling back to Fri.",
 				best_hash
 			);
@@ -1016,14 +1006,14 @@ pub async fn submit_blob_main_task(
 	let blob_params = match runtime_client.get_blob_runtime_parameters(finalized_block_hash) {
 		Ok(p) => p,
 		Err(e) => {
-			log::error!("Could not get blob_params: {e:?}");
+			tracing::error!("Could not get blob_params: {e:?}");
 			BlobRuntimeParameters::default()
 		},
 	};
 	let fri_params_version = match runtime_client.get_fri_params_version(finalized_block_hash) {
 		Ok(v) => v,
 		Err(e) => {
-			log::error!(
+			tracing::error!(
 				"Could not get FRI params version from runtime at {:?}: {e:?}. Falling back to V0.",
 				finalized_block_hash
 			);
@@ -1220,7 +1210,7 @@ fn handle_kzg_submission(
 		.await;
 
 		if let Err(e) = result {
-			log::error!("{e}");
+			tracing::error!("{e}");
 		}
 	})
 }
@@ -1310,15 +1300,12 @@ fn handle_fri_submission(
 		.await;
 
 		if let Err(e) = result {
-			log::error!("{e}");
+			tracing::error!("{e}");
 		}
 	})
 }
 
-#[tracing::instrument(
-	name = "blob.submit.background_task",
-	skip_all,
-)]
+#[tracing::instrument(name = "blob.submit.background_task", skip_all)]
 async fn submit_blob_background_task(
 	opaque_tx: UncheckedExtrinsic,
 	blob_hash: H256,
@@ -1329,8 +1316,9 @@ async fn submit_blob_background_task(
 	friends: Friends,
 	nonce_cache: Arc<dyn NonceCacheApiT>,
 ) {
-	let blob_len = blob.len();
+	tracing::info!(block_hash = ?blob_hash, "Submit blob background task started.");
 
+	let blob_len = blob.len();
 	let signer = extract_signer_and_nonce(&opaque_tx);
 
 	let stored =
@@ -1353,13 +1341,8 @@ async fn submit_blob_background_task(
 		if let Some((who, _)) = signer.as_ref() {
 			nonce_cache.clear(who);
 		}
-		log::error!("tx-pool error: {e}")
+		tracing::error!("tx-pool error: {e}")
 	}
-
-	log::info!(
-		"BLOB - RPC submit_blob - bg:task - After Submitting to pool - {:?}",
-		blob_hash,
-	);
 
 	// Metrics and Telemetry
 	BlobMetrics::inc_submissions_added_to_pool_total();
@@ -1373,10 +1356,7 @@ fn clear_reserved_nonce(nonce_cache: &Arc<dyn NonceCacheApiT>, opaque_tx: &Unche
 	}
 }
 
-#[tracing::instrument(
-	name = "blob.store_and_gossip",
-	skip_all,
-)]
+#[tracing::instrument(name = "blob.submit.store_and_gossip", skip_all)]
 pub async fn store_and_gossip_blob(
 	blob_hash: H256,
 	blob: Arc<Vec<u8>>,
@@ -1400,7 +1380,7 @@ pub async fn store_and_gossip_blob(
 	let maybe_blob_metadata = match friends.database.get_blob_metadata(&blob_hash) {
 		Ok(m) => m,
 		Err(e) => {
-			log::error!("Failed to get data from blob storage: {e}");
+			tracing::error!("Failed to get data from blob storage: {e}");
 			return Err(());
 		},
 	};
@@ -1411,7 +1391,7 @@ pub async fn store_and_gossip_blob(
 	{
 		Ok(scheme) => scheme,
 		Err(e) => {
-			log::error!(
+			tracing::error!(
 				"Could not get commitment scheme from runtime at {:?}: {e:?}. Falling back to Fri.",
 				finalized_block_hash
 			);
@@ -1452,7 +1432,7 @@ pub async fn store_and_gossip_blob(
 				finalized_block_hash,
 				e
 			);
-			log::error!("{}", err);
+			tracing::error!("{}", err);
 			return Err(());
 		},
 	};
@@ -1472,14 +1452,14 @@ pub async fn store_and_gossip_blob(
 				finalized_block_hash,
 				e
 			);
-			log::error!("{}", err);
+			tracing::error!("{}", err);
 			return Err(());
 		},
 	};
 
 	if commitment_scheme == CommitmentScheme::Fri {
 		if fri_data.is_none() {
-			log::error!("Fri data must be available for Fri commitment scheme");
+			tracing::error!("Fri data must be available for Fri commitment scheme");
 			return Err(());
 		}
 		let fri_data = fri_data.expect("checked above; qed");
@@ -1492,7 +1472,7 @@ pub async fn store_and_gossip_blob(
 			finalized_block_hash,
 		) {
 			if storing_validators[prover_index as usize] == my_validator_id {
-				log::info!(
+				tracing::info!(
 					"I am the designated prover for blob {:?} including eval_proof? {}",
 					blob_hash,
 					fri_data.fri_eval_proof.is_some()
@@ -1524,7 +1504,7 @@ pub async fn store_and_gossip_blob(
 	{
 		Ok(o) => o,
 		Err(e) => {
-			log::error!("could not check if rpc should store blob: {e}");
+			tracing::error!("could not check if rpc should store blob: {e}");
 			return Err(());
 		},
 	};
@@ -1572,11 +1552,11 @@ pub async fn store_and_gossip_blob(
 	let gossip_cmd_sender = friends.externalities.gossip_cmd_sender();
 
 	if let Err(e) = gossip_cmd_sender.send(blob_received_notification).await {
-		log::error!("internal channel closed: {e}");
+		tracing::error!("internal channel closed: {e}");
 		return Err(());
 	}
 
-	log::info!(
+	tracing::info!(
 		"BLOB - RPC submit_blob - bg:task - After gossiping blob notif - {:?}",
 		blob_hash,
 	);
@@ -1585,10 +1565,7 @@ pub async fn store_and_gossip_blob(
 	Ok(())
 }
 
-#[tracing::instrument(
-	name = "blob.store",
-	skip_all,
-)]
+#[tracing::instrument(name = "blob.store", skip_all)]
 fn store_new_blob(
 	blob_hash: H256,
 	blob: Arc<Vec<u8>>,
@@ -1607,20 +1584,20 @@ fn store_new_blob(
 	};
 
 	if let Some(o) = maybe_ownership {
-		log::info!(
+		tracing::info!(
 			"BLOB - RPC submit_blob - bg:task - I Should store - {:?}",
 			blob_hash,
 		);
 		if let Err(e) = database.insert_blob_ownership(&blob_hash, o) {
-			log::error!("failed to insert blob ownership into store: {e}");
+			tracing::error!("failed to insert blob ownership into store: {e}");
 		}
 	}
 
 	// Store the blob in the store -------------------
 	if let Err(e) = database.insert_blob_metadata(blob_metadata) {
-		log::error!("failed to insert blob metadata into store: {e}");
+		tracing::error!("failed to insert blob metadata into store: {e}");
 	}
-	log::info!(
+	tracing::info!(
 		"BLOB - RPC submit_blob - bg:task - After inserting metadata - {:?}",
 		blob_hash,
 	);
@@ -1642,9 +1619,9 @@ fn store_new_blob(
 	));
 
 	if let Err(e) = database.insert_blob(&blob.blob_hash, &compressed_blob) {
-		log::error!("failed to insert blob into store: {e}");
+		tracing::error!("failed to insert blob into store: {e}");
 	}
-	log::info!(
+	tracing::info!(
 		"BLOB - RPC submit_blob - bg:task - After inserting blob - {:?}",
 		blob_hash,
 	);

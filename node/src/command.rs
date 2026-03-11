@@ -22,9 +22,9 @@ use avail_blob::types::FullClient;
 use avail_node::chains;
 use da_runtime::Block;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
-use sc_tracing::logging::internal_utils::OtelParams;
 use sc_cli::{Result, Role, SubstrateCli, SyncMode};
 use sc_service::PartialComponents;
+use sc_tracing::logging::internal_utils::OtelParams;
 use sp_runtime::traits::HashingFor;
 
 use crate::{

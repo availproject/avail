@@ -34,6 +34,7 @@ fn derive_extra_query_index(blob_hash: H256, commitment: &[u8], leaf_count: usiz
 	(u64::from_le_bytes(arr) as usize) % leaf_count
 }
 
+#[tracing::instrument(name = "initial_validation", skip_all)]
 pub fn initial_validation(
 	max_blob_size: usize,
 	blob: &[u8],
@@ -106,6 +107,7 @@ pub fn initial_validation(
 	))
 }
 
+#[tracing::instrument(name = "tx.validation", skip_all)]
 pub fn tx_validation(
 	at: H256,
 	metadata: &[u8],
@@ -154,6 +156,7 @@ pub fn tx_validation(
 	Ok(opaque_tx)
 }
 
+#[tracing::instrument(name = "validate_kzg_commitment", skip_all)]
 pub async fn validate_kzg_commitment(
 	hash: H256,
 	provided_commitment: &Vec<u8>,
@@ -186,6 +189,7 @@ pub async fn validate_kzg_commitment(
 }
 
 /// Validate FRI commitment for the given blob and verify the evaluation proof for the given evaluation point and claim.
+#[tracing::instrument(name = "validate_fri_commitment", skip_all)]
 pub fn validate_fri_commitment(
 	blob_hash: H256,
 	blob: &[u8],
@@ -256,6 +260,7 @@ pub fn validate_fri_commitment(
 	Ok(proof_bytes)
 }
 
+#[tracing::instrument(name = "validate_fri_proof", skip_all)]
 pub fn validate_fri_proof(
 	blob_size: usize,
 	params_version: FriParamsVersion,
