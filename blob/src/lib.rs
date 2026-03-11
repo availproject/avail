@@ -503,34 +503,47 @@ async fn handle_blob_received_notification<Block>(
 					todo!("KZG commitment validation")
 				},
 				CommitmentScheme::Fri => {
-					// Check if the eval_point_seed and eval_claim are present in the associated BlobMetadata tx
-					if blob_received.eval_point_seed.is_none() || blob_received.eval_claim.is_none()
-					{
-						log::error!(target: LOG_TARGET, "Missing eval_point_seed or eval_claim for FRI blob");
-						return;
-					}
-
-					let fri_eval_proof = match validate_fri_commitment(
-						blob_received.hash,
-						&blob_data,
-						&blob_received.commitment,
-						fri_params_version,
-						&blob_received.eval_point_seed.expect("checked above"),
-						&blob_received.eval_claim.expect("checked above"),
-					) {
-						Ok(proof_bytes) => proof_bytes,
-						Err(e) => {
-							log::error!(target: LOG_TARGET, "FRI commitment validation failed: {}", e);
-							return;
-						},
-					};
-
 					if should_send_proof {
+						// Check if the eval_point_seed and eval_claim are present in the associated BlobMetadata tx
+						if blob_received.eval_point_seed.is_none()
+							|| blob_received.eval_claim.is_none()
+						{
+							log::error!(target: LOG_TARGET, "Missing eval_point_seed or eval_claim for FRI blob");
+							return;
+						}
+
+						let fri_eval_proof = match validate_fri_commitment(
+							blob_received.hash,
+							&blob_data,
+							&blob_received.commitment,
+							fri_params_version,
+							&blob_received.eval_point_seed.expect("checked above"),
+							&blob_received.eval_claim.expect("checked above"),
+						) {
+							Ok(proof_bytes) => proof_bytes,
+							Err(e) => {
+								log::error!(target: LOG_TARGET, "FRI commitment validation failed: {}", e);
+								return;
+							},
+						};
+
 						// send the eval_proof with stored_blob notification & also update the local metadata with eval_proof
 						log::info!(target: LOG_TARGET, "Designated prover for blob {}, sending eval proof", blob_received.hash);
 						eval_proof = Some(fri_eval_proof);
 						blob_meta.fri_eval_proof = eval_proof.clone();
 						blob_meta.fri_eval_prover_index = Some(prover_index);
+					} else {
+						const FRI_COMMITMENT_SIZE: usize = 32;
+
+						if blob_received.commitment.len() != FRI_COMMITMENT_SIZE {
+							log::error!(
+								target: LOG_TARGET,
+								"Fri commitment must be {} bytes, got {}",
+								FRI_COMMITMENT_SIZE,
+								blob_received.commitment.len()
+							);
+							return;
+						}
 					}
 				},
 			}
