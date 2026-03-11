@@ -19,7 +19,7 @@
 //! A consensus proposer for "basic" chains which use the primitive inherent-data.
 
 // FIXME #1021 move this into sp-consensus
-use avail_base::{PostInherentsBackend, PostInherentsProvider};
+use avail_base::{PostInherentsBackend, PostInherentsProvider, MAX_BLOB_TXS_PER_BLOCK};
 
 use avail_blob::{
 	store::{RocksdbBlobStore, StorageApiT},
@@ -605,7 +605,6 @@ where
 			}
 
 			let encoded = pending_tx_data.clone().encode();
-			stop_watch.start("Check if wait next block");
 			let (should_submit, is_submit_blob_metadata) = check_if_wait_next_block(
 				&self.client,
 				&self.blob_database,
@@ -614,8 +613,12 @@ where
 				&mut blob_metadata,
 				tx_index,
 			);
-			stop_watch.stop("Check if wait next block");
 			if !should_submit {
+				continue;
+			}
+			if is_submit_blob_metadata && submit_blob_metadata_calls.len() > MAX_BLOB_TXS_PER_BLOCK
+			{
+				submit_blob_metadata_calls.pop();
 				continue;
 			}
 

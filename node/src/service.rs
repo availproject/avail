@@ -39,10 +39,14 @@ use sc_client_api::{Backend, BlockBackend};
 use sc_consensus::{BlockImportParams, Verifier};
 use sc_consensus_babe::{self, SlotProportion};
 use sc_consensus_grandpa::{BeforeBestBlockBy, ThreeQuartersOfTheUnfinalizedChain};
+use sc_executor::{HeapAllocStrategy, HostFunctions, WasmExecutor};
 use sc_network::{service::traits::NetworkService, Event, NetworkBackend, NetworkEventStream};
 use sc_network_sync::SyncingService;
 use sc_network_sync::WarpSyncConfig;
-use sc_service::{error::Error as ServiceError, Configuration, RpcHandlers, TaskManager};
+use sc_service::{
+	config::ExecutorConfiguration, error::Error as ServiceError, Configuration, RpcHandlers,
+	TaskManager,
+};
 use sc_telemetry::{Telemetry, TelemetryWorker};
 use sc_transaction_pool_api::OffchainTransactionPoolFactory;
 use sp_api::ProvideRuntimeApi;
@@ -79,6 +83,24 @@ pub type BlockImport = crate::da_block_import::BlockImport<
 		FullSelectChain,
 	>,
 >;
+
+/// Creates a [`WasmExecutor`] according to [`ExecutorConfiguration`].
+/// This is taken from `builder.rs` and modified to accommodate blobs eval proofs in memory (new_wasm_executor).
+pub fn new_wasm_avail_executor<H: HostFunctions>(
+	config: &ExecutorConfiguration,
+) -> WasmExecutor<H> {
+	let strategy = HeapAllocStrategy::Dynamic {
+		maximum_pages: Some(32 * 1024), // One page is 64kb, limit is 2gb (we could go to 4)
+	};
+
+	WasmExecutor::<H>::builder()
+		.with_execution_method(config.wasm_method)
+		.with_onchain_heap_alloc_strategy(strategy)
+		.with_offchain_heap_alloc_strategy(strategy)
+		.with_max_runtime_instances(config.max_runtime_instances)
+		.with_runtime_cache_size(config.runtime_cache_size)
+		.build()
+}
 
 /// Fetch the nonce of the given `account` from the chain state.
 ///
@@ -197,7 +219,7 @@ pub fn new_partial(
 		})
 		.transpose()?;
 
-	let executor = sc_service::new_wasm_executor(&config.executor);
+	let executor = new_wasm_avail_executor(&config.executor);
 
 	let (client, backend, keystore_container, task_manager) =
 		sc_service::new_full_parts::<Block, RuntimeApi, _>(
@@ -384,7 +406,7 @@ pub fn new_partial_light(
 		})
 		.transpose()?;
 
-	let executor = sc_service::new_wasm_executor(&config.executor);
+	let executor = new_wasm_avail_executor(&config.executor);
 
 	let (client, backend, keystore_container, task_manager) =
 		sc_service::new_full_parts::<Block, RuntimeApi, _>(
