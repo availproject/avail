@@ -1059,9 +1059,103 @@ pub async fn submit_blob_main_task(
 				)?;
 			let blob = Arc::new(blob);
 
+			// ideally eval_point_seed and eval_claim should be None here for KZG, but we can let it pass for now
+			Ok(handle_kzg_submission(
+				stop_watch,
+				commitment_queue,
+				metadata_signed_transaction,
+				opaque_tx,
+				blob_hash,
+				blob,
+				blob_params,
+				provided_commitment,
+				friends,
+				nonce_cache,
+				runtime_client,
+				cols,
+				rows,
+			))
+		},
+
+		CommitmentScheme::Fri => {
+			// Check if the eval_point_seed and eval_claim are present for Fri
+			if eval_point_seed.is_none() || eval_claim.is_none() {
+				clear_reserved_nonce(&nonce_cache, &opaque_tx);
+				return Err(internal_err!(
+					"eval_point_seed and eval_claim must be present for Fri commitment scheme"
+				));
+			}
+
+			let eval_point_seed = eval_point_seed.expect("checked above; qed");
+			let eval_claim = eval_claim.expect("checked above; qed");
+			let babe_randomness =
+				get_babe_randomness(&friends.backend_client, finalized_block_hash).map_err(
+					|e| {
+						clear_reserved_nonce(&nonce_cache, &opaque_tx);
+						e
+					},
+				)?;
+			let derived_eval_seed = derive_seed_from_inputs(&babe_randomness, &blob_hash.0);
+			if eval_point_seed != derived_eval_seed {
+				clear_reserved_nonce(&nonce_cache, &opaque_tx);
+				return Err(internal_err!(
+					"eval_point_seed does not match derived seed!"
+				));
+			}
+
+			Ok(handle_fri_submission(
+				stop_watch,
+				metadata_signed_transaction,
+				opaque_tx,
+				app_id,
+				blob_hash,
+				blob,
+				blob_params,
+				provided_commitment,
+				friends,
+				nonce_cache,
+				runtime_client,
+				fri_params_version,
+				eval_point_seed,
+				eval_claim,
+				derived_eval_seed,
+			))
+		},
+	}
+}
+
+fn handle_kzg_submission(
+	mut stop_watch: SmartStopwatch,
+	commitment_queue: Arc<dyn CommitmentQueueApiT>,
+	metadata_signed_transaction: Vec<u8>,
+	opaque_tx: UncheckedExtrinsic,
+	blob_hash: H256,
+	blob: Arc<Vec<u8>>,
+	blob_params: BlobRuntimeParameters,
+	provided_commitment: Vec<u8>,
+	friends: Friends,
+	nonce_cache: Arc<dyn NonceCacheApiT>,
+	runtime_client: Arc<dyn RuntimeApiT>,
+	cols: usize,
+	rows: usize,
+) -> tokio::task::JoinHandle<()> {
+	task::spawn(async move {
+		let result: RpcResult<()> = async {
+			let blob_for_grid = blob.clone();
 			let start = crate::utils::get_current_timestamp_ms();
 			stop_watch.start("Polynominal Grid Gen.");
-			let grid = build_polynomial_grid(&*blob, cols, rows, Default::default());
+			let grid = task::spawn_blocking(move || {
+				build_polynomial_grid(blob_for_grid.as_slice(), cols, rows, Default::default())
+			})
+			.await
+			.map_err(|e| {
+				clear_reserved_nonce(&nonce_cache, &opaque_tx);
+				internal_err!(
+					"KZG polynomial grid generation task failed for blob {:?}: {}",
+					blob_hash,
+					e
+				)
+			})?;
 			stop_watch.stop("Polynominal Grid Gen.");
 			let end = crate::utils::get_current_timestamp_ms();
 			// Telemetry
@@ -1096,66 +1190,70 @@ pub async fn submit_blob_main_task(
 				internal_err!("{}", e)
 			})?;
 
-			let handle = task::spawn(async move {
-				submit_blob_background_task(
-					opaque_tx,
-					blob_hash,
-					blob,
-					blob_params,
-					provided_commitment,
-					None,
-					friends,
-					nonce_cache,
-				)
-				.await
-			});
-
-			// ideally eval_point_seed and eval_claim should be None here for KZG, but we can let it pass for now
-			Ok(handle)
-		},
-
-		CommitmentScheme::Fri => {
-			// Check if the eval_point_seed and eval_claim are present for Fri
-			if eval_point_seed.is_none() || eval_claim.is_none() {
-				clear_reserved_nonce(&nonce_cache, &opaque_tx);
-				return Err(internal_err!(
-					"eval_point_seed and eval_claim must be present for Fri commitment scheme"
-				));
-			}
-
-			let eval_point_seed = eval_point_seed.expect("checked above; qed");
-			let eval_claim = eval_claim.expect("checked above; qed");
-			let babe_randomness =
-				get_babe_randomness(&friends.backend_client, finalized_block_hash).map_err(
-					|e| {
-						clear_reserved_nonce(&nonce_cache, &opaque_tx);
-						e
-					},
-				)?;
-			let derived_eval_seed = derive_seed_from_inputs(&babe_randomness, &blob_hash.0);
-			if eval_point_seed != derived_eval_seed {
-				clear_reserved_nonce(&nonce_cache, &opaque_tx);
-				return Err(internal_err!(
-					"eval_point_seed does not match derived seed!"
-				));
-			}
-			stop_watch.start("Fri Commitment Validation");
-			let fri_eval_proof = match validate_fri_commitment(
+			submit_blob_background_task(
+				opaque_tx,
 				blob_hash,
-				&blob,
-				&provided_commitment,
-				fri_params_version,
-				&derived_eval_seed,
-				&eval_claim,
-			) {
-				Ok(proof_bytes) => proof_bytes,
-				Err(e) => {
-					clear_reserved_nonce(&nonce_cache, &opaque_tx);
-					stop_watch.stop("Fri Commitment Validation");
-					stop_watch.stop("Commitments (Total)");
-					return Err(internal_err!("{}", e));
-				},
-			};
+				blob,
+				blob_params,
+				provided_commitment,
+				None,
+				friends,
+				nonce_cache,
+			)
+			.await;
+
+			Ok(())
+		}
+		.await;
+
+		if let Err(e) = result {
+			log::error!("{e}");
+		}
+	})
+}
+
+fn handle_fri_submission(
+	mut stop_watch: SmartStopwatch,
+	metadata_signed_transaction: Vec<u8>,
+	opaque_tx: UncheckedExtrinsic,
+	app_id: AppId,
+	blob_hash: H256,
+	blob: Vec<u8>,
+	blob_params: BlobRuntimeParameters,
+	provided_commitment: Vec<u8>,
+	friends: Friends,
+	nonce_cache: Arc<dyn NonceCacheApiT>,
+	runtime_client: Arc<dyn RuntimeApiT>,
+	fri_params_version: FriParamsVersion,
+	eval_point_seed: [u8; 32],
+	eval_claim: [u8; 16],
+	derived_eval_seed: [u8; 32],
+) -> tokio::task::JoinHandle<()> {
+	task::spawn(async move {
+		let result: RpcResult<()> = async {
+			let blob = Arc::new(blob);
+			let blob_for_validation = blob.clone();
+			let commitment_for_validation = provided_commitment.clone();
+
+			stop_watch.start("Fri Commitment Validation");
+			let fri_eval_proof = task::spawn_blocking(move || {
+				validate_fri_commitment(
+					blob_hash,
+					blob_for_validation.as_slice(),
+					&commitment_for_validation,
+					fri_params_version,
+					&derived_eval_seed,
+					&eval_claim,
+				)
+			})
+			.await
+			.expect("Fri commitment validation task panicked")
+			.map_err(|e| {
+				clear_reserved_nonce(&nonce_cache, &opaque_tx);
+				stop_watch.stop("Fri Commitment Validation");
+				stop_watch.stop("Commitments (Total)");
+				internal_err!("{}", e)
+			})?;
 			stop_watch.stop("Fri Commitment Validation");
 			stop_watch.stop("Commitments (Total)");
 
@@ -1176,30 +1274,32 @@ pub async fn submit_blob_main_task(
 				internal_err!("{}", e)
 			})?;
 
-			let blob = Arc::new(blob);
 			let fri_data = FriData {
 				app_id,
 				eval_point_seed,
 				eval_claim,
 				fri_eval_proof: Some(fri_eval_proof),
 			};
-			let handle = task::spawn(async move {
-				submit_blob_background_task(
-					opaque_tx,
-					blob_hash,
-					blob,
-					blob_params,
-					provided_commitment,
-					Some(fri_data),
-					friends,
-					nonce_cache,
-				)
-				.await
-			});
+			submit_blob_background_task(
+				opaque_tx,
+				blob_hash,
+				blob,
+				blob_params,
+				provided_commitment,
+				Some(fri_data),
+				friends,
+				nonce_cache,
+			)
+			.await;
 
-			Ok(handle)
-		},
-	}
+			Ok(())
+		}
+		.await;
+
+		if let Err(e) = result {
+			log::error!("{e}");
+		}
+	})
 }
 
 async fn submit_blob_background_task(
