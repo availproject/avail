@@ -1,9 +1,9 @@
 // #region Imports
 use avail_fri::{
-	core::{FriBiniusPCS, B128},
+	FriParamsVersion,
+	core::{B128, FriBiniusPCS},
 	encoding::BytesEncoder,
 	eval_utils::{derive_evaluation_point, derive_seed_from_inputs, eval_claim_to_bytes},
-	FriParamsVersion,
 };
 use avail_rust::codec::Encode;
 use avail_rust::{avail_rust_core::rpc::blob::submit_blob, prelude::*};
@@ -14,13 +14,13 @@ use std::{
 	collections::BTreeMap,
 	error::Error,
 	sync::{
-		atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
 		Arc,
+		atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
 	},
 	time::{Duration, Instant, SystemTime},
 };
 use tokio::{
-	sync::{mpsc, Semaphore},
+	sync::{Semaphore, mpsc},
 	task::JoinSet,
 };
 // #endregion
@@ -35,6 +35,7 @@ const DEFAULT_IN_FLIGHT: usize = 4;
 const FUND_EACH_AVAIL: u128 = 10;
 const RANDOMNESS_REFRESH_SECS: u64 = 30;
 const APP_ID_SHARDS: usize = 5;
+const EXTRA_QUERY_DOMAIN_SEP: &[u8] = b"fri-extra-query-v1";
 // #endregion
 
 // #region Args
@@ -93,6 +94,7 @@ struct PreparedTx {
 	commitment: Vec<u8>,
 	seed: [u8; 32],
 	claim: [u8; 16],
+	proof: Vec<u8>,
 }
 
 #[derive(Debug)]
@@ -200,11 +202,18 @@ fn fill_byte(run_salt: u64, unique_id: u64, account_idx: usize) -> u8 {
 	seed[8..16].copy_from_slice(&unique_id.to_le_bytes());
 	seed[16..24].copy_from_slice(&(account_idx as u64).to_le_bytes());
 	let byte = keccak_256(&seed)[0];
-	if byte == 0 {
-		1
-	} else {
-		byte
-	}
+	if byte == 0 { 1 } else { byte }
+}
+
+fn derive_extra_query_index(blob_hash: H256, commitment: &[u8], leaf_count: usize) -> usize {
+	let mut preimage = Vec::with_capacity(32 + commitment.len() + EXTRA_QUERY_DOMAIN_SEP.len());
+	preimage.extend_from_slice(blob_hash.as_bytes());
+	preimage.extend_from_slice(commitment);
+	preimage.extend_from_slice(EXTRA_QUERY_DOMAIN_SEP);
+	let hash = keccak_256(&preimage);
+	let mut arr = [0u8; 8];
+	arr.copy_from_slice(&hash[..8]);
+	(u64::from_le_bytes(arr) as usize) % leaf_count
 }
 
 fn prepare_tx(
@@ -251,6 +260,21 @@ fn prepare_tx(
 	let eval_claim_bytes: [u8; 16] = eval_claim_to_bytes(eval_claim)
 		.try_into()
 		.map_err(|_| "invalid claim byte length".to_string())?;
+	let (terminate_codeword, query_prover, proof) = pcs
+		.prove_with_openings::<B128>(packed.packed_mle.clone(), &ctx, &commit_output, &eval_point)
+		.map_err(|e| format!("evaluation proof error: {e}"))?;
+	let log_batch_size = ctx.fri_params.log_batch_size();
+	let leaf_count = 1usize
+		<< (ctx
+			.fri_params
+			.rs_code()
+			.log_len()
+			.saturating_sub(log_batch_size));
+	let extra_index = derive_extra_query_index(blob_hash, &commit_output.commitment, leaf_count);
+	let eval_proof = pcs
+		.build_eval_proof_bundle(&proof, &terminate_codeword, &query_prover, extra_index)
+		.map_err(|e| format!("build evaluation proof bundle error: {e}"))?
+		.encode();
 
 	Ok(PreparedTx {
 		index,
@@ -260,6 +284,7 @@ fn prepare_tx(
 		commitment: commit_output.commitment.to_vec(),
 		seed: eval_point_seed,
 		claim: eval_claim_bytes,
+		proof: eval_proof,
 	})
 }
 
@@ -351,6 +376,7 @@ async fn submit_once(
 		prepared.commitment.clone(),
 		Some(prepared.seed),
 		Some(prepared.claim),
+		Some(prepared.proof),
 	);
 
 	let tx_bytes = match unsigned
