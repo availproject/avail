@@ -10,8 +10,7 @@ use avail_fri::{
 	transcript_from_bytes, FriEvalProofBundle, FriParamsVersion,
 };
 use avail_observability::metrics::BlobMetrics;
-use codec::{Decode, Encode};
-// use da_commitment::build_fri_commitments::build_fri_da_commitment;
+use codec::Decode;
 use da_control::Call;
 use da_runtime::RuntimeCall;
 use da_runtime::UncheckedExtrinsic;
@@ -196,9 +195,7 @@ pub fn validate_fri_commitment(
 	blob: &[u8],
 	provided_commitment: &[u8],
 	params_version: FriParamsVersion,
-	eval_point_seed: &[u8; 32],
-	eval_claim: &[u8; 16],
-) -> Result<Vec<u8>, String> {
+) -> Result<(), String> {
 	const FRI_COMMITMENT_SIZE: usize = 32;
 
 	if provided_commitment.len() != FRI_COMMITMENT_SIZE {
@@ -236,32 +233,11 @@ pub fn validate_fri_commitment(
 		return Err(format!("Fri commitment mismatch for blob {blob_hash:?}"));
 	}
 
-	let eval_point = derive_evaluation_point(*eval_point_seed, n_vars);
-	let eval_claim = eval_claim_from_bytes(eval_claim)
-		.map_err(|e| format!("Failed to deserialize evaluation claim: {}", e))?;
-
-	let (terminate_codeword, query_prover, proof) = pcs
-		.prove_with_openings::<B128>(packed.packed_mle.clone(), &ctx, &commit_output, &eval_point)
-		.map_err(|e| e.to_string())?;
-	let log_batch_size = ctx.fri_params.log_batch_size();
-	let leaf_count = 1usize
-		<< (ctx
-			.fri_params
-			.rs_code()
-			.log_len()
-			.saturating_sub(log_batch_size));
-	let extra_index = derive_extra_query_index(blob_hash, provided_commitment, leaf_count);
-	let bundle = pcs
-		.build_eval_proof_bundle(&proof, &terminate_codeword, &query_prover, extra_index)
-		.map_err(|e| e.to_string())?;
-
-	pcs.verify_eval_proof_bundle(&bundle, eval_claim, &eval_point, &ctx)
-		.map_err(|e| e.to_string())?;
-	let proof_bytes = bundle.encode();
-	Ok(proof_bytes)
+	Ok(())
 }
 
 pub fn validate_fri_proof(
+	blob_hash: H256,
 	blob_size: usize,
 	params_version: FriParamsVersion,
 	expected_commitment: &[u8],
@@ -296,6 +272,17 @@ pub fn validate_fri_proof(
 	let ctx = pcs
 		.initialize_fri_context::<B128>(log_len)
 		.map_err(|e| e.to_string())?;
+	let log_batch_size = ctx.fri_params.log_batch_size();
+	let leaf_count = 1usize
+		<< (ctx
+			.fri_params
+			.rs_code()
+			.log_len()
+			.saturating_sub(log_batch_size));
+	let expected_extra_index = derive_extra_query_index(blob_hash, expected_commitment, leaf_count);
+	if bundle.extra_query.extra_index as usize != expected_extra_index {
+		return Err("FRI proof extra query index does not match derived index".into());
+	}
 
 	let eval_point = derive_evaluation_point(*eval_point_seed, n_vars);
 	let eval_claim = eval_claim_from_bytes(eval_claim)

@@ -229,6 +229,7 @@ async fn handle_blob_received_notification<Block>(
 		};
 
 		match validate_fri_proof(
+			blob_received.hash,
 			blob_received.size as usize,
 			fri_params_version,
 			&blob_received.commitment,
@@ -501,13 +502,12 @@ async fn handle_blob_received_notification<Block>(
 						&blob_data,
 						&blob_received.commitment,
 						fri_params_version,
-						&blob_received.eval_point_seed.expect("checked above"),
-						&blob_received.eval_claim.expect("checked above"),
 					) {
 						log::error!(target: LOG_TARGET, "FRI commitment validation failed: {}", e);
 						return;
 					}
 					if let Err(e) = validate_fri_proof(
+						blob_received.hash,
 						blob_data.len(),
 						fri_params_version,
 						&blob_received.commitment,

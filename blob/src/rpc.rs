@@ -1142,20 +1142,16 @@ pub async fn submit_blob_main_task(
 				));
 			}
 			stop_watch.start("Fri Commitment Validation");
-			if let Err(e) = validate_fri_commitment(
-				blob_hash,
-				&blob,
-				&provided_commitment,
-				fri_params_version,
-				&derived_eval_seed,
-				&eval_claim,
-			) {
+			if let Err(e) =
+				validate_fri_commitment(blob_hash, &blob, &provided_commitment, fri_params_version)
+			{
 				clear_reserved_nonce(&nonce_cache, &opaque_tx);
 				stop_watch.stop("Fri Commitment Validation");
 				stop_watch.stop("Commitments (Total)");
 				return Err(internal_err!("{}", e));
 			}
 			if let Err(e) = validate_fri_proof(
+				blob_hash,
 				blob.len(),
 				fri_params_version,
 				&provided_commitment,

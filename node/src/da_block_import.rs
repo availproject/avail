@@ -175,6 +175,7 @@ where
 						}
 
 						avail_blob::validation::validate_fri_proof(
+							da.hash,
 							da.size_bytes as usize,
 							params_version,
 							&da.commitments,

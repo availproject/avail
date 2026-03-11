@@ -470,6 +470,7 @@ where
 					);
 				} else {
 					match avail_blob::validation::validate_fri_proof(
+						blob.blob_hash,
 						blob.size_bytes as usize,
 						params_version,
 						&blob.commitment,
