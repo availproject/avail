@@ -9,7 +9,6 @@ use codec::{Decode, Encode};
 use derive_more::Constructor;
 use sp_core::H256;
 use sp_runtime::OpaqueExtrinsic;
-use sp_std::collections::btree_map::BTreeMap;
 use sp_std::{iter::repeat, vec::Vec};
 
 #[derive(Constructor, Debug, Encode, Decode, Clone, PartialEq, Eq)]
@@ -50,7 +49,6 @@ pub struct HeaderExtensionBuilderData {
 
 #[derive(Clone, Debug, Default)]
 pub struct PostInherentInfo {
-	pub eval_proofs: BTreeMap<u32, Vec<u8>>,
 	pub failed: Vec<u32>,
 }
 

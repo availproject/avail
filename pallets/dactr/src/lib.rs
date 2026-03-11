@@ -495,7 +495,11 @@ pub mod pallet {
 
 		#[pallet::call_index(5)]
 		#[pallet::weight((
-			weight_helper::submit_blob_metadata::<T>(*size),
+			weight_helper::submit_blob_metadata::<T>(
+				*size,
+				commitment.len().saturated_into(),
+				eval_proof.as_ref().map(|proof| proof.len()).unwrap_or_default().saturated_into(),
+			),
 			DispatchClass::Normal,
 			SubmitBlobMetadataFeeModifier::<T>::get(),
 		))]
@@ -507,6 +511,7 @@ pub mod pallet {
 			commitment: Vec<u8>,
 			_eval_point_seed: Option<[u8; 32]>,
 			_eval_claim: Option<[u8; 16]>,
+			#[allow(unused_variables)] eval_proof: Option<EvalProof>,
 		) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
 			ensure!(
@@ -1127,10 +1132,17 @@ pub mod weight_helper {
 	}
 
 	/// Weight for `dataAvailability::submit_blob_metadata`.
-	pub fn submit_blob_metadata<T: Config>(data_len: u64) -> Weight {
+	pub fn submit_blob_metadata<T: Config>(
+		data_len: u64,
+		commitment_len: u64,
+		eval_proof_len: u64,
+	) -> Weight {
 		/* Compute regular substrate weight. */
-		let data_len_u32: u32 = data_len.saturated_into();
-		let regular_weight = T::WeightInfo::submit_blob_metadata(data_len_u32);
+		let payload_len = data_len
+			.saturating_add(commitment_len)
+			.saturating_add(eval_proof_len);
+		let payload_len_u32: u32 = payload_len.saturated_into();
+		let regular_weight = T::WeightInfo::submit_blob_metadata(payload_len_u32);
 
 		/* Compute weight based on size taken compared to the maximum in a block. */
 		// Before we used to compare to the matrix total size, but with new values for blob crate
@@ -1148,7 +1160,7 @@ pub mod weight_helper {
 			NORMAL_DISPATCH_RATIO_PERBILL * block_weights.max_block.ref_time();
 
 		// We compute the ratio of data size / max_da_ratio multiply with the maximum weight.
-		let data_ratio = Perbill::from_rational(data_len, max_da_ratio);
+		let data_ratio = Perbill::from_rational(payload_len, max_da_ratio);
 		let ref_time = data_ratio * max_weight_normal_ratio;
 		let da_weight = Weight::from_parts(ref_time, regular_weight.proof_size());
 

@@ -122,20 +122,6 @@ where
 	}
 }
 
-/// Deterministically select designated prover index for a blob.
-pub fn designated_prover_index(
-	blob_hash: &H256,
-	finalized_block_hash: &H256,
-	nb_validators_per_blob: u32,
-) -> u32 {
-	let mut input = [0u8; 64];
-	input[..32].copy_from_slice(finalized_block_hash.as_bytes());
-	input[32..].copy_from_slice(blob_hash.as_bytes());
-
-	let h = sp_core::blake2_256(&input);
-	u32::from_le_bytes(h[..4].try_into().unwrap()) % nb_validators_per_blob
-}
-
 /// Return the list of storing validators for a blob
 pub fn validators_for_blob(
 	blob_hash: H256,
@@ -459,7 +445,6 @@ fn get_block_tx_summary(
 		success: false,
 		reason: None,
 		ownership: Vec::new(),
-		eval_proof: None,
 	};
 
 	let (meta, ownerships) = match blob_metadata {
@@ -489,8 +474,6 @@ fn get_block_tx_summary(
 		blob_summary.reason = Some("Not enough validators vouched for this block".into());
 		return blob_summary;
 	}
-
-	blob_summary.eval_proof = meta.fri_eval_proof.clone();
 
 	blob_summary.success = true;
 

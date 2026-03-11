@@ -200,8 +200,6 @@ pub struct BlobMetadata {
 	pub eval_claim: Option<[u8; 16]>,
 	/// Evaluation proof for FRI blobs
 	pub fri_eval_proof: Option<Vec<u8>>,
-	/// Index of the designated prover among storing_validator_list (maybe we dont need to store this?)
-	pub fri_eval_prover_index: Option<u32>,
 }
 
 /// FriData will store Fri scheme related data for blob
@@ -250,8 +248,6 @@ pub struct BlobReceived {
 	pub eval_claim: Option<[u8; 16]>,
 	/// Evaluation proof for FRI blobs
 	pub fri_eval_proof: Option<Vec<u8>>,
-	/// Index of the designated prover among storing_validator_list
-	pub fri_eval_prover_index: Option<u32>,
 }
 
 /// Structure for the request when a blob is requested from a validator
@@ -281,8 +277,6 @@ pub struct BlobStored {
 	pub ownership_entry: OwnershipEntry,
 	/// The finalized block hash for other nodes reference
 	pub finalized_block_hash: H256,
-	/// Evaluation proof
-	pub eval_proof: Option<Vec<u8>>,
 }
 
 /// Structure for the signature that validator sends when sending notification / requests
@@ -318,8 +312,6 @@ pub struct BlobTxSummary {
 	pub reason: Option<String>,
 	/// The vector of ownership entries
 	pub ownership: Vec<OwnershipEntry>,
-	/// Evaluation proof for FRI
-	pub eval_proof: Option<Vec<u8>>,
 }
 impl BlobTxSummary {
 	pub fn convert_to_primitives(
@@ -335,7 +327,6 @@ impl BlobTxSummary {
 			String,      // Encoded Peer id
 			Vec<u8>,     // Signature
 		)>,
-		Option<Vec<u8>>, // Evaluation proof
 	)> {
 		input
 			.into_iter()
@@ -359,7 +350,6 @@ impl BlobTxSummary {
 					summary.success,
 					summary.reason,
 					ownership,
-					summary.eval_proof,
 				)
 			})
 			.collect()

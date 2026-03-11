@@ -326,7 +326,16 @@ mod benchmarks {
 		debug_assert!(!commitment.is_empty());
 
 		#[extrinsic_call]
-		_(origin, app_id, blob_hash, s.into(), commitment);
+		_(
+			origin,
+			app_id,
+			blob_hash,
+			s.into(),
+			commitment,
+			None,
+			None,
+			None,
+		);
 
 		assert_last_event::<T>(
 			Event::SubmitBlobMetadataRequest {

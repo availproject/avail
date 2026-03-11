@@ -646,6 +646,7 @@ mod tests {
 			commitment: Vec::new(),
 			eval_claim: None,
 			eval_point_seed: None,
+			eval_proof: None,
 		})
 	}
 

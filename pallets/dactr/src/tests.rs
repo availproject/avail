@@ -405,6 +405,7 @@ mod submit_blob_metadata {
 				commitment,
 				None,
 				None,
+				None,
 			));
 
 			let event = RuntimeEvent::DataAvailability(Event::SubmitBlobMetadataRequest {
@@ -431,6 +432,7 @@ mod submit_blob_metadata {
 				commitment,
 				None,
 				None,
+				None,
 			);
 			assert_noop!(err, Error::CommitmentCannotBeEmpty);
 		})
@@ -450,6 +452,7 @@ mod submit_blob_metadata {
 				blob_hash,
 				size,
 				commitment,
+				None,
 				None,
 				None,
 			);
@@ -473,8 +476,17 @@ mod submit_blob_metadata {
 				commitment,
 				None,
 				None,
+				None,
 			);
 			assert_noop!(err, Error::DataCannotBeEmpty);
+		})
+	}
+
+	#[test]
+	fn eval_proof_is_bounded_to_512kb() {
+		new_test_ext().execute_with(|| {
+			assert!(crate::EvalProof::try_from(vec![0u8; 512 * 1024]).is_ok());
+			assert!(crate::EvalProof::try_from(vec![0u8; 512 * 1024 + 1]).is_err());
 		})
 	}
 }
@@ -493,7 +505,6 @@ mod submit_blob_txs_summary {
 				success: true,
 				reason: None,
 				ownership: Vec::new(),
-				eval_proof: None,
 			};
 			let s2 = crate::BlobTxSummaryRuntime {
 				hash: H256::random(),
@@ -501,7 +512,6 @@ mod submit_blob_txs_summary {
 				success: false,
 				reason: Some("example".into()),
 				ownership: Vec::new(),
-				eval_proof: None,
 			};
 
 			let total_blob_size: u64 = (2 * H256::random().0.len()) as u64;
@@ -830,6 +840,7 @@ mod set_blob_runtime_parameters {
 				let root: RuntimeOrigin = RawOrigin::Root.into();
 				let err = DataAvailability::set_blob_runtime_parameters(
 					root,
+					None,
 					None,
 					None,
 					None,

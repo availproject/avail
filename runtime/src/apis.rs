@@ -617,7 +617,7 @@ impl_runtime_apis! {
 	}
 
 	impl avail_base::PostInherentsProvider<Block> for Runtime {
-	fn create_post_inherent_extrinsics(
+		fn create_post_inherent_extrinsics(
 		data: avail_base::StorageMap,
 		blob_txs_summary: Vec<(
 			H256,
@@ -625,7 +625,6 @@ impl_runtime_apis! {
 			bool,
 			Option<String>,
 			Vec<(AccountId32, AuthorityDiscoveryId, String, Vec<u8>)>,
-			Option<Vec<u8>>,
 		)>, total_blob_size: u64) -> Vec<<Block as BlockT>::Extrinsic> {
 		// 1. Vector pallet post-inherent extrinsics (unsigned, bare)
 		let mut post_inherent_extrinsics: Vec<<Block as BlockT>::Extrinsic> =

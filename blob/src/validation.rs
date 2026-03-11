@@ -45,6 +45,7 @@ pub fn initial_validation(
 		Vec<u8>,
 		Option<[u8; 32]>,
 		Option<[u8; 16]>,
+		Option<Vec<u8>>,
 	),
 	String,
 > {
@@ -62,6 +63,7 @@ pub fn initial_validation(
 		provided_commitment,
 		eval_pont_seed,
 		eval_claim,
+		eval_proof,
 	) = match encoded_metadata_signed_transaction.function {
 		RuntimeCall::DataAvailability(Call::submit_blob_metadata {
 			app_id,
@@ -70,6 +72,7 @@ pub fn initial_validation(
 			commitment,
 			eval_point_seed,
 			eval_claim,
+			eval_proof,
 		}) => (
 			app_id,
 			size as usize,
@@ -77,6 +80,7 @@ pub fn initial_validation(
 			commitment,
 			eval_point_seed,
 			eval_claim,
+			eval_proof.map(Into::into),
 		),
 		_ => return Err("metadata extrinsic must be dataAvailability.submitBlobMetadata".into()),
 	};
@@ -103,6 +107,7 @@ pub fn initial_validation(
 		provided_commitment,
 		eval_pont_seed,
 		eval_claim,
+		eval_proof,
 	))
 }
 

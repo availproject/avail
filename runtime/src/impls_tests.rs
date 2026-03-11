@@ -733,6 +733,7 @@ mod measure_full_block_size {
 						commitment: commitment.clone(),
 						eval_point_seed: None,
 						eval_claim: None,
+						eval_proof: None,
 					},
 				);
 
@@ -772,7 +773,6 @@ mod measure_full_block_size {
 							success: true,
 							reason: None,
 							ownership: ownership.clone(),
-							eval_proof: None,
 						});
 					},
 					Err(e) => match e {

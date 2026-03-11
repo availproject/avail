@@ -10,7 +10,6 @@ use pallet_multisig::Call as MultisigCall;
 use pallet_proxy::Call as ProxyCall;
 use pallet_vector::Call as VectorCall;
 use sp_core::H256;
-use sp_std::collections::btree_map::BTreeMap;
 use sp_std::vec::Vec;
 
 const MAX_FILTER_ITERATIONS: usize = 3;
@@ -69,7 +68,6 @@ impl HeaderExtensionDataFilter for Runtime {
 
 	fn get_data_from_post_inherents(opaques: &[OpaqueExtrinsic]) -> PostInherentInfo {
 		let mut failed = Vec::new();
-		let mut eval_proofs = BTreeMap::new();
 		let len = opaques.len();
 		if len == 0 {
 			return PostInherentInfo::default();
@@ -95,9 +93,6 @@ impl HeaderExtensionDataFilter for Runtime {
 				}) = &unchecked_extrinsic.function
 				{
 					for summary in blob_txs_summary {
-						if let Some(proof) = &summary.eval_proof {
-							eval_proofs.insert(summary.tx_index, proof.clone());
-						}
 						if !summary.success {
 							failed.push(summary.tx_index);
 						}
@@ -106,10 +101,7 @@ impl HeaderExtensionDataFilter for Runtime {
 			}
 		}
 
-		PostInherentInfo {
-			failed,
-			eval_proofs,
-		}
+		PostInherentInfo { failed }
 	}
 }
 
@@ -124,29 +116,32 @@ fn filter_da_call(
 		return None;
 	}
 
-	let (app_id, blob_hash, size_bytes, commitment, eval_point_seed, eval_claim) = match call {
-		DACall::submit_blob_metadata {
-			app_id,
-			blob_hash,
-			commitment,
-			size,
-			eval_point_seed,
-			eval_claim,
-		} => {
-			if commitment.is_empty() {
-				return None;
-			}
-			(
-				*app_id,
-				*blob_hash,
-				*size,
-				commitment.clone(),
-				*eval_point_seed,
-				*eval_claim,
-			)
-		},
-		_ => return None,
-	};
+	let (app_id, blob_hash, size_bytes, commitment, eval_point_seed, eval_claim, eval_proof) =
+		match call {
+			DACall::submit_blob_metadata {
+				app_id,
+				blob_hash,
+				commitment,
+				size,
+				eval_point_seed,
+				eval_claim,
+				eval_proof,
+			} => {
+				if commitment.is_empty() {
+					return None;
+				}
+				(
+					*app_id,
+					*blob_hash,
+					*size,
+					commitment.clone(),
+					*eval_point_seed,
+					*eval_claim,
+					eval_proof.clone().map(Into::into),
+				)
+			},
+			_ => return None,
+		};
 
 	let tx_index = u32::try_from(tx_index).ok()?;
 	let submitted_data = Some(SubmittedData::new(
@@ -157,7 +152,7 @@ fn filter_da_call(
 		commitment,
 		eval_point_seed,
 		eval_claim,
-		post_inherent_info.eval_proofs.get(&tx_index).cloned(),
+		eval_proof,
 	));
 
 	Some(ExtractedTxData {

@@ -21,6 +21,8 @@ use sp_std::vec::Vec;
 
 pub type AppKeyFor<T> = BoundedVec<u8, <T as Config>::MaxAppKeyLength>;
 pub type AppDataFor<T> = BoundedVec<u8, <T as Config>::MaxAppDataLength>;
+pub const MAX_EVAL_PROOF_BYTES: u32 = 512 * 1024;
+pub type EvalProof = BoundedVec<u8, ConstU32<MAX_EVAL_PROOF_BYTES>>;
 
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Clone, Encode, Decode, TypeInfo, PartialEq, RuntimeDebug, MaxEncodedLen)]
@@ -61,7 +63,6 @@ pub struct BlobTxSummaryRuntime {
 	pub success: bool,
 	pub reason: Option<String>,
 	pub ownership: Vec<(AccountId32, AuthorityId, String, Vec<u8>)>,
-	pub eval_proof: Option<Vec<u8>>,
 }
 impl BlobTxSummaryRuntime {
 	pub fn convert_into(
@@ -71,19 +72,17 @@ impl BlobTxSummaryRuntime {
 			bool,
 			Option<String>,
 			Vec<(AccountId32, AuthorityId, String, Vec<u8>)>,
-			Option<Vec<u8>>,
 		)>,
 	) -> Vec<BlobTxSummaryRuntime> {
 		input
 			.into_iter()
 			.map(
-				|(hash, tx_index, success, reason, ownership, eval_proof)| BlobTxSummaryRuntime {
+				|(hash, tx_index, success, reason, ownership)| BlobTxSummaryRuntime {
 					hash,
 					tx_index,
 					success,
 					reason,
 					ownership,
-					eval_proof,
 				},
 			)
 			.collect()

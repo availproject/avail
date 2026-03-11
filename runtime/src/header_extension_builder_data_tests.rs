@@ -146,6 +146,7 @@ fn submit_blob_metadata(data: Vec<u8>) -> Vec<u8> {
 		commitment,
 		eval_point_seed: None,
 		eval_claim: None,
+		eval_proof: None,
 	}
 	.into();
 
