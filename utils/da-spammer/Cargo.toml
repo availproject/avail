@@ -8,13 +8,12 @@ edition = "2024"
 clap = { version = "4.5", features = ["derive"] }
 tokio = { version = "1.45.1", features = ["macros", "rt-multi-thread"] }
 
-avail-fri = { git = "https://github.com/availproject/avail-core.git", rev = "df3ec48d0b86ad4e5a1607d4c4d128d7a2f641d2", default-features = false, features = [
+avail-fri = { git = "https://github.com/availproject/avail-core.git", rev = "589e6f2f40e0658012eb16945e24dcf61125d53c", default-features = false, features = [
     "parallel",
     "std",
 ] }
-avail-rust = { package = "avail-rust-client", git = "https://github.com/availproject/avail-rust.git", rev = "65b3d86c1f85e68387eeda8ae91cdcba9d2e2683", default-features = false, features = [
+avail-rust = { package = "avail-rust-client", git = "https://github.com/availproject/avail-rust.git", rev = "88f6ac83e9b15b80d5a818083522e931ba9b1d60", default-features = false, features = [
     "native",
-    "reqwest",
 ] }
 
 sp-crypto-hashing = { version = "0.1.0", default-features = false }

@@ -977,7 +977,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 	println!("In-flight     : {}", args.in_flight);
 	println!("Workers       : {}", threads);
 
-	let client = Arc::new(Client::connect(&args.endpoint).await?);
+	let client = Arc::new(Client::connect(args.endpoint.as_str()).await?);
 	let senders = build_senders(&client, &args).await?;
 
 	println!("Sender count  : {}", senders.len());
