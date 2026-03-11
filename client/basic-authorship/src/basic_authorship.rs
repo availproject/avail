@@ -61,6 +61,7 @@ use substrate_prometheus_endpoint::Registry as PrometheusRegistry;
 /// will accept. If the block doesn't fit in such a package, it can not be
 /// transferred to other nodes.
 pub const DEFAULT_BLOCK_SIZE_LIMIT: usize = 128 * 1024 * 1024 + 512;
+pub const DEFAULT_BLOCK_SIZE_FINALIZE_HEADROOM: usize = 8 * 1024 * 1024;
 
 const DEFAULT_SOFT_DEADLINE_PERCENT: Percent = Percent::from_percent(50);
 
@@ -88,6 +89,9 @@ pub struct ProposerFactory<A, C, PR> {
 	/// we switch to a fixed-amount mode, in which after we see `MAX_SKIPPED_TRANSACTIONS`
 	/// transactions which exhaust resources, we will conclude that the block is full.
 	soft_deadline_percent: Percent,
+	/// Extra block-size headroom reserved so runtime finalization has memory left for
+	/// extrinsics-root construction.
+	finalize_block_size_headroom: usize,
 	telemetry: Option<TelemetryHandle>,
 	/// When estimating the block size, should the proof be included?
 	include_proof_in_block_size_estimation: bool,
@@ -116,6 +120,7 @@ impl<A, C> ProposerFactory<A, C, DisableProofRecording> {
 			metrics: PrometheusMetrics::new(prometheus),
 			default_block_size_limit: DEFAULT_BLOCK_SIZE_LIMIT,
 			soft_deadline_percent: DEFAULT_SOFT_DEADLINE_PERCENT,
+			finalize_block_size_headroom: DEFAULT_BLOCK_SIZE_FINALIZE_HEADROOM,
 			telemetry,
 			client,
 			include_proof_in_block_size_estimation: false,
@@ -147,6 +152,7 @@ impl<A, C> ProposerFactory<A, C, EnableProofRecording> {
 			metrics: PrometheusMetrics::new(prometheus),
 			default_block_size_limit: DEFAULT_BLOCK_SIZE_LIMIT,
 			soft_deadline_percent: DEFAULT_SOFT_DEADLINE_PERCENT,
+			finalize_block_size_headroom: DEFAULT_BLOCK_SIZE_FINALIZE_HEADROOM,
 			telemetry,
 			include_proof_in_block_size_estimation: true,
 			blob_database,
@@ -187,6 +193,11 @@ impl<A, C, PR> ProposerFactory<A, C, PR> {
 	pub fn set_soft_deadline(&mut self, percent: Percent) {
 		self.soft_deadline_percent = percent;
 	}
+
+	/// Set the block-size headroom reserved for runtime finalization.
+	pub fn set_block_size_headroom(&mut self, headroom: usize) {
+		self.finalize_block_size_headroom = headroom;
+	}
 }
 
 impl<Block, C, A, PR> ProposerFactory<A, C, PR>
@@ -226,6 +237,7 @@ where
 			metrics: self.metrics.clone(),
 			default_block_size_limit: self.default_block_size_limit,
 			soft_deadline_percent: self.soft_deadline_percent,
+			finalize_block_size_headroom: self.finalize_block_size_headroom,
 			telemetry: self.telemetry.clone(),
 			blob_database: self.blob_database.clone(),
 			_phantom: PhantomData,
@@ -278,6 +290,7 @@ pub struct Proposer<Block: BlockT, C, A: TransactionPool, PR> {
 	default_block_size_limit: usize,
 	include_proof_in_block_size_estimation: bool,
 	soft_deadline_percent: Percent,
+	finalize_block_size_headroom: usize,
 	telemetry: Option<TelemetryHandle>,
 	blob_database: Arc<dyn StorageApiT>,
 	_phantom: PhantomData<PR>,
@@ -372,6 +385,8 @@ where
 		block_size_limit: Option<usize>,
 	) -> Result<Proposal<Block, PR::Proof>, sp_blockchain::Error> {
 		let block_timer = time::Instant::now();
+		let block_size_limit = block_size_limit.unwrap_or(self.default_block_size_limit);
+		let safe_block_size_limit = self.safe_block_size_limit(block_size_limit);
 		let mut block_builder = BlockBuilderBuilder::new(&*self.client)
 			.on_parent_block(self.parent_hash)
 			.with_parent_block_number(self.parent_number)
@@ -386,10 +401,17 @@ where
 		// <https://github.com/paritytech/substrate/pull/14275/>
 
 		let (end_reason, blob_txs_summary, total_blob_size) = self
-			.apply_extrinsics(&mut block_builder, deadline, block_size_limit, inherent_len)
+			.apply_extrinsics(
+				&mut block_builder,
+				deadline,
+				block_size_limit,
+				safe_block_size_limit,
+				inherent_len,
+			)
 			.await?;
 
 		self.apply_post_inherents(&mut block_builder, blob_txs_summary, total_blob_size)?;
+		self.ensure_safe_to_finalize(&block_builder, block_size_limit, safe_block_size_limit)?;
 
 		let (block, storage_changes, proof) = block_builder.build()?.into_inner();
 		let block_took = block_timer.elapsed();
@@ -507,7 +529,8 @@ where
 		&self,
 		block_builder: &mut sc_block_builder::BlockBuilder<'_, Block, C>,
 		deadline: time::Instant,
-		block_size_limit: Option<usize>,
+		block_size_limit: usize,
+		safe_block_size_limit: usize,
 		inherent_len: usize,
 	) -> Result<(EndProposingReason, Vec<BlobTxSummary>, u64), sp_blockchain::Error> {
 		let mut stop_watch = SmartStopwatch::new("😍 APPLY EXTRINSICS");
@@ -538,10 +561,15 @@ where
 			},
 		};
 
-		let block_size_limit = block_size_limit.unwrap_or(self.default_block_size_limit);
-
 		debug!(target: LOG_TARGET, "Attempting to push transactions from the pool.");
 		debug!(target: LOG_TARGET, "Pool status: {:?}", self.transaction_pool.status());
+		debug!(
+			target: LOG_TARGET,
+			"Block size limits: raw={} safe={} headroom={}",
+			block_size_limit,
+			safe_block_size_limit,
+			self.finalize_block_size_headroom,
+		);
 		let mut transaction_pushed = false;
 
 		let mut submit_blob_metadata_calls = Vec::new();
@@ -576,13 +604,13 @@ where
 
 			let block_size =
 				block_builder.estimate_block_size(self.include_proof_in_block_size_estimation);
-			if block_size + pending_tx_data.encoded_size() > block_size_limit {
+			if block_size + pending_tx_data.encoded_size() > safe_block_size_limit {
 				pending_iterator.report_invalid(&pending_tx);
 				if skipped < MAX_SKIPPED_TRANSACTIONS {
 					skipped += 1;
 					debug!(
 						target: LOG_TARGET,
-						"Transaction would overflow the block size limit, \
+						"Transaction would overflow the safe block size limit, \
 					 but will try {} more transactions before quitting.",
 						MAX_SKIPPED_TRANSACTIONS - skipped,
 					);
@@ -590,7 +618,7 @@ where
 				} else if now < soft_deadline {
 					debug!(
 						target: LOG_TARGET,
-						"Transaction would overflow the block size limit, \
+						"Transaction would overflow the safe block size limit, \
 					 but we still have time before the soft deadline, so \
 					 we will try a bit more."
 					);
@@ -598,7 +626,7 @@ where
 				} else {
 					debug!(
 						target: LOG_TARGET,
-						"Reached block size limit, proceeding with proposing."
+						"Reached safe block size limit, proceeding with proposing."
 					);
 					break EndProposingReason::HitBlockSizeLimit;
 				}
@@ -687,6 +715,46 @@ where
 			.report_invalid(Some(self.parent_hash), unqueue_invalid)
 			.await;
 		Ok((end_reason, blob_txs_summary, total_blob_size))
+	}
+
+	fn safe_block_size_limit(&self, block_size_limit: usize) -> usize {
+		let safe_limit = block_size_limit.saturating_sub(self.finalize_block_size_headroom);
+		if safe_limit == 0 {
+			warn!(
+				target: LOG_TARGET,
+				"Finalize headroom ({}) is greater than the block size limit ({}). Falling back to a 1-byte safe limit.",
+				self.finalize_block_size_headroom,
+				block_size_limit,
+			);
+			1
+		} else {
+			safe_limit
+		}
+	}
+
+	fn ensure_safe_to_finalize(
+		&self,
+		block_builder: &sc_block_builder::BlockBuilder<'_, Block, C>,
+		block_size_limit: usize,
+		safe_block_size_limit: usize,
+	) -> Result<(), sp_blockchain::Error> {
+		let estimated_size =
+			block_builder.estimate_block_size(self.include_proof_in_block_size_estimation);
+		if estimated_size > safe_block_size_limit {
+			let message = format!(
+				"candidate block estimated size {} exceeds safe finalize limit {} (raw limit {}, headroom {})",
+				estimated_size,
+				safe_block_size_limit,
+				block_size_limit,
+				self.finalize_block_size_headroom,
+			);
+			warn!(target: LOG_TARGET, "{message}");
+			return Err(sp_blockchain::Error::Application(Box::new(
+				std::io::Error::other(message),
+			)));
+		}
+
+		Ok(())
 	}
 
 	/// Prints a summary and does telemetry + metrics.
