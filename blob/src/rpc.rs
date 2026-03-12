@@ -2,7 +2,9 @@ use crate::traits::CommitmentQueueApiT;
 use crate::types::{BlobEvalData, BlobInfo, BlobSummary, FriData};
 use crate::utils::{designated_prover_index, get_babe_randomness_key, get_my_validator_id};
 use crate::validation::{
-	initial_validation, tx_validation, validate_fri_commitment, validate_kzg_commitment,
+	generate_fri_proof_from_prepared, initial_validation, prepare_fri_validation, tx_validation,
+	validate_kzg_commitment, validate_prepared_fri_commitment, validate_prepared_fri_eval_claim,
+	with_eval_point,
 };
 use crate::{
 	nonce_cache::NonceCache,
@@ -1237,35 +1239,10 @@ async fn handle_fri_submission(
 	tracing::info!(block_hash = ?blob_hash, blob_size = blob.len(), "Blob handle fri submission");
 
 	let blob = Arc::new(blob);
-	let blob_for_validation = blob.clone();
-	let commitment_for_validation = provided_commitment.clone();
-
-	let parent = tracing::Span::current();
-	let validation_span = tracing::info_span!(
-		parent: &parent,
-		"validate_fri_commitment_blocking"
-	);
-	let fri_eval_proof = task::spawn_blocking(move || {
-		let _enter = validation_span.enter();
-
-		validate_fri_commitment(
-			blob_hash,
-			blob_for_validation.as_slice(),
-			&commitment_for_validation,
-			fri_params_version,
-			&derived_eval_seed,
-			&eval_claim,
-		)
-	})
-	.await
-	.expect("Fri commitment validation task panicked")
-	.map_err(|e| {
-		clear_reserved_nonce(&nonce_cache, &opaque_tx);
-		internal_err!("{}", e)
-	})?;
-
 	let client_info = friends.externalities.client_info();
 	let best_hash = client_info.best_hash;
+	let finalized_block_hash = client_info.finalized_hash;
+	let parent = tracing::Span::current();
 
 	let _ = tx_validation(
 		best_hash,
@@ -1281,11 +1258,117 @@ async fn handle_fri_submission(
 		internal_err!("{}", e)
 	})?;
 
+	let validators = friends
+		.runtime_client
+		.get_active_validators(finalized_block_hash)
+		.map_err(|e| {
+			clear_reserved_nonce(&nonce_cache, &opaque_tx);
+			internal_err!(
+				"Failed to fetch active validators at {:?}: {:?}",
+				finalized_block_hash,
+				e
+			)
+		})?;
+	if validators.is_empty() {
+		clear_reserved_nonce(&nonce_cache, &opaque_tx);
+		return Err(anyhow::anyhow!("No active validators available"));
+	}
+
+	let (nb_validators_per_blob, _) =
+		get_validator_per_blob_inner(blob_params.clone(), validators.len() as u32);
+	let storing_validators = validators_for_blob(
+		blob_hash,
+		&validators,
+		&finalized_block_hash.encode(),
+		nb_validators_per_blob,
+	)
+	.map_err(|e| {
+		clear_reserved_nonce(&nonce_cache, &opaque_tx);
+		internal_err!(
+			"Failed to derive storing validators at {:?}: {:?}",
+			finalized_block_hash,
+			e
+		)
+	})?;
+
+	let prover_index =
+		designated_prover_index(&blob_hash, &finalized_block_hash, nb_validators_per_blob);
+	let should_generate_proof = get_my_validator_id(
+		&friends.externalities.keystore(),
+		friends.runtime_client.as_ref(),
+		finalized_block_hash,
+	)
+	.ok()
+	.and_then(|(my_validator_id, _)| {
+		storing_validators
+			.get(prover_index as usize)
+			.map(|id| *id == my_validator_id)
+	})
+	.unwrap_or(false);
+
+	let fri_eval_proof = if should_generate_proof {
+		let blob_for_proof = blob.clone();
+		let commitment_for_proof = provided_commitment.clone();
+		let eval_seed = derived_eval_seed;
+		let eval_claim = eval_claim;
+		let proof_span = tracing::info_span!(
+			parent: &parent,
+			"generate_fri_eval_proof_blocking"
+		);
+		Some(
+			task::spawn_blocking(move || {
+				let _enter = proof_span.enter();
+				let prepared = with_eval_point(
+					prepare_fri_validation(blob_for_proof.as_slice(), fri_params_version)?,
+					&eval_seed,
+				);
+				generate_fri_proof_from_prepared(
+					blob_hash,
+					&commitment_for_proof,
+					&eval_claim,
+					&prepared,
+				)
+			})
+			.await
+			.expect("Fri proof generation task panicked")
+			.map_err(|e| {
+				clear_reserved_nonce(&nonce_cache, &opaque_tx);
+				internal_err!("{}", e)
+			})?,
+		)
+	} else {
+		let blob_for_validation = blob.clone();
+		let commitment_for_validation = provided_commitment.clone();
+		let eval_seed = derived_eval_seed;
+		let eval_claim = eval_claim;
+		let validation_span = tracing::info_span!(
+			parent: &parent,
+			"validate_fri_prepared_blocking"
+		);
+		task::spawn_blocking(move || {
+			let _enter = validation_span.enter();
+			let prepared = with_eval_point(
+				prepare_fri_validation(blob_for_validation.as_slice(), fri_params_version)?,
+				&eval_seed,
+			);
+			validate_prepared_fri_commitment(blob_hash, &commitment_for_validation, &prepared)?;
+			validate_prepared_fri_eval_claim(&eval_claim, &prepared)
+		})
+		.await
+		.expect("Fri prepared validation task panicked")
+		.map_err(|e| {
+			clear_reserved_nonce(&nonce_cache, &opaque_tx);
+			internal_err!("{}", e)
+		})?;
+
+		None
+	};
+
 	let fri_data = FriData {
 		app_id,
 		eval_point_seed,
 		eval_claim,
-		fri_eval_proof: Some(fri_eval_proof),
+		fri_eval_proof,
 	};
 	submit_blob_background_task(
 		opaque_tx,

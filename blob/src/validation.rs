@@ -4,8 +4,8 @@ use crate::{
 	utils::{extract_signer_and_nonce, CommitmentQueueMessage},
 };
 use avail_fri::{
-	core::{FriBiniusPCS, B128},
-	encoding::{mle_dims_from_blob_size, BytesEncoder},
+	core::{FriBiniusPCS, FriCommitOutput, FriContext, B128},
+	encoding::{mle_dims_from_blob_size, BytesEncoder, PackedMLE},
 	eval_utils::{derive_evaluation_point, eval_claim_from_bytes},
 	transcript_from_bytes, FriEvalProofBundle, FriParamsVersion,
 };
@@ -22,6 +22,19 @@ use sp_runtime::transaction_validity::TransactionSource;
 use std::sync::Arc;
 
 const EXTRA_QUERY_DOMAIN_SEP: &[u8] = b"fri-extra-query-v1";
+const FRI_COMMITMENT_SIZE: usize = 32;
+
+/// Shared FRI state derived from blob bytes and params.
+///
+/// Internal callers can prepare this once and then reuse it for commitment
+/// validation, eval-claim validation, and optional proof generation.
+pub(crate) struct PreparedFriValidation {
+	packed: PackedMLE<B128>,
+	pcs: FriBiniusPCS,
+	ctx: FriContext,
+	commit_output: FriCommitOutput<B128>,
+	eval_point: Vec<B128>,
+}
 
 fn derive_extra_query_index(blob_hash: H256, commitment: &[u8], leaf_count: usize) -> usize {
 	let mut preimage = Vec::with_capacity(32 + commitment.len() + EXTRA_QUERY_DOMAIN_SEP.len());
@@ -32,6 +45,124 @@ fn derive_extra_query_index(blob_hash: H256, commitment: &[u8], leaf_count: usiz
 	let mut arr = [0u8; 8];
 	arr.copy_from_slice(&hash[..8]);
 	(u64::from_le_bytes(arr) as usize) % leaf_count
+}
+
+/// Encode the blob and initialize the PCS/context once for subsequent FRI checks.
+pub(crate) fn prepare_fri_validation(
+	blob: &[u8],
+	params_version: FriParamsVersion,
+) -> Result<PreparedFriValidation, String> {
+	let encoder = BytesEncoder::<B128>::new();
+	let packed = encoder
+		.bytes_to_packed_mle(blob)
+		.map_err(|e| e.to_string())?;
+	let n_vars = packed.total_n_vars;
+	let pcs = FriBiniusPCS::new(params_version.to_config(n_vars));
+	let ctx = pcs
+		.initialize_fri_context::<B128>(packed.packed_mle.log_len())
+		.map_err(|e| e.to_string())?;
+	let commit_output = pcs
+		.commit(&packed.packed_mle, &ctx)
+		.map_err(|e| e.to_string())?;
+
+	Ok(PreparedFriValidation {
+		eval_point: Vec::new(),
+		packed,
+		pcs,
+		ctx,
+		commit_output,
+	})
+}
+
+/// Compare the prepared commitment against the commitment supplied in metadata.
+pub(crate) fn validate_prepared_fri_commitment(
+	blob_hash: H256,
+	provided_commitment: &[u8],
+	prepared: &PreparedFriValidation,
+) -> Result<(), String> {
+	if provided_commitment.len() != FRI_COMMITMENT_SIZE {
+		return Err(format!(
+			"Fri commitment must be {} bytes, got {}",
+			FRI_COMMITMENT_SIZE,
+			provided_commitment.len()
+		));
+	}
+
+	if prepared.commit_output.commitment.as_slice() != provided_commitment {
+		return Err(format!("Fri commitment mismatch for blob {blob_hash:?}"));
+	}
+
+	Ok(())
+}
+
+/// Compare the prepared evaluation result against the supplied eval claim.
+pub(crate) fn validate_prepared_fri_eval_claim(
+	eval_claim: &[u8; 16],
+	prepared: &PreparedFriValidation,
+) -> Result<(), String> {
+	let expected_eval_claim = prepared
+		.pcs
+		.calculate_evaluation_claim(&prepared.packed.packed_values, &prepared.eval_point)
+		.map_err(|e| e.to_string())?;
+	let provided_eval_claim = eval_claim_from_bytes(eval_claim)
+		.map_err(|e| format!("Failed to deserialize evaluation claim: {}", e))?;
+
+	if expected_eval_claim != provided_eval_claim {
+		return Err("FRI evaluation claim does not match blob data".into());
+	}
+
+	Ok(())
+}
+
+/// Attach the evaluation point derived from the supplied seed to prepared FRI state.
+pub(crate) fn with_eval_point(
+	mut prepared: PreparedFriValidation,
+	eval_point_seed: &[u8; 32],
+) -> PreparedFriValidation {
+	prepared.eval_point = derive_evaluation_point(*eval_point_seed, prepared.packed.total_n_vars);
+	prepared
+}
+
+/// Generate & self-verify an evaluation proof using already prepared FRI state.
+pub(crate) fn generate_fri_proof_from_prepared(
+	blob_hash: H256,
+	provided_commitment: &[u8],
+	eval_claim: &[u8; 16],
+	prepared: &PreparedFriValidation,
+) -> Result<Vec<u8>, String> {
+	validate_prepared_fri_commitment(blob_hash, provided_commitment, prepared)?;
+	let eval_claim = eval_claim_from_bytes(eval_claim)
+		.map_err(|e| format!("Failed to deserialize evaluation claim: {}", e))?;
+
+	let (terminate_codeword, query_prover, proof) = prepared
+		.pcs
+		.prove_with_openings::<B128>(
+			prepared.packed.packed_mle.clone(),
+			&prepared.ctx,
+			&prepared.commit_output,
+			&prepared.eval_point,
+		)
+		.map_err(|e| e.to_string())?;
+	let log_batch_size = prepared.ctx.fri_params.log_batch_size();
+	let leaf_count = 1usize
+		<< (prepared
+			.ctx
+			.fri_params
+			.rs_code()
+			.log_len()
+			.saturating_sub(log_batch_size));
+	let extra_index = derive_extra_query_index(blob_hash, provided_commitment, leaf_count);
+	let bundle = prepared
+		.pcs
+		.build_eval_proof_bundle(&proof, &terminate_codeword, &query_prover, extra_index)
+		.map_err(|e| e.to_string())?;
+
+	prepared
+		.pcs
+		.verify_eval_proof_bundle(&bundle, eval_claim, &prepared.eval_point, &prepared.ctx)
+		.map_err(|e| e.to_string())?;
+
+	Ok(bundle.encode())
 }
 
 #[tracing::instrument(name = "initial_validation", skip_all)]
@@ -188,76 +319,35 @@ pub async fn validate_kzg_commitment(
 	Ok(())
 }
 
-/// Validate FRI commitment for the given blob and verify the evaluation proof for the given evaluation point and claim.
+/// Recompute the blob's FRI commitment and compare it with the provided commitment.
+///
+/// This is the cheapest FRI validation step and should be run for every stored blob.
 #[tracing::instrument(name = "validate_fri_commitment", skip_all)]
 pub fn validate_fri_commitment(
 	blob_hash: H256,
 	blob: &[u8],
 	provided_commitment: &[u8],
 	params_version: FriParamsVersion,
+) -> Result<(), String> {
+	let prepared = prepare_fri_validation(blob, params_version)?;
+	validate_prepared_fri_commitment(blob_hash, provided_commitment, &prepared)
+}
+
+/// Recompute the evaluation claim from blob data and compare it with the provided claim.
+///
+/// This validates the claimed evaluation without generating a proof.
+#[tracing::instrument(name = "validate_fri_eval_claim", skip_all)]
+pub fn validate_fri_eval_claim(
+	blob: &[u8],
+	params_version: FriParamsVersion,
 	eval_point_seed: &[u8; 32],
 	eval_claim: &[u8; 16],
-) -> Result<Vec<u8>, String> {
-	const FRI_COMMITMENT_SIZE: usize = 32;
-
-	if provided_commitment.len() != FRI_COMMITMENT_SIZE {
-		return Err(format!(
-			"Fri commitment must be {} bytes, got {}",
-			FRI_COMMITMENT_SIZE,
-			provided_commitment.len()
-		));
-	}
-
-	// let expected = build_fri_da_commitment(blob, params_version);
-	// Encode bytes → multilinear extension over B128
-	let encoder = BytesEncoder::<B128>::new();
-	let packed = encoder
-		.bytes_to_packed_mle(blob)
-		.map_err(|e| e.to_string())?;
-
-	let n_vars = packed.total_n_vars;
-
-	// Map version + n_vars → concrete FriParamsConfig
-	let cfg = params_version.to_config(n_vars);
-
-	// Build PCS + FRI context
-	let pcs = FriBiniusPCS::new(cfg);
-	let ctx = pcs
-		.initialize_fri_context::<B128>(packed.packed_mle.log_len())
-		.map_err(|e| e.to_string())?;
-
-	// Commit to the blob MLE: returns a 32-byte digest in `commitment`
-	let commit_output = pcs
-		.commit(&packed.packed_mle, &ctx)
-		.map_err(|e| e.to_string())?;
-
-	if commit_output.commitment.as_slice() != provided_commitment {
-		return Err(format!("Fri commitment mismatch for blob {blob_hash:?}"));
-	}
-
-	let eval_point = derive_evaluation_point(*eval_point_seed, n_vars);
-	let eval_claim = eval_claim_from_bytes(eval_claim)
-		.map_err(|e| format!("Failed to deserialize evaluation claim: {}", e))?;
-
-	let (terminate_codeword, query_prover, proof) = pcs
-		.prove_with_openings::<B128>(packed.packed_mle.clone(), &ctx, &commit_output, &eval_point)
-		.map_err(|e| e.to_string())?;
-	let log_batch_size = ctx.fri_params.log_batch_size();
-	let leaf_count = 1usize
-		<< (ctx
-			.fri_params
-			.rs_code()
-			.log_len()
-			.saturating_sub(log_batch_size));
-	let extra_index = derive_extra_query_index(blob_hash, provided_commitment, leaf_count);
-	let bundle = pcs
-		.build_eval_proof_bundle(&proof, &terminate_codeword, &query_prover, extra_index)
-		.map_err(|e| e.to_string())?;
-
-	pcs.verify_eval_proof_bundle(&bundle, eval_claim, &eval_point, &ctx)
-		.map_err(|e| e.to_string())?;
-	let proof_bytes = bundle.encode();
-	Ok(proof_bytes)
+) -> Result<(), String> {
+	let prepared = with_eval_point(
+		prepare_fri_validation(blob, params_version)?,
+		eval_point_seed,
+	);
+	validate_prepared_fri_eval_claim(eval_claim, &prepared)
 }
 
 #[tracing::instrument(name = "validate_fri_proof", skip_all)]
