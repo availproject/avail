@@ -1034,7 +1034,14 @@ pub async fn submit_blob_main_task(
 		initial_validation(max_blob_size, &blob, &metadata_signed_transaction)
 			.map_err(|e| internal_err!("{}", e))?;
 
-	tracing::info!(block_hash = ?blob_hash, blob_size = blob.len(), "Blob passed initial validation");
+	tracing::info!(
+		?blob_hash,
+		blob_size = blob.len(),
+		?app_id,
+		?best_hash,
+		?finalized_block_hash,
+		"Blob passed initial validation"
+	);
 
 	let opaque_tx = tx_validation(
 		best_hash,
@@ -1047,7 +1054,9 @@ pub async fn submit_blob_main_task(
 	)
 	.map_err(|e| internal_err!("{}", e))?;
 
-	if let Some((who, nonce)) = extract_signer_and_nonce(&opaque_tx) {
+	let signature = extract_signer_and_nonce(&opaque_tx);
+	tracing::info!(address = ?signature.as_ref().and_then(|x| Some(x.0.clone())),  nonce = ?signature.as_ref().and_then(|x| Some(x.1)),  "Blob passed TX validation");
+	if let Some((who, nonce)) = signature {
 		nonce_cache.commit(&who, nonce);
 	}
 
@@ -1156,8 +1165,6 @@ async fn handle_kzg_submission(
 	cols: usize,
 	rows: usize,
 ) -> anyhow::Result<()> {
-	tracing::info!(block_hash = ?blob_hash, blob_size = blob.len(), "Blob handle kzg submission");
-
 	let blob_for_grid = blob.clone();
 
 	let parent = tracing::Span::current();
@@ -1236,8 +1243,6 @@ async fn handle_fri_submission(
 	eval_claim: [u8; 16],
 	derived_eval_seed: [u8; 32],
 ) -> anyhow::Result<()> {
-	tracing::info!(block_hash = ?blob_hash, blob_size = blob.len(), "Blob handle fri submission");
-
 	let blob = Arc::new(blob);
 	let client_info = friends.externalities.client_info();
 	let best_hash = client_info.best_hash;
@@ -1364,6 +1369,9 @@ async fn handle_fri_submission(
 		None
 	};
 
+	let fri_eval_proof_len = fri_eval_proof.as_ref().and_then(|x| Some(x.len()));
+	tracing::info!(fri_eval_proof_len, "Fri Eval Proof");
+
 	let fri_data = FriData {
 		app_id,
 		eval_point_seed,
@@ -1396,8 +1404,6 @@ async fn submit_blob_background_task(
 	friends: Friends,
 	nonce_cache: Arc<dyn NonceCacheApiT>,
 ) {
-	tracing::info!(block_hash = ?blob_hash, blob_size = blob.len(), "Submit blob background task started.");
-
 	let blob_len = blob.len();
 	let signer = extract_signer_and_nonce(&opaque_tx);
 
