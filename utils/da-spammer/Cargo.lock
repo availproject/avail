@@ -1646,6 +1646,7 @@ dependencies = [
 name = "da-spammer"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "avail-fri",
  "avail-rust-client",
  "base64",
@@ -1653,6 +1654,7 @@ dependencies = [
  "ctrlc",
  "num_cpus",
  "parity-scale-codec",
+ "parking_lot",
  "rayon",
  "sp-crypto-hashing 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio",

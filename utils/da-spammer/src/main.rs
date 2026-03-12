@@ -1,11 +1,11 @@
 // #region Imports
 use avail_fri::{
-	core::{FriBiniusPCS, B128},
+	FriParamsVersion,
+	core::{B128, FriBiniusPCS},
 	encoding::BytesEncoder,
 	eval_utils::{derive_evaluation_point, derive_seed_from_inputs, eval_claim_to_bytes},
-	FriParamsVersion,
 };
-use avail_rust::{prelude::*};
+use avail_rust::prelude::*;
 use clap::Parser;
 use rayon::ThreadPoolBuilder;
 use sp_crypto_hashing::keccak_256;
@@ -15,13 +15,13 @@ use std::{
 	fs,
 	path::PathBuf,
 	sync::{
-		atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
 		Arc,
+		atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
 	},
 	time::{Duration, Instant, SystemTime},
 };
 use tokio::{
-	sync::{mpsc, Semaphore},
+	sync::{Semaphore, mpsc},
 	task::JoinSet,
 };
 // #endregion
@@ -208,19 +208,10 @@ fn fill_byte(run_salt: u64, unique_id: u64, account_idx: usize) -> u8 {
 	seed[8..16].copy_from_slice(&unique_id.to_le_bytes());
 	seed[16..24].copy_from_slice(&(account_idx as u64).to_le_bytes());
 	let byte = keccak_256(&seed)[0];
-	if byte == 0 {
-		1
-	} else {
-		byte
-	}
+	if byte == 0 { 1 } else { byte }
 }
 
-fn mutate_file_blob(
-	blob: &mut [u8],
-	index: usize,
-	run_salt: u64,
-	unique_id: u64,
-) {
+fn mutate_file_blob(blob: &mut [u8], index: usize, run_salt: u64, unique_id: u64) {
 	if blob.is_empty() {
 		return;
 	}
@@ -397,17 +388,20 @@ async fn submit_once(
 		prepared.blob.len()
 	);
 
-	let result = client.blob().submit_blob_and_blob_metadata(
-		app_id,
-		prepared.hash,
-		prepared.blob.len() as u64,
-		prepared.commitment.clone(),
-		Some(prepared.seed),
-		Some(prepared.claim),
-		&signer,
-		Options::new().app_id(app_id).nonce(nonce),
-		&prepared.blob
-	).await;
+	let result = client
+		.blob()
+		.submit_blob_and_blob_metadata(
+			app_id,
+			prepared.hash,
+			prepared.blob.len() as u64,
+			prepared.commitment.clone(),
+			Some(prepared.seed),
+			Some(prepared.claim),
+			&signer,
+			Options::new().app_id(app_id).nonce(nonce),
+			&prepared.blob,
+		)
+		.await;
 
 	match result {
 		Ok(_) => {
