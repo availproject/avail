@@ -23,7 +23,10 @@ use crate::{
 		get_active_validators, get_my_validator_id, get_validator_id_from_key,
 		get_validator_per_blob, sign_blob_data, validators_for_blob, verify_signed_blob_data,
 	},
-	validation::{validate_fri_commitment, validate_fri_proof},
+	validation::{
+		generate_fri_proof_from_prepared, prepare_fri_validation, validate_fri_proof,
+		validate_prepared_fri_commitment, validate_prepared_fri_eval_claim, with_eval_point,
+	},
 };
 use anyhow::{anyhow, Result};
 use avail_core::header::extension::CommitmentScheme;
@@ -510,27 +513,53 @@ async fn handle_blob_received_notification<Block>(
 						return;
 					}
 
-					let fri_eval_proof = match validate_fri_commitment(
-						blob_received.hash,
-						&blob_data,
-						&blob_received.commitment,
-						fri_params_version,
-						&blob_received.eval_point_seed.expect("checked above"),
-						&blob_received.eval_claim.expect("checked above"),
-					) {
-						Ok(proof_bytes) => proof_bytes,
+					let prepared = match prepare_fri_validation(&blob_data, fri_params_version) {
+						Ok(prepared) => with_eval_point(
+							prepared,
+							&blob_received.eval_point_seed.expect("checked above"),
+						),
 						Err(e) => {
-							tracing::error!(target: LOG_TARGET, "FRI commitment validation failed: {}", e);
+							tracing::error!(target: LOG_TARGET, "FRI preparation failed: {}", e);
 							return;
 						},
 					};
 
 					if should_send_proof {
+						let fri_eval_proof = match generate_fri_proof_from_prepared(
+							blob_received.hash,
+							&blob_received.commitment,
+							&blob_received.eval_claim.expect("checked above"),
+							&prepared,
+						) {
+							Ok(proof_bytes) => proof_bytes,
+							Err(e) => {
+								tracing::error!(target: LOG_TARGET, "FRI proof generation failed: {}", e);
+								return;
+							},
+						};
+
 						// send the eval_proof with stored_blob notification & also update the local metadata with eval_proof
 						tracing::info!(target: LOG_TARGET, "Designated prover for blob {}, sending eval proof", blob_received.hash);
 						eval_proof = Some(fri_eval_proof);
 						blob_meta.fri_eval_proof = eval_proof.clone();
 						blob_meta.fri_eval_prover_index = Some(prover_index);
+					} else {
+						if let Err(e) = validate_prepared_fri_commitment(
+							blob_received.hash,
+							&blob_received.commitment,
+							&prepared,
+						) {
+							tracing::error!(target: LOG_TARGET, "FRI commitment validation failed: {}", e);
+							return;
+						}
+
+						if let Err(e) = validate_prepared_fri_eval_claim(
+							&blob_received.eval_claim.expect("checked above"),
+							&prepared,
+						) {
+							tracing::error!(target: LOG_TARGET, "FRI eval claim validation failed: {}", e);
+							return;
+						}
 					}
 				},
 			}
