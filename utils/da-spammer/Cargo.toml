@@ -8,7 +8,7 @@ edition = "2024"
 clap = { version = "4.5", features = ["derive"] }
 tokio = { version = "1.45.1", features = ["macros", "rt-multi-thread"] }
 
-avail-fri = { git = "https://github.com/availproject/avail-core.git", rev = "8ff9f8b093c6994f4f2e1a6b477582a10bc3d2f5", default-features = false, features = [
+avail-fri = { git = "https://github.com/availproject/avail-core.git", rev = "f1889544c65a7cf65df077bd4dc1e8941cd4e41f", default-features = false, features = [
     "parallel",
     "std",
 ] }
