@@ -4,7 +4,7 @@ const { u8aToHex } = require("@polkadot/util");
 const { cryptoWaitReady, keccakAsU8a } = require("@polkadot/util-crypto");
 const { build_commitments_js } = require("../pkg_node");
 
-const WS_URL = "ws://91.98.84.164:8546";
+const WS_URL = "ws://127.0.0.1:9944";
 const FRI_PARAMS_VERSION = 0;
 const APP_ID = 0;
 const ERA_PERIOD = 32;
