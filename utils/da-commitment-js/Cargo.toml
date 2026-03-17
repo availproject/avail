@@ -7,7 +7,7 @@ version = "0.1.0"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-avail-fri = { git = "https://github.com/availproject/avail-core.git", rev = "773b378836c9b75e5abf6f6f4c459572cdb28f6e", default-features = false }
+avail-fri = { git = "https://github.com/availproject/avail-core.git", rev = "471192e65bd9054335257c5d7e039f720cdaeaf7", default-features = false }
 wasm-bindgen = { version = "0.2" }
 getrandom = { version = "0.2", features = ["js"] }
 console_error_panic_hook = { version = "0.1" }

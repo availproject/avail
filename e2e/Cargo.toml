@@ -9,13 +9,13 @@ edition = "2021"
 # avail-core = { path = "../../avail-core/core", default-features = false, features = [ "runtime"] }
 # avail-fri = { path = "../../avail-core/fri", default-features = false, features = ["std"] }
 # avail-rust = { package = "avail-rust-client", path = "../../avail-rust/client", default-features = false, features = ["native", "reqwest"] }
-# avail-core = { git = "https://github.com/availproject/avail-core.git", rev = "773b378836c9b75e5abf6f6f4c459572cdb28f6e", default-features = false, features = [ "runtime"] }
-avail-fri = { git = "https://github.com/availproject/avail-core.git", rev = "773b378836c9b75e5abf6f6f4c459572cdb28f6e", default-features = false, features = ["std"] }
-kate = { git = "https://github.com/availproject/avail-core", rev = "773b378836c9b75e5abf6f6f4c459572cdb28f6e", default-features = false, features = ["std"] }
+# avail-core = { git = "https://github.com/availproject/avail-core.git", rev = "471192e65bd9054335257c5d7e039f720cdaeaf7", default-features = false, features = [ "runtime"] }
+avail-fri = { git = "https://github.com/availproject/avail-core.git", rev = "471192e65bd9054335257c5d7e039f720cdaeaf7", default-features = false, features = ["std"] }
+kate = { git = "https://github.com/availproject/avail-core", rev = "471192e65bd9054335257c5d7e039f720cdaeaf7", default-features = false, features = ["std"] }
 const-hex = "1.18"
 codec = { package = "parity-scale-codec", version = "3", default-features = false }
-sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "4502096688042139808e43f9d94273f0dc99558c", default-features = false, features = ["std"] }
-sp-crypto-hashing = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "4502096688042139808e43f9d94273f0dc99558c", default-features = false }
+sp-std = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "d9921cf0f6bb1a43d9e01210dc89ca24eec4b951", default-features = false, features = ["std"] }
+sp-crypto-hashing = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "d9921cf0f6bb1a43d9e01210dc89ca24eec4b951", default-features = false }
 avail-rust = { package = "avail-rust-client", git = "https://github.com/availproject/avail-rust.git", rev = "65b3d86c1f85e68387eeda8ae91cdcba9d2e2683", default-features = false, features = ["native", "reqwest"] }
 
 # Other
