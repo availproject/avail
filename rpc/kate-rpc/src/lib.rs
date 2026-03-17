@@ -1,5 +1,5 @@
 use avail_core::data_proof::ProofResponse;
-use avail_core::{header::HeaderExtension, traits::ExtendedHeader};
+use avail_core::{header::ExtendedHeader, header::HeaderExtension};
 use avail_observability::metrics::avail::{MetricObserver, ObserveKind};
 use da_runtime::apis::{DataAvailApi, KateApi as RTKateApi};
 use kate::com::Cell;

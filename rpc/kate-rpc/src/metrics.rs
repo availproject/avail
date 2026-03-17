@@ -1,6 +1,6 @@
 use crate::{HashOf, Kate, KateApiServer, ProofResponse};
 // use crate::{Cells, HashOf, Kate, KateApiServer, ProofResponse, Rows};
-use avail_core::{header::HeaderExtension, traits::ExtendedHeader};
+use avail_core::{header::ExtendedHeader, header::HeaderExtension};
 use da_runtime::apis::DataAvailApi;
 use sp_runtime::OpaqueExtrinsic;
 

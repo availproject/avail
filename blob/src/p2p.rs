@@ -14,10 +14,7 @@ use crate::{
 	RESPONSE_MAX_SIZE,
 };
 use async_channel::Receiver;
-use avail_core::{
-	header::{extension::fri::FriHeader, HeaderExtension},
-	traits::ExtendedHeader,
-};
+use avail_core::header::{extension::fri::FriHeader, ExtendedHeader, HeaderExtension};
 use codec::{Decode, Encode};
 use core::marker::PhantomData;
 use futures::{future, FutureExt, StreamExt};

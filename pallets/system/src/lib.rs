@@ -105,8 +105,7 @@ use avail_core::header::extension::kzg::KzgHeaderVersion;
 use avail_core::header::extension::CommitmentScheme;
 use avail_core::{
 	ensure,
-	header::runtime::{Header as DaHeader, HeaderExtension},
-	traits::{ExtendedHeader},
+	header::runtime::{ExtendedHeader, Header as DaHeader, HeaderExtension},
 };
 
 extern crate alloc;

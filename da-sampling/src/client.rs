@@ -6,11 +6,11 @@ use crate::{
 };
 use avail_blob::p2p::BlobHandle;
 use avail_core::{
+	header::ExtendedHeader,
 	header::{
 		extension::{fri::FriHeader, fri_v1::FriBlobCommitment},
 		HeaderExtension,
 	},
-	traits::extended_header::ExtendedHeader,
 };
 use da_runtime::Header as DaHeader;
 use futures::channel::oneshot;

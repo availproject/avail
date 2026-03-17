@@ -8,9 +8,8 @@ use avail_base::header_extension::SubmittedData;
 use avail_core::{
 	header::{
 		extension::{fri::FriHeaderVersion, kzg::KzgHeaderVersion},
-		HeaderExtension,
+		ExtendedHeader, HeaderExtension,
 	},
-	traits::ExtendedHeader,
 	FriParamsVersion,
 };
 
