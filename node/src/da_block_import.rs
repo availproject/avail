@@ -276,17 +276,29 @@ where
 		);
 		let skip_sync = self.unsafe_da_sync && is_sync;
 
-		let blob_summaries = self.extract_blob_summaries(&block)?;
+		let blob_summaries = if skip_sync {
+			Vec::new()
+		} else {
+			self.extract_blob_summaries(&block)?
+		};
 
-		let extrinsics = block.body.clone().unwrap_or_default();
-		let extracted = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(
-			block.header.number,
-			&extrinsics,
-		);
+		let extracted = if skip_sync {
+			None
+		} else {
+			let extrinsics = block.body.clone().unwrap_or_default();
+			Some(HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(
+				block.header.number,
+				&extrinsics,
+			))
+		};
 
 		if !is_own && !skip_sync && !block.with_state() {
 			self.ensure_last_extrinsic_is_failed_send_message_txs(&block)?;
-			self.ensure_valid_header_extension(&block, &extracted, skip_sync)?;
+			self.ensure_valid_header_extension(
+				&block,
+				extracted.as_ref().expect("extracted is present when skip_sync is false; qed"),
+				skip_sync,
+			)?;
 		}
 
 		let block_number: u32 = block.header.number;
@@ -298,7 +310,9 @@ where
 		// On successful import of block, write to our blob indexer and publish eval claims.
 		if let Ok(ImportResult::Imported(_imported)) = &result {
 			if !is_sync {
-				self.publish_eval_claims(block_hash, &extracted);
+				if let Some(extracted) = extracted.as_ref() {
+					self.publish_eval_claims(block_hash, extracted);
+				}
 			}
 
 			// filter out successful blobs only and collect BlobInfo entries
