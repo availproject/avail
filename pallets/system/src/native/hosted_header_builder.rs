@@ -55,7 +55,7 @@ pub trait HeaderExtensionBuilder {
 /// Runtime-side DA header builder.
 pub mod da {
 	use super::*;
-	use avail_core::header::Header as DaHeader;
+	use avail_core::header::runtime::Header as DaHeader;
 	use core::marker::PhantomData;
 	use sp_runtime::traits::BlakeTwo256;
 

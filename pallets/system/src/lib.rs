@@ -105,8 +105,8 @@ use avail_core::header::extension::kzg::KzgHeaderVersion;
 use avail_core::header::extension::CommitmentScheme;
 use avail_core::{
 	ensure,
-	header::{Header as DaHeader, HeaderExtension},
-	traits::{ExtendedBlock, ExtendedHeader},
+	header::runtime::{Header as DaHeader, HeaderExtension},
+	traits::{ExtendedHeader},
 };
 
 extern crate alloc;
@@ -633,7 +633,7 @@ pub mod pallet {
 		/// The Block type used by the runtime. This is used by `construct_runtime` to retrieve the
 		/// extrinsics or other block specific data as needed.
 		#[pallet::no_default]
-		type Block: Parameter + Member + ExtendedBlock<ExtHeader = Self::Header, Hash = Self::Hash>;
+		type Block: Parameter + Member;
 
 		/// Maximum number of block number to block hash mappings to keep (oldest pruned first).
 		#[pallet::constant]

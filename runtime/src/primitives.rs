@@ -1,5 +1,5 @@
 use crate::{extensions, AllPalletsWithSystem, Runtime, RuntimeCall};
-use avail_core::header::Header as DaHeader;
+use avail_core::header::runtime::Header as DaHeader;
 use codec::{Decode, Encode};
 use scale_info::prelude::{format, string::String};
 
@@ -40,7 +40,7 @@ pub type UncheckedExtrinsic =
 /// !!!Must be the same as UncheckedExtrinsic!!!!
 pub type Preamble = sp_runtime::generic::Preamble<Address, Signature, SignedExtra>;
 /// DA Block type as expected by this runtime.
-pub type Block = avail_core::DaBlock<Header, UncheckedExtrinsic>;
+pub type Block = sp_runtime::generic::Block<Header, UncheckedExtrinsic>;
 /// Block type for the node
 pub type NodeBlock = generic::Block<Header, OpaqueExtrinsic>;
 /// A Block signed with a Justification

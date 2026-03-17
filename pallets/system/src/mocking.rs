@@ -48,7 +48,7 @@ pub type MockBlockU128<T> = generic::Block<
 >;
 
 /// An implementation of `sp_runtime::traits::Block` with DA header to be used in tests
-pub type MockDaBlock<T> = avail_core::DaBlock<
-	avail_core::header::Header<BlockNumber, sp_runtime::traits::BlakeTwo256>,
+pub type MockDaBlock<T> = sp_runtime::generic::Block<
+	avail_core::header::runtime::Header<BlockNumber, sp_runtime::traits::BlakeTwo256>,
 	MockUncheckedExtrinsic<T>,
 >;

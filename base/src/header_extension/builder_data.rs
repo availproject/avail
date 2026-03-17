@@ -1,9 +1,9 @@
 use super::HeaderExtensionDataFilter;
+use avail_core::AppId;
 use avail_core::{
 	data_proof::{AddressedMessage, SubTrie, TxDataRoots},
 	Keccak256,
 };
-use avail_core::{traits::GetAppId, AppId};
 use binary_merkle_tree::{merkle_proof, merkle_root, MerkleProof};
 use codec::{Decode, Encode};
 use derive_more::Constructor;
@@ -28,12 +28,6 @@ pub struct SubmittedData {
 	pub eval_point_seed: Option<[u8; 32]>,
 	pub eval_claim: Option<[u8; 16]>,
 	pub eval_proof: Option<Vec<u8>>,
-}
-
-impl GetAppId for SubmittedData {
-	fn app_id(&self) -> AppId {
-		self.id
-	}
 }
 
 #[derive(Debug, Default)]
