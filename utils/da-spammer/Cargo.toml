@@ -8,11 +8,11 @@ edition = "2024"
 clap = { version = "4.5", features = ["derive"] }
 tokio = { version = "1.45.1", features = ["macros", "rt-multi-thread"] }
 
-avail-fri = { git = "https://github.com/availproject/avail-core.git", rev = "471192e65bd9054335257c5d7e039f720cdaeaf7", default-features = false, features = [
+avail-fri = { git = "https://github.com/availproject/avail-core.git", rev = "91c8cf845c71ac300651c278391db155bd3e2b62", default-features = false, features = [
     "parallel",
     "std",
 ] }
-avail-rust = { package = "avail-rust-client", git = "https://github.com/availproject/avail-rust.git", rev = "88f6ac83e9b15b80d5a818083522e931ba9b1d60", default-features = false, features = [
+avail-rust = { package = "avail-rust-client", git = "https://github.com/availproject/avail-rust.git", rev = "998d3f0be6d26fae53c74402e72ef728dc337ed7", default-features = false, features = [
     "native",
 ] }
 

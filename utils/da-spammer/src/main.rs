@@ -1,11 +1,6 @@
 // #region Imports
-use avail_fri::{
-	core::{FriBiniusPCS, B128},
-	encoding::BytesEncoder,
-	eval_utils::{derive_evaluation_point, derive_seed_from_inputs, eval_claim_to_bytes},
-	FriParamsVersion,
-};
-use avail_rust::{prelude::*};
+use avail_fri::BlobCommitment;
+use avail_rust::prelude::*;
 use clap::Parser;
 use rayon::ThreadPoolBuilder;
 use sp_crypto_hashing::keccak_256;
@@ -15,13 +10,13 @@ use std::{
 	fs,
 	path::PathBuf,
 	sync::{
-		atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
 		Arc,
+		atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
 	},
 	time::{Duration, Instant, SystemTime},
 };
 use tokio::{
-	sync::{mpsc, Semaphore},
+	sync::{Semaphore, mpsc},
 	task::JoinSet,
 };
 // #endregion
@@ -96,9 +91,7 @@ struct PreparedTx {
 	account_idx: usize,
 	blob: Vec<u8>,
 	hash: H256,
-	commitment: Vec<u8>,
-	seed: [u8; 32],
-	claim: [u8; 16],
+	commitment: BlobCommitment,
 }
 
 #[derive(Debug)]
@@ -208,19 +201,10 @@ fn fill_byte(run_salt: u64, unique_id: u64, account_idx: usize) -> u8 {
 	seed[8..16].copy_from_slice(&unique_id.to_le_bytes());
 	seed[16..24].copy_from_slice(&(account_idx as u64).to_le_bytes());
 	let byte = keccak_256(&seed)[0];
-	if byte == 0 {
-		1
-	} else {
-		byte
-	}
+	if byte == 0 { 1 } else { byte }
 }
 
-fn mutate_file_blob(
-	blob: &mut [u8],
-	index: usize,
-	run_salt: u64,
-	unique_id: u64,
-) {
+fn mutate_file_blob(blob: &mut [u8], index: usize, run_salt: u64, unique_id: u64) {
 	if blob.is_empty() {
 		return;
 	}
@@ -278,39 +262,15 @@ fn prepare_tx(
 
 	let blob_hash = H256::from(keccak_256(&blob));
 
-	let encoder = BytesEncoder::<B128>::new();
-	let packed = encoder
-		.bytes_to_packed_mle(&blob)
-		.map_err(|e| format!("encode error: {e}"))?;
-
-	let cfg = FriParamsVersion::V0.to_config(packed.total_n_vars);
-	let pcs = FriBiniusPCS::new(cfg);
-	let ctx = pcs
-		.initialize_fri_context::<B128>(packed.packed_mle.log_len())
-		.map_err(|e| format!("init fri context error: {e}"))?;
-
-	let commit_output = pcs
-		.commit(&packed.packed_mle, &ctx)
-		.map_err(|e| format!("commit error: {e}"))?;
-
-	let eval_point_seed = derive_seed_from_inputs(&babe_randomness, &blob_hash.0);
-	let eval_point = derive_evaluation_point(eval_point_seed, packed.total_n_vars);
-	let eval_claim = pcs
-		.calculate_evaluation_claim(&packed.packed_values, &eval_point)
-		.map_err(|e| format!("evaluation claim error: {e}"))?;
-
-	let eval_claim_bytes: [u8; 16] = eval_claim_to_bytes(eval_claim)
-		.try_into()
-		.map_err(|_| "invalid claim byte length".to_string())?;
+	let commitment = BlobCommitment::compute(&babe_randomness, &blob, &blob_hash.0)
+		.map_err(|e| format!("fri error: {e}"))?;
 
 	Ok(PreparedTx {
 		index,
 		account_idx,
 		blob,
 		hash: blob_hash,
-		commitment: commit_output.commitment.to_vec(),
-		seed: eval_point_seed,
-		claim: eval_claim_bytes,
+		commitment,
 	})
 }
 
@@ -397,17 +357,19 @@ async fn submit_once(
 		prepared.blob.len()
 	);
 
-	let result = client.blob().submit_blob_and_blob_metadata(
-		app_id,
-		prepared.hash,
-		prepared.blob.len() as u64,
-		prepared.commitment.clone(),
-		Some(prepared.seed),
-		Some(prepared.claim),
-		&signer,
-		Options::new().app_id(app_id).nonce(nonce),
-		&prepared.blob
-	).await;
+	let result = client
+		.blob()
+		.submit_blob_and_blob_metadata(
+			app_id,
+			&prepared.blob,
+			prepared.hash,
+			prepared.commitment.commitment.clone(),
+			Some(prepared.commitment.seed),
+			Some(prepared.commitment.claim),
+			&signer,
+			Options::new().nonce(nonce),
+		)
+		.await;
 
 	match result {
 		Ok(_) => {
