@@ -1,0 +1,34 @@
+[package]
+name = "try-runtime-cli"
+version = "0.10.1"
+authors.workspace = true
+description = "Avail's custom tool, built on top of Substrate's programmatic testing framework."
+edition.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "try-runtime"
+path = "main.rs"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+clap = { workspace = true, features = ["derive"] }
+env_logger = { workspace = true }
+parity-scale-codec = { version = "~3.7", features = ["derive"] }
+tokio = { version = "1.50.0", features = ["full"] }
+
+sp-io = { workspace = true, default-features = true, features = ["std"] }
+sp-core = { workspace = true, default-features = true, features = ["std"] }
+sp-runtime = { workspace = true, default-features = true, features = ["std"] }
+sp-state-machine = { workspace = true, default-features = true, features = ["std"] }
+sp-storage = { workspace = true, default-features = true, features = ["std"] }
+
+try-runtime-core = { workspace = true }
+
+avail-blob = { workspace = true, default-features = true, features = ["std"] }
+da-runtime = { workspace = true, default-features = true, features = ["std"] }
+frame-support = { workspace = true, default-features = true, features = ["std"] }
