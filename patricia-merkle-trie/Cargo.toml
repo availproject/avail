@@ -13,6 +13,7 @@ hash-db = { workspace = true, default-features = false }
 primitive-types = { workspace = true, default-features = false }
 memory-db = { workspace = true, default-features = false }
 sp-io = { workspace = true, default-features = false }
+sp-core = { workspace = true, default-features = false }
 
 hash256-std-hasher = { workspace = true, default-features = false }
 rlp = { workspace = true, default-features = false }

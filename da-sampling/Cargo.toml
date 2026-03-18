@@ -12,7 +12,6 @@ avail-blob.workspace = true
 avail-core.workspace = true
 avail-fri.workspace = true
 da-runtime.workspace = true
-array-bytes.workspace = true
 async-channel.workspace = true
 sp-core.workspace = true
 sp-runtime.workspace = true

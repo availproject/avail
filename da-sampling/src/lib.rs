@@ -23,9 +23,10 @@ fn get_protocol_name<Hash: AsRef<[u8]>>(
 	chain_spec: &Box<dyn ChainSpec>,
 ) -> ProtocolName {
 	let genesis_hash = genesis_hash.as_ref();
+	let genesis_hash_hex = const_hex::encode(genesis_hash);
 	let chain_prefix = match chain_spec.fork_id() {
-		Some(fork_id) => format!("/{}/{}", array_bytes::bytes2hex("", genesis_hash), fork_id),
-		None => format!("/{}", array_bytes::bytes2hex("", genesis_hash)),
+		Some(fork_id) => format!("/{}/{}", genesis_hash_hex, fork_id),
+		None => format!("/{}", genesis_hash_hex),
 	};
 	format!("{}{}", chain_prefix, DA_SAMPLING_PROTOCOL).into()
 }
