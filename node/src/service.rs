@@ -302,7 +302,7 @@ pub fn new_partial(
 	let (import_queue, babe_worker_handle) =
 		sc_consensus_babe::import_queue(sc_consensus_babe::ImportQueueParams {
 			link: babe_link.clone(),
-			block_import: block_import.clone(),
+			block_import: da_block_import.clone(),
 			justification_import: Some(Box::new(justification_import)),
 			client: client.clone(),
 			slot_duration,

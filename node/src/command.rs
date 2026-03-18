@@ -22,7 +22,7 @@ use avail_blob::types::FullClient;
 use avail_node::chains;
 use da_runtime::Block;
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
-use sc_cli::{Result, Role, SubstrateCli, SyncMode};
+use sc_cli::{Result, Role, SubstrateCli};
 use sc_service::PartialComponents;
 use sc_tracing::logging::internal_utils::OtelParams;
 use sp_runtime::traits::HashingFor;
@@ -107,9 +107,8 @@ pub fn run() -> Result<()> {
 		Some(Subcommand::LightClient(cmd)) => {
 			let runner = cli.create_runner(&cmd.run)?;
 			runner.run_node_until_exit(|mut config| async move {
-				// Forcing fast-unsafe sync for LC (for local testing)
-				// For live networks, sync mode for lc should be warp
-				config.network.sync_mode = SyncMode::FastUnsafe.into();
+				// DA light clients use a dedicated light-only sync mode without touching existing modes
+				config.network.sync_mode = sc_network::config::SyncMode::AvailLight;
 				config.role = Role::LightClient;
 
 				log::info!(

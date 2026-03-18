@@ -213,6 +213,8 @@ where
 			return;
 		};
 
+		let mut messages = Vec::new();
+
 		for da in &extracted.data_submissions {
 			let (Some(eval_point_seed), Some(eval_claim), Some(eval_proof)) =
 				(da.eval_point_seed, da.eval_claim, da.eval_proof.clone())
@@ -220,33 +222,42 @@ where
 				continue;
 			};
 
-			let msg = EvalClaimsMessage {
+			messages.push(EvalClaimsMessage {
 				block_hash,
 				app_id: da.id,
 				blob_hash: da.hash,
 				eval_point_seed,
 				eval_claim,
 				eval_proof,
-			};
-
-			match eval_sender.try_send(msg) {
-				Ok(()) => {},
-				Err(TrySendError::Full(_)) => {
-					log::warn!(
-						"Eval claims channel full, dropping eval claims for block {:?}, blob {:?}",
-						block_hash,
-						da.hash
-					);
-				},
-				Err(TrySendError::Closed(_)) => {
-					log::warn!(
-						"Eval claims channel closed, dropping eval claims for block {:?}, blob {:?}",
-						block_hash,
-						da.hash
-					);
-				},
-			}
+			});
 		}
+
+		if messages.is_empty() {
+			return;
+		}
+
+		tokio::spawn(async move {
+			for msg in messages {
+				let blob_hash = msg.blob_hash;
+				match eval_sender.try_send(msg) {
+					Ok(()) => {},
+					Err(TrySendError::Full(_)) => {
+						log::warn!(
+							"Eval claims channel full, dropping eval claims for block {:?}, blob {:?}",
+							block_hash,
+							blob_hash
+						);
+					},
+					Err(TrySendError::Closed(_)) => {
+						log::warn!(
+							"Eval claims channel closed, dropping eval claims for block {:?}, blob {:?}",
+							block_hash,
+							blob_hash
+						);
+					},
+				}
+			}
+		});
 	}
 }
 
@@ -276,17 +287,30 @@ where
 		);
 		let skip_sync = self.unsafe_da_sync && is_sync;
 
-		let blob_summaries = self.extract_blob_summaries(&block)?;
+		let blob_summaries = if skip_sync {
+			Vec::new()
+		} else {
+			self.extract_blob_summaries(&block)?
+		};
 
-		let extrinsics = block.body.clone().unwrap_or_default();
-		let extracted = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(
-			block.header.number,
-			&extrinsics,
-		);
+		let extracted = if skip_sync {
+			None
+		} else {
+			let extrinsics = block.body.clone().unwrap_or_default();
+			Some(HeaderExtensionBuilderData::from_opaque_extrinsics::<
+				RTExtractor,
+			>(block.header.number, &extrinsics))
+		};
 
 		if !is_own && !skip_sync && !block.with_state() {
 			self.ensure_last_extrinsic_is_failed_send_message_txs(&block)?;
-			self.ensure_valid_header_extension(&block, &extracted, skip_sync)?;
+			self.ensure_valid_header_extension(
+				&block,
+				extracted
+					.as_ref()
+					.expect("extracted is present when skip_sync is false; qed"),
+				skip_sync,
+			)?;
 		}
 
 		let block_number: u32 = block.header.number;
@@ -298,7 +322,9 @@ where
 		// On successful import of block, write to our blob indexer and publish eval claims.
 		if let Ok(ImportResult::Imported(_imported)) = &result {
 			if !is_sync {
-				self.publish_eval_claims(block_hash, &extracted);
+				if let Some(extracted) = extracted.as_ref() {
+					self.publish_eval_claims(block_hash, extracted);
+				}
 			}
 
 			// filter out successful blobs only and collect BlobInfo entries
@@ -325,12 +351,26 @@ where
 			}
 
 			if !blob_infos.is_empty() {
-				let _ = self
-					.blob_store
-					.insert_blob_infos_by_block_batch(&blob_infos);
-				let _ = self
-					.blob_store
-					.append_pending_blob_infos_batch(&block_hash, &blob_infos);
+				let blob_store = self.blob_store.clone();
+				tokio::task::spawn_blocking(move || {
+					if let Err(err) = blob_store.insert_blob_infos_by_block_batch(&blob_infos) {
+						log::warn!(
+							"Failed to store canonical blob infos for block {:?}: {:?}",
+							block_hash,
+							err
+						);
+					}
+
+					if let Err(err) =
+						blob_store.append_pending_blob_infos_batch(&block_hash, &blob_infos)
+					{
+						log::warn!(
+							"Failed to append pending blob infos for block {:?}: {:?}",
+							block_hash,
+							err
+						);
+					}
+				});
 			}
 		}
 
