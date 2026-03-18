@@ -170,6 +170,15 @@ To enable Kate RPC you need to pass `--enable-kate-rpc` flag when executing the 
     Max size cannot exceed 10_000
 
     [default: 64]
+
+--otel-traces-endpoint <OTEL_TRACES_ENDPOINT>
+    OTEL Traces Endpoint
+
+--otel-logs-endpoint <OTEL_LOGS_ENDPOINT>
+    OTEL Logs Endpoint
+
+--otel-metrics-endpoint <OTEL_METRICS_ENDPOINT>
+    OTEL Metrics Endpoint
 ```
 
 ## Run Benchmarks
