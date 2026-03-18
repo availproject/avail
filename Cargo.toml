@@ -16,6 +16,8 @@ members = [
 	"da-commitment",
 	"observability",
 	"da-sampling",
+	"utils/try-runtime-cli/cli",
+	"utils/try-runtime-cli/core",
 ]
 
 exclude = [
@@ -59,6 +61,7 @@ frame-system = { path = "pallets/system", default-features = false }
 frame-system-rpc-runtime-api = { path = "pallets/system/rpc/runtime-api", default-features = false }
 frame-system-benchmarking = { path = "pallets/system/benchmarking", default-features = false }
 avail-blob = { path = "blob", default-features = false }
+try-runtime-core = { path = "utils/try-runtime-cli/core" }
 kvdb = { version = "0.13.0", default-features = false }
 kvdb-rocksdb = { version = "0.21.0", default-features = false }
 
@@ -125,6 +128,10 @@ jsonrpsee = { version = "0.24.7", features = ["server", "client", "macros"] }
 moka = { version = "0.12.1", features = ["future"] }
 lru = "0.16"
 tempfile = "3.26"
+assert_cmd = "~2.1"
+regex = "~1.12"
+paris = "1.5.15"
+similar-asserts = "1.6.0"
 
 # Ethereum
 rlp = { version = "0.6.1", default-features = false }
@@ -248,16 +255,18 @@ sc-rpc-spec-v2 = { git = "https://github.com/availproject/polkadot-sdk.git", rev
 substrate-frame-rpc-system = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "113ff6b8dd9219431e753345641cccadd66952a5", default-features = false }
 substrate-state-trie-migration-rpc = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "113ff6b8dd9219431e753345641cccadd66952a5", default-features = false }
 frame-benchmarking-cli = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "113ff6b8dd9219431e753345641cccadd66952a5", default-features = false }
-# try-runtime-cli = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "113ff6b8dd9219431e753345641cccadd66952a5", default-features = false }
 substrate-build-script-utils = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "113ff6b8dd9219431e753345641cccadd66952a5", default-features = false }
 sp-trie = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "113ff6b8dd9219431e753345641cccadd66952a5", default-features = false }
 sp-state-machine = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "113ff6b8dd9219431e753345641cccadd66952a5", default-features = false }
-
-
 sc-block-builder = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "113ff6b8dd9219431e753345641cccadd66952a5" }
 sc-proposer-metrics = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "113ff6b8dd9219431e753345641cccadd66952a5" }
 substrate-prometheus-endpoint = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "113ff6b8dd9219431e753345641cccadd66952a5" }
-# substrate-test-runtime-client = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "113ff6b8dd9219431e753345641cccadd66952a5" }
+
+# try-runtime-cli related
+sp-consensus-aura = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "113ff6b8dd9219431e753345641cccadd66952a5" }
+substrate-rpc-client = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "113ff6b8dd9219431e753345641cccadd66952a5" }
+frame-remote-externalities = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "113ff6b8dd9219431e753345641cccadd66952a5" }
+substrate-cli-test-utils = { git = "https://github.com/availproject/polkadot-sdk.git", rev = "113ff6b8dd9219431e753345641cccadd66952a5" }
 
 # Otel
 tracing = { version = "0.1" }

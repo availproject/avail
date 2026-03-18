@@ -1,0 +1,57 @@
+[package]
+name = "try-runtime-core"
+version = "0.10.1"
+authors.workspace = true
+description = "Avail's custom tool, built on top of Substrate's programmatic testing framework."
+edition.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+tokio = { version = "1.50.0" }
+async-trait = { workspace = true }
+array-bytes = "9.3"
+bytesize = { version = "~2.3", features = ["serde"] }
+clap = { workspace = true, features = ["derive"] }
+hex = { version = "0.4.3", default-features = false }
+itertools = { workspace = true }
+log = { workspace = true }
+parity-scale-codec = { version = "~3.7", features = ["derive"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+strum = "~0.27"
+strum_macros = "~0.27"
+zstd = { workspace = true }
+
+frame-remote-externalities = { workspace = true }
+frame-try-runtime = { workspace = true, default-features = true, features=["try-runtime", "std"] }
+frame-support = { workspace = true, default-features = true, features = ["std"] }
+frame-system = { workspace = true, default-features = true, features = ["std"] }
+
+sc-cli = { workspace = true, default-features = false }
+sc-executor = { workspace = true, default-features = true }
+
+sp-api = { workspace = true, default-features = true, features = ["std"] }
+sp-consensus-aura = { workspace = true, default-features = true, features = ["std"] }
+sp-consensus-babe = { workspace = true, default-features = true, features = ["std"] }
+sp-core = { workspace = true, default-features = true, features = ["std"] }
+sp-externalities = { workspace = true, default-features = true }
+sp-inherents = { workspace = true, default-features = true, features = ["std"] }
+sp-io = { workspace = true, default-features = true, features = ["std"] }
+sp-keystore = { workspace = true, default-features = true, features = ["std"] }
+sp-rpc = { workspace = true, default-features = true }
+sp-runtime = { workspace = true, default-features = true, features = ["std"] }
+sp-state-machine = { workspace = true, default-features = true, features = ["std"] }
+sp-std = { workspace = true, default-features = true, features = ["std"] }
+sp-timestamp = { workspace = true, default-features = true, features = ["std"] }
+sp-transaction-storage-proof = { workspace = true, default-features = true, features = ["std"] }
+sp-version = { workspace = true, default-features = true, features = ["std"] }
+sp-weights = { workspace = true, default-features = true, features = ["std"] }
+
+substrate-rpc-client = { workspace = true }
+paris = "1.5.15"
+similar-asserts = "1.6.0"
