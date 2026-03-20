@@ -18,6 +18,7 @@ serde_json.workspace = true
 serde.workspace = true
 const-hex.workspace = true
 tracing = { workspace = true }
+lru = { workspace = true }
 
 # 3rd party
 jsonrpsee.workspace = true

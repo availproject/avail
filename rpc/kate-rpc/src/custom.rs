@@ -48,6 +48,8 @@ pub trait Api {
 	async fn block_timestamp(&self, block_id: types::BlockId) -> RpcResult<u64>;
 }
 
+type CachedExtrinsics = lru::LruCache<(H256, u32), CachedExtrinsic>;
+
 pub struct Rpc<C, Block>
 where
 	C: ProvideRuntimeApi<Block> + Send + Sync + 'static,
@@ -55,6 +57,7 @@ where
 	Block: BlockT,
 {
 	pub client: Arc<C>,
+	pub cached_extrinsics: Arc<parking_lot::Mutex<CachedExtrinsics>>,
 	_phantom: PhantomData<Block>,
 }
 impl<C, Block> Rpc<C, Block>
@@ -66,8 +69,11 @@ where
 	<Block as BlockT>::Hash: From<H256>,
 {
 	pub fn new(client: Arc<C>) -> Self {
+		let cached_extrinsics =
+			lru::LruCache::new(unsafe { std::num::NonZeroUsize::new_unchecked(1000) });
 		Self {
 			client,
+			cached_extrinsics: Arc::new(parking_lot::Mutex::new(cached_extrinsics)),
 			_phantom: PhantomData,
 		}
 	}
@@ -184,18 +190,22 @@ where
 
 		let allow_list = AllowedExtrinsicsWrapper::new(allow_list);
 		for (ext_index, opaque) in body_iter {
-			let mut wrapper = ExtrinsicWrapper::new(opaque, ext_index as u32);
+			let mut wrapper = ExtrinsicWrapper::new(opaque, block_hash, ext_index as u32);
 
-			if !allow_list.index_allowed(wrapper.ext_index) {
+			if !allow_list.index_allowed(ext_index as u32) {
 				continue;
 			}
 
-			let ext_hash = wrapper.hash().map_err(|e| Error::other_error(e))?;
+			let ext_hash = wrapper
+				.hash(&self.cached_extrinsics)
+				.map_err(|e| Error::other_error(e))?;
 			if !allow_list.hash_allowed(ext_hash) {
 				continue;
 			}
 
-			let ext_call_id = wrapper.call_id().map_err(|e| Error::other_error(e))?;
+			let ext_call_id = wrapper
+				.call_id(&self.cached_extrinsics)
+				.map_err(|e| Error::other_error(e))?;
 			if !allow_list.pallet_allowed(ext_call_id.0) {
 				continue;
 			}
@@ -203,8 +213,12 @@ where
 				continue;
 			}
 
-			let account_id = wrapper.account_id().map_err(|e| Error::other_error(e))?;
-			let nonce = wrapper.nonce().map_err(|e| Error::other_error(e))?;
+			let account_id = wrapper
+				.account_id(&self.cached_extrinsics)
+				.map_err(|e| Error::other_error(e))?;
+			let nonce = wrapper
+				.nonce(&self.cached_extrinsics)
+				.map_err(|e| Error::other_error(e))?;
 			if let Some(allowed_address) = &query.address {
 				let Some(account) = account_id.as_ref() else {
 					continue;
@@ -333,6 +347,14 @@ where
 }
 
 #[derive(Default)]
+pub struct CachedExtrinsic {
+	hash: Option<H256>,
+	call_id: Option<(u8, u8)>,
+	account_id: Option<Option<AccountId>>,
+	nonce: Option<Option<u32>>,
+}
+
+#[derive(Default)]
 struct AllowedExtrinsicsWrapper {
 	allowed_indices: Option<Vec<u32>>,
 	allowed_hashes: Option<Vec<H256>>,
@@ -424,51 +446,132 @@ impl AllowedExtrinsicsWrapper {
 struct ExtrinsicWrapper {
 	pub opaque: OpaqueExtrinsic,
 	pub transparent: Option<TransparentOpaque>,
-	pub ext_index: u32,
+	pub key: (H256, u32),
 }
 
 impl ExtrinsicWrapper {
-	pub fn new(opaque: OpaqueExtrinsic, ext_index: u32) -> Self {
+	pub fn new(opaque: OpaqueExtrinsic, block_hash: H256, ext_index: u32) -> Self {
 		Self {
 			opaque,
 			transparent: None,
-			ext_index,
+			key: (block_hash, ext_index),
 		}
 	}
 
-	pub fn hash(&mut self) -> Result<H256, String> {
+	pub fn hash(
+		&mut self,
+		cache: &Arc<parking_lot::Mutex<CachedExtrinsics>>,
+	) -> Result<H256, String> {
+		// Check cache
+		{
+			let mut lock = cache.lock();
+			let cached = lock.get(&self.key);
+			if let Some(hash) = cached.and_then(|x| x.hash) {
+				return Ok(hash);
+			}
+		}
+
 		let transparent = self.transparent()?;
 		let hash = Blake2Hasher::hash(&transparent.bytes);
+
+		// Set cache
+		{
+			let mut lock = cache.lock();
+			let cached = lock.get_or_insert_mut(self.key, || Default::default());
+			cached.hash = Some(hash);
+		}
+
 		return Ok(hash);
 	}
 
-	pub fn call_id(&mut self) -> Result<(u8, u8), String> {
-		let transparent = self.transparent()?;
-		return Ok((transparent.pallet_id, transparent.variant_id));
-	}
-
-	pub fn nonce(&mut self) -> Result<Option<u32>, String> {
-		let transparent = self.transparent()?;
-		if let Preamble::Signed(_, _, extended) = &transparent.preamble {
-			return Ok(Some(extended.5 .0));
-		}
-
-		Ok(None)
-	}
-
-	pub fn account_id(&mut self) -> Result<Option<AccountId>, String> {
-		let transparent = self.transparent()?;
-		if let Preamble::Signed(address, _, _) = &transparent.preamble {
-			if let MultiAddress::Id(id) = address {
-				return Ok(Some(id.clone()));
-			}
-
-			if let MultiAddress::Address32(id) = address {
-				return Ok(Some(AccountId::from(id.clone())));
+	pub fn call_id(
+		&mut self,
+		cache: &Arc<parking_lot::Mutex<CachedExtrinsics>>,
+	) -> Result<(u8, u8), String> {
+		// Check cache
+		{
+			let mut lock = cache.lock();
+			let cached = lock.get(&self.key);
+			if let Some(call_id) = cached.and_then(|x| x.call_id) {
+				return Ok(call_id);
 			}
 		}
 
-		Ok(None)
+		let transparent = self.transparent()?;
+		let call_id = (transparent.pallet_id, transparent.variant_id);
+
+		// Set cache
+		{
+			let mut lock = cache.lock();
+			let cached = lock.get_or_insert_mut(self.key, || Default::default());
+			cached.call_id = Some(call_id);
+		}
+
+		return Ok(call_id);
+	}
+
+	pub fn nonce(
+		&mut self,
+		cache: &Arc<parking_lot::Mutex<CachedExtrinsics>>,
+	) -> Result<Option<u32>, String> {
+		// Check cache
+		{
+			let mut lock = cache.lock();
+			let cached = lock.get(&self.key);
+			if let Some(nonce) = cached.and_then(|x| x.nonce) {
+				return Ok(nonce);
+			}
+		}
+
+		let transparent = self.transparent()?;
+		let nonce = if let Preamble::Signed(_, _, extended) = &transparent.preamble {
+			Some(extended.5 .0)
+		} else {
+			None
+		};
+
+		// Set cache
+		{
+			let mut lock = cache.lock();
+			let cached = lock.get_or_insert_mut(self.key, || Default::default());
+			cached.nonce = Some(nonce);
+		}
+
+		return Ok(nonce);
+	}
+
+	pub fn account_id(
+		&mut self,
+		cache: &Arc<parking_lot::Mutex<CachedExtrinsics>>,
+	) -> Result<Option<AccountId>, String> {
+		// Check cache
+		{
+			let mut lock = cache.lock();
+			let cached = lock.get(&self.key);
+			if let Some(account_id) = cached.and_then(|x| x.account_id.clone()) {
+				return Ok(account_id);
+			}
+		}
+
+		let transparent = self.transparent()?;
+		let account_id = if let Preamble::Signed(address, _, _) = &transparent.preamble {
+			match address {
+				MultiAddress::Id(id) => Some(id.clone()),
+				MultiAddress::Address32(id) => Some(AccountId::from(id.clone())),
+				_ => None,
+			}
+		} else {
+			None
+		};
+
+		// Set cache
+		{
+			let mut lock = cache.lock();
+			let cached = lock.get_or_insert_mut(self.key, || Default::default());
+			cached.account_id = Some(account_id.clone());
+		}
+
+		Ok(account_id)
 	}
 
 	fn transparent(&mut self) -> Result<&TransparentOpaque, String> {
@@ -483,8 +586,6 @@ impl ExtrinsicWrapper {
 			.ok_or(String::from("Failed to find transparent extrinsic."))
 	}
 }
-
-impl ExtrinsicWrapper {}
 
 struct TransparentOpaque {
 	pub bytes: Vec<u8>,
