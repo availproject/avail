@@ -1,7 +1,7 @@
 use codec::{Compact, Decode, Encode};
-use da_runtime::Preamble;
+use da_runtime::{AccountId, Preamble};
 use fetch_events::AllowedEvents;
-use fetch_extrinsics::{AllowedExtrinsic, DataFormat, Extrinsic, Extrinsics, SignatureFilter};
+use fetch_extrinsics::{AllowedExtrinsic, DataFormat, Extrinsic, Extrinsics, Query};
 use frame_system_rpc_runtime_api::SystemEventsApi;
 use jsonrpsee::{
 	core::{async_trait, RpcResult},
@@ -34,7 +34,7 @@ pub trait Api {
 		&self,
 		at: types::BlockId,
 		allow_list: Option<Vec<AllowedExtrinsic>>,
-		sig_filter: SignatureFilter,
+		query: Query,
 		data_format: DataFormat,
 	) -> RpcResult<Extrinsics>;
 
@@ -89,6 +89,10 @@ impl Error {
 	pub fn into_error_object<'a>(self, msg: String) -> ErrorObject<'a> {
 		ErrorObject::owned(i32::from(self), msg, None::<()>)
 	}
+
+	pub fn other_error<'a>(msg: String) -> ErrorObject<'a> {
+		ErrorObject::owned(i32::from(Self::Other), msg, None::<()>)
+	}
 }
 
 impl From<Error> for i32 {
@@ -116,26 +120,14 @@ where
 {
 	async fn events(
 		&self,
-		block_id: types::BlockId,
+		at: types::BlockId,
 		filter: fetch_events::AllowedEvents,
 		fetch_data: bool,
 	) -> RpcResult<fetch_events::Events> {
 		use fetch_events::PhaseEvents;
 
-		let block_hash = match block_id {
-			types::BlockId::Hash(hash) => hash,
-			types::BlockId::Number(number) => {
-				let hash = match self.client.block_hash(number.into()) {
-					Ok(ok) => ok,
-					Err(err) => return Err(Error::NoBlockFound.into_error_object(err.to_string())),
-				};
-				let Some(hash) = hash else {
-					return Err(Error::NoBlockFound
-						.into_error_object(String::from("Failed to find block hash")));
-				};
-				hash.into()
-			},
-		};
+		let block_hash = block_hash_from_block_id(&self.client, at)
+			.map_err(|e| Error::NoBlockFound.into_error_object(e))?;
 
 		let runtime_api = self.client.runtime_api();
 		let result = runtime_api
@@ -149,22 +141,13 @@ where
 		}
 	}
 
-	#[tracing::instrument(
-		name = "http.request",
-		skip_all,
-		fields(
-			http.method = "POST",
-			http.route = "/extrinsics"
-		)
-	)]
 	async fn extrinsics(
 		&self,
 		at: types::BlockId,
 		allow_list: Option<Vec<AllowedExtrinsic>>,
-		sig_filter: SignatureFilter,
+		query: Query,
 		data_format: DataFormat,
 	) -> RpcResult<Extrinsics> {
-		use types::BlockId;
 		const MAX_INDICES_COUNT: usize = 30;
 
 		if let Some(allow_list) = &allow_list {
@@ -175,57 +158,54 @@ where
 			}
 		}
 
-		let block_hash = match at {
-			BlockId::Hash(h) => h,
-			BlockId::Number(n) => {
-				let hash = match self.client.block_hash(n.into()) {
-					Ok(ok) => ok,
-					Err(err) => return Err(Error::NoBlockFound.into_error_object(err.to_string())),
-				};
-				let Some(hash) = hash else {
-					return Err(Error::NoBlockFound
-						.into_error_object(String::from("Failed to find block hash")));
-				};
-				hash.into()
-			},
-		};
+		let block_hash = block_hash_from_block_id(&self.client, at)
+			.map_err(|e| Error::NoBlockFound.into_error_object(e))?;
 
-		let block_body = match self.client.block_body(block_hash.into()) {
-			Ok(x) => x,
-			Err(e) => {
-				return Err(Error::Other.into_error_object(e.to_string()));
-			},
-		};
+		let block_body = self
+			.client
+			.block_body(block_hash.into())
+			.map_err(|e| Error::other_error(e.to_string()))?;
 
 		let Some(block_body) = block_body else {
 			return Ok(Vec::new());
 		};
 
-		let (allowed_indices, allowed_hashes, allowed_pallets, allowed_calls) =
-			allowed_extrinsics_to_parts(allow_list);
+		let limit = query.max_items.unwrap_or(u32::MAX) as usize;
+		if limit == 0 {
+			return Ok(Vec::new());
+		}
 
-		let mut returned_extrinsics = Vec::new();
-		for (ext_index, opaque) in block_body.into_iter().enumerate() {
-			let ext_index = ext_index as u32;
-			// Filter Indices
-			if let Some(allowed) = &allowed_indices {
-				if !allowed.contains(&ext_index) {
-					continue;
-				}
+		let mut extrinsics_to_return = Vec::new();
+		let body_iter: Box<dyn Iterator<Item = (usize, OpaqueExtrinsic)>> = if query.reverse {
+			Box::new(block_body.into_iter().enumerate().rev())
+		} else {
+			Box::new(block_body.into_iter().enumerate())
+		};
+
+		let allow_list = AllowedExtrinsicsWrapper::new(allow_list);
+		for (ext_index, opaque) in body_iter {
+			let mut wrapper = ExtrinsicWrapper::new(opaque, ext_index as u32);
+
+			if !allow_list.index_allowed(wrapper.ext_index) {
+				continue;
 			}
 
-			let transparent = TransparentOpaque::from_opaque(&opaque)?;
-
-			let mut account_id = None;
-			let mut nonce = None;
-			if let Some((address, _, extended)) = transparent.preamble.to_signed() {
-				nonce = Some(extended.5 .0);
-				if let MultiAddress::Id(id) = address {
-					account_id = Some(id);
-				}
+			let ext_hash = wrapper.hash().map_err(|e| Error::other_error(e))?;
+			if !allow_list.hash_allowed(ext_hash) {
+				continue;
 			}
 
-			if let Some(allowed_address) = &sig_filter.account_id {
+			let ext_call_id = wrapper.call_id().map_err(|e| Error::other_error(e))?;
+			if !allow_list.pallet_allowed(ext_call_id.0) {
+				continue;
+			}
+			if !allow_list.call_allowed(&ext_call_id) {
+				continue;
+			}
+
+			let account_id = wrapper.account_id().map_err(|e| Error::other_error(e))?;
+			let nonce = wrapper.nonce().map_err(|e| Error::other_error(e))?;
+			if let Some(allowed_address) = &query.address {
 				let Some(account) = account_id.as_ref() else {
 					continue;
 				};
@@ -235,60 +215,38 @@ where
 				}
 			}
 
-			if let Some(allowed_nonce) = &sig_filter.nonce {
-				let Some(nonce) = nonce.as_ref() else {
-					continue;
-				};
-				if *allowed_nonce != *nonce {
+			if let Some(allowed_nonce) = query.nonce {
+				if Some(allowed_nonce) != nonce {
 					continue;
 				}
 			}
 
-			// Filter Pallets
-			if let Some(allowed) = &allowed_pallets {
-				if !allowed.contains(&transparent.pallet_id) {
-					continue;
-				}
-			}
-
-			// Filter Calls
-			if let Some(allowed) = &allowed_calls {
-				if !allowed.contains(&(transparent.pallet_id, transparent.variant_id)) {
-					continue;
-				}
-			}
-
-			let ext_hash = Blake2Hasher::hash(&transparent.bytes);
-
-			// Filter Hashes
-			if let Some(allowed) = &allowed_hashes {
-				if !allowed.contains(&ext_hash) {
-					continue;
-				}
-			}
-
+			let transparent = wrapper.transparent().map_err(|e| Error::other_error(e))?;
 			let data = match data_format {
 				DataFormat::None => String::new(),
 				DataFormat::Call => {
 					const_hex::encode(&transparent.bytes[transparent.call_start_pos..])
 				},
-				DataFormat::Extrinsic => const_hex::encode(transparent.bytes),
+				DataFormat::Extrinsic => const_hex::encode(&transparent.bytes),
 			};
 
 			let ext = Extrinsic {
 				data,
 				ext_hash,
-				ext_index,
+				ext_index: ext_index as u32,
 				pallet_id: transparent.pallet_id,
 				variant_id: transparent.variant_id,
 				account_id,
 				nonce,
 			};
 
-			returned_extrinsics.push(ext);
+			extrinsics_to_return.push(ext);
+			if extrinsics_to_return.len() >= limit {
+				break;
+			}
 		}
 
-		Ok(returned_extrinsics)
+		Ok(extrinsics_to_return)
 	}
 
 	async fn chain_info(&self) -> RpcResult<types::ChainInfo> {
@@ -314,27 +272,13 @@ where
 		const TIMESTAMP_SET_PALLET_ID: u8 = 3;
 		const TIMESTAMP_SET_VARIANT_ID: u8 = 0;
 
-		let block_hash = match at {
-			types::BlockId::Hash(h) => h,
-			types::BlockId::Number(n) => {
-				let hash = match self.client.block_hash(n.into()) {
-					Ok(ok) => ok,
-					Err(err) => return Err(Error::NoBlockFound.into_error_object(err.to_string())),
-				};
-				let Some(hash) = hash else {
-					return Err(Error::NoBlockFound
-						.into_error_object(String::from("Failed to find block hash")));
-				};
-				hash.into()
-			},
-		};
+		let block_hash = block_hash_from_block_id(&self.client, at)
+			.map_err(|e| Error::NoBlockFound.into_error_object(e))?;
 
-		let block_body = match self.client.block_body(block_hash.into()) {
-			Ok(x) => x,
-			Err(e) => {
-				return Err(Error::Other.into_error_object(e.to_string()));
-			},
-		};
+		let block_body = self
+			.client
+			.block_body(block_hash.into())
+			.map_err(|e| Error::other_error(e.to_string()))?;
 
 		let Some(block_body) = block_body else {
 			return Ok(0);
@@ -344,7 +288,8 @@ where
 			return Ok(0);
 		};
 
-		let transparent = TransparentOpaque::from_opaque(opaque)?;
+		let transparent =
+			TransparentOpaque::from_opaque(opaque).map_err(|e| Error::other_error(e))?;
 
 		if (transparent.pallet_id != TIMESTAMP_SET_PALLET_ID)
 			|| (transparent.variant_id != TIMESTAMP_SET_VARIANT_ID)
@@ -362,6 +307,185 @@ where
 	}
 }
 
+fn block_hash_from_block_id<C, Block>(client: &Arc<C>, at: types::BlockId) -> Result<H256, String>
+where
+	C: ProvideRuntimeApi<Block> + Send + Sync + 'static,
+	C: BlockBackend<Block>,
+	C::Api: frame_system_rpc_runtime_api::SystemEventsApi<Block>,
+	Block: BlockT,
+	<Block as BlockT>::Hash: From<H256> + Into<H256>,
+{
+	let block_hash = match at {
+		types::BlockId::Hash(h) => h,
+		types::BlockId::Number(n) => {
+			let hash = match client.block_hash(n.into()) {
+				Ok(ok) => ok,
+				Err(err) => return Err(err.to_string()),
+			};
+			let Some(hash) = hash else {
+				return Err(String::from("Failed to find block hash"));
+			};
+			hash.into()
+		},
+	};
+
+	Ok(block_hash)
+}
+
+#[derive(Default)]
+struct AllowedExtrinsicsWrapper {
+	allowed_indices: Option<Vec<u32>>,
+	allowed_hashes: Option<Vec<H256>>,
+	allowed_pallets: Option<Vec<u8>>,
+	allowed_calls: Option<Vec<(u8, u8)>>,
+}
+
+impl AllowedExtrinsicsWrapper {
+	pub fn new(list: Option<Vec<AllowedExtrinsic>>) -> Self {
+		let Some(list) = list else {
+			return Self::default();
+		};
+
+		let mut allowed_indices: Option<Vec<u32>> = None;
+		let mut allowed_hashes: Option<Vec<H256>> = None;
+		let mut allowed_pallets: Option<Vec<u8>> = None;
+		let mut allowed_calls: Option<Vec<(u8, u8)>> = None;
+
+		for allowed in list {
+			match allowed {
+				AllowedExtrinsic::TxHash(x) => {
+					if let Some(hashes) = allowed_hashes.as_mut() {
+						hashes.push(x);
+					} else {
+						allowed_hashes = Some(vec![x])
+					}
+				},
+				AllowedExtrinsic::TxIndex(x) => {
+					if let Some(items) = allowed_indices.as_mut() {
+						items.push(x);
+					} else {
+						allowed_indices = Some(vec![x])
+					}
+				},
+				AllowedExtrinsic::Pallet(x) => {
+					if let Some(items) = allowed_pallets.as_mut() {
+						items.push(x);
+					} else {
+						allowed_pallets = Some(vec![x])
+					}
+				},
+				AllowedExtrinsic::PalletCall(x) => {
+					if let Some(items) = allowed_calls.as_mut() {
+						items.push(x);
+					} else {
+						allowed_calls = Some(vec![x])
+					}
+				},
+			}
+		}
+
+		Self {
+			allowed_indices,
+			allowed_hashes,
+			allowed_pallets,
+			allowed_calls,
+		}
+	}
+
+	pub fn index_allowed(&self, index: u32) -> bool {
+		let Some(list) = self.allowed_indices.as_ref() else {
+			return true;
+		};
+		return list.contains(&index);
+	}
+
+	pub fn hash_allowed(&self, hash: H256) -> bool {
+		let Some(list) = self.allowed_hashes.as_ref() else {
+			return true;
+		};
+		return list.contains(&hash);
+	}
+
+	pub fn pallet_allowed(&self, pallet: u8) -> bool {
+		let Some(list) = self.allowed_pallets.as_ref() else {
+			return true;
+		};
+		return list.contains(&pallet);
+	}
+
+	pub fn call_allowed(&self, call: &(u8, u8)) -> bool {
+		let Some(list) = self.allowed_calls.as_ref() else {
+			return true;
+		};
+		return list.contains(call);
+	}
+}
+
+struct ExtrinsicWrapper {
+	pub opaque: OpaqueExtrinsic,
+	pub transparent: Option<TransparentOpaque>,
+	pub ext_index: u32,
+}
+
+impl ExtrinsicWrapper {
+	pub fn new(opaque: OpaqueExtrinsic, ext_index: u32) -> Self {
+		Self {
+			opaque,
+			transparent: None,
+			ext_index,
+		}
+	}
+
+	pub fn hash(&mut self) -> Result<H256, String> {
+		let transparent = self.transparent()?;
+		let hash = Blake2Hasher::hash(&transparent.bytes);
+		return Ok(hash);
+	}
+
+	pub fn call_id(&mut self) -> Result<(u8, u8), String> {
+		let transparent = self.transparent()?;
+		return Ok((transparent.pallet_id, transparent.variant_id));
+	}
+
+	pub fn nonce(&mut self) -> Result<Option<u32>, String> {
+		let transparent = self.transparent()?;
+		if let Preamble::Signed(_, _, extended) = &transparent.preamble {
+			return Ok(Some(extended.5 .0));
+		}
+
+		Ok(None)
+	}
+
+	pub fn account_id(&mut self) -> Result<Option<AccountId>, String> {
+		let transparent = self.transparent()?;
+		if let Preamble::Signed(address, _, _) = &transparent.preamble {
+			if let MultiAddress::Id(id) = address {
+				return Ok(Some(id.clone()));
+			}
+
+			if let MultiAddress::Address32(id) = address {
+				return Ok(Some(AccountId::from(id.clone())));
+			}
+		}
+
+		Ok(None)
+	}
+
+	fn transparent(&mut self) -> Result<&TransparentOpaque, String> {
+		if self.transparent.is_none() {
+			let transparent = TransparentOpaque::from_opaque(&self.opaque)?;
+			self.transparent = Some(transparent);
+		}
+
+		// Will never fail
+		self.transparent
+			.as_ref()
+			.ok_or(String::from("Failed to find transparent extrinsic."))
+	}
+}
+
+impl ExtrinsicWrapper {}
+
 struct TransparentOpaque {
 	pub bytes: Vec<u8>,
 	pub call_start_pos: usize,
@@ -371,29 +495,29 @@ struct TransparentOpaque {
 }
 
 impl TransparentOpaque {
-	pub fn from_opaque<'a>(opaque: &OpaqueExtrinsic) -> Result<TransparentOpaque, ErrorObject<'a>> {
+	pub fn from_opaque(opaque: &OpaqueExtrinsic) -> Result<TransparentOpaque, String> {
 		let bytes = opaque.encode();
 		let mut iter = bytes.as_slice();
 		let _ = match Compact::<u32>::decode(&mut iter) {
 			Ok(x) => x,
 			Err(e) => {
-				return Err(Error::Other.into_error_object(e.to_string()));
+				return Err(e.to_string());
 			},
 		};
 		let preamble = match Preamble::decode(&mut iter) {
 			Ok(p) => p,
 			Err(e) => {
-				return Err(Error::Other.into_error_object(e.to_string()));
+				return Err(e.to_string());
 			},
 		};
 
 		let call_start_pos = bytes.len().saturating_sub(iter.len());
 		let pallet_id = *bytes
 			.get(call_start_pos)
-			.ok_or(Error::Other.into_error_object(String::from("Invalid extrinsic found.")))?;
+			.ok_or(String::from("Invalid extrinsic found."))?;
 		let variant_id = *bytes
 			.get(call_start_pos + 1)
-			.ok_or(Error::Other.into_error_object(String::from("Invalid extrinsic found.")))?;
+			.ok_or(String::from("Invalid extrinsic found."))?;
 
 		let res = TransparentOpaque {
 			bytes,
@@ -404,64 +528,6 @@ impl TransparentOpaque {
 		};
 		Ok(res)
 	}
-}
-
-fn allowed_extrinsics_to_parts(
-	list: Option<Vec<AllowedExtrinsic>>,
-) -> (
-	Option<Vec<u32>>,
-	Option<Vec<H256>>,
-	Option<Vec<u8>>,
-	Option<Vec<(u8, u8)>>,
-) {
-	let Some(list) = list else {
-		return (None, None, None, None);
-	};
-
-	let mut allowed_indices: Option<Vec<u32>> = None;
-	let mut allowed_hashes: Option<Vec<H256>> = None;
-	let mut allowed_pallets: Option<Vec<u8>> = None;
-	let mut allowed_calls: Option<Vec<(u8, u8)>> = None;
-
-	for allowed in list {
-		match allowed {
-			AllowedExtrinsic::TxHash(x) => {
-				if let Some(hashes) = allowed_hashes.as_mut() {
-					hashes.push(x);
-				} else {
-					allowed_hashes = Some(vec![x])
-				}
-			},
-			AllowedExtrinsic::TxIndex(x) => {
-				if let Some(items) = allowed_indices.as_mut() {
-					items.push(x);
-				} else {
-					allowed_indices = Some(vec![x])
-				}
-			},
-			AllowedExtrinsic::Pallet(x) => {
-				if let Some(items) = allowed_pallets.as_mut() {
-					items.push(x);
-				} else {
-					allowed_pallets = Some(vec![x])
-				}
-			},
-			AllowedExtrinsic::PalletCall(x) => {
-				if let Some(items) = allowed_calls.as_mut() {
-					items.push(x);
-				} else {
-					allowed_calls = Some(vec![x])
-				}
-			},
-		}
-	}
-
-	(
-		allowed_indices,
-		allowed_hashes,
-		allowed_pallets,
-		allowed_calls,
-	)
 }
 
 pub mod types {
@@ -589,9 +655,14 @@ pub mod fetch_extrinsics {
 	}
 
 	#[derive(Default, Clone, Serialize, Deserialize)]
-	pub struct SignatureFilter {
-		// SS58 address
-		pub account_id: Option<String>,
+	pub struct Query {
+		/// SS58 address
+		pub address: Option<String>,
+		/// Nonce
 		pub nonce: Option<u32>,
+		/// If set to Some(1) it will return only the first occurrence of a extrinsic that match.
+		pub max_items: Option<u32>,
+		/// If true, it will traverse the extrinsic list from end to start.
+		pub reverse: bool,
 	}
 }

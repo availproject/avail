@@ -249,8 +249,8 @@ where
 		GrandpaJustifications::<C, Block>::new(client.clone()),
 	))?;
 
-	io.merge(kate_rpc::system::ApiServer::into_rpc(
-		kate_rpc::system::Rpc::<C, Block>::new(client),
+	io.merge(kate_rpc::custom::ApiServer::into_rpc(
+		kate_rpc::custom::Rpc::<C, Block>::new(client),
 	))?;
 
 	Ok(io)
