@@ -106,9 +106,12 @@ pub fn run() -> Result<()> {
 		},
 		Some(Subcommand::LightClient(cmd)) => {
 			let runner = cli.create_runner(&cmd.run)?;
+			// Light node uses warp bootstrap first, then switches to `AvailLight`.
+			// This gives a verified finalized checkpoint near tip, re-initializes GRANDPA
+			// from that trusted state target, and avoids historical block sync from genesis.
+			// `AvailLight` mode ensures that we only donwload headers & justification without block body.
 			runner.run_node_until_exit(|mut config| async move {
-				// DA light clients use a dedicated light-only sync mode without touching existing modes
-				config.network.sync_mode = sc_network::config::SyncMode::AvailLight;
+				config.network.sync_mode = sc_network::config::SyncMode::Warp;
 				config.role = Role::LightClient;
 
 				log::info!(
