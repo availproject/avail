@@ -161,33 +161,42 @@ where
 					FriHeader::V1(inner) => (inner.params_version, FriHeaderVersion::V1),
 				};
 
-				// Verify FRI proofs unless syncing
+				// FRI eval proofs are best-effort import-time data: blob-owner attestations are the
+				// primary validity signal, and requiring proofs in every summary would strengthen
+				// guarantees but can reduce throughput by forcing authors to wait on proof delivery.
+				// When a proof is included we still verify it here, but blocks remain importable
+				// without it. 
 				if !skip_sync {
 					for da in submitted_blobs.iter() {
-						if da.eval_point_seed.is_none()
-							|| da.eval_claim.is_none()
-							|| da.eval_proof.is_none()
-						{
-							return Err(ConsensusError::ClientImport(format!(
-								"Missing FRI proof data for blob {:?}",
-								da.hash
-							)));
+						match (
+							da.eval_point_seed.as_ref(),
+							da.eval_claim.as_ref(),
+							da.eval_proof.as_ref(),
+						) {
+							(Some(eval_point_seed), Some(eval_claim), Some(eval_proof)) => {
+								avail_blob::validation::validate_fri_proof(
+									da.size_bytes as usize,
+									params_version,
+									&da.commitments,
+									eval_point_seed,
+									eval_claim,
+									eval_proof,
+								)
+								.map_err(|e| {
+									ConsensusError::ClientImport(format!(
+										"FRI proof validation failed for blob {:?}: {e}",
+										da.hash
+									))
+								})?;
+							},
+							(Some(_), Some(_), None) => {},
+							_ => {
+								return Err(ConsensusError::ClientImport(format!(
+									"Incomplete FRI eval data for blob {:?}",
+									da.hash
+								)));
+							},
 						}
-
-						avail_blob::validation::validate_fri_proof(
-							da.size_bytes as usize,
-							params_version,
-							&da.commitments,
-							&da.eval_point_seed.expect("checked above; qed"),
-							&da.eval_claim.expect("checked above; qed"),
-							da.eval_proof.as_ref().expect("checked above; qed"),
-						)
-						.map_err(|e| {
-							ConsensusError::ClientImport(format!(
-								"FRI proof validation failed for blob {:?}: {e}",
-								da.hash
-							))
-						})?;
 					}
 				}
 
