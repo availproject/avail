@@ -6587,6 +6587,7 @@ dependencies = [
  "kate",
  "kate-recovery",
  "log",
+ "lru 0.16.3",
  "parity-scale-codec",
  "parking_lot 0.12.5",
  "sc-client-api",
