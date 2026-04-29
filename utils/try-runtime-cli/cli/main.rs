@@ -340,18 +340,16 @@ use da_runtime::NodeBlock;
 use try_runtime_core::commands::TryRuntime;
 
 fn init_env() {
-    if env::var(env_logger::DEFAULT_FILTER_ENV).is_err() {
-        env::set_var(env_logger::DEFAULT_FILTER_ENV, "info");
-    }
-    env_logger::init();
+	if env::var(env_logger::DEFAULT_FILTER_ENV).is_err() {
+		env::set_var(env_logger::DEFAULT_FILTER_ENV, "info");
+	}
+	env_logger::init();
 }
 
 #[tokio::main]
 async fn main() {
-    init_env();
+	init_env();
 
-    let cmd = TryRuntime::parse();
-    cmd.run::<NodeBlock, HostFunctions>()
-        .await
-        .unwrap();
+	let cmd = TryRuntime::parse();
+	cmd.run::<NodeBlock, HostFunctions>().await.unwrap();
 }

@@ -21,5 +21,4 @@ use sp_state_machine::TestExternalities;
 /// Some operations must be performed prior to inherents being applied.
 ///
 /// Avail-focused empty block production does not need parachain-system pre-apply hooks.
-pub fn pre_apply_inherents<B: BlockT>(_ext: &mut TestExternalities<HashingFor<B>>) {
-}
+pub fn pre_apply_inherents<B: BlockT>(_ext: &mut TestExternalities<HashingFor<B>>) {}

@@ -165,7 +165,7 @@ where
 				// primary validity signal, and requiring proofs in every summary would strengthen
 				// guarantees but can reduce throughput by forcing authors to wait on proof delivery.
 				// When a proof is included we still verify it here, but blocks remain importable
-				// without it. 
+				// without it.
 				if !skip_sync {
 					for da in submitted_blobs.iter() {
 						match (
