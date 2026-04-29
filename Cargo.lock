@@ -1283,7 +1283,7 @@ dependencies = [
 [[package]]
 name = "avail-core"
 version = "0.6.2"
-source = "git+https://github.com/availproject/avail-core.git?rev=93c92c15d4a94c1d821efbc128e46c55aae69437#93c92c15d4a94c1d821efbc128e46c55aae69437"
+source = "git+https://github.com/availproject/avail-core.git?rev=044d045f919119206db4dccadab57e8d6890769e#044d045f919119206db4dccadab57e8d6890769e"
 dependencies = [
  "binary-merkle-tree",
  "blake2b_simd",
@@ -1317,7 +1317,7 @@ dependencies = [
 [[package]]
 name = "avail-fri"
 version = "0.1.0"
-source = "git+https://github.com/availproject/avail-core.git?rev=93c92c15d4a94c1d821efbc128e46c55aae69437#93c92c15d4a94c1d821efbc128e46c55aae69437"
+source = "git+https://github.com/availproject/avail-core.git?rev=044d045f919119206db4dccadab57e8d6890769e#044d045f919119206db4dccadab57e8d6890769e"
 dependencies = [
  "avail-core",
  "binius-field",
@@ -6553,7 +6553,7 @@ dependencies = [
 [[package]]
 name = "kate"
 version = "0.9.2"
-source = "git+https://github.com/availproject/avail-core.git?rev=93c92c15d4a94c1d821efbc128e46c55aae69437#93c92c15d4a94c1d821efbc128e46c55aae69437"
+source = "git+https://github.com/availproject/avail-core.git?rev=044d045f919119206db4dccadab57e8d6890769e#044d045f919119206db4dccadab57e8d6890769e"
 dependencies = [
  "avail-core",
  "const-hex",
@@ -6579,7 +6579,7 @@ dependencies = [
 [[package]]
 name = "kate-recovery"
 version = "0.10.0"
-source = "git+https://github.com/availproject/avail-core.git?rev=93c92c15d4a94c1d821efbc128e46c55aae69437#93c92c15d4a94c1d821efbc128e46c55aae69437"
+source = "git+https://github.com/availproject/avail-core.git?rev=044d045f919119206db4dccadab57e8d6890769e#044d045f919119206db4dccadab57e8d6890769e"
 dependencies = [
  "avail-core",
  "derive_more 2.1.1",
