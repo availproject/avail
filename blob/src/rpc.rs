@@ -25,7 +25,7 @@ use crate::{
 };
 use avail_base::HeaderExtensionBuilderData;
 use avail_core::header::extension::CommitmentScheme;
-use avail_core::{AppId, DataProof};
+use avail_core::{data_proof::ProofResponse, AppId, DataProof};
 use avail_fri::eval_utils::derive_seed_from_inputs;
 use avail_fri::{
 	transcript_to_bytes, BytesEncoder, FriBiniusPCS, FriParamsVersion, SamplingProof, B128,
@@ -34,7 +34,7 @@ use avail_observability::metrics::BlobMetrics;
 use codec::{Decode, Encode};
 use da_commitment::build_kzg_commitments::build_polynomial_grid;
 use da_control::{BlobRuntimeParameters, Call};
-use da_runtime::apis::{BlobApi as _, KateApi};
+use da_runtime::apis::{BlobApi as _, BridgeApi};
 use da_runtime::{Runtime, RuntimeCall, UncheckedExtrinsic};
 use frame_system::limits::BlockLength;
 use jsonrpsee::{
@@ -229,6 +229,28 @@ where
 		blob_hash: H256,
 		at: Option<Block::Hash>,
 	) -> RpcResult<DataProof>;
+
+	/// Returns a data-root proof for the transaction at `transaction_index`.
+	///
+	/// For bridge transactions this response also includes the bridge message
+	/// bytes that are proven by the bridge data root.
+	///
+	/// ### Parameters
+	/// - `transaction_index`: Index of the transaction in the block body.
+	/// - `at`: Optional block hash. If omitted, uses the node's best block.
+	///
+	/// ### Returns
+	/// - `ProofResponse` containing the data proof and optional bridge message.
+	///
+	/// ### Errors
+	/// - If the block is not finalized.
+	/// - If no data exists for the requested transaction index.
+	#[method(name = "bridge_queryDataProof")]
+	async fn query_data_proof(
+		&self,
+		transaction_index: u32,
+		at: Option<Block::Hash>,
+	) -> RpcResult<ProofResponse>;
 
 	// TODO: feature-gate this RPC only for debugging & development
 	#[method(name = "blob_logStuff")]
@@ -695,12 +717,43 @@ where
 			.client
 			.runtime_api()
 			.inclusion_proof(header.hash(), extrinsics, blob_hash)
-			.map_err(|e| internal_err!("KateApi::inclusion_proof failed: {e:?}"))?
+			.map_err(|e| internal_err!("BridgeApi::inclusion_proof failed: {e:?}"))?
 			.ok_or_else(|| {
 				internal_err!(
 					"Cannot fetch tx data by blob_hash {blob_hash:?} at block {:?}",
 					block_hash
 				)
+			})
+	}
+
+	#[tracing::instrument(name = "query_data_proof", skip_all)]
+	async fn query_data_proof(
+		&self,
+		tx_idx: u32,
+		at: Option<Block::Hash>,
+	) -> RpcResult<ProofResponse> {
+		let at = self.at_or_best(at);
+		let signed_block = self
+			.blob_handle
+			.client
+			.block(at.into())
+			.map_err(|e| internal_err!("Failed to get block: {:?}", e))?
+			.ok_or_else(|| internal_err!("Block not found: {:?}", at))?;
+
+		let block_header = signed_block.block.header();
+		let block_number: u32 = (*block_header.number()).into();
+		if self.blob_handle.client.info().finalized_number < *block_header.number() {
+			return Err(internal_err!("Requested block {at:?} is not finalized"));
+		}
+
+		let (header, extrinsics) = signed_block.block.deconstruct();
+		self.blob_handle
+			.client
+			.runtime_api()
+			.data_proof(header.hash(), block_number, extrinsics, tx_idx)
+			.map_err(|e| internal_err!("BridgeApi::data_proof failed: {e:?}"))?
+			.ok_or_else(|| {
+				internal_err!("Cannot fetch tx data at tx index {tx_idx:?} at block {at:?}")
 			})
 	}
 

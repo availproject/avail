@@ -10,7 +10,6 @@ use substrate_prometheus_endpoint::{
 pub struct AvailMetrics {
 	pub import_block: ImportBlockMetrics,
 	pub header_extension: HeaderExtensionBuilderMetrics,
-	pub kate_rpc: KateRpcMetrics,
 	pub blob: BlobMetrics,
 }
 
@@ -19,7 +18,6 @@ impl AvailMetrics {
 	pub fn new(registry: &Registry) -> Result<Self, PrometheusError> {
 		let import_block = ImportBlockMetrics::new(registry)?;
 		let header_extension = HeaderExtensionBuilderMetrics::new(registry)?;
-		let kate_rpc = KateRpcMetrics::new(registry)?;
 		let blob = BlobMetrics::new(registry)?;
 
 		log::info!(
@@ -30,7 +28,6 @@ impl AvailMetrics {
 		Ok(Self {
 			import_block,
 			header_extension,
-			kate_rpc,
 			blob,
 		})
 	}
@@ -283,116 +280,6 @@ impl HeaderExtensionBuilderMetrics {
 	}
 }
 
-pub struct KateRpcMetrics {
-	pub query_rows_execution_time: Histogram,
-	pub query_proof_execution_time: Histogram,
-	pub query_block_length_execution_time: Histogram,
-	pub query_data_proof_execution_time: Histogram,
-}
-
-impl KateRpcMetrics {
-	pub fn new(registry: &Registry) -> Result<Self, PrometheusError> {
-		let buckets = [
-			1000.0, 5000.0, 10000.0, 25000.0, //  1ms, 5ms, 10ms, 25ms
-			50000.0, 75000.0, 100_000.0, 150_000.0, // 50ms, 75ms, 100ms, 150ms
-			200_000.0, 300_000.0, 400_000.0, 500_000.0, // 200ms, 300ms, 400ms, 500ms
-		];
-		let query_rows_execution_time = custom_histogram(
-			registry,
-			"avail_kate_rpc_query_rows_execution_time",
-			"Kate RPC - Query Rows Time in microseconds",
-			buckets.to_vec(),
-		)?;
-
-		let buckets = [
-			100_000.0,
-			250_000.0,
-			500_000.0,
-			1_000_000.0, //  100ms, 250ms, 500ms, 1s
-			2_500_000.0,
-			5_000_000.0,
-			7_500_000.0,
-			10_000_000.0, // 2.5s, 5s, 7.5s, 10s
-			12_500_000.0,
-			15_000_000.0,
-			17_500_000.0, // 12.5s, 15s, 17.5s
-		];
-		let query_proof_execution_time = custom_histogram(
-			registry,
-			"avail_kate_rpc_query_proof_execution_time",
-			"Kate RPC - Query Proof Time in microseconds",
-			buckets.to_vec(),
-		)?;
-
-		let buckets = [
-			100.0, 200.0, 300.0, 400.0, 500.0, // 0.10ms, 0.20ms, 0.30ms, 0.40ms, 0.50ms,
-			750.0, 1000.0, 1250.0, 2500.0, // 0.75ms, 1.0ms, 1.25ms, 2.5ms
-			5000.0, 7500.0, 10000.0, // 5ms, 7.5ms, 10ms
-		];
-		let query_block_length_execution_time = custom_histogram(
-			registry,
-			"avail_kate_rpc_query_block_length_execution_time",
-			"Kate RPC - Query Block Length Time in microseconds",
-			buckets.to_vec(),
-		)?;
-
-		let buckets = [
-			100.0, 250.0, 500.0, 1000.0, 2500.0, // 0.10ms, 0.25ms, 0.5ms, 1ms, 2.5ms,
-			5000.0, 7500.0, 10000.0, 25000.0, // 5ms, 7.5ms, 10ms, 25ms
-			50000.0, // 50ms
-		];
-		let query_data_proof_execution_time = custom_histogram(
-			registry,
-			"avail_kate_rpc_query_data_proof_execution_time",
-			"Kate RPC - Query Data Proof Time in microseconds",
-			buckets.to_vec(),
-		)?;
-
-		Ok(Self {
-			query_rows_execution_time,
-			query_proof_execution_time,
-			query_block_length_execution_time,
-			query_data_proof_execution_time,
-		})
-	}
-
-	pub(crate) fn observe_query_rows_execution_time(duration: Duration) {
-		if let Some(metrics) = AVAIL_METRICS.get() {
-			metrics
-				.kate_rpc
-				.query_rows_execution_time
-				.observe(duration.as_micros() as f64);
-		}
-	}
-
-	pub(crate) fn observe_query_proof_execution_time(duration: Duration) {
-		if let Some(metrics) = AVAIL_METRICS.get() {
-			metrics
-				.kate_rpc
-				.query_proof_execution_time
-				.observe(duration.as_micros() as f64);
-		}
-	}
-
-	pub(crate) fn observe_query_block_length_execution_time(duration: Duration) {
-		if let Some(metrics) = AVAIL_METRICS.get() {
-			metrics
-				.kate_rpc
-				.query_block_length_execution_time
-				.observe(duration.as_micros() as f64);
-		}
-	}
-
-	pub(crate) fn observe_query_data_proof_execution_time(duration: Duration) {
-		if let Some(metrics) = AVAIL_METRICS.get() {
-			metrics
-				.kate_rpc
-				.query_data_proof_execution_time
-				.observe(duration.as_micros() as f64);
-		}
-	}
-}
-
 pub struct ImportBlockMetrics {
 	pub total_execution_time: Histogram,
 }
@@ -438,10 +325,6 @@ impl ImportBlockMetrics {
 
 pub enum ObserveKind {
 	ImportBlockTotalExecutionTime,
-	KateQueryDataProof,
-	KateQueryBlockLength,
-	KateQueryProof,
-	KateQueryRows,
 	HETotalExecutionTime,
 	HEGrid,
 	HECommitment,
@@ -467,18 +350,6 @@ impl Drop for MetricObserver {
 		match self.kind {
 			ObserveKind::ImportBlockTotalExecutionTime => {
 				ImportBlockMetrics::observe_total_execution_time(duration)
-			},
-			ObserveKind::KateQueryDataProof => {
-				KateRpcMetrics::observe_query_data_proof_execution_time(duration)
-			},
-			ObserveKind::KateQueryBlockLength => {
-				KateRpcMetrics::observe_query_block_length_execution_time(duration)
-			},
-			ObserveKind::KateQueryProof => {
-				KateRpcMetrics::observe_query_proof_execution_time(duration)
-			},
-			ObserveKind::KateQueryRows => {
-				KateRpcMetrics::observe_query_rows_execution_time(duration)
 			},
 			ObserveKind::HETotalExecutionTime => {
 				HeaderExtensionBuilderMetrics::observe_total_execution_time(duration)

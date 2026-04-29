@@ -1348,6 +1348,7 @@ dependencies = [
  "avail-blob",
  "avail-core",
  "avail-observability",
+ "avail-rpc",
  "clap",
  "clap-num",
  "clap_complete",
@@ -1361,7 +1362,6 @@ dependencies = [
  "futures",
  "jsonrpsee",
  "kate",
- "kate-rpc",
  "log",
  "mmr-rpc",
  "pallet-im-online",
@@ -1437,6 +1437,32 @@ dependencies = [
  "serde_json",
  "substrate-prometheus-endpoint",
  "tokio",
+]
+
+[[package]]
+name = "avail-rpc"
+version = "0.3.0"
+dependencies = [
+ "avail-base",
+ "avail-core",
+ "const-hex",
+ "da-runtime",
+ "frame-support",
+ "frame-system",
+ "frame-system-rpc-runtime-api",
+ "jsonrpsee",
+ "log",
+ "parity-scale-codec",
+ "parking_lot 0.12.5",
+ "sc-client-api",
+ "sc-service",
+ "serde",
+ "serde_json",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core",
+ "sp-runtime",
+ "tracing",
 ]
 
 [[package]]
@@ -6569,35 +6595,6 @@ dependencies = [
  "sp-std",
  "static_assertions",
  "thiserror-no-std",
-]
-
-[[package]]
-name = "kate-rpc"
-version = "0.3.0"
-dependencies = [
- "avail-base",
- "avail-core",
- "avail-observability",
- "const-hex",
- "da-runtime",
- "frame-support",
- "frame-system",
- "frame-system-rpc-runtime-api",
- "jsonrpsee",
- "kate",
- "kate-recovery",
- "log",
- "parity-scale-codec",
- "parking_lot 0.12.5",
- "sc-client-api",
- "sc-service",
- "serde",
- "serde_json",
- "sp-api",
- "sp-blockchain",
- "sp-core",
- "sp-runtime",
- "tracing",
 ]
 
 [[package]]

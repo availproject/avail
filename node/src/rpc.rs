@@ -29,7 +29,7 @@
 //! be placed here or imported from corresponding FRAME RPC definitions.
 
 //! # Data Availability Changes
-//! - Add Kate RPC extension.
+//! - Add Avail-specific RPC extensions.
 //! - Remove `sc_rpc::dev` extension.
 
 #![warn(missing_docs)]
@@ -37,7 +37,7 @@
 use std::sync::Arc;
 
 use da_runtime::{
-	apis::{BlobApi, DataAvailApi, KateApi, VectorApi},
+	apis::{BlobApi, BridgeApi, DataAvailApi, VectorApi},
 	AccountId, Balance, BlockNumber, Hash, Index, NodeBlock as Block,
 };
 use jsonrpsee::RpcModule;
@@ -95,13 +95,6 @@ pub struct FullDeps<C, P, SC, B> {
 	pub babe: BabeDeps,
 	/// GRANDPA specific dependencies.
 	pub grandpa: GrandpaDeps<B>,
-	/// Kate RPC specific dependencies.
-	///
-	/// Available configs:
-	/// - pub max_cells_size: usize,
-	/// - pub rpc_enabled: bool,
-	/// - pub rpc_metrics_enabled: bool,
-	pub kate_rpc_deps: kate_rpc::Deps,
 }
 
 /// Instantiate all Full RPC extensions.
@@ -126,7 +119,7 @@ where
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
 	C::Api: BabeApi<Block>,
 	C::Api: BlockBuilder<Block>,
-	C::Api: DataAvailApi<Block> + KateApi<Block> + VectorApi<Block> + BlobApi<Block>,
+	C::Api: DataAvailApi<Block> + BridgeApi<Block> + VectorApi<Block> + BlobApi<Block>,
 	C::Api: TaggedTransactionQueue<Block>,
 	P: TransactionPool<Block = Block> + 'static,
 	SC: SelectChain<Block> + 'static,
@@ -134,9 +127,7 @@ where
 	B::State: sc_client_api::backend::StateBackend<sp_runtime::traits::HashingFor<Block>>,
 	H256: From<<P as sc_transaction_pool_api::TransactionPool>::Hash>,
 {
-	use kate_rpc::justifications::{GrandpaJustifications, GrandpaServer};
-	use kate_rpc::metrics::KateApiMetricsServer;
-	use kate_rpc::{Kate, KateApiServer};
+	use avail_rpc::justifications::{GrandpaJustifications, GrandpaServer};
 	use mmr_rpc::{Mmr, MmrApiServer};
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
 	use sc_consensus_babe_rpc::{Babe, BabeApiServer};
@@ -157,7 +148,6 @@ where
 		chain_spec,
 		babe,
 		grandpa,
-		kate_rpc_deps,
 	} = deps;
 
 	let BabeDeps {
@@ -172,7 +162,6 @@ where
 		finality_provider,
 	} = grandpa;
 
-	let is_dev_chain = chain_spec.id().ends_with("development_network");
 	// let chain_name = chain_spec.name().to_string();
 	// let genesis_hash = client
 	// 	.block_hash(0)
@@ -228,20 +217,6 @@ where
 
 	io.merge(StateMigration::new(client.clone(), backend.clone()).into_rpc())?;
 
-	if is_dev_chain || kate_rpc_deps.rpc_metrics_enabled {
-		io.merge(KateApiMetricsServer::into_rpc(Kate::<C, Block>::new(
-			client.clone(),
-			kate_rpc_deps.max_cells_size,
-		)))?;
-	}
-
-	if is_dev_chain || kate_rpc_deps.rpc_enabled || kate_rpc_deps.rpc_metrics_enabled {
-		io.merge(KateApiServer::into_rpc(Kate::<C, Block>::new(
-			client.clone(),
-			kate_rpc_deps.max_cells_size,
-		)))?;
-	}
-
 	#[cfg(feature = "testing-environment")]
 	io.merge(TestingApiServer::into_rpc(TestingEnv))?;
 
@@ -249,8 +224,8 @@ where
 		GrandpaJustifications::<C, Block>::new(client.clone()),
 	))?;
 
-	io.merge(kate_rpc::system::ApiServer::into_rpc(
-		kate_rpc::system::Rpc::<C, Block>::new(client),
+	io.merge(avail_rpc::system::ApiServer::into_rpc(
+		avail_rpc::system::Rpc::<C, Block>::new(client),
 	))?;
 
 	Ok(io)
