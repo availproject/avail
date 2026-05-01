@@ -5,8 +5,6 @@
 // 	block_api::{BlockExtOptionsExpanded, BlockWithRawExt},
 // 	prelude::*,
 // };
-// use da_commitment::build_kzg_commitments::build_da_commitments;
-// use kate::Seed;
 // use sp_crypto_hashing::keccak_256;
 // use sp_std::iter::repeat;
 
@@ -25,7 +23,6 @@
 // 		println!("---------- START Commitment generation {i} ---------- ");
 // 		let blob: Vec<u8> = repeat(byte).take(len - i).collect::<Vec<u8>>();
 // 		let blob_hash = H256::from(keccak_256(&blob));
-// 		let commitments = build_da_commitments(&blob, 1024, 4096, Seed::default());
 // 		println!("blob len = {:?}", blob.len());
 // 		println!("blob_hash = {:?}", blob_hash);
 // 		println!("commitments len = {:?}", commitments.len());

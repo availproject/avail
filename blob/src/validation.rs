@@ -1,7 +1,6 @@
-use crate::traits::CommitmentQueueApiT;
 use crate::{
 	traits::{NonceCacheApiT, RuntimeApiT},
-	utils::{extract_signer_and_nonce, CommitmentQueueMessage},
+	utils::extract_signer_and_nonce,
 };
 use avail_fri::{
 	core::{FriBiniusPCS, FriCommitOutput, FriContext, B128},
@@ -9,13 +8,10 @@ use avail_fri::{
 	eval_utils::{derive_evaluation_point, eval_claim_from_bytes},
 	transcript_from_bytes, FriEvalProofBundle, FriParamsVersion,
 };
-use avail_observability::metrics::BlobMetrics;
 use codec::{Decode, Encode};
-// use da_commitment::build_fri_commitments::build_fri_da_commitment;
 use da_control::Call;
 use da_runtime::RuntimeCall;
 use da_runtime::UncheckedExtrinsic;
-use kate::gridgen::core::PolynomialGrid;
 use sp_core::keccak_256;
 use sp_core::H256;
 use sp_runtime::transaction_validity::TransactionSource;
@@ -285,38 +281,6 @@ pub fn tx_validation(
 	}
 
 	Ok(opaque_tx)
-}
-
-#[tracing::instrument(name = "validate_kzg_commitment", skip_all)]
-pub async fn validate_kzg_commitment(
-	hash: H256,
-	provided_commitment: &Vec<u8>,
-	grid: PolynomialGrid,
-	queue: &Arc<dyn CommitmentQueueApiT>,
-) -> Result<(), String> {
-	// Metrics
-	let queue_capacity = queue.capacity();
-	BlobMetrics::set_queue_capacity(queue_capacity as u64);
-	crate::telemetry::BlobSubmission::queue_capacity(hash, queue_capacity);
-
-	let (message, rx_comm) = CommitmentQueueMessage::new(hash, grid);
-	if !queue.send(message) {
-		// Need better error handling
-		return Err("Commitment queue is full".into());
-	}
-	let commitment = match rx_comm.await {
-		Ok(x) => x,
-		Err(_) => {
-			return Err("Cannot compute commitment. :(  Channel is down".into());
-		},
-	};
-
-	// Check comitment
-	if !provided_commitment.eq(&commitment) {
-		return Err("submitted blob commitment mismatch".into());
-	}
-
-	Ok(())
 }
 
 /// Recompute the blob's FRI commitment and compare it with the provided commitment.

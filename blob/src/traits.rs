@@ -1,5 +1,4 @@
 use crate::types::EvalClaimsMessage;
-use crate::utils::CommitmentQueueMessage;
 use crate::{BlobHandle, BlobNotification};
 use avail_fri::FriParamsVersion;
 use da_runtime::{apis::BlobApi, AccountId, UncheckedExtrinsic};
@@ -276,11 +275,6 @@ where
 	fn eval_claims_cmd_sender(&self) -> Option<&async_channel::Sender<EvalClaimsMessage>> {
 		self.blob_handle.eval_claims_cmd_sender.as_ref()
 	}
-}
-
-pub trait CommitmentQueueApiT: Send + Sync {
-	fn send(&self, value: CommitmentQueueMessage) -> bool;
-	fn capacity(&self) -> usize;
 }
 
 pub trait NonceCacheApiT: Send + Sync {

@@ -6,10 +6,8 @@ use avail_blob::store::RocksdbBlobStore;
 use avail_blob::store::StorageApiT;
 use avail_blob::traits::*;
 use avail_blob::types::CompressedBlob;
-use avail_blob::utils::CommitmentQueue;
 use avail_rust::prelude::*;
-use da_commitment::build_kzg_commitments;
-use da_commitment::build_kzg_commitments::build_da_commitments;
+use da_commitment::build_fri_commitments::{build_fri_da_commitment, FriParamsVersion};
 use da_runtime::AccountId;
 use da_runtime::UncheckedExtrinsic;
 use da_runtime::AVAIL;
@@ -55,8 +53,7 @@ fn read_data() -> Result<(), String> {
 	Ok(())
 }
 
-pub const DEFAULT_ROWS: usize = 1024;
-pub const DEFAULT_COLS: usize = 4096;
+pub const DEFAULT_FRI_PARAMS_VERSION: FriParamsVersion = FriParamsVersion::V0;
 
 pub struct DummyNonceCache;
 impl NonceCacheApiT for DummyNonceCache {
@@ -129,7 +126,7 @@ struct BuildTxOutput {
 fn build_transaction(data: Arc<Vec<u8>>) -> BuildTxOutput {
 	// Hash and Commitments
 	let data_hash = H256::from(keccak_256(&*data));
-	let commitments = build_da_commitments(&*data, 1024, 4096, Default::default());
+	let commitments = build_fri_da_commitment(&data, DEFAULT_FRI_PARAMS_VERSION);
 
 	// Tx
 	let account_id: avail_rust::AccountId = avail_rust::AccountId::from([0u8; 32]);
@@ -218,50 +215,28 @@ mod validation {
 	fn commitment_validation(bencher: Bencher) {
 		let data = DATA_TO_BENCH.get().unwrap().clone();
 		let tx = build_transaction(data);
-
-		// Queue
-		let (queue, rx) = CommitmentQueue::new(1);
-		CommitmentQueue::spawn_background_task(rx);
-		let queue: Arc<dyn CommitmentQueueApiT> = Arc::new(queue);
-
-		// grid & Commitment
-		let grid = build_kzg_commitments::build_polynomial_grid(
-			&*tx.data,
-			DEFAULT_ROWS,
-			DEFAULT_COLS,
-			Default::default(),
-		);
 		let provided_commitment = &tx.commitments;
 
 		bencher
-			.with_inputs(|| (provided_commitment, &grid, &queue))
+			.with_inputs(|| (&tx.data, provided_commitment))
 			.bench_local_refs(|params| {
-				let runtime = tokio::runtime::Runtime::new().unwrap();
-				runtime.block_on(async {
-					avail_blob::validation::validate_kzg_commitment(
-						tx.data_hash,
-						&params.0,
-						params.1.clone(),
-						&params.2,
-					)
-					.await
-					.expect("Ok")
-				});
+				avail_blob::validation::validate_fri_commitment(
+					tx.data_hash,
+					params.0.as_slice(),
+					params.1.as_slice(),
+					DEFAULT_FRI_PARAMS_VERSION,
+				)
+				.expect("Ok");
 			});
 	}
 
 	#[divan::bench(max_time = 2)]
-	fn build_polynomial_grid(bencher: Bencher) {
+	fn build_fri_commitment(bencher: Bencher) {
 		let data = DATA_TO_BENCH.get().unwrap().clone();
 		let tx = build_transaction(data);
 
 		bencher.with_inputs(|| &tx).bench_local_refs(|tx| {
-			build_kzg_commitments::build_polynomial_grid(
-				&*tx.data,
-				DEFAULT_ROWS,
-				DEFAULT_COLS,
-				Default::default(),
-			);
+			build_fri_da_commitment(&tx.data, DEFAULT_FRI_PARAMS_VERSION);
 		});
 	}
 }

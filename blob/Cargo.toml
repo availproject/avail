@@ -13,8 +13,6 @@ sp-consensus-babe = { workspace = true, default-features = false }
 sc-transaction-pool = { workspace = true, default-features = false }
 frame-support = { workspace = true, default-features = false }
 pallet-balances = { workspace = true, default-features = false }
-kate = { workspace = true, default-features = false }
-kate-recovery = { workspace = true, default-features = false }
 avail-observability = { workspace = true }
 
 tokio = { version = "1.50.0", features = [
@@ -81,8 +79,6 @@ std = [
 	"frame-benchmarking/std",
 	"frame-system/std",
 	"futures/std",
-	"kate-recovery/std",
-	"kate/std",
 	"once_cell/std",
 	"sc-executor/std",
 	"scale-info/std",

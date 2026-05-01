@@ -11,8 +11,6 @@ workspace = true
 
 [dependencies]
 avail-fri = { workspace = true, default-features = false }
-kate = { workspace = true, default-features = false }
-primitive-types.workspace = true
 thiserror-no-std.workspace = true
 log = { workspace = true, default-features = false }
 anyhow = { version = "1.0", default-features = false}
@@ -23,7 +21,7 @@ divan = { version = "0.1"}
 
 [features]
 default = [ "std" ]
-std = [ "avail-fri/std", "kate/std", "log/std" ]
+std = [ "avail-fri/std", "log/std" ]
 
 [[bench]]
 name = "commitment"

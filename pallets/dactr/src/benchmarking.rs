@@ -12,7 +12,6 @@ use frame_system::{
 	Config as SystemConfig,
 	RawOrigin,
 };
-use kate::Seed;
 use scale_info::{StaticTypeInfo, TypeInfo};
 use sp_core::H256;
 use sp_runtime::{
@@ -314,15 +313,13 @@ mod benchmarks {
 
 		let blob_hash = H256::repeat_byte((s + 1) as u8);
 
-		let block_length = frame_system::Pallet::<T>::block_length();
 		let data = vec![0u8; s as usize];
 		let app_id = AppId(2);
-		let commitment = crate::extensions::native::hosted_commitment_builder::build_da_commitments(
-			&data,
-			block_length.cols.0,
-			block_length.rows.0,
-			Seed::default(),
-		);
+		let commitment =
+			crate::extensions::native::hosted_commitment_builder::build_fri_commitments(
+				&data,
+				crate::Pallet::<T>::fri_params_version(),
+			);
 		debug_assert!(!commitment.is_empty());
 
 		#[extrinsic_call]

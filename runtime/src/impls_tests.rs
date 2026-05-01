@@ -621,16 +621,14 @@ mod measure_full_block_size {
 	use crate::{
 		extensions::check_batch_transactions::CheckBatchTransactions,
 		impls_tests::tests::RuntimeGenesisConfig, Block, DataAvailability, Executive, Header,
-		Runtime, RuntimeCall, SignedExtra, SignedPayload, System, Timestamp, UncheckedExtrinsic,
+		Runtime, RuntimeCall, SignedExtra, SignedPayload, Timestamp, UncheckedExtrinsic,
 	};
-	use avail_core::{AppId, FriParamsVersion, currency::AVAIL, from_substrate::keccak_256};
+	use avail_core::{currency::AVAIL, from_substrate::keccak_256, AppId, FriParamsVersion};
 	use codec::Encode;
 	use da_control::{
 		extensions::native::hosted_commitment_builder::build_fri_commitments, BlobTxSummaryRuntime,
 	};
-	use frame_support::{
-		pallet_prelude::{InvalidTransaction, TransactionValidityError},
-	};
+	use frame_support::pallet_prelude::{InvalidTransaction, TransactionValidityError};
 	use frame_system::{
 		CheckEra, CheckGenesis, CheckNonZeroSender, CheckNonce, CheckSpecVersion, CheckTxVersion,
 		CheckWeight,
