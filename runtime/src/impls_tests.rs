@@ -623,13 +623,12 @@ mod measure_full_block_size {
 		impls_tests::tests::RuntimeGenesisConfig, Block, DataAvailability, Executive, Header,
 		Runtime, RuntimeCall, SignedExtra, SignedPayload, System, Timestamp, UncheckedExtrinsic,
 	};
-	use avail_core::{currency::AVAIL, from_substrate::keccak_256, AppId};
+	use avail_core::{AppId, FriParamsVersion, currency::AVAIL, from_substrate::keccak_256};
 	use codec::Encode;
 	use da_control::{
-		extensions::native::hosted_commitment_builder::build_kzg_commitments, BlobTxSummaryRuntime,
+		extensions::native::hosted_commitment_builder::build_fri_commitments, BlobTxSummaryRuntime,
 	};
 	use frame_support::{
-		// dispatch::GetDispatchInfo,
 		pallet_prelude::{InvalidTransaction, TransactionValidityError},
 	};
 	use frame_system::{
@@ -711,15 +710,11 @@ mod measure_full_block_size {
 			let mut nonce: u32 = 0;
 			let mut extrinsics = Vec::new();
 
-			let block_length = System::block_length();
 			let blob_runtime_parameters = DataAvailability::blob_runtime_parameters();
 			let max_blob_size = blob_runtime_parameters.max_blob_size;
 			let blob = vec![b'a'; max_blob_size as usize];
-			let cols = block_length.cols.0;
-			let rows = block_length.rows.0;
-			let seed = kate::Seed::default();
 			let blob_hash = H256(keccak_256(&blob));
-			let commitment = build_kzg_commitments(&blob, cols, rows, seed);
+			let commitment = build_fri_commitments(&blob, FriParamsVersion::V0);
 
 			let mut blob_txs_summary: Vec<BlobTxSummaryRuntime> = vec![];
 			let ownership = sample_ownerships();
@@ -735,14 +730,6 @@ mod measure_full_block_size {
 						eval_claim: None,
 					},
 				);
-
-				// let info = call.get_dispatch_info();
-				// println!(
-				// 	"predicted: class={:?}, weight(ref_time)={}, proof_size={}",
-				// 	info.class,
-				// 	info.weight.ref_time(),
-				// 	info.weight.proof_size()
-				// );
 
 				let extra: SignedExtra = (
 					CheckNonZeroSender::<Runtime>::new(),

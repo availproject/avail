@@ -44,7 +44,6 @@ pub const EVAL_CLAIMS_TOPIC: &[u8] = b"avail/eval_claims/1";
 pub type HostFunctions = (
 	frame_system::native::hosted_header_builder::hosted_header_builder::HostFunctions,
 	avail_base::mem_tmp_storage::hosted_mem_tmp_storage::HostFunctions,
-	da_runtime::kate::native::hosted_kate::HostFunctions,
 	da_control::extensions::native::hosted_commitment_builder::HostFunctions,
 	sp_io::SubstrateHostFunctions,
 );
@@ -54,7 +53,6 @@ pub type HostFunctions = (
 	frame_benchmarking::benchmarking::HostFunctions,
 	frame_system::native::hosted_header_builder::hosted_header_builder::HostFunctions,
 	avail_base::mem_tmp_storage::hosted_mem_tmp_storage::HostFunctions,
-	da_runtime::kate::native::hosted_kate::HostFunctions,
 	da_control::extensions::native::hosted_commitment_builder::HostFunctions,
 	sp_io::SubstrateHostFunctions,
 );

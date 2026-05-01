@@ -158,7 +158,6 @@ pub fn run() -> Result<()> {
 						cmd.run_with_spec::<HashingFor<Block>, (
 							frame_system::native::hosted_header_builder::hosted_header_builder::HostFunctions,
 							avail_base::mem_tmp_storage::hosted_mem_tmp_storage::HostFunctions,
-							da_runtime::kate::native::hosted_kate::HostFunctions,
 							da_control::extensions::native::hosted_commitment_builder::HostFunctions,
 						)>(Some(config.chain_spec))
 					},
