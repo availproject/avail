@@ -9,7 +9,6 @@ use avail_base::{HeaderExtensionBuilderData, ProvidePostInherent};
 use avail_core::{
 	currency::Balance,
 	data_proof::{DataProof, ProofResponse, SubTrie},
-	header::extension::CommitmentScheme,
 	header::HeaderExtension,
 	FriParamsVersion,
 };
@@ -88,9 +87,6 @@ decl_runtime_apis! {
 
 		/// Get the blob vouch fee reserve amount
 		fn get_blob_vouch_fee_reserve() -> u128;
-
-		/// Get teh commitment_scheme active in the Runtime
-		fn commitement_scheme() -> CommitmentScheme;
 	}
 }
 
@@ -537,10 +533,6 @@ impl_runtime_apis! {
 
 		fn get_blob_vouch_fee_reserve() -> u128 {
 			crate::constants::da::BlobVouchFeeReserve::get()
-		}
-
-		fn commitement_scheme() -> CommitmentScheme {
-			<Runtime as frame_system::Config>::DaCommitmentScheme::get()
 		}
 	}
 

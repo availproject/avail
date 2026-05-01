@@ -1,7 +1,6 @@
 use crate::types::EvalClaimsMessage;
 use crate::utils::CommitmentQueueMessage;
 use crate::{BlobHandle, BlobNotification};
-use avail_core::header::extension::CommitmentScheme;
 use avail_fri::FriParamsVersion;
 use da_runtime::{apis::BlobApi, AccountId, UncheckedExtrinsic};
 use jsonrpsee::core::async_trait;
@@ -49,8 +48,6 @@ pub trait RuntimeApiT: Send + Sync {
 	fn account_nonce(&self, block_hash: H256, who: AccountId) -> Result<u32, ApiError>;
 
 	fn get_blob_vouch_fee_reserve(&self, block_hash: H256) -> Result<u128, ApiError>;
-
-	fn commitment_scheme(&self, block_hash: H256) -> Result<CommitmentScheme, ApiError>;
 
 	fn get_fri_params_version(&self, block_hash: H256) -> Result<FriParamsVersion, ApiError>;
 }
@@ -117,10 +114,6 @@ where
 		self.0
 			.runtime_api()
 			.get_blob_vouch_fee_reserve(block_hash.into())
-	}
-
-	fn commitment_scheme(&self, block_hash: H256) -> Result<CommitmentScheme, ApiError> {
-		self.0.runtime_api().commitement_scheme(block_hash.into())
 	}
 
 	fn get_fri_params_version(&self, block_hash: H256) -> Result<FriParamsVersion, ApiError> {

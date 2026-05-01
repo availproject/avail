@@ -2,8 +2,7 @@
 ///
 /// This `BlockImport` ensures that any block follows the Data Availability Protocol before send it
 /// to Babe and Grandpa.
-/// It double-checks the **extension header** which contains the `Kate Commitment` and `Data
-/// Root`.
+/// It double-checks the **extension header** which contains FRI commitments and data root.
 use async_channel::TrySendError;
 use avail_base::HeaderExtensionBuilderData;
 use avail_blob::{
@@ -11,24 +10,13 @@ use avail_blob::{
 	store::StorageApiT,
 	types::{BlobInfo, EvalClaimsMessage, OwnershipEntry},
 };
-use avail_core::{
-	ensure,
-	header::{
-		extension::{
-			fri::{FriHeader, FriHeaderVersion},
-			kzg::{KzgHeader, KzgHeaderVersion},
-		},
-		HeaderExtension,
-	},
-	BlockLengthColumns, BlockLengthRows, BLOCK_CHUNK_SIZE,
-};
+use avail_core::{ensure, header::HeaderExtension};
 use avail_observability::metrics::avail::{MetricObserver, ObserveKind};
 use da_control::BlobTxSummaryRuntime;
 use da_runtime::{
 	apis::{DataAvailApi, ExtensionBuilder},
 	Header as DaHeader, Runtime,
 };
-use frame_system::limits::{BlockLength, BlockLengthError};
 use frame_system::native::build_extension;
 use sc_consensus::{
 	block_import::{BlockCheckParams, BlockImport as BlockImportT, BlockImportParams},
@@ -136,31 +124,12 @@ where
 		let parent_hash = <B as BlockT>::Hash::from(block.header.parent_hash);
 		let api = self.client.runtime_api();
 
-		let block_length = extension_block_len(&block.header.extension)?;
 		let data_root = api
 			.build_data_root(parent_hash, block_number, extrinsics.clone())
 			.map_err(data_root_fail)?;
 		let submitted_blobs = extracted.data_submissions.clone();
 		let regenerated_extension = match &block.header.extension {
-			HeaderExtension::Kzg(kzg_hdr) => {
-				let kzg_version = match kzg_hdr {
-					KzgHeader::V4(_) => KzgHeaderVersion::V4,
-				};
-
-				build_extension::build_kzg_extension(
-					submitted_blobs,
-					data_root,
-					block_length,
-					kzg_version,
-				)
-			},
-
-			HeaderExtension::Fri(fri_hdr) => {
-				// Extract params_version + version from the header itself
-				let (params_version, fri_version) = match fri_hdr {
-					FriHeader::V1(inner) => (inner.params_version, FriHeaderVersion::V1),
-				};
-
+			HeaderExtension::V1(ext) => {
 				// FRI eval proofs are best-effort import-time data: blob-owner attestations are the
 				// primary validity signal, and requiring proofs in every summary would strengthen
 				// guarantees but can reduce throughput by forcing authors to wait on proof delivery.
@@ -176,7 +145,7 @@ where
 							(Some(eval_point_seed), Some(eval_claim), Some(eval_proof)) => {
 								avail_blob::validation::validate_fri_proof(
 									da.size_bytes as usize,
-									params_version,
+									ext.params_version,
 									&da.commitments,
 									eval_point_seed,
 									eval_claim,
@@ -200,12 +169,7 @@ where
 					}
 				}
 
-				build_extension::build_fri_extension(
-					submitted_blobs,
-					data_root,
-					params_version,
-					fri_version,
-				)
+				build_extension::build_extension(submitted_blobs, data_root, ext.params_version)
 			},
 		};
 
@@ -403,25 +367,6 @@ impl<B, C, I: Clone> Clone for BlockImport<B, C, I> {
 	}
 }
 
-fn extension_block_len(extension: &HeaderExtension) -> Result<BlockLength, ConsensusError> {
-	match extension {
-		HeaderExtension::Kzg(kzg_hdr) => {
-			let (rows, cols) = match kzg_hdr {
-				KzgHeader::V4(ext) => (ext.rows() as u32, ext.cols() as u32),
-			};
-
-			BlockLength::with_normal_ratio(
-				BlockLengthRows(rows),
-				BlockLengthColumns(cols),
-				BLOCK_CHUNK_SIZE,
-				sp_runtime::Perbill::from_percent(90),
-			)
-			.map_err(block_contains_invalid_block_length)
-		},
-		HeaderExtension::Fri(_) => Ok(BlockLength::default()),
-	}
-}
-
 fn extension_mismatch(a: &HeaderExtension, b: &HeaderExtension) -> ConsensusError {
 	ConsensusError::ClientImport(format!(
 		"DA extension mismatch\nExpected: {a:#?}\nGenerated: {b:#?}"
@@ -438,8 +383,4 @@ fn block_doesnt_contain_vector_post_inherent() -> ConsensusError {
 
 fn block_doesnt_contain_da_post_inherent() -> ConsensusError {
 	ConsensusError::ClientImport("Missing DA post inherent".into())
-}
-
-fn block_contains_invalid_block_length(err: BlockLengthError) -> ConsensusError {
-	ConsensusError::ClientImport(format!("Invalid block length: {err:?}"))
 }

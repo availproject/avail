@@ -111,13 +111,6 @@ impl RuntimeApiT for DummyRuntimeApi {
 		Ok(AVAIL)
 	}
 
-	fn commitment_scheme(
-		&self,
-		_block_hash: H256,
-	) -> Result<avail_core::header::extension::CommitmentScheme, ApiError> {
-		Ok(avail_core::header::extension::CommitmentScheme::Fri)
-	}
-
 	fn get_fri_params_version(
 		&self,
 		_block_hash: H256,

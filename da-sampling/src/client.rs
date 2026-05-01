@@ -6,10 +6,7 @@ use crate::{
 };
 use avail_blob::p2p::BlobHandle;
 use avail_core::{
-	header::{
-		extension::{fri::FriHeader, fri_v1::FriBlobCommitment},
-		HeaderExtension,
-	},
+	header::{extension::fri_v1::FriBlobCommitment, HeaderExtension},
 	traits::extended_header::ExtendedHeader,
 };
 use da_runtime::Header as DaHeader;
@@ -99,26 +96,13 @@ where
 			header.number
 		);
 
-		if header.extension.is_kzg() {
-			trace!(target: LOG_TARGET, "⏭️ Skipping DA sampling: KZG block");
-			return;
-		}
-
 		if !header.extension().has_da_commitments() {
 			trace!(target: LOG_TARGET, "⏭️ Skipping DA sampling: no DA commitments");
 			return;
 		}
 
-		let extension = match &header.extension {
-			HeaderExtension::Fri(ext) => ext,
-			_ => {
-				trace!(target: LOG_TARGET, "⏭️ Skipping DA sampling: non-FRI extension");
-				return;
-			},
-		};
-
-		let (blobs, params_version) = match extension {
-			FriHeader::V1(ext) => (&ext.blobs, ext.params_version),
+		let (blobs, params_version) = match header.extension() {
+			HeaderExtension::V1(ext) => (&ext.blobs, ext.params_version),
 		};
 
 		if blobs.is_empty() {
