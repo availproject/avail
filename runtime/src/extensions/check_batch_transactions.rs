@@ -495,8 +495,7 @@ where
 		let mut maybe_next_app_id: Option<AppId> = None;
 
 		while let Some(call) = stack.pop() {
-			if let Some(DACall::<T>::submit_data { app_id, .. })
-			| Some(DACall::<T>::submit_blob_metadata { app_id, .. }) = call.is_sub_type()
+			if let Some(DACall::<T>::submit_blob_metadata { app_id, .. }) = call.is_sub_type()
 			{
 				let next_app_id =
 					maybe_next_app_id.get_or_insert_with(<Pallet<T>>::peek_next_application_id);

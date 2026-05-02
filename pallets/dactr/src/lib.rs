@@ -5,7 +5,7 @@
 
 use avail_core::{
 	currency::Balance, AppId, BlockLengthColumns, BlockLengthRows, FriParamsVersion,
-	BLOCK_CHUNK_SIZE, DA_DISPATCH_RATIO, NORMAL_DISPATCH_RATIO,
+	DA_DISPATCH_RATIO, NORMAL_DISPATCH_RATIO,
 };
 use codec::{Compact, CompactLen as _, Encode};
 use frame_support::ensure;
@@ -16,7 +16,6 @@ use frame_support::{
 	traits::{Currency, Get, ReservableCurrency},
 	weights::Weight,
 };
-use frame_system::{limits::BlockLength, pallet::DynamicBlockLength};
 use sp_arithmetic::traits::SaturatedConversion;
 use sp_core::H256;
 use sp_runtime::traits::Convert;
@@ -373,75 +372,6 @@ pub mod pallet {
 			})?;
 
 			Self::deposit_event(Event::ApplicationKeyCreated { key, owner, id });
-			Ok(().into())
-		}
-
-		#[pallet::call_index(1)]
-		#[pallet::weight((
-			weight_helper::submit_data::<T>(data.len()),
-			DispatchClass::Normal,
-			SubmitDataFeeModifier::<T>::get()
-		))]
-		/// TODO: Remove this. Currently no-op
-		pub fn submit_data(
-			_origin: OriginFor<T>,
-			_app_id: AppId,
-			#[allow(unused_variables)] data: AppDataFor<T>,
-		) -> DispatchResultWithPostInfo {
-			Ok(().into())
-		}
-
-		#[pallet::call_index(2)]
-		#[pallet::weight(T::WeightInfo::submit_block_length_proposal())]
-		pub fn submit_block_length_proposal(
-			origin: OriginFor<T>,
-			rows: u32,
-			cols: u32,
-		) -> DispatchResultWithPostInfo {
-			ensure_root(origin)?;
-			let rows = BlockLengthRows(rows);
-			let cols = BlockLengthColumns(cols);
-
-			ensure!(
-				rows <= T::MaxBlockRows::get() && cols <= T::MaxBlockCols::get(),
-				Error::<T>::BlockDimensionsOutOfBounds
-			);
-			ensure!(
-				rows >= T::MinBlockRows::get() && cols >= T::MinBlockCols::get(),
-				Error::<T>::BlockDimensionsTooSmall
-			);
-
-			// Check if rows and cols are powers of 2
-			// Check if `rows` or `cols` are a power of 2: they must be nonzero and have no bits in common with `(rows or cols) - 1`.
-			ensure!(
-				rows.0 != 0 && (rows.0 & (rows.0 - 1)) == 0,
-				Error::<T>::NotPowerOfTwo
-			);
-			ensure!(
-				cols.0 != 0 && (cols.0 & (cols.0 - 1)) == 0,
-				Error::<T>::NotPowerOfTwo
-			);
-
-			let current_block_dimension = DynamicBlockLength::<T>::get();
-			let is_increase =
-				rows >= current_block_dimension.rows && cols >= current_block_dimension.cols;
-			ensure!(
-				is_increase || Self::is_block_weight_acceptable(),
-				Error::<T>::InvalidBlockWeightReduction
-			);
-
-			let block_length = BlockLength::with_normal_ratio(
-				rows,
-				cols,
-				BLOCK_CHUNK_SIZE,
-				DA_DISPATCH_RATIO_PERBILL,
-			)
-			.map_err(|_| Error::<T>::BlockDimensionsOutOfBounds)?;
-
-			DynamicBlockLength::<T>::put(block_length);
-
-			Self::deposit_event(Event::BlockLengthProposalSubmitted { rows, cols });
-
 			Ok(().into())
 		}
 
