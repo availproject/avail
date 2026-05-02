@@ -798,11 +798,13 @@ where
 				)
 			})?;
 
-		match (&d.eval_point_seed, &d.eval_claim, &d.eval_proof) {
-			(Some(seed), Some(claim), Some(proof)) => {
-				Ok(BlobEvalData::new(*seed, *claim, proof.clone()))
-			},
-			_ => Err(internal_err!(
+		match &d.eval_proof {
+			Some(proof) => Ok(BlobEvalData::new(
+				d.eval_point_seed,
+				d.eval_claim,
+				proof.clone(),
+			)),
+			None => Err(internal_err!(
 				"Blob {:?} does not contain eval data in block {:?}",
 				blob_hash,
 				at
@@ -823,7 +825,7 @@ where
 		let expected_commitment = submissions
 			.iter()
 			.find(|d| d.hash == blob_hash)
-			.map(|d| d.commitments.clone())
+			.map(|d| d.commitment.clone())
 			.ok_or_else(|| {
 				internal_err!(
 					"Blob submission data not found for blob {:?} in block {:?}",
@@ -1073,15 +1075,6 @@ pub async fn submit_blob_main_task(
 	}
 
 	let parent = tracing::Span::current();
-	if eval_point_seed.is_none() || eval_claim.is_none() {
-		clear_reserved_nonce(&nonce_cache, &opaque_tx);
-		return Err(internal_err!(
-			"eval_point_seed and eval_claim must be present for Fri commitment scheme"
-		));
-	}
-
-	let eval_point_seed = eval_point_seed.expect("checked above; qed");
-	let eval_claim = eval_claim.expect("checked above; qed");
 	let babe_randomness = get_babe_randomness(&friends.backend_client, finalized_block_hash)
 		.map_err(|e| {
 			clear_reserved_nonce(&nonce_cache, &opaque_tx);
@@ -1279,7 +1272,7 @@ async fn handle_fri_submission(
 		blob,
 		blob_params,
 		provided_commitment,
-		Some(fri_data),
+		fri_data,
 		friends,
 		nonce_cache,
 	)
@@ -1295,7 +1288,7 @@ async fn submit_blob_background_task(
 	blob: Arc<Vec<u8>>,
 	blob_params: BlobRuntimeParameters,
 	commitment: Vec<u8>,
-	fri_data: Option<FriData>,
+	fri_data: FriData,
 	friends: Friends,
 	nonce_cache: Arc<dyn NonceCacheApiT>,
 ) {
@@ -1343,7 +1336,7 @@ pub async fn store_and_gossip_blob(
 	blob: Arc<Vec<u8>>,
 	blob_params: BlobRuntimeParameters,
 	commitment: Vec<u8>,
-	fri_data: Option<FriData>,
+	fri_data: FriData,
 	friends: &Friends,
 ) -> Result<(), ()> {
 	let client_info = friends.externalities.client_info();
@@ -1377,8 +1370,8 @@ pub async fn store_and_gossip_blob(
 			nb_validators_per_blob: 0,
 			nb_validators_per_blob_threshold: 0,
 			storing_validator_list: Default::default(),
-			eval_point_seed: None,
-			eval_claim: None,
+			eval_point_seed: fri_data.eval_point_seed,
+			eval_claim: fri_data.eval_claim,
 			fri_eval_proof: None,
 			fri_eval_prover_index: None,
 		}
@@ -1422,11 +1415,6 @@ pub async fn store_and_gossip_blob(
 		},
 	};
 
-	if fri_data.is_none() {
-		tracing::error!("Fri data must be available");
-		return Err(());
-	}
-	let fri_data = fri_data.expect("checked above; qed");
 	let prover_index =
 		designated_prover_index(&blob_hash, &finalized_block_hash, nb_validators_per_blob);
 
@@ -1445,8 +1433,8 @@ pub async fn store_and_gossip_blob(
 			blob_metadata.fri_eval_prover_index = Some(prover_index);
 		}
 	}
-	blob_metadata.eval_point_seed = Some(fri_data.eval_point_seed);
-	blob_metadata.eval_claim = Some(fri_data.eval_claim);
+	blob_metadata.eval_point_seed = fri_data.eval_point_seed;
+	blob_metadata.eval_claim = fri_data.eval_claim;
 
 	blob_metadata.is_notified = true;
 	blob_metadata.expires_at = finalized_block_number.saturating_add(blob_params.temp_blob_ttl);
@@ -1504,7 +1492,7 @@ pub async fn store_and_gossip_blob(
 			finalized_block_hash: finalized_block_hash.into(),
 			finalized_block_number,
 			eval_point_seed: blob_metadata.eval_point_seed,
-			eval_claim: blob_metadata.eval_claim.clone(),
+			eval_claim: blob_metadata.eval_claim,
 			fri_eval_proof: blob_metadata.fri_eval_proof.clone(),
 			fri_eval_prover_index: blob_metadata.fri_eval_prover_index,
 		});

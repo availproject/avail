@@ -166,16 +166,7 @@ pub fn initial_validation(
 	max_blob_size: usize,
 	blob: &[u8],
 	metadata: &[u8],
-) -> Result<
-	(
-		avail_core::AppId,
-		H256,
-		Vec<u8>,
-		Option<[u8; 32]>,
-		Option<[u8; 16]>,
-	),
-	String,
-> {
+) -> Result<(avail_core::AppId, H256, Vec<u8>, [u8; 32], [u8; 16]), String> {
 	if blob.len() > max_blob_size {
 		return Err("blob is too big".into());
 	}
@@ -188,7 +179,7 @@ pub fn initial_validation(
 		provided_size,
 		provided_blob_hash,
 		provided_commitment,
-		eval_pont_seed,
+		eval_point_seed,
 		eval_claim,
 	) = match encoded_metadata_signed_transaction.function {
 		RuntimeCall::DataAvailability(Call::submit_blob_metadata {
@@ -209,8 +200,6 @@ pub fn initial_validation(
 		_ => return Err("metadata extrinsic must be dataAvailability.submitBlobMetadata".into()),
 	};
 
-	// TODO: do basic check like if the current commitment scheme is Fri, eval_point_seed and eval_claim must be present
-
 	// Check size
 	if provided_size != blob.len() {
 		return Err(std::format!(
@@ -229,7 +218,7 @@ pub fn initial_validation(
 		app_id,
 		blob_hash,
 		provided_commitment,
-		eval_pont_seed,
+		eval_point_seed,
 		eval_claim,
 	))
 }

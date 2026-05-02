@@ -215,27 +215,12 @@ async fn handle_blob_received_notification<Block>(
 
 	// If the eval_proof is received, validate it
 	if blob_received.fri_eval_proof.is_some() {
-		let eval_point_seed = match &blob_received.eval_point_seed {
-			Some(seed) => seed,
-			None => {
-				tracing::error!(target: LOG_TARGET, "Missing eval_point_seed for FRI blob");
-				return;
-			},
-		};
-		let eval_claim = match &blob_received.eval_claim {
-			Some(claim) => claim,
-			None => {
-				tracing::error!(target: LOG_TARGET, "Missing eval_claim for FRI blob");
-				return;
-			},
-		};
-
 		match validate_fri_proof(
 			blob_received.size as usize,
 			fri_params_version,
 			&blob_received.commitment,
-			eval_point_seed,
-			eval_claim,
+			&blob_received.eval_point_seed,
+			&blob_received.eval_claim,
 			&blob_received
 				.fri_eval_proof
 				.as_ref()
@@ -263,6 +248,8 @@ async fn handle_blob_received_notification<Block>(
 		if !merged.is_notified {
 			merged.size = blob_received.size;
 			merged.commitment = blob_received.commitment.clone();
+			merged.eval_point_seed = blob_received.eval_point_seed;
+			merged.eval_claim = blob_received.eval_claim;
 			merged.is_notified = true;
 		}
 
@@ -483,17 +470,8 @@ async fn handle_blob_received_notification<Block>(
 				return;
 			}
 
-			// Do the FRI commitment validation and generate the eval proof if needed.
-			if blob_received.eval_point_seed.is_none() || blob_received.eval_claim.is_none() {
-				tracing::error!(target: LOG_TARGET, "Missing eval_point_seed or eval_claim for FRI blob");
-				return;
-			}
-
 			let prepared = match prepare_fri_validation(&blob_data, fri_params_version) {
-				Ok(prepared) => with_eval_point(
-					prepared,
-					&blob_received.eval_point_seed.expect("checked above"),
-				),
+				Ok(prepared) => with_eval_point(prepared, &blob_received.eval_point_seed),
 				Err(e) => {
 					tracing::error!(target: LOG_TARGET, "FRI preparation failed: {}", e);
 					return;
@@ -504,7 +482,7 @@ async fn handle_blob_received_notification<Block>(
 				let fri_eval_proof = match generate_fri_proof_from_prepared(
 					blob_received.hash,
 					&blob_received.commitment,
-					&blob_received.eval_claim.expect("checked above"),
+					&blob_received.eval_claim,
 					&prepared,
 				) {
 					Ok(proof_bytes) => proof_bytes,
@@ -529,10 +507,9 @@ async fn handle_blob_received_notification<Block>(
 					return;
 				}
 
-				if let Err(e) = validate_prepared_fri_eval_claim(
-					&blob_received.eval_claim.expect("checked above"),
-					&prepared,
-				) {
+				if let Err(e) =
+					validate_prepared_fri_eval_claim(&blob_received.eval_claim, &prepared)
+				{
 					tracing::error!(target: LOG_TARGET, "FRI eval claim validation failed: {}", e);
 					return;
 				}
@@ -1072,14 +1049,8 @@ async fn handle_blob_stored_notification<Block>(
 			blob_metadata.size as usize,
 			fri_params_version,
 			&blob_metadata.commitment,
-			&blob_metadata
-				.eval_point_seed
-				.as_ref()
-				.expect("should be present in metadata"),
-			&blob_metadata
-				.eval_claim
-				.as_ref()
-				.expect("should be present in metadata"),
+			&blob_metadata.eval_point_seed,
+			&blob_metadata.eval_claim,
 			blob_stored.eval_proof.as_ref().expect("checked above"),
 		) {
 			Ok(_) => {

@@ -435,8 +435,8 @@ pub mod pallet {
 			blob_hash: H256,
 			size: u64,
 			commitment: Vec<u8>,
-			_eval_point_seed: Option<[u8; 32]>,
-			_eval_claim: Option<[u8; 16]>,
+			_eval_point_seed: [u8; 32],
+			_eval_claim: [u8; 16],
 		) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
 			ensure!(

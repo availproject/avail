@@ -119,14 +119,14 @@ impl RuntimeApiT for DummyRuntimeApi {
 struct BuildTxOutput {
 	pub tx_bytes: Vec<u8>,
 	pub data_hash: H256,
-	pub commitments: Vec<u8>,
+	pub commitment: Vec<u8>,
 	pub data: Arc<Vec<u8>>,
 }
 
 fn build_transaction(data: Arc<Vec<u8>>) -> BuildTxOutput {
 	// Hash and Commitments
 	let data_hash = H256::from(keccak_256(&*data));
-	let commitments = build_fri_da_commitment(&data, DEFAULT_FRI_PARAMS_VERSION);
+	let commitment = build_fri_da_commitment(&data, DEFAULT_FRI_PARAMS_VERSION);
 
 	// Tx
 	let account_id: avail_rust::AccountId = avail_rust::AccountId::from([0u8; 32]);
@@ -136,7 +136,7 @@ fn build_transaction(data: Arc<Vec<u8>>) -> BuildTxOutput {
 	let call = avail::data_availability::tx::SubmitBlobMetadata {
 		blob_hash: avail_rust_blob_hash,
 		size: data.len() as u64,
-		commitments: commitments.clone(),
+		commitments: commitment.clone(),
 	};
 	let call = ExtrinsicCall::from(&call);
 	let extra = ExtrinsicExtra {
@@ -158,7 +158,7 @@ fn build_transaction(data: Arc<Vec<u8>>) -> BuildTxOutput {
 	BuildTxOutput {
 		tx_bytes: ext.encode(),
 		data_hash,
-		commitments,
+		commitment,
 		data,
 	}
 }
@@ -215,7 +215,7 @@ mod validation {
 	fn commitment_validation(bencher: Bencher) {
 		let data = DATA_TO_BENCH.get().unwrap().clone();
 		let tx = build_transaction(data);
-		let provided_commitment = &tx.commitments;
+		let provided_commitment = &tx.commitment;
 
 		bencher
 			.with_inputs(|| (&tx.data, provided_commitment))

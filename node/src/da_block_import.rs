@@ -137,34 +137,21 @@ where
 				// without it.
 				if !skip_sync {
 					for da in submitted_blobs.iter() {
-						match (
-							da.eval_point_seed.as_ref(),
-							da.eval_claim.as_ref(),
-							da.eval_proof.as_ref(),
-						) {
-							(Some(eval_point_seed), Some(eval_claim), Some(eval_proof)) => {
-								avail_blob::validation::validate_fri_proof(
-									da.size_bytes as usize,
-									ext.params_version,
-									&da.commitments,
-									eval_point_seed,
-									eval_claim,
-									eval_proof,
-								)
-								.map_err(|e| {
-									ConsensusError::ClientImport(format!(
-										"FRI proof validation failed for blob {:?}: {e}",
-										da.hash
-									))
-								})?;
-							},
-							(Some(_), Some(_), None) => {},
-							_ => {
-								return Err(ConsensusError::ClientImport(format!(
-									"Incomplete FRI eval data for blob {:?}",
+						if let Some(eval_proof) = da.eval_proof.as_ref() {
+							avail_blob::validation::validate_fri_proof(
+								da.size_bytes as usize,
+								ext.params_version,
+								&da.commitment,
+								&da.eval_point_seed,
+								&da.eval_claim,
+								eval_proof,
+							)
+							.map_err(|e| {
+								ConsensusError::ClientImport(format!(
+									"FRI proof validation failed for blob {:?}: {e}",
 									da.hash
-								)));
-							},
+								))
+							})?;
 						}
 					}
 				}
@@ -189,9 +176,7 @@ where
 		let mut messages = Vec::new();
 
 		for da in &extracted.data_submissions {
-			let (Some(eval_point_seed), Some(eval_claim), Some(eval_proof)) =
-				(da.eval_point_seed, da.eval_claim, da.eval_proof.clone())
-			else {
+			let Some(eval_proof) = da.eval_proof.clone() else {
 				continue;
 			};
 
@@ -199,8 +184,8 @@ where
 				block_hash,
 				app_id: da.id,
 				blob_hash: da.hash,
-				eval_point_seed,
-				eval_claim,
+				eval_point_seed: da.eval_point_seed,
+				eval_claim: da.eval_claim,
 				eval_proof,
 			});
 		}

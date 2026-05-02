@@ -13,7 +13,7 @@ use avail_base::testing_env::*;
 
 /// Build a FRI V1 header extension from submitted blobs.
 ///
-/// - We expect `submitted[i].commitments` to contain exactly one 32-byte Fri commitment
+/// - We expect `submitted[i].commitment` to contain exactly one 32-byte Fri commitment
 ///   (Merkle root of the RS codewords). If any entry has len != 32, we log and return a *faulty* header.
 pub fn build_extension(
 	submitted: Vec<SubmittedData>,
@@ -28,10 +28,10 @@ pub fn build_extension(
 	let mut blobs: Vec<FriBlobCommitment> = Vec::with_capacity(submitted.len());
 
 	for (idx, s) in submitted.into_iter().enumerate() {
-		if s.commitments.len() != 32 {
+		if s.commitment.len() != 32 {
 			log::error!(
 				"Fri header: expected 32-byte commitment for blob #{idx}, got {} bytes",
-				s.commitments.len()
+				s.commitment.len()
 			);
 			return HeaderExtension::get_faulty_header(data_root);
 		}
@@ -39,7 +39,7 @@ pub fn build_extension(
 		blobs.push(FriBlobCommitment {
 			blob_hash: s.hash,
 			size_bytes: s.size_bytes,
-			commitment: s.commitments,
+			commitment: s.commitment,
 		});
 	}
 
