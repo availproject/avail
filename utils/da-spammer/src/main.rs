@@ -359,13 +359,13 @@ async fn submit_once(
 
 	let result = client
 		.blob()
-		.submit_blob_and_blob_metadata(
+		.submit_with_metadata(
 			app_id,
 			&prepared.blob,
 			prepared.hash,
 			prepared.commitment.commitment.clone(),
-			Some(prepared.commitment.seed),
-			Some(prepared.commitment.claim),
+			prepared.commitment.seed,
+			prepared.commitment.claim,
 			&signer,
 			Options::new().nonce(nonce),
 		)
