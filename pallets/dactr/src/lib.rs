@@ -83,7 +83,7 @@ pub mod pallet {
 
 		parameter_types! {
 			pub const MaxAppKeyLength: u32 = 32;
-			pub const MaxAppDataLength: u32 = 1_048_576; // 1 Mb
+			pub const MaxAppDataLength: u32 = 32 * 1024 * 1024;
 			pub const MaxVouchesPerRecord: u32 = 256; // Need to be greater than vouch threshold
 			pub const BlobVouchFeeReserve: Balance = 0;
 		}
@@ -153,10 +153,6 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn application_key)]
 	pub type AppKeys<T: Config> = StorageMap<_, Blake2_128Concat, AppKeyFor<T>, AppKeyInfoFor<T>>;
-
-	/// Store data fee modifier for submit_data call.
-	#[pallet::storage]
-	pub type SubmitDataFeeModifier<T: Config> = StorageValue<_, DispatchFeeModifier, ValueQuery>;
 
 	/// Store data fee modifier for submit_blob_metadata call.
 	#[pallet::storage]
@@ -377,21 +373,6 @@ pub mod pallet {
 			Ok(().into())
 		}
 
-		#[pallet::call_index(4)]
-		#[pallet::weight(T::WeightInfo::set_submit_data_fee_modifier())]
-		pub fn set_submit_data_fee_modifier(
-			origin: OriginFor<T>,
-			modifier: DispatchFeeModifier,
-		) -> DispatchResultWithPostInfo {
-			ensure_root(origin)?;
-
-			SubmitDataFeeModifier::<T>::put(modifier);
-
-			Self::deposit_event(Event::SubmitDataFeeModifierSet { value: modifier });
-
-			Ok(().into())
-		}
-
 		#[pallet::call_index(5)]
 		#[pallet::weight((
 			weight_helper::submit_blob_metadata::<T>(*size),
@@ -451,8 +432,6 @@ pub mod pallet {
 			max_transaction_validity: Option<u64>,
 			max_blob_retry_before_discarding: Option<u16>,
 			max_block_size: Option<u64>,
-			max_total_old_submission_size: Option<u64>,
-			disable_old_da_submission: Option<bool>,
 			vouch_threshold: Option<u32>,
 		) -> DispatchResultWithPostInfo {
 			ensure_root(origin)?;
@@ -499,13 +478,6 @@ pub mod pallet {
 						Error::<T>::MaxBlockSizeTooLarge
 					);
 					params.max_block_size = v;
-				}
-				if let Some(v) = max_total_old_submission_size {
-					ensure!(v <= 4 * 1024 * 1024, Error::<T>::MaxOldSubmissionTooLarge);
-					params.max_total_old_submission_size = v;
-				}
-				if let Some(v) = disable_old_da_submission {
-					params.disable_old_da_submission = v;
 				}
 				if let Some(v) = vouch_threshold {
 					ensure!(
@@ -738,16 +710,9 @@ pub mod pallet {
 			owner: T::AccountId,
 			id: AppId,
 		},
-		DataSubmitted {
-			who: T::AccountId,
-			data_hash: H256,
-		},
 		ApplicationKeySet {
 			old_key: AppKeyFor<T>,
 			new_key: AppKeyFor<T>,
-		},
-		SubmitDataFeeModifierSet {
-			value: DispatchFeeModifier,
 		},
 		SubmitBlobMetadataRequest {
 			who: T::AccountId,
@@ -805,10 +770,6 @@ pub mod pallet {
 		MaxBlobRetryTooLow,
 		/// The maximum block size is too big.
 		MaxBlockSizeTooLarge,
-		/// The maximum old submissions in a block is too large.
-		MaxOldSubmissionTooLarge,
-		/// Old data submission are disabled.
-		OldDaSubmissionDisabled,
 		/// The vouch threshold cannot be zero.
 		InvalidVouchThreshold,
 		/// Attempted to set a FRI params version that is not supported by this runtime.

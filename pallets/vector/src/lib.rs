@@ -1389,7 +1389,6 @@ where
 pub mod weight_helper {
 	use super::*;
 
-	/// Weight for `dataAvailability::submit_data`.
 	pub fn fulfill_call<T: Config>(function_id: H256) -> (Weight, DispatchClass) {
 		if let Some((step_function_id, _)) = FunctionIds::<T>::get() {
 			if step_function_id == function_id {

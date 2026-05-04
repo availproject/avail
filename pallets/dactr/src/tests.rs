@@ -2,10 +2,9 @@ use frame_support::{assert_noop, assert_ok};
 use frame_system::RawOrigin;
 use sp_core::H256;
 
-use crate::config_preludes::MaxAppDataLength;
 use crate::{
 	mock::{new_test_ext, DataAvailability, RuntimeEvent, RuntimeOrigin, System, Test},
-	AppDataFor, AppKeyFor, AppKeyInfoFor, Event,
+	AppKeyFor, AppKeyInfoFor, Event,
 };
 
 type Error = crate::Error<Test>;
@@ -68,51 +67,6 @@ mod create_application_key {
 
 			let err = DataAvailability::create_application_key(alice, new_key);
 			assert_noop!(err, Error::AppKeyAlreadyExists);
-		})
-	}
-}
-
-mod submit_data {
-	// use avail_core::AppId;
-
-	use super::*;
-
-	// #[test]
-	// fn submit_data() {
-	// 	new_test_ext().execute_with(|| {
-	// 		let alice: RuntimeOrigin = RawOrigin::Signed(ALICE).into();
-	// 		let max_app_key_length: usize = MaxAppDataLength::get().try_into().unwrap();
-	// 		let data = AppDataFor::<Test>::try_from(vec![b'X'; max_app_key_length]).unwrap();
-	// 		let data_hash = H256(sp_io::hashing::keccak_256(&data));
-
-	// 		assert_ok!(DataAvailability::submit_data(alice, AppId(1), data));
-
-	// 		let event = RuntimeEvent::DataAvailability(Event::DataSubmitted {
-	// 			who: ALICE,
-	// 			data_hash,
-	// 		});
-	// 		System::assert_last_event(event);
-	// 	})
-	// }
-
-	// #[test]
-	// fn data_cannot_be_empty() {
-	// 	new_test_ext().execute_with(|| {
-	// 		let alice: RuntimeOrigin = RawOrigin::Signed(ALICE).into();
-	// 		let data = AppDataFor::<Test>::try_from(vec![]).unwrap();
-
-	// 		let err = DataAvailability::submit_data(alice, AppId(1), data);
-	// 		assert_noop!(err, Error::DataCannotBeEmpty);
-	// 	})
-	// }
-
-	#[test]
-	fn submit_data_too_long() {
-		new_test_ext().execute_with(|| {
-			// This test could be removed since we use a bounded vec, but due to criticity of this extrinsic, it does not hurt to have it.
-			let max_app_key_length: usize = MaxAppDataLength::get().try_into().unwrap();
-			let err = AppDataFor::<Test>::try_from(vec![b'X'; max_app_key_length + 1]);
-			assert!(err.is_err());
 		})
 	}
 }
@@ -186,52 +140,6 @@ mod set_application_key {
 
 			let err = DataAvailability::set_application_key(root, old_key, new_key);
 			assert_noop!(err, Error::UnknownAppKey);
-		})
-	}
-}
-
-mod set_submit_data_fee_modifier {
-	use super::*;
-	use crate::SubmitDataFeeModifier;
-	use frame_support::dispatch::DispatchFeeModifier;
-
-	#[test]
-	fn default_value() {
-		new_test_ext().execute_with(|| {
-			let value = SubmitDataFeeModifier::<Test>::get();
-			assert_eq!(value.weight_maximum_fee, None);
-			assert_eq!(value.weight_fee_divider, None);
-			assert_eq!(value.weight_fee_multiplier, None);
-		})
-	}
-
-	#[test]
-	fn only_sudo_can_call_this() {
-		new_test_ext().execute_with(|| {
-			let alice: RuntimeOrigin = RawOrigin::Signed(ALICE).into();
-			let value = SubmitDataFeeModifier::<Test>::get();
-			assert!(DataAvailability::set_submit_data_fee_modifier(alice, value).is_err());
-		})
-	}
-
-	#[test]
-	fn set_submit_data_fee_modifier() {
-		new_test_ext().execute_with(|| {
-			let root: RuntimeOrigin = RawOrigin::Root.into();
-
-			let old_value = SubmitDataFeeModifier::<Test>::get();
-			let new_value = DispatchFeeModifier {
-				weight_maximum_fee: Some(100),
-				weight_fee_divider: Some(100),
-				weight_fee_multiplier: Some(100),
-			};
-
-			assert_ne!(old_value, new_value);
-
-			assert_ok!(DataAvailability::set_submit_data_fee_modifier(
-				root, new_value
-			));
-			assert_eq!(new_value, SubmitDataFeeModifier::<Test>::get());
 		})
 	}
 }
@@ -391,8 +299,6 @@ mod set_blob_runtime_parameters {
 			let max_tx_validity = Some(120);
 			let max_retry = Some(5);
 			let max_block_size = Some(1 * 1024 * 1024 * 1024);
-			let max_total_old_submission_size = Some(2 * 1024 * 1024);
-			let disable_old_da_submission = Some(true);
 			let vouch_threshold = Some(1);
 
 			assert_ok!(DataAvailability::set_blob_runtime_parameters(
@@ -406,8 +312,6 @@ mod set_blob_runtime_parameters {
 				max_tx_validity,
 				max_retry,
 				max_block_size,
-				max_total_old_submission_size,
-				disable_old_da_submission,
 				vouch_threshold,
 			));
 
@@ -422,8 +326,6 @@ mod set_blob_runtime_parameters {
 				max_transaction_validity: max_tx_validity.unwrap(),
 				max_blob_retry_before_discarding: max_retry.unwrap(),
 				max_block_size: max_block_size.unwrap(),
-				max_total_old_submission_size: max_total_old_submission_size.unwrap(),
-				disable_old_da_submission: disable_old_da_submission.unwrap(),
 				vouch_threshold: vouch_threshold.unwrap(),
 			};
 
@@ -445,7 +347,7 @@ mod set_blob_runtime_parameters {
 			let before = BlobRuntimeParams::<Test>::get();
 
 			assert_ok!(DataAvailability::set_blob_runtime_parameters(
-				root, None, None, None, None, None, None, None, None, None, None, None, None
+				root, None, None, None, None, None, None, None, None, None, None
 			));
 
 			let after = BlobRuntimeParams::<Test>::get();
@@ -482,8 +384,6 @@ mod set_blob_runtime_parameters {
 					None,
 					None,
 					None,
-					None,
-					None,
 				);
 				assert_noop!(err, Error::BlobSizeTooLarge);
 				assert_unchanged();
@@ -495,8 +395,6 @@ mod set_blob_runtime_parameters {
 					root,
 					None,
 					Some(Perbill::from_percent(0)),
-					None,
-					None,
 					None,
 					None,
 					None,
@@ -524,8 +422,6 @@ mod set_blob_runtime_parameters {
 					None,
 					None,
 					None,
-					None,
-					None,
 				);
 				assert_noop!(err, Error::MinBlobHolderCountInvalid);
 				assert_unchanged();
@@ -539,8 +435,6 @@ mod set_blob_runtime_parameters {
 					None,
 					None,
 					Some(1_000),
-					None,
-					None,
 					None,
 					None,
 					None,
@@ -566,8 +460,6 @@ mod set_blob_runtime_parameters {
 					None,
 					None,
 					None,
-					None,
-					None,
 				);
 				assert_noop!(err, Error::TempBlobTtlTooShort);
 				assert_unchanged();
@@ -583,8 +475,6 @@ mod set_blob_runtime_parameters {
 					None,
 					None,
 					Some(3),
-					None,
-					None,
 					None,
 					None,
 					None,
@@ -608,8 +498,6 @@ mod set_blob_runtime_parameters {
 					None,
 					None,
 					None,
-					None,
-					None,
 				);
 				assert_noop!(err, Error::MaxTransactionValidityTooHigh);
 				assert_unchanged();
@@ -627,8 +515,6 @@ mod set_blob_runtime_parameters {
 					None,
 					None,
 					Some(2),
-					None,
-					None,
 					None,
 					None,
 				);
@@ -650,8 +536,6 @@ mod set_blob_runtime_parameters {
 					None,
 					Some(10 * 1024 * 1024 * 1024),
 					None,
-					None,
-					None,
 				);
 				assert_noop!(err, Error::MaxBlockSizeTooLarge);
 				assert_unchanged();
@@ -661,29 +545,6 @@ mod set_blob_runtime_parameters {
 				let root: RuntimeOrigin = RawOrigin::Root.into();
 				let err = DataAvailability::set_blob_runtime_parameters(
 					root,
-					None,
-					None,
-					None,
-					None,
-					None,
-					None,
-					None,
-					None,
-					None,
-					Some(5 * 1024 * 1024),
-					None,
-					None,
-				);
-				assert_noop!(err, Error::MaxOldSubmissionTooLarge);
-				assert_unchanged();
-			}
-
-			{
-				let root: RuntimeOrigin = RawOrigin::Root.into();
-				let err = DataAvailability::set_blob_runtime_parameters(
-					root,
-					None,
-					None,
 					None,
 					None,
 					None,

@@ -2,10 +2,9 @@
 mod multiplier_tests {
 	use crate::impls::*;
 	use crate::*;
-	use avail_core::currency::{CENTS, MICRO_AVAIL, MILLICENTS};
+	use avail_core::currency::{CENTS, MILLICENTS};
 	use frame_support::{
-		dispatch::{DispatchClass, DispatchInfo, Pays},
-		traits::OnFinalize,
+		dispatch::DispatchClass,
 		weights::{Weight, WeightToFee},
 	};
 	use pallet_transaction_payment::{Multiplier, TargetedFeeAdjustment};
@@ -226,60 +225,6 @@ mod multiplier_tests {
 					adjusted_fee / DOLLARS,
 				);
 			}
-		});
-	}
-
-	#[test]
-	#[ignore]
-	fn weight_congested_chain_simulation() {
-		// `cargo test weight_congested_chain_simulation -- --nocapture` to get some insight.
-		sp_io::TestExternalities::default().execute_with(|| {
-			// By default weight multiplier will be 1
-			let wm = TransactionPayment::next_fee_multiplier();
-			assert_eq!(wm, Multiplier::one());
-			let block_weight = BlockWeights::get()
-				.get(DispatchClass::Normal)
-				.max_total
-				.unwrap() - Weight::from_parts(100, 0);
-
-			let tx_len: usize = 512 * 1024; // 512 Kb data
-			let da_submission_weight = da_control::weight_helper::submit_data::<Runtime>(tx_len);
-			let dispatch_info = DispatchInfo {
-				call_weight: da_submission_weight,
-				pays_fee: Pays::Yes,
-				..Default::default()
-			};
-			let tx_fee = TransactionPayment::compute_fee(tx_len as u32, &dispatch_info, 0);
-			println!(
-				"Iteration: {}, wm: {:?},  Fee: {} units / {} MICRO_AVAIL",
-				0,
-				wm,
-				tx_fee,
-				tx_fee / MICRO_AVAIL,
-			);
-			run_with_system_weight(block_weight, || {
-				let mut iterations: u32 = 0;
-				let mut day_count: u32 = 0;
-				loop {
-					iterations += 1;
-					TransactionPayment::on_finalize(System::block_number());
-					let wm = TransactionPayment::next_fee_multiplier();
-					let tx_fee = TransactionPayment::compute_fee(tx_len as u32, &dispatch_info, 0);
-					if iterations % EPOCH_DURATION_IN_SLOTS == 0 {
-						day_count += 1;
-						println!(
-							"Iteration: {}, wm: {:?},  Fee: {} units / {} MICRO_AVAIL",
-							day_count,
-							wm,
-							tx_fee,
-							tx_fee / MICRO_AVAIL,
-						);
-					}
-					if day_count == 7u32 {
-						break;
-					}
-				}
-			});
 		});
 	}
 

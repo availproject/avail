@@ -194,7 +194,7 @@ where
 		Self(sp_std::marker::PhantomData)
 	}
 
-	/// forbid DataAvailability::submit_data and Vector::send_message inside batch
+	/// Forbid DA blob metadata and Vector::send_message inside batch.
 	pub fn do_validate(
 		&self,
 		call: &<T as SystemConfig>::RuntimeCall,

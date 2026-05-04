@@ -131,12 +131,11 @@ mod tests {
 		CheckWeight,
 	};
 	use pallet_transaction_payment::ChargeTransactionPayment;
+	use sp_core::H256;
 	use sp_io::TestExternalities;
 	use sp_keyring::Sr25519Keyring::Alice;
-	use sp_runtime::BoundedVec;
 	use sp_runtime::BuildStorage;
 	use sp_runtime::OpaqueExtrinsic;
-	use sp_std::convert::TryInto;
 
 	fn extra() -> SignedExtra {
 		(
@@ -155,14 +154,13 @@ mod tests {
 
 	#[test]
 	fn roundtrip_unsigned_ext() {
-		// This test uses your runtime types and DA call to ensure the decode path works.
-		let v = [1u8; 8].to_vec();
-		let data: BoundedVec<u8, _> = v.try_into().expect("bounded");
-
-		// Build the call.
-		let call: RuntimeCall = DACall::submit_data {
+		let call: RuntimeCall = DACall::submit_blob_metadata {
 			app_id: avail_core::AppId(2),
-			data,
+			blob_hash: H256::repeat_byte(1),
+			size: 1,
+			commitment: vec![1],
+			eval_point_seed: [0; 32],
+			eval_claim: [0; 16],
 		}
 		.into();
 
@@ -194,15 +192,16 @@ mod tests {
 		let mut ext = TestExternalities::new(storage);
 
 		ext.execute_with(|| {
-			let v = [1u8; 8].to_vec();
-			let data: BoundedVec<u8, _> = v.try_into().expect("bounded");
 			let extra = extra();
 			let alice = Alice.to_account_id();
 
-			// Build the call.
-			let call: RuntimeCall = DACall::submit_data {
+			let call: RuntimeCall = DACall::submit_blob_metadata {
 				app_id: avail_core::AppId(2),
-				data,
+				blob_hash: H256::repeat_byte(1),
+				size: 1,
+				commitment: vec![1],
+				eval_point_seed: [0; 32],
+				eval_claim: [0; 16],
 			}
 			.into();
 

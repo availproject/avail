@@ -52,9 +52,6 @@ use core::marker::PhantomData;
 pub trait WeightInfo {
 	fn create_application_key() -> Weight;
 	fn set_application_key() -> Weight;
-	fn data_root(i: u32, ) -> Weight;
-	fn data_root_batch(i: u32, ) -> Weight;
-	fn set_submit_data_fee_modifier() -> Weight;
 	fn set_blob_runtime_parameters() -> Weight;
 	fn submit_blob_txs_summary(n: u32, ) -> Weight;
 	fn submit_blob_metadata(s: u32, ) -> Weight;
@@ -89,36 +86,6 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		Weight::from_parts(33_451_000, 6176)
 			.saturating_add(T::DbWeight::get().reads(2_u64))
 			.saturating_add(T::DbWeight::get().writes(2_u64))
-	}
-	/// The range of component `i` is `[0, 524288]`.
-	fn data_root(i: u32, ) -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `0`
-		//  Estimated: `0`
-		// Minimum execution time: 2_859_000 picoseconds.
-		Weight::from_parts(2_928_000, 0)
-			// Standard Error: 2
-			.saturating_add(Weight::from_parts(5_198, 0).saturating_mul(i.into()))
-	}
-	/// The range of component `i` is `[0, 2097152]`.
-	fn data_root_batch(i: u32, ) -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `0`
-		//  Estimated: `0`
-		// Minimum execution time: 2_200_000 picoseconds.
-		Weight::from_parts(8_193_988, 0)
-			// Standard Error: 2
-			.saturating_add(Weight::from_parts(5_269, 0).saturating_mul(i.into()))
-	}
-	/// Storage: `DataAvailability::SubmitDataFeeModifier` (r:0 w:1)
-	/// Proof: `DataAvailability::SubmitDataFeeModifier` (`max_values`: Some(1), `max_size`: Some(27), added: 522, mode: `MaxEncodedLen`)
-	fn set_submit_data_fee_modifier() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `0`
-		//  Estimated: `0`
-		// Minimum execution time: 3_537_000 picoseconds.
-		Weight::from_parts(3_921_000, 0)
-			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	/// Storage: `DataAvailability::BlobRuntimeParams` (r:1 w:1)
 	/// Proof: `DataAvailability::BlobRuntimeParams` (`max_values`: Some(1), `max_size`: Some(50), added: 545, mode: `MaxEncodedLen`)
@@ -210,36 +177,6 @@ impl WeightInfo for () {
 		Weight::from_parts(33_451_000, 6176)
 			.saturating_add(RocksDbWeight::get().reads(2_u64))
 			.saturating_add(RocksDbWeight::get().writes(2_u64))
-	}
-	/// The range of component `i` is `[0, 524288]`.
-	fn data_root(i: u32, ) -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `0`
-		//  Estimated: `0`
-		// Minimum execution time: 2_859_000 picoseconds.
-		Weight::from_parts(2_928_000, 0)
-			// Standard Error: 2
-			.saturating_add(Weight::from_parts(5_198, 0).saturating_mul(i.into()))
-	}
-	/// The range of component `i` is `[0, 2097152]`.
-	fn data_root_batch(i: u32, ) -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `0`
-		//  Estimated: `0`
-		// Minimum execution time: 2_200_000 picoseconds.
-		Weight::from_parts(8_193_988, 0)
-			// Standard Error: 2
-			.saturating_add(Weight::from_parts(5_269, 0).saturating_mul(i.into()))
-	}
-	/// Storage: `DataAvailability::SubmitDataFeeModifier` (r:0 w:1)
-	/// Proof: `DataAvailability::SubmitDataFeeModifier` (`max_values`: Some(1), `max_size`: Some(27), added: 522, mode: `MaxEncodedLen`)
-	fn set_submit_data_fee_modifier() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `0`
-		//  Estimated: `0`
-		// Minimum execution time: 3_537_000 picoseconds.
-		Weight::from_parts(3_921_000, 0)
-			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 	/// Storage: `DataAvailability::BlobRuntimeParams` (r:1 w:1)
 	/// Proof: `DataAvailability::BlobRuntimeParams` (`max_values`: Some(1), `max_size`: Some(50), added: 545, mode: `MaxEncodedLen`)

@@ -612,7 +612,7 @@ pub mod pallet {
 			+ Debug
 			+ IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
-		/// UncheckedExtrinsic Type used on Kate commitment & Data root calculation.
+		/// UncheckedExtrinsic type used for header extension and data-root calculation.
 		#[pallet::no_default]
 		type Extrinsic: Encode + Decode + ExtrinsicCall<Call = Self::RuntimeCall>;
 
