@@ -1,14 +1,11 @@
-use avail_core::{BlockLengthColumns, BlockLengthRows, BLOCK_CHUNK_SIZE};
-use frame_support::{assert_noop, assert_ok, error::BadOrigin};
-use frame_system::{limits::BlockLength, RawOrigin};
+use frame_support::{assert_noop, assert_ok};
+use frame_system::RawOrigin;
 use sp_core::H256;
 
-use crate::config_preludes::{
-	MaxAppDataLength, MaxBlockCols, MaxBlockRows, MinBlockCols, MinBlockRows,
-};
+use crate::config_preludes::MaxAppDataLength;
 use crate::{
 	mock::{new_test_ext, DataAvailability, RuntimeEvent, RuntimeOrigin, System, Test},
-	AppDataFor, AppKeyFor, AppKeyInfoFor, Event, DA_DISPATCH_RATIO_PERBILL,
+	AppDataFor, AppKeyFor, AppKeyInfoFor, Event,
 };
 
 type Error = crate::Error<Test>;
@@ -116,151 +113,6 @@ mod submit_data {
 			let max_app_key_length: usize = MaxAppDataLength::get().try_into().unwrap();
 			let err = AppDataFor::<Test>::try_from(vec![b'X'; max_app_key_length + 1]);
 			assert!(err.is_err());
-		})
-	}
-}
-
-mod submit_block_length_proposal {
-	use super::*;
-
-	#[test]
-	fn submit_block_length_proposal() {
-		new_test_ext().execute_with(|| {
-			let root: RuntimeOrigin = RawOrigin::Root.into();
-			let rows = BlockLengthRows(128);
-			let cols = BlockLengthColumns(128);
-
-			assert_ok!(DataAvailability::submit_block_length_proposal(
-				root, rows.0, cols.0
-			));
-
-			let dynamic_block_length = System::block_length();
-			let new_block_length = BlockLength::with_normal_ratio(
-				rows,
-				cols,
-				BLOCK_CHUNK_SIZE,
-				DA_DISPATCH_RATIO_PERBILL,
-			)
-			.unwrap();
-			assert_eq!(dynamic_block_length, new_block_length);
-
-			let event =
-				RuntimeEvent::DataAvailability(Event::BlockLengthProposalSubmitted { rows, cols });
-			System::assert_last_event(event);
-		})
-	}
-
-	#[test]
-	fn submit_block_length_proposal_min() {
-		new_test_ext().execute_with(|| {
-			let root: RuntimeOrigin = RawOrigin::Root.into();
-			let rows = MinBlockRows::get();
-			let cols = MinBlockCols::get();
-
-			assert_ok!(DataAvailability::submit_block_length_proposal(
-				root, rows.0, cols.0
-			));
-
-			let dynamic_block_length = System::block_length();
-			let new_block_length = BlockLength::with_normal_ratio(
-				rows,
-				cols,
-				BLOCK_CHUNK_SIZE,
-				DA_DISPATCH_RATIO_PERBILL,
-			)
-			.unwrap();
-			assert_eq!(dynamic_block_length, new_block_length);
-
-			let event =
-				RuntimeEvent::DataAvailability(Event::BlockLengthProposalSubmitted { rows, cols });
-			System::assert_last_event(event);
-		})
-	}
-
-	#[test]
-	fn submit_block_length_proposal_max() {
-		new_test_ext().execute_with(|| {
-			let root: RuntimeOrigin = RawOrigin::Root.into();
-			let rows = MaxBlockRows::get();
-			let cols = MaxBlockCols::get();
-
-			assert_ok!(DataAvailability::submit_block_length_proposal(
-				root, rows.0, cols.0
-			));
-
-			let dynamic_block_length = System::block_length();
-			let new_block_length = BlockLength::with_normal_ratio(
-				rows,
-				cols,
-				BLOCK_CHUNK_SIZE,
-				DA_DISPATCH_RATIO_PERBILL,
-			)
-			.unwrap();
-			assert_eq!(dynamic_block_length, new_block_length);
-
-			let event =
-				RuntimeEvent::DataAvailability(Event::BlockLengthProposalSubmitted { rows, cols });
-			System::assert_last_event(event);
-		})
-	}
-
-	#[test]
-	fn bad_origin() {
-		new_test_ext().execute_with(|| {
-			let alice: RuntimeOrigin = RawOrigin::Signed(ALICE).into();
-			let rows = MaxBlockRows::get();
-			let cols = MaxBlockCols::get();
-
-			let err = DataAvailability::submit_block_length_proposal(alice, rows.0, cols.0);
-			assert_noop!(err, BadOrigin);
-		})
-	}
-
-	#[test]
-	fn block_dimensions_out_of_bounds() {
-		new_test_ext().execute_with(|| {
-			let root: RuntimeOrigin = RawOrigin::Root.into();
-			let rows = MaxBlockRows::get();
-			let cols = MaxBlockCols::get();
-
-			let err =
-				DataAvailability::submit_block_length_proposal(root.clone(), rows.0 + 1, cols.0);
-			assert_noop!(err, Error::BlockDimensionsOutOfBounds);
-
-			let err = DataAvailability::submit_block_length_proposal(root, rows.0, cols.0 + 1);
-			assert_noop!(err, Error::BlockDimensionsOutOfBounds);
-		})
-	}
-
-	#[test]
-	fn block_dimensions_too_small() {
-		new_test_ext().execute_with(|| {
-			let root: RuntimeOrigin = RawOrigin::Root.into();
-			let rows = MinBlockRows::get();
-			let cols = MinBlockCols::get();
-
-			let err =
-				DataAvailability::submit_block_length_proposal(root.clone(), rows.0 - 1, cols.0);
-			assert_noop!(err, Error::BlockDimensionsTooSmall);
-
-			let err = DataAvailability::submit_block_length_proposal(root, rows.0, cols.0 - 1);
-			assert_noop!(err, Error::BlockDimensionsTooSmall);
-		})
-	}
-
-	#[test]
-	fn not_power_of_two() {
-		new_test_ext().execute_with(|| {
-			let root: RuntimeOrigin = RawOrigin::Root.into();
-
-			let err = DataAvailability::submit_block_length_proposal(root.clone(), 118, 128);
-			assert_noop!(err, Error::NotPowerOfTwo);
-
-			let err = DataAvailability::submit_block_length_proposal(root.clone(), 128, 118);
-			assert_noop!(err, Error::NotPowerOfTwo);
-
-			let err = DataAvailability::submit_block_length_proposal(root.clone(), 111, 111);
-			assert_noop!(err, Error::NotPowerOfTwo);
 		})
 	}
 }

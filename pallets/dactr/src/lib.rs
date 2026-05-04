@@ -4,15 +4,12 @@
 #![recursion_limit = "256"]
 
 use avail_core::{
-	currency::Balance, AppId, BlockLengthColumns, BlockLengthRows, FriParamsVersion,
-	DA_DISPATCH_RATIO, NORMAL_DISPATCH_RATIO,
+	currency::Balance, AppId, FriParamsVersion, DA_DISPATCH_RATIO, NORMAL_DISPATCH_RATIO,
 };
-use codec::{Compact, CompactLen as _, Encode};
+use codec::Encode;
 use frame_support::ensure;
 use frame_support::traits::{ValidatorSet, ValidatorSetWithIdentification};
-use frame_support::weights::constants::ExtrinsicBaseWeight;
 use frame_support::{
-	dispatch::DispatchClass,
 	traits::{Currency, Get, ReservableCurrency},
 	weights::Weight,
 };
@@ -85,10 +82,6 @@ pub mod pallet {
 		impl frame_system::DefaultConfig for TestDefaultConfig {}
 
 		parameter_types! {
-			pub const MinBlockRows: BlockLengthRows = BlockLengthRows(32);
-			pub const MaxBlockRows: BlockLengthRows = BlockLengthRows(4096);
-			pub const MinBlockCols: BlockLengthColumns = BlockLengthColumns(32);
-			pub const MaxBlockCols: BlockLengthColumns = BlockLengthColumns(1024);
 			pub const MaxAppKeyLength: u32 = 32;
 			pub const MaxAppDataLength: u32 = 1_048_576; // 1 Mb
 			pub const MaxVouchesPerRecord: u32 = 256; // Need to be greater than vouch threshold
@@ -97,13 +90,8 @@ pub mod pallet {
 
 		#[frame_support::register_default_impl(TestDefaultConfig)]
 		impl DefaultConfig for TestDefaultConfig {
-			type BlockLenProposalId = u32;
 			type MaxAppDataLength = MaxAppDataLength;
 			type MaxAppKeyLength = MaxAppKeyLength;
-			type MaxBlockCols = MaxBlockCols;
-			type MaxBlockRows = MaxBlockRows;
-			type MinBlockCols = MinBlockCols;
-			type MinBlockRows = MinBlockRows;
 			type MaxVouchesPerRecord = MaxVouchesPerRecord;
 			type SessionDataProvider = ();
 			type BlobVouchFeeReserve = BlobVouchFeeReserve;
@@ -117,9 +105,6 @@ pub mod pallet {
 		#[pallet::no_default]
 		type Currency: ReservableCurrency<Self::AccountId>;
 
-		/// Block length proposal Id.
-		type BlockLenProposalId: Parameter + Default + One + CheckedAdd + MaxEncodedLen;
-
 		/// The max length of application key.
 		#[pallet::constant]
 		type MaxAppKeyLength: Get<u32>;
@@ -127,22 +112,6 @@ pub mod pallet {
 		/// The max length of app data.
 		#[pallet::constant]
 		type MaxAppDataLength: Get<u32>;
-
-		/// Minimum number of rows in a block.
-		#[pallet::constant]
-		type MinBlockRows: Get<BlockLengthRows>;
-
-		/// Maximum number of rows in a block.
-		#[pallet::constant]
-		type MaxBlockRows: Get<BlockLengthRows>;
-
-		/// Minimum number of cols in a block.
-		#[pallet::constant]
-		type MinBlockCols: Get<BlockLengthColumns>;
-
-		/// Maximum number of cols in a block.
-		#[pallet::constant]
-		type MaxBlockCols: Get<BlockLengthColumns>;
 
 		/// Maximum number of validators vouching for a blob validator accusation.
 		#[pallet::constant]
@@ -773,10 +742,6 @@ pub mod pallet {
 			who: T::AccountId,
 			data_hash: H256,
 		},
-		BlockLengthProposalSubmitted {
-			rows: BlockLengthRows,
-			cols: BlockLengthColumns,
-		},
 		ApplicationKeySet {
 			old_key: AppKeyFor<T>,
 			new_key: AppKeyFor<T>,
@@ -816,20 +781,10 @@ pub mod pallet {
 		LastAppIdOverflowed,
 		/// The submitted data is empty.
 		DataCannotBeEmpty,
-		/// The last block length proposal Id overflowed.
-		LastBlockLenProposalIdOverflowed,
-		/// The proposed block dimensions are out of bounds.
-		BlockDimensionsOutOfBounds,
-		/// The proposed block dimensions are too small.
-		BlockDimensionsTooSmall,
-		/// The request to reduce block dimensions was made in a non-empty block
-		InvalidBlockWeightReduction,
 		/// Submit data call outside of block execution context.
 		BadContext,
 		/// App info was not found for the given App key
 		UnknownAppKey,
-		/// Submit block length proposal was made with values not power of 2
-		NotPowerOfTwo,
 		/// The commitment is empty
 		CommitmentCannotBeEmpty,
 		/// The blob size exceeds the allowed maximum (e.g., > 31 MB).
@@ -921,19 +876,6 @@ impl<T: Config> Pallet<T> {
 		})
 	}
 
-	/// Check if the block weight is acceptable to execute the extrinsic
-	/// We check the current normal ratio weight, if it's too high, it means we won't reduce the block size
-	pub fn is_block_weight_acceptable() -> bool {
-		let current_weight = <frame_system::Pallet<T>>::block_weight();
-		let current_normal_weight: &Weight = current_weight.get(DispatchClass::Normal);
-		// Offsetting the base_weight multiplication done for all txs
-		let base_weight = ExtrinsicBaseWeight::get().saturating_mul(100);
-		let acceptable_limit: Weight = T::WeightInfo::submit_block_length_proposal()
-			.saturating_mul(5)
-			.saturating_add(base_weight);
-		current_normal_weight.all_lte(acceptable_limit)
-	}
-
 	/// Try to reserve the vouch fee for `who`.
 	/// If the account doesn't have enough free balance, returns an error.
 	pub fn reserve_vouch_fee(who: &T::AccountId) -> DispatchResult {
@@ -1003,60 +945,6 @@ pub mod weight_helper {
 	use avail_base::MAX_BLOB_TXS_PER_BLOCK;
 
 	use super::*;
-
-	/// Weight for `dataAvailability::submit_data`.
-	pub fn submit_data<T: Config>(data_len: usize) -> Weight {
-		/* Compute regular substrate weight. */
-		let data_len: u32 = data_len.saturated_into();
-		let data_prefix_len: u32 =
-			compact_len(&data_len).unwrap_or(4 /* We imply the maximum */);
-		// Get the encoded len.
-		let encoded_data_len: u32 = match data_len.checked_add(data_prefix_len) {
-			Some(l) => l,
-			None => data_len,
-		};
-		let basic_weight = T::WeightInfo::submit_data(data_len);
-		let data_root_weight = T::WeightInfo::data_root(data_len);
-		let regular_weight = basic_weight.saturating_add(data_root_weight);
-
-		/* Compute weight based on size taken in the matrix and hence computation. */
-		// We get the current settings for matrix columns, rows and chunk_size.
-		// Before, we got this value from the runtime, now that the matric size is increased for blobs,
-		// We take raw value corresponding to 4mb of data when multiplied by the chunk size
-		let blob_runtime_params = BlobRuntimeParams::<T>::get();
-		let max_total_old_submission_size: u32 = blob_runtime_params
-			.max_total_old_submission_size
-			.saturated_into();
-		let chunk_size: u32 = 32;
-		let max_scalar = max_total_old_submission_size.div_ceil(chunk_size);
-
-		// We compute the maximum numbers of scalars in the matrix and multiply with the DA dispatch ratio.
-		let max_scalar_da_ratio = DA_DISPATCH_RATIO_PERBILL * max_scalar;
-
-		// We get the current maximum weight in a block and multiply with normal dispatch ratio.
-		let block_weights = <T as frame_system::Config>::BlockWeights::get();
-		let max_weight_normal_ratio: u64 =
-			NORMAL_DISPATCH_RATIO_PERBILL * block_weights.max_block.ref_time();
-
-		// We compute the number of scalars
-		let nb_scalar = encoded_data_len
-			.saturating_add(chunk_size - 1)
-			.saturating_div(chunk_size - 1);
-
-		// We compute the ratio of nb scalars / max scalars in the matrix and multiply with the maximum weight.
-		let data_scalar_ratio = Perbill::from_rational(nb_scalar, max_scalar_da_ratio);
-		let ref_time = data_scalar_ratio * max_weight_normal_ratio;
-		let scalar_based_weight = Weight::from_parts(ref_time, regular_weight.proof_size());
-
-		// We return the biggest value between the regular weight and scalar based weight.
-		// I cannot think of a case where regular weight > matrix based weight.
-		scalar_based_weight.max(regular_weight)
-	}
-
-	fn compact_len(value: &u32) -> Option<u32> {
-		let len = Compact::<u32>::compact_len(value);
-		u32::try_from(len).ok()
-	}
 
 	fn estimated_post_inherent_summary_size(blob_size_bytes: u64) -> u64 {
 		// Based on empiric results tuned up a little.

@@ -63,29 +63,6 @@ impl<T: frame_system::Config> da_control::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
-	/// Storage: `System::DynamicBlockLength` (r:1 w:1)
-	/// Proof: `System::DynamicBlockLength` (`max_values`: Some(1), `max_size`: Some(24), added: 519, mode: `MaxEncodedLen`)
-	fn submit_block_length_proposal() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `65`
-		//  Estimated: `1509`
-		// Minimum execution time: 16_350_000 picoseconds.
-		Weight::from_parts(17_393_000, 0)
-			.saturating_add(Weight::from_parts(0, 1509))
-			.saturating_add(T::DbWeight::get().reads(1))
-			.saturating_add(T::DbWeight::get().writes(1))
-	}
-	/// The range of component `i` is `[1, 524288]`.
-	fn submit_data(i: u32, ) -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `0`
-		//  Estimated: `0`
-		// Minimum execution time: 12_741_000 picoseconds.
-		Weight::from_parts(5_340_425, 0)
-			.saturating_add(Weight::from_parts(0, 0))
-			// Standard Error: 1
-			.saturating_add(Weight::from_parts(1_690, 0).saturating_mul(i.into()))
-	}
 	/// Storage: `DataAvailability::AppKeys` (r:2 w:2)
 	/// Proof: `DataAvailability::AppKeys` (`max_values`: None, `max_size`: Some(118), added: 2593, mode: `MaxEncodedLen`)
 	fn set_application_key() -> Weight {

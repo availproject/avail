@@ -1153,11 +1153,6 @@ pub mod pallet {
 	pub(super) type AuthorizedUpgrade<T: Config> =
 		StorageValue<_, CodeUpgradeAuthorization<T>, OptionQuery>;
 
-	/// The dynamic block length
-	#[pallet::storage]
-	#[pallet::getter(fn block_length)]
-	pub type DynamicBlockLength<T: Config> = StorageValue<_, limits::BlockLength, ValueQuery>;
-
 	/// The weight reclaimed for the extrinsic.
 	///
 	/// This information is available until the end of the extrinsic execution.
@@ -1174,7 +1169,6 @@ pub mod pallet {
 	pub struct GenesisConfig<T: Config> {
 		#[serde(skip)]
 		pub _config: sp_std::marker::PhantomData<T>,
-		pub block_length: limits::BlockLength,
 	}
 
 	#[pallet::genesis_build]
@@ -1187,7 +1181,6 @@ pub mod pallet {
 			<UpgradedToTripleRefCount<T>>::put(true);
 
 			sp_io::storage::set(well_known_keys::EXTRINSIC_INDEX, &0u32.encode());
-			<DynamicBlockLength<T>>::put(&self.block_length);
 			StorageVersion::new(3).put::<Pallet<T>>();
 		}
 	}
@@ -2473,13 +2466,6 @@ impl<T: Config> Pallet<T> {
 			Error::<T>::Unauthorized
 		);
 		Ok(authorization)
-	}
-
-	/// Creates a `ExtrinsicLen` based on `len` as raw length.
-	/// It uses the current `chunk_size` to calculate the padded len.
-	pub fn padded_extrinsic_len(len: u32) -> u32 {
-		let chunk_size = Self::block_length().chunk_size();
-		kate::padded_len(len, chunk_size)
 	}
 
 	/// Reclaim the weight for the extrinsic given info and post info.

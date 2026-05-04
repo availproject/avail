@@ -13,10 +13,7 @@ use avail_blob::{
 use avail_core::{ensure, header::HeaderExtension};
 use avail_observability::metrics::avail::{MetricObserver, ObserveKind};
 use da_control::BlobTxSummaryRuntime;
-use da_runtime::{
-	apis::{DataAvailApi, ExtensionBuilder},
-	Header as DaHeader, Runtime,
-};
+use da_runtime::{apis::ExtensionBuilder, Header as DaHeader, Runtime};
 use frame_system::native::build_extension;
 use sc_consensus::{
 	block_import::{BlockCheckParams, BlockImport as BlockImportT, BlockImportParams},
@@ -48,7 +45,7 @@ where
 	I: BlockImportT<B> + Clone + Send + Sync,
 	I::Error: Into<ConsensusError>,
 	C: ProvideRuntimeApi<B> + HeaderBackend<B> + Send + Sync,
-	C::Api: DataAvailApi<B> + ExtensionBuilder<B>,
+	C::Api: ExtensionBuilder<B>,
 {
 	pub fn new(
 		client: Arc<C>,
@@ -226,7 +223,7 @@ where
 	I: BlockImportT<B> + Clone + Send + Sync,
 	I::Error: Into<ConsensusError>,
 	C: ProvideRuntimeApi<B> + HeaderBackend<B> + Send + Sync,
-	C::Api: DataAvailApi<B> + ExtensionBuilder<B>,
+	C::Api: ExtensionBuilder<B>,
 {
 	type Error = ConsensusError;
 

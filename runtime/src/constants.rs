@@ -350,15 +350,9 @@ pub mod preimage {
 }
 
 pub mod da {
-	use avail_core::{BlockLengthColumns, BlockLengthRows};
-
 	use super::*;
 
 	parameter_types! {
-		pub const MinBlockRows: BlockLengthRows = BlockLengthRows(32);
-		pub const MaxBlockRows: BlockLengthRows = BlockLengthRows(4096);
-		pub const MinBlockCols: BlockLengthColumns = BlockLengthColumns(64);
-		pub const MaxBlockCols: BlockLengthColumns = BlockLengthColumns(1024);
 		pub const BlobVouchFeeReserve: Balance = 1 * AVAIL;
 	}
 	pub type MaxAppKeyLength = ConstU32<64>;

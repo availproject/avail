@@ -9,14 +9,12 @@ use avail_base::{HeaderExtensionBuilderData, ProvidePostInherent};
 use avail_core::{
 	currency::Balance,
 	data_proof::{DataProof, ProofResponse, SubTrie},
-	header::HeaderExtension,
 	FriParamsVersion,
 };
 use sp_runtime::OpaqueExtrinsic;
 
 use frame_support::genesis_builder_helper::{build_state, get_preset};
 use frame_support::{traits::KeyOwnerProofSystem, weights::Weight};
-use frame_system::limits::BlockLength;
 use frame_system_rpc_runtime_api::system_events_api::fetch_events;
 use pallet_nomination_pools::PoolId;
 use pallet_transaction_payment::{FeeDetails, RuntimeDispatchInfo};
@@ -39,19 +37,8 @@ type RTExtractor = <Runtime as frame_system::Config>::HeaderExtensionDataFilter;
 type RTExtrinsic = <Runtime as frame_system::Config>::Extrinsic;
 
 decl_runtime_apis! {
-	#[api_version(2)]
-	pub trait DataAvailApi {
-		fn block_length() -> BlockLength;
-	}
 
 	pub trait ExtensionBuilder {
-		#[api_version(4)]
-		fn build_extension(
-			extrinsics: Vec<OpaqueExtrinsic>,
-			data_root: H256,
-			block_length: BlockLength,
-			block_number: u32,
-		) -> HeaderExtension;
 		fn build_data_root(block: u32, extrinsics: Vec<OpaqueExtrinsic>) -> H256;
 		fn check_if_extrinsic_is_vector_post_inherent(uxt: &<Block as BlockT>::Extrinsic) -> bool;
 		fn check_if_extrinsic_is_da_post_inherent(uxt: &<Block as BlockT>::Extrinsic) -> bool;
@@ -425,34 +412,9 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl crate::apis::DataAvailApi<Block> for Runtime {
-		fn block_length() -> frame_system::limits::BlockLength {
-			frame_system::Pallet::<Runtime>::block_length()
-		}
-	}
-
-	#[api_version(4)]
 	impl crate::apis::ExtensionBuilder<Block> for Runtime {
 		fn build_data_root(block: u32, extrinsics: Vec<OpaqueExtrinsic>) -> H256  {
 			HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block, &extrinsics).data_root()
-		}
-
-		fn build_extension(
-			_extrinsics: Vec<OpaqueExtrinsic>,
-			_data_root: H256,
-			_block_length: BlockLength,
-			_block_number: u32,
-		) -> HeaderExtension {
-			// use frame_system::native::hosted_header_builder::da::HeaderExtensionBuilder;
-			// use frame_system::HeaderExtensionBuilder as _;
-
-			// let bl = frame_system::Pallet::<Runtime>::block_length();
-			// let cols = bl.cols.0;
-			// let rows = bl.rows.0;
-			// let app_extrinsics = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block_number, &extrinsics, cols, rows).to_app_extrinsics();
-			// HeaderExtensionBuilder::<Runtime>::build(app_extrinsics, data_root, block_length, block_number)
-			// Currentlt this API is used for V3 header generaton, which we no longer support for time being
-			todo!()
 		}
 
 		fn check_if_extrinsic_is_vector_post_inherent(uxt: &<Block as BlockT>::Extrinsic) -> bool {

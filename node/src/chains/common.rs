@@ -1,11 +1,8 @@
 use super::{get_account_id_from_seed, AuthorityKeys};
-use avail_core::BLOCK_CHUNK_SIZE;
 
-use da_control::DA_DISPATCH_RATIO_PERBILL;
 use da_runtime::{
 	constants, AccountId, Balance, DataAvailabilityConfig, SessionKeys, StakerStatus,
 };
-use frame_system::limits::BlockLength;
 use pallet_vector::constants::{
 	get_poseidon_hash_for_period, BROADCASTER, BROADCASTER_DOMAIN, FINALITY_THRESHOLD,
 	GENESIS_TIME, GENESIS_VALIDATOR_ROOT, PERIOD, ROTATE_FUNCTION_ID, ROTATE_VK, SECONDS_PER_SLOT,
@@ -94,18 +91,7 @@ pub fn runtime_genesis_config(
 	let validator_count = session_keys.len() as u32;
 	let session_keys: Vec<(AccountId, AccountId, SessionKeys)> =
 		session_keys.into_iter().map(|k| k.into()).collect();
-	let block_length = BlockLength::with_normal_ratio(
-		frame_system::limits::MAX_BLOCK_ROWS,
-		frame_system::limits::MAX_BLOCK_COLUMNS,
-		BLOCK_CHUNK_SIZE,
-		DA_DISPATCH_RATIO_PERBILL,
-	)
-	.expect("Valid `BlockLength` genesis definition .qed");
-
 	json!({
-		"system": {
-			"blockLength": block_length,
-		},
 		"balances": {
 			"balances": balances,
 		},

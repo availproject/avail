@@ -7,13 +7,9 @@ use serde_json::{json, Value};
 use sp_std::vec;
 use sp_std::vec::Vec;
 
-use avail_core::BLOCK_CHUNK_SIZE;
-use da_control::DA_DISPATCH_RATIO_PERBILL;
-
 use crate::{
 	self as da_runtime, constants, AccountId, Balance, DataAvailabilityConfig, SessionKeys,
 };
-use frame_system::limits::BlockLength;
 use sp_staking::StakerStatus;
 
 use pallet_vector::constants::{
@@ -161,18 +157,7 @@ pub fn runtime_genesis_config(
 	let session_keys: Vec<(AccountId, AccountId, SessionKeys)> =
 		session_keys.into_iter().map(|k| k.into()).collect();
 
-	let block_length = BlockLength::with_normal_ratio(
-		frame_system::limits::MAX_BLOCK_ROWS,
-		frame_system::limits::MAX_BLOCK_COLUMNS,
-		BLOCK_CHUNK_SIZE,
-		DA_DISPATCH_RATIO_PERBILL,
-	)
-	.expect("Valid `BlockLength` genesis definition; qed");
-
 	json!({
-		"system": {
-			"blockLength": block_length,
-		},
 		"balances": {
 			"balances": balances,
 		},
