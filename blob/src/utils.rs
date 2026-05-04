@@ -581,14 +581,6 @@ pub fn get_babe_randomness_key() -> StorageKey {
 	storage_key
 }
 
-pub fn get_dynamic_blocklength_key() -> StorageKey {
-	let mut key = Vec::new();
-	key.extend(&twox_128(b"System"));
-	key.extend(&twox_128(b"DynamicBlockLength"));
-	let storage_key = StorageKey(key);
-	storage_key
-}
-
 pub fn get_current_session_key() -> StorageKey {
 	let mut key = Vec::new();
 	key.extend(&twox_128(b"Session"));
