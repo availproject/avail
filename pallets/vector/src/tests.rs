@@ -1,15 +1,10 @@
 use crate::{
-	mock::{
-		new_test_ext, Balances, Bridge, RuntimeEvent, RuntimeOrigin, System, Test,
-		ROTATE_FUNCTION_ID, ROTATE_VK, STEP_FUNCTION_ID, STEP_VK,
-	},
+	mock::{new_test_ext, Balances, Bridge, RuntimeEvent, RuntimeOrigin, System, Test},
 	state::Configuration,
 	storage_utils::MessageStatusEnum,
-	Broadcasters, ConfigurationStorage, Error, Event, ExecutionStateRoots, FunctionIds,
-	FunctionInput, FunctionOutput, FunctionProof, Head, Headers, MessageStatus, MockEnabled,
-	ProofOutputs, RotateVerificationKey, SP1VerificationKey, SourceChainFrozen,
-	StepVerificationKey, SyncCommitteeHashes, SyncCommitteePoseidons, Updater, ValidProof,
-	WhitelistedDomains,
+	Broadcasters, ConfigurationStorage, Error, Event, ExecutionStateRoots, Head, Headers,
+	MessageStatus, MockEnabled, ProofOutputs, SP1VerificationKey, SourceChainFrozen,
+	SyncCommitteeHashes, Updater, ValidProof, WhitelistedDomains,
 };
 use alloy_sol_types::SolValue;
 use avail_core::data_proof::Message::FungibleToken;
@@ -21,7 +16,6 @@ use frame_support::{
 };
 use frame_system::RawOrigin;
 use hex_literal::hex;
-use primitive_types::U256;
 use sp1_sdk::SP1ProofWithPublicValues;
 use sp_core::{crypto::AccountId32, keccak_256, ByteArray};
 use sp_runtime::{testing::H256, traits::BadOrigin};
@@ -36,41 +30,6 @@ const SP1_VERIFICATION_KEY: [u8; 32] =
 	hex!("003ef077b6a82831a994a12a673901221ca1752080605189930748d0772d5c68");
 
 pub const PROOF_FILE: &str = "test/proof.bin";
-
-fn get_valid_step_input() -> FunctionInput {
-	BoundedVec::truncate_from(
-		hex!("0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df0000000000747ffe")
-			.to_vec(),
-	)
-}
-
-fn get_valid_step_output() -> FunctionOutput {
-	BoundedVec::truncate_from(hex!("e4566e0cf4edb171a3eedd59f9943bbcd0b1f6b648f1a6e26d5264b668ab41ec51e76629b32b943497207e7b7ccff8fbc12e9e6d758cc7eed972422c4cad02b90000000000747fa001fd").to_vec())
-}
-
-fn get_valid_step_proof() -> FunctionProof {
-	BoundedVec::truncate_from(hex!("0b496d04c0e12206bc846edd2077a20b8b55f65fc0e40bb8cf617d9b79ce39e508281ad49432300b3b7c8a95a0a63544f93f553fcfdeba38c82460888f4030ed1f67a1be666c12ee00658109c802042c58f645474fcee7d128277a4e35c1dd1504d33cb652ec23407cd3580eda0196dd97054eb5c2a817163d6997832d9abd422729b3e85a15941722baeb5ca8a42567a91c6a0b0cd64ac15431fde05071e90e0d30c12013d5803336cc2f433c16eaa5434e30b89ce7395c3c3cda29dde3be062281095f143d728486c71203b24fa6068e69aabf29d457ffadc6d682d51a4f08179d3240bc561ae7e2c005bb772a4d4c5ba6644986052fad554f042ab0074a8f").to_vec())
-}
-
-fn get_valid_rotate_input() -> FunctionInput {
-	BoundedVec::truncate_from(
-		hex!("e882fe800bed07205bf2cbf17f30148b335d143a91811ff65280c221c9f57856").to_vec(),
-	)
-}
-
-fn get_valid_rotate_output() -> FunctionOutput {
-	BoundedVec::truncate_from(
-		hex!("2441c10b0b6605985c56ebf6dc1ca7e9a0ae20e617c931d72f2ec19aa40ccc8d").to_vec(),
-	)
-}
-
-fn get_valid_rotate_proof() -> FunctionProof {
-	BoundedVec::truncate_from(hex!("14305744fb26a377656a947cae0874c14b086de9d407bdfaf415ca9f47402c04144589183b473537750e7211f93671e324825db673edcf5c0839b08eecba08202966ba52dc07e1bf9832a54770048b84999172d47c57628758d8fe43dd9fe1412e6f8c0e75a79cde28e0e24eb09f9d23309defb07f4a1761deb6598de77278971d2d914930ad2e3ad8b6264e595a0516a912fc9394c93fa61146efc54d61e5c32378a5d4460aa2164422702f9401fcfb3e2b991a0e5b847ede3ea9ffe70a55100203abc0636c101adb6546c2f7aaf32d79e69093afb40c3c1a674e44a1ece76a1183fc03ef9553a7728672de2aada5d5582b5bcf0859e8c312ab59429553ed6d").to_vec())
-}
-
-fn get_invalid_proof() -> FunctionProof {
-	BoundedVec::truncate_from(hex!("1b496d04c0e12206bc846edd2077a20b8b55f65fc0e40bb8cf617d9b79ce39e508281ad49432300b3b7c8a95a0a63544f93f553fcfdeba38c82460888f4030ed1f67a1be666c12ee00658109c802042c58f645474fcee7d128277a4e35c1dd1504d33cb652ec23407cd3580eda0196dd97054eb5c2a817163d6997832d9abd422729b3e85a15941722baeb5ca8a42567a91c6a0b0cd64ac15431fde05071e90e0d30c12013d5803336cc2f433c16eaa5434e30b89ce7395c3c3cda29dde3be062281095f143d728486c71203b24fa6068e69aabf29d457ffadc6d682d51a4f08179d3240bc561ae7e2c005bb772a4d4c5ba6644986052fad554f042ab0074a8f").to_vec())
-}
 
 fn get_valid_account_proof() -> ValidProof {
 	BoundedVec::truncate_from(vec![
@@ -186,109 +145,6 @@ fn get_valid_amb_message() -> AddressedMessage {
 		destination_domain: 1,
 		id: 0,
 	}
-}
-
-#[test]
-fn test_fulfill_step_call_proof_not_valid() {
-	new_test_ext().execute_with(|| {
-		let slot = 7634942;
-		Updater::<Test>::set(H256(TEST_SENDER_VEC));
-		ConfigurationStorage::<Test>::set(Configuration {
-			slots_per_period: 8192,
-			finality_threshold: 461,
-		});
-
-		let result = Bridge::fulfill_call(
-			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
-			STEP_FUNCTION_ID,
-			get_valid_step_input(),
-			get_valid_step_output(),
-			get_invalid_proof(),
-			slot,
-		);
-
-		assert_err!(result, Error::<Test>::VerificationFailed);
-	});
-}
-
-#[test]
-fn test_fulfill_step_call_not_valid_function_id() {
-	new_test_ext().execute_with(|| {
-		let slot = 7634942;
-		Updater::<Test>::set(H256(TEST_SENDER_VEC));
-		ConfigurationStorage::<Test>::set(Configuration {
-			slots_per_period: 8192,
-			finality_threshold: 461,
-		});
-		let invalid_function_id: H256 = H256(hex!(
-			"bf44af6890508b3b7f6910d4a4570a0d524769a23ce340b2c7400e140ad168ab"
-		));
-		let result = Bridge::fulfill_call(
-			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
-			invalid_function_id,
-			get_valid_step_input(),
-			get_valid_step_output(),
-			get_valid_step_proof(),
-			slot,
-		);
-
-		assert_err!(result, Error::<Test>::FunctionIdNotKnown);
-	});
-}
-
-#[test]
-fn test_fulfill_step_call_finality_not_met() {
-	new_test_ext().execute_with(|| {
-		let slot = 7634942;
-		Updater::<Test>::set(H256(TEST_SENDER_VEC));
-		SyncCommitteePoseidons::<Test>::insert(
-			931,
-			U256::from("0x0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df"),
-		);
-
-		ConfigurationStorage::<Test>::set(Configuration {
-			slots_per_period: 8192,
-			finality_threshold: 512, // max finality
-		});
-		let result = Bridge::fulfill_call(
-			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
-			STEP_FUNCTION_ID,
-			get_valid_step_input(),
-			get_valid_step_output(),
-			get_valid_step_proof(),
-			slot,
-		);
-
-		assert_err!(result, Error::<Test>::NotEnoughParticipants);
-	});
-}
-
-#[test]
-fn test_fulfill_step_call_wrong_updater_address() {
-	new_test_ext().execute_with(|| {
-		let slot = 7634942;
-		Updater::<Test>::set(H256(TEST_SENDER_VEC));
-		ConfigurationStorage::<Test>::set(Configuration {
-			slots_per_period: 8192,
-			finality_threshold: 461,
-		});
-		let invalid_function_id: H256 = H256(hex!(
-			"bf44af6890508b3b7f6910d4a4570a0d524769a23ce340b2c7400e140ad168ab"
-		));
-
-		let wrong_updater: AccountId32 = AccountId32::new([1u8; 32]);
-
-		let result = Bridge::fulfill_call(
-			RuntimeOrigin::signed(wrong_updater),
-			invalid_function_id,
-			get_valid_step_input(),
-			get_valid_step_output(),
-			get_valid_step_proof(),
-			slot,
-		);
-
-		assert_err!(result, Error::<Test>::UpdaterMisMatch);
-	});
 }
 
 #[test]
@@ -609,286 +465,6 @@ fn test_execute_message_with_unsupported_domain() {
 }
 
 #[test]
-fn test_fulfill_step_call() {
-	new_test_ext().execute_with(|| {
-		let slot = 7634942;
-		Updater::<Test>::set(H256(TEST_SENDER_VEC));
-
-		SyncCommitteePoseidons::<Test>::insert(
-			931,
-			U256::from("0x0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df"),
-		);
-
-		ConfigurationStorage::<Test>::set(Configuration {
-			slots_per_period: 8192,
-			finality_threshold: 461,
-		});
-
-		let result = Bridge::fulfill_call(
-			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
-			STEP_FUNCTION_ID,
-			get_valid_step_input(),
-			get_valid_step_output(),
-			get_valid_step_proof(),
-			slot,
-		);
-
-		assert_ok!(result);
-		let finalized_slot = 7634848;
-		// ensure that event is fired
-		let expected_event = RuntimeEvent::Bridge(Event::HeadUpdated {
-			slot: finalized_slot,
-			finalization_root: H256(hex!(
-				"e4566e0cf4edb171a3eedd59f9943bbcd0b1f6b648f1a6e26d5264b668ab41ec"
-			)),
-			execution_state_root: H256(hex!(
-				"51e76629b32b943497207e7b7ccff8fbc12e9e6d758cc7eed972422c4cad02b9"
-			)),
-		});
-
-		let finalized_slot = 7634848;
-
-		let header = Headers::<Test>::get(finalized_slot);
-		let head = Head::<Test>::get();
-		let ex_state_root = ExecutionStateRoots::<Test>::get(finalized_slot);
-
-		assert_eq!(
-			header,
-			H256(hex!(
-				"e4566e0cf4edb171a3eedd59f9943bbcd0b1f6b648f1a6e26d5264b668ab41ec"
-			))
-		);
-		assert_eq!(
-			ex_state_root,
-			H256(hex!(
-				"51e76629b32b943497207e7b7ccff8fbc12e9e6d758cc7eed972422c4cad02b9"
-			))
-		);
-		assert_eq!(head, finalized_slot);
-		assert_eq!(expected_event, System::events()[0].event);
-	});
-}
-
-#[test]
-fn test_fulfill_step_call_wrong_poseidon() {
-	new_test_ext().execute_with(|| {
-		let slot = 7634942;
-		Updater::<Test>::set(H256(TEST_SENDER_VEC));
-
-		// current poseidon is not the same as the one in the valid proof
-		SyncCommitteePoseidons::<Test>::insert(
-			931,
-			U256::from("0x0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332da"),
-		);
-
-		ConfigurationStorage::<Test>::set(Configuration {
-			slots_per_period: 8192,
-			finality_threshold: 461,
-		});
-
-		let result = Bridge::fulfill_call(
-			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
-			STEP_FUNCTION_ID,
-			get_valid_step_input(),
-			get_valid_step_output(),
-			get_valid_step_proof(),
-			slot,
-		);
-
-		assert_err!(result, Error::<Test>::StepVerificationError);
-	});
-}
-
-#[test]
-fn test_fulfill_step_call_slot_behind_head() {
-	new_test_ext().execute_with(|| {
-		let slot = 7634942;
-		Updater::<Test>::set(H256(TEST_SENDER_VEC));
-		SyncCommitteePoseidons::<Test>::insert(
-			931,
-			U256::from("0x0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df"),
-		);
-
-		// move head forward
-		Head::<Test>::set(8634942);
-
-		ConfigurationStorage::<Test>::set(Configuration {
-			slots_per_period: 8192,
-			finality_threshold: 461,
-		});
-
-		let result = Bridge::fulfill_call(
-			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
-			STEP_FUNCTION_ID,
-			get_valid_step_input(),
-			get_valid_step_output(),
-			get_valid_step_proof(),
-			slot,
-		);
-
-		assert_err!(result, Error::<Test>::SlotBehindHead);
-	});
-}
-
-#[test]
-fn test_fulfill_rotate_call() {
-	new_test_ext().execute_with(|| {
-		let slot = 7634942;
-		Updater::<Test>::set(H256(TEST_SENDER_VEC));
-
-		ConfigurationStorage::<Test>::set(Configuration {
-			slots_per_period: 8192,
-			finality_threshold: 342,
-		});
-
-		Headers::<Test>::set(
-			slot,
-			H256(hex!(
-				"e882fe800bed07205bf2cbf17f30148b335d143a91811ff65280c221c9f57856"
-			)),
-		);
-
-		let result = Bridge::fulfill_call(
-			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
-			ROTATE_FUNCTION_ID,
-			get_valid_rotate_input(),
-			get_valid_rotate_output(),
-			get_valid_rotate_proof(),
-			slot,
-		);
-
-		assert_ok!(result);
-		// ensure that event is fired
-		let expected_poseidon = U256::from_dec_str(
-			"16399439943012933445970260519503780180385945954293268151243539801891563949197",
-		)
-		.unwrap();
-
-		let current_period = 931;
-		let expected_event = RuntimeEvent::Bridge(Event::SyncCommitteeUpdated {
-			period: current_period + 1,
-			root: expected_poseidon,
-		});
-
-		let poseidon = SyncCommitteePoseidons::<Test>::get(current_period + 1);
-
-		assert_eq!(expected_event, System::events()[0].event);
-		assert_eq!(poseidon, expected_poseidon);
-	});
-}
-
-#[test]
-fn test_fulfill_rotate_call_wrong_header() {
-	new_test_ext().execute_with(|| {
-		let slot = 7634942;
-		Updater::<Test>::set(H256(TEST_SENDER_VEC));
-
-		ConfigurationStorage::<Test>::set(Configuration {
-			slots_per_period: 8192,
-			finality_threshold: 342,
-		});
-		// set current wrong header for valid rotate call
-		Headers::<Test>::set(
-			slot,
-			H256(hex!(
-				"e882fe800bed07205bf2cbf17f30148b335d143a91811ff65280c221c9f57855"
-			)),
-		);
-
-		let result = Bridge::fulfill_call(
-			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
-			ROTATE_FUNCTION_ID,
-			get_valid_rotate_input(),
-			get_valid_rotate_output(),
-			get_valid_rotate_proof(),
-			slot,
-		);
-
-		assert_err!(result, Error::<Test>::RotateVerificationError);
-	});
-}
-
-#[test]
-fn test_fulfill_call_function_ids_not_set() {
-	new_test_ext().execute_with(|| {
-		Updater::<Test>::set(H256(TEST_SENDER_VEC));
-
-		Bridge::set_function_ids(RawOrigin::Root.into(), None).unwrap();
-		let slot = 7634942;
-		let err = Bridge::fulfill_call(
-			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
-			STEP_FUNCTION_ID,
-			get_valid_step_input(),
-			get_valid_step_output(),
-			get_valid_step_proof(),
-			slot,
-		);
-		assert_err!(err, Error::<Test>::FunctionIdsAreNotSet);
-	});
-}
-
-#[test]
-fn test_fulfill_step_call_verification_key_is_not_set() {
-	new_test_ext().execute_with(|| {
-		Bridge::set_step_verification_key(RawOrigin::Root.into(), None).unwrap();
-		Updater::<Test>::set(H256(TEST_SENDER_VEC));
-
-		let slot = 7634942;
-
-		SyncCommitteePoseidons::<Test>::insert(
-			931,
-			U256::from("0x0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df"),
-		);
-
-		ConfigurationStorage::<Test>::set(Configuration {
-			slots_per_period: 8192,
-			finality_threshold: 461,
-		});
-
-		let err = Bridge::fulfill_call(
-			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
-			STEP_FUNCTION_ID,
-			get_valid_step_input(),
-			get_valid_step_output(),
-			get_valid_step_proof(),
-			slot,
-		);
-		assert_err!(err, Error::<Test>::VerificationKeyIsNotSet);
-	});
-}
-
-#[test]
-fn test_fulfill_rotate_call_verification_key_is_not_set() {
-	new_test_ext().execute_with(|| {
-		Bridge::set_rotate_verification_key(RawOrigin::Root.into(), None).unwrap();
-		let slot = 7634942;
-		Updater::<Test>::set(H256(TEST_SENDER_VEC));
-
-		ConfigurationStorage::<Test>::set(Configuration {
-			slots_per_period: 8192,
-			finality_threshold: 342,
-		});
-
-		Headers::<Test>::set(
-			slot,
-			H256(hex!(
-				"e882fe800bed07205bf2cbf17f30148b335d143a91811ff65280c221c9f57856"
-			)),
-		);
-
-		let err = Bridge::fulfill_call(
-			RuntimeOrigin::signed(TEST_SENDER_ACCOUNT),
-			ROTATE_FUNCTION_ID,
-			get_valid_rotate_input(),
-			get_valid_rotate_output(),
-			get_valid_rotate_proof(),
-			slot,
-		);
-		assert_err!(err, Error::<Test>::VerificationKeyIsNotSet);
-	});
-}
-
-#[test]
 fn set_whitelisted_domains_works_with_root() {
 	new_test_ext().execute_with(|| {
 		let domains = BoundedVec::try_from([0, 1, 2, 3].to_vec()).unwrap();
@@ -951,16 +527,17 @@ fn set_configuration_does_not_work_with_non_root() {
 fn set_broadcaster_works_with_root() {
 	new_test_ext().execute_with(|| {
 		let domain = 2;
+		let broadcaster = H256([1; 32]);
 		let old = Broadcasters::<Test>::get(domain);
-		assert_ne!(old, STEP_FUNCTION_ID);
+		assert_ne!(old, broadcaster);
 
-		let ok = Bridge::set_broadcaster(RawOrigin::Root.into(), domain, STEP_FUNCTION_ID);
+		let ok = Bridge::set_broadcaster(RawOrigin::Root.into(), domain, broadcaster);
 		assert_ok!(ok);
-		assert_eq!(Broadcasters::<Test>::get(domain), STEP_FUNCTION_ID);
+		assert_eq!(Broadcasters::<Test>::get(domain), broadcaster);
 
 		let expected_event = RuntimeEvent::Bridge(Event::BroadcasterUpdated {
 			old,
-			new: STEP_FUNCTION_ID,
+			new: broadcaster,
 			domain,
 		});
 		System::assert_last_event(expected_event);
@@ -971,64 +548,7 @@ fn set_broadcaster_works_with_root() {
 fn set_broadcaster_does_not_work_with_non_root() {
 	new_test_ext().execute_with(|| {
 		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
-		let ok = Bridge::set_broadcaster(origin, 2, STEP_FUNCTION_ID);
-		assert_err!(ok, BadOrigin);
-	});
-}
-
-#[test]
-fn set_poseidon_hash_works_with_root() {
-	new_test_ext().execute_with(|| {
-		let period = 2;
-		let poseidon_hash = BoundedVec::try_from(
-			[
-				0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
-				23, 24, 25, 26, 27, 28, 29, 30, 31,
-			]
-			.to_vec(),
-		)
-		.unwrap();
-		let root = U256::from_dec_str(
-			"1780731860627700044960722568376592200742329637303199754547598369979440671",
-		)
-		.unwrap();
-		assert_ne!(SyncCommitteePoseidons::<Test>::get(period), root);
-
-		let ok = Bridge::set_poseidon_hash(RawOrigin::Root.into(), period, poseidon_hash);
-		assert_ok!(ok);
-		assert_eq!(SyncCommitteePoseidons::<Test>::get(period), root);
-
-		let expected_event = RuntimeEvent::Bridge(Event::SyncCommitteeUpdated { period, root });
-		System::assert_last_event(expected_event);
-	});
-}
-
-#[test]
-fn set_poseidon_hash_wrong_hash_length() {
-	new_test_ext().execute_with(|| {
-		let period = 2;
-		let poseidon_hash = BoundedVec::try_from(
-			[
-				0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
-				23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
-			]
-			.to_vec(),
-		)
-		.unwrap();
-
-		let error = Bridge::set_poseidon_hash(RawOrigin::Root.into(), period, poseidon_hash);
-		assert_err!(error, Error::<Test>::CannotParseOutputData);
-		assert_eq!(SyncCommitteePoseidons::<Test>::get(period), U256::zero());
-	});
-}
-
-#[test]
-fn set_poseidon_hash_does_not_work_with_non_root() {
-	new_test_ext().execute_with(|| {
-		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
-		let root = BoundedVec::try_from([0, 1, 2, 3, 4].to_vec()).unwrap();
-
-		let ok = Bridge::set_poseidon_hash(origin, 2, root);
+		let ok = Bridge::set_broadcaster(origin, 2, H256([1; 32]));
 		assert_err!(ok, BadOrigin);
 	});
 }
@@ -1067,7 +587,7 @@ fn send_message_arbitrary_message_works() {
 	new_test_ext().execute_with(|| {
 		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
 		let message = Message::ArbitraryMessage(BoundedVec::truncate_from([0, 1, 2, 3].to_vec()));
-		let to = ROTATE_FUNCTION_ID;
+		let to = H256([1; 32]);
 		let domain = 2;
 
 		let event = Event::MessageSubmitted {
@@ -1089,7 +609,7 @@ fn send_message_arbitrary_message_doesnt_accept_empty_data() {
 		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
 		let message = Message::ArbitraryMessage(BoundedVec::truncate_from(vec![]));
 
-		let ok = Bridge::send_message(origin, message, ROTATE_FUNCTION_ID, 2);
+		let ok = Bridge::send_message(origin, message, H256([1; 32]), 2);
 		assert_err!(ok, Error::<Test>::InvalidBridgeInputs);
 	});
 }
@@ -1105,7 +625,7 @@ fn send_message_fungible_token_works() {
 			asset_id: H256::zero(),
 			amount: 100,
 		};
-		let to = ROTATE_FUNCTION_ID;
+		let to = H256([1; 32]);
 		let domain = 2;
 
 		Balances::make_free_balance_be(
@@ -1134,7 +654,7 @@ fn send_message_fungible_token_does_not_accept_zero_amount() {
 			asset_id: H256::zero(),
 			amount: 0,
 		};
-		let to = ROTATE_FUNCTION_ID;
+		let to = H256([1; 32]);
 		let domain = 2;
 
 		let err = Bridge::send_message(origin, message, to, domain);
@@ -1259,84 +779,6 @@ fn test_double_execute_arbitrary_message() {
 			message_root,
 		});
 		System::assert_last_event(expected_event);
-	});
-}
-
-#[test]
-fn set_function_ids_works_with_root() {
-	new_test_ext().execute_with(|| {
-		let ok = Bridge::set_function_ids(RawOrigin::Root.into(), None);
-		assert_ok!(ok);
-		assert_eq!(FunctionIds::<Test>::get(), None);
-
-		let value = Some((STEP_FUNCTION_ID, ROTATE_FUNCTION_ID));
-		let ok = Bridge::set_function_ids(RawOrigin::Root.into(), value);
-		assert_ok!(ok);
-		assert_eq!(FunctionIds::<Test>::get(), value);
-
-		let expected_event = RuntimeEvent::Bridge(Event::FunctionIdsUpdated { value });
-		System::assert_last_event(expected_event);
-	});
-}
-
-#[test]
-fn set_function_ids_does_not_work_with_non_root() {
-	new_test_ext().execute_with(|| {
-		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
-		let ok = Bridge::set_function_ids(origin, None);
-		assert_err!(ok, BadOrigin);
-	});
-}
-
-#[test]
-fn set_step_verification_key_works_with_root() {
-	new_test_ext().execute_with(|| {
-		let ok = Bridge::set_step_verification_key(RawOrigin::Root.into(), None);
-		assert_ok!(ok);
-		assert_eq!(StepVerificationKey::<Test>::get(), None);
-
-		let value = Some(BoundedVec::try_from(STEP_VK.as_bytes().to_vec()).unwrap());
-		let ok = Bridge::set_step_verification_key(RawOrigin::Root.into(), value.clone());
-		assert_ok!(ok);
-		assert_eq!(StepVerificationKey::<Test>::get(), value.clone());
-
-		let expected_event = RuntimeEvent::Bridge(Event::StepVerificationKeyUpdated { value });
-		System::assert_last_event(expected_event);
-	});
-}
-
-#[test]
-fn set_step_verification_key_does_not_work_with_non_root() {
-	new_test_ext().execute_with(|| {
-		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
-		let ok = Bridge::set_step_verification_key(origin, None);
-		assert_err!(ok, BadOrigin);
-	});
-}
-
-#[test]
-fn set_rotate_verification_key_works_with_root() {
-	new_test_ext().execute_with(|| {
-		let ok = Bridge::set_rotate_verification_key(RawOrigin::Root.into(), None);
-		assert_ok!(ok);
-		assert_eq!(RotateVerificationKey::<Test>::get(), None);
-
-		let value = Some(BoundedVec::try_from(ROTATE_VK.as_bytes().to_vec()).unwrap());
-		let ok = Bridge::set_rotate_verification_key(RawOrigin::Root.into(), value.clone());
-		assert_ok!(ok);
-		assert_eq!(RotateVerificationKey::<Test>::get(), value.clone());
-
-		let expected_event = RuntimeEvent::Bridge(Event::RotateVerificationKeyUpdated { value });
-		System::assert_last_event(expected_event);
-	});
-}
-
-#[test]
-fn set_rotate_verification_key_does_not_work_with_non_root() {
-	new_test_ext().execute_with(|| {
-		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
-		let ok = Bridge::set_rotate_verification_key(origin, None);
-		assert_err!(ok, BadOrigin);
 	});
 }
 

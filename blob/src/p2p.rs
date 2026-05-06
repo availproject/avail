@@ -14,10 +14,7 @@ use crate::{
 	RESPONSE_MAX_SIZE,
 };
 use async_channel::Receiver;
-use avail_core::{
-	header::{extension::fri::FriHeader, HeaderExtension},
-	traits::ExtendedHeader,
-};
+use avail_core::{header::HeaderExtension, traits::ExtendedHeader};
 use codec::{Decode, Encode};
 use core::marker::PhantomData;
 use futures::{future, FutureExt, StreamExt};
@@ -417,10 +414,8 @@ where
 					continue;
 				}
 
-				let blobs = match header.extension() {
-					HeaderExtension::Fri(FriHeader::V1(ext)) => &ext.blobs,
-					_ => continue,
-				};
+				let HeaderExtension::V1(ext) = header.extension();
+				let blobs = &ext.blobs;
 
 				let missing: Vec<H256> = blobs
 					.iter()

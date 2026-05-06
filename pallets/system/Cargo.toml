@@ -92,7 +92,7 @@ experimental = [ "frame-support/experimental" ]
 header_commitment_corruption = []
 
 # Enables secure seed generation using for padding fill during the matrix
-# generation for Kate commitment.
+# generation for header extension data.
 # NOTE: WIP because that affects the Data Availability Protocol used during
 # the block import process.
 secure_padding_fill = []

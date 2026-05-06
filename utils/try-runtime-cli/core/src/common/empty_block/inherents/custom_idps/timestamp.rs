@@ -23,61 +23,59 @@ use sp_runtime::Digest;
 use sp_timestamp::{Timestamp, TimestampInherentData};
 
 pub struct InherentDataProvider {
-    pub blocktime_millis: u64,
-    pub maybe_parent_info: Option<(InherentData, Digest)>,
+	pub blocktime_millis: u64,
+	pub maybe_parent_info: Option<(InherentData, Digest)>,
 }
 
 impl InherentDataProvider {
-    pub fn timestamp(&self) -> Timestamp {
-        match &self.maybe_parent_info {
-            Some((prev_inherent_data, _)) => sp_timestamp::InherentDataProvider::new(
-                prev_inherent_data
-                    .timestamp_inherent_data()
-                    .unwrap()
-                    .unwrap()
-                    + self.blocktime_millis,
-            )
-            .timestamp(),
-            None => sp_timestamp::InherentDataProvider::from_system_time().timestamp(),
-        }
-    }
+	pub fn timestamp(&self) -> Timestamp {
+		match &self.maybe_parent_info {
+			Some((prev_inherent_data, _)) => sp_timestamp::InherentDataProvider::new(
+				prev_inherent_data
+					.timestamp_inherent_data()
+					.unwrap()
+					.unwrap() + self.blocktime_millis,
+			)
+			.timestamp(),
+			None => sp_timestamp::InherentDataProvider::from_system_time().timestamp(),
+		}
+	}
 }
 
 #[async_trait::async_trait]
 impl sp_inherents::InherentDataProvider for InherentDataProvider {
-    async fn provide_inherent_data(
-        &self,
-        inherent_data: &mut sp_inherents::InherentData,
-    ) -> Result<(), sp_inherents::Error> {
-        match &self.maybe_parent_info {
-            Some((prev_inherent_data, _)) => {
-                let idp = sp_timestamp::InherentDataProvider::new(
-                    prev_inherent_data
-                        .timestamp_inherent_data()
-                        .unwrap()
-                        .unwrap()
-                        + self.blocktime_millis,
-                );
-                idp.provide_inherent_data(inherent_data)
-                    .await
-                    .expect("Failed to provide timestamp inherent");
-            }
-            None => {
-                let idp = sp_timestamp::InherentDataProvider::from_system_time();
-                idp.provide_inherent_data(inherent_data)
-                    .await
-                    .expect("Failed to provide timestamp inherent");
-            }
-        };
+	async fn provide_inherent_data(
+		&self,
+		inherent_data: &mut sp_inherents::InherentData,
+	) -> Result<(), sp_inherents::Error> {
+		match &self.maybe_parent_info {
+			Some((prev_inherent_data, _)) => {
+				let idp = sp_timestamp::InherentDataProvider::new(
+					prev_inherent_data
+						.timestamp_inherent_data()
+						.unwrap()
+						.unwrap() + self.blocktime_millis,
+				);
+				idp.provide_inherent_data(inherent_data)
+					.await
+					.expect("Failed to provide timestamp inherent");
+			},
+			None => {
+				let idp = sp_timestamp::InherentDataProvider::from_system_time();
+				idp.provide_inherent_data(inherent_data)
+					.await
+					.expect("Failed to provide timestamp inherent");
+			},
+		};
 
-        Ok(())
-    }
+		Ok(())
+	}
 
-    async fn try_handle_error(
-        &self,
-        _: &InherentIdentifier,
-        _: &[u8],
-    ) -> Option<Result<(), sp_inherents::Error>> {
-        None
-    }
+	async fn try_handle_error(
+		&self,
+		_: &InherentIdentifier,
+		_: &[u8],
+	) -> Option<Result<(), sp_inherents::Error>> {
+		None
+	}
 }

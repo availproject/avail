@@ -158,7 +158,6 @@ pub fn run() -> Result<()> {
 						cmd.run_with_spec::<HashingFor<Block>, (
 							frame_system::native::hosted_header_builder::hosted_header_builder::HostFunctions,
 							avail_base::mem_tmp_storage::hosted_mem_tmp_storage::HostFunctions,
-							da_runtime::kate::native::hosted_kate::HostFunctions,
 							da_control::extensions::native::hosted_commitment_builder::HostFunctions,
 						)>(Some(config.chain_spec))
 					},
@@ -250,7 +249,6 @@ pub fn run() -> Result<()> {
 				} = new_partial(
 					&config,
 					cli.unsafe_da_sync,
-					kate_rpc::Deps::default(),
 					cli.grandpa_justification_period,
 				)?;
 				Ok((cmd.run(client, import_queue), task_manager))
@@ -266,7 +264,6 @@ pub fn run() -> Result<()> {
 				} = new_partial(
 					&config,
 					cli.unsafe_da_sync,
-					kate_rpc::Deps::default(),
 					cli.grandpa_justification_period,
 				)?;
 				Ok((cmd.run(client, config.database), task_manager))
@@ -282,7 +279,6 @@ pub fn run() -> Result<()> {
 				} = new_partial(
 					&config,
 					cli.unsafe_da_sync,
-					kate_rpc::Deps::default(),
 					cli.grandpa_justification_period,
 				)?;
 				Ok((cmd.run(client, config.chain_spec), task_manager))
@@ -299,7 +295,6 @@ pub fn run() -> Result<()> {
 				} = new_partial(
 					&config,
 					cli.unsafe_da_sync,
-					kate_rpc::Deps::default(),
 					cli.grandpa_justification_period,
 				)?;
 				Ok((cmd.run(client, import_queue), task_manager))
@@ -320,7 +315,6 @@ pub fn run() -> Result<()> {
 				} = new_partial(
 					&config,
 					cli.unsafe_da_sync,
-					kate_rpc::Deps::default(),
 					cli.grandpa_justification_period,
 				)?;
 				let aux_revert = Box::new(|client: Arc<FullClient>, backend, blocks| {

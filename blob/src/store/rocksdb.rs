@@ -378,7 +378,7 @@ impl StorageApiT for RocksdbBlobStore {
 			if let Ok(blob_metadata) = BlobMetadata::decode(&mut value.as_slice()) {
 				tracing::info!(
 					target: LOG_TARGET,
-					"Blob: hash={:?}, size={}, commitments_len={}, is_notified={}, nb_val_per_blob={}, expires_at={}",
+					"Blob: hash={:?}, size={}, commitment_len={}, is_notified={}, nb_val_per_blob={}, expires_at={}",
 					blob_metadata.hash,
 					blob_metadata.size,
 					blob_metadata.commitment.len(),

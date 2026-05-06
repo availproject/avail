@@ -1,10 +1,8 @@
-use crate::traits::CommitmentQueueApiT;
 use crate::types::{BlobEvalData, BlobInfo, BlobSummary, FriData};
 use crate::utils::{designated_prover_index, get_babe_randomness_key, get_my_validator_id};
 use crate::validation::{
 	generate_fri_proof_from_prepared, initial_validation, prepare_fri_validation, tx_validation,
-	validate_kzg_commitment, validate_prepared_fri_commitment, validate_prepared_fri_eval_claim,
-	with_eval_point,
+	validate_prepared_fri_commitment, validate_prepared_fri_eval_claim, with_eval_point,
 };
 use crate::{
 	nonce_cache::NonceCache,
@@ -18,25 +16,22 @@ use crate::{
 	types::{Blob, BlobMetadata, BlobNotification, BlobReceived, CompressedBlob, OwnershipEntry},
 	utils::{
 		build_signature_payload, extract_signer_and_nonce, generate_base_index,
-		get_dynamic_blocklength_key, get_my_validator_public_account, get_validator_per_blob_inner,
-		sign_blob_data, validators_for_blob, B64Param, CommitmentQueue,
+		get_my_validator_public_account, get_validator_per_blob_inner, sign_blob_data,
+		validators_for_blob, B64Param,
 	},
 	MAX_RPC_RETRIES,
 };
 use avail_base::HeaderExtensionBuilderData;
-use avail_core::header::extension::CommitmentScheme;
-use avail_core::{AppId, DataProof};
+use avail_core::{data_proof::ProofResponse, AppId, DataProof};
 use avail_fri::eval_utils::derive_seed_from_inputs;
 use avail_fri::{
 	transcript_to_bytes, BytesEncoder, FriBiniusPCS, FriParamsVersion, SamplingProof, B128,
 };
 use avail_observability::metrics::BlobMetrics;
 use codec::{Decode, Encode};
-use da_commitment::build_kzg_commitments::build_polynomial_grid;
 use da_control::{BlobRuntimeParameters, Call};
-use da_runtime::apis::{BlobApi as _, KateApi};
+use da_runtime::apis::{BlobApi as _, BridgeApi};
 use da_runtime::{Runtime, RuntimeCall, UncheckedExtrinsic};
-use frame_system::limits::BlockLength;
 use jsonrpsee::{
 	core::{async_trait, RpcResult},
 	proc_macros::rpc,
@@ -230,6 +225,28 @@ where
 		at: Option<Block::Hash>,
 	) -> RpcResult<DataProof>;
 
+	/// Returns a data-root proof for the transaction at `transaction_index`.
+	///
+	/// For bridge transactions this response also includes the bridge message
+	/// bytes that are proven by the bridge data root.
+	///
+	/// ### Parameters
+	/// - `transaction_index`: Index of the transaction in the block body.
+	/// - `at`: Optional block hash. If omitted, uses the node's best block.
+	///
+	/// ### Returns
+	/// - `ProofResponse` containing the data proof and optional bridge message.
+	///
+	/// ### Errors
+	/// - If the block is not finalized.
+	/// - If no data exists for the requested transaction index.
+	#[method(name = "bridge_queryDataProof")]
+	async fn query_data_proof(
+		&self,
+		transaction_index: u32,
+		at: Option<Block::Hash>,
+	) -> RpcResult<ProofResponse>;
+
 	// TODO: feature-gate this RPC only for debugging & development
 	#[method(name = "blob_logStuff")]
 	async fn log_stuff(&self) -> RpcResult<()>;
@@ -355,7 +372,6 @@ pub struct BlobRpc<Pool, Block: BlockT, Backend> {
 	pool: Arc<Pool>,
 	backend: Arc<Backend>,
 	blob_handle: Arc<BlobHandle<Block>>,
-	commitment_queue: Arc<CommitmentQueue>,
 	nonce_cache: Arc<NonceCache>,
 	fri_sampling_cache: Arc<Mutex<HashMap<FriSamplingCacheKey, FriSamplingCacheEntry>>>,
 	_block: PhantomData<Block>,
@@ -371,15 +387,10 @@ where
 		pool: Arc<Pool>,
 		backend: Arc<Backend>,
 	) -> Self {
-		let (queue, rx) = CommitmentQueue::new(25);
-		BlobMetrics::set_queue_capacity(rx.capacity() as u64);
-		CommitmentQueue::spawn_background_task(rx);
-
 		Self {
 			pool,
 			backend,
 			blob_handle,
-			commitment_queue: Arc::new(queue),
 			nonce_cache: Arc::new(NonceCache::new()),
 			fri_sampling_cache: Arc::new(Mutex::new(HashMap::new())),
 			_block: PhantomData,
@@ -459,7 +470,6 @@ where
 		};
 
 		let result = submit_blob_main_task(
-			self.commitment_queue.clone(),
 			metadata_signed_transaction.0,
 			blob.0,
 			friends,
@@ -695,12 +705,43 @@ where
 			.client
 			.runtime_api()
 			.inclusion_proof(header.hash(), extrinsics, blob_hash)
-			.map_err(|e| internal_err!("KateApi::inclusion_proof failed: {e:?}"))?
+			.map_err(|e| internal_err!("BridgeApi::inclusion_proof failed: {e:?}"))?
 			.ok_or_else(|| {
 				internal_err!(
 					"Cannot fetch tx data by blob_hash {blob_hash:?} at block {:?}",
 					block_hash
 				)
+			})
+	}
+
+	#[tracing::instrument(name = "query_data_proof", skip_all)]
+	async fn query_data_proof(
+		&self,
+		tx_idx: u32,
+		at: Option<Block::Hash>,
+	) -> RpcResult<ProofResponse> {
+		let at = self.at_or_best(at);
+		let signed_block = self
+			.blob_handle
+			.client
+			.block(at.into())
+			.map_err(|e| internal_err!("Failed to get block: {:?}", e))?
+			.ok_or_else(|| internal_err!("Block not found: {:?}", at))?;
+
+		let block_header = signed_block.block.header();
+		let block_number: u32 = (*block_header.number()).into();
+		if self.blob_handle.client.info().finalized_number < *block_header.number() {
+			return Err(internal_err!("Requested block {at:?} is not finalized"));
+		}
+
+		let (header, extrinsics) = signed_block.block.deconstruct();
+		self.blob_handle
+			.client
+			.runtime_api()
+			.data_proof(header.hash(), block_number, extrinsics, tx_idx)
+			.map_err(|e| internal_err!("BridgeApi::data_proof failed: {e:?}"))?
+			.ok_or_else(|| {
+				internal_err!("Cannot fetch tx data at tx index {tx_idx:?} at block {at:?}")
 			})
 	}
 
@@ -757,11 +798,13 @@ where
 				)
 			})?;
 
-		match (&d.eval_point_seed, &d.eval_claim, &d.eval_proof) {
-			(Some(seed), Some(claim), Some(proof)) => {
-				Ok(BlobEvalData::new(*seed, *claim, proof.clone()))
-			},
-			_ => Err(internal_err!(
+		match &d.eval_proof {
+			Some(proof) => Ok(BlobEvalData::new(
+				d.eval_point_seed,
+				d.eval_claim,
+				proof.clone(),
+			)),
+			None => Err(internal_err!(
 				"Blob {:?} does not contain eval data in block {:?}",
 				blob_hash,
 				at
@@ -782,7 +825,7 @@ where
 		let expected_commitment = submissions
 			.iter()
 			.find(|d| d.hash == blob_hash)
-			.map(|d| d.commitments.clone())
+			.map(|d| d.commitment.clone())
 			.ok_or_else(|| {
 				internal_err!(
 					"Blob submission data not found for blob {:?} in block {:?}",
@@ -968,26 +1011,8 @@ fn get_babe_randomness(
 	Ok(randomness)
 }
 
-fn get_dynamic_block_length(
-	backend_client: &Arc<dyn BackendApiT>,
-	finalized_block_hash: H256,
-) -> RpcResult<(usize, usize)> {
-	let storage_key = get_dynamic_blocklength_key();
-	let maybe_raw = backend_client
-		.storage(finalized_block_hash, &storage_key.0)
-		.map_err(|e| internal_err!("Storage query error: {e:?}"))?;
-	let raw = maybe_raw.ok_or(internal_err!("DynamicBlockLength not found"))?;
-	let block_length =
-		BlockLength::decode(&mut &raw[..]).map_err(|e| internal_err!("Decode error: {e:?}"))?;
-	let cols = block_length.cols.0 as usize;
-	let rows = block_length.rows.0 as usize;
-
-	Ok((cols, rows))
-}
-
 #[tracing::instrument(name = "blob.submit.main_task", skip_all)]
 pub async fn submit_blob_main_task(
-	commitment_queue: Arc<dyn CommitmentQueueApiT>,
 	metadata_signed_transaction: Vec<u8>,
 	blob: Vec<u8>,
 	friends: Friends,
@@ -999,17 +1024,6 @@ pub async fn submit_blob_main_task(
 	let client_info = friends.externalities.client_info();
 	let best_hash = client_info.best_hash;
 	let finalized_block_hash = client_info.finalized_hash;
-
-	let commitment_scheme = match runtime_client.commitment_scheme(best_hash) {
-		Ok(scheme) => scheme,
-		Err(e) => {
-			tracing::error!(
-				"Could not get commitment scheme from runtime at {:?}: {e:?}. Falling back to Fri.",
-				best_hash
-			);
-			CommitmentScheme::Fri
-		},
-	};
 
 	let blob_params = match runtime_client.get_blob_runtime_parameters(finalized_block_hash) {
 		Ok(p) => p,
@@ -1061,169 +1075,43 @@ pub async fn submit_blob_main_task(
 	}
 
 	let parent = tracing::Span::current();
-	match commitment_scheme {
-		CommitmentScheme::Kzg => {
-			let (cols, rows) =
-				get_dynamic_block_length(&friends.backend_client, finalized_block_hash).map_err(
-					|e| {
-						clear_reserved_nonce(&nonce_cache, &opaque_tx);
-						e
-					},
-				)?;
-			let blob = Arc::new(blob);
-
-			// ideally eval_point_seed and eval_claim should be None here for KZG, but we can let it pass for now
-			Ok(tokio::spawn(async move {
-				let result = handle_kzg_submission(
-					commitment_queue,
-					metadata_signed_transaction,
-					opaque_tx,
-					blob_hash,
-					blob,
-					blob_params,
-					provided_commitment,
-					friends,
-					nonce_cache,
-					runtime_client,
-					cols,
-					rows,
-				)
-				.instrument(parent)
-				.await;
-				if let Err(e) = result {
-					tracing::error!(error = ?e, "handle_fri_submission error.");
-				}
-			}))
-		},
-
-		CommitmentScheme::Fri => {
-			// Check if the eval_point_seed and eval_claim are present for Fri
-			if eval_point_seed.is_none() || eval_claim.is_none() {
-				clear_reserved_nonce(&nonce_cache, &opaque_tx);
-				return Err(internal_err!(
-					"eval_point_seed and eval_claim must be present for Fri commitment scheme"
-				));
-			}
-
-			let eval_point_seed = eval_point_seed.expect("checked above; qed");
-			let eval_claim = eval_claim.expect("checked above; qed");
-			let babe_randomness =
-				get_babe_randomness(&friends.backend_client, finalized_block_hash).map_err(
-					|e| {
-						clear_reserved_nonce(&nonce_cache, &opaque_tx);
-						e
-					},
-				)?;
-			let derived_eval_seed = derive_seed_from_inputs(&babe_randomness, &blob_hash.0);
-			if eval_point_seed != derived_eval_seed {
-				clear_reserved_nonce(&nonce_cache, &opaque_tx);
-				return Err(internal_err!(
-					"eval_point_seed does not match derived seed!"
-				));
-			}
-
-			Ok(tokio::spawn(async move {
-				let result = handle_fri_submission(
-					metadata_signed_transaction,
-					opaque_tx,
-					app_id,
-					blob_hash,
-					blob,
-					blob_params,
-					provided_commitment,
-					friends,
-					nonce_cache,
-					runtime_client,
-					fri_params_version,
-					eval_point_seed,
-					eval_claim,
-					derived_eval_seed,
-				)
-				.instrument(parent)
-				.await;
-
-				if let Err(e) = result {
-					tracing::error!(error = ?e, "handle_fri_submission error.");
-				}
-			}))
-		},
-	}
-}
-
-#[tracing::instrument(name = "handle_kzg_submission", skip_all)]
-async fn handle_kzg_submission(
-	commitment_queue: Arc<dyn CommitmentQueueApiT>,
-	metadata_signed_transaction: Vec<u8>,
-	opaque_tx: UncheckedExtrinsic,
-	blob_hash: H256,
-	blob: Arc<Vec<u8>>,
-	blob_params: BlobRuntimeParameters,
-	provided_commitment: Vec<u8>,
-	friends: Friends,
-	nonce_cache: Arc<dyn NonceCacheApiT>,
-	runtime_client: Arc<dyn RuntimeApiT>,
-	cols: usize,
-	rows: usize,
-) -> anyhow::Result<()> {
-	let blob_for_grid = blob.clone();
-
-	let parent = tracing::Span::current();
-	let grid_span = tracing::info_span!(
-		parent: &parent,
-		"build_polynomial_grid_blocking"
-	);
-	let grid = task::spawn_blocking(move || {
-		let _enter = grid_span.enter();
-		build_polynomial_grid(blob_for_grid.as_slice(), cols, rows, Default::default())
-	})
-	.await
-	.map_err(|e| {
-		clear_reserved_nonce(&nonce_cache, &opaque_tx);
-		internal_err!(
-			"KZG polynomial grid generation task failed for blob {:?}: {}",
-			blob_hash,
-			e
-		)
-	})?;
-
-	validate_kzg_commitment(blob_hash, &provided_commitment, grid, &commitment_queue)
-		.await
+	let babe_randomness = get_babe_randomness(&friends.backend_client, finalized_block_hash)
 		.map_err(|e| {
 			clear_reserved_nonce(&nonce_cache, &opaque_tx);
-			internal_err!("{}", e)
+			e
 		})?;
-
-	// After potentially long work, re-validate tx
-	let client_info = friends.externalities.client_info();
-	let best_hash = client_info.best_hash;
-
-	let _ = tx_validation(
-		best_hash,
-		&metadata_signed_transaction,
-		blob_params.min_transaction_validity,
-		blob_params.max_transaction_validity,
-		&runtime_client,
-		&nonce_cache,
-		false,
-	)
-	.map_err(|e| {
+	let derived_eval_seed = derive_seed_from_inputs(&babe_randomness, &blob_hash.0);
+	if eval_point_seed != derived_eval_seed {
 		clear_reserved_nonce(&nonce_cache, &opaque_tx);
-		internal_err!("{}", e)
-	})?;
+		return Err(internal_err!(
+			"eval_point_seed does not match derived seed!"
+		));
+	}
 
-	submit_blob_background_task(
-		opaque_tx,
-		blob_hash,
-		blob,
-		blob_params,
-		provided_commitment,
-		None,
-		friends,
-		nonce_cache,
-	)
-	.await;
+	Ok(tokio::spawn(async move {
+		let result = handle_fri_submission(
+			metadata_signed_transaction,
+			opaque_tx,
+			app_id,
+			blob_hash,
+			blob,
+			blob_params,
+			provided_commitment,
+			friends,
+			nonce_cache,
+			runtime_client,
+			fri_params_version,
+			eval_point_seed,
+			eval_claim,
+			derived_eval_seed,
+		)
+		.instrument(parent)
+		.await;
 
-	Ok(())
+		if let Err(e) = result {
+			tracing::error!(error = ?e, "handle_fri_submission error.");
+		}
+	}))
 }
 
 #[tracing::instrument(name = "handle_fri_submission", skip_all)]
@@ -1384,7 +1272,7 @@ async fn handle_fri_submission(
 		blob,
 		blob_params,
 		provided_commitment,
-		Some(fri_data),
+		fri_data,
 		friends,
 		nonce_cache,
 	)
@@ -1400,7 +1288,7 @@ async fn submit_blob_background_task(
 	blob: Arc<Vec<u8>>,
 	blob_params: BlobRuntimeParameters,
 	commitment: Vec<u8>,
-	fri_data: Option<FriData>,
+	fri_data: FriData,
 	friends: Friends,
 	nonce_cache: Arc<dyn NonceCacheApiT>,
 ) {
@@ -1448,7 +1336,7 @@ pub async fn store_and_gossip_blob(
 	blob: Arc<Vec<u8>>,
 	blob_params: BlobRuntimeParameters,
 	commitment: Vec<u8>,
-	fri_data: Option<FriData>,
+	fri_data: FriData,
 	friends: &Friends,
 ) -> Result<(), ()> {
 	let client_info = friends.externalities.client_info();
@@ -1468,19 +1356,6 @@ pub async fn store_and_gossip_blob(
 		},
 	};
 
-	let commitment_scheme = match friends
-		.runtime_client
-		.commitment_scheme(finalized_block_hash)
-	{
-		Ok(scheme) => scheme,
-		Err(e) => {
-			tracing::error!(
-				"Could not get commitment scheme from runtime at {:?}: {e:?}. Falling back to Fri.",
-				finalized_block_hash
-			);
-			CommitmentScheme::Fri
-		},
-	};
 	let mut blob_metadata = maybe_blob_metadata.unwrap_or_else(|| {
 		let blob_len = blob.len();
 
@@ -1495,8 +1370,8 @@ pub async fn store_and_gossip_blob(
 			nb_validators_per_blob: 0,
 			nb_validators_per_blob_threshold: 0,
 			storing_validator_list: Default::default(),
-			eval_point_seed: None,
-			eval_claim: None,
+			eval_point_seed: fri_data.eval_point_seed,
+			eval_claim: fri_data.eval_claim,
 			fri_eval_proof: None,
 			fri_eval_prover_index: None,
 		}
@@ -1540,33 +1415,26 @@ pub async fn store_and_gossip_blob(
 		},
 	};
 
-	if commitment_scheme == CommitmentScheme::Fri {
-		if fri_data.is_none() {
-			tracing::error!("Fri data must be available for Fri commitment scheme");
-			return Err(());
-		}
-		let fri_data = fri_data.expect("checked above; qed");
-		let prover_index =
-			designated_prover_index(&blob_hash, &finalized_block_hash, nb_validators_per_blob);
+	let prover_index =
+		designated_prover_index(&blob_hash, &finalized_block_hash, nb_validators_per_blob);
 
-		if let Ok((my_validator_id, _babe_key)) = get_my_validator_id(
-			&friends.externalities.keystore(),
-			friends.runtime_client.as_ref(),
-			finalized_block_hash,
-		) {
-			if storing_validators[prover_index as usize] == my_validator_id {
-				tracing::info!(
-					"I am the designated prover for blob {:?} including eval_proof? {}",
-					blob_hash,
-					fri_data.fri_eval_proof.is_some()
-				);
-				blob_metadata.fri_eval_proof = fri_data.fri_eval_proof;
-				blob_metadata.fri_eval_prover_index = Some(prover_index);
-			}
+	if let Ok((my_validator_id, _babe_key)) = get_my_validator_id(
+		&friends.externalities.keystore(),
+		friends.runtime_client.as_ref(),
+		finalized_block_hash,
+	) {
+		if storing_validators[prover_index as usize] == my_validator_id {
+			tracing::info!(
+				"I am the designated prover for blob {:?} including eval_proof? {}",
+				blob_hash,
+				fri_data.fri_eval_proof.is_some()
+			);
+			blob_metadata.fri_eval_proof = fri_data.fri_eval_proof;
+			blob_metadata.fri_eval_prover_index = Some(prover_index);
 		}
-		blob_metadata.eval_point_seed = Some(fri_data.eval_point_seed);
-		blob_metadata.eval_claim = Some(fri_data.eval_claim);
 	}
+	blob_metadata.eval_point_seed = fri_data.eval_point_seed;
+	blob_metadata.eval_claim = fri_data.eval_claim;
 
 	blob_metadata.is_notified = true;
 	blob_metadata.expires_at = finalized_block_number.saturating_add(blob_params.temp_blob_ttl);
@@ -1624,7 +1492,7 @@ pub async fn store_and_gossip_blob(
 			finalized_block_hash: finalized_block_hash.into(),
 			finalized_block_number,
 			eval_point_seed: blob_metadata.eval_point_seed,
-			eval_claim: blob_metadata.eval_claim.clone(),
+			eval_claim: blob_metadata.eval_claim,
 			fri_eval_proof: blob_metadata.fri_eval_proof.clone(),
 			fri_eval_prover_index: blob_metadata.fri_eval_prover_index,
 		});

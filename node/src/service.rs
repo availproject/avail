@@ -183,7 +183,6 @@ pub fn create_extrinsic(
 pub fn new_partial(
 	config: &Configuration,
 	unsafe_da_sync: bool,
-	kate_rpc_deps: kate_rpc::Deps,
 	grandpa_justification_period: u32,
 ) -> Result<
 	sc_service::PartialComponents<
@@ -350,7 +349,6 @@ pub fn new_partial(
 					subscription_executor,
 					finality_provider: finality_proof_provider.clone(),
 				},
-				kate_rpc_deps: kate_rpc_deps.clone(),
 			};
 			node_rpc::create_full(deps, rpc_backend.clone()).map_err(Into::into)
 		};
@@ -497,7 +495,6 @@ pub fn new_full_base<N: NetworkBackend<Block, <Block as BlockT>::Hash>>(
 	disable_hardware_benchmarks: bool,
 	with_startup_data: impl FnOnce(&BlockImport, &sc_consensus_babe::BabeLink<Block>),
 	unsafe_da_sync: bool,
-	kate_rpc_deps: kate_rpc::Deps,
 	grandpa_justification_period: u32,
 ) -> Result<NewFullBase, ServiceError> {
 	// let is_offchain_indexing_enabled = config.offchain_worker.indexing_enabled;
@@ -526,12 +523,7 @@ pub fn new_full_base<N: NetworkBackend<Block, <Block as BlockT>::Hash>>(
 		select_chain,
 		transaction_pool,
 		other: (rpc_builder, import_setup, rpc_setup, mut telemetry, blob_database),
-	} = new_partial(
-		&config,
-		unsafe_da_sync,
-		kate_rpc_deps,
-		grandpa_justification_period,
-	)?;
+	} = new_partial(&config, unsafe_da_sync, grandpa_justification_period)?;
 
 	let metrics = N::register_notification_metrics(
 		config.prometheus_config.as_ref().map(|cfg| &cfg.registry),
@@ -879,11 +871,6 @@ pub fn new_full_base<N: NetworkBackend<Block, <Block as BlockT>::Hash>>(
 pub fn new_full(config: Configuration, cli: Cli) -> Result<TaskManager, ServiceError> {
 	let database_path = config.database.path().map(Path::to_path_buf);
 	let storage_param = cli.storage_monitor.clone();
-	let kate_rpc_deps = kate_rpc::Deps {
-		max_cells_size: cli.kate_max_cells_size,
-		rpc_enabled: cli.kate_rpc_enabled,
-		rpc_metrics_enabled: cli.kate_rpc_metrics_enabled,
-	};
 
 	let task_manager = match config.network.network_backend {
 		sc_network::config::NetworkBackendType::Libp2p => {
@@ -892,7 +879,6 @@ pub fn new_full(config: Configuration, cli: Cli) -> Result<TaskManager, ServiceE
 				cli.no_hardware_benchmarks,
 				|_, _| (),
 				cli.unsafe_da_sync,
-				kate_rpc_deps,
 				cli.grandpa_justification_period,
 			)
 			.map(|NewFullBase { task_manager, .. }| task_manager)?;
@@ -904,7 +890,6 @@ pub fn new_full(config: Configuration, cli: Cli) -> Result<TaskManager, ServiceE
 				cli.no_hardware_benchmarks,
 				|_, _| (),
 				cli.unsafe_da_sync,
-				kate_rpc_deps,
 				cli.grandpa_justification_period,
 			)
 			.map(|NewFullBase { task_manager, .. }| task_manager)?;

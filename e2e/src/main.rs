@@ -1,6 +1,5 @@
 mod infinity_da_automatic_test;
 mod infinity_da_test;
-mod max_block_submit;
 
 use std::time::Duration;
 
@@ -10,7 +9,6 @@ use avail_rust_core::rpc::Error as RpcError;
 #[tokio::main]
 async fn main() -> Result<(), Error> {
 	// Uncomment the following two lines for automatic tests when a node is launched
-	// max_block_submit::run().await?;
 	// infinity_da_automatic_test::run().await?;
 
 	// This is a manual test

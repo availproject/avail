@@ -100,9 +100,6 @@
 #![warn(unused_extern_crates)]
 
 use avail_base::{HeaderExtensionBuilderData, HeaderExtensionDataFilter};
-use avail_core::header::extension::fri::FriHeaderVersion;
-use avail_core::header::extension::kzg::KzgHeaderVersion;
-use avail_core::header::extension::CommitmentScheme;
 use avail_core::{
 	ensure,
 	header::{Header as DaHeader, HeaderExtension},
@@ -317,11 +314,8 @@ pub mod pallet {
 
 	/// Default implementations of [`DefaultConfig`], which can be used to implement [`Config`].
 	pub mod config_preludes {
-		use super::{
-			inject_runtime_type, AccountInfo, BlakeTwo256, CommitmentScheme, DaHeader,
-			DefaultConfig,
-		};
-		use frame_support::{derive_impl, parameter_types, traits::ConstU32};
+		use super::{inject_runtime_type, AccountInfo, BlakeTwo256, DaHeader, DefaultConfig};
+		use frame_support::{derive_impl, traits::ConstU32};
 
 		/// Provides a viable default config that can be used with
 		/// [`derive_impl`](`frame_support::derive_impl`) to derive a testing pallet config
@@ -330,10 +324,6 @@ pub mod pallet {
 		/// See `Test` in the `default-config` example pallet's `test.rs` for an example of
 		/// a downstream user of this particular `TestDefaultConfig`
 		pub struct TestDefaultConfig;
-
-		parameter_types! {
-			pub const DefaultDaCommitmentScheme: CommitmentScheme = CommitmentScheme::Fri;
-		}
 
 		#[frame_support::register_default_impl(TestDefaultConfig)]
 		impl DefaultConfig for TestDefaultConfig {
@@ -370,7 +360,6 @@ pub mod pallet {
 			type MaxDiffAppIdPerBlock = ConstU32<1_024>;
 			type MaxTxPerAppIdPerBlock = ConstU32<8_192>;
 			type HeaderExtensionDataFilter = ();
-			type DaCommitmentScheme = DefaultDaCommitmentScheme;
 			// Default/test fallback only. Real runtimes should override this and source the
 			// params version from runtime state from DA pallet.
 			fn da_fri_params_version() -> frame_system::FriParamsVersion {
@@ -483,7 +472,6 @@ pub mod pallet {
 			type MaxDiffAppIdPerBlock = ConstU32<1_024>;
 			type MaxTxPerAppIdPerBlock = ConstU32<8_192>;
 			type HeaderExtensionDataFilter = ();
-			type DaCommitmentScheme = DefaultDaCommitmentScheme;
 			// Default/test fallback only. Real runtimes should override this and source the
 			// params version from runtime state (e.g. a governance-controlled pallet).
 			fn da_fri_params_version() -> frame_system::FriParamsVersion {
@@ -624,7 +612,7 @@ pub mod pallet {
 			+ Debug
 			+ IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
-		/// UncheckedExtrinsic Type used on Kate commitment & Data root calculation.
+		/// UncheckedExtrinsic type used for header extension and data-root calculation.
 		#[pallet::no_default]
 		type Extrinsic: Encode + Decode + ExtrinsicCall<Call = Self::RuntimeCall>;
 
@@ -712,9 +700,6 @@ pub mod pallet {
 		#[pallet::constant]
 		type MaxTxPerAppIdPerBlock: Get<u32>;
 
-		/// Commitment Scheme to be used
-		#[pallet::constant]
-		type DaCommitmentScheme: Get<CommitmentScheme>;
 		/// Runtime-selected FRI params version (can be storage-backed in runtime impl).
 		fn da_fri_params_version() -> frame_system::FriParamsVersion;
 		/// All migrations that should run in the next runtime upgrade.
@@ -1168,11 +1153,6 @@ pub mod pallet {
 	pub(super) type AuthorizedUpgrade<T: Config> =
 		StorageValue<_, CodeUpgradeAuthorization<T>, OptionQuery>;
 
-	/// The dynamic block length
-	#[pallet::storage]
-	#[pallet::getter(fn block_length)]
-	pub type DynamicBlockLength<T: Config> = StorageValue<_, limits::BlockLength, ValueQuery>;
-
 	/// The weight reclaimed for the extrinsic.
 	///
 	/// This information is available until the end of the extrinsic execution.
@@ -1189,7 +1169,6 @@ pub mod pallet {
 	pub struct GenesisConfig<T: Config> {
 		#[serde(skip)]
 		pub _config: sp_std::marker::PhantomData<T>,
-		pub block_length: limits::BlockLength,
 	}
 
 	#[pallet::genesis_build]
@@ -1202,7 +1181,6 @@ pub mod pallet {
 			<UpgradedToTripleRefCount<T>>::put(true);
 
 			sp_io::storage::set(well_known_keys::EXTRINSIC_INDEX, &0u32.encode());
-			<DynamicBlockLength<T>>::put(&self.block_length);
 			StorageVersion::new(3).put::<Pallet<T>>();
 		}
 	}
@@ -2121,25 +2099,12 @@ impl<T: Config> Pallet<T> {
 		let extrinsics_root = extrinsics_data_root::<T::Hashing>(extrinsics);
 
 		let data_root = header_extension_builder_data.data_root();
-		let extension = match T::DaCommitmentScheme::get() {
-			CommitmentScheme::Kzg => {
-				let block_length = Self::block_length();
-				native::hosted_header_builder::da::HeaderExtensionBuilder::<T>::build_kzg_extension(
-					header_extension_builder_data.data_submissions,
-					data_root,
-					block_length,
-					KzgHeaderVersion::V4,
-				)
-			},
-			CommitmentScheme::Fri => {
-				native::hosted_header_builder::da::HeaderExtensionBuilder::<T>::build_fri_extension(
-					header_extension_builder_data.data_submissions,
-					data_root,
-					T::da_fri_params_version(),
-					FriHeaderVersion::V1,
-				)
-			},
-		};
+		let extension =
+			native::hosted_header_builder::da::HeaderExtensionBuilder::<T>::build_extension(
+				header_extension_builder_data.data_submissions,
+				data_root,
+				T::da_fri_params_version(),
+			);
 
 		let header = <HeaderFor<T> as ExtendedHeader>::new(
 			number,
@@ -2501,13 +2466,6 @@ impl<T: Config> Pallet<T> {
 			Error::<T>::Unauthorized
 		);
 		Ok(authorization)
-	}
-
-	/// Creates a `ExtrinsicLen` based on `len` as raw length.
-	/// It uses the current `chunk_size` to calculate the padded len.
-	pub fn padded_extrinsic_len(len: u32) -> u32 {
-		let chunk_size = Self::block_length().chunk_size();
-		kate::padded_len(len, chunk_size)
 	}
 
 	/// Reclaim the weight for the extrinsic given info and post info.

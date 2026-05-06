@@ -35,7 +35,6 @@ mod genesis_config_presets;
 pub mod impls;
 #[cfg(test)]
 mod impls_tests;
-pub mod kate;
 mod primitives;
 pub mod transaction_filter;
 mod version;

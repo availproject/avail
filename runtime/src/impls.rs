@@ -126,14 +126,9 @@ impl pallet_identity::Config for Runtime {
 }
 
 impl da_control::Config for Runtime {
-	type BlockLenProposalId = u32;
 	type Currency = Balances;
 	type MaxAppDataLength = constants::da::MaxAppDataLength;
 	type MaxAppKeyLength = constants::da::MaxAppKeyLength;
-	type MaxBlockCols = constants::da::MaxBlockCols;
-	type MaxBlockRows = constants::da::MaxBlockRows;
-	type MinBlockCols = constants::da::MinBlockCols;
-	type MinBlockRows = constants::da::MinBlockRows;
 	type MaxVouchesPerRecord = constants::da::MaxVouchesPerRecord;
 	type SessionDataProvider = Self;
 	type BlobVouchFeeReserve = constants::da::BlobVouchFeeReserve;

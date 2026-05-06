@@ -47,20 +47,6 @@ pub struct Cli {
 	#[clap(flatten)]
 	pub storage_monitor: sc_storage_monitor::StorageMonitorParams,
 
-	/// Enable Kate RPC
-	#[clap(long = "enable-kate-rpc", default_value_t = false)]
-	pub kate_rpc_enabled: bool,
-
-	/// Enable Kate RPC Metrics
-	#[clap(long = "enable-kate-rpc-metrics", default_value_t = false)]
-	pub kate_rpc_metrics_enabled: bool,
-
-	/// The maximum number of cells that can be requested in one go.
-	///
-	/// Max size cannot exceed 10_000
-	#[arg(long, default_value_t = 64, value_parser=kate_max_cells_size_upper_bound)]
-	pub kate_max_cells_size: usize,
-
 	/// The interval, in blocks, at which Grandpa justifications are either imported or generated and stored in the backend.
 	#[arg(long, default_value_t =512, value_parser=grandpa_justification_period_bounds)]
 	pub grandpa_justification_period: u32,
@@ -81,10 +67,6 @@ pub struct Cli {
 	/// OTEL Metrics Endpoint
 	#[arg(long)]
 	pub otel_metrics_endpoint: Option<String>,
-}
-
-fn kate_max_cells_size_upper_bound(s: &str) -> Result<usize, String> {
-	clap_num::number_range(s, 0, 10_000)
 }
 
 fn grandpa_justification_period_bounds(s: &str) -> Result<u32, String> {

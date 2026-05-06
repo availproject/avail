@@ -15,7 +15,7 @@ use sp_std::vec::Vec;
 
 const MAX_FILTER_ITERATIONS: usize = 3;
 
-/// Filters and extracts `data` from `call` if it is a `DataAvailability::submit_data` or `Vector::send_message` type.
+/// Filters and extracts data from `DataAvailability::submit_blob_metadata` or `Vector::send_message` calls.
 /// Handles N levels of nesting in case those calls are wrapped in proxy / multisig calls.
 impl HeaderExtensionDataFilter for Runtime {
 	fn filter(
@@ -202,7 +202,7 @@ fn filter_vector_call(
 	})
 }
 
-/// Recursively unwrap Proxy/Multisig calls up to `MAX_ITERATIONS` to find `DataAvailability::submit_data` or `Vector::send_message` calls.
+/// Recursively unwrap Proxy/Multisig calls up to `MAX_ITERATIONS` to find DA blob metadata or vector send-message calls.
 /// If we exceed `MAX_ITERATIONS`, we stop and return the current call.
 fn extract_final_call(mut call: &Call) -> (&Call, usize) {
 	let mut nb_iterations = 0;

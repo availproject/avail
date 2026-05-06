@@ -13,9 +13,7 @@ use avail_fri::{
 	FriParamsVersion,
 };
 use codec::Encode;
-// use da_commitment::build_kzg_commitments::build_da_commitments;
 // use da_commitment::build_fri_commitments::build_fri_da_commitment;
-// use kate::Seed;
 use sp_crypto_hashing::keccak_256;
 use sp_std::iter::repeat;
 
@@ -85,7 +83,6 @@ pub async fn run() -> Result<(), Error> {
 		println!("---------- START Commitment generation {i} ---------- ");
 		let blob: Vec<u8> = repeat(byte).take(len - i).collect::<Vec<u8>>();
 		let blob_hash = H256::from(keccak_256(&blob));
-		// let commitments = build_da_commitments(&blob, 1024, 4096, Seed::default());
 		// let commitments = build_fri_da_commitment(&blob, FriParamsVersion::V0);
 		let params_version = FriParamsVersion::V0;
 		// Encode bytes → multilinear extension over B128

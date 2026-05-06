@@ -2,10 +2,9 @@
 mod multiplier_tests {
 	use crate::impls::*;
 	use crate::*;
-	use avail_core::currency::{CENTS, MICRO_AVAIL, MILLICENTS};
+	use avail_core::currency::{CENTS, MILLICENTS};
 	use frame_support::{
-		dispatch::{DispatchClass, DispatchInfo, Pays},
-		traits::OnFinalize,
+		dispatch::DispatchClass,
 		weights::{Weight, WeightToFee},
 	};
 	use pallet_transaction_payment::{Multiplier, TargetedFeeAdjustment};
@@ -226,60 +225,6 @@ mod multiplier_tests {
 					adjusted_fee / DOLLARS,
 				);
 			}
-		});
-	}
-
-	#[test]
-	#[ignore]
-	fn weight_congested_chain_simulation() {
-		// `cargo test weight_congested_chain_simulation -- --nocapture` to get some insight.
-		sp_io::TestExternalities::default().execute_with(|| {
-			// By default weight multiplier will be 1
-			let wm = TransactionPayment::next_fee_multiplier();
-			assert_eq!(wm, Multiplier::one());
-			let block_weight = BlockWeights::get()
-				.get(DispatchClass::Normal)
-				.max_total
-				.unwrap() - Weight::from_parts(100, 0);
-
-			let tx_len: usize = 512 * 1024; // 512 Kb data
-			let da_submission_weight = da_control::weight_helper::submit_data::<Runtime>(tx_len);
-			let dispatch_info = DispatchInfo {
-				call_weight: da_submission_weight,
-				pays_fee: Pays::Yes,
-				..Default::default()
-			};
-			let tx_fee = TransactionPayment::compute_fee(tx_len as u32, &dispatch_info, 0);
-			println!(
-				"Iteration: {}, wm: {:?},  Fee: {} units / {} MICRO_AVAIL",
-				0,
-				wm,
-				tx_fee,
-				tx_fee / MICRO_AVAIL,
-			);
-			run_with_system_weight(block_weight, || {
-				let mut iterations: u32 = 0;
-				let mut day_count: u32 = 0;
-				loop {
-					iterations += 1;
-					TransactionPayment::on_finalize(System::block_number());
-					let wm = TransactionPayment::next_fee_multiplier();
-					let tx_fee = TransactionPayment::compute_fee(tx_len as u32, &dispatch_info, 0);
-					if iterations % EPOCH_DURATION_IN_SLOTS == 0 {
-						day_count += 1;
-						println!(
-							"Iteration: {}, wm: {:?},  Fee: {} units / {} MICRO_AVAIL",
-							day_count,
-							wm,
-							tx_fee,
-							tx_fee / MICRO_AVAIL,
-						);
-					}
-					if day_count == 7u32 {
-						break;
-					}
-				}
-			});
 		});
 	}
 
@@ -621,17 +566,14 @@ mod measure_full_block_size {
 	use crate::{
 		extensions::check_batch_transactions::CheckBatchTransactions,
 		impls_tests::tests::RuntimeGenesisConfig, Block, DataAvailability, Executive, Header,
-		Runtime, RuntimeCall, SignedExtra, SignedPayload, System, Timestamp, UncheckedExtrinsic,
+		Runtime, RuntimeCall, SignedExtra, SignedPayload, Timestamp, UncheckedExtrinsic,
 	};
-	use avail_core::{currency::AVAIL, from_substrate::keccak_256, AppId};
+	use avail_core::{currency::AVAIL, from_substrate::keccak_256, AppId, FriParamsVersion};
 	use codec::Encode;
 	use da_control::{
-		extensions::native::hosted_commitment_builder::build_kzg_commitments, BlobTxSummaryRuntime,
+		extensions::native::hosted_commitment_builder::build_fri_commitments, BlobTxSummaryRuntime,
 	};
-	use frame_support::{
-		// dispatch::GetDispatchInfo,
-		pallet_prelude::{InvalidTransaction, TransactionValidityError},
-	};
+	use frame_support::pallet_prelude::{InvalidTransaction, TransactionValidityError};
 	use frame_system::{
 		CheckEra, CheckGenesis, CheckNonZeroSender, CheckNonce, CheckSpecVersion, CheckTxVersion,
 		CheckWeight,
@@ -711,15 +653,11 @@ mod measure_full_block_size {
 			let mut nonce: u32 = 0;
 			let mut extrinsics = Vec::new();
 
-			let block_length = System::block_length();
 			let blob_runtime_parameters = DataAvailability::blob_runtime_parameters();
 			let max_blob_size = blob_runtime_parameters.max_blob_size;
 			let blob = vec![b'a'; max_blob_size as usize];
-			let cols = block_length.cols.0;
-			let rows = block_length.rows.0;
-			let seed = kate::Seed::default();
 			let blob_hash = H256(keccak_256(&blob));
-			let commitment = build_kzg_commitments(&blob, cols, rows, seed);
+			let commitment = build_fri_commitments(&blob, FriParamsVersion::V0);
 
 			let mut blob_txs_summary: Vec<BlobTxSummaryRuntime> = vec![];
 			let ownership = sample_ownerships();
@@ -731,18 +669,10 @@ mod measure_full_block_size {
 						blob_hash,
 						size: tx_size,
 						commitment: commitment.clone(),
-						eval_point_seed: None,
-						eval_claim: None,
+						eval_point_seed: [0u8; 32],
+						eval_claim: [0u8; 16],
 					},
 				);
-
-				// let info = call.get_dispatch_info();
-				// println!(
-				// 	"predicted: class={:?}, weight(ref_time)={}, proof_size={}",
-				// 	info.class,
-				// 	info.weight.ref_time(),
-				// 	info.weight.proof_size()
-				// );
 
 				let extra: SignedExtra = (
 					CheckNonZeroSender::<Runtime>::new(),

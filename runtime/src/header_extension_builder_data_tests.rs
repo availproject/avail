@@ -16,7 +16,7 @@ use avail_core::data_proof::AddressedMessage;
 use avail_core::data_proof::SubTrie;
 use binary_merkle_tree::{verify_proof, Leaf, MerkleProof};
 use codec::{Compact, Encode};
-use da_commitment::build_kzg_commitments::build_da_commitments;
+use da_commitment::build_fri_commitments::{build_fri_da_commitment, FriParamsVersion};
 use derive_more::Constructor;
 use hex_literal::hex;
 use pallet_transaction_payment::ChargeTransactionPayment;
@@ -138,14 +138,14 @@ fn signed_extrinsic(function: RuntimeCall) -> Vec<u8> {
 
 fn submit_blob_metadata(data: Vec<u8>) -> Vec<u8> {
 	let blob_hash = H256::from(keccak_256(&data));
-	let commitment = build_da_commitments(&data, 1024, 4096, Seed::default());
+	let commitment = build_fri_da_commitment(&data, FriParamsVersion::V0);
 	let function = DaCall::submit_blob_metadata {
 		app_id: AppId(0),
 		blob_hash,
 		size: data.len() as u64,
 		commitment,
-		eval_point_seed: None,
-		eval_claim: None,
+		eval_point_seed: [0u8; 32],
+		eval_claim: [0u8; 16],
 	}
 	.into();
 

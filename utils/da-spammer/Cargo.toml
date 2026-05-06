@@ -12,7 +12,7 @@ avail-fri = { git = "https://github.com/availproject/avail-core.git", rev = "91c
     "parallel",
     "std",
 ] }
-avail-rust = { package = "avail-rust-client", git = "https://github.com/availproject/avail-rust.git", rev = "998d3f0be6d26fae53c74402e72ef728dc337ed7", default-features = false, features = [
+avail-rust = { package = "avail-rust-client", git = "https://github.com/availproject/avail-rust.git", rev = "54bf818733d9b81206aec2eaa6ddfcb84b891cd1", default-features = false, features = [
     "native",
 ] }
 

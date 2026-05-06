@@ -1,4 +1,4 @@
-use avail_core::{BlockLengthColumns, BlockLengthRows, NORMAL_DISPATCH_RATIO};
+use avail_core::NORMAL_DISPATCH_RATIO;
 use frame_support::{
 	construct_runtime, parameter_types,
 	traits::Randomness,
@@ -104,13 +104,6 @@ parameter_types! {
 	pub const ReportLongevity: u64 =
 		BondingDuration::get() as u64 * SessionsPerEra::get() as u64 * EpochDuration::get();
 
-	// DA Control
-	pub const MaxAppKeyLength :u32 = 64;
-	pub const MaxAppDataLength :u32 = 512 * 1024; // 512 Kb
-	pub const MinBlockRows: BlockLengthRows = BlockLengthRows(32);
-	pub const MaxBlockRows: BlockLengthRows = frame_system::limits::MAX_BLOCK_ROWS;
-	pub const MinBlockCols: BlockLengthColumns = BlockLengthColumns(32);
-	pub const MaxBlockCols: BlockLengthColumns = frame_system::limits::MAX_BLOCK_COLUMNS;
 }
 
 #[derive(Clone, Copy)]

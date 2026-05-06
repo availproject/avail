@@ -3,16 +3,9 @@
 //! More info about runtime interfaces:
 //! https://docs.rs/sp-runtime-interface/latest/sp_runtime_interface/attr.runtime_interface.html
 
-use crate::{limits::BlockLength, Config};
+use crate::Config;
 use avail_base::header_extension::SubmittedData;
-use avail_core::{
-	header::{
-		extension::{fri::FriHeaderVersion, kzg::KzgHeaderVersion},
-		HeaderExtension,
-	},
-	traits::ExtendedHeader,
-	FriParamsVersion,
-};
+use avail_core::{header::HeaderExtension, traits::ExtendedHeader, FriParamsVersion};
 
 pub use kate::{
 	metrics::{IgnoreMetrics, Metrics},
@@ -35,20 +28,11 @@ pub const MIN_WIDTH: usize = 4;
 pub trait HeaderExtensionBuilder {
 	type Header: ExtendedHeader<Extension = HeaderExtension>;
 
-	/// Build the KZG header extension.
-	fn build_kzg_extension(
-		submitted: Vec<SubmittedData>,
-		data_root: H256,
-		block_length: BlockLength,
-		kzg_version: KzgHeaderVersion,
-	) -> HeaderExtension;
-
-	/// Build the FRI header extension.
-	fn build_fri_extension(
+	/// Build the DA header extension.
+	fn build_extension(
 		submitted: Vec<SubmittedData>,
 		data_root: H256,
 		params_version: FriParamsVersion,
-		fri_version: FriHeaderVersion,
 	) -> HeaderExtension;
 }
 
@@ -68,35 +52,13 @@ pub mod da {
 		type Header = DaHeader<BlockNumber, BlakeTwo256>;
 
 		#[inline]
-		fn build_kzg_extension(
-			submitted: Vec<SubmittedData>,
-			data_root: H256,
-			block_length: BlockLength,
-			kzg_version: KzgHeaderVersion,
-		) -> HeaderExtension {
-			super::hosted_header_builder::build_kzg_extension(
-				submitted,
-				data_root,
-				block_length,
-				kzg_version,
-			)
-			.into()
-		}
-
-		#[inline]
-		fn build_fri_extension(
+		fn build_extension(
 			submitted: Vec<SubmittedData>,
 			data_root: H256,
 			params_version: FriParamsVersion,
-			fri_version: FriHeaderVersion,
 		) -> HeaderExtension {
-			super::hosted_header_builder::build_fri_extension(
-				submitted,
-				data_root,
-				params_version,
-				fri_version,
-			)
-			.into()
+			super::hosted_header_builder::build_extension(submitted, data_root, params_version)
+				.into()
 		}
 	}
 }
@@ -106,31 +68,15 @@ pub mod da {
 /// The actual implementation lives in `crate::native::build_extension`.
 #[runtime_interface]
 pub trait HostedHeaderBuilder {
-	fn build_kzg_extension(
-		submitted: PassFatPointerAndDecode<Vec<SubmittedData>>,
-		data_root: PassFatPointerAndDecode<H256>,
-		block_length: PassFatPointerAndDecode<BlockLength>,
-		kzg_version: PassFatPointerAndDecode<KzgHeaderVersion>,
-	) -> AllocateAndReturnByCodec<HeaderExtension> {
-		crate::native::build_extension::build_kzg_extension(
-			submitted.to_vec(),
-			data_root,
-			block_length,
-			kzg_version,
-		)
-	}
-
-	fn build_fri_extension(
+	fn build_extension(
 		submitted: PassFatPointerAndDecode<Vec<SubmittedData>>,
 		data_root: PassFatPointerAndDecode<H256>,
 		params_version: PassFatPointerAndDecode<FriParamsVersion>,
-		fri_version: PassFatPointerAndDecode<FriHeaderVersion>,
 	) -> AllocateAndReturnByCodec<HeaderExtension> {
-		crate::native::build_extension::build_fri_extension(
+		crate::native::build_extension::build_extension(
 			submitted.to_vec(),
 			data_root,
 			params_version,
-			fri_version,
 		)
 	}
 }

@@ -1,17 +1,14 @@
-use crate::traits::{CommitmentQueueApiT, RuntimeApiT};
+use crate::traits::RuntimeApiT;
 use crate::{
 	store::StorageApiT,
 	types::{BlobHash, BlobMetadata, BlobSignatureData, BlobTxSummary, OwnershipEntry},
 };
 use anyhow::{anyhow, Context, Result};
-use avail_observability::metrics::BlobMetrics;
 use base64::Engine;
 use codec::{Decode, Encode};
-use da_commitment::build_kzg_commitments::build_commitments_from_polynomial_grid;
 use da_control::{BlobRuntimeParameters, Call};
 use da_runtime::UncheckedExtrinsic;
 use da_runtime::{apis::BlobApi, RuntimeCall};
-use kate::gridgen::core::PolynomialGrid;
 use sc_client_api::{HeaderBackend, StorageKey};
 use sc_keystore::{Keystore, LocalKeystore};
 use sc_transaction_pool_api::TransactionSource;
@@ -33,7 +30,6 @@ use sp_transaction_pool::runtime_api::TaggedTransactionQueue;
 use std::time::Duration;
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::{collections::BTreeMap, io::Write, sync::Arc};
-use tokio::sync::{mpsc, oneshot};
 
 pub fn get_my_validator_public_account(
 	keystore: &Arc<LocalKeystore>,
@@ -585,14 +581,6 @@ pub fn get_babe_randomness_key() -> StorageKey {
 	storage_key
 }
 
-pub fn get_dynamic_blocklength_key() -> StorageKey {
-	let mut key = Vec::new();
-	key.extend(&twox_128(b"System"));
-	key.extend(&twox_128(b"DynamicBlockLength"));
-	let storage_key = StorageKey(key);
-	storage_key
-}
-
 pub fn get_current_session_key() -> StorageKey {
 	let mut key = Vec::new();
 	key.extend(&twox_128(b"Session"));
@@ -675,70 +663,6 @@ impl Drop for SmartStopwatch {
 		}
 
 		tracing::info!("{}", msg)
-	}
-}
-
-pub struct CommitmentQueueMessage {
-	hash: H256,
-	grid: PolynomialGrid,
-	request: oneshot::Sender<Vec<u8>>,
-}
-
-impl CommitmentQueueMessage {
-	pub fn new(hash: H256, grid: PolynomialGrid) -> (Self, oneshot::Receiver<Vec<u8>>) {
-		let (tx, rx) = oneshot::channel();
-		let s = Self {
-			hash,
-			grid,
-			request: tx,
-		};
-		(s, rx)
-	}
-}
-
-pub struct CommitmentQueue {
-	tx: mpsc::Sender<CommitmentQueueMessage>,
-}
-
-impl CommitmentQueueApiT for CommitmentQueue {
-	fn send(&self, value: CommitmentQueueMessage) -> bool {
-		self.tx.try_send(value).is_ok()
-	}
-
-	fn capacity(&self) -> usize {
-		self.tx.capacity()
-	}
-}
-
-impl CommitmentQueue {
-	pub fn new(channel_size: usize) -> (Self, mpsc::Receiver<CommitmentQueueMessage>) {
-		let (tx, rx) = mpsc::channel(channel_size);
-		(Self { tx }, rx)
-	}
-
-	pub fn spawn_background_task(rx: mpsc::Receiver<CommitmentQueueMessage>) {
-		std::thread::spawn(move || {
-			Self::run_task(rx);
-		});
-	}
-
-	pub fn run_task(mut rx: mpsc::Receiver<CommitmentQueueMessage>) {
-		while let Some(msg) = rx.blocking_recv() {
-			let start = get_current_timestamp_ms();
-			let commitment = build_commitments_from_polynomial_grid(msg.grid);
-			let end = get_current_timestamp_ms();
-
-			crate::telemetry::BlobSubmission::build_commitment(msg.hash, start, end);
-
-			_ = msg.request.send(commitment);
-
-			// Metrics
-			BlobMetrics::observe_commitment_build_time_duration(
-				(end.saturating_sub(start)) as f64 / 1000f64,
-			);
-			tracing::info!("{}", rx.capacity());
-			BlobMetrics::set_queue_capacity(rx.capacity() as u64);
-		}
 	}
 }
 

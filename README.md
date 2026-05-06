@@ -151,26 +151,8 @@ docker run --rm -p 30333:30333 -p 9944:9944 -v ./output:/output:z availnode --de
 
 ## RPCs and Custom Flags
 
-### Kate RPC
-To enable Kate RPC you need to pass `--enable-kate-rpc` flag when executing the binary.
-`--dev` implies `--enable-kate-rpc`.
-
-```bash
-./avail-node --enable-kate-rpc
-```
-
 ### All Custom Flags
 ```txt
---enable-kate-rpc
-    Enable Kate RPC
-
---kate-max-cells-size <KATE_MAX_CELLS_SIZE>
-    The maximum number of cells that can be requested in one go.
-
-    Max size cannot exceed 10_000
-
-    [default: 64]
-
 --otel-traces-endpoint <OTEL_TRACES_ENDPOINT>
     OTEL Traces Endpoint
 
@@ -182,12 +164,6 @@ To enable Kate RPC you need to pass `--enable-kate-rpc` flag when executing the 
 ```
 
 ## Run Benchmarks
-### Kate RPC
-```bash
-./avail-node --dev
-deno run -A ./examples/deno/benchmarks/query_proof.ts && deno run -A ./examples/deno/benchmarks/query_rows.ts && deno run -A ./examples/deno/benchmarks/query_block_length.ts && deno run -A ./examples/deno/benchmarks/query_data_proof.ts
-```
-
 ### Header Builder
 ```bash
 # Option 1: for time measurement

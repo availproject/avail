@@ -63,29 +63,6 @@ impl<T: frame_system::Config> da_control::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(2))
 	}
-	/// Storage: `System::DynamicBlockLength` (r:1 w:1)
-	/// Proof: `System::DynamicBlockLength` (`max_values`: Some(1), `max_size`: Some(24), added: 519, mode: `MaxEncodedLen`)
-	fn submit_block_length_proposal() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `65`
-		//  Estimated: `1509`
-		// Minimum execution time: 16_350_000 picoseconds.
-		Weight::from_parts(17_393_000, 0)
-			.saturating_add(Weight::from_parts(0, 1509))
-			.saturating_add(T::DbWeight::get().reads(1))
-			.saturating_add(T::DbWeight::get().writes(1))
-	}
-	/// The range of component `i` is `[1, 524288]`.
-	fn submit_data(i: u32, ) -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `0`
-		//  Estimated: `0`
-		// Minimum execution time: 12_741_000 picoseconds.
-		Weight::from_parts(5_340_425, 0)
-			.saturating_add(Weight::from_parts(0, 0))
-			// Standard Error: 1
-			.saturating_add(Weight::from_parts(1_690, 0).saturating_mul(i.into()))
-	}
 	/// Storage: `DataAvailability::AppKeys` (r:2 w:2)
 	/// Proof: `DataAvailability::AppKeys` (`max_values`: None, `max_size`: Some(118), added: 2593, mode: `MaxEncodedLen`)
 	fn set_application_key() -> Weight {
@@ -97,39 +74,6 @@ impl<T: frame_system::Config> da_control::WeightInfo for WeightInfo<T> {
 			.saturating_add(Weight::from_parts(0, 6176))
 			.saturating_add(T::DbWeight::get().reads(2))
 			.saturating_add(T::DbWeight::get().writes(2))
-	}
-	/// The range of component `i` is `[0, 524288]`.
-	fn data_root(i: u32, ) -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `0`
-		//  Estimated: `0`
-		// Minimum execution time: 2_881_000 picoseconds.
-		Weight::from_parts(2_991_000, 0)
-			.saturating_add(Weight::from_parts(0, 0))
-			// Standard Error: 2
-			.saturating_add(Weight::from_parts(5_191, 0).saturating_mul(i.into()))
-	}
-	/// The range of component `i` is `[0, 2097152]`.
-	fn data_root_batch(i: u32, ) -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `0`
-		//  Estimated: `0`
-		// Minimum execution time: 2_370_000 picoseconds.
-		Weight::from_parts(6_753_725, 0)
-			.saturating_add(Weight::from_parts(0, 0))
-			// Standard Error: 2
-			.saturating_add(Weight::from_parts(5_259, 0).saturating_mul(i.into()))
-	}
-	/// Storage: `DataAvailability::SubmitDataFeeModifier` (r:0 w:1)
-	/// Proof: `DataAvailability::SubmitDataFeeModifier` (`max_values`: Some(1), `max_size`: Some(27), added: 522, mode: `MaxEncodedLen`)
-	fn set_submit_data_fee_modifier() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `0`
-		//  Estimated: `0`
-		// Minimum execution time: 3_453_000 picoseconds.
-		Weight::from_parts(3_723_000, 0)
-			.saturating_add(Weight::from_parts(0, 0))
-			.saturating_add(T::DbWeight::get().writes(1))
 	}
 	/// Storage: `DataAvailability::BlobRuntimeParams` (r:1 w:1)
 	/// Proof: `DataAvailability::BlobRuntimeParams` (`max_values`: Some(1), `max_size`: Some(50), added: 545, mode: `MaxEncodedLen`)

@@ -118,11 +118,6 @@ pub struct BlobRuntimeParameters {
 	/// Theoritically with a matrix size of 4096 / 1024 we can store up to 132 mb of commitments which represents a huge block
 	/// Hence we need to bound it with a value
 	pub max_block_size: u64,
-	/// Tha mximum size allowed for old data submission
-	/// We use this value to bound old data submission now that the matrix size is increased
-	pub max_total_old_submission_size: u64,
-	/// Flag to disable / enable old DA submission
-	pub disable_old_da_submission: bool,
 	/// The threshold to consider a blob missing accusation valid
 	pub vouch_threshold: u32,
 }
@@ -138,8 +133,6 @@ impl Default for BlobRuntimeParameters {
 			max_transaction_validity: 150,        // In blocks
 			max_blob_retry_before_discarding: 10, // In blocks
 			max_block_size: 3 * 1024 * 1024 * 1024, // 3gb
-			max_total_old_submission_size: 4 * 1024 * 1024,
-			disable_old_da_submission: false,
 			vouch_threshold: 2,
 		}
 	}

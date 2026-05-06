@@ -9,15 +9,12 @@ use avail_base::{HeaderExtensionBuilderData, ProvidePostInherent};
 use avail_core::{
 	currency::Balance,
 	data_proof::{DataProof, ProofResponse, SubTrie},
-	header::extension::CommitmentScheme,
-	header::HeaderExtension,
 	FriParamsVersion,
 };
 use sp_runtime::OpaqueExtrinsic;
 
 use frame_support::genesis_builder_helper::{build_state, get_preset};
 use frame_support::{traits::KeyOwnerProofSystem, weights::Weight};
-use frame_system::limits::BlockLength;
 use frame_system_rpc_runtime_api::system_events_api::fetch_events;
 use pallet_nomination_pools::PoolId;
 use pallet_transaction_payment::{FeeDetails, RuntimeDispatchInfo};
@@ -25,7 +22,7 @@ use scale_info::prelude::string::String;
 use sp_api::{decl_runtime_apis, impl_runtime_apis};
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_consensus_grandpa::AuthorityId as GrandpaId;
-use sp_core::{crypto::KeyTypeId, H256, U256};
+use sp_core::{crypto::KeyTypeId, H256};
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::traits::ExtrinsicCall;
 use sp_runtime::{
@@ -40,19 +37,8 @@ type RTExtractor = <Runtime as frame_system::Config>::HeaderExtensionDataFilter;
 type RTExtrinsic = <Runtime as frame_system::Config>::Extrinsic;
 
 decl_runtime_apis! {
-	#[api_version(2)]
-	pub trait DataAvailApi {
-		fn block_length() -> BlockLength;
-	}
 
 	pub trait ExtensionBuilder {
-		#[api_version(4)]
-		fn build_extension(
-			extrinsics: Vec<OpaqueExtrinsic>,
-			data_root: H256,
-			block_length: BlockLength,
-			block_number: u32,
-		) -> HeaderExtension;
 		fn build_data_root(block: u32, extrinsics: Vec<OpaqueExtrinsic>) -> H256;
 		fn check_if_extrinsic_is_vector_post_inherent(uxt: &<Block as BlockT>::Extrinsic) -> bool;
 		fn check_if_extrinsic_is_da_post_inherent(uxt: &<Block as BlockT>::Extrinsic) -> bool;
@@ -60,16 +46,12 @@ decl_runtime_apis! {
 	}
 
 	pub trait VectorApi {
-		fn sync_committee_poseidons(slot: u64) -> U256;
 		fn head() -> u64;
 		fn headers(slot: u64) -> H256;
 	}
 
-	pub trait KateApi {
+	pub trait BridgeApi {
 		fn data_proof(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, tx_idx: u32) -> Option<ProofResponse>;
-		// fn rows(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, rows: Vec<u32>) -> Result<Vec<GRow>, RTKateError >;
-		// fn proof(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, cells: Vec<(u32,u32)> ) -> Result<Vec<GDataProof>, RTKateError>;
-		// fn multiproof(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, cells: Vec<(u32,u32)> ) -> Result<Vec<(GMultiProof, GCellBlock)>, RTKateError>;
 		fn inclusion_proof(extrinsics: Vec<OpaqueExtrinsic>, blob_hash: H256) -> Option<DataProof>;
 	}
 
@@ -91,9 +73,6 @@ decl_runtime_apis! {
 
 		/// Get the blob vouch fee reserve amount
 		fn get_blob_vouch_fee_reserve() -> u128;
-
-		/// Get teh commitment_scheme active in the Runtime
-		fn commitement_scheme() -> CommitmentScheme;
 	}
 }
 
@@ -432,34 +411,9 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl crate::apis::DataAvailApi<Block> for Runtime {
-		fn block_length() -> frame_system::limits::BlockLength {
-			frame_system::Pallet::<Runtime>::block_length()
-		}
-	}
-
-	#[api_version(4)]
 	impl crate::apis::ExtensionBuilder<Block> for Runtime {
 		fn build_data_root(block: u32, extrinsics: Vec<OpaqueExtrinsic>) -> H256  {
 			HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block, &extrinsics).data_root()
-		}
-
-		fn build_extension(
-			_extrinsics: Vec<OpaqueExtrinsic>,
-			_data_root: H256,
-			_block_length: BlockLength,
-			_block_number: u32,
-		) -> HeaderExtension {
-			// use frame_system::native::hosted_header_builder::da::HeaderExtensionBuilder;
-			// use frame_system::HeaderExtensionBuilder as _;
-
-			// let bl = frame_system::Pallet::<Runtime>::block_length();
-			// let cols = bl.cols.0;
-			// let rows = bl.rows.0;
-			// let app_extrinsics = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block_number, &extrinsics, cols, rows).to_app_extrinsics();
-			// HeaderExtensionBuilder::<Runtime>::build(app_extrinsics, data_root, block_length, block_number)
-			// Currentlt this API is used for V3 header generaton, which we no longer support for time being
-			todo!()
 		}
 
 		fn check_if_extrinsic_is_vector_post_inherent(uxt: &<Block as BlockT>::Extrinsic) -> bool {
@@ -504,10 +458,6 @@ impl_runtime_apis! {
 	}
 
 	impl crate::apis::VectorApi<Block> for Runtime {
-		fn sync_committee_poseidons(slot: u64) -> U256 {
-			pallet_vector::Pallet::<Runtime>::sync_committee_poseidons(slot)
-		}
-
 		fn head() -> u64 {
 			pallet_vector::Pallet::<Runtime>::head()
 		}
@@ -541,19 +491,15 @@ impl_runtime_apis! {
 		fn get_blob_vouch_fee_reserve() -> u128 {
 			crate::constants::da::BlobVouchFeeReserve::get()
 		}
-
-		fn commitement_scheme() -> CommitmentScheme {
-			<Runtime as frame_system::Config>::DaCommitmentScheme::get()
-		}
 	}
 
-	impl crate::apis::KateApi<Block> for Runtime {
+	impl crate::apis::BridgeApi<Block> for Runtime {
 		fn data_proof(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, tx_idx: u32) -> Option<ProofResponse> {
 			let data = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block_number, &extrinsics);
 			let (leaf_idx, sub_trie) = data.leaf_idx(tx_idx)?;
 			log::trace!(
 				target: LOG_TARGET,
-				"KateApi::data_proof: tx_idx={tx_idx:?} leaf_idx={leaf_idx:?}, sub_trie:{sub_trie:?}");
+				"BridgeApi::data_proof: tx_idx={tx_idx:?} leaf_idx={leaf_idx:?}, sub_trie:{sub_trie:?}");
 
 			let (sub_proof, message) = match sub_trie {
 				SubTrie::DataSubmit => {
@@ -572,7 +518,7 @@ impl_runtime_apis! {
 			let proof = ProofResponse::new(data_proof, message);
 			log::trace!(
 				target: LOG_TARGET,
-				"KateApi::data_proof: proof={proof:#?}");
+				"BridgeApi::data_proof: proof={proof:#?}");
 
 			Some(proof)
 		}
@@ -588,32 +534,6 @@ impl_runtime_apis! {
 			Some(data_proof)
 		}
 
-		// fn rows(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, rows: Vec<u32>) -> Result<Vec<GRow>, RTKateError> {
-		// 	let bl = frame_system::Pallet::<Runtime>::block_length();
-		// 	let cols = bl.cols.0;
-		// 	let rows2 = bl.rows.0;
-		// 	let app_extrinsics = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block_number, &extrinsics, cols, rows2).to_app_extrinsics();
-		// 	let grid_rows = super::kate::grid::<Runtime>(app_extrinsics, block_len, rows)?;
-		// 	log::trace!(target: LOG_TARGET, "KateApi::rows: rows={grid_rows:#?}");
-		// 	Ok(grid_rows)
-		// }
-
-	// 	fn proof(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, cells: Vec<(u32,u32)> ) -> Result<Vec<GDataProof>, RTKateError> {
-	// 		let bl = frame_system::Pallet::<Runtime>::block_length();
-	// 		let cols = bl.cols.0;
-	// 		let rows = bl.rows.0;
-	// 		let app_extrinsics = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block_number, &extrinsics, cols, rows).to_app_extrinsics();
-	// 		let data_proofs = super::kate::proof::<Runtime>(app_extrinsics, block_len, cells)?;
-	// 		log::trace!(target: LOG_TARGET, "KateApi::proof: data_proofs={data_proofs:#?}");
-	// 		Ok(data_proofs)
-	// 	}
-
-	// 	fn multiproof(block_number: u32, extrinsics: Vec<OpaqueExtrinsic>, block_len: BlockLength, cells: Vec<(u32,u32)> ) -> Result<Vec<(GMultiProof, GCellBlock)>, RTKateError> {
-	// 		let app_extrinsics = HeaderExtensionBuilderData::from_opaque_extrinsics::<RTExtractor>(block_number, &extrinsics, block_len.cols.0, block_len.rows.0).to_app_extrinsics();
-	// 		let data_proofs = super::kate::multiproof::<Runtime>(app_extrinsics, block_len, cells)?;
-	// 		log::trace!(target: LOG_TARGET, "KateApi::proof: data_proofs={data_proofs:#?}");
-	// 		Ok(data_proofs)
-	// 	}
 	}
 
 	impl avail_base::PostInherentsProvider<Block> for Runtime {

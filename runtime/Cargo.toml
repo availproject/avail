@@ -16,8 +16,6 @@ targets = ["x86_64-unknown-linux-gnu"]
 # Internal
 avail-base = { workspace = true, default-features = false }
 avail-core = { workspace = true, default-features = false }
-kate = { workspace = true, default-features = false }
-kate-recovery = { workspace = true, default-features = false }
 
 da-control = { workspace = true, default-features = false }
 pallet-mandate = { workspace = true, default-features = false }
@@ -27,10 +25,8 @@ pallet-vector = { workspace = true, default-features = false }
 static_assertions.workspace = true
 log = { workspace = true, default-features = false }
 hex-literal.workspace = true
-rayon = { workspace = true, optional = true }
 serde = { workspace = true, optional = true, features = ["derive"] }
 serde_json = { workspace = true, features = ["alloc", "arbitrary_precision"] }
-thiserror-no-std.workspace = true
 derive_more.workspace = true
 
 # Substrate
@@ -115,26 +111,6 @@ serde_json.workspace = true
 sp-keyring = { workspace = true, default-features = false }
 env_logger.workspace = true
 pallet-staking-reward-fn = { workspace = true, default-features = false }
-iai.workspace = true
-iai-callgrind.workspace = true
-criterion.workspace = true
-divan.workspace = true
-
-[[bench]]
-name = "header_kate_commitment_iai_callgrind"
-harness = false
-
-[[bench]]
-name = "header_kate_commitment_iai"
-harness = false
-
-[[bench]]
-name = "header_kate_commitment_cri"
-harness = false
-
-[[bench]]
-name = "header_kate_commitment_divan"
-harness = false
 
 [features]
 default = [ "std" ]
@@ -156,7 +132,6 @@ std = [
 	"frame-system-rpc-runtime-api/std",
 	"frame-system/std",
 	"frame-try-runtime?/std",
-	"kate/std",
 	"log/std",
 	"pallet-authority-discovery/std",
 	"pallet-authorship/std",
@@ -189,7 +164,6 @@ std = [
 	"pallet-tx-pause/std",
 	"pallet-utility/std",
 	"pallet-vector/std",
-	"rayon",
 	"scale-info/std",
 	"serde",
 	"serde_json/std",

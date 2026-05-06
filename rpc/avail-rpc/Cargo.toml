@@ -1,5 +1,5 @@
 [package]
-name = "kate-rpc"
+name = "avail-rpc"
 version = "0.3.0"
 edition = "2021"
 
@@ -10,9 +10,6 @@ avail-base.workspace = true
 da-runtime.workspace = true
 frame-system = { workspace = true, default-features = false }
 avail-core = { workspace = true, default-features = false }
-kate = { workspace = true, default-features = false }
-avail-observability = { workspace = true, optional = true }
-kate-recovery = { workspace = true, default-features = false }
 codec = { package = "parity-scale-codec", version = "3" }
 serde_json.workspace = true
 serde.workspace = true
@@ -40,18 +37,10 @@ std = [
 	"avail-base/std",
 	"avail-core/std",
 	"da-runtime/std",
-	"dep:avail-observability",
 	"frame-support/std",
 	"frame-system/std",
-	"kate/std",
 	"serde/std",
 	"sp-api/std",
 	"sp-core/std",
 	"sp-runtime/std",
 ]
-
-# Enables secure seed generation using for padding fill during the matrix
-# generation for Kate commitment.
-# NOTE: WIP because that affects the Data Availability Protocol used during
-# the block import process.
-secure_padding_fill = []

@@ -44,7 +44,6 @@ pub const EVAL_CLAIMS_TOPIC: &[u8] = b"avail/eval_claims/1";
 pub type HostFunctions = (
 	frame_system::native::hosted_header_builder::hosted_header_builder::HostFunctions,
 	avail_base::mem_tmp_storage::hosted_mem_tmp_storage::HostFunctions,
-	da_runtime::kate::native::hosted_kate::HostFunctions,
 	da_control::extensions::native::hosted_commitment_builder::HostFunctions,
 	sp_io::SubstrateHostFunctions,
 );
@@ -54,7 +53,6 @@ pub type HostFunctions = (
 	frame_benchmarking::benchmarking::HostFunctions,
 	frame_system::native::hosted_header_builder::hosted_header_builder::HostFunctions,
 	avail_base::mem_tmp_storage::hosted_mem_tmp_storage::HostFunctions,
-	da_runtime::kate::native::hosted_kate::HostFunctions,
 	da_control::extensions::native::hosted_commitment_builder::HostFunctions,
 	sp_io::SubstrateHostFunctions,
 );
@@ -175,7 +173,7 @@ pub struct BlobMetadata {
 	pub hash: BlobHash,
 	/// The size of the blob.
 	pub size: u64,
-	/// The commitment of the blob.
+	/// The FRI commitment of the blob.
 	pub commitment: Vec<u8>,
 	/// Store the number of validators per blob for this blob metadata
 	pub nb_validators_per_blob: u32,
@@ -194,10 +192,10 @@ pub struct BlobMetadata {
 	pub finalized_block_number: u64,
 	/// The list of storing validators
 	pub storing_validator_list: Vec<AccountId32>,
-	/// Evaluation point seed for FRI blobs
-	pub eval_point_seed: Option<[u8; 32]>,
-	/// Evaluation claim for FRI blobs
-	pub eval_claim: Option<[u8; 16]>,
+	/// Evaluation point seed for the FRI blob.
+	pub eval_point_seed: [u8; 32],
+	/// Evaluation claim for the FRI blob.
+	pub eval_claim: [u8; 16],
 	/// Evaluation proof for FRI blobs
 	pub fri_eval_proof: Option<Vec<u8>>,
 	/// Index of the designated prover among storing_validator_list (maybe we dont need to store this?)
@@ -234,7 +232,7 @@ pub struct BlobReceived {
 	pub hash: BlobHash,
 	/// The size of the blob.
 	pub size: u64,
-	/// The commitment of the blob
+	/// The FRI commitment of the blob
 	pub commitment: Vec<u8>,
 	/// The optional ownership entry of the sending rpc
 	pub ownership: Option<OwnershipEntry>,
@@ -244,10 +242,10 @@ pub struct BlobReceived {
 	pub finalized_block_hash: H256,
 	/// The finalized block number for other nodes reference
 	pub finalized_block_number: u64,
-	/// Evaluation point seed for FRI blobs
-	pub eval_point_seed: Option<[u8; 32]>,
-	/// Evaluation claim for FRI blobs
-	pub eval_claim: Option<[u8; 16]>,
+	/// Evaluation point seed for the FRI blob
+	pub eval_point_seed: [u8; 32],
+	/// Evaluation claim for the FRI blob
+	pub eval_claim: [u8; 16],
 	/// Evaluation proof for FRI blobs
 	pub fri_eval_proof: Option<Vec<u8>>,
 	/// Index of the designated prover among storing_validator_list
