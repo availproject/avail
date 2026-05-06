@@ -1,8 +1,6 @@
 use crate::{
 	state::Configuration, BalanceOf, BoundedVec, Call, Config, ConfigurationStorage,
-	ExecutionStateRoots, FunctionIds, FunctionInput, FunctionOutput, FunctionProof, Headers,
-	Pallet, ProofInput, PublicValuesInput, RotateVerificationKey, StepVerificationKey, Updater,
-	ValidProof,
+	ExecutionStateRoots, Pallet, ProofInput, PublicValuesInput, Updater, ValidProof,
 };
 use avail_core::data_proof::BOUNDED_DATA_MAX_LENGTH;
 use avail_core::data_proof::{AddressedMessage, Message};
@@ -16,153 +14,6 @@ use sp_runtime::traits::Bounded;
 use sp_std::vec;
 
 const ACCOUNT1: [u8; 32] = [2u8; 32];
-pub const STEP_FUNCTION_ID: H256 = H256(hex!(
-	"af44af6890508b3b7f6910d4a4570a0d524769a23ce340b2c7400e140ad168ab"
-));
-pub const ROTATE_FUNCTION_ID: H256 = H256(hex!(
-	"9c1096d800fc42454d2d76e6ae1d461b5a67c7b474efb9d47989e47ed39b1b7b"
-));
-pub const STEP_VK: &str = r#"{"vk_json":{
-	"protocol": "groth16",
-	"curve": "bn128",
-	"nPublic": 2,
-	"vk_alpha_1": [
-		"20491192805390485299153009773594534940189261866228447918068658471970481763042",
-		"9383485363053290200918347156157836566562967994039712273449902621266178545958",
-		"1"
-	],
-	"vk_beta_2": [
-		[
-			"6375614351688725206403948262868962793625744043794305715222011528459656738731",
-			"4252822878758300859123897981450591353533073413197771768651442665752259397132"
-		],
-		[
-			"10505242626370262277552901082094356697409835680220590971873171140371331206856",
-			"21847035105528745403288232691147584728191162732299865338377159692350059136679"
-		],
-		[
-			"1",
-			"0"
-		]
-	],
-	"vk_gamma_2": [
-		[
-			"10857046999023057135944570762232829481370756359578518086990519993285655852781",
-			"11559732032986387107991004021392285783925812861821192530917403151452391805634"
-		],
-		[
-			"8495653923123431417604973247489272438418190587263600148770280649306958101930",
-			"4082367875863433681332203403145435568316851327593401208105741076214120093531"
-		],
-		[
-			"1",
-			"0"
-		]
-	],
-	"vk_delta_2": [
-		[
-			"677302577815076814357170457144294271294364985082280272249076505900964830740",
-			"5628948730667472013190771331033856457010306836153142947462627646651446565415"
-		],
-		[
-			"5877290568297658003612857476419103064356778304319760331670835003648166891449",
-			"10874997846396459971354014654692242947705540424071616448481145872912634110727"
-		],
-		[
-			"1",
-			"0"
-		]
-	],
-	"vk_alphabeta_12": [],
-	"IC": [
-		[
-			"202333273032481017331373350816007583026713320195536354260471885571526195724",
-			"8246242704115088390751476790768744984402990892657920674334938931948100192840",
-			"1"
-		],
-		[
-			"12901454334783146822957332552289769626984444933652541503990843020723194328882",
-			"12436078488518552293095332739673622487901350475115357313978341690183990059269",
-			"1"
-		],
-		[
-			"12828056956769114977702246128118682473179646035440405756936949778100648490262",
-			"7351319165217643779735289066901404053730163225836026220896225559268517203790",
-			"1"
-		]
-	]
-}}"#;
-pub const ROTATE_VK: &str = r#"{"vk_json":{
-    "protocol": "groth16",
-    "curve": "bn128",
-    "nPublic": 2,
-    "vk_alpha_1": [
-        "20491192805390485299153009773594534940189261866228447918068658471970481763042",
-        "9383485363053290200918347156157836566562967994039712273449902621266178545958",
-        "1"
-    ],
-    "vk_beta_2": [
-        [
-            "6375614351688725206403948262868962793625744043794305715222011528459656738731",
-            "4252822878758300859123897981450591353533073413197771768651442665752259397132"
-        ],
-        [
-            "10505242626370262277552901082094356697409835680220590971873171140371331206856",
-            "21847035105528745403288232691147584728191162732299865338377159692350059136679"
-        ],
-        [
-            "1",
-            "0"
-        ]
-    ],
-    "vk_gamma_2": [
-        [
-            "10857046999023057135944570762232829481370756359578518086990519993285655852781",
-            "11559732032986387107991004021392285783925812861821192530917403151452391805634"
-        ],
-        [
-            "8495653923123431417604973247489272438418190587263600148770280649306958101930",
-            "4082367875863433681332203403145435568316851327593401208105741076214120093531"
-        ],
-        [
-            "1",
-            "0"
-        ]
-    ],
-    "vk_delta_2": [
-        [
-            "2864156988502350018268114524769442611229738724281856064310359811414088775164",
-            "19784911050814990253005325251017779746002278450060367709911093357779852409724"
-        ],
-        [
-            "2320747355788118605608963241136772405889379999161258135797985959373766905799",
-            "7118041328407665643077665093375077236507031390654037220453830314560753892708"
-        ],
-        [
-            "1",
-            "0"
-        ]
-    ],
-    "vk_alphabeta_12": [],
-    "IC": [
-        [
-            "15615341388138779177592192310982411536626378440854127969627902314302018589756",
-            "15825561397777957655855081872509949298182852212017977148985160662370122761845",
-            "1"
-        ],
-        [
-            "21866659777455953012076240694890418723891531368136637553921599064988704009798",
-            "18794682133425820197214508210971026410261369883290190279860606526851568182754",
-            "1"
-        ],
-        [
-            "17134706853007662603932468543386586959990776778768283640697616786730646170163",
-            "20580957029031123131958004810864543174606183854578157485523871304119815226629",
-            "1"
-        ]
-    ]
-}}"#;
-
 // Generated with SP1 Helios https://github.com/succinctlabs/sp1-helios/blob/main/README.md
 // cargo prove key —-elf (sp1 helios elf) in SP1 Helios
 const SP1_VERIFICATION_KEY: [u8; 32] =
@@ -183,7 +34,7 @@ mod benchmarks {
 	) -> Result<(), BenchmarkError> {
 		let origin = RawOrigin::Signed(whitelisted_caller());
 		let message = Message::ArbitraryMessage(BoundedVec::truncate_from([0, 1, 2, 3].to_vec()));
-		let to = ROTATE_FUNCTION_ID;
+		let to = H256([1; 32]);
 		let domain = 2;
 
 		#[extrinsic_call]
@@ -200,7 +51,7 @@ mod benchmarks {
 			asset_id: H256::zero(),
 			amount: 1_000_000_000_000_000_000u128,
 		};
-		let to = ROTATE_FUNCTION_ID;
+		let to = H256([1; 32]);
 		let domain = 2;
 
 		// ACCOUNT1 needs to have enough funds to send 1 token
@@ -208,20 +59,6 @@ mod benchmarks {
 
 		#[extrinsic_call]
 		send_message(origin, message, to, domain);
-
-		Ok(())
-	}
-
-	#[benchmark]
-	fn set_poseidon_hash() -> Result<(), BenchmarkError> {
-		#[extrinsic_call]
-		_(
-			RawOrigin::Root,
-			0,
-			BoundedVec::truncate_from(
-				hex!("0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df").to_vec(),
-			),
-		);
 
 		Ok(())
 	}
@@ -265,94 +102,6 @@ mod benchmarks {
 	fn source_chain_froze() -> Result<(), BenchmarkError> {
 		#[extrinsic_call]
 		_(RawOrigin::Root, 0, true);
-
-		Ok(())
-	}
-
-	#[benchmark]
-	fn fulfill_call_step() -> Result<(), BenchmarkError> {
-		let hash = BoundedVec::truncate_from(
-			hex!("0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df").to_vec(),
-		);
-
-		Pallet::<T>::set_poseidon_hash(RawOrigin::Root.into(), 931, hash).unwrap();
-
-		Updater::<T>::set(H256(ACCOUNT1));
-		ConfigurationStorage::<T>::set(Configuration {
-			slots_per_period: 8192,
-			finality_threshold: 461,
-		});
-
-		let account = T::AccountId::from(ACCOUNT1);
-		let origin = RawOrigin::Signed(account.clone());
-
-		// We use test values instead of dev / prod values
-		// We override dev config
-		FunctionIds::<T>::set(Some((STEP_FUNCTION_ID, ROTATE_FUNCTION_ID)));
-		StepVerificationKey::<T>::set(Some(
-			BoundedVec::try_from(STEP_VK.as_bytes().to_vec()).unwrap(),
-		));
-		RotateVerificationKey::<T>::set(Some(
-			BoundedVec::try_from(ROTATE_VK.as_bytes().to_vec()).unwrap(),
-		));
-
-		#[extrinsic_call]
-		fulfill_call(
-			origin,
-			STEP_FUNCTION_ID,
-			get_valid_step_input(),
-			get_valid_step_output(),
-			get_valid_step_proof(),
-			7634942,
-		);
-
-		Ok(())
-	}
-
-	#[benchmark]
-	fn fulfill_call_rotate() -> Result<(), BenchmarkError> {
-		let slot = 7634942;
-		let hash = BoundedVec::truncate_from(
-			hex!("0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df").to_vec(),
-		);
-
-		Pallet::<T>::set_poseidon_hash(RawOrigin::Root.into(), 931, hash).unwrap();
-
-		Updater::<T>::set(H256(ACCOUNT1));
-		ConfigurationStorage::<T>::set(Configuration {
-			slots_per_period: 8192,
-			finality_threshold: 342,
-		});
-
-		Headers::<T>::set(
-			slot,
-			H256(hex!(
-				"e882fe800bed07205bf2cbf17f30148b335d143a91811ff65280c221c9f57856"
-			)),
-		);
-
-		let account = T::AccountId::from(ACCOUNT1);
-		let origin = RawOrigin::Signed(account.clone());
-
-		// We use test values instead of dev / prod values
-		// We override dev config
-		FunctionIds::<T>::set(Some((STEP_FUNCTION_ID, ROTATE_FUNCTION_ID)));
-		StepVerificationKey::<T>::set(Some(
-			BoundedVec::try_from(STEP_VK.as_bytes().to_vec()).unwrap(),
-		));
-		RotateVerificationKey::<T>::set(Some(
-			BoundedVec::try_from(ROTATE_VK.as_bytes().to_vec()).unwrap(),
-		));
-
-		#[extrinsic_call]
-		fulfill_call(
-			origin,
-			ROTATE_FUNCTION_ID,
-			get_valid_rotate_input(),
-			get_valid_rotate_output(),
-			get_valid_rotate_proof(),
-			slot,
-		);
 
 		Ok(())
 	}
@@ -429,43 +178,11 @@ mod benchmarks {
 	}
 
 	#[benchmark]
-	fn set_function_ids() -> Result<(), BenchmarkError> {
-		let origin = RawOrigin::Root;
-
-		#[extrinsic_call]
-		_(origin, Some((STEP_FUNCTION_ID, ROTATE_FUNCTION_ID)));
-
-		Ok(())
-	}
-
-	#[benchmark]
 	fn set_updater() -> Result<(), BenchmarkError> {
 		let origin = RawOrigin::Root;
 
 		#[extrinsic_call]
 		_(origin, H256(ACCOUNT1));
-
-		Ok(())
-	}
-
-	#[benchmark]
-	fn set_step_verification_key() -> Result<(), BenchmarkError> {
-		let origin = RawOrigin::Root;
-		let value = Some(BoundedVec::try_from(STEP_VK.as_bytes().to_vec()).unwrap());
-
-		#[extrinsic_call]
-		_(origin, value);
-
-		Ok(())
-	}
-
-	#[benchmark]
-	fn set_rotate_verification_key() -> Result<(), BenchmarkError> {
-		let origin = RawOrigin::Root;
-		let value = Some(BoundedVec::try_from(ROTATE_VK.as_bytes().to_vec()).unwrap());
-
-		#[extrinsic_call]
-		_(origin, value);
 
 		Ok(())
 	}
@@ -610,37 +327,6 @@ fn get_valid_amb_storage_proof() -> crate::ValidProof {
         BoundedVec::truncate_from(hex!("f851808080a0aec544652aa67b55271eec87a45f5ca89f6a6ea762450ca63b014ceb073e4e9d80808080808080808080a08c06dc4d3d3e8d7fe5a8a88222594ba9f4cdb19baaa8e60919b5617770423f828080").to_vec()),
         BoundedVec::truncate_from(hex!("f843a020b5be412f275a18f6e4d622aee4ff40b21467c926224771b782d4c095d1444ba1a05774ba3f9618e2da3885b0e2853e4005c3e836625e8be0f69bf3d93f51fac58d").to_vec()),
     ])
-}
-
-fn get_valid_step_input() -> FunctionInput {
-	BoundedVec::truncate_from(
-		hex!("0ab2afdc05c8b6ae1f2ab20874fb4159e25d5c1d4faa41aee232d6ab331332df0000000000747ffe")
-			.to_vec(),
-	)
-}
-
-fn get_valid_step_output() -> FunctionOutput {
-	BoundedVec::truncate_from(hex!("e4566e0cf4edb171a3eedd59f9943bbcd0b1f6b648f1a6e26d5264b668ab41ec51e76629b32b943497207e7b7ccff8fbc12e9e6d758cc7eed972422c4cad02b90000000000747fa001fd").to_vec())
-}
-
-fn get_valid_step_proof() -> FunctionProof {
-	BoundedVec::truncate_from(hex!("0b496d04c0e12206bc846edd2077a20b8b55f65fc0e40bb8cf617d9b79ce39e508281ad49432300b3b7c8a95a0a63544f93f553fcfdeba38c82460888f4030ed1f67a1be666c12ee00658109c802042c58f645474fcee7d128277a4e35c1dd1504d33cb652ec23407cd3580eda0196dd97054eb5c2a817163d6997832d9abd422729b3e85a15941722baeb5ca8a42567a91c6a0b0cd64ac15431fde05071e90e0d30c12013d5803336cc2f433c16eaa5434e30b89ce7395c3c3cda29dde3be062281095f143d728486c71203b24fa6068e69aabf29d457ffadc6d682d51a4f08179d3240bc561ae7e2c005bb772a4d4c5ba6644986052fad554f042ab0074a8f").to_vec())
-}
-
-fn get_valid_rotate_input() -> FunctionInput {
-	BoundedVec::truncate_from(
-		hex!("e882fe800bed07205bf2cbf17f30148b335d143a91811ff65280c221c9f57856").to_vec(),
-	)
-}
-
-fn get_valid_rotate_output() -> FunctionOutput {
-	BoundedVec::truncate_from(
-		hex!("2441c10b0b6605985c56ebf6dc1ca7e9a0ae20e617c931d72f2ec19aa40ccc8d").to_vec(),
-	)
-}
-
-fn get_valid_rotate_proof() -> FunctionProof {
-	BoundedVec::truncate_from(hex!("14305744fb26a377656a947cae0874c14b086de9d407bdfaf415ca9f47402c04144589183b473537750e7211f93671e324825db673edcf5c0839b08eecba08202966ba52dc07e1bf9832a54770048b84999172d47c57628758d8fe43dd9fe1412e6f8c0e75a79cde28e0e24eb09f9d23309defb07f4a1761deb6598de77278971d2d914930ad2e3ad8b6264e595a0516a912fc9394c93fa61146efc54d61e5c32378a5d4460aa2164422702f9401fcfb3e2b991a0e5b847ede3ea9ffe70a55100203abc0636c101adb6546c2f7aaf32d79e69093afb40c3c1a674e44a1ece76a1183fc03ef9553a7728672de2aada5d5582b5bcf0859e8c312ab59429553ed6d").to_vec())
 }
 
 fn get_valid_sp1_proof() -> ProofInput {

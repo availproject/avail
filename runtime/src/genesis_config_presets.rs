@@ -3,6 +3,7 @@
 
 #![allow(clippy::vec_init_then_push)]
 
+use scale_info::prelude::format;
 use serde_json::{json, Value};
 use sp_std::vec;
 use sp_std::vec::Vec;
@@ -13,13 +14,11 @@ use crate::{
 use sp_staking::StakerStatus;
 
 use pallet_vector::constants::{
-	get_poseidon_hash_for_period, BROADCASTER, BROADCASTER_DOMAIN, FINALITY_THRESHOLD,
-	GENESIS_TIME, GENESIS_VALIDATOR_ROOT, PERIOD, ROTATE_FUNCTION_ID, ROTATE_VK, SECONDS_PER_SLOT,
-	SLOTS_PER_PERIOD, SOURCE_CHAIN_ID, STEP_FUNCTION_ID, STEP_VK,
+	BROADCASTER, BROADCASTER_DOMAIN, FINALITY_THRESHOLD, GENESIS_TIME, GENESIS_VALIDATOR_ROOT,
+	PERIOD, SECONDS_PER_SLOT, SLOTS_PER_PERIOD, SOURCE_CHAIN_ID,
 };
 
 use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
-use scale_info::prelude::format;
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_consensus_babe::AuthorityId as BabeId;
 use sp_consensus_grandpa::AuthorityId as GrandpaId;
@@ -187,16 +186,12 @@ pub fn runtime_genesis_config(
 			"broadcaster": BROADCASTER,
 			"broadcasterDomain": BROADCASTER_DOMAIN,
 			"finalityThreshold": FINALITY_THRESHOLD,
-			"functionIds": (STEP_FUNCTION_ID, ROTATE_FUNCTION_ID),
 			"genesisTime": GENESIS_TIME,
 			"genesisValidatorRoot": GENESIS_VALIDATOR_ROOT,
 			"period": PERIOD,
 			"secondsPerSlot": SECONDS_PER_SLOT,
 			"slotsPerPeriod": SLOTS_PER_PERIOD,
 			"sourceChainId": SOURCE_CHAIN_ID,
-			"syncCommitteePoseidon": format!("0x{:064x}", get_poseidon_hash_for_period()),
-			"stepVerificationKey": STEP_VK.as_bytes().to_vec(),
-			"rotateVerificationKey": ROTATE_VK.as_bytes().to_vec(),
 			"whitelistedDomains": vec![2],
 		},
 		"nominationPools": {

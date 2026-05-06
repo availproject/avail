@@ -22,7 +22,7 @@ use scale_info::prelude::string::String;
 use sp_api::{decl_runtime_apis, impl_runtime_apis};
 use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_consensus_grandpa::AuthorityId as GrandpaId;
-use sp_core::{crypto::KeyTypeId, H256, U256};
+use sp_core::{crypto::KeyTypeId, H256};
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::traits::ExtrinsicCall;
 use sp_runtime::{
@@ -46,7 +46,6 @@ decl_runtime_apis! {
 	}
 
 	pub trait VectorApi {
-		fn sync_committee_poseidons(slot: u64) -> U256;
 		fn head() -> u64;
 		fn headers(slot: u64) -> H256;
 	}
@@ -459,10 +458,6 @@ impl_runtime_apis! {
 	}
 
 	impl crate::apis::VectorApi<Block> for Runtime {
-		fn sync_committee_poseidons(slot: u64) -> U256 {
-			pallet_vector::Pallet::<Runtime>::sync_committee_poseidons(slot)
-		}
-
 		fn head() -> u64 {
 			pallet_vector::Pallet::<Runtime>::head()
 		}
