@@ -66,32 +66,10 @@ where
 
 	pub fn get_scheduler_call(&self) -> Option<&<T as SchedulerConfig>::RuntimeCall> {
 		match self.0.is_sub_type() {
-			Some(SchedulerCall::<T>::schedule {
-				call,
-				when: _,
-				maybe_periodic: _,
-				priority: _,
-			})
-			| Some(SchedulerCall::<T>::schedule_after {
-				after: _,
-				maybe_periodic: _,
-				priority: _,
-				call,
-			})
-			| Some(SchedulerCall::<T>::schedule_named {
-				id: _,
-				when: _,
-				maybe_periodic: _,
-				priority: _,
-				call,
-			})
-			| Some(SchedulerCall::<T>::schedule_named_after {
-				id: _,
-				after: _,
-				maybe_periodic: _,
-				priority: _,
-				call,
-			}) => Some(call),
+			Some(SchedulerCall::<T>::schedule { call, .. })
+			| Some(SchedulerCall::<T>::schedule_after { call, .. })
+			| Some(SchedulerCall::<T>::schedule_named { call, .. })
+			| Some(SchedulerCall::<T>::schedule_named_after { call, .. }) => Some(call),
 			_ => None,
 		}
 	}
@@ -107,31 +85,16 @@ where
 
 	pub fn get_as_multi_call(&self) -> Option<&<T as MultisigConfig>::RuntimeCall> {
 		match self.0.is_sub_type() {
-			Some(MultisigCall::<T>::as_multi {
-				call,
-				threshold: _,
-				other_signatories: _,
-				maybe_timepoint: _,
-				max_weight: _,
-			})
-			| Some(MultisigCall::as_multi_threshold_1 {
-				other_signatories: _,
-				call,
-			}) => {
-				//
-				Some(call)
-			},
+			Some(MultisigCall::<T>::as_multi { call, .. })
+			| Some(MultisigCall::as_multi_threshold_1 { call, .. }) => Some(call),
 			_ => None,
 		}
 	}
 
 	pub fn get_proxy_call(&self) -> Option<&<T as ProxyConfig>::RuntimeCall> {
 		match self.0.is_sub_type() {
-			Some(ProxyCall::<T>::proxy {
-				call,
-				real: _,
-				force_proxy_type: _,
-			}) => Some(call),
+			Some(ProxyCall::<T>::proxy { call, .. }) => Some(call),
+			Some(ProxyCall::<T>::proxy_announced { call, .. }) => Some(call),
 			_ => None,
 		}
 	}
@@ -272,12 +235,10 @@ where
 		let call: &<T as SystemConfig>::RuntimeCall = call.into_ref();
 		let call = WrappedCall::<T>(call);
 
-		if iteration > 1 || inside_batch {
-			ensure!(
-				!call.is_send_message_call(),
-				InvalidTransaction::Custom(UnexpectedSendMessageCall as u8)
-			);
-		}
+		ensure!(
+			!call.is_send_message_call(),
+			InvalidTransaction::Custom(UnexpectedSendMessageCall as u8)
+		);
 
 		if let Some(call) = call.get_proxy_call() {
 			return Self::recursive_proxy_call(call, iteration + 1, inside_batch);
@@ -310,21 +271,20 @@ where
 			return Err(InvalidTransaction::Custom(MaxRecursionExceeded as u8).into());
 		}
 
-		if iteration > 1 || inside_batch {
-			match call.is_sub_type() {
-				Some(VectorCall::<T>::send_message { .. }) => {
-					return Err(InvalidTransaction::Custom(UnexpectedSendMessageCall as u8).into())
-				},
-				_ => (),
-			}
+		match call.is_sub_type() {
+			Some(VectorCall::<T>::send_message { .. }) => {
+				return Err(InvalidTransaction::Custom(UnexpectedSendMessageCall as u8).into())
+			},
+			_ => (),
 		}
 
 		match call.is_sub_type() {
-			Some(ProxyCall::<T>::proxy {
-				call,
-				real: _,
-				force_proxy_type: _,
-			}) => return Self::recursive_proxy_call(call, iteration + 1, inside_batch),
+			Some(ProxyCall::<T>::proxy { call, .. }) => {
+				return Self::recursive_proxy_call(call, iteration + 1, inside_batch)
+			},
+			Some(ProxyCall::<T>::proxy_announced { call, .. }) => {
+				return Self::recursive_proxy_call(call, iteration + 1, inside_batch)
+			},
 			_ => (),
 		}
 
@@ -338,49 +298,18 @@ where
 		}
 
 		match call.is_sub_type() {
-			Some(MultisigCall::<T>::as_multi {
-				call,
-				threshold: _,
-				other_signatories: _,
-				maybe_timepoint: _,
-				max_weight: _,
-			})
-			| Some(MultisigCall::as_multi_threshold_1 {
-				other_signatories: _,
-				call,
-			}) => {
+			Some(MultisigCall::<T>::as_multi { call, .. })
+			| Some(MultisigCall::as_multi_threshold_1 { call, .. }) => {
 				return Self::recursive_multisig_call(call, iteration + 1, inside_batch);
 			},
 			_ => (),
 		}
 
 		match call.is_sub_type() {
-			Some(SchedulerCall::<T>::schedule {
-				call,
-				when: _,
-				maybe_periodic: _,
-				priority: _,
-			})
-			| Some(SchedulerCall::<T>::schedule_after {
-				after: _,
-				maybe_periodic: _,
-				priority: _,
-				call,
-			})
-			| Some(SchedulerCall::<T>::schedule_named {
-				id: _,
-				when: _,
-				maybe_periodic: _,
-				priority: _,
-				call,
-			})
-			| Some(SchedulerCall::<T>::schedule_named_after {
-				id: _,
-				after: _,
-				maybe_periodic: _,
-				priority: _,
-				call,
-			}) => {
+			Some(SchedulerCall::<T>::schedule { call, .. })
+			| Some(SchedulerCall::<T>::schedule_after { call, .. })
+			| Some(SchedulerCall::<T>::schedule_named { call, .. })
+			| Some(SchedulerCall::<T>::schedule_named_after { call, .. }) => {
 				return Self::recursive_scheduler_call(call, iteration + 1, inside_batch);
 			},
 			_ => (),
@@ -409,11 +338,12 @@ where
 		}
 
 		match call.is_sub_type() {
-			Some(ProxyCall::<T>::proxy {
-				call,
-				real: _,
-				force_proxy_type: _,
-			}) => return Self::recursive_proxy_call(call, iteration + 1, inside_batch),
+			Some(ProxyCall::<T>::proxy { call, .. }) => {
+				return Self::recursive_proxy_call(call, iteration + 1, inside_batch)
+			},
+			Some(ProxyCall::<T>::proxy_announced { call, .. }) => {
+				return Self::recursive_proxy_call(call, iteration + 1, inside_batch)
+			},
 			_ => (),
 		}
 
@@ -427,49 +357,18 @@ where
 		}
 
 		match call.is_sub_type() {
-			Some(MultisigCall::<T>::as_multi {
-				call,
-				threshold: _,
-				other_signatories: _,
-				maybe_timepoint: _,
-				max_weight: _,
-			})
-			| Some(MultisigCall::as_multi_threshold_1 {
-				other_signatories: _,
-				call,
-			}) => {
+			Some(MultisigCall::<T>::as_multi { call, .. })
+			| Some(MultisigCall::as_multi_threshold_1 { call, .. }) => {
 				return Self::recursive_multisig_call(call, iteration + 1, inside_batch);
 			},
 			_ => (),
 		}
 
 		match call.is_sub_type() {
-			Some(SchedulerCall::<T>::schedule {
-				call,
-				when: _,
-				maybe_periodic: _,
-				priority: _,
-			})
-			| Some(SchedulerCall::<T>::schedule_after {
-				after: _,
-				maybe_periodic: _,
-				priority: _,
-				call,
-			})
-			| Some(SchedulerCall::<T>::schedule_named {
-				id: _,
-				when: _,
-				maybe_periodic: _,
-				priority: _,
-				call,
-			})
-			| Some(SchedulerCall::<T>::schedule_named_after {
-				id: _,
-				after: _,
-				maybe_periodic: _,
-				priority: _,
-				call,
-			}) => {
+			Some(SchedulerCall::<T>::schedule { call, .. })
+			| Some(SchedulerCall::<T>::schedule_after { call, .. })
+			| Some(SchedulerCall::<T>::schedule_named { call, .. })
+			| Some(SchedulerCall::<T>::schedule_named_after { call, .. }) => {
 				return Self::recursive_scheduler_call(call, iteration + 1, inside_batch);
 			},
 			_ => (),

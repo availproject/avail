@@ -36,12 +36,7 @@ impl HeaderExtensionDataFilter for Runtime {
 		let (final_call, nb_iterations) = extract_final_call(&unchecked_extrinsic.function);
 
 		if nb_iterations > 0 {
-			match final_call {
-				Call::Vector(call) => {
-					filter_vector_call(failed_transactions, maybe_caller, call, block, tx_index)
-				},
-				_ => None,
-			}
+			None
 		} else {
 			match final_call {
 				Call::Vector(call) => {
