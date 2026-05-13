@@ -7,11 +7,6 @@ use crate::Config;
 use avail_base::header_extension::SubmittedData;
 use avail_core::{header::HeaderExtension, traits::ExtendedHeader, FriParamsVersion};
 
-pub use kate::{
-	metrics::{IgnoreMetrics, Metrics},
-	Seed,
-};
-
 use sp_core::H256;
 use sp_runtime_interface::{
 	pass_by::{AllocateAndReturnByCodec, PassFatPointerAndDecode},

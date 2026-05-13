@@ -104,6 +104,7 @@ use avail_core::{
 	ensure,
 	header::{Header as DaHeader, HeaderExtension},
 	traits::{ExtendedBlock, ExtendedHeader},
+	Seed,
 };
 
 extern crate alloc;
@@ -128,7 +129,6 @@ use frame_support::{
 	},
 	Parameter,
 };
-use kate::Seed;
 use pallet_prelude::{BlockNumberFor, HeaderFor};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]

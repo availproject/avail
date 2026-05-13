@@ -21,7 +21,7 @@ name = "avail-node"
 # Internals
 avail-base.workspace = true
 avail-core = { workspace = true, features = ["std"] }
-kate.workspace = true
+# kate.workspace = true
 da-runtime.workspace = true
 da-control.workspace = true
 da-sampling.workspace = true
