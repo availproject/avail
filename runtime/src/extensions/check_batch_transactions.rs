@@ -149,6 +149,12 @@ where
 				call,
 				real: _,
 				force_proxy_type: _,
+			})
+			| Some(ProxyCall::<T>::proxy_announced {
+				call,
+				delegate: _,
+				real: _,
+				force_proxy_type: _,
 			}) => Some(call),
 			_ => None,
 		}
@@ -287,12 +293,10 @@ where
 		let call: &<T as SystemConfig>::RuntimeCall = call.into_ref();
 		let call = WrappedCall::<T>(call);
 
-		if iteration > 1 || inside_batch {
-			ensure!(
-				!call.is_send_message_call(),
-				InvalidTransaction::Custom(UnexpectedSendMessageCall as u8)
-			);
-		}
+		ensure!(
+			!call.is_send_message_call(),
+			InvalidTransaction::Custom(UnexpectedSendMessageCall as u8)
+		);
 
 		if let Some(call) = call.get_proxy_call() {
 			return Self::recursive_proxy_call(call, iteration + 1, inside_batch);
@@ -323,14 +327,18 @@ where
 			return Err(TxInvalid::Custom(MaxRecursionExceeded as u8).into());
 		}
 
-		if iteration > 1 || inside_batch {
-			if let Some(VectorCall::<T>::send_message { .. }) = call.is_sub_type() {
-				return Err(TxInvalid::Custom(UnexpectedSendMessageCall as u8).into());
-			}
+		if let Some(VectorCall::<T>::send_message { .. }) = call.is_sub_type() {
+			return Err(TxInvalid::Custom(UnexpectedSendMessageCall as u8).into());
 		}
 
 		if let Some(ProxyCall::<T>::proxy {
 			call,
+			real: _,
+			force_proxy_type: _,
+		})
+		| Some(ProxyCall::<T>::proxy_announced {
+			call,
+			delegate: _,
 			real: _,
 			force_proxy_type: _,
 		}) = call.is_sub_type()
@@ -415,6 +423,12 @@ where
 
 		if let Some(ProxyCall::<T>::proxy {
 			call,
+			real: _,
+			force_proxy_type: _,
+		})
+		| Some(ProxyCall::<T>::proxy_announced {
+			call,
+			delegate: _,
 			real: _,
 			force_proxy_type: _,
 		}) = call.is_sub_type()
@@ -622,10 +636,12 @@ mod tests {
 	};
 	use da_control::pallet::Call as DACall;
 	use frame_system::pallet::Call as SysCall;
+	use pallet_scheduler::pallet::Call as SchedulerCall;
 	use pallet_utility::pallet::Call as UtilityCall;
 	use sp_core::H256;
 	use sp_runtime::generic::UncheckedExtrinsic;
 	use sp_runtime::transaction_validity::{InvalidTransaction, TransactionValidityError};
+	use sp_runtime::AccountId32;
 	use test_case::test_case;
 
 	use super::*;
@@ -634,6 +650,12 @@ mod tests {
 
 	fn remark_call() -> RuntimeCall {
 		RuntimeCall::System(SysCall::remark { remark: vec![] })
+	}
+
+	fn account(value: u8) -> AccountId32 {
+		let mut account = [0u8; 32];
+		account[0] = value;
+		AccountId32::new(account)
 	}
 
 	fn submit_blob_metadata_call() -> RuntimeCall {
@@ -669,6 +691,49 @@ mod tests {
 
 	fn force_batch_call(calls: Vec<RuntimeCall>) -> RuntimeCall {
 		RuntimeCall::Utility(UtilityCall::force_batch { calls })
+	}
+
+	fn proxy_call(call: RuntimeCall) -> RuntimeCall {
+		RuntimeCall::Proxy(ProxyCall::proxy {
+			real: account(2).into(),
+			force_proxy_type: None,
+			call: Box::new(call),
+		})
+	}
+
+	fn proxy_announced_call(call: RuntimeCall) -> RuntimeCall {
+		RuntimeCall::Proxy(ProxyCall::proxy_announced {
+			delegate: account(3).into(),
+			real: account(2).into(),
+			force_proxy_type: None,
+			call: Box::new(call),
+		})
+	}
+
+	fn multisig_call(call: RuntimeCall) -> RuntimeCall {
+		RuntimeCall::Multisig(MultisigCall::as_multi {
+			threshold: 2,
+			other_signatories: vec![account(2)],
+			maybe_timepoint: None,
+			call: Box::new(call),
+			max_weight: Weight::zero(),
+		})
+	}
+
+	fn multisig_threshold_1_call(call: RuntimeCall) -> RuntimeCall {
+		RuntimeCall::Multisig(MultisigCall::as_multi_threshold_1 {
+			other_signatories: vec![account(2)],
+			call: Box::new(call),
+		})
+	}
+
+	fn scheduler_call(call: RuntimeCall) -> RuntimeCall {
+		RuntimeCall::Scheduler(SchedulerCall::schedule {
+			when: 10,
+			maybe_periodic: None,
+			priority: 0,
+			call: Box::new(call),
+		})
 	}
 
 	fn to_invalid_tx(custom_id: InvalidTransactionCustomId) -> TransactionValidity {
@@ -712,5 +777,23 @@ mod tests {
 		validate(batch_call(calls.clone()))?;
 		validate(batch_all_call(calls.clone()))?;
 		validate(force_batch_call(calls))
+	}
+
+	#[test_case(proxy_call(send_message_call()) =>  to_invalid_tx(UnexpectedSendMessageCall); "Proxy send_message should be blocked" )]
+	#[test_case(proxy_announced_call(send_message_call()) =>  to_invalid_tx(UnexpectedSendMessageCall); "Proxy announced send_message should be blocked" )]
+	#[test_case(multisig_call(send_message_call()) =>  to_invalid_tx(UnexpectedSendMessageCall); "Multisig send_message should be blocked" )]
+	#[test_case(multisig_threshold_1_call(send_message_call()) =>  to_invalid_tx(UnexpectedSendMessageCall); "Multisig threshold 1 send_message should be blocked" )]
+	#[test_case(scheduler_call(send_message_call()) =>  to_invalid_tx(UnexpectedSendMessageCall); "Scheduler send_message should be blocked" )]
+	fn test_wrapped_send_message_is_blocked(call: RuntimeCall) -> TransactionValidity {
+		validate(call)
+	}
+
+	#[test_case(proxy_call(remark_call()) =>  Ok(ValidTransaction::default()); "Proxy non-bridge call should be allowed" )]
+	#[test_case(proxy_announced_call(remark_call()) =>  Ok(ValidTransaction::default()); "Proxy announced non-bridge call should be allowed" )]
+	#[test_case(multisig_call(remark_call()) =>  Ok(ValidTransaction::default()); "Multisig non-bridge call should be allowed" )]
+	#[test_case(multisig_threshold_1_call(remark_call()) =>  Ok(ValidTransaction::default()); "Multisig threshold 1 non-bridge call should be allowed" )]
+	#[test_case(scheduler_call(remark_call()) =>  Ok(ValidTransaction::default()); "Scheduler non-bridge call should be allowed" )]
+	fn test_wrapped_non_bridge_call_is_allowed(call: RuntimeCall) -> TransactionValidity {
+		validate(call)
 	}
 }

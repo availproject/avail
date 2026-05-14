@@ -6,17 +6,13 @@ use avail_core::data_proof::{tx_uid, AddressedMessage};
 use sp_runtime::OpaqueExtrinsic;
 
 use da_control::Call as DACall;
-use pallet_multisig::Call as MultisigCall;
-use pallet_proxy::Call as ProxyCall;
 use pallet_vector::Call as VectorCall;
 use sp_core::H256;
 use sp_std::collections::btree_map::BTreeMap;
 use sp_std::vec::Vec;
 
-const MAX_FILTER_ITERATIONS: usize = 3;
-
 /// Filters and extracts data from `DataAvailability::submit_blob_metadata` or `Vector::send_message` calls.
-/// Handles N levels of nesting in case those calls are wrapped in proxy / multisig calls.
+/// Bridge messages are only extracted from direct `Vector::send_message` calls.
 impl HeaderExtensionDataFilter for Runtime {
 	fn filter(
 		post_inherent_info: PostInherentInfo,
@@ -29,33 +25,18 @@ impl HeaderExtensionDataFilter for Runtime {
 			Ok(unchecked_extrinsic) => {
 				let maybe_caller = unchecked_get_caller(&unchecked_extrinsic);
 
-				let (final_call, nb_iterations) = extract_final_call(&unchecked_extrinsic.function);
-
-				if nb_iterations > 0 {
-					match final_call {
-						Call::Vector(call) => filter_vector_call(
-							&post_inherent_info.failed,
-							maybe_caller.as_ref(),
-							call,
-							block,
-							tx_index,
-						),
-						_ => None,
-					}
-				} else {
-					match final_call {
-						Call::Vector(call) => filter_vector_call(
-							&post_inherent_info.failed,
-							maybe_caller.as_ref(),
-							call,
-							block,
-							tx_index,
-						),
-						Call::DataAvailability(call) => {
-							filter_da_call(call, tx_index, post_inherent_info)
-						},
-						_ => None,
-					}
+				match &unchecked_extrinsic.function {
+					Call::Vector(call) => filter_vector_call(
+						&post_inherent_info.failed,
+						maybe_caller.as_ref(),
+						call,
+						block,
+						tx_index,
+					),
+					Call::DataAvailability(call) => {
+						filter_da_call(call, tx_index, post_inherent_info)
+					},
+					_ => None,
 				}
 			},
 			Err(e) => {
@@ -200,31 +181,4 @@ fn filter_vector_call(
 		bridge_data,
 		..Default::default()
 	})
-}
-
-/// Recursively unwrap Proxy/Multisig calls up to `MAX_ITERATIONS` to find DA blob metadata or vector send-message calls.
-/// If we exceed `MAX_ITERATIONS`, we stop and return the current call.
-fn extract_final_call(mut call: &Call) -> (&Call, usize) {
-	let mut nb_iterations = 0;
-	for i in 0..MAX_FILTER_ITERATIONS {
-		nb_iterations = i;
-		match call {
-			Call::Proxy(proxy_call) => match proxy_call {
-				ProxyCall::proxy { call: inner, .. }
-				| ProxyCall::proxy_announced { call: inner, .. } => {
-					call = inner;
-				},
-				_ => break,
-			},
-			Call::Multisig(multisig_call) => match multisig_call {
-				MultisigCall::as_multi_threshold_1 { call: inner, .. }
-				| MultisigCall::as_multi { call: inner, .. } => {
-					call = inner;
-				},
-				_ => break,
-			},
-			_ => break,
-		}
-	}
-	(call, nb_iterations)
 }

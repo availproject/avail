@@ -9,7 +9,10 @@ use frame_system::{
 	CheckEra, CheckGenesis, CheckNonZeroSender, CheckNonce, CheckSpecVersion, CheckTxVersion,
 	CheckWeight,
 };
+use frame_support::weights::Weight;
 // use pallet_balances::Call as BalancesCall;
+use pallet_multisig::Call as MultisigCall;
+use pallet_proxy::Call as ProxyCall;
 use pallet_vector::Call as VectorCall;
 
 use avail_core::data_proof::AddressedMessage;
@@ -22,7 +25,7 @@ use hex_literal::hex;
 use pallet_transaction_payment::ChargeTransactionPayment;
 use sp_core::keccak_256;
 use sp_core::H256;
-use sp_keyring::AccountKeyring::Alice;
+use sp_keyring::AccountKeyring::{Alice, Bob};
 use sp_runtime::traits::Keccak256;
 use sp_runtime::{
 	generic::Era,
@@ -165,14 +168,38 @@ fn submit_blob_metadata(data: Vec<u8>) -> Vec<u8> {
 // }
 
 fn bridge_msg(data: Vec<u8>) -> Vec<u8> {
+	signed_extrinsic(bridge_msg_call(data))
+}
+
+fn bridge_msg_call(data: Vec<u8>) -> RuntimeCall {
 	let message = Message::ArbitraryMessage(BoundedData::truncate_from(data));
 	let to = H256::repeat_byte(0x01);
-	let function = VectorCall::send_message {
+	VectorCall::send_message {
 		message,
 		to,
 		domain: 2,
 	}
-	.into();
+	.into()
+}
+
+fn proxy_bridge_msg(data: Vec<u8>) -> Vec<u8> {
+	let function = RuntimeCall::Proxy(ProxyCall::proxy {
+		real: Bob.to_account_id().into(),
+		force_proxy_type: None,
+		call: Box::new(bridge_msg_call(data)),
+	});
+
+	signed_extrinsic(function)
+}
+
+fn multisig_bridge_msg(data: Vec<u8>) -> Vec<u8> {
+	let function = RuntimeCall::Multisig(MultisigCall::as_multi {
+		threshold: 2,
+		other_signatories: vec![Bob.to_account_id()],
+		maybe_timepoint: None,
+		call: Box::new(bridge_msg_call(data)),
+		max_weight: Weight::from_parts(1_000_000_000, 0),
+	});
 
 	signed_extrinsic(function)
 }
@@ -215,6 +242,15 @@ fn data_root_filter(extrinsics: &[Vec<u8>]) -> H256 {
 	new_test_ext().execute_with(|| {
 		HeaderExtensionBuilderData::from_raw_extrinsics::<Runtime>(0, extrinsics).data_root()
 	})
+}
+
+#[test_case(&[proxy_bridge_msg(hex!("47").to_vec())]; "proxy")]
+#[test_case(&[multisig_bridge_msg(hex!("47").to_vec())]; "multisig")]
+fn wrapped_bridge_send_message_is_not_filtered(extrinsics: &[Vec<u8>]) {
+	new_test_ext().execute_with(|| {
+		let data = HeaderExtensionBuilderData::from_raw_extrinsics::<Runtime>(0, extrinsics);
+		assert!(data.bridge_messages.is_empty());
+	});
 }
 
 // #[cfg(test)]
