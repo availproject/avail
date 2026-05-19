@@ -40,7 +40,7 @@ use pallet_tx_pause::RuntimeCallNameOf;
 use sp_core::{ConstU64, RuntimeDebug};
 use sp_runtime::{
 	generic::Era,
-	traits::{self, BlakeTwo256, Bounded, Convert, IdentityLookup, OpaqueKeys, Zero},
+	traits::{self, BlakeTwo256, Bounded, Convert, IdentityLookup, OpaqueKeys},
 	FixedPointNumber, FixedU128, Perbill, Permill, Perquintill,
 };
 
@@ -167,28 +167,13 @@ impl OnChargeTransaction<Runtime> for RtuOnChargeTransaction {
 		<FungibleAdapter<Balances, DealWithFees<Runtime>> as OnChargeTransaction<Runtime>>::LiquidityInfo;
 
 	fn withdraw_fee(
-		who: &AccountId,
-		call: &RuntimeCall,
-		dispatch_info: &traits::DispatchInfoOf<RuntimeCall>,
-		fee: Self::Balance,
-		tip: Self::Balance,
+		_who: &AccountId,
+		_call: &RuntimeCall,
+		_dispatch_info: &traits::DispatchInfoOf<RuntimeCall>,
+		_fee: Self::Balance,
+		_tip: Self::Balance,
 	) -> Result<Self::LiquidityInfo, sp_runtime::transaction_validity::TransactionValidityError> {
-		if tip.is_zero()
-			&& matches!(
-				call,
-				RuntimeCall::DataAvailability(da_control::Call::submit_data { .. })
-			) && da_control::Pallet::<Runtime>::is_submit_data_whitelisted(who)
-		{
-			return Ok(Default::default());
-		}
-
-		<FungibleAdapter<Balances, DealWithFees<Runtime>> as OnChargeTransaction<Runtime>>::withdraw_fee(
-			who,
-			call,
-			dispatch_info,
-			fee,
-			tip,
-		)
+		Ok(Default::default())
 	}
 
 	fn correct_and_deposit_fee(
@@ -855,6 +840,7 @@ impl Contains<RuntimeCall> for RtuHardCutoverCallFilter {
 			RuntimeCall::DataAvailability(da_control::Call::set_submit_data_whitelist {
 				..
 			}) => true,
+			RuntimeCall::Vector(pallet_vector::Call::failed_send_message_txs { .. }) => true,
 
 			RuntimeCall::Proxy(pallet_proxy::Call::proxy { call, .. }) => Self::contains(call),
 			RuntimeCall::Proxy(..) => false,
