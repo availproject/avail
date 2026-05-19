@@ -159,9 +159,9 @@ parameter_types! {
 	pub MaximumMultiplier: Multiplier = Bounded::max_value();
 }
 
-pub struct RtuOnChargeTransaction;
+pub struct FeeLessTransaction;
 
-impl OnChargeTransaction<Runtime> for RtuOnChargeTransaction {
+impl OnChargeTransaction<Runtime> for FeeLessTransaction {
 	type Balance = Balance;
 	type LiquidityInfo =
 		<FungibleAdapter<Balances, DealWithFees<Runtime>> as OnChargeTransaction<Runtime>>::LiquidityInfo;
@@ -204,7 +204,7 @@ impl pallet_transaction_payment::Config for Runtime {
 		MaximumMultiplier,
 	>;
 	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
-	type OnChargeTransaction = RtuOnChargeTransaction;
+	type OnChargeTransaction = FeeLessTransaction;
 	type OperationalFeeMultiplier = OperationalFeeMultiplier;
 	type RuntimeEvent = RuntimeEvent;
 	type WeightToFee = ConstantMultiplier<Balance, WeightFee>; // 1 weight = 10 picoAVAIL -> second_price = 10 AVAIL
@@ -814,12 +814,12 @@ impl pallet_tx_pause::Config for Runtime {
 
 /// Hard-cutover runtime filter.
 ///
-/// This keeps consensus/admin/governance paths live, allows direct DA submissions
-/// for the DA pallet whitelist, and blocks the ordinary economic/user-facing call
-/// surface at the runtime boundary.
-pub struct RtuHardCutoverCallFilter;
+/// This keeps consensus/governance paths live, allows direct DA submissions
+/// for the DA pallet for whitelisted accounts, and blocks the ordinary economic/user-facing
+/// calls at the runtime boundary.
+pub struct HardCutoverCallFilter;
 
-impl Contains<RuntimeCall> for RtuHardCutoverCallFilter {
+impl Contains<RuntimeCall> for HardCutoverCallFilter {
 	fn contains(call: &RuntimeCall) -> bool {
 		match call {
 			RuntimeCall::Timestamp(..) => true,
@@ -866,7 +866,7 @@ impl frame_system::Config for Runtime {
 	/// The identifier used to distinguish between accounts.
 	type AccountId = AccountId;
 	/// The basic call filter to use in dispatchable.
-	type BaseCallFilter = InsideBoth<RtuHardCutoverCallFilter, TxPause>;
+	type BaseCallFilter = InsideBoth<HardCutoverCallFilter, TxPause>;
 	/// The Block type used by the runtime
 	type Block = Block;
 	/// Maximum number of block number to block hash mappings to keep (oldest pruned first).
