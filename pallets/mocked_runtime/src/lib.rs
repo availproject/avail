@@ -141,7 +141,6 @@ impl frame_system::Config for Runtime {
 	type OnNewAccount = ();
 	type OnSetCode = ();
 	type PalletInfo = PalletInfo;
-	type Randomness = TestRandomness<Runtime>;
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeOrigin = RuntimeOrigin;

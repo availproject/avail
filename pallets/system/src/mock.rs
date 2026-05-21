@@ -114,7 +114,6 @@ impl Config for Test {
 	type AccountData = u32;
 	type HeaderExtensionBuilder =
 		frame_system::native::hosted_header_builder::da::HeaderExtensionBuilder<Test>;
-	// type Randomness = TestRandomness<Test>;
 	type Header = Header;
 	type HeaderExtensionDataFilter = ();
 	type Extrinsic = Extrinsic;

@@ -23,7 +23,6 @@ use codec::Encode;
 use frame_support::{derive_impl, traits::ConstU32};
 use frame_system::{
 	mocking::MockUncheckedExtrinsic, native::hosted_header_builder::da::HeaderExtensionBuilder,
-	test_utils::TestRandomness,
 };
 use sp_runtime::BuildStorage;
 
@@ -44,7 +43,6 @@ impl frame_system::Config for Test {
 	type HeaderExtensionBuilder = HeaderExtensionBuilder<Test>;
 	type OnSetCode = ();
 	type PalletInfo = PalletInfo;
-	type Randomness = TestRandomness<Test>;
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeOrigin = RuntimeOrigin;

@@ -600,10 +600,6 @@ pub mod pallet {
 		#[pallet::no_default]
 		type HeaderExtensionBuilder: native::hosted_header_builder::HeaderExtensionBuilder;
 
-		// /// Source of random seeds.
-		// #[pallet::no_default]
-		// type Randomness: Randomness<Self::Hash, BlockNumberFor<Self>>;
-
 		/// The aggregated event type of the runtime.
 		#[pallet::no_default_bounds]
 		type RuntimeEvent: Parameter
