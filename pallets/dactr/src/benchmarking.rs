@@ -2,6 +2,7 @@
 
 use super::*;
 use crate::Pallet;
+use codec::Decode;
 use frame_benchmarking::{v1::BenchmarkError, v2::*, whitelisted_caller};
 use frame_support::traits::Get;
 use frame_system::{Config as SystemConfig, RawOrigin};
@@ -126,6 +127,11 @@ mod benchmarks {
 					None
 				},
 				ownership: Vec::new(),
+				eval_proof: Some(vec![
+					0u8;
+					1 + ((i as usize) * ((650 * 1024) - 1))
+						/ ((n as usize).saturating_sub(1).max(1))
+				]),
 			})
 			.collect();
 

@@ -137,8 +137,8 @@ where
 	use substrate_frame_rpc_system::{System, SystemApiServer};
 	use substrate_state_trie_migration_rpc::{StateMigration, StateMigrationApiServer};
 
-	#[cfg(feature = "testing-environment")]
-	use testing_rpc::{TestingApiServer, TestingEnv};
+	// #[cfg(feature = "testing-environment")]
+	// use testing_rpc::{TestingApiServer, TestingEnv};
 
 	let mut io = RpcModule::new(());
 	let FullDeps {
@@ -217,8 +217,8 @@ where
 
 	io.merge(StateMigration::new(client.clone(), backend.clone()).into_rpc())?;
 
-	#[cfg(feature = "testing-environment")]
-	io.merge(TestingApiServer::into_rpc(TestingEnv))?;
+	// #[cfg(feature = "testing-environment")]
+	// io.merge(TestingApiServer::into_rpc(TestingEnv))?;
 
 	io.merge(GrandpaServer::into_rpc(
 		GrandpaJustifications::<C, Block>::new(client.clone()),

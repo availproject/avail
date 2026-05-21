@@ -50,6 +50,7 @@ sp-authority-discovery = { workspace = true, default-features = false }
 sc-authority-discovery = { workspace = true, default-features = false }
 kvdb = { workspace = true, default-features = false }
 kvdb-rocksdb = { workspace = true, default-features = false }
+rocksdb = { workspace = true, default-features = false, features = ["bindgen-runtime"] }
 tempfile = { workspace = true }
 jsonrpsee = { workspace = true }
 futures = { workspace = true }

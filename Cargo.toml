@@ -60,6 +60,7 @@ avail-blob = { path = "blob", default-features = false }
 try-runtime-core = { path = "utils/try-runtime-cli/core" }
 kvdb = { version = "0.13.0", default-features = false }
 kvdb-rocksdb = { version = "0.21.0", default-features = false }
+rocksdb = { version = "0.24.0", default-features = false, features = ["bindgen-runtime"] }
 
 # benchmarking
 criterion = { version = "0.8", default-features = false }

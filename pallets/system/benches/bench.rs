@@ -15,7 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{criterion_group, criterion_main, Criterion};
 use frame_support::{
 	construct_runtime, derive_impl, dispatch::DispatchClass, parameter_types, traits::ConstU32,
 	weights::Weight,
@@ -30,6 +30,7 @@ use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
 	BuildStorage, Perbill,
 };
+use std::hint::black_box;
 
 #[frame_support::pallet]
 mod module {

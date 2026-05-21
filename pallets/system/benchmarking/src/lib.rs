@@ -244,12 +244,8 @@ mod benchmarks {
 
 		#[block]
 		{
-			let _header = T::HeaderExtensionBuilder::build_extension(
-				app_extrinsics,
-				data_root,
-				block_length,
-				HeaderVersion::V4,
-			);
+			let _header =
+				T::HeaderExtensionBuilder::build_extension(app_extrinsics, data_root, block_length);
 		}
 
 		Ok(())
