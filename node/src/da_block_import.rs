@@ -135,20 +135,19 @@ where
 				if !skip_sync {
 					for da in submitted_blobs.iter() {
 						if let Some(eval_proof) = da.eval_proof.as_ref() {
-							avail_blob::validation::validate_fri_proof(
+							if let Err(e) = avail_blob::validation::validate_fri_proof(
 								da.size_bytes as usize,
 								ext.params_version,
 								&da.commitment,
 								&da.eval_point_seed,
 								&da.eval_claim,
 								eval_proof,
-							)
-							.map_err(|e| {
-								ConsensusError::ClientImport(format!(
+							) {
+								log::warn!(
 									"FRI proof validation failed for blob {:?}: {e}",
 									da.hash
-								))
-							})?;
+								);
+							}
 						}
 					}
 				}
