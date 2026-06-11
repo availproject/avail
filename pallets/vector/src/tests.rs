@@ -1,5 +1,8 @@
 use crate::{
-	mock::{new_test_ext, Balances, Bridge, RuntimeEvent, RuntimeOrigin, System, Test},
+	mock::{
+		new_test_ext, new_test_ext_with_vector_config, Balances, Bridge, RuntimeEvent,
+		RuntimeOrigin, System, Test,
+	},
 	state::Configuration,
 	storage_utils::MessageStatusEnum,
 	Broadcasters, ConfigurationStorage, Error, Event, ExecutionStateRoots, Head, Headers,
@@ -30,6 +33,35 @@ const SP1_VERIFICATION_KEY: [u8; 32] =
 	hex!("003ef077b6a82831a994a12a673901221ca1752080605189930748d0772d5c68");
 
 pub const PROOF_FILE: &str = "test/proof.bin";
+
+#[test]
+fn genesis_build_sets_light_client_state() {
+	let head = 9_437_184;
+	let period = 1152;
+	let updater = H256([1u8; 32]);
+	let sync_committee_hash = H256([2u8; 32]);
+	let sp1_verification_key = H256([3u8; 32]);
+
+	new_test_ext_with_vector_config(crate::GenesisConfig::<Test> {
+		slots_per_period: 8192,
+		period,
+		head,
+		updater,
+		sync_committee_hash,
+		sp1_verification_key,
+		whitelisted_domains: vec![2],
+		..Default::default()
+	})
+	.execute_with(|| {
+		assert_eq!(Head::<Test>::get(), head);
+		assert_eq!(Updater::<Test>::get(), updater);
+		assert_eq!(
+			SyncCommitteeHashes::<Test>::get(period),
+			sync_committee_hash
+		);
+		assert_eq!(SP1VerificationKey::<Test>::get(), sp1_verification_key);
+	});
+}
 
 fn get_valid_account_proof() -> ValidProof {
 	BoundedVec::truncate_from(vec![

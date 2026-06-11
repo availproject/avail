@@ -13,3 +13,7 @@ pub const GENESIS_VALIDATOR_ROOT: H256 = H256(hex!(
 pub const GENESIS_TIME: u64 = 1606824023;
 pub const SECONDS_PER_SLOT: u64 = 12;
 pub const SOURCE_CHAIN_ID: u64 = 1;
+pub const HEAD: u64 = 0;
+pub const UPDATER: H256 = H256::zero();
+pub const SYNC_COMMITTEE_HASH: H256 = H256::zero();
+pub const SP1_VERIFICATION_KEY: H256 = H256::zero();

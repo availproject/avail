@@ -69,6 +69,15 @@ impl vector_bridge::Config for Test {
 
 /// Create new externalities for `Vector` module tests.
 pub fn new_test_ext() -> sp_io::TestExternalities {
+	new_test_ext_with_vector_config(vector_bridge::GenesisConfig::<Test> {
+		whitelisted_domains: vec![2],
+		..Default::default()
+	})
+}
+
+pub fn new_test_ext_with_vector_config(
+	vector_config: vector_bridge::GenesisConfig<Test>,
+) -> sp_io::TestExternalities {
 	let mut t = RuntimeGenesisConfig::default()
 		.system
 		.build_storage()
@@ -81,12 +90,8 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	.assimilate_storage(&mut t)
 	.unwrap();
 
-	vector_bridge::GenesisConfig::<Test> {
-		whitelisted_domains: vec![2],
-		..Default::default()
-	}
-	.assimilate_storage(&mut t)
-	.unwrap();
+	vector_config.assimilate_storage(&mut t).unwrap();
+
 	let mut ext = sp_io::TestExternalities::new(t);
 	ext.execute_with(|| System::set_block_number(1));
 	ext
