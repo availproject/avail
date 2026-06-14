@@ -5,7 +5,8 @@ use da_runtime::{
 };
 use pallet_vector::constants::{
 	BROADCASTER, BROADCASTER_DOMAIN, FINALITY_THRESHOLD, GENESIS_TIME, GENESIS_VALIDATOR_ROOT,
-	PERIOD, SECONDS_PER_SLOT, SLOTS_PER_PERIOD, SOURCE_CHAIN_ID,
+	HEAD, PERIOD, SECONDS_PER_SLOT, SLOTS_PER_PERIOD, SOURCE_CHAIN_ID, SP1_VERIFICATION_KEY,
+	SYNC_COMMITTEE_HASH, UPDATER,
 };
 use sc_telemetry::TelemetryEndpoints;
 use serde_json::{json, Value};
@@ -122,10 +123,14 @@ pub fn runtime_genesis_config(
 			"finalityThreshold": FINALITY_THRESHOLD,
 			"genesisTime": GENESIS_TIME,
 			"genesisValidatorRoot": GENESIS_VALIDATOR_ROOT,
+			"head": HEAD,
 			"period": PERIOD,
 			"secondsPerSlot": SECONDS_PER_SLOT,
 			"slotsPerPeriod": SLOTS_PER_PERIOD,
+			"sp1VerificationKey": SP1_VERIFICATION_KEY,
 			"sourceChainId": SOURCE_CHAIN_ID,
+			"syncCommitteeHash": SYNC_COMMITTEE_HASH,
+			"updater": UPDATER,
 			"whitelistedDomains": vec![2],
 		},
 		"nominationPools": {

@@ -311,6 +311,10 @@ pub mod pallet {
 		pub genesis_time: u64,
 		pub seconds_per_slot: u64,
 		pub source_chain_id: u64,
+		pub head: u64,
+		pub updater: H256,
+		pub sync_committee_hash: H256,
+		pub sp1_verification_key: H256,
 		pub _phantom: PhantomData<T>,
 	}
 
@@ -341,6 +345,22 @@ pub mod pallet {
 			SecondsPerSlot::<T>::set(self.seconds_per_slot);
 
 			SourceChainId::<T>::set(self.source_chain_id);
+
+			if self.head != 0 {
+				Head::<T>::set(self.head);
+			}
+
+			if self.updater != H256::zero() {
+				Updater::<T>::set(self.updater);
+			}
+
+			if self.sync_committee_hash != H256::zero() {
+				SyncCommitteeHashes::<T>::insert(self.period, self.sync_committee_hash);
+			}
+
+			if self.sp1_verification_key != H256::zero() {
+				SP1VerificationKey::<T>::set(self.sp1_verification_key);
+			}
 		}
 	}
 
