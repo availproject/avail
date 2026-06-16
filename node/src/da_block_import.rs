@@ -113,7 +113,7 @@ where
 	fn ensure_valid_header_extension(
 		&self,
 		block: &BlockImportParams<B>,
-		extracted: &HeaderExtensionBuilderData,
+		extracted: &mut HeaderExtensionBuilderData,
 		skip_sync: bool,
 	) -> Result<(), ConsensusError> {
 		let extrinsics = block.body.clone().unwrap_or_default();
@@ -124,7 +124,6 @@ where
 		let data_root = api
 			.build_data_root(parent_hash, block_number, extrinsics.clone())
 			.map_err(data_root_fail)?;
-		let submitted_blobs = extracted.data_submissions.clone();
 		let regenerated_extension = match &block.header.extension {
 			HeaderExtension::V1(ext) => {
 				// FRI eval proofs are best-effort import-time data: blob-owner attestations are the
@@ -133,26 +132,28 @@ where
 				// When a proof is included we still verify it here, but blocks remain importable
 				// without it.
 				if !skip_sync {
-					for da in submitted_blobs.iter() {
+					for da in extracted.data_submissions.iter_mut() {
 						if let Some(eval_proof) = da.eval_proof.as_ref() {
-							avail_blob::validation::validate_fri_proof(
+							if let Err(e) = avail_blob::validation::validate_fri_proof(
 								da.size_bytes as usize,
 								ext.params_version,
 								&da.commitment,
 								&da.eval_point_seed,
 								&da.eval_claim,
 								eval_proof,
-							)
-							.map_err(|e| {
-								ConsensusError::ClientImport(format!(
-									"FRI proof validation failed for blob {:?}: {e}",
-									da.hash
-								))
-							})?;
+							) {
+								log::warn!(
+									"FRI proof validation failed for blob {:?} in block #{:?}; dropping optional proof and continuing import: {e}",
+									da.hash,
+									block_number
+								);
+								da.eval_proof = None;
+							}
 						}
 					}
 				}
 
+				let submitted_blobs = extracted.data_submissions.clone();
 				build_extension::build_extension(submitted_blobs, data_root, ext.params_version)
 			},
 		};
@@ -248,7 +249,7 @@ where
 			self.extract_blob_summaries(&block)?
 		};
 
-		let extracted = if skip_sync {
+		let mut extracted = if skip_sync {
 			None
 		} else {
 			let extrinsics = block.body.clone().unwrap_or_default();
@@ -262,7 +263,7 @@ where
 			self.ensure_valid_header_extension(
 				&block,
 				extracted
-					.as_ref()
+					.as_mut()
 					.expect("extracted is present when skip_sync is false; qed"),
 				skip_sync,
 			)?;

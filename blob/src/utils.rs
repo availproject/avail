@@ -427,12 +427,21 @@ pub async fn get_blob_txs_summary(
 			size,
 			blob_hash,
 			commitment,
+			eval_point_seed,
+			eval_claim,
 			..
 		}) = tx
 		{
 			let maybe_blob_metadata = blob_metadata.get(&blob_hash);
-			let blob_summary =
-				get_block_tx_summary(blob_hash, commitment, maybe_blob_metadata, tx_index, size);
+			let blob_summary = get_block_tx_summary(
+				blob_hash,
+				commitment,
+				eval_point_seed,
+				eval_claim,
+				maybe_blob_metadata,
+				tx_index,
+				size,
+			);
 			if blob_summary.success {
 				total_size += size;
 			}
@@ -446,6 +455,8 @@ pub async fn get_blob_txs_summary(
 fn get_block_tx_summary(
 	blob_hash: BlobHash,
 	commitment: Vec<u8>,
+	eval_point_seed: [u8; 32],
+	eval_claim: [u8; 16],
 	blob_metadata: Option<&(BlobMetadata, Vec<OwnershipEntry>)>,
 	tx_index: u32,
 	size: u64,
@@ -487,7 +498,15 @@ fn get_block_tx_summary(
 		return blob_summary;
 	}
 
-	blob_summary.eval_proof = meta.fri_eval_proof.clone();
+	if meta.eval_point_seed == eval_point_seed && meta.eval_claim == eval_claim {
+		blob_summary.eval_proof = meta.fri_eval_proof.clone();
+	} else if meta.fri_eval_proof.is_some() {
+		tracing::warn!(
+			?blob_hash,
+			tx_index,
+			"Skipping stored FRI eval proof because metadata eval seed or claim differs from the transaction"
+		);
+	}
 
 	blob_summary.success = true;
 

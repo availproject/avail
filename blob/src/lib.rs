@@ -243,6 +243,15 @@ async fn handle_blob_received_notification<Block>(
 	// Get the existing blob or create a new one
 	let mut blob_meta = if let Some(existing) = maybe_metadata {
 		let mut merged = existing;
+		let same_eval_tuple = merged.eval_point_seed == blob_received.eval_point_seed
+			&& merged.eval_claim == blob_received.eval_claim;
+
+		if !same_eval_tuple {
+			merged.eval_point_seed = blob_received.eval_point_seed;
+			merged.eval_claim = blob_received.eval_claim;
+			merged.fri_eval_proof = None;
+			merged.fri_eval_prover_index = None;
+		}
 
 		// Fill missing notification data
 		if !merged.is_notified {
@@ -254,7 +263,7 @@ async fn handle_blob_received_notification<Block>(
 		}
 
 		// allow enrichment with eval proof
-		if merged.fri_eval_proof.is_none() && blob_received.fri_eval_proof.is_some() {
+		if blob_received.fri_eval_proof.is_some() {
 			merged.fri_eval_proof = blob_received.fri_eval_proof;
 			merged.fri_eval_prover_index = blob_received.fri_eval_prover_index;
 		}

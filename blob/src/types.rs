@@ -202,6 +202,12 @@ pub struct BlobMetadata {
 	pub fri_eval_prover_index: Option<u32>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, Serialize, Deserialize)]
+pub struct BlobEvalProof {
+	pub eval_proof: Vec<u8>,
+	pub prover_index: Option<u32>,
+}
+
 /// FriData will store Fri scheme related data for blob
 #[derive(Debug, Clone, PartialEq, Eq, Encode, Decode, Serialize, Deserialize)]
 pub struct FriData {
