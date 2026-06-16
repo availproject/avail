@@ -9,7 +9,7 @@ use tempfile::TempDir;
 use ttl_cache::TtlCache;
 
 use crate::{
-	types::{Blob, BlobHash, BlobInfo, BlobMetadata, BlockHash, OwnershipEntry},
+	types::{Blob, BlobEvalProof, BlobHash, BlobInfo, BlobMetadata, BlockHash, OwnershipEntry},
 	BLOB_CACHE_DURATION, LOG_TARGET, MAX_BLOBS_IN_CACHE,
 };
 
@@ -32,9 +32,11 @@ impl RocksdbBlobStore {
 	pub const COL_BLOB_BY_BLOCK: u32 = 7;
 	// pending blobs by block: BlockHash -> Vec<BlobInfo>
 	pub const COL_BLOB_PENDING_BY_BLOCK: u32 = 8;
+	// eval proofs by blob_hash, eval seed, and eval claim
+	pub const COL_BLOB_EVAL_PROOF: u32 = 9;
 
 	pub fn open(path: impl AsRef<Path>) -> Result<Self> {
-		let num_columns = 9;
+		let num_columns = 10;
 		let db_config = DatabaseConfig::with_columns(num_columns);
 		let db = Database::open(&db_config, path.as_ref())?;
 		Ok(RocksdbBlobStore {
@@ -54,16 +56,35 @@ impl Default for RocksdbBlobStore {
 impl StorageApiT for RocksdbBlobStore {
 	fn insert_blob_metadata(&self, blob_metadata: &BlobMetadata) -> Result<()> {
 		if let Some(existing) = self.get_blob_metadata(&blob_metadata.hash).ok().flatten() {
+			let same_eval_tuple = existing.eval_point_seed == blob_metadata.eval_point_seed
+				&& existing.eval_claim == blob_metadata.eval_claim;
+
 			// existing already has eval proof
-			if existing.fri_eval_proof.is_some() {
+			if existing.fri_eval_proof.is_some() && same_eval_tuple {
 				return Ok(());
 			}
 
 			// existing has no eval proof AND incoming also has no eval proof
-			if existing.is_notified && blob_metadata.fri_eval_proof.is_none() {
+			if existing.is_notified && blob_metadata.fri_eval_proof.is_none() && same_eval_tuple {
 				return Ok(());
 			}
 		}
+
+		if let Some(eval_proof) = blob_metadata.fri_eval_proof.as_ref() {
+			self.insert_blob_eval_proof(
+				&blob_metadata.hash,
+				&blob_metadata.eval_point_seed,
+				&blob_metadata.eval_claim,
+				&BlobEvalProof {
+					eval_proof: eval_proof.clone(),
+					prover_index: blob_metadata.fri_eval_prover_index,
+				},
+			)?;
+		}
+
+		let mut blob_metadata = blob_metadata.clone();
+		blob_metadata.fri_eval_proof = None;
+		blob_metadata.fri_eval_prover_index = None;
 
 		let mut tx = DBTransaction::new();
 		tx.put(
@@ -80,8 +101,23 @@ impl StorageApiT for RocksdbBlobStore {
 			.get(Self::COL_BLOB_METADATA, &blob_meta_key(hash))?
 			.map(|bytes| {
 				let mut slice = bytes.as_slice();
-				BlobMetadata::decode(&mut slice)
-					.map_err(|_| anyhow!("failed to decode blob metadata from the store"))
+				let mut metadata = BlobMetadata::decode(&mut slice)
+					.map_err(|_| anyhow!("failed to decode blob metadata from the store"))?;
+				match self.get_blob_eval_proof(
+					&metadata.hash,
+					&metadata.eval_point_seed,
+					&metadata.eval_claim,
+				)? {
+					Some(eval_proof) => {
+						metadata.fri_eval_proof = Some(eval_proof.eval_proof);
+						metadata.fri_eval_prover_index = eval_proof.prover_index;
+					},
+					None => {
+						metadata.fri_eval_proof = None;
+						metadata.fri_eval_prover_index = None;
+					},
+				}
+				Ok(metadata)
 			})
 			.transpose()
 	}
@@ -91,6 +127,42 @@ impl StorageApiT for RocksdbBlobStore {
 			.db
 			.get(Self::COL_BLOB_METADATA, &blob_meta_key(hash))?
 			.is_some())
+	}
+
+	fn insert_blob_eval_proof(
+		&self,
+		hash: &BlobHash,
+		eval_point_seed: &[u8; 32],
+		eval_claim: &[u8; 16],
+		eval_proof: &BlobEvalProof,
+	) -> Result<()> {
+		let mut tx = DBTransaction::new();
+		tx.put(
+			Self::COL_BLOB_EVAL_PROOF,
+			&blob_eval_proof_key(hash, eval_point_seed, eval_claim),
+			&eval_proof.encode(),
+		);
+		self.db.write(tx)?;
+		Ok(())
+	}
+
+	fn get_blob_eval_proof(
+		&self,
+		hash: &BlobHash,
+		eval_point_seed: &[u8; 32],
+		eval_claim: &[u8; 16],
+	) -> Result<Option<BlobEvalProof>> {
+		self.db
+			.get(
+				Self::COL_BLOB_EVAL_PROOF,
+				&blob_eval_proof_key(hash, eval_point_seed, eval_claim),
+			)?
+			.map(|bytes| {
+				let mut slice = bytes.as_slice();
+				BlobEvalProof::decode(&mut slice)
+					.map_err(|_| anyhow!("failed to decode blob eval proof from the store"))
+			})
+			.transpose()
 	}
 
 	fn insert_blob_retry(&self, hash: &BlobHash, count: u16) -> Result<()> {
@@ -286,6 +358,9 @@ impl StorageApiT for RocksdbBlobStore {
 
 			// remove blob
 			tx.delete(Self::COL_BLOB, &blob_key(hash));
+
+			// remove blob eval proofs
+			tx.delete_prefix(Self::COL_BLOB_EVAL_PROOF, &blob_eval_proof_key_prefix(hash));
 
 			// remove blob ownership
 			tx.delete_prefix(Self::COL_BLOB_OWNERSHIP, &blob_ownership_key_prefix(hash));

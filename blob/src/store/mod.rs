@@ -1,5 +1,6 @@
 use crate::types::{
-	Blob, BlobHash, BlobInfo, BlobMetadata, BlockHash, CompressedBlob, OwnershipEntry,
+	Blob, BlobEvalProof, BlobHash, BlobInfo, BlobMetadata, BlockHash, CompressedBlob,
+	OwnershipEntry,
 };
 use anyhow::Result;
 
@@ -15,6 +16,19 @@ pub trait StorageApiT: Send + Sync {
 	fn insert_blob_metadata(&self, blob_metadata: &BlobMetadata) -> Result<()>;
 	fn get_blob_metadata(&self, hash: &BlobHash) -> Result<Option<BlobMetadata>>;
 	fn blob_metadata_exists(&self, hash: &BlobHash) -> Result<bool>;
+	fn insert_blob_eval_proof(
+		&self,
+		hash: &BlobHash,
+		eval_point_seed: &[u8; 32],
+		eval_claim: &[u8; 16],
+		eval_proof: &BlobEvalProof,
+	) -> Result<()>;
+	fn get_blob_eval_proof(
+		&self,
+		hash: &BlobHash,
+		eval_point_seed: &[u8; 32],
+		eval_claim: &[u8; 16],
+	) -> Result<Option<BlobEvalProof>>;
 
 	// Blobs
 	fn insert_blob(&self, blob_hash: &BlobHash, blob: &CompressedBlob) -> Result<()>;
@@ -107,6 +121,24 @@ pub(crate) fn blob_count_key(hash: &BlobHash) -> Vec<u8> {
 #[inline]
 pub(crate) fn blob_key(hash: &BlobHash) -> Vec<u8> {
 	hash.0.to_vec()
+}
+
+#[inline]
+pub(crate) fn blob_eval_proof_key_prefix(hash: &BlobHash) -> Vec<u8> {
+	hash.0.to_vec()
+}
+
+#[inline]
+pub(crate) fn blob_eval_proof_key(
+	hash: &BlobHash,
+	eval_point_seed: &[u8; 32],
+	eval_claim: &[u8; 16],
+) -> Vec<u8> {
+	let mut k = Vec::with_capacity(80);
+	k.extend_from_slice(&hash.0);
+	k.extend_from_slice(eval_point_seed);
+	k.extend_from_slice(eval_claim);
+	k
 }
 
 #[inline]

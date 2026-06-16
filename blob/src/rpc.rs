@@ -1376,6 +1376,12 @@ pub async fn store_and_gossip_blob(
 			fri_eval_prover_index: None,
 		}
 	});
+	let same_eval_tuple = blob_metadata.eval_point_seed == fri_data.eval_point_seed
+		&& blob_metadata.eval_claim == fri_data.eval_claim;
+	if !same_eval_tuple {
+		blob_metadata.fri_eval_proof = None;
+		blob_metadata.fri_eval_prover_index = None;
+	}
 
 	// It might be a new blob or an old one being resubmitted, we still update most of the values
 	let validators = match friends
