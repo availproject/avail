@@ -773,6 +773,8 @@ pub mod pallet {
 		pub fn enable_mock(origin: OriginFor<T>, value: bool) -> DispatchResult {
 			ensure_root(origin)?;
 
+			ensure!(SourceChainId::<T>::get() != 1, Error::<T>::MockIsNotEnabled);
+
 			MockEnabled::<T>::set(value);
 			Self::deposit_event(Event::MockEnabled { value });
 
@@ -788,6 +790,7 @@ pub mod pallet {
 			public_values: PublicValuesInput,
 		) -> DispatchResultWithPostInfo {
 			ensure!(MockEnabled::<T>::get(), Error::<T>::MockIsNotEnabled);
+			ensure!(SourceChainId::<T>::get() != 1, Error::<T>::MockIsNotEnabled);
 
 			let sender: [u8; 32] = ensure_signed(origin)?.into();
 			let updater = Updater::<T>::get();
