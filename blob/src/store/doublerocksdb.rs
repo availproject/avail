@@ -199,7 +199,7 @@ impl StorageApiT for DoubleRocksdbBlobStore {
 				let blob = Blob {
 					blob_hash: hash.clone(),
 					size: raw.len() as u64,
-					data: raw,
+					data: raw.to_vec(),
 				};
 				tracing::info!(
 					"GET_BLOB[Double] - Reconstruction took - {:?} - hash: {:?}",
