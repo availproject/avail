@@ -343,6 +343,11 @@ impl StorageApiT for RocksdbBlobStore {
 		);
 
 		self.db.write(tx)?;
+		if let Ok(mut cache) = self.cache.lock() {
+			for hash in hashes {
+				cache.remove(hash);
+			}
+		}
 		Ok(())
 	}
 
