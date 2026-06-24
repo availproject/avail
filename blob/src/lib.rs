@@ -997,13 +997,15 @@ async fn handle_blob_stored_notification<Block>(
 			.ok()
 			.flatten();
 		if existing_expiry.is_none() {
-			let (block_number, block_hash) = match blob_handle.client.header(blob_stored.hash) {
-				Ok(Some(h)) => (h.number, h.hash()),
-				_ => (
-					blob_handle.client.info().finalized_number,
-					blob_handle.client.info().finalized_hash,
-				),
-			};
+			// since we block_hash & number to add the expiry, we can use finalised_block hash observed during blob handling
+			let (block_number, block_hash) =
+				match blob_handle.client.header(blob_stored.finalized_block_hash) {
+					Ok(Some(h)) => (h.number, h.hash()),
+					_ => (
+						blob_handle.client.info().finalized_number,
+						blob_handle.client.info().finalized_hash,
+					),
+				};
 			let block_number: u64 = block_number.saturated_into();
 
 			let blob_runtime_params = match blob_handle
