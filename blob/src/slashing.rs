@@ -111,8 +111,7 @@ where
 	)
 }
 
-/// Checks whether the validator has enough free balance to cover the required blob offence deposit.
-/// Returns `true` if the validator can afford the deposit, otherwise `false`.
+/// Returns how many blob offence deposits the validator can afford.
 fn check_has_sufficient_balance(
 	client: &Arc<FullClient>,
 	imported_block_hash: H256,
@@ -138,7 +137,11 @@ fn check_has_sufficient_balance(
 		})
 		.unwrap_or(0);
 
-	free_balance % required_deposit
+	if required_deposit == 0 {
+		return u128::MAX;
+	}
+
+	free_balance / required_deposit
 }
 
 fn create_blob_offence(
