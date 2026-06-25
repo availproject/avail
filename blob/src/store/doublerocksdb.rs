@@ -195,16 +195,18 @@ impl StorageApiT for DoubleRocksdbBlobStore {
 		match self.get_raw_blob(hash)? {
 			Some(compressed_blob) => {
 				let timer = std::time::Instant::now();
-				let data = compressed_blob.data()?;
-				let mut slice = data.as_slice();
-				let decoded = Blob::decode(&mut slice)
-					.map_err(|_| anyhow!("failed to decode blob from the blob store"))?;
+				let raw = compressed_blob.data()?;
+				let blob = Blob {
+					blob_hash: hash.clone(),
+					size: raw.len() as u64,
+					data: raw.to_vec(),
+				};
 				tracing::info!(
-					"GET_BLOB[Double] - Decoding took - {:?} - hash: {:?}",
+					"GET_BLOB[Double] - Reconstruction took - {:?} - hash: {:?}",
 					timer.elapsed(),
 					hash
 				);
-				Ok(Some(decoded))
+				Ok(Some(blob))
 			},
 			None => Ok(None),
 		}
@@ -371,6 +373,11 @@ impl StorageApiT for DoubleRocksdbBlobStore {
 
 		self.db_meta.write(tx_meta)?;
 		self.db_blob.write(tx_blob)?;
+		if let Ok(mut cache) = self.cache.lock() {
+			for hash in hashes {
+				cache.remove(hash);
+			}
+		}
 		Ok(())
 	}
 
