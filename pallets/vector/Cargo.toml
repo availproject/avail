@@ -21,11 +21,6 @@ sp-std = { workspace = true, default-features = false }
 sp-core = { workspace = true, default-features = false }
 frame-benchmarking = { workspace = true, default-features = false, optional = true }
 sp1-verifier = { version = "6.3.1", default-features = false }
-# sp1-verifier v6 transitively pulls getrandom 0.2 (via rand/rand_core) into the
-# no_std runtime build. wasm32-unknown-unknown has no default getrandom backend, so
-# enable the `custom` feature and register a never-called shim (see src/lib.rs) so
-# the runtime wasm links. On-chain Groth16 verification never requests randomness.
-getrandom = { version = "0.2", default-features = false, features = ["custom"] }
 alloy-sol-types = { version = "0.8.12", default-features = false }
 
 ark-bn254.workspace = true
@@ -41,6 +36,15 @@ rlp.workspace = true
 primitive-types.workspace = true
 ethabi.workspace = true
 
+[target.'cfg(all(target_arch = "wasm32", target_os = "unknown"))'.dependencies]
+# sp1-verifier v6 transitively pulls getrandom 0.2 (via rand/rand_core) into the
+# no_std runtime build. wasm32-unknown-unknown has no default getrandom backend, so
+# enable the `custom` feature and register a never-called shim (see src/lib.rs) so
+# the runtime wasm links. On-chain Groth16 verification never requests randomness.
+getrandom = { version = "0.2", default-features = false, features = ["custom"] }
+
+[target.'cfg(not(all(target_arch = "wasm32", target_os = "unknown")))'.dependencies]
+getrandom = { version = "0.2", default-features = false }
 
 [dev-dependencies]
 pallet-balances = { workspace = true, default-features = false, features = ["std"] }
@@ -56,7 +60,9 @@ std = [
 	"frame-benchmarking?/std",
 	"frame-support/std",
 	"frame-system/std",
+	"getrandom/std",
 	"scale-info/std",
+	"sp1-verifier/std",
 	"sp-core/std",
 	"sp-io/std",
 	"sp-runtime/std",

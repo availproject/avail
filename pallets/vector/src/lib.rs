@@ -37,8 +37,10 @@ pub use pallet::*;
 // source so the runtime wasm links; on-chain Groth16 verification is deterministic
 // and never requests randomness. The registration only takes effect on
 // wasm32-unknown-unknown; on all other targets getrandom uses its OS backend.
+#[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
 getrandom::register_custom_getrandom!(unsupported_getrandom);
 
+#[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
 fn unsupported_getrandom(_buf: &mut [u8]) -> Result<(), getrandom::Error> {
 	Err(getrandom::Error::UNSUPPORTED)
 }
