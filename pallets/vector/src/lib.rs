@@ -32,6 +32,17 @@ mod weights;
 
 pub use pallet::*;
 
+// sp1-verifier v6 transitively depends on getrandom 0.2, which has no backend on
+// wasm32-unknown-unknown (the runtime target). Register a never-called custom
+// source so the runtime wasm links; on-chain Groth16 verification is deterministic
+// and never requests randomness. The registration only takes effect on
+// wasm32-unknown-unknown; on all other targets getrandom uses its OS backend.
+getrandom::register_custom_getrandom!(unsupported_getrandom);
+
+fn unsupported_getrandom(_buf: &mut [u8]) -> Result<(), getrandom::Error> {
+	Err(getrandom::Error::UNSUPPORTED)
+}
+
 sol! {
 	#[derive(Debug)]
 	 struct ProofOutputs {

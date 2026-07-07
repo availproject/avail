@@ -20,7 +20,12 @@ sp-runtime = { workspace = true, default-features = false }
 sp-std = { workspace = true, default-features = false }
 sp-core = { workspace = true, default-features = false }
 frame-benchmarking = { workspace = true, default-features = false, optional = true }
-sp1-verifier = { version = "5.0.0", default-features = false }
+sp1-verifier = { version = "6.3.1", default-features = false }
+# sp1-verifier v6 transitively pulls getrandom 0.2 (via rand/rand_core) into the
+# no_std runtime build. wasm32-unknown-unknown has no default getrandom backend, so
+# enable the `custom` feature and register a never-called shim (see src/lib.rs) so
+# the runtime wasm links. On-chain Groth16 verification never requests randomness.
+getrandom = { version = "0.2", default-features = false, features = ["custom"] }
 alloy-sol-types = { version = "0.8.12", default-features = false }
 
 ark-bn254.workspace = true
@@ -40,7 +45,7 @@ ethabi.workspace = true
 [dev-dependencies]
 pallet-balances = { workspace = true, default-features = false, features = ["std"] }
 pallet-timestamp = { workspace = true, default-features = false }
-sp1-sdk = { version = "5.0.0", default-features = false }
+sp1-sdk = { version = "6.3.1", default-features = false }
 
 [features]
 default = [ "std" ]

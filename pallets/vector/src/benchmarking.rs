@@ -167,7 +167,7 @@ pub const ROTATE_VK: &str = r#"{"vk_json":{
 // Generated with SP1 Helios https://github.com/succinctlabs/sp1-helios/blob/main/README.md
 // cargo prove key —-elf (sp1 helios elf) in SP1 Helios
 const SP1_VERIFICATION_KEY: [u8; 32] =
-	hex!("003ef077b6a82831a994a12a673901221ca1752080605189930748d0772d5c68");
+	hex!("003c9ecfe3b5678b34eccbc399ef1bb99c0e965075fcf0fbfaaa0e738eb76fff");
 
 #[benchmarks(where
 [u8; 32]: From << T as frame_system::Config >::AccountId >,

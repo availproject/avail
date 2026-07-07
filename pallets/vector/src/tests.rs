@@ -33,7 +33,7 @@ const TEST_SENDER_ACCOUNT: AccountId32 = AccountId32::new(TEST_SENDER_VEC);
 // Generated with SP1 Helios https://github.com/succinctlabs/sp1-helios/blob/main/README.md
 // cargo prove key —-elf (sp1 helios elf) in SP1 Helios
 const SP1_VERIFICATION_KEY: [u8; 32] =
-	hex!("003ef077b6a82831a994a12a673901221ca1752080605189930748d0772d5c68");
+	hex!("003c9ecfe3b5678b34eccbc399ef1bb99c0e965075fcf0fbfaaa0e738eb76fff");
 
 pub const PROOF_FILE: &str = "test/proof.bin";
 
@@ -1424,18 +1424,18 @@ fn test_fulfill_successfully() {
 		let _proof_outputs: ProofOutputs = SolValue::abi_decode(&public_inputs, true).unwrap();
 		let slots_per_period = 8192;
 		let finality_threshold = 342u16;
-		let last_slot = 7762303u64;
+		let last_slot = 10640479u64;
 		let current_period = last_slot / slots_per_period;
 		Head::<Test>::set(last_slot);
 
 		SyncCommitteeHashes::<Test>::set(
 			current_period,
 			H256(hex!(
-				"42839f47fdc746dc26ca1c2641262d5b997c7f0f9f78c4b2666a38785d872886"
+				"b036b217b716c0e620de4f3f7b52a7176bdee2606721aefa80fde52b1701d5ba"
 			)),
 		);
 
-		let new_head = 7762304u64;
+		let new_head = 10640480u64;
 
 		ConfigurationStorage::<Test>::set(Configuration {
 			slots_per_period,
@@ -1456,14 +1456,14 @@ fn test_fulfill_successfully() {
 		let header = Headers::<Test>::get(new_head);
 		assert_eq!(
 			H256(hex!(
-				"5559433ab3226e0ce900f9de94a373d61764cc297894b59fb4dc36fed55e3ae7"
+				"590b7ae9567ad363e4a3f07fbf9cfa0578958f401258f096c5b7734a841af9dc"
 			)),
 			header
 		);
 		let execution_state_root = ExecutionStateRoots::<Test>::get(new_head);
 		assert_eq!(
 			H256(hex!(
-				"5311df8b9bc4c07042a4f50404d05b95af459e6fc0fd6ebdeb4660f1291e8f94"
+				"37ca0cb8e709ef890bf7cdc4c5389a9bd01b6fe36ab1f9c0e20b01d21ed9d4e2"
 			)),
 			execution_state_root
 		);
@@ -1471,7 +1471,7 @@ fn test_fulfill_successfully() {
 		let sync_committee_hash = SyncCommitteeHashes::<Test>::get(new_head / 8192);
 		assert_eq!(
 			H256(hex!(
-				"42839f47fdc746dc26ca1c2641262d5b997c7f0f9f78c4b2666a38785d872886"
+				"b036b217b716c0e620de4f3f7b52a7176bdee2606721aefa80fde52b1701d5ba"
 			)),
 			sync_committee_hash
 		);
@@ -1479,7 +1479,7 @@ fn test_fulfill_successfully() {
 		let next_sync_committee_hash = SyncCommitteeHashes::<Test>::get((new_head / 8192) + 1);
 		assert_eq!(
 			H256(hex!(
-				"bd0714ec7bf95f99eb2c432e334471c45bd133d57a60a8554dda99afc9757a05"
+				"5ecdf307a5de4411d8f5fc35f0f50ca1e16cbdb3aa094252b46b58ec6f7bb52a"
 			)),
 			next_sync_committee_hash
 		);
@@ -1497,13 +1497,13 @@ fn test_fulfill_successfully_mock_enabled() {
 		SP1VerificationKey::<Test>::set(H256(SP1_VERIFICATION_KEY));
 		let slots_per_period = 8192;
 		let finality_threshold = 342u16;
-		let last_slot = 7762302u64;
+		let last_slot = 10640478u64;
 		let current_period = last_slot / slots_per_period;
 		Head::<Test>::set(last_slot);
 		SyncCommitteeHashes::<Test>::set(
 			current_period,
 			H256(hex!(
-				"42839f47fdc746dc26ca1c2641262d5b997c7f0f9f78c4b2666a38785d872886"
+				"b036b217b716c0e620de4f3f7b52a7176bdee2606721aefa80fde52b1701d5ba"
 			)),
 		);
 
@@ -1586,14 +1586,14 @@ fn test_fulfill_successfully_sync_committee_not_set() {
 		let proof_outputs: ProofOutputs = SolValue::abi_decode(&public_inputs, true).unwrap();
 		let slots_per_period = 8192;
 		let finality_threshold = 342u16;
-		let last_slot = 7762303u64;
+		let last_slot = 10640479u64;
 		let current_period = last_slot / slots_per_period;
 		Head::<Test>::set(last_slot);
 
 		SyncCommitteeHashes::<Test>::set(
 			current_period,
 			H256(hex!(
-				"42839f47fdc746dc26ca1c2641262d5b997c7f0f9f78c4b2666a38785d872886"
+				"b036b217b716c0e620de4f3f7b52a7176bdee2606721aefa80fde52b1701d5ba"
 			)),
 		);
 
@@ -1612,7 +1612,7 @@ fn test_fulfill_successfully_sync_committee_not_set() {
 		);
 
 		assert_ok!(ok);
-		let new_head = 7762304u64;
+		let new_head = 10640480u64;
 
 		let header = Headers::<Test>::get(new_head);
 
@@ -1701,13 +1701,13 @@ fn test_fulfill_incorrect_proof_output() {
 		let proof_outputs: ProofOutputs = SolValue::abi_decode(&proof_outputs_vec, true).unwrap();
 		let slots_per_period = 8192;
 		let finality_threshold = 342u16;
-		let last_slot = 7762303u64;
+		let last_slot = 10640479u64;
 		let current_period = last_slot / slots_per_period;
 		Head::<Test>::set(last_slot);
 		SyncCommitteeHashes::<Test>::set(
 			current_period,
 			H256(hex!(
-				"42839f47fdc746dc26ca1c2641262d5b997c7f0f9f78c4b2666a38785d872886"
+				"b036b217b716c0e620de4f3f7b52a7176bdee2606721aefa80fde52b1701d5ba"
 			)),
 		);
 
@@ -1740,10 +1740,10 @@ fn test_fulfill_head_not_greater() {
 		let proof_outputs: ProofOutputs = SolValue::abi_decode(&public_inputs, true).unwrap();
 		let slots_per_period = 8192;
 		let finality_threshold = 342u16;
-		let last_slot = 7762305u64;
+		let last_slot = 10640481u64;
 		let current_period = last_slot / slots_per_period;
 
-		let new_head = 7762304u64;
+		let new_head = 10640480u64;
 
 		ConfigurationStorage::<Test>::set(Configuration {
 			slots_per_period,
