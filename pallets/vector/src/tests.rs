@@ -20,7 +20,8 @@ use frame_support::{
 use frame_system::RawOrigin;
 use hex_literal::hex;
 use sp1_sdk::SP1ProofWithPublicValues;
-use sp_core::{crypto::AccountId32, keccak_256, ByteArray};
+use sp_core::{crypto::AccountId32, ByteArray};
+use sp_io::hashing::keccak_256;
 use sp_runtime::{testing::H256, traits::BadOrigin};
 
 const TEST_SENDER_VEC: [u8; 32] =

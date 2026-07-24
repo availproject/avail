@@ -23,8 +23,8 @@ use da_commitment::build_fri_commitments::{build_fri_da_commitment, FriParamsVer
 use derive_more::Constructor;
 use hex_literal::hex;
 use pallet_transaction_payment::ChargeTransactionPayment;
-use sp_core::keccak_256;
 use sp_core::H256;
+use sp_io::hashing::keccak_256;
 use sp_keyring::AccountKeyring::{Alice, Bob};
 use sp_runtime::traits::Keccak256;
 use sp_runtime::{
@@ -387,7 +387,7 @@ mod bridge_tests {
 
 	use super::*;
 	use avail_base::header_extension::BridgedData;
-	use sp_core::keccak_256;
+	use sp_io::hashing::keccak_256;
 
 	fn expected_send_arbitrary_data() -> HeaderExtensionBuilderData {
 		let message = Message::ArbitraryMessage(BoundedData::truncate_from(b"123".to_vec()));
@@ -517,7 +517,7 @@ mod bridge_tests {
 mod data_root {
 	use bounded_collections::BoundedVec;
 	// use frame_support::traits::DefensiveTruncateFrom;
-	use sp_core::keccak_256;
+	use sp_io::hashing::keccak_256;
 
 	use super::*;
 

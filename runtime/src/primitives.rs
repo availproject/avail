@@ -173,8 +173,8 @@ mod tests {
 		let raw_bytes: Vec<u8> = uxt.encode();
 
 		// OpaqueExtrinsic is assumed to hold exactly these raw bytes.
-		let opaque =
-			OpaqueExtrinsic::from_bytes(raw_bytes.as_slice()).expect("opaque from bytes ok");
+		let opaque = OpaqueExtrinsic::try_from_encoded_extrinsic(raw_bytes.as_slice())
+			.expect("opaque from bytes ok");
 
 		let decoded: UncheckedExtrinsic =
 			opaque_to_unchecked(&opaque).expect("decode must succeed");
@@ -226,8 +226,8 @@ mod tests {
 			let raw_bytes: Vec<u8> = uxt.encode();
 
 			// OpaqueExtrinsic holds exactly these bytes.
-			let opaque =
-				OpaqueExtrinsic::from_bytes(raw_bytes.as_slice()).expect("opaque from bytes ok");
+			let opaque = OpaqueExtrinsic::try_from_encoded_extrinsic(raw_bytes.as_slice())
+				.expect("opaque from bytes ok");
 
 			let decoded: UncheckedExtrinsic =
 				opaque_to_unchecked(&opaque).expect("decode must succeed");
