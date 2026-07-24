@@ -25,7 +25,8 @@ use frame_try_runtime::UpgradeCheckSelect;
 use log::Level;
 use parity_scale_codec::Encode;
 use sc_executor::sp_wasm_interface::HostFunctions;
-use sp_core::{hexdisplay::HexDisplay, twox_128, Hasher, H256};
+use sp_core::{hexdisplay::HexDisplay, Hasher, H256};
+use sp_io::hashing::twox_128;
 use sp_runtime::{
 	traits::{Block as BlockT, HashingFor, NumberFor},
 	DeserializeOwned,

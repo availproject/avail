@@ -3,7 +3,8 @@ use std::{fmt::Debug, ops::DerefMut, str::FromStr, sync::Arc, time::Duration};
 use log::Level;
 use parity_scale_codec::{Codec, Encode};
 use sc_executor::sp_wasm_interface::HostFunctions;
-use sp_core::{twox_128, Hasher, H256};
+use sp_core::{Hasher, H256};
+use sp_io::hashing::twox_128;
 use sp_runtime::{
 	traits::{Block as BlockT, NumberFor},
 	DeserializeOwned, ExtrinsicInclusionMode,
