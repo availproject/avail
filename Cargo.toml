@@ -35,8 +35,8 @@ homepage = "https://www.availproject.org/"
 
 
 [workspace.dependencies]
-avail-core = { git = "https://github.com/availproject/avail-core.git", rev = "b2c3a86c7ce1905e00f9f45054788ce20d9bc5d7", default-features = false, features = [ "runtime"] }
-avail-fri = { git = "https://github.com/availproject/avail-core.git", rev = "b2c3a86c7ce1905e00f9f45054788ce20d9bc5d7", default-features = false }
+avail-core = { git = "https://github.com/availproject/avail-core.git", rev = "d6cfb9d70e8da22bdcc23ac96f0c617a9a5914ad", default-features = false, features = [ "runtime"] }
+avail-fri = { git = "https://github.com/availproject/avail-core.git", rev = "d6cfb9d70e8da22bdcc23ac96f0c617a9a5914ad", default-features = false }
 # avail-core = { path = "../avail-core/core", default-features = false, features = [ "runtime"] }
 # avail-fri = { path = "../avail-core/fri", default-features = false }
 

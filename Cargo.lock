@@ -138,60 +138,13 @@ dependencies = [
 ]
 
 [[package]]
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-name = "alloy-primitives"
-version = "1.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4885c1409b6936c4898e646ef58baf6ec54edaf6d8179f79df805a7b85b7cf3e"
-dependencies = [
- "bytes",
- "cfg-if",
- "const-hex",
- "derive_more 2.1.1",
- "itoa",
- "paste",
- "ruint",
- "rustc-hash 2.1.3",
- "sha3 0.11.0",
-]
-
-[[package]]
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
 name = "alloy-sol-macro"
 version = "0.8.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e68b32b6fa0d09bb74b4cefe35ccc8269d711c26629bc7cd98a47eeb12fe353f"
 dependencies = [
-<<<<<<< HEAD
-<<<<<<< HEAD
  "alloy-sol-macro-expander",
  "alloy-sol-macro-input",
-=======
- "alloy-sol-macro-expander 0.8.26",
- "alloy-sol-macro-input 0.8.26",
- "proc-macro-error2",
- "proc-macro2",
- "quote",
- "syn 2.0.119",
-]
-
-[[package]]
-name = "alloy-sol-macro"
-version = "1.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "840128ed2b2971d6d4668a553fe403a82683d3acc646c73e75887e7157408033"
-dependencies = [
- "alloy-sol-macro-expander 1.6.0",
- "alloy-sol-macro-input 1.6.0",
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
- "alloy-sol-macro-expander",
- "alloy-sol-macro-input",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "proc-macro-error2",
  "proc-macro2",
  "quote",
@@ -207,53 +160,16 @@ dependencies = [
  "alloy-sol-macro-input",
  "const-hex",
  "heck 0.5.0",
-<<<<<<< HEAD
- "indexmap 2.13.0",
-=======
  "indexmap 2.14.0",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "proc-macro-error2",
  "proc-macro2",
  "quote",
-<<<<<<< HEAD
- "syn 2.0.117",
- "syn-solidity",
-=======
  "syn 2.0.119",
-<<<<<<< HEAD
- "syn-solidity 0.8.26",
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
  "syn-solidity",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "tiny-keccak",
 ]
 
 [[package]]
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-name = "alloy-sol-macro-expander"
-version = "1.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "63ec265e5d65d725175f6ca7711c970824c90ef9c0d1f1973711d4150ee612dd"
-dependencies = [
- "alloy-sol-macro-input 1.6.0",
- "const-hex",
- "heck 0.5.0",
- "indexmap",
- "proc-macro-error2",
- "proc-macro2",
- "quote",
- "sha3 0.11.0",
- "syn 2.0.119",
- "syn-solidity 1.6.0",
-]
-
-[[package]]
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
 name = "alloy-sol-macro-input"
 version = "0.8.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -265,33 +181,8 @@ dependencies = [
  "macro-string",
  "proc-macro2",
  "quote",
-<<<<<<< HEAD
- "syn 2.0.117",
- "syn-solidity",
-=======
  "syn 2.0.119",
-<<<<<<< HEAD
- "syn-solidity 0.8.26",
-]
-
-[[package]]
-name = "alloy-sol-macro-input"
-version = "1.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "89bf01077f18650876cfa682eb1f949967b5cde03f1a51c955c469d2c9b4aa67"
-dependencies = [
- "const-hex",
- "dunce",
- "heck 0.5.0",
- "macro-string 0.2.0",
- "proc-macro2",
- "quote",
- "syn 2.0.119",
- "syn-solidity 1.6.0",
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
  "syn-solidity",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
 ]
 
 [[package]]
@@ -306,22 +197,6 @@ dependencies = [
 ]
 
 [[package]]
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-name = "alloy-sol-types"
-version = "1.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "384cf252de0db2dec52821eac037a7f57e2aa33fe5b900ce6fe39973402341f1"
-dependencies = [
- "alloy-primitives 1.6.0",
- "alloy-sol-macro 1.6.0",
-]
-
-[[package]]
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
 name = "android_system_properties"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -996,11 +871,7 @@ checksum = "c7c24de15d275a1ecfd47a380fb4d5ec9bfe0933f309ed5e705b775596a3574d"
 dependencies = [
  "proc-macro2",
  "quote",
-<<<<<<< HEAD
- "syn 2.0.117",
-=======
  "syn 2.0.119",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
 ]
 
 [[package]]
@@ -1181,7 +1052,7 @@ dependencies = [
 [[package]]
 name = "avail-core"
 version = "0.6.2"
-source = "git+https://github.com/availproject/avail-core.git?rev=b2c3a86c7ce1905e00f9f45054788ce20d9bc5d7#b2c3a86c7ce1905e00f9f45054788ce20d9bc5d7"
+source = "git+https://github.com/availproject/avail-core.git?rev=d6cfb9d70e8da22bdcc23ac96f0c617a9a5914ad#d6cfb9d70e8da22bdcc23ac96f0c617a9a5914ad"
 dependencies = [
  "binary-merkle-tree",
  "blake2b_simd",
@@ -1215,7 +1086,7 @@ dependencies = [
 [[package]]
 name = "avail-fri"
 version = "0.1.0"
-source = "git+https://github.com/availproject/avail-core.git?rev=b2c3a86c7ce1905e00f9f45054788ce20d9bc5d7#b2c3a86c7ce1905e00f9f45054788ce20d9bc5d7"
+source = "git+https://github.com/availproject/avail-core.git?rev=d6cfb9d70e8da22bdcc23ac96f0c617a9a5914ad#d6cfb9d70e8da22bdcc23ac96f0c617a9a5914ad"
 dependencies = [
  "avail-core",
  "binius-field",
@@ -1375,14 +1246,6 @@ dependencies = [
  "http 1.4.2",
  "http-body 1.1.0",
  "http-body-util",
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
- "hyper 1.10.1",
- "hyper-util",
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "itoa",
  "matchit",
  "memchr",
@@ -1500,32 +1363,6 @@ dependencies = [
 
 [[package]]
 name = "bindgen"
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-version = "0.70.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f49d8fed880d473ea71efb9bf597651e77201bdd4893efe54c9e5d65ae04ce6f"
-dependencies = [
- "bitflags 2.13.0",
- "cexpr",
- "clang-sys",
- "itertools 0.13.0",
- "log",
- "prettyplease",
- "proc-macro2",
- "quote",
- "regex",
- "rustc-hash 1.1.0",
- "shlex 1.3.0",
- "syn 2.0.119",
-]
-
-[[package]]
-name = "bindgen"
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
 version = "0.72.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "993776b509cfb49c750f11b8f07a46fa23e0a1386ffc01fb1e7d343efc387895"
@@ -1970,8 +1807,6 @@ dependencies = [
 ]
 
 [[package]]
-<<<<<<< HEAD
-=======
 name = "block-buffer"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1981,19 +1816,6 @@ dependencies = [
 ]
 
 [[package]]
-<<<<<<< HEAD
-name = "block2"
-version = "0.6.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cdeb9d870516001442e364c5220d3574d2da8dc765554b4a617230d33fa58ef5"
-dependencies = [
- "objc2",
-]
-
-[[package]]
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
 name = "blocking"
 version = "1.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2193,31 +2015,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "37b2a672a2cb129a2e41c10b1224bb368f9f37a2b16b612598138befd7b37eb5"
 
 [[package]]
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-name = "cbindgen"
-version = "0.27.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3fce8dd7fcfcbf3a0a87d8f515194b49d6135acab73e18bd380d1d93bb1a15eb"
-dependencies = [
- "clap",
- "heck 0.4.1",
- "indexmap",
- "log",
- "proc-macro2",
- "quote",
- "serde",
- "serde_json",
- "syn 2.0.119",
- "tempfile",
- "toml",
-]
-
-[[package]]
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
 name = "cc"
 version = "1.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3058,22 +2855,6 @@ dependencies = [
 ]
 
 [[package]]
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-name = "ctrlc"
-version = "3.5.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e0b1fab2ae45819af2d0731d60f2afe17227ebb1a1538a236da84c93e9a60162"
-dependencies = [
- "dispatch2",
- "nix 0.31.3",
- "windows-sys 0.61.2",
-]
-
-[[package]]
-=======
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
 name = "cumulus-client-parachain-inherent"
 version = "0.26.0"
 source = "git+https://github.com/availproject/polkadot-sdk.git?tag=polkadot-1.24.0-patch-1#26b61a91aea7eb0d4e48a6335e3aa29b47493da1"
@@ -3229,7 +3010,6 @@ dependencies = [
 ]
 
 [[package]]
->>>>>>> a9263937 (update to sdk-v1.24.0)
 name = "curve25519-dalek"
 version = "4.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3279,11 +3059,7 @@ checksum = "e3184a94384c663718698311a78a51ac00c484c10b4eeac06fb0a068c5f64fa2"
 dependencies = [
  "cc",
  "codespan-reporting",
-<<<<<<< HEAD
- "indexmap 2.13.0",
-=======
  "indexmap 2.14.0",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "proc-macro2",
  "quote",
  "scratch",
@@ -3298,11 +3074,7 @@ checksum = "0148d8fd1199329ddf1d157a5e134e51ceff37c6a7ddd38615c399d81cb05d8d"
 dependencies = [
  "clap",
  "codespan-reporting",
-<<<<<<< HEAD
- "indexmap 2.13.0",
-=======
  "indexmap 2.14.0",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "proc-macro2",
  "quote",
  "syn 3.0.3",
@@ -3320,11 +3092,7 @@ version = "1.0.198"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2c77c856545d886c9bd5215409ebb63b925e262135248b50c79e5a5f194ee47c"
 dependencies = [
-<<<<<<< HEAD
- "indexmap 2.13.0",
-=======
  "indexmap 2.14.0",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "proc-macro2",
  "quote",
  "syn 3.0.3",
@@ -3735,27 +3503,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "deepsize2"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "86b5184084af9beed35eecbf4c36baf6e26b9dc47b61b74e02f930c72a58e71b"
-dependencies = [
- "deepsize_derive2",
- "hashbrown 0.14.5",
-]
-
-[[package]]
-name = "deepsize_derive2"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e0f8817865cacf3b93b943ca06b0fc5fd8e99eabfdb7ea5d296efcbc4afc4f69"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.117",
-]
-
-[[package]]
 name = "der"
 version = "0.7.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3982,24 +3729,6 @@ dependencies = [
 ]
 
 [[package]]
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-name = "dispatch2"
-version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1e0e367e4e7da84520dedcac1901e4da967309406d1e51017ae1abfb97adbd38"
-dependencies = [
- "bitflags 2.13.0",
- "block2",
- "libc",
- "objc2",
-]
-
-[[package]]
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
 name = "displaydoc"
 version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4119,21 +3848,13 @@ version = "3.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f7d4c414c94bc830797115b8e5f434d58e7e80cb42ba88508c14bc6ea270625"
 dependencies = [
-<<<<<<< HEAD
- "bitflags 2.11.0",
-=======
  "bitflags 2.13.1",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "byteorder",
  "lazy_static",
  "proc-macro-error2",
  "proc-macro2",
  "quote",
-<<<<<<< HEAD
- "syn 2.0.117",
-=======
  "syn 2.0.119",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
 ]
 
 [[package]]
@@ -4145,11 +3866,7 @@ dependencies = [
  "byteorder",
  "dynasm",
  "fnv",
-<<<<<<< HEAD
- "memmap2 0.9.10",
-=======
  "memmap2 0.9.11",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
 ]
 
 [[package]]
@@ -4224,20 +3941,10 @@ dependencies = [
 name = "either"
 version = "1.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-<<<<<<< HEAD
-checksum = "48c757948c5ede0e46177b7add2e67155f70e33c07fea8284df6576da70b3719"
-dependencies = [
- "serde",
-]
-=======
 checksum = "91622ff5e7162018101f2fea40d6ebf4a78bbe5a49736a2020649edf9693679e"
-<<<<<<< HEAD
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
 dependencies = [
  "serde",
 ]
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
 
 [[package]]
 name = "elf"
@@ -4521,11 +4228,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "74fef4569247a5f429d9156b9d0a2599914385dd189c539334c625d8099d90ab"
 dependencies = [
  "futures-core",
-<<<<<<< HEAD
- "nom",
-=======
  "nom 7.1.3",
->>>>>>> a9263937 (update to sdk-v1.24.0)
  "pin-project-lite",
 ]
 
@@ -5466,10 +5169,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "07e28edb80900c19c28f1072f2e8aeca7fa06b23cd4169cefe1af5aa3260783f"
 dependencies = [
  "fallible-iterator",
-<<<<<<< HEAD
- "indexmap 2.13.0",
-=======
->>>>>>> a9263937 (update to sdk-v1.24.0)
  "stable_deref_trait",
 ]
 
@@ -5579,11 +5278,7 @@ dependencies = [
  "futures-sink",
  "futures-util",
  "http 0.2.12",
-<<<<<<< HEAD
- "indexmap 2.13.0",
-=======
  "indexmap 2.14.0",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "slab",
  "tokio",
  "tokio-util",
@@ -5601,17 +5296,8 @@ dependencies = [
  "fnv",
  "futures-core",
  "futures-sink",
-<<<<<<< HEAD
- "http 1.4.0",
- "indexmap 2.13.0",
-=======
  "http 1.4.2",
-<<<<<<< HEAD
- "indexmap",
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
  "indexmap 2.14.0",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "slab",
  "tokio",
  "tokio-util",
@@ -5663,12 +5349,9 @@ name = "hashbrown"
 version = "0.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8a9ee70c43aaf417c914396645a0fa852624801b24ebb7ae78fe8272889ac888"
-<<<<<<< HEAD
-=======
 dependencies = [
  "ahash 0.7.8",
 ]
->>>>>>> a9263937 (update to sdk-v1.24.0)
 
 [[package]]
 name = "hashbrown"
@@ -6066,19 +5749,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "hyper-timeout"
-version = "0.5.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b90d566bffbce6a75bd8b09a05aa8c2cb1fabb6cb348f8840c9e4c90a0d83b0"
-dependencies = [
- "hyper 1.8.1",
- "hyper-util",
- "pin-project-lite",
- "tokio",
- "tower-service",
-]
-
-[[package]]
 name = "hyper-util"
 version = "0.1.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6362,10 +6032,6 @@ checksum = "964de6e86d545b246d84badc0fef527924ace5134f30641c203ef52ba83f58d5"
 
 [[package]]
 name = "indexmap"
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
 version = "1.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bd070e393353796e801d209ad339e89596eb4c8d430d18ede6a1cced8fafbd99"
@@ -6376,13 +6042,7 @@ dependencies = [
 
 [[package]]
 name = "indexmap"
-<<<<<<< HEAD
-version = "2.13.0"
-=======
-=======
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
 version = "2.14.0"
->>>>>>> a9263937 (update to sdk-v1.24.0)
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d466e9454f08e4a911e14806c24e16fba1b4c121d1ea474396f396069cf949d9"
 dependencies = [
@@ -6437,11 +6097,7 @@ name = "internal-utils"
 version = "0.0.0"
 source = "git+https://github.com/availproject/engineering-toolkit?tag=v0.1.4#b05ead2f3f1697f408a371f0ab3ec87310618315"
 dependencies = [
-<<<<<<< HEAD
- "opentelemetry 0.31.0",
-=======
  "opentelemetry 0.32.0",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "opentelemetry-appender-tracing",
  "opentelemetry-otlp",
  "opentelemetry-semantic-conventions",
@@ -7590,16 +7246,8 @@ dependencies = [
  "futures",
  "futures-timer",
  "hickory-resolver 0.25.2",
-<<<<<<< HEAD
-<<<<<<< HEAD
- "indexmap 2.13.0",
-=======
- "indexmap",
-=======
  "indexmap 2.14.0",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "ip_network",
->>>>>>> a9263937 (update to sdk-v1.24.0)
  "libc",
  "mockall",
  "multiaddr",
@@ -8216,30 +7864,11 @@ checksum = "74523f3a35e05aba87a1d978330aef40f67b0304ac79c1c00b294c9830543db6"
 dependencies = [
  "bitflags 2.13.1",
  "cfg-if",
-<<<<<<< HEAD
- "cfg_aliases 0.2.1",
- "libc",
-]
-
-[[package]]
-<<<<<<< HEAD
-=======
-name = "nix"
-version = "0.31.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cf20d2fde8ff38632c426f1165ed7436270b44f199fc55284c38276f9db47c3d"
-dependencies = [
- "bitflags 2.13.0",
- "cfg-if",
- "cfg_aliases 0.2.1",
-=======
  "cfg_aliases 0.2.2",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "libc",
 ]
 
 [[package]]
->>>>>>> a9263937 (update to sdk-v1.24.0)
 name = "no-std-compat"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8486,12 +8115,6 @@ version = "0.36.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "62948e14d923ea95ea2c7c86c71013138b66525b86bdc08d2dcc262bdb497b87"
 dependencies = [
-<<<<<<< HEAD
- "crc32fast",
- "hashbrown 0.15.5",
- "indexmap 2.13.0",
-=======
->>>>>>> a9263937 (update to sdk-v1.24.0)
  "memchr",
 ]
 
@@ -8502,24 +8125,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ff76201f031d8863c38aa7f905eca4f53abbfa15f609db4277d44cd8938f33fe"
 dependencies = [
  "crc32fast",
-<<<<<<< HEAD
-<<<<<<< HEAD
- "flate2",
- "hashbrown 0.15.5",
- "indexmap 2.13.0",
-=======
- "hashbrown 0.15.5",
- "indexmap",
->>>>>>> a9263937 (update to sdk-v1.24.0)
- "memchr",
- "ruzstd 0.8.3",
-=======
  "flate2",
  "hashbrown 0.15.5",
  "indexmap 2.14.0",
  "memchr",
  "ruzstd",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
 ]
 
 [[package]]
@@ -8583,23 +8193,6 @@ checksum = "7c87def4c32ab89d880effc9e097653c8da5d6ef28e6b539d313baaacfbafcbe"
 [[package]]
 name = "opentelemetry"
 version = "0.23.0"
-<<<<<<< HEAD
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1b69a91d4893e713e06f724597ad630f1fa76057a5e1026c0ca67054a9032a76"
-dependencies = [
- "futures-core",
- "futures-sink",
- "js-sys",
- "once_cell",
- "pin-project-lite",
- "thiserror 1.0.69",
-]
-
-[[package]]
-name = "opentelemetry"
-version = "0.31.0"
-=======
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1b69a91d4893e713e06f724597ad630f1fa76057a5e1026c0ca67054a9032a76"
 dependencies = [
@@ -8631,11 +8224,7 @@ version = "0.32.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2c0080f0dc1d7c786f467cd85a4e395fcab11ee852004f39a29a18ab7c25d837"
 dependencies = [
-<<<<<<< HEAD
- "opentelemetry 0.31.0",
-=======
  "opentelemetry 0.32.0",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "tracing",
  "tracing-core",
  "tracing-subscriber",
@@ -8649,19 +8238,9 @@ checksum = "5683015d09e2df236ef005b17f6f196f0d5f6313c4fa43a7b6a53b52776e4331"
 dependencies = [
  "async-trait",
  "bytes",
-<<<<<<< HEAD
- "http 1.4.0",
- "opentelemetry 0.31.0",
-=======
  "http 1.4.2",
-<<<<<<< HEAD
- "opentelemetry",
->>>>>>> a9263937 (update to sdk-v1.24.0)
- "reqwest",
-=======
  "opentelemetry 0.32.0",
  "reqwest 0.13.4",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
 ]
 
 [[package]]
@@ -8670,17 +8249,8 @@ version = "0.32.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9966929966d17620d7c316c643ba62631826e10021409357772d5eea84f62c35"
 dependencies = [
-<<<<<<< HEAD
- "http 1.4.0",
- "opentelemetry 0.31.0",
-=======
  "http 1.4.2",
-<<<<<<< HEAD
- "opentelemetry",
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
  "opentelemetry 0.32.0",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "opentelemetry-http",
  "opentelemetry-proto",
  "opentelemetry_sdk",
@@ -8695,23 +8265,9 @@ version = "0.32.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "56d658ba1faf63f7b9c492cfbe6e0ec365440a16132d3270c1065f7b33f1b638"
 dependencies = [
-<<<<<<< HEAD
- "opentelemetry 0.31.0",
-=======
  "opentelemetry 0.32.0",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "opentelemetry_sdk",
-<<<<<<< HEAD
- "prost 0.14.3",
- "tonic 0.14.5",
-=======
  "prost 0.14.4",
-<<<<<<< HEAD
- "tonic",
->>>>>>> a9263937 (update to sdk-v1.24.0)
- "tonic-prost",
-=======
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
 ]
 
 [[package]]
@@ -8729,11 +8285,7 @@ dependencies = [
  "futures-channel",
  "futures-executor",
  "futures-util",
-<<<<<<< HEAD
- "opentelemetry 0.31.0",
-=======
  "opentelemetry 0.32.0",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "percent-encoding",
  "portable-atomic",
  "rand 0.9.5",
@@ -8808,30 +8360,14 @@ version = "0.4.3-succinct"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d69e6e9af4eaaaa60f7bb9f0e0f73ebcbaefe7e00974d97ad0fa542d6a4f0890"
 dependencies = [
-<<<<<<< HEAD
-<<<<<<< HEAD
  "cfg-if",
- "num-bigint 0.4.6",
-=======
-=======
- "cfg-if",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "num-bigint 0.4.8",
->>>>>>> a9263937 (update to sdk-v1.24.0)
  "p3-field",
  "p3-mds",
  "p3-poseidon2",
  "p3-symmetric",
-<<<<<<< HEAD
- "rand 0.8.5",
- "rustc_version",
-=======
  "rand 0.8.7",
-<<<<<<< HEAD
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
  "rustc_version",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "serde",
 ]
 
@@ -8841,17 +8377,8 @@ version = "0.4.3-succinct"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2077757c7cb514202ccb5368f521f23f5709c720599e6545c683c66e0a52d2d8"
 dependencies = [
-<<<<<<< HEAD
-<<<<<<< HEAD
  "ff",
- "num-bigint 0.4.6",
-=======
- "ff 0.13.1",
-=======
- "ff",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "num-bigint 0.4.8",
->>>>>>> a9263937 (update to sdk-v1.24.0)
  "p3-field",
  "p3-poseidon2",
  "p3-symmetric",
@@ -8965,20 +8492,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3a9683cd0ef68100df7c62490533047bcf19c04c4a0fa1efc9d7c1e03e31f6b3"
 dependencies = [
  "cfg-if",
-<<<<<<< HEAD
- "num-bigint 0.4.6",
-=======
  "num-bigint 0.4.8",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "p3-field",
  "p3-mds",
  "p3-poseidon2",
  "p3-symmetric",
-<<<<<<< HEAD
- "rand 0.8.5",
-=======
  "rand 0.8.7",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "rustc_version",
  "serde",
 ]
@@ -9103,20 +8622,6 @@ dependencies = [
 ]
 
 [[package]]
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-name = "pairing"
-version = "0.22.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "135590d8bdba2b31346f9cd1fb2a912329f5135e832a4f422942eb6ead8b6b3b"
-dependencies = [
- "group 0.12.1",
-]
-
-[[package]]
-=======
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
 name = "pallet-accumulate-and-forward"
 version = "0.4.0"
 source = "git+https://github.com/availproject/polkadot-sdk.git?tag=polkadot-1.24.0-patch-1#26b61a91aea7eb0d4e48a6335e3aa29b47493da1"
@@ -9149,7 +8654,6 @@ dependencies = [
 ]
 
 [[package]]
->>>>>>> a9263937 (update to sdk-v1.24.0)
 name = "pallet-authority-discovery"
 version = "49.0.0"
 source = "git+https://github.com/availproject/polkadot-sdk.git?tag=polkadot-1.24.0-patch-1#26b61a91aea7eb0d4e48a6335e3aa29b47493da1"
@@ -9888,66 +9392,18 @@ dependencies = [
 ]
 
 [[package]]
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-name = "pasta_curves"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5cc65faf8e7313b4b1fbaa9f7ca917a0eed499a9663be71477f87993604341d8"
-dependencies = [
- "blake2b_simd",
- "ff 0.12.1",
- "group 0.12.1",
- "lazy_static",
- "rand 0.8.7",
- "static_assertions",
- "subtle 2.6.1",
-]
-
-[[package]]
-name = "pasta_curves"
-version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d3e57598f73cc7e1b2ac63c79c517b31a0877cd7c402cdcaa311b5208de7a095"
-dependencies = [
- "blake2b_simd",
- "ff 0.13.1",
- "group 0.13.0",
- "lazy_static",
- "rand 0.8.7",
- "static_assertions",
- "subtle 2.6.1",
-]
-
-[[package]]
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
 name = "paste"
 version = "1.0.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "57c0d7b74b563b49d38dae00a0c37d4d6de9b432382b2892f0574ddcae73fd0a"
 
 [[package]]
-<<<<<<< HEAD
-=======
 name = "pastey"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2ee67f1008b1ba2321834326597b8e186293b049a023cdef258527550b9935b4"
 
 [[package]]
-<<<<<<< HEAD
-name = "pathdiff"
-version = "0.2.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "df94ce210e5bc13cb6651479fa48d14f601d9858cfe0467f43ae157023b938d3"
-
-[[package]]
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
 name = "patricia-merkle-trie"
 version = "0.1.0"
 dependencies = [
@@ -10051,11 +9507,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b4c5cc86750666a3ed20bdaf5ca2a0344f9c67674cae0515bec2da16fbaa47db"
 dependencies = [
  "fixedbitset 0.4.2",
-<<<<<<< HEAD
- "indexmap 2.13.0",
-=======
  "indexmap 2.14.0",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
 ]
 
 [[package]]
@@ -10065,11 +9517,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3672b37090dbd86368a4145bc067582552b29c27377cad4e0a306c97f9bd7772"
 dependencies = [
  "fixedbitset 0.5.7",
-<<<<<<< HEAD
- "indexmap 2.13.0",
-=======
  "indexmap 2.14.0",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
 ]
 
 [[package]]
@@ -11487,22 +10935,12 @@ dependencies = [
  "pin-project-lite",
  "sync_wrapper",
  "tokio",
-<<<<<<< HEAD
-<<<<<<< HEAD
- "tokio-rustls",
- "tokio-util",
-=======
- "tokio-rustls 0.26.4",
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "tower 0.5.3",
  "tower-http 0.6.11",
  "tower-service",
  "url",
  "wasm-bindgen",
  "wasm-bindgen-futures",
- "wasm-streams",
  "web-sys",
 ]
 
@@ -11773,15 +11211,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rustls-pemfile"
-version = "2.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dce314e5fee3f39953d46bb63bb8a46d40c2f8fb7cc5a3b6cab2bde9721d6e50"
-dependencies = [
- "rustls-pki-types",
-]
-
-[[package]]
 name = "rustls-pki-types"
 version = "1.15.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -11844,15 +11273,6 @@ name = "rustversion"
 version = "1.0.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf54715a573b99ac80df0bc206da022bcd442c974952c7b9720069370852e21f"
-
-[[package]]
-name = "ruzstd"
-version = "0.8.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a7c1c839d570d835527c9a5e4db7cb2198683a988cb9d7293fc8674e6bd58fc8"
-dependencies = [
- "twox-hash 2.1.3",
-]
 
 [[package]]
 name = "ruzstd"
@@ -13030,13 +12450,8 @@ dependencies = [
  "async-trait",
  "futures",
  "futures-timer",
-<<<<<<< HEAD
- "indexmap 2.13.0",
- "itertools 0.11.0",
-=======
  "indexmap 2.14.0",
  "itertools 0.14.0",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "linked-hash-map",
  "parity-scale-codec",
  "parking_lot 0.12.5",
@@ -13066,11 +12481,7 @@ source = "git+https://github.com/availproject/polkadot-sdk.git?tag=polkadot-1.24
 dependencies = [
  "async-trait",
  "futures",
-<<<<<<< HEAD
- "indexmap 2.13.0",
-=======
  "indexmap 2.14.0",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "log",
  "parity-scale-codec",
  "serde",
@@ -13869,11 +13280,7 @@ source = "git+https://github.com/succinctlabs/sp1.git?rev=3a98ea24252f1ba91401f2
 dependencies = [
  "derive-where",
  "itertools 0.14.0",
-<<<<<<< HEAD
- "rand 0.8.5",
-=======
  "rand 0.8.7",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "serde",
  "slop-algebra",
  "slop-alloc",
@@ -13972,11 +13379,7 @@ dependencies = [
  "futures",
  "itertools 0.14.0",
  "num_cpus",
-<<<<<<< HEAD
- "rand 0.8.5",
-=======
  "rand 0.8.7",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "rayon",
  "serde",
  "slop-algebra",
@@ -14071,11 +13474,7 @@ dependencies = [
  "derive-where",
  "futures",
  "num_cpus",
-<<<<<<< HEAD
- "rand 0.8.5",
-=======
  "rand 0.8.7",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "rayon",
  "serde",
  "slop-algebra",
@@ -14155,17 +13554,10 @@ name = "slop-tensor"
 version = "6.3.1"
 source = "git+https://github.com/succinctlabs/sp1.git?rev=3a98ea24252f1ba91401f25ce7dbcb9eb743d76a#3a98ea24252f1ba91401f25ce7dbcb9eb743d76a"
 dependencies = [
-<<<<<<< HEAD
- "arrayvec 0.7.6",
- "derive-where",
- "itertools 0.14.0",
- "rand 0.8.5",
-=======
  "arrayvec 0.7.8",
  "derive-where",
  "itertools 0.14.0",
  "rand 0.8.7",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "rayon",
  "serde",
  "slop-algebra",
@@ -14202,11 +13594,7 @@ dependencies = [
  "derive-where",
  "futures",
  "itertools 0.14.0",
-<<<<<<< HEAD
- "rand 0.8.5",
-=======
  "rand 0.8.7",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "rayon",
  "serde",
  "slop-algebra",
@@ -14291,7 +13679,7 @@ dependencies = [
  "poly1305",
  "rand 0.8.7",
  "rand_chacha 0.3.1",
- "ruzstd 0.6.0",
+ "ruzstd",
  "schnorrkel",
  "serde",
  "serde_json",
@@ -14301,15 +13689,7 @@ dependencies = [
  "slab",
  "smallvec",
  "soketto",
-<<<<<<< HEAD
-<<<<<<< HEAD
- "twox-hash 1.6.3",
-=======
- "twox-hash 2.1.2",
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
  "twox-hash 2.1.3",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "wasmi",
  "x25519-dalek",
  "zeroize",
@@ -14660,11 +14040,7 @@ dependencies = [
  "byteorder",
  "digest 0.10.7",
  "sha2 0.10.9",
-<<<<<<< HEAD
- "sha3",
-=======
  "sha3 0.10.9",
->>>>>>> a9263937 (update to sdk-v1.24.0)
  "twox-hash 1.6.3",
 ]
 
@@ -14677,11 +14053,7 @@ dependencies = [
  "byteorder",
  "digest 0.10.7",
  "sha2 0.10.9",
-<<<<<<< HEAD
- "sha3",
-=======
  "sha3 0.10.9",
->>>>>>> a9263937 (update to sdk-v1.24.0)
  "twox-hash 1.6.3",
 ]
 
@@ -15184,19 +14556,8 @@ dependencies = [
 
 [[package]]
 name = "sp1-build"
-<<<<<<< HEAD
-<<<<<<< HEAD
 version = "6.3.1"
 source = "git+https://github.com/succinctlabs/sp1.git?rev=3a98ea24252f1ba91401f25ce7dbcb9eb743d76a#3a98ea24252f1ba91401f25ce7dbcb9eb743d76a"
-=======
-version = "5.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6bb5e809974422e96b9033f1db60405e72a776faa49f39c8d4dfc6da3943a385"
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
-version = "6.3.1"
-source = "git+https://github.com/succinctlabs/sp1.git?rev=3a98ea24252f1ba91401f25ce7dbcb9eb743d76a#3a98ea24252f1ba91401f25ce7dbcb9eb743d76a"
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
 dependencies = [
  "anyhow",
  "cargo_metadata 0.18.1",
@@ -15222,24 +14583,9 @@ dependencies = [
  "hashbrown 0.14.5",
  "hex",
  "itertools 0.14.0",
-<<<<<<< HEAD
- "memmap2 0.9.10",
- "num",
-<<<<<<< HEAD
- "object 0.37.3",
-=======
- "p3-baby-bear",
- "p3-field",
- "p3-maybe-rayon",
- "p3-util",
- "rand 0.8.7",
- "range-set-blaze",
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
  "memmap2 0.9.11",
  "num",
  "object 0.37.3",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "rrs-succinct",
  "serde",
  "serde_arrays",
@@ -15262,22 +14608,9 @@ dependencies = [
 ]
 
 [[package]]
-<<<<<<< HEAD
-<<<<<<< HEAD
 name = "sp1-core-executor-runner"
 version = "6.3.1"
 source = "git+https://github.com/succinctlabs/sp1.git?rev=3a98ea24252f1ba91401f25ce7dbcb9eb743d76a#3a98ea24252f1ba91401f25ce7dbcb9eb743d76a"
-=======
-name = "sp1-core-machine"
-version = "5.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7a1cbc279cf9dcf1faabc8d9b592027cf5ce5bfea6d44d2da58351379f92dba1"
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
-name = "sp1-core-executor-runner"
-version = "6.3.1"
-source = "git+https://github.com/succinctlabs/sp1.git?rev=3a98ea24252f1ba91401f25ce7dbcb9eb743d76a#3a98ea24252f1ba91401f25ce7dbcb9eb743d76a"
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
 dependencies = [
  "base64",
  "bincode",
@@ -15323,26 +14656,6 @@ dependencies = [
  "itertools 0.14.0",
  "num",
  "num_cpus",
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
- "p256",
- "p3-air",
- "p3-baby-bear",
- "p3-challenger",
- "p3-field",
- "p3-keccak-air",
- "p3-matrix",
- "p3-maybe-rayon",
- "p3-poseidon2",
- "p3-symmetric",
- "p3-uni-stark",
- "p3-util",
- "pathdiff",
- "rand 0.8.7",
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "rayon",
  "rayon-scan",
  "rrs-succinct",
@@ -15375,30 +14688,6 @@ dependencies = [
  "tracing-forest",
  "tracing-subscriber",
  "typenum",
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
- "web-time",
-]
-
-[[package]]
-name = "sp1-cuda"
-version = "5.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a04cfd497bcb85d52eccd3718ddc8d88f17bfc4aefa288b41d1b0b21a065f3fc"
-dependencies = [
- "bincode",
- "ctrlc",
- "prost 0.13.5",
- "serde",
- "sp1-core-machine",
- "sp1-prover",
- "tokio",
- "tracing",
- "twirp-rs",
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
 ]
 
 [[package]]
@@ -15442,11 +14731,7 @@ dependencies = [
  "futures",
  "hashbrown 0.14.5",
  "itertools 0.14.0",
-<<<<<<< HEAD
- "num-bigint 0.4.6",
-=======
  "num-bigint 0.4.8",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "num-traits",
  "num_cpus",
  "rayon",
@@ -15492,11 +14777,7 @@ dependencies = [
  "hashbrown 0.14.5",
  "libc",
  "memfd",
-<<<<<<< HEAD
- "memmap2 0.9.10",
-=======
  "memmap2 0.9.11",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "serde",
  "sp1-primitives",
  "tracing",
@@ -15514,18 +14795,7 @@ dependencies = [
  "hex",
  "itertools 0.14.0",
  "lazy_static",
-<<<<<<< HEAD
- "num-bigint 0.4.6",
-=======
  "num-bigint 0.4.8",
-<<<<<<< HEAD
- "p3-baby-bear",
- "p3-field",
- "p3-poseidon2",
- "p3-symmetric",
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "serde",
  "sha2 0.10.9",
  "slop-algebra",
@@ -15539,33 +14809,14 @@ dependencies = [
 
 [[package]]
 name = "sp1-prover"
-<<<<<<< HEAD
-<<<<<<< HEAD
 version = "6.3.1"
 source = "git+https://github.com/succinctlabs/sp1.git?rev=3a98ea24252f1ba91401f25ce7dbcb9eb743d76a#3a98ea24252f1ba91401f25ce7dbcb9eb743d76a"
-=======
-version = "5.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "49b14da2fa5bea1b2fffccda3f5c0c9a153a766f412c5259ea75302e58629e7c"
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
-version = "6.3.1"
-source = "git+https://github.com/succinctlabs/sp1.git?rev=3a98ea24252f1ba91401f25ce7dbcb9eb743d76a#3a98ea24252f1ba91401f25ce7dbcb9eb743d76a"
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
 dependencies = [
  "anyhow",
  "bincode",
  "clap",
  "dirs",
-<<<<<<< HEAD
-<<<<<<< HEAD
  "either",
-=======
- "downloader",
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
- "either",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "enum-map",
  "eyre",
  "futures",
@@ -15574,34 +14825,12 @@ dependencies = [
  "indicatif",
  "itertools 0.14.0",
  "lru 0.12.5",
-<<<<<<< HEAD
-<<<<<<< HEAD
- "mti",
- "num-bigint 0.4.6",
- "opentelemetry 0.23.0",
- "pin-project",
- "rand 0.8.5",
- "reqwest",
-=======
- "num-bigint 0.4.8",
- "p3-baby-bear",
- "p3-bn254-fr",
- "p3-challenger",
- "p3-commit",
- "p3-field",
- "p3-matrix",
- "p3-symmetric",
- "p3-util",
- "rayon",
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
  "mti",
  "num-bigint 0.4.8",
  "opentelemetry 0.23.0",
  "pin-project",
  "rand 0.8.7",
  "reqwest 0.12.28",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "serde",
  "serde_json",
  "serial_test",
@@ -15628,49 +14857,23 @@ dependencies = [
  "sp1-recursion-compiler",
  "sp1-recursion-executor",
  "sp1-recursion-gnark-ffi",
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "sp1-recursion-machine",
  "sp1-verifier",
  "static_assertions",
  "sysinfo",
  "tempfile",
-<<<<<<< HEAD
-=======
- "sp1-stark",
->>>>>>> a9263937 (update to sdk-v1.24.0)
- "thiserror 1.0.69",
- "tokio",
- "tonic 0.12.3",
-=======
  "thiserror 1.0.69",
  "tokio",
  "tonic",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "tracing",
  "tracing-appender",
  "tracing-subscriber",
 ]
 
 [[package]]
-<<<<<<< HEAD
-<<<<<<< HEAD
 name = "sp1-prover-types"
 version = "6.3.1"
 source = "git+https://github.com/succinctlabs/sp1.git?rev=3a98ea24252f1ba91401f25ce7dbcb9eb743d76a#3a98ea24252f1ba91401f25ce7dbcb9eb743d76a"
-=======
-name = "sp1-recursion-circuit"
-version = "5.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c956633f64e93396eecc712d6516cfda94f32c0855d149b71dc43911e7b7f26f"
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
-name = "sp1-prover-types"
-version = "6.3.1"
-source = "git+https://github.com/succinctlabs/sp1.git?rev=3a98ea24252f1ba91401f25ce7dbcb9eb743d76a#3a98ea24252f1ba91401f25ce7dbcb9eb743d76a"
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
 dependencies = [
  "anyhow",
  "async-scoped",
@@ -15678,10 +14881,6 @@ dependencies = [
  "chrono",
  "futures-util",
  "hashbrown 0.14.5",
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "mti",
  "prost 0.13.5",
  "serde",
@@ -15689,11 +14888,7 @@ dependencies = [
  "sp1-hypercube",
  "sp1-primitives",
  "tokio",
-<<<<<<< HEAD
- "tonic 0.12.3",
-=======
  "tonic",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "tonic-build",
  "tracing",
 ]
@@ -15705,27 +14900,7 @@ source = "git+https://github.com/succinctlabs/sp1.git?rev=3a98ea24252f1ba91401f2
 dependencies = [
  "bincode",
  "itertools 0.14.0",
-<<<<<<< HEAD
- "rand 0.8.5",
-=======
- "itertools 0.13.0",
- "num-traits",
- "p3-air",
- "p3-baby-bear",
- "p3-bn254-fr",
- "p3-challenger",
- "p3-commit",
- "p3-dft",
- "p3-field",
- "p3-fri",
- "p3-matrix",
- "p3-symmetric",
- "p3-uni-stark",
- "p3-util",
-=======
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "rand 0.8.7",
->>>>>>> a9263937 (update to sdk-v1.24.0)
  "rayon",
  "serde",
  "slop-air",
@@ -15759,19 +14934,8 @@ dependencies = [
 
 [[package]]
 name = "sp1-recursion-compiler"
-<<<<<<< HEAD
-<<<<<<< HEAD
 version = "6.3.1"
 source = "git+https://github.com/succinctlabs/sp1.git?rev=3a98ea24252f1ba91401f25ce7dbcb9eb743d76a#3a98ea24252f1ba91401f25ce7dbcb9eb743d76a"
-=======
-version = "5.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "61aa201b49cbdd52be19faec75f648e7e5e2c4930bcea7f4d1f1dbb3882cc518"
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
-version = "6.3.1"
-source = "git+https://github.com/succinctlabs/sp1.git?rev=3a98ea24252f1ba91401f25ce7dbcb9eb743d76a#3a98ea24252f1ba91401f25ce7dbcb9eb743d76a"
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
 dependencies = [
  "backtrace",
  "cfg-if",
@@ -15789,54 +14953,15 @@ dependencies = [
 ]
 
 [[package]]
-<<<<<<< HEAD
-<<<<<<< HEAD
 name = "sp1-recursion-executor"
 version = "6.3.1"
 source = "git+https://github.com/succinctlabs/sp1.git?rev=3a98ea24252f1ba91401f25ce7dbcb9eb743d76a#3a98ea24252f1ba91401f25ce7dbcb9eb743d76a"
-=======
-name = "sp1-recursion-core"
-version = "5.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e919d8031abe3b01ed001d5877801c2edcea0d98de56786a3e631a10fea3400d"
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
-name = "sp1-recursion-executor"
-version = "6.3.1"
-source = "git+https://github.com/succinctlabs/sp1.git?rev=3a98ea24252f1ba91401f25ce7dbcb9eb743d76a#3a98ea24252f1ba91401f25ce7dbcb9eb743d76a"
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
 dependencies = [
  "backtrace",
  "cfg-if",
  "hashbrown 0.14.5",
-<<<<<<< HEAD
-<<<<<<< HEAD
  "itertools 0.14.0",
  "range-set-blaze",
-=======
- "itertools 0.13.0",
- "num_cpus",
- "p3-air",
- "p3-baby-bear",
- "p3-bn254-fr",
- "p3-challenger",
- "p3-commit",
- "p3-dft",
- "p3-field",
- "p3-fri",
- "p3-matrix",
- "p3-maybe-rayon",
- "p3-merkle-tree",
- "p3-poseidon2",
- "p3-symmetric",
- "p3-util",
- "pathdiff",
- "rand 0.8.7",
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
- "itertools 0.14.0",
- "range-set-blaze",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "serde",
  "slop-algebra",
  "slop-maybe-rayon",
@@ -15852,35 +14977,14 @@ dependencies = [
 
 [[package]]
 name = "sp1-recursion-gnark-ffi"
-<<<<<<< HEAD
-<<<<<<< HEAD
 version = "6.3.1"
 source = "git+https://github.com/succinctlabs/sp1.git?rev=3a98ea24252f1ba91401f25ce7dbcb9eb743d76a#3a98ea24252f1ba91401f25ce7dbcb9eb743d76a"
-=======
-version = "5.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b651c433d85aaa869fb581f5209626c80c2a345191fac7419a2e97aaad017bbc"
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
-version = "6.3.1"
-source = "git+https://github.com/succinctlabs/sp1.git?rev=3a98ea24252f1ba91401f25ce7dbcb9eb743d76a#3a98ea24252f1ba91401f25ce7dbcb9eb743d76a"
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
 dependencies = [
  "anyhow",
  "bincode",
  "cfg-if",
  "hex",
-<<<<<<< HEAD
- "num-bigint 0.4.6",
-=======
  "num-bigint 0.4.8",
-<<<<<<< HEAD
- "p3-baby-bear",
- "p3-field",
- "p3-symmetric",
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "serde",
  "serde_json",
  "sha2 0.10.9",
@@ -15900,11 +15004,7 @@ version = "6.3.1"
 source = "git+https://github.com/succinctlabs/sp1.git?rev=3a98ea24252f1ba91401f25ce7dbcb9eb743d76a#3a98ea24252f1ba91401f25ce7dbcb9eb743d76a"
 dependencies = [
  "itertools 0.14.0",
-<<<<<<< HEAD
- "rand 0.8.5",
-=======
  "rand 0.8.7",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "slop-air",
  "slop-algebra",
  "slop-basefold",
@@ -15921,30 +15021,11 @@ dependencies = [
 
 [[package]]
 name = "sp1-sdk"
-<<<<<<< HEAD
-<<<<<<< HEAD
 version = "6.3.1"
 source = "git+https://github.com/succinctlabs/sp1.git?rev=3a98ea24252f1ba91401f25ce7dbcb9eb743d76a#3a98ea24252f1ba91401f25ce7dbcb9eb743d76a"
 dependencies = [
  "anyhow",
  "async-trait",
-=======
-version = "5.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2ed77ad8133ef4d915ad55ce700b53cd32a72fc3829ae4ad0fdf4db1982c983a"
-=======
-version = "6.3.1"
-source = "git+https://github.com/succinctlabs/sp1.git?rev=3a98ea24252f1ba91401f25ce7dbcb9eb743d76a#3a98ea24252f1ba91401f25ce7dbcb9eb743d76a"
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
-dependencies = [
- "anyhow",
- "async-trait",
-<<<<<<< HEAD
- "aws-config",
- "aws-sdk-kms",
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "bincode",
  "cfg-if",
  "dirs",
@@ -15952,24 +15033,9 @@ dependencies = [
  "futures",
  "hex",
  "indicatif",
-<<<<<<< HEAD
-<<<<<<< HEAD
- "itertools 0.14.0",
- "k256",
- "num-bigint 0.4.6",
-=======
- "itertools 0.13.0",
- "k256",
- "p3-baby-bear",
- "p3-field",
- "p3-fri",
- "rustls 0.23.42",
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
  "itertools 0.14.0",
  "k256",
  "num-bigint 0.4.8",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "serde",
  "sha2 0.10.9",
  "sp1-build",
@@ -15985,48 +15051,7 @@ dependencies = [
  "strum 0.27.2",
  "tempfile",
  "thiserror 1.0.69",
-<<<<<<< HEAD
-<<<<<<< HEAD
  "tokio",
-=======
- "tracing",
-]
-
-[[package]]
-name = "sp1-stark"
-version = "5.2.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0e99d1cc89ba28fc95736afb1e6ad22b9eb689e95a1dbb29cf0e9d1fa4fc2a5c"
-dependencies = [
- "arrayref",
- "hashbrown 0.14.5",
- "itertools 0.13.0",
- "num-bigint 0.4.8",
- "num-traits",
- "p3-air",
- "p3-baby-bear",
- "p3-challenger",
- "p3-commit",
- "p3-dft",
- "p3-field",
- "p3-fri",
- "p3-matrix",
- "p3-maybe-rayon",
- "p3-merkle-tree",
- "p3-poseidon2",
- "p3-symmetric",
- "p3-uni-stark",
- "p3-util",
- "rayon-scan",
- "serde",
- "sp1-derive",
- "sp1-primitives",
- "strum 0.26.3",
- "sysinfo",
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
- "tokio",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "tracing",
 ]
 
@@ -16053,11 +15078,7 @@ dependencies = [
  "sp1-recursion-machine",
  "strum 0.27.2",
  "substrate-bn-succinct-rs",
-<<<<<<< HEAD
- "thiserror 2.0.18",
-=======
  "thiserror 2.0.19",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
 ]
 
 [[package]]
@@ -16224,31 +15245,12 @@ dependencies = [
 ]
 
 [[package]]
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
 name = "strength_reduce"
 version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fe895eb47f22e2ddd4dabc02bce419d2e643c8e3b585c78158b349195bc24d82"
 
 [[package]]
-<<<<<<< HEAD
-name = "string-interner"
-version = "0.17.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1c6a0d765f5807e98a091107bae0a56ea3799f66a5de47b2c84c94a39c09974e"
-dependencies = [
- "cfg-if",
- "hashbrown 0.14.5",
-]
-
-[[package]]
-=======
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
 name = "strsim"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -16271,11 +15273,7 @@ checksum = "59ab74230a0592602e361bd63c645413fa8cbe4500d10274e849179e5c72548f"
 dependencies = [
  "proc-macro2",
  "quote",
-<<<<<<< HEAD
- "syn 2.0.117",
-=======
  "syn 2.0.119",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
 ]
 
 [[package]]
@@ -16720,8 +15718,6 @@ dependencies = [
 ]
 
 [[package]]
-<<<<<<< HEAD
-=======
 name = "syn-solidity"
 version = "0.8.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -16734,7 +15730,6 @@ dependencies = [
 ]
 
 [[package]]
->>>>>>> a9263937 (update to sdk-v1.24.0)
 name = "sync_wrapper"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -17212,11 +16207,7 @@ version = "0.22.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "41fe8c660ae4257887cf66394862d21dbca4a6ddd26f04a3560410406a2f819a"
 dependencies = [
-<<<<<<< HEAD
- "indexmap 2.13.0",
-=======
  "indexmap 2.14.0",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "serde",
  "serde_spanned 0.6.9",
  "toml_datetime 0.6.11",
@@ -17230,17 +16221,8 @@ version = "0.25.13+spec-1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6975367e4d2ef766d86af01ffad14b622fecc8d4357a998fbc4deb6e9bacaf9b"
 dependencies = [
-<<<<<<< HEAD
-<<<<<<< HEAD
- "indexmap 2.13.0",
- "toml_datetime 1.0.1+spec-1.1.0",
-=======
- "indexmap",
-=======
  "indexmap 2.14.0",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "toml_datetime 1.1.1+spec-1.1.0",
->>>>>>> a9263937 (update to sdk-v1.24.0)
  "toml_parser",
  "winnow 1.0.4",
 ]
@@ -17261,49 +16243,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5d99f8c9a7727884afe522e9bd5edbfc91a3312b36a77b5fb8926e4c31a41801"
 
 [[package]]
-<<<<<<< HEAD
-name = "tonic"
-<<<<<<< HEAD
-version = "0.12.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "877c5b330756d856ffcc4553ab34a5684481ade925ecc54bcd1bf02b1d0d4d52"
-dependencies = [
- "async-stream",
- "async-trait",
- "axum",
- "base64",
- "bytes",
- "h2 0.4.13",
- "http 1.4.0",
- "http-body 1.0.1",
- "http-body-util",
- "hyper 1.8.1",
- "hyper-timeout",
- "hyper-util",
- "percent-encoding",
- "pin-project",
- "prost 0.13.5",
- "rustls-pemfile",
- "socket2 0.5.10",
- "tokio",
- "tokio-rustls",
- "tokio-stream",
- "tower 0.4.13",
- "tower-layer",
- "tower-service",
- "tracing",
-]
-
-[[package]]
-name = "tonic"
-version = "0.14.5"
-=======
-version = "0.14.6"
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
 name = "toml_writer"
 version = "1.1.2+spec-1.1.0"
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7d56353a2a665ad0f41a421187180aab746c8c325620617ad883a99a1cbe66d2"
 
@@ -17342,43 +16283,15 @@ dependencies = [
 [[package]]
 name = "tonic-build"
 version = "0.12.3"
-<<<<<<< HEAD
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9557ce109ea773b399c9b9e5dca39294110b74f1f342cb347a80d1fce8c26a11"
 dependencies = [
- "prettyplease",
- "proc-macro2",
- "prost-build 0.13.5",
- "prost-types 0.13.5",
- "quote",
- "syn 2.0.117",
-]
-
-[[package]]
-name = "tonic-prost"
-version = "0.14.6"
-=======
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9557ce109ea773b399c9b9e5dca39294110b74f1f342cb347a80d1fce8c26a11"
-dependencies = [
-<<<<<<< HEAD
- "bytes",
-<<<<<<< HEAD
- "prost 0.14.3",
- "tonic 0.14.5",
-=======
- "prost 0.14.4",
- "tonic",
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
  "prettyplease",
  "proc-macro2",
  "prost-build 0.13.5",
  "prost-types 0.13.5",
  "quote",
  "syn 2.0.119",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
 ]
 
 [[package]]
@@ -17392,11 +16305,7 @@ dependencies = [
  "indexmap 1.9.3",
  "pin-project",
  "pin-project-lite",
-<<<<<<< HEAD
- "rand 0.8.5",
-=======
  "rand 0.8.7",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "slab",
  "tokio",
  "tokio-util",
@@ -17578,17 +16487,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "adbc64cba7137545b8044cb1fe9814f7aacf3c6b5f9b45be8bb5db538befdb26"
 dependencies = [
  "js-sys",
-<<<<<<< HEAD
-<<<<<<< HEAD
- "opentelemetry 0.31.0",
-=======
- "opentelemetry",
- "opentelemetry_sdk",
- "rustversion",
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
  "opentelemetry 0.32.0",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "smallvec",
  "tracing",
  "tracing-core",
@@ -17784,34 +16683,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "676ac81d5454c4dcf37955d34fa8626ede3490f744b86ca14a7b90168d2a08aa"
 
 [[package]]
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-name = "twirp-rs"
-version = "0.13.0-succinct"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "27dfcc06b8d9262bc2d4b8d1847c56af9971a52dd8a0076876de9db763227d0d"
-dependencies = [
- "async-trait",
- "axum",
- "futures",
- "http 1.4.2",
- "http-body-util",
- "hyper 1.10.1",
- "prost 0.13.5",
- "reqwest",
- "serde",
- "serde_json",
- "thiserror 1.0.69",
- "tokio",
- "tower 0.5.3",
- "url",
-]
-
-[[package]]
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
 name = "twox-hash"
 version = "1.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -17825,36 +16696,7 @@ dependencies = [
 
 [[package]]
 name = "twox-hash"
-<<<<<<< HEAD
-<<<<<<< HEAD
 version = "2.1.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8464ec13c3691491391d9fce00f6416c9a48e46972f72d7865688be2080192c9"
-
-[[package]]
-name = "typeid_prefix"
-version = "1.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a9da1387307fdee46aa441e4f08a1b491e659fcac1aca9cd71f2c624a0de5d1b"
-
-[[package]]
-name = "typeid_suffix"
-version = "1.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "77b55e96f110c6db5d1a2f24072552537f0091dc90cebeaa679540bac93e7405"
-dependencies = [
- "uuid",
-]
-
-[[package]]
-name = "typenum"
-version = "1.19.0"
-=======
-version = "2.1.2"
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
-version = "2.1.3"
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8464ec13c3691491391d9fce00f6416c9a48e46972f72d7865688be2080192c9"
 
@@ -18033,16 +16875,8 @@ version = "1.24.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bf3923a6f5c4c6382e0b653c4117f48d631ea17f38ed86e2a828e6f7412f5239"
 dependencies = [
-<<<<<<< HEAD
-<<<<<<< HEAD
  "atomic",
- "getrandom 0.4.2",
-=======
-=======
- "atomic",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "getrandom 0.4.3",
->>>>>>> a9263937 (update to sdk-v1.24.0)
  "js-sys",
  "md-5",
  "sha1_smol",
@@ -18268,21 +17102,6 @@ dependencies = [
 ]
 
 [[package]]
-<<<<<<< HEAD
-name = "wasm-metadata"
-version = "0.244.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bb0e353e6a2fbdc176932bbaab493762eb1255a7900fe0fea1a2f96c296cc909"
-dependencies = [
- "anyhow",
- "indexmap 2.13.0",
- "wasm-encoder 0.244.0",
- "wasmparser 0.244.0",
-]
-
-[[package]]
-=======
->>>>>>> a9263937 (update to sdk-v1.24.0)
 name = "wasm-opt"
 version = "0.116.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -18408,45 +17227,12 @@ checksum = "a9b1e81f3eb254cf7404a82cee6926a4a3ccc5aad80cc3d43608a070c67aa1d7"
 dependencies = [
  "bitflags 2.13.1",
  "hashbrown 0.15.5",
-<<<<<<< HEAD
-<<<<<<< HEAD
- "indexmap 2.13.0",
- "semver 1.0.27",
-=======
- "indexmap",
-=======
  "indexmap 2.14.0",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "semver 1.0.28",
->>>>>>> a9263937 (update to sdk-v1.24.0)
  "serde",
 ]
 
 [[package]]
-<<<<<<< HEAD
-name = "wasmparser"
-version = "0.244.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "47b807c72e1bac69382b3a6fb3dbe8ea4c0ed87ff5629b8685ae6b9a611028fe"
-dependencies = [
- "bitflags 2.11.0",
- "hashbrown 0.15.5",
- "indexmap 2.13.0",
- "semver 1.0.27",
-]
-
-[[package]]
-name = "wasmparser-nostd"
-version = "0.100.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d5a015fe95f3504a94bb1462c717aae75253e39b9dd6c3fb1062c934535c64aa"
-dependencies = [
- "indexmap-nostd",
-]
-
-[[package]]
-=======
->>>>>>> a9263937 (update to sdk-v1.24.0)
 name = "wasmprinter"
 version = "0.236.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -18472,16 +17258,8 @@ dependencies = [
  "fxprof-processed-profile",
  "gimli 0.32.3",
  "hashbrown 0.15.5",
-<<<<<<< HEAD
-<<<<<<< HEAD
- "indexmap 2.13.0",
-=======
- "indexmap",
-=======
  "indexmap 2.14.0",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "ittapi",
->>>>>>> a9263937 (update to sdk-v1.24.0)
  "libc",
  "log",
  "mach2",
@@ -18523,17 +17301,8 @@ dependencies = [
  "cpp_demangle",
  "cranelift-bitset",
  "cranelift-entity",
-<<<<<<< HEAD
- "gimli 0.31.1",
- "indexmap 2.13.0",
-=======
  "gimli 0.32.3",
-<<<<<<< HEAD
- "indexmap",
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
  "indexmap 2.14.0",
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
  "log",
  "object 0.37.3",
  "postcard",
@@ -19287,93 +18056,7 @@ dependencies = [
 name = "wit-bindgen"
 version = "0.57.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-<<<<<<< HEAD
-checksum = "d7249219f66ced02969388cf2bb044a09756a083d0fab1e566056b04d9fbcaa5"
-dependencies = [
- "wit-bindgen-rust-macro",
-]
-
-[[package]]
-name = "wit-bindgen-core"
-version = "0.51.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ea61de684c3ea68cb082b7a88508a8b27fcc8b797d738bfc99a82facf1d752dc"
-dependencies = [
- "anyhow",
- "heck 0.5.0",
- "wit-parser",
-]
-
-[[package]]
-name = "wit-bindgen-rust"
-version = "0.51.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b7c566e0f4b284dd6561c786d9cb0142da491f46a9fbed79ea69cdad5db17f21"
-dependencies = [
- "anyhow",
- "heck 0.5.0",
- "indexmap 2.13.0",
- "prettyplease",
- "syn 2.0.117",
- "wasm-metadata",
- "wit-bindgen-core",
- "wit-component",
-]
-
-[[package]]
-name = "wit-bindgen-rust-macro"
-version = "0.51.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0c0f9bfd77e6a48eccf51359e3ae77140a7f50b1e2ebfe62422d8afdaffab17a"
-dependencies = [
- "anyhow",
- "prettyplease",
- "proc-macro2",
- "quote",
- "syn 2.0.117",
- "wit-bindgen-core",
- "wit-bindgen-rust",
-]
-
-[[package]]
-name = "wit-component"
-version = "0.244.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9d66ea20e9553b30172b5e831994e35fbde2d165325bec84fc43dbf6f4eb9cb2"
-dependencies = [
- "anyhow",
- "bitflags 2.11.0",
- "indexmap 2.13.0",
- "log",
- "serde",
- "serde_derive",
- "serde_json",
- "wasm-encoder 0.244.0",
- "wasm-metadata",
- "wasmparser 0.244.0",
- "wit-parser",
-]
-
-[[package]]
-name = "wit-parser"
-version = "0.244.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ecc8ac4bc1dc3381b7f59c34f00b67e18f910c2c0f50015669dde7def656a736"
-dependencies = [
- "anyhow",
- "id-arena",
- "indexmap 2.13.0",
- "log",
- "semver 1.0.27",
- "serde",
- "serde_derive",
- "serde_json",
- "unicode-xid",
- "wasmparser 0.244.0",
-]
-=======
 checksum = "1ebf944e87a7c253233ad6766e082e3cd714b5d03812acc24c318f549614536e"
->>>>>>> a9263937 (update to sdk-v1.24.0)
 
 [[package]]
 name = "writeable"
@@ -19626,39 +18309,6 @@ dependencies = [
 ]
 
 [[package]]
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-name = "zkhash"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4352d1081da6922701401cdd4cbf29a2723feb4cfabb5771f6fee8e9276da1c7"
-dependencies = [
- "ark-ff 0.4.2",
- "ark-std 0.4.0",
- "bitvec",
- "blake2 0.10.6",
- "bls12_381",
- "byteorder",
- "cfg-if",
- "group 0.12.1",
- "group 0.13.0",
- "halo2",
- "hex",
- "jubjub",
- "lazy_static",
- "pasta_curves 0.5.1",
- "rand 0.8.7",
- "serde",
- "sha2 0.10.9",
- "sha3 0.10.9",
- "subtle 2.6.1",
-]
-
-[[package]]
->>>>>>> a9263937 (update to sdk-v1.24.0)
-=======
->>>>>>> c36cb665 (Bump sp1 sdk to v6 (#832) (#836))
 name = "zmij"
 version = "1.0.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
