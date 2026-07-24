@@ -44,7 +44,7 @@ pub use avail_core::currency::{Balance, AVAIL, CENTS, MILLICENTS};
 pub use avail_core::{header::Header as DaHeader, AppId};
 use constants::time::*;
 pub use frame_support::{
-	construct_runtime, debug,
+	construct_runtime,
 	dispatch::DispatchClass,
 	pallet_prelude::Get,
 	parameter_types,
@@ -69,7 +69,7 @@ pub use pallet_staking::StakerStatus;
 pub use primitives::*;
 use sp_core::OpaqueMetadata;
 
-pub use sp_runtime::{Perbill, Percent, Permill, RuntimeDebug};
+pub use sp_runtime::{Perbill, Percent, Permill};
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;

@@ -40,12 +40,12 @@ use sc_telemetry::{telemetry, TelemetryHandle, CONSENSUS_INFO};
 use sc_transaction_pool_api::{InPoolTransaction, TransactionPool, TxInvalidityReportMap};
 use sp_api::{ApiExt, CallApiAt, ProvideRuntimeApi};
 use sp_blockchain::{ApplyExtrinsicFailed::Validity, Error::ApplyExtrinsicFailed, HeaderBackend};
-use sp_consensus::{DisableProofRecording, EnableProofRecording, ProofRecording, Proposal};
+use sp_consensus::{Proposal, ProposeArgs};
 use sp_core::{traits::SpawnNamed, H256};
 use sp_inherents::InherentData;
 use sp_runtime::{
 	traits::{BlakeTwo256, Block as BlockT, Hash as HashT, Header as HeaderT},
-	Digest, Percent, SaturatedConversion,
+	Percent, SaturatedConversion,
 };
 use sp_transaction_pool::runtime_api::TaggedTransactionQueue;
 use std::{collections::BTreeMap, marker::PhantomData, pin::Pin, sync::Arc, time};
@@ -65,6 +65,17 @@ pub const DEFAULT_BLOCK_SIZE_LIMIT: usize = 128 * 1024 * 1024 + 512;
 const DEFAULT_SOFT_DEADLINE_PERCENT: Percent = Percent::from_percent(50);
 
 const LOG_TARGET: &'static str = "basic-authorship";
+
+/// Marker used to preserve the existing proposer-factory API without recording a proof by
+/// default. Proof recording itself is supplied through [`ProposeArgs`].
+pub struct DisableProofRecording;
+
+/// Marker used to preserve the existing proof-recording proposer-factory constructor.
+pub struct EnableProofRecording;
+
+pub trait ProofRecording: Send + Sync + 'static {}
+impl ProofRecording for DisableProofRecording {}
+impl ProofRecording for EnableProofRecording {}
 
 /// [`Proposer`] factory.
 pub struct ProposerFactory<A, C, PR> {
@@ -302,21 +313,13 @@ where
 		+ BlobApi<Block>,
 	PR: ProofRecording,
 {
-	type Proposal =
-		Pin<Box<dyn Future<Output = Result<Proposal<Block, PR::Proof>, Self::Error>> + Send>>;
+	type Proposal = Pin<Box<dyn Future<Output = Result<Proposal<Block>, Self::Error>> + Send>>;
 	type Error = sp_blockchain::Error;
-	type ProofRecording = PR;
-	type Proof = PR::Proof;
 
-	fn propose(
-		self,
-		inherent_data: InherentData,
-		inherent_digests: Digest,
-		max_duration: time::Duration,
-		block_size_limit: Option<usize>,
-	) -> Self::Proposal {
+	fn propose(self, args: ProposeArgs<Block>) -> Self::Proposal {
 		let (tx, rx) = oneshot::channel();
 		let spawn_handle = self.spawn_handle.clone();
+		let max_duration = args.max_duration;
 
 		spawn_handle.spawn_blocking(
 			"basic-authorship-proposer",
@@ -324,9 +327,7 @@ where
 			Box::pin(async move {
 				// leave some time for evaluation and block finalization (33%)
 				let deadline = (self.now)() + max_duration - max_duration / 3;
-				let res = self
-					.propose_with(inherent_data, inherent_digests, deadline, block_size_limit)
-					.await;
+				let res = self.propose_with(args, deadline).await;
 				if tx.send(res).is_err() {
 					trace!(
 						target: LOG_TARGET,
@@ -366,17 +367,24 @@ where
 {
 	async fn propose_with(
 		self,
-		inherent_data: InherentData,
-		inherent_digests: Digest,
+		args: ProposeArgs<Block>,
 		deadline: time::Instant,
-		block_size_limit: Option<usize>,
-	) -> Result<Proposal<Block, PR::Proof>, sp_blockchain::Error> {
+	) -> Result<Proposal<Block>, sp_blockchain::Error> {
+		let ProposeArgs {
+			inherent_data,
+			inherent_digests,
+			block_size_limit,
+			storage_proof_recorder,
+			extra_extensions,
+			..
+		} = args;
 		let block_timer = time::Instant::now();
 		let mut block_builder = BlockBuilderBuilder::new(&*self.client)
 			.on_parent_block(self.parent_hash)
 			.with_parent_block_number(self.parent_number)
-			.with_proof_recording(PR::ENABLED)
+			.with_proof_recorder(storage_proof_recorder)
 			.with_inherent_digests(inherent_digests)
+			.with_extra_extensions(extra_extensions)
 			.build()?;
 
 		self.client.init_post_inherent_data();
@@ -391,16 +399,12 @@ where
 
 		self.apply_post_inherents(&mut block_builder, blob_txs_summary, total_blob_size)?;
 
-		let (block, storage_changes, proof) = block_builder.build()?.into_inner();
+		let (block, storage_changes) = block_builder.build()?.into_inner();
 		let block_took = block_timer.elapsed();
-
-		let proof =
-			PR::into_proof(proof).map_err(|e| sp_blockchain::Error::Application(Box::new(e)))?;
 
 		self.print_summary(&block, end_reason, block_took, block_timer.elapsed());
 		Ok(Proposal {
 			block,
-			proof,
 			storage_changes,
 		})
 	}
@@ -574,8 +578,7 @@ where
 			let pending_tx_data = (**pending_tx.data()).clone();
 			let pending_tx_hash = pending_tx.hash().clone();
 
-			let block_size =
-				block_builder.estimate_block_size(self.include_proof_in_block_size_estimation);
+			let block_size = block_builder.estimate_block_size();
 			if block_size + pending_tx_data.encoded_size() > block_size_limit {
 				pending_iterator.report_invalid(&pending_tx);
 				if skipped < MAX_SKIPPED_TRANSACTIONS {

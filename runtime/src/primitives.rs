@@ -41,6 +41,8 @@ pub type UncheckedExtrinsic =
 pub type Preamble = sp_runtime::generic::Preamble<Address, Signature, SignedExtra>;
 /// DA Block type as expected by this runtime.
 pub type Block = avail_core::DaBlock<Header, UncheckedExtrinsic>;
+/// Lazy block type used by runtime APIs to decode extrinsics on demand.
+pub type LazyBlock = avail_core::DaLazyBlock<Header, UncheckedExtrinsic>;
 /// Block type for the node
 pub type NodeBlock = generic::Block<Header, OpaqueExtrinsic>;
 /// A Block signed with a Justification

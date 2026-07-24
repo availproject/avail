@@ -104,7 +104,6 @@ use avail_core::{
 	ensure,
 	header::{Header as DaHeader, HeaderExtension},
 	traits::{ExtendedBlock, ExtendedHeader},
-	Seed,
 };
 
 extern crate alloc;
@@ -148,7 +147,7 @@ use sp_runtime::{
 		StaticLookup, Zero,
 	},
 	transaction_validity::TransactionValidityError,
-	DispatchError, RuntimeDebug,
+	DispatchError,
 };
 #[cfg(any(feature = "std", test))]
 use sp_std::map;
@@ -286,16 +285,7 @@ where
 /// [`ExtrinsicSuccess`](Event::ExtrinsicSuccess) and [`ExtrinsicFailed`](Event::ExtrinsicFailed)
 /// events.
 #[derive(
-	Clone,
-	Copy,
-	Eq,
-	PartialEq,
-	Default,
-	RuntimeDebug,
-	Encode,
-	Decode,
-	DecodeWithMemTracking,
-	TypeInfo,
+	Clone, Copy, Eq, PartialEq, Default, Debug, Encode, Decode, DecodeWithMemTracking, TypeInfo,
 )]
 pub struct DispatchEventInfo {
 	/// Weight of this transaction.
@@ -573,7 +563,6 @@ pub mod pallet {
 			+ sp_std::hash::Hash
 			+ AsRef<[u8]>
 			+ AsMut<[u8]>
-			+ Into<Seed>
 			+ MaxEncodedLen;
 
 		/// The hashing system (algorithm) being used in the runtime (e.g. Blake2).
@@ -1051,7 +1040,7 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::whitelist_storage]
 	#[pallet::getter(fn block_weight)]
-	pub(super) type BlockWeight<T: Config> = StorageValue<_, ConsumedWeight, ValueQuery>;
+	pub type BlockWeight<T: Config> = StorageValue<_, ConsumedWeight, ValueQuery>;
 
 	/// Total length (in bytes) for all extrinsics put together, for the current block.
 	// we no longer need MaxDiffAppIdPerBlock & MaxTxPerAppIdPerBlock
@@ -1128,6 +1117,10 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::unbounded]
 	pub type LastRuntimeUpgrade<T: Config> = StorageValue<_, LastRuntimeUpgradeInfo>;
+
+	/// Number of blocks until a pending runtime code upgrade is applied.
+	#[pallet::storage]
+	pub(super) type BlocksTillUpgrade<T: Config> = StorageValue<_, u8>;
 
 	/// True if we have upgraded so that `type RefCount` is `u32`. False (default) if not.
 	#[pallet::storage]
@@ -1221,7 +1214,7 @@ pub type Key = Vec<u8>;
 pub type KeyValue = (Vec<u8>, Vec<u8>);
 
 /// A phase of a block's execution.
-#[derive(Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen, Clone, Copy, PartialEq, Eq)]
+#[derive(Encode, Decode, Debug, TypeInfo, MaxEncodedLen, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub enum Phase {
 	/// Applying an extrinsic.
@@ -1239,7 +1232,7 @@ impl Default for Phase {
 }
 
 /// Record of an event happening.
-#[derive(Encode, Decode, RuntimeDebug, TypeInfo)]
+#[derive(Encode, Decode, Debug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Serialize, PartialEq, Eq, Clone))]
 pub struct EventRecord<E: Parameter + Member, T> {
 	/// The phase of the block it happened in.
@@ -1268,7 +1261,7 @@ type EventIndex = u32;
 pub type RefCount = u32;
 
 /// Information of an account.
-#[derive(Clone, Eq, PartialEq, Default, RuntimeDebug, Encode, Decode, TypeInfo, MaxEncodedLen)]
+#[derive(Clone, Eq, PartialEq, Default, Debug, Encode, Decode, TypeInfo, MaxEncodedLen)]
 pub struct AccountInfo<Nonce, AccountData> {
 	/// The number of transactions this account has sent.
 	pub nonce: Nonce,
@@ -1288,7 +1281,7 @@ pub struct AccountInfo<Nonce, AccountData> {
 
 /// Stores the `spec_version` and `spec_name` of when the last runtime upgrade
 /// happened.
-#[derive(RuntimeDebug, Encode, Decode, TypeInfo)]
+#[derive(Debug, Encode, Decode, TypeInfo)]
 #[cfg_attr(feature = "std", derive(PartialEq))]
 pub struct LastRuntimeUpgradeInfo {
 	pub spec_version: codec::Compact<u32>,
@@ -1547,14 +1540,14 @@ where
 }
 
 /// Reference status; can be either referenced or unreferenced.
-#[derive(RuntimeDebug)]
+#[derive(Debug)]
 pub enum RefStatus {
 	Referenced,
 	Unreferenced,
 }
 
 /// Some resultant status relevant to incrementing a provider/self-sufficient reference.
-#[derive(Eq, PartialEq, RuntimeDebug)]
+#[derive(Eq, PartialEq, Debug)]
 pub enum IncRefStatus {
 	/// Account was created.
 	Created,
@@ -1563,7 +1556,7 @@ pub enum IncRefStatus {
 }
 
 /// Some resultant status relevant to decrementing a provider/self-sufficient reference.
-#[derive(Eq, PartialEq, RuntimeDebug)]
+#[derive(Eq, PartialEq, Debug)]
 pub enum DecRefStatus {
 	/// Account was destroyed.
 	Reaped,
@@ -1620,15 +1613,45 @@ impl<T: Config> Pallet<T> {
 		Account::<T>::contains_key(who)
 	}
 
-	/// Write code to the storage and emit related events and digest items.
+	/// Write code to storage and emit related events and digest items. Depending on the system
+	/// version, the code is either applied immediately or scheduled as a pending upgrade.
 	///
 	/// Note this function almost never should be used directly. It is exposed
 	/// for `OnSetCode` implementations that defer actual code being written to
 	/// the storage (for instance in case of parachains).
 	pub fn update_code_in_storage(code: &[u8]) {
-		storage::unhashed::put_raw(well_known_keys::CODE, code);
+		match T::Version::get().system_version {
+			0..=2 => storage::unhashed::put_raw(well_known_keys::CODE, code),
+			_ => {
+				BlocksTillUpgrade::<T>::put(2u8);
+				storage::unhashed::put_raw(well_known_keys::PENDING_CODE, code);
+			},
+		}
 		Self::deposit_log(generic::DigestItem::RuntimeEnvironmentUpdated);
 		Self::deposit_event(Event::CodeUpdated);
+	}
+
+	/// Apply pending runtime code when its scheduled activation block is reached.
+	///
+	/// This is called by `frame-executive` while finalizing a block.
+	pub fn maybe_apply_pending_code_upgrade() {
+		let Some(remaining) = BlocksTillUpgrade::<T>::get() else {
+			return;
+		};
+		let remaining = remaining.saturating_sub(1);
+
+		if remaining > 0 {
+			BlocksTillUpgrade::<T>::put(remaining);
+			return;
+		}
+
+		BlocksTillUpgrade::<T>::kill();
+		let Some(new_code) = storage::unhashed::get_raw(well_known_keys::PENDING_CODE) else {
+			return;
+		};
+
+		storage::unhashed::put_raw(well_known_keys::CODE, &new_code);
+		storage::unhashed::kill(well_known_keys::PENDING_CODE);
 	}
 
 	/// Whether all inherents have been applied.
@@ -1929,6 +1952,11 @@ impl<T: Config> Pallet<T> {
 	/// Gets extrinsics count.
 	pub fn extrinsic_count() -> u32 {
 		ExtrinsicCount::<T>::get().unwrap_or_default()
+	}
+
+	/// Returns the current active execution phase.
+	pub fn execution_phase() -> Option<Phase> {
+		ExecutionPhase::<T>::get()
 	}
 
 	/// Returns all extrinsics len in raw.

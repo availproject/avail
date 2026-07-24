@@ -17,7 +17,7 @@
 //! `NodeCodec` implementation for Rlp
 
 use alloc::vec::Vec;
-use core::{borrow::Borrow, marker::PhantomData};
+use core::{borrow::Borrow, error::Error, fmt, marker::PhantomData};
 use hash_db::Hasher;
 use primitive_types::H256;
 use rlp::{DecoderError, Prototype, Rlp, RlpStream};
@@ -30,6 +30,24 @@ use trie_db::{
 #[derive(Default, Clone)]
 pub struct RlpNodeCodec<H: Hasher> {
 	mark: PhantomData<H>,
+}
+
+/// RLP decoding error wrapper that implements `core::error::Error` in `no_std` builds.
+#[derive(Debug)]
+pub struct RlpDecoderError(DecoderError);
+
+impl fmt::Display for RlpDecoderError {
+	fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+		self.0.fmt(formatter)
+	}
+}
+
+impl Error for RlpDecoderError {}
+
+impl From<DecoderError> for RlpDecoderError {
+	fn from(error: DecoderError) -> Self {
+		Self(error)
+	}
 }
 
 const HASHED_NULL_NODE: [u8; 32] = [
@@ -45,7 +63,7 @@ impl<H> NodeCodec for RlpNodeCodec<H>
 where
 	H: Hasher<Out = H256>,
 {
-	type Error = DecoderError;
+	type Error = RlpDecoderError;
 	type HashOut = H::Out;
 
 	fn hashed_null_node() -> H::Out {
@@ -136,7 +154,7 @@ where
 			// an empty branch index.
 			Prototype::Data(0) => Ok(NodePlan::Empty),
 			// something went wrong.
-			_ => Err(DecoderError::Custom("Rlp is not valid.")),
+			_ => Err(DecoderError::Custom("Rlp is not valid.").into()),
 		}
 	}
 

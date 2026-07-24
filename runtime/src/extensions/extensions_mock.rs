@@ -2,7 +2,6 @@
 
 use codec::DecodeWithMemTracking;
 use codec::{Decode, Encode, MaxEncodedLen};
-use frame_support::pallet_prelude::RuntimeDebug;
 use frame_support::parameter_types;
 use frame_support::traits::fungible::HoldConsideration;
 use frame_support::traits::EqualPrivilegeOnly;
@@ -155,7 +154,7 @@ parameter_types! {
 	Encode,
 	Decode,
 	DecodeWithMemTracking,
-	RuntimeDebug,
+	Debug,
 	MaxEncodedLen,
 	scale_info::TypeInfo,
 )]

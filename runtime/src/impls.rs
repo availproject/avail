@@ -40,7 +40,7 @@ use pallet_transaction_payment::{FungibleAdapter, Multiplier, TargetedFeeAdjustm
 use pallet_treasury::TreasuryAccountId;
 use pallet_tx_pause::RuntimeCallNameOf;
 use sp_core::crypto::KeyTypeId;
-use sp_core::{ConstU64, RuntimeDebug};
+use sp_core::ConstU64;
 use sp_runtime::{
 	generic::Era,
 	traits::{self, BlakeTwo256, Bounded, Convert, OpaqueKeys},
@@ -761,7 +761,7 @@ impl pallet_mmr::Config for Runtime {
 	Encode,
 	Decode,
 	DecodeWithMemTracking,
-	RuntimeDebug,
+	Debug,
 	MaxEncodedLen,
 	scale_info::TypeInfo,
 )]

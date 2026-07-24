@@ -65,7 +65,7 @@ impl frame_benchmarking_cli::ExtrinsicBuilder for RemarkBuilder {
 			SystemCall::remark { remark: vec![] },
 			Some(nonce),
 		);
-		OpaqueExtrinsic::from_bytes(&extrinsic.encode())
+		OpaqueExtrinsic::try_from_encoded_extrinsic(&extrinsic.encode())
 			.map_err(|_| "`AppUncheckedExtrinsic` cannot be decoded as `OpaqueExtrinsic`")
 	}
 }
@@ -111,7 +111,7 @@ impl frame_benchmarking_cli::ExtrinsicBuilder for TransferKeepAliveBuilder {
 			},
 			Some(nonce),
 		);
-		OpaqueExtrinsic::from_bytes(&extrinsic.encode())
+		OpaqueExtrinsic::try_from_encoded_extrinsic(&extrinsic.encode())
 			.map_err(|_| "`AppUncheckedExtrinsic` cannot be decoded as `OpaqueExtrinsic`")
 	}
 }
