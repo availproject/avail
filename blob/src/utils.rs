@@ -16,7 +16,8 @@ use sp_api::ProvideRuntimeApi;
 use sp_authority_discovery::AuthorityId;
 use sp_core::sr25519::{Public, Signature};
 use sp_core::H256;
-use sp_core::{crypto::KeyTypeId, sr25519, twox_128};
+use sp_core::{crypto::KeyTypeId, sr25519};
+use sp_io::hashing::{blake2_256, twox_128};
 use sp_runtime::generic::Preamble;
 use sp_runtime::MultiAddress;
 use sp_runtime::{
@@ -128,7 +129,7 @@ pub fn designated_prover_index(
 	input[..32].copy_from_slice(finalized_block_hash.as_bytes());
 	input[32..].copy_from_slice(blob_hash.as_bytes());
 
-	let h = sp_core::blake2_256(&input);
+	let h = blake2_256(&input);
 	u32::from_le_bytes(h[..4].try_into().unwrap()) % nb_validators_per_blob
 }
 

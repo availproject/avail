@@ -41,6 +41,8 @@ pub type UncheckedExtrinsic =
 pub type Preamble = sp_runtime::generic::Preamble<Address, Signature, SignedExtra>;
 /// DA Block type as expected by this runtime.
 pub type Block = avail_core::DaBlock<Header, UncheckedExtrinsic>;
+/// Lazy block type used by runtime APIs to decode extrinsics on demand.
+pub type LazyBlock = avail_core::DaLazyBlock<Header, UncheckedExtrinsic>;
 /// Block type for the node
 pub type NodeBlock = generic::Block<Header, OpaqueExtrinsic>;
 /// A Block signed with a Justification
@@ -171,8 +173,8 @@ mod tests {
 		let raw_bytes: Vec<u8> = uxt.encode();
 
 		// OpaqueExtrinsic is assumed to hold exactly these raw bytes.
-		let opaque =
-			OpaqueExtrinsic::from_bytes(raw_bytes.as_slice()).expect("opaque from bytes ok");
+		let opaque = OpaqueExtrinsic::try_from_encoded_extrinsic(raw_bytes.as_slice())
+			.expect("opaque from bytes ok");
 
 		let decoded: UncheckedExtrinsic =
 			opaque_to_unchecked(&opaque).expect("decode must succeed");
@@ -224,8 +226,8 @@ mod tests {
 			let raw_bytes: Vec<u8> = uxt.encode();
 
 			// OpaqueExtrinsic holds exactly these bytes.
-			let opaque =
-				OpaqueExtrinsic::from_bytes(raw_bytes.as_slice()).expect("opaque from bytes ok");
+			let opaque = OpaqueExtrinsic::try_from_encoded_extrinsic(raw_bytes.as_slice())
+				.expect("opaque from bytes ok");
 
 			let decoded: UncheckedExtrinsic =
 				opaque_to_unchecked(&opaque).expect("decode must succeed");

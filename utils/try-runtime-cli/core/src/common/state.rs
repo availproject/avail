@@ -18,7 +18,7 @@
 use std::{fmt::Debug, path::PathBuf, str::FromStr};
 
 use frame_remote_externalities::{
-	Builder, Mode, OfflineConfig, OnlineConfig, RemoteExternalities, SnapshotConfig, Transport,
+	Builder, Mode, OfflineConfig, OnlineConfig, RemoteExternalities, SnapshotConfig,
 };
 use parity_scale_codec::Decode;
 use sc_cli::{execution_method_from_cli, RuntimeVersion};
@@ -27,9 +27,10 @@ use sc_executor::{
 };
 use sp_api::{CallContext, StorageProof};
 use sp_core::{
-	hexdisplay::HexDisplay, storage::well_known_keys, traits::ReadRuntimeVersion, twox_128, Hasher,
+	hexdisplay::HexDisplay, storage::well_known_keys, traits::ReadRuntimeVersion, Hasher,
 };
 use sp_externalities::Extensions;
+use sp_io::hashing::twox_128;
 use sp_runtime::{
 	traits::{BlakeTwo256, Block as BlockT, HashingFor, Header as HeaderT},
 	DeserializeOwned,
@@ -204,15 +205,9 @@ impl State {
                         })
                     })
                     .collect::<Result<Vec<_>, _>>()?;
-				if uri.len() > 1 {
-					log::warn!(
-						target: LOG_TARGET,
-						"multiple RPC URIs were provided, but this frame-remote-externalities revision only supports a single transport; using the first URI"
-					);
-				}
 				Builder::<Block>::new().mode(Mode::Online(OnlineConfig {
 					at,
-					transport: Transport::from(uri[0].clone()),
+					transport_uris: uri.clone(),
 					state_snapshot,
 					pallets: pallet.clone(),
 					child_trie: *child_tree,
@@ -388,7 +383,11 @@ pub(crate) fn state_machine_call<Block: BlockT, HostFns: HostFunctions>(
 		method,
 		data,
 		&mut extensions,
-		&sp_state_machine::backend::BackendRuntimeCode::new(&ext.backend).runtime_code()?,
+		&sp_state_machine::backend::BackendRuntimeCode::new(
+			&ext.backend,
+			sp_state_machine::backend::TryPendingCode::No,
+		)
+		.runtime_code()?,
 		CallContext::Offchain,
 	)
 	.execute()
@@ -411,7 +410,10 @@ pub(crate) fn state_machine_call_with_proof<Block: BlockT, HostFns: HostFunction
 	mut extensions: Extensions,
 	maybe_export_proof: Option<PathBuf>,
 ) -> sc_cli::Result<(StorageProof, Vec<u8>)> {
-	let runtime_code_backend = sp_state_machine::backend::BackendRuntimeCode::new(&ext.backend);
+	let runtime_code_backend = sp_state_machine::backend::BackendRuntimeCode::new(
+		&ext.backend,
+		sp_state_machine::backend::TryPendingCode::No,
+	);
 	let proving_backend = TrieBackendBuilder::wrap(&ext.backend)
 		.with_recorder(Default::default())
 		.build();

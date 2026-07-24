@@ -13,7 +13,8 @@ use sc_service::TFullClient;
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_authority_discovery::AuthorityId;
-use sp_core::{blake2_256, H256};
+use sp_core::H256;
+use sp_io::hashing::blake2_256;
 use sp_runtime::{
 	traits::{Block as BlockT, Hash as HashT, HashingFor},
 	AccountId32,

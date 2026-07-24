@@ -95,6 +95,8 @@ pub fn run() -> Result<()> {
 					endpoint_logs: cli.otel_logs_endpoint.clone(),
 					service_name: env!("CARGO_CRATE_NAME").into(),
 					service_version: env!("CARGO_PKG_VERSION").into(),
+					resource_attributes: Vec::new(),
+					metric_temporality: sc_tracing::logging::internal_utils::Temporality::Delta,
 				};
 
 				builder.with_otel(params);

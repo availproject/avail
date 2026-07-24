@@ -24,7 +24,7 @@
 //! `frame_system` tracks consumption of each of these resources separately for each
 //! `DispatchClass`. This module contains configuration object for both resources,
 //! which should be passed to `frame_system` configuration when runtime is being set up.
-use core::num::NonZeroU32;
+use core::{fmt::Debug, num::NonZeroU32};
 
 use avail_core::kate::DATA_CHUNK_SIZE;
 use avail_core::{BlockLengthColumns, BlockLengthRows, BLOCK_CHUNK_SIZE};
@@ -36,7 +36,7 @@ use frame_support::{
 };
 use scale_info::{build::Fields, Path, Type, TypeInfo};
 use serde::{Deserialize, Serialize};
-use sp_runtime::{traits::Bounded, Perbill, RuntimeDebug};
+use sp_runtime::{traits::Bounded, Perbill};
 use sp_std::vec::Vec;
 use static_assertions::const_assert;
 
@@ -44,7 +44,7 @@ pub const MAX_BLOCK_ROWS: BlockLengthRows = BlockLengthRows(4096);
 pub const MAX_BLOCK_COLUMNS: BlockLengthColumns = BlockLengthColumns(1024);
 
 /// Block length limit configuration.
-#[derive(RuntimeDebug, PartialEq, Clone, MaxEncodedLen, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Clone, MaxEncodedLen, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BlockLength {
 	/// Maximal total length in bytes for each extrinsic class.
@@ -58,7 +58,7 @@ pub struct BlockLength {
 	chunk_size: NonZeroU32,
 }
 
-#[derive(RuntimeDebug, Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub enum BlockLengthError {
 	InvalidChunkSize,
 	OverflowBaseMax,
@@ -263,7 +263,7 @@ impl BlockLength {
 	}
 }
 
-#[derive(Default, RuntimeDebug)]
+#[derive(Default, Debug)]
 pub struct ValidationErrors {
 	pub has_errors: bool,
 	#[cfg(feature = "std")]
@@ -289,7 +289,7 @@ pub type ValidationResult = Result<BlockWeights, ValidationErrors>;
 const DEFAULT_NORMAL_RATIO: Perbill = Perbill::from_percent(75);
 
 /// `DispatchClass`-specific weight configuration.
-#[derive(RuntimeDebug, Clone, codec::Encode, codec::Decode, TypeInfo)]
+#[derive(Debug, Clone, codec::Encode, codec::Decode, TypeInfo)]
 pub struct WeightsPerClass {
 	/// Base weight of single extrinsic of given class.
 	pub base_extrinsic: Weight,
@@ -389,7 +389,7 @@ pub struct WeightsPerClass {
 ///
 /// As a consequence of `reserved` space, total consumed block weight might exceed `max_block`
 /// value, so this parameter should rather be thought of as "target block weight" than a hard limit.
-#[derive(RuntimeDebug, Clone, codec::Encode, codec::Decode, TypeInfo)]
+#[derive(Debug, Clone, codec::Encode, codec::Decode, TypeInfo)]
 pub struct BlockWeights {
 	/// Base weight of block execution.
 	pub base_block: Weight,

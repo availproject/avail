@@ -23,7 +23,7 @@ pub type AppKeyFor<T> = BoundedVec<u8, <T as Config>::MaxAppKeyLength>;
 pub type AppDataFor<T> = BoundedVec<u8, <T as Config>::MaxAppDataLength>;
 
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, RuntimeDebug, MaxEncodedLen)]
+#[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Debug, MaxEncodedLen)]
 pub struct AppKeyInfo<Acc: PartialEq> {
 	/// Owner of the key
 	pub owner: Acc,
@@ -54,7 +54,7 @@ impl<AccountId> SessionDataProvider<AccountId> for () {
 	}
 }
 
-#[derive(Clone, Encode, Decode, DecodeWithMemTracking, TypeInfo, PartialEq, RuntimeDebug)]
+#[derive(Clone, Encode, Decode, DecodeWithMemTracking, TypeInfo, PartialEq, Debug)]
 pub struct BlobTxSummaryRuntime {
 	pub hash: H256,
 	pub tx_index: u32,
@@ -141,15 +141,7 @@ impl Default for BlobRuntimeParameters {
 /// Structure used when there is an offence reported by validators client side.
 /// They all need some vouching from accusing validators and it needs to reach a threshold to be considered valid.
 #[derive(
-	RuntimeDebug,
-	Clone,
-	PartialEq,
-	Eq,
-	Encode,
-	Decode,
-	DecodeWithMemTracking,
-	MaxEncodedLen,
-	TypeInfo,
+	Debug, Clone, PartialEq, Eq, Encode, Decode, DecodeWithMemTracking, MaxEncodedLen, TypeInfo,
 )]
 pub enum BlobOffenceKind {
 	SummaryNbBlobMismatch,
@@ -162,15 +154,7 @@ pub enum BlobOffenceKind {
 }
 
 #[derive(
-	RuntimeDebug,
-	Clone,
-	PartialEq,
-	Eq,
-	Encode,
-	Decode,
-	DecodeWithMemTracking,
-	MaxEncodedLen,
-	TypeInfo,
+	Debug, Clone, PartialEq, Eq, Encode, Decode, DecodeWithMemTracking, MaxEncodedLen, TypeInfo,
 )]
 pub struct ValidatorVoucher {
 	pub session_index: u32,
@@ -189,15 +173,7 @@ impl ValidatorVoucher {
 }
 
 #[derive(
-	RuntimeDebug,
-	Clone,
-	PartialEq,
-	Eq,
-	Encode,
-	Decode,
-	DecodeWithMemTracking,
-	MaxEncodedLen,
-	TypeInfo,
+	Debug, Clone, PartialEq, Eq, Encode, Decode, DecodeWithMemTracking, MaxEncodedLen, TypeInfo,
 )]
 pub struct OffenceKey {
 	pub block_hash: H256,
@@ -235,7 +211,7 @@ impl OffenceKey {
 	}
 }
 
-#[derive(RuntimeDebug, PartialEq, Eq, Encode, Decode, MaxEncodedLen, TypeInfo)]
+#[derive(Debug, PartialEq, Eq, Encode, Decode, MaxEncodedLen, TypeInfo)]
 #[scale_info(skip_type_params(T))]
 pub struct OffenceRecord<T: Config> {
 	/// What type of offence this record represents.
@@ -342,7 +318,7 @@ impl<T: Config> OffenceRecord<T> {
 	}
 }
 
-#[derive(Clone, Encode, Decode, RuntimeDebug, PartialEq, Eq, TypeInfo)]
+#[derive(Clone, Encode, Decode, Debug, PartialEq, Eq, TypeInfo)]
 pub struct BlobOffence<Offender> {
 	pub kind: BlobOffenceKind,
 	pub key: OffenceKey,

@@ -768,7 +768,7 @@ mod clear_blob_offence_records {
 		new_test_ext().execute_with(|| {
 			let alice: RuntimeOrigin = RawOrigin::Signed(ALICE).into();
 			let res = DataAvailability::clear_blob_offence_records(alice);
-			assert_noop!(res, frame_support::error::BadOrigin);
+			assert_noop!(res, sp_runtime::DispatchError::BadOrigin);
 		});
 	}
 }

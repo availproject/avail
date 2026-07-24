@@ -61,7 +61,7 @@ impl HeaderExtensionBuilderData {
 	) -> Self {
 		let opaques: Vec<OpaqueExtrinsic> = extrinsics
 			.iter()
-			.filter_map(|e| OpaqueExtrinsic::from_bytes(e).ok())
+			.filter_map(|e| OpaqueExtrinsic::try_from_encoded_extrinsic(e).ok())
 			.collect();
 
 		Self::from_opaque_extrinsics::<F>(block, &opaques)

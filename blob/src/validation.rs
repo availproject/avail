@@ -12,8 +12,8 @@ use codec::{Decode, Encode};
 use da_control::Call;
 use da_runtime::RuntimeCall;
 use da_runtime::UncheckedExtrinsic;
-use sp_core::keccak_256;
 use sp_core::H256;
+use sp_io::hashing::keccak_256;
 use sp_runtime::transaction_validity::TransactionSource;
 use std::sync::Arc;
 
