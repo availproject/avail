@@ -267,9 +267,33 @@ impl<T: frame_system::Config> pallet_vector::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().reads(1))
 			.saturating_add(T::DbWeight::get().writes(1))
 	}
+	/// Storage: `Vector::PicoUpdater` (r:1 w:1)
+	/// Proof: `Vector::PicoUpdater` (`max_values`: Some(1), `max_size`: Some(32), added: 527, mode: `MaxEncodedLen`)
+	fn set_pico_updater() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `388`
+		//  Estimated: `1517`
+		// Minimum execution time: 15_000_000 picoseconds.
+		Weight::from_parts(16_000_000, 0)
+			.saturating_add(Weight::from_parts(0, 1517))
+			.saturating_add(T::DbWeight::get().reads(1))
+			.saturating_add(T::DbWeight::get().writes(1))
+	}
 	/// Storage: `Vector::SP1VerificationKey` (r:1 w:1)
 	/// Proof: `Vector::SP1VerificationKey` (`max_values`: Some(1), `max_size`: Some(32), added: 527, mode: `MaxEncodedLen`)
 	fn set_sp1_verification_key() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `357`
+		//  Estimated: `1517`
+		// Minimum execution time: 7_000_000 picoseconds.
+		Weight::from_parts(8_000_000, 0)
+			.saturating_add(Weight::from_parts(0, 1517))
+			.saturating_add(T::DbWeight::get().reads(1))
+			.saturating_add(T::DbWeight::get().writes(1))
+	}
+	/// Storage: `Vector::PicoVerificationKey` (r:1 w:1)
+	/// Proof: `Vector::PicoVerificationKey` (`max_values`: Some(1), `max_size`: Some(32), added: 527, mode: `MaxEncodedLen`)
+	fn set_pico_verification_key() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `357`
 		//  Estimated: `1517`
