@@ -8,8 +8,8 @@ use crate::{
 	Broadcasters, ConfigurationStorage, Error, Event, ExecutionStateRoots, FunctionIds,
 	FunctionInput, FunctionOutput, FunctionProof, Head, Headers, MessageStatus, MockEnabled,
 	ProofOutputs, RotateVerificationKey, SP1VerificationKey, SourceChainFrozen,
-	StepVerificationKey, SyncCommitteeHashes, SyncCommitteePoseidons, Updater, ValidProof,
-	WhitelistedDomains,
+	SourceChainId, StepVerificationKey, SyncCommitteeHashes, SyncCommitteePoseidons, Updater,
+	ValidProof, WhitelistedDomains,
 };
 use alloy_sol_types::SolValue;
 use avail_core::data_proof::Message::FungibleToken;
@@ -1492,6 +1492,71 @@ fn test_fulfill_successfully() {
 			)),
 			next_sync_committee_hash
 		);
+	});
+}
+
+/// Mock accepts state roots with no proof, so it must be unreachable when the bridge is
+/// pointed at Ethereum mainnet -- both when arming it and when using it.
+#[test]
+fn test_mock_is_rejected_on_source_chain_one() {
+	new_test_ext().execute_with(|| {
+		SourceChainId::<Test>::set(1);
+
+		assert_err!(
+			Bridge::enable_mock(RawOrigin::Root.into(), true),
+			Error::<Test>::MockIsNotEnabled
+		);
+
+		// Even with the flag already armed, e.g. set before the source chain id changed.
+		MockEnabled::<Test>::set(true);
+		Updater::<Test>::set(H256(TEST_SENDER_VEC));
+		let public_inputs = SP1ProofWithPublicValues::load(PROOF_FILE)
+			.unwrap()
+			.public_values
+			.to_vec();
+
+		assert_err!(
+			Bridge::mock_fulfill(
+				RuntimeOrigin::signed(TEST_SENDER_VEC.into()),
+				BoundedVec::truncate_from(public_inputs),
+			),
+			Error::<Test>::MockIsNotEnabled
+		);
+	});
+}
+
+/// `mock_fulfill` deliberately skips the anchor binding so it can still bootstrap a test
+/// chain that has no stored headers at all.
+#[test]
+fn test_mock_fulfill_bootstraps_without_a_stored_anchor() {
+	new_test_ext().execute_with(|| {
+		let public_inputs = SP1ProofWithPublicValues::load(PROOF_FILE)
+			.unwrap()
+			.public_values
+			.to_vec();
+
+		let last_slot = 14823232u64;
+		ConfigurationStorage::<Test>::set(Configuration {
+			slots_per_period: SLOTS_PER_PERIOD,
+			finality_threshold: 342,
+		});
+		Head::<Test>::set(last_slot);
+		SyncCommitteeHashes::<Test>::set(
+			last_slot / SLOTS_PER_PERIOD,
+			H256(PROOF_SYNC_COMMITTEE_HASH),
+		);
+		Updater::<Test>::set(H256(TEST_SENDER_VEC));
+		MockEnabled::<Test>::set(true);
+
+		// No `Headers` entry anywhere -- the state a fresh test chain is in.
+		assert_eq!(Headers::<Test>::get(PROOF_PREV_HEAD), H256::zero());
+
+		assert_ok!(Bridge::mock_fulfill(
+			RuntimeOrigin::signed(TEST_SENDER_VEC.into()),
+			BoundedVec::truncate_from(public_inputs),
+		));
+
+		assert_eq!(Head::<Test>::get(), 14823296);
 	});
 }
 

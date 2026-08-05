@@ -1035,6 +1035,9 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::enable_mock())]
 		pub fn enable_mock(origin: OriginFor<T>, value: bool) -> DispatchResult {
 			ensure_root(origin)?;
+			// Mock accepts state roots with no proof at all, so it must never be reachable
+			// on a chain bridging Ethereum mainnet.
+			ensure!(SourceChainId::<T>::get() != 1, Error::<T>::MockIsNotEnabled);
 
 			MockEnabled::<T>::set(value);
 			Self::deposit_event(Event::MockEnabled { value });
@@ -1054,6 +1057,9 @@ pub mod pallet {
 				MockEnabled::<T>::get() == true,
 				Error::<T>::MockIsNotEnabled
 			);
+			// Defence in depth: `enable_mock` already refuses to arm this on chain id 1, but
+			// the flag could predate that check or survive a source chain id change.
+			ensure!(SourceChainId::<T>::get() != 1, Error::<T>::MockIsNotEnabled);
 
 			let sender: [u8; 32] = ensure_signed(origin)?.into();
 			let updater = Updater::<T>::get();
@@ -1082,6 +1088,11 @@ pub mod pallet {
 				Error::<T>::SyncCommitteeStartMismatch
 			);
 
+			// Deliberately no anchor binding here. This extrinsic already accepts an
+			// arbitrary header and execution state root with no proof, so requiring a known
+			// anchor buys no security -- it would only stop mock from bootstrapping a test
+			// chain, which is the whole point of it. The `SourceChainId != 1` guard above is
+			// what keeps that acceptable.
 			Head::<T>::set(new_head);
 			let header = Headers::<T>::get(new_head);
 			ensure!(header == H256::zero(), Error::<T>::HeaderRootAlreadySet);
