@@ -144,6 +144,9 @@ pub mod pallet {
 		// New variants must be appended here. `ModuleError` carries the variant's index, so
 		// inserting above shifts every later variant and silently changes the error that
 		// off-chain decoders report.
+		/// The proof's previous header does not match the header stored for that slot,
+		/// so the update does not extend the chain this pallet has already accepted.
+		PreviousHeaderMismatch,
 		/// A slot in the proof output does not fit in a u64. The values are `uint256` on the
 		/// wire and are only bounded by the circuit, so they must be range-checked here
 		/// rather than narrowed with a panicking conversion.
@@ -391,6 +394,17 @@ pub mod pallet {
 		pub genesis_time: u64,
 		pub seconds_per_slot: u64,
 		pub source_chain_id: u64,
+		/// Slot the chain starts tracking from. Must be paired with `header` and
+		/// `sync_committee_hash`, and its period must equal `period`.
+		pub head: u64,
+		/// Beacon header root for `head`. `fulfill` binds every update to the header already
+		/// stored for its anchor slot, so a chain starting mid-history without this could
+		/// never accept a first update.
+		pub header: H256,
+		/// Sync committee hash for `head`'s period. `fulfill` checks the proof's
+		/// `startSyncCommitteeHash` against this, so it is the second half of what a fresh
+		/// chain needs; without it genesis leaves the chain unable to sync.
+		pub sync_committee_hash: H256,
 		pub _phantom: PhantomData<T>,
 	}
 
@@ -434,6 +448,35 @@ pub mod pallet {
 			SecondsPerSlot::<T>::set(self.seconds_per_slot);
 
 			SourceChainId::<T>::set(self.source_chain_id);
+
+			// `fulfill` needs all three of these before it can accept a first update: the
+			// head, that head's header (the anchor it binds against), and the sync committee
+			// hash for the head's period. They are written together so genesis either leaves
+			// the pallet fully unconfigured or fully able to sync -- never half-configured,
+			// which would look valid but reject every update.
+			if self.head != 0 {
+				assert!(
+					self.header != H256::zero(),
+					"Vector genesis sets a non-zero head but no header; `fulfill` would be permanently blocked."
+				);
+				assert!(
+					self.sync_committee_hash != H256::zero(),
+					"Vector genesis sets a non-zero head but no sync committee hash; `fulfill` would reject every update."
+				);
+				assert!(
+					self.slots_per_period != 0,
+					"Vector genesis needs a non-zero slots_per_period to derive the head's period."
+				);
+				let head_period = self.head / self.slots_per_period;
+				assert!(
+					head_period == self.period,
+					"Vector genesis period does not match the head's period; the sync committee hash would be stored under a period `fulfill` never reads."
+				);
+
+				Head::<T>::set(self.head);
+				Headers::<T>::insert(self.head, self.header);
+				SyncCommitteeHashes::<T>::insert(self.period, self.sync_committee_hash);
+			}
 		}
 	}
 
@@ -883,6 +926,19 @@ pub mod pallet {
 				&GROTH16_VK_BYTES,
 			);
 			ensure!(is_valid.is_ok(), Error::<T>::VerificationFailed);
+
+			// The circuit derives `prevHeader`/`prevHead` from the prover-supplied anchor store,
+			// so the proof alone does not tie the update to this pallet's state. Binding the
+			// anchor to a header we already stored is what makes `Headers` a chain rather than a
+			// set of unrelated roots, and `execute` authorizes messages against those roots.
+			let prev_head: u64 = proof_outputs
+				.prevHead
+				.try_into()
+				.map_err(|_| Error::<T>::SlotOutOfRange)?;
+			ensure!(
+				Headers::<T>::get(prev_head) == H256::from(proof_outputs.prevHeader.0),
+				Error::<T>::PreviousHeaderMismatch
+			);
 
 			Head::<T>::set(new_head);
 			let header = Headers::<T>::get(new_head);
