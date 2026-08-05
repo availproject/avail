@@ -30,9 +30,11 @@ jobs:
         run: cargo build --release --features try-runtime
 
       - name: Test try-runtime on-runtime-upgrade
+        env:
+          WSENDPOINT: ${{ github.event.inputs.wsendpoint }}
         run: |
           ./target/release/avail-node try-runtime \
           --runtime ./target/release/wbuild/da-runtime/da_runtime.compact.compressed.wasm \
           --chain ./misc/genesis/testnet.kate.chain.spec.raw.json \
           on-runtime-upgrade live \
-          -u ${{ github.event.inputs.wsendpoint }}
+          -u "$WSENDPOINT"
