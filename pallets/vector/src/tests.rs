@@ -1560,6 +1560,117 @@ fn test_mock_fulfill_bootstraps_without_a_stored_anchor() {
 	});
 }
 
+/// Everything `fulfill` needs on an empty chain is reachable: anchor state from genesis,
+/// which no extrinsic can write, and all the rest through root extrinsics. No direct
+/// storage writes here -- this is the sequence an operator actually performs.
+#[test]
+fn test_empty_chain_fully_configurable_from_genesis_and_extrinsics() {
+	new_test_ext_with_genesis_head(
+		PROOF_PREV_HEAD,
+		H256(PROOF_PREV_HEADER),
+		H256(PROOF_SYNC_COMMITTEE_HASH),
+		SLOTS_PER_PERIOD,
+	)
+	.execute_with(|| {
+		assert_ok!(Bridge::set_configuration(
+			RawOrigin::Root.into(),
+			Configuration {
+				slots_per_period: SLOTS_PER_PERIOD,
+				finality_threshold: 342,
+			}
+		));
+		assert_ok!(Bridge::set_updater(
+			RawOrigin::Root.into(),
+			H256(TEST_SENDER_VEC)
+		));
+		assert_ok!(Bridge::set_sp1_verification_key(
+			RawOrigin::Root.into(),
+			H256(SP1_VERIFICATION_KEY)
+		));
+
+		let sp1 = SP1ProofWithPublicValues::load(PROOF_FILE).unwrap();
+		assert_ok!(Bridge::fulfill(
+			RuntimeOrigin::signed(TEST_SENDER_VEC.into()),
+			BoundedVec::truncate_from(sp1.bytes()),
+			BoundedVec::truncate_from(sp1.public_values.to_vec()),
+		));
+
+		assert_eq!(Head::<Test>::get(), 14823296);
+	});
+}
+
+/// `fulfill` cannot bootstrap an empty chain the way mock can: its values are proof-bound,
+/// so it cannot present the zero sync committee hash that an unseeded chain would match.
+#[test]
+fn test_fulfill_cannot_bootstrap_an_empty_chain() {
+	new_test_ext().execute_with(|| {
+		let sp1_proof_with_public_values = SP1ProofWithPublicValues::load(PROOF_FILE).unwrap();
+		let proof = sp1_proof_with_public_values.bytes();
+		let public_inputs = sp1_proof_with_public_values.public_values.to_vec();
+
+		// Everything operational is configured; only the chain history is missing.
+		SP1VerificationKey::<Test>::set(H256(SP1_VERIFICATION_KEY));
+		ConfigurationStorage::<Test>::set(Configuration {
+			slots_per_period: SLOTS_PER_PERIOD,
+			finality_threshold: 342,
+		});
+		Updater::<Test>::set(H256(TEST_SENDER_VEC));
+
+		assert_eq!(Head::<Test>::get(), 0);
+		assert_eq!(SyncCommitteeHashes::<Test>::get(0), H256::zero());
+
+		assert_err!(
+			Bridge::fulfill(
+				RuntimeOrigin::signed(TEST_SENDER_VEC.into()),
+				BoundedVec::truncate_from(proof),
+				BoundedVec::truncate_from(public_inputs),
+			),
+			Error::<Test>::SyncCommitteeStartMismatch
+		);
+	});
+}
+
+/// Can mock bootstrap a chain with genuinely nothing in storage -- no head, no headers, no
+/// sync committee hashes?
+#[test]
+fn test_mock_fulfill_from_completely_empty_chain() {
+	new_test_ext().execute_with(|| {
+		use alloy_sol_types::private::{FixedBytes, U256 as AlloyU256};
+
+		assert_eq!(Head::<Test>::get(), 0);
+		assert_eq!(SyncCommitteeHashes::<Test>::get(0), H256::zero());
+
+		ConfigurationStorage::<Test>::set(Configuration {
+			slots_per_period: SLOTS_PER_PERIOD,
+			finality_threshold: 342,
+		});
+		Updater::<Test>::set(H256(TEST_SENDER_VEC));
+		MockEnabled::<Test>::set(true);
+
+		// Mock values are unproven, so they can carry a zero startSyncCommitteeHash, which
+		// matches the empty SyncCommitteeHashes[0] a fresh chain has.
+		let outputs = ProofOutputs {
+			executionStateRoot: FixedBytes([1u8; 32]),
+			newHeader: FixedBytes([2u8; 32]),
+			nextSyncCommitteeHash: FixedBytes([0u8; 32]),
+			newHead: AlloyU256::from(32u64),
+			prevHeader: FixedBytes([0u8; 32]),
+			prevHead: AlloyU256::from(0u64),
+			syncCommitteeHash: FixedBytes([3u8; 32]),
+			startSyncCommitteeHash: FixedBytes([0u8; 32]),
+		};
+
+		assert_ok!(Bridge::mock_fulfill(
+			RuntimeOrigin::signed(TEST_SENDER_VEC.into()),
+			BoundedVec::truncate_from(outputs.abi_encode()),
+		));
+
+		assert_eq!(Head::<Test>::get(), 32);
+		assert_eq!(Headers::<Test>::get(32), H256([2u8; 32]));
+		assert_eq!(ExecutionStateRoots::<Test>::get(32), H256([1u8; 32]));
+	});
+}
+
 /// Sync committee hash for `PROOF_PREV_HEAD`'s period, as the fixture's proof expects it.
 const PROOF_SYNC_COMMITTEE_HASH: [u8; 32] =
 	hex!("f8ee980d80cd1e3e48033ff8bb0a594cca36772a7f3e457513d3ae1bfc74e130");
