@@ -1486,6 +1486,45 @@ fn test_fulfill_successfully() {
 	});
 }
 
+/// Slots are `uint256` on the wire and only the circuit bounds them to u64. Narrowing them
+/// must not panic: the conversion runs before proof verification, so the value is still
+/// attacker-supplied at that point (this reproduces with a dummy proof).
+#[test]
+fn test_fulfill_rejects_oversized_slots_without_panicking() {
+	new_test_ext().execute_with(|| {
+		use alloy_sol_types::private::{FixedBytes, U256 as AlloyU256};
+
+		let outputs = |new_head, prev_head| ProofOutputs {
+			executionStateRoot: FixedBytes([0u8; 32]),
+			newHeader: FixedBytes([0u8; 32]),
+			nextSyncCommitteeHash: FixedBytes([0u8; 32]),
+			newHead: new_head,
+			prevHeader: FixedBytes([0u8; 32]),
+			prevHead: prev_head,
+			syncCommitteeHash: FixedBytes([0u8; 32]),
+			startSyncCommitteeHash: FixedBytes([0u8; 32]),
+		};
+
+		Updater::<Test>::set(H256(TEST_SENDER_VEC));
+		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
+
+		let err = Bridge::fulfill(
+			origin.clone(),
+			BoundedVec::truncate_from(vec![0u8; 4]),
+			BoundedVec::truncate_from(outputs(AlloyU256::MAX, AlloyU256::from(0u64)).abi_encode()),
+		);
+		assert_err!(err, Error::<Test>::SlotOutOfRange);
+
+		// `mock_fulfill` narrows `newHead` with no proof verification at all.
+		MockEnabled::<Test>::set(true);
+		let err = Bridge::mock_fulfill(
+			origin,
+			BoundedVec::truncate_from(outputs(AlloyU256::MAX, AlloyU256::MAX).abi_encode()),
+		);
+		assert_err!(err, Error::<Test>::SlotOutOfRange);
+	});
+}
+
 #[test]
 fn test_fulfill_successfully_mock_enabled() {
 	new_test_ext().execute_with(|| {

@@ -141,6 +141,13 @@ pub mod pallet {
 		SyncCommitteeStartMismatch,
 		/// Mock is not enabled.
 		MockIsNotEnabled,
+		// New variants must be appended here. `ModuleError` carries the variant's index, so
+		// inserting above shifts every later variant and silently changes the error that
+		// off-chain decoders report.
+		/// A slot in the proof output does not fit in a u64. The values are `uint256` on the
+		/// wire and are only bounded by the circuit, so they must be range-checked here
+		/// rather than narrowed with a panicking conversion.
+		SlotOutOfRange,
 	}
 
 	#[pallet::event]
@@ -850,7 +857,10 @@ pub mod pallet {
 				.map_err(|_| Error::<T>::CannotDecodePublicValue)?;
 
 			let head = Head::<T>::get();
-			let new_head: u64 = proof_outputs.newHead.to();
+			let new_head: u64 = proof_outputs
+				.newHead
+				.try_into()
+				.map_err(|_| Error::<T>::SlotOutOfRange)?;
 			ensure!(new_head > head, Error::<T>::SlotBehindHead);
 			let config = ConfigurationStorage::<T>::get();
 
@@ -998,7 +1008,10 @@ pub mod pallet {
 				.map_err(|_| Error::<T>::CannotDecodePublicValue)?;
 
 			let head = Head::<T>::get();
-			let new_head: u64 = proof_outputs.newHead.to();
+			let new_head: u64 = proof_outputs
+				.newHead
+				.try_into()
+				.map_err(|_| Error::<T>::SlotOutOfRange)?;
 			ensure!(new_head > head, Error::<T>::SlotBehindHead);
 			let config = ConfigurationStorage::<T>::get();
 
