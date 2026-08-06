@@ -394,8 +394,8 @@ pub mod pallet {
 		pub genesis_time: u64,
 		pub seconds_per_slot: u64,
 		pub source_chain_id: u64,
-		/// Slot the chain starts tracking from. Must be paired with `header` and
-		/// `sync_committee_hash`, and its period must equal `period`.
+		/// Slot the SP1 light client starts tracking from. Must be paired with `header`
+		/// and `sync_committee_hash`.
 		pub head: u64,
 		/// Beacon header root for `head`. `fulfill` binds every update to the header already
 		/// stored for its anchor slot, so a chain starting mid-history without this could
@@ -449,11 +449,6 @@ pub mod pallet {
 
 			SourceChainId::<T>::set(self.source_chain_id);
 
-			// `fulfill` needs all three of these before it can accept a first update: the
-			// head, that head's header (the anchor it binds against), and the sync committee
-			// hash for the head's period. They are written together so genesis either leaves
-			// the pallet fully unconfigured or fully able to sync -- never half-configured,
-			// which would look valid but reject every update.
 			if self.head != 0 {
 				assert!(
 					self.header != H256::zero(),
@@ -468,14 +463,15 @@ pub mod pallet {
 					"Vector genesis needs a non-zero slots_per_period to derive the head's period."
 				);
 				let head_period = self.head / self.slots_per_period;
-				assert!(
-					head_period == self.period,
-					"Vector genesis period does not match the head's period; the sync committee hash would be stored under a period `fulfill` never reads."
-				);
 
 				Head::<T>::set(self.head);
 				Headers::<T>::insert(self.head, self.header);
-				SyncCommitteeHashes::<T>::insert(self.period, self.sync_committee_hash);
+				SyncCommitteeHashes::<T>::insert(head_period, self.sync_committee_hash);
+			} else {
+				assert!(
+					self.header == H256::zero() && self.sync_committee_hash == H256::zero(),
+					"Vector genesis supplies anchor state but no head; `fulfill` would reject every update."
+				);
 			}
 		}
 	}
@@ -935,8 +931,10 @@ pub mod pallet {
 				.prevHead
 				.try_into()
 				.map_err(|_| Error::<T>::SlotOutOfRange)?;
+			let prev_header =
+				Headers::<T>::try_get(prev_head).map_err(|_| Error::<T>::PreviousHeaderMismatch)?;
 			ensure!(
-				Headers::<T>::get(prev_head) == H256::from(proof_outputs.prevHeader.0),
+				prev_header == H256::from(proof_outputs.prevHeader.0),
 				Error::<T>::PreviousHeaderMismatch
 			);
 

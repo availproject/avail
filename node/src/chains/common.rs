@@ -9,7 +9,8 @@ use frame_system::limits::BlockLength;
 use pallet_vector::constants::{
 	get_poseidon_hash_for_period, BROADCASTER, BROADCASTER_DOMAIN, FINALITY_THRESHOLD,
 	GENESIS_TIME, GENESIS_VALIDATOR_ROOT, PERIOD, ROTATE_FUNCTION_ID, ROTATE_VK, SECONDS_PER_SLOT,
-	SLOTS_PER_PERIOD, SOURCE_CHAIN_ID, STEP_FUNCTION_ID, STEP_VK,
+	SLOTS_PER_PERIOD, SOURCE_CHAIN_ID, SP1_HEAD, SP1_HEADER, SP1_SYNC_COMMITTEE_HASH,
+	STEP_FUNCTION_ID, STEP_VK,
 };
 use sc_telemetry::TelemetryEndpoints;
 use serde_json::{json, Value};
@@ -138,10 +139,13 @@ pub fn runtime_genesis_config(
 			"functionIds": (STEP_FUNCTION_ID, ROTATE_FUNCTION_ID),
 			"genesisTime": GENESIS_TIME,
 			"genesisValidatorRoot": GENESIS_VALIDATOR_ROOT,
+			"head": SP1_HEAD,
+			"header": SP1_HEADER,
 			"period": PERIOD,
 			"secondsPerSlot": SECONDS_PER_SLOT,
 			"slotsPerPeriod": SLOTS_PER_PERIOD,
 			"sourceChainId": SOURCE_CHAIN_ID,
+			"syncCommitteeHash": SP1_SYNC_COMMITTEE_HASH,
 			"syncCommitteePoseidon":get_poseidon_hash_for_period(),
 			"stepVerificationKey": STEP_VK.as_bytes().to_vec(),
 			"rotateVerificationKey": ROTATE_VK.as_bytes().to_vec(),

@@ -1744,6 +1744,47 @@ fn test_genesis_head_without_sync_committee_hash_panics() {
 	);
 }
 
+/// The other half of the same triple: a head with no anchor header would leave `fulfill`
+/// with nothing to bind against.
+#[test]
+#[should_panic(expected = "but no header")]
+fn test_genesis_head_without_header_panics() {
+	new_test_ext_with_genesis_head(
+		PROOF_PREV_HEAD,
+		H256::zero(),
+		H256(PROOF_SYNC_COMMITTEE_HASH),
+		SLOTS_PER_PERIOD,
+	);
+}
+
+/// The inverse half-configuration: anchor state supplied but no head. `head` is what gates
+/// the genesis branch, so without this assertion the anchor is silently dropped and the
+/// chain boots looking configured while rejecting every update. Reachable because chain
+/// specs are JSON patches -- an omitted field defaults to zero instead of failing to parse.
+#[test]
+#[should_panic(expected = "anchor state but no head")]
+fn test_genesis_anchor_without_head_panics() {
+	new_test_ext_with_genesis_head(
+		0,
+		H256(PROOF_PREV_HEADER),
+		H256(PROOF_SYNC_COMMITTEE_HASH),
+		SLOTS_PER_PERIOD,
+	);
+}
+
+/// A chain with none of the three set is the legitimate unconfigured case -- the older
+/// testnet specs predate these fields -- and must still build.
+#[test]
+fn test_genesis_without_any_anchor_state_builds() {
+	new_test_ext_with_genesis_head(0, H256::zero(), H256::zero(), SLOTS_PER_PERIOD).execute_with(
+		|| {
+			assert_eq!(Head::<Test>::get(), 0);
+			assert_eq!(Headers::<Test>::get(0), H256::zero());
+			assert_eq!(SyncCommitteeHashes::<Test>::get(0), H256::zero());
+		},
+	);
+}
+
 /// Slots are `uint256` on the wire and only the circuit bounds them to u64. Narrowing them
 /// must not panic: the conversion runs before proof verification, so the value is still
 /// attacker-supplied at that point (this reproduces with a dummy proof).

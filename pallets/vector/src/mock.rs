@@ -247,7 +247,8 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 
 /// Externalities for a chain whose Vector genesis starts mid-history: `head`, that head's
 /// header, and the sync committee hash for its period are all seeded, which is what
-/// `fulfill` needs before it can accept a first update.
+/// `fulfill` needs before it can accept a first update. Genesis requires all three or none
+/// of them, so passing a zero for any one is how the half-configured cases are exercised.
 pub fn new_test_ext_with_genesis_head(
 	head: u64,
 	header: H256,
