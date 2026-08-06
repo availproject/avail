@@ -568,8 +568,6 @@
           ],
           "genesisTime": 1606824023,
           "genesisValidatorRoot": "0x4b363db94e286120d76eb905340fdd4e54bfe9f06bf33ff6cf5ad27f511bfe95",
-          "head": 14823232,
-          "header": "0x13336665133b7e26ea5d56b3d3fc3d46eec523881be65d5fb8dcaf4e478f3bad",
           "period": 1152,
           "rotateVerificationKey": [
             123,
@@ -6819,7 +6817,6 @@
             125,
             125
           ],
-          "syncCommitteeHash": "0xf8ee980d80cd1e3e48033ff8bb0a594cca36772a7f3e457513d3ae1bfc74e130",
           "syncCommitteePoseidon": "0x1decb72d8d9199932838375599bddecdee9fd7409fa5698dd5aa4817c1aab790",
           "whitelistedDomains": [
             2
