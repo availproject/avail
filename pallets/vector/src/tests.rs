@@ -7,9 +7,9 @@ use crate::{
 	storage_utils::MessageStatusEnum,
 	Broadcasters, ConfigurationStorage, Error, Event, ExecutionStateRoots, FunctionIds,
 	FunctionInput, FunctionOutput, FunctionProof, Head, Headers, MessageStatus, MockEnabled,
-	ProofOutputs, RotateVerificationKey, SP1VerificationKey, SourceChainFrozen,
-	SourceChainId, StepVerificationKey, SyncCommitteeHashes, SyncCommitteePoseidons, Updater,
-	ValidProof, WhitelistedDomains,
+	ProofOutputs, RotateVerificationKey, SP1VerificationKey, SourceChainFrozen, SourceChainId,
+	StepVerificationKey, SyncCommitteeHashes, SyncCommitteePoseidons, Updater, ValidProof,
+	WhitelistedDomains,
 };
 use alloy_sol_types::SolValue;
 use avail_core::data_proof::Message::FungibleToken;
@@ -1504,7 +1504,7 @@ fn test_mock_is_rejected_on_source_chain_one() {
 
 		assert_err!(
 			Bridge::enable_mock(RawOrigin::Root.into(), true),
-			Error::<Test>::MockIsNotEnabled
+			Error::<Test>::MockError
 		);
 
 		// Even with the flag already armed, e.g. set before the source chain id changed.
@@ -1520,7 +1520,7 @@ fn test_mock_is_rejected_on_source_chain_one() {
 				RuntimeOrigin::signed(TEST_SENDER_VEC.into()),
 				BoundedVec::truncate_from(public_inputs),
 			),
-			Error::<Test>::MockIsNotEnabled
+			Error::<Test>::MockError
 		);
 	});
 }
@@ -2007,7 +2007,7 @@ fn test_mock_fulfill_disabled() {
 			origin.clone(),
 			BoundedVec::truncate_from(public_inputs.clone()),
 		);
-		assert_err!(err, Error::<Test>::MockIsNotEnabled);
+		assert_err!(err, Error::<Test>::MockError);
 	});
 }
 

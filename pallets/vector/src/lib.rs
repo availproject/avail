@@ -139,11 +139,9 @@ pub mod pallet {
 		SyncCommitteeHashAlreadySet,
 		/// Emit when start sync committee does not match.
 		SyncCommitteeStartMismatch,
-		/// Mock is not enabled.
-		MockIsNotEnabled,
-		// New variants must be appended here. `ModuleError` carries the variant's index, so
-		// inserting above shifts every later variant and silently changes the error that
-		// off-chain decoders report.
+		/// Mock is unusable: either it is not enabled, or the source chain is Ethereum
+		/// mainnet, where mock must never be reachable.
+		MockError,
 		/// The proof's previous header does not match the header stored for that slot,
 		/// so the update does not extend the chain this pallet has already accepted.
 		PreviousHeaderMismatch,
@@ -1035,7 +1033,7 @@ pub mod pallet {
 			ensure_root(origin)?;
 			// Mock accepts state roots with no proof at all, so it must never be reachable
 			// on a chain bridging Ethereum mainnet.
-			ensure!(SourceChainId::<T>::get() != 1, Error::<T>::MockIsNotEnabled);
+			ensure!(SourceChainId::<T>::get() != 1, Error::<T>::MockError);
 
 			MockEnabled::<T>::set(value);
 			Self::deposit_event(Event::MockEnabled { value });
@@ -1051,13 +1049,10 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			public_values: PublicValuesInput,
 		) -> DispatchResultWithPostInfo {
-			ensure!(
-				MockEnabled::<T>::get() == true,
-				Error::<T>::MockIsNotEnabled
-			);
+			ensure!(MockEnabled::<T>::get() == true, Error::<T>::MockError);
 			// Defence in depth: `enable_mock` already refuses to arm this on chain id 1, but
 			// the flag could predate that check or survive a source chain id change.
-			ensure!(SourceChainId::<T>::get() != 1, Error::<T>::MockIsNotEnabled);
+			ensure!(SourceChainId::<T>::get() != 1, Error::<T>::MockError);
 
 			let sender: [u8; 32] = ensure_signed(origin)?.into();
 			let updater = Updater::<T>::get();
