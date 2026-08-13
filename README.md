@@ -189,6 +189,9 @@ There you can learn how to:
 - Find out what node synchronization options are available
 - Running Avail Benchmarks
 
+## Governance
+Avail governance and reference material is maintained in the [Avail governance repository](https://github.com/availproject/governance).
+
 ## License
 
 This project contains source files under multiple open source licenses.
