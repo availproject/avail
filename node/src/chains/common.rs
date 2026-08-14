@@ -7,9 +7,8 @@ use da_runtime::{
 };
 use frame_system::limits::BlockLength;
 use pallet_vector::constants::{
-	get_poseidon_hash_for_period, BROADCASTER, BROADCASTER_DOMAIN, FINALITY_THRESHOLD,
-	GENESIS_TIME, GENESIS_VALIDATOR_ROOT, PERIOD, ROTATE_FUNCTION_ID, ROTATE_VK, SECONDS_PER_SLOT,
-	SLOTS_PER_PERIOD, SOURCE_CHAIN_ID, STEP_FUNCTION_ID, STEP_VK,
+	BROADCASTER, BROADCASTER_DOMAIN, FINALITY_THRESHOLD, GENESIS_TIME, GENESIS_VALIDATOR_ROOT,
+	PERIOD, SECONDS_PER_SLOT, SLOTS_PER_PERIOD, SOURCE_CHAIN_ID,
 };
 use sc_telemetry::TelemetryEndpoints;
 use serde_json::{json, Value};
@@ -135,16 +134,12 @@ pub fn runtime_genesis_config(
 			"broadcaster": BROADCASTER,
 			"broadcasterDomain": BROADCASTER_DOMAIN,
 			"finalityThreshold": FINALITY_THRESHOLD,
-			"functionIds": (STEP_FUNCTION_ID, ROTATE_FUNCTION_ID),
 			"genesisTime": GENESIS_TIME,
 			"genesisValidatorRoot": GENESIS_VALIDATOR_ROOT,
 			"period": PERIOD,
 			"secondsPerSlot": SECONDS_PER_SLOT,
 			"slotsPerPeriod": SLOTS_PER_PERIOD,
 			"sourceChainId": SOURCE_CHAIN_ID,
-			"syncCommitteePoseidon":get_poseidon_hash_for_period(),
-			"stepVerificationKey": STEP_VK.as_bytes().to_vec(),
-			"rotateVerificationKey": ROTATE_VK.as_bytes().to_vec(),
 			"whitelistedDomains": vec![2],
 		},
 		"nominationPools": {
