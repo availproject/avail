@@ -8,7 +8,7 @@ use crate::config_preludes::{
 };
 use crate::{
 	mock::{new_test_ext, DataAvailability, RuntimeEvent, RuntimeOrigin, System, Test},
-	AppDataFor, AppKeyFor, AppKeyInfoFor, Event, DA_DISPATCH_RATIO_PERBILL,
+	AppDataFor, AppKeyFor, AppKeyInfoFor, Event, SubmitDataWhitelist, DA_DISPATCH_RATIO_PERBILL,
 };
 
 type Error = crate::Error<Test>;
@@ -81,6 +81,7 @@ mod submit_data {
 	#[test]
 	fn submit_data() {
 		new_test_ext().execute_with(|| {
+			SubmitDataWhitelist::<Test>::insert(ALICE, ());
 			let alice: RuntimeOrigin = RawOrigin::Signed(ALICE).into();
 			let max_app_key_length: usize = MaxAppDataLength::get().try_into().unwrap();
 			let data = AppDataFor::<Test>::try_from(vec![b'X'; max_app_key_length]).unwrap();
@@ -99,11 +100,23 @@ mod submit_data {
 	#[test]
 	fn data_cannot_be_empty() {
 		new_test_ext().execute_with(|| {
+			SubmitDataWhitelist::<Test>::insert(ALICE, ());
 			let alice: RuntimeOrigin = RawOrigin::Signed(ALICE).into();
 			let data = AppDataFor::<Test>::try_from(vec![]).unwrap();
 
 			let err = DataAvailability::submit_data(alice, data);
 			assert_noop!(err, Error::DataCannotBeEmpty);
+		})
+	}
+
+	#[test]
+	fn signer_must_be_whitelisted() {
+		new_test_ext().execute_with(|| {
+			let alice: RuntimeOrigin = RawOrigin::Signed(ALICE).into();
+			let data = AppDataFor::<Test>::try_from(vec![b'X']).unwrap();
+
+			let err = DataAvailability::submit_data(alice, data);
+			assert_noop!(err, Error::SubmitDataSignerNotWhitelisted);
 		})
 	}
 

@@ -1,11 +1,11 @@
 use crate::{
 	constants, prod_or_fast, voter_bags, weights, AccountId, AccountIndex, Babe, Balances, Block,
-	BlockNumber, ElectionProviderMultiPhase, Everything, Hash, Header, Historical, ImOnline,
-	ImOnlineId, Index, Indices, Moment, NominationPools, Offences, OriginCaller, PalletInfo,
-	Preimage, ReserveIdentifier, Runtime, RuntimeCall, RuntimeEvent, RuntimeFreezeReason,
-	RuntimeHoldReason, RuntimeOrigin, RuntimeVersion, Session, SessionKeys, Signature,
-	SignedPayload, Staking, System, Timestamp, TransactionPayment, Treasury, TxPause,
-	UncheckedExtrinsic, VoterList, MINUTES, SLOT_DURATION, VERSION,
+	BlockNumber, ElectionProviderMultiPhase, Hash, Header, Historical, ImOnline, ImOnlineId, Index,
+	Indices, Moment, NominationPools, Offences, OriginCaller, PalletInfo, Preimage,
+	ReserveIdentifier, Runtime, RuntimeCall, RuntimeEvent, RuntimeFreezeReason, RuntimeHoldReason,
+	RuntimeOrigin, RuntimeVersion, Session, SessionKeys, Signature, SignedPayload, Staking, System,
+	Timestamp, TransactionPayment, Treasury, TxPause, UncheckedExtrinsic, VoterList, MINUTES,
+	SLOT_DURATION, VERSION,
 };
 use avail_core::{
 	currency::{Balance, AVAIL, CENTS, NANO_AVAIL, PICO_AVAIL},
@@ -22,10 +22,8 @@ use frame_support::{
 	pallet_prelude::{Get, Weight},
 	parameter_types,
 	traits::{
-		fungible::{Balanced, Credit, HoldConsideration},
-		tokens::{
-			imbalance::ResolveTo, pay::PayFromAccount, Imbalance, UnityAssetBalanceConversion,
-		},
+		fungible::{Credit, HoldConsideration},
+		tokens::{pay::PayFromAccount, Imbalance, UnityAssetBalanceConversion},
 		ConstU32, Contains, Currency, EitherOf, EitherOfDiverse, EqualPrivilegeOnly, InsideBoth,
 		InstanceFilter, LinearStoragePrice, OnUnbalanced,
 	},
@@ -35,8 +33,9 @@ use frame_support::{
 use frame_system::{limits::BlockLength, EnsureRoot, EnsureRootWithSuccess, EnsureWithSuccess};
 use pallet_election_provider_multi_phase::{GeometricDepositBase, SolutionAccuracyOf};
 use pallet_identity::legacy::IdentityInfo;
-use pallet_transaction_payment::{FungibleAdapter, Multiplier, TargetedFeeAdjustment};
-use pallet_treasury::TreasuryAccountId;
+use pallet_transaction_payment::{
+	FungibleAdapter, Multiplier, OnChargeTransaction, TargetedFeeAdjustment,
+};
 use pallet_tx_pause::RuntimeCallNameOf;
 use sp_core::{ConstU64, RuntimeDebug};
 use sp_runtime::{
@@ -160,6 +159,42 @@ parameter_types! {
 	pub MaximumMultiplier: Multiplier = Bounded::max_value();
 }
 
+pub struct FeeLessTransaction;
+
+impl OnChargeTransaction<Runtime> for FeeLessTransaction {
+	type Balance = Balance;
+	type LiquidityInfo =
+		<FungibleAdapter<Balances, DealWithFees<Runtime>> as OnChargeTransaction<Runtime>>::LiquidityInfo;
+
+	fn withdraw_fee(
+		_who: &AccountId,
+		_call: &RuntimeCall,
+		_dispatch_info: &traits::DispatchInfoOf<RuntimeCall>,
+		_fee: Self::Balance,
+		_tip: Self::Balance,
+	) -> Result<Self::LiquidityInfo, sp_runtime::transaction_validity::TransactionValidityError> {
+		Ok(Default::default())
+	}
+
+	fn correct_and_deposit_fee(
+		who: &AccountId,
+		dispatch_info: &traits::DispatchInfoOf<RuntimeCall>,
+		post_info: &traits::PostDispatchInfoOf<RuntimeCall>,
+		corrected_fee: Self::Balance,
+		tip: Self::Balance,
+		already_withdrawn: Self::LiquidityInfo,
+	) -> Result<(), sp_runtime::transaction_validity::TransactionValidityError> {
+		<FungibleAdapter<Balances, DealWithFees<Runtime>> as OnChargeTransaction<Runtime>>::correct_and_deposit_fee(
+			who,
+			dispatch_info,
+			post_info,
+			corrected_fee,
+			tip,
+			already_withdrawn,
+		)
+	}
+}
+
 impl pallet_transaction_payment::Config for Runtime {
 	type FeeMultiplierUpdate = TargetedFeeAdjustment<
 		Self,
@@ -169,7 +204,7 @@ impl pallet_transaction_payment::Config for Runtime {
 		MaximumMultiplier,
 	>;
 	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
-	type OnChargeTransaction = FungibleAdapter<Balances, DealWithFees<Runtime>>;
+	type OnChargeTransaction = FeeLessTransaction;
 	type OperationalFeeMultiplier = OperationalFeeMultiplier;
 	type RuntimeEvent = RuntimeEvent;
 	type WeightToFee = ConstantMultiplier<Balance, WeightFee>; // 1 weight = 10 picoAVAIL -> second_price = 10 AVAIL
@@ -209,42 +244,19 @@ impl pallet_session::historical::Config for Runtime {
 	type FullIdentificationOf = pallet_staking::ExposureOf<Runtime>;
 }
 
-/// Logic for the author to get a portion of fees.
-pub struct Author<R>(sp_std::marker::PhantomData<R>);
-impl<R> OnUnbalanced<Credit<R::AccountId, pallet_balances::Pallet<R>>> for Author<R>
-where
-	R: pallet_balances::Config + pallet_authorship::Config,
-	<R as frame_system::Config>::AccountId: From<AccountId>,
-	<R as frame_system::Config>::AccountId: Into<AccountId>,
-{
-	fn on_nonzero_unbalanced(
-		amount: Credit<<R as frame_system::Config>::AccountId, pallet_balances::Pallet<R>>,
-	) {
-		if let Some(author) = <pallet_authorship::Pallet<R>>::author() {
-			let _ = <pallet_balances::Pallet<R>>::resolve(&author, amount);
-		}
-	}
-}
-
 pub struct DealWithFees<R>(core::marker::PhantomData<R>);
 impl<R> OnUnbalanced<Credit<R::AccountId, pallet_balances::Pallet<R>>> for DealWithFees<R>
 where
-	R: pallet_balances::Config + pallet_authorship::Config + pallet_treasury::Config,
-	<R as frame_system::Config>::AccountId: From<AccountId>,
-	<R as frame_system::Config>::AccountId: Into<AccountId>,
+	R: pallet_balances::Config,
 {
 	fn on_unbalanceds<B>(
 		mut fees_then_tips: impl Iterator<Item = Credit<R::AccountId, pallet_balances::Pallet<R>>>,
 	) {
-		if let Some(fees) = fees_then_tips.next() {
-			// for fees, 20% to author, 80% to treasury
-			let mut split = fees.ration(80, 20);
+		if let Some(mut fees) = fees_then_tips.next() {
 			if let Some(tips) = fees_then_tips.next() {
-				// for tips, if any, 100% to author
-				tips.merge_into(&mut split.1);
+				tips.merge_into(&mut fees);
 			}
-			ResolveTo::<TreasuryAccountId<R>, pallet_balances::Pallet<R>>::on_unbalanced(split.0);
-			<Author<R> as OnUnbalanced<_>>::on_unbalanced(split.1);
+			drop(fees);
 		}
 	}
 }
@@ -493,7 +505,7 @@ impl pallet_staking::Config for Runtime {
 	type CurrencyBalance = Balance;
 	type CurrencyToVote = sp_staking::currency_to_vote::U128CurrencyToVote;
 	type ElectionProvider = ElectionProviderMultiPhase;
-	type EraPayout = pallet_staking::ConvertCurve<constants::staking::RewardCurve>;
+	type EraPayout = ();
 	type EventListeners = NominationPools;
 	type GenesisElectionProvider = onchain::OnChainExecution<OnChainSeqPhragmen>;
 	type HistoryDepth = constants::staking::HistoryDepth;
@@ -800,6 +812,44 @@ impl pallet_tx_pause::Config for Runtime {
 	type WeightInfo = weights::pallet_tx_pause::WeightInfo<Runtime>;
 }
 
+/// Hard-cutover runtime filter.
+///
+/// This keeps consensus/governance paths live, allows direct DA submissions
+/// for the DA pallet for whitelisted accounts, and blocks the ordinary economic/user-facing
+/// calls at the runtime boundary.
+pub struct HardCutoverCallFilter;
+
+impl Contains<RuntimeCall> for HardCutoverCallFilter {
+	fn contains(call: &RuntimeCall) -> bool {
+		match call {
+			RuntimeCall::Timestamp(..) => true,
+
+			RuntimeCall::TechnicalCommittee(..)
+			| RuntimeCall::TreasuryCommittee(..)
+			| RuntimeCall::Treasury(..)
+			| RuntimeCall::Sudo(..)
+			| RuntimeCall::Scheduler(..)
+			| RuntimeCall::Mandate(..)
+			| RuntimeCall::TxPause(..) => true,
+
+			RuntimeCall::System(frame_system::Call::set_code { .. })
+			| RuntimeCall::System(frame_system::Call::set_code_without_checks { .. })
+			| RuntimeCall::System(frame_system::Call::set_heap_pages { .. }) => true,
+
+			RuntimeCall::DataAvailability(da_control::Call::submit_data { .. }) => true,
+			RuntimeCall::DataAvailability(da_control::Call::set_submit_data_whitelist {
+				..
+			}) => true,
+			RuntimeCall::Vector(pallet_vector::Call::failed_send_message_txs { .. }) => true,
+
+			RuntimeCall::Proxy(pallet_proxy::Call::proxy { call, .. }) => Self::contains(call),
+			RuntimeCall::Proxy(..) => false,
+
+			_ => false,
+		}
+	}
+}
+
 parameter_types! {
 	pub const BlockHashCount: BlockNumber = 2400;
 	pub const Version: RuntimeVersion = VERSION;
@@ -816,7 +866,7 @@ impl frame_system::Config for Runtime {
 	/// The identifier used to distinguish between accounts.
 	type AccountId = AccountId;
 	/// The basic call filter to use in dispatchable.
-	type BaseCallFilter = InsideBoth<Everything, TxPause>;
+	type BaseCallFilter = InsideBoth<HardCutoverCallFilter, TxPause>;
 	/// The Block type used by the runtime
 	type Block = Block;
 	/// Maximum number of block number to block hash mappings to keep (oldest pruned first).

@@ -81,11 +81,17 @@ where
 	///  production.
 	pub fn do_validate(
 		&self,
+		who: &T::AccountId,
 		call: &<T as SystemConfig>::RuntimeCall,
 		len: usize,
 	) -> TransactionValidity {
 		self.ensure_valid_app_id(call)?;
 		if let Some(DACall::<T>::submit_data { .. }) = call.is_sub_type() {
+			ensure!(
+				<Pallet<T>>::is_submit_data_whitelisted(who),
+				InvalidTransaction::BadSigner
+			);
+
 			let all_extrinsics_len = self
 				.next_all_extrinsics_len(len)
 				.ok_or(InvalidTransaction::ExhaustsResources)?;
@@ -254,7 +260,7 @@ where
 		_info: &DispatchInfoOf<Self::Call>,
 		len: usize,
 	) -> TransactionValidity {
-		self.do_validate(call, len)
+		self.do_validate(_who, call, len)
 	}
 
 	fn pre_dispatch(
@@ -264,7 +270,7 @@ where
 		_info: &DispatchInfoOf<Self::Call>,
 		len: usize,
 	) -> Result<Self::Pre, TransactionValidityError> {
-		self.do_validate(call, len)?;
+		self.do_validate(_who, call, len)?;
 		Ok(())
 	}
 
@@ -298,6 +304,7 @@ mod tests {
 	};
 	use frame_system::pallet::Call as SysCall;
 	use sp_runtime::transaction_validity::InvalidTransaction;
+	use sp_runtime::AccountId32;
 	use test_case::test_case;
 
 	use super::*;
@@ -320,6 +327,12 @@ mod tests {
 		))
 	}
 
+	fn alice() -> AccountId32 {
+		let mut account = [0u8; 32];
+		account[0] = 1;
+		AccountId32::new(account)
+	}
+
 	#[test_case(1, submit_data_call() => Ok(ValidTransaction::default()); "Submit Data call should be allowed to use any valid AppId" )]
 	#[test_case(100, submit_data_call() => to_invalid_tx(InvalidAppId); "Submit Data call with invalid AppId should be blocked" )]
 	#[test_case(0, remark_call() => Ok(ValidTransaction::default()); "Any Non-Submit-Data call with AppId == 0 should be allowed" )]
@@ -328,6 +341,9 @@ mod tests {
 		let extrinsic =
 			AppUncheckedExtrinsic::<u32, RuntimeCall, (), ()>::new_unsigned(call.clone());
 		let len = extrinsic.encoded_size();
-		new_test_ext().execute_with(|| CheckAppId::<Test>::from(AppId(id)).do_validate(&call, len))
+		new_test_ext().execute_with(|| {
+			crate::SubmitDataWhitelist::<Test>::insert(alice(), ());
+			CheckAppId::<Test>::from(AppId(id)).do_validate(&alice(), &call, len)
+		})
 	}
 }
