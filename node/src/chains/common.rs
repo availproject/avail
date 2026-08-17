@@ -5,7 +5,7 @@ use da_runtime::{
 };
 use pallet_vector::constants::{
 	BROADCASTER, BROADCASTER_DOMAIN, FINALITY_THRESHOLD, GENESIS_TIME, GENESIS_VALIDATOR_ROOT,
-	HEAD, PERIOD, SECONDS_PER_SLOT, SLOTS_PER_PERIOD, SOURCE_CHAIN_ID, SP1_VERIFICATION_KEY,
+	HEAD, HEADER, PERIOD, SECONDS_PER_SLOT, SLOTS_PER_PERIOD, SOURCE_CHAIN_ID, SP1_VERIFICATION_KEY,
 	SYNC_COMMITTEE_HASH, UPDATER,
 };
 use sc_telemetry::TelemetryEndpoints;
@@ -124,6 +124,7 @@ pub fn runtime_genesis_config(
 			"genesisTime": GENESIS_TIME,
 			"genesisValidatorRoot": GENESIS_VALIDATOR_ROOT,
 			"head": HEAD,
+			"header": HEADER,
 			"period": PERIOD,
 			"secondsPerSlot": SECONDS_PER_SLOT,
 			"slotsPerPeriod": SLOTS_PER_PERIOD,

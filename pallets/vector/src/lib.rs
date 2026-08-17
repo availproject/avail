@@ -113,8 +113,16 @@ pub mod pallet {
 		SyncCommitteeHashAlreadySet,
 		/// Emit when start sync committee does not match.
 		SyncCommitteeStartMismatch,
-		/// Mock is not enabled.
-		MockIsNotEnabled,
+		/// Mock is unusable: either it is not enabled, or the source chain is Ethereum
+		/// mainnet, where mock must never be reachable.
+		MockError,
+		/// The proof's previous header does not match the header stored for that slot,
+		/// so the update does not extend the chain this pallet has already accepted.
+		PreviousHeaderMismatch,
+		/// A slot in the proof output does not fit in a u64. The values are `uint256` on the
+		/// wire and are only bounded by the circuit, so they must be range-checked here
+		/// rather than narrowed with a panicking conversion.
+		SlotOutOfRange,
 	}
 
 	#[pallet::event]
@@ -311,9 +319,18 @@ pub mod pallet {
 		pub genesis_time: u64,
 		pub seconds_per_slot: u64,
 		pub source_chain_id: u64,
+		/// Slot the SP1 light client starts tracking from. Must be paired with `header`
+		/// and `sync_committee_hash`.
 		pub head: u64,
-		pub updater: H256,
+		/// Beacon header root for `head`. `fulfill` binds every update to the header already
+		/// stored for its anchor slot, so a chain starting mid-history without this could
+		/// never accept a first update.
+		pub header: H256,
+		/// Sync committee hash for `head`'s period. `fulfill` checks the proof's
+		/// `startSyncCommitteeHash` against this, so it is the second half of what a fresh
+		/// chain needs; without it genesis leaves the chain unable to sync.
 		pub sync_committee_hash: H256,
+		pub updater: H256,
 		pub sp1_verification_key: H256,
 		pub _phantom: PhantomData<T>,
 	}
@@ -347,15 +364,32 @@ pub mod pallet {
 			SourceChainId::<T>::set(self.source_chain_id);
 
 			if self.head != 0 {
+				assert!(
+					self.header != H256::zero(),
+					"Vector genesis sets a non-zero head but no header; `fulfill` would be permanently blocked."
+				);
+				assert!(
+					self.sync_committee_hash != H256::zero(),
+					"Vector genesis sets a non-zero head but no sync committee hash; `fulfill` would reject every update."
+				);
+				assert!(
+					self.slots_per_period != 0,
+					"Vector genesis needs a non-zero slots_per_period to derive the head's period."
+				);
+				let head_period = self.head / self.slots_per_period;
+
 				Head::<T>::set(self.head);
+				Headers::<T>::insert(self.head, self.header);
+				SyncCommitteeHashes::<T>::insert(head_period, self.sync_committee_hash);
+			} else {
+				assert!(
+					self.header == H256::zero() && self.sync_committee_hash == H256::zero(),
+					"Vector genesis supplies anchor state but no head; `fulfill` would reject every update."
+				);
 			}
 
 			if self.updater != H256::zero() {
 				Updater::<T>::set(self.updater);
-			}
-
-			if self.sync_committee_hash != H256::zero() {
-				SyncCommitteeHashes::<T>::insert(self.period, self.sync_committee_hash);
 			}
 
 			if self.sp1_verification_key != H256::zero() {
@@ -653,7 +687,10 @@ pub mod pallet {
 				.map_err(|_| Error::<T>::CannotDecodePublicValue)?;
 
 			let head = Head::<T>::get();
-			let new_head: u64 = proof_outputs.newHead.to();
+			let new_head: u64 = proof_outputs
+				.newHead
+				.try_into()
+				.map_err(|_| Error::<T>::SlotOutOfRange)?;
 			ensure!(new_head > head, Error::<T>::SlotBehindHead);
 			let config = ConfigurationStorage::<T>::get();
 
@@ -676,6 +713,21 @@ pub mod pallet {
 				&GROTH16_VK_BYTES,
 			);
 			ensure!(is_valid.is_ok(), Error::<T>::VerificationFailed);
+
+			// The circuit derives `prevHeader`/`prevHead` from the prover-supplied anchor store,
+			// so the proof alone does not tie the update to this pallet's state. Binding the
+			// anchor to a header we already stored is what makes `Headers` a chain rather than a
+			// set of unrelated roots, and `execute` authorizes messages against those roots.
+			let prev_head: u64 = proof_outputs
+				.prevHead
+				.try_into()
+				.map_err(|_| Error::<T>::SlotOutOfRange)?;
+			let prev_header =
+				Headers::<T>::try_get(prev_head).map_err(|_| Error::<T>::PreviousHeaderMismatch)?;
+			ensure!(
+				prev_header == H256::from(proof_outputs.prevHeader.0),
+				Error::<T>::PreviousHeaderMismatch
+			);
 
 			Head::<T>::set(new_head);
 			let header = Headers::<T>::get(new_head);
@@ -772,8 +824,9 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::enable_mock())]
 		pub fn enable_mock(origin: OriginFor<T>, value: bool) -> DispatchResult {
 			ensure_root(origin)?;
-
-			ensure!(SourceChainId::<T>::get() != 1, Error::<T>::MockIsNotEnabled);
+			// Mock accepts state roots with no proof at all, so it must never be reachable
+			// on a chain bridging Ethereum mainnet.
+			ensure!(SourceChainId::<T>::get() != 1, Error::<T>::MockError);
 
 			MockEnabled::<T>::set(value);
 			Self::deposit_event(Event::MockEnabled { value });
@@ -789,8 +842,10 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			public_values: PublicValuesInput,
 		) -> DispatchResultWithPostInfo {
-			ensure!(MockEnabled::<T>::get(), Error::<T>::MockIsNotEnabled);
-			ensure!(SourceChainId::<T>::get() != 1, Error::<T>::MockIsNotEnabled);
+			ensure!(MockEnabled::<T>::get() == true, Error::<T>::MockError);
+			// Defence in depth: `enable_mock` already refuses to arm this on chain id 1, but
+			// the flag could predate that check or survive a source chain id change.
+			ensure!(SourceChainId::<T>::get() != 1, Error::<T>::MockError);
 
 			let sender: [u8; 32] = ensure_signed(origin)?.into();
 			let updater = Updater::<T>::get();
@@ -801,7 +856,10 @@ pub mod pallet {
 				.map_err(|_| Error::<T>::CannotDecodePublicValue)?;
 
 			let head = Head::<T>::get();
-			let new_head: u64 = proof_outputs.newHead.to();
+			let new_head: u64 = proof_outputs
+				.newHead
+				.try_into()
+				.map_err(|_| Error::<T>::SlotOutOfRange)?;
 			ensure!(new_head > head, Error::<T>::SlotBehindHead);
 			let config = ConfigurationStorage::<T>::get();
 
@@ -816,6 +874,11 @@ pub mod pallet {
 				Error::<T>::SyncCommitteeStartMismatch
 			);
 
+			// Deliberately no anchor binding here. This extrinsic already accepts an
+			// arbitrary header and execution state root with no proof, so requiring a known
+			// anchor buys no security -- it would only stop mock from bootstrapping a test
+			// chain, which is the whole point of it. The `SourceChainId != 1` guard above is
+			// what keeps that acceptable.
 			Head::<T>::set(new_head);
 			let header = Headers::<T>::get(new_head);
 			ensure!(header == H256::zero(), Error::<T>::HeaderRootAlreadySet);
