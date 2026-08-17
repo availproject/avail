@@ -21,6 +21,13 @@ const ACCOUNT1: [u8; 32] = [2u8; 32];
 const SP1_VERIFICATION_KEY: [u8; 32] =
 	hex!("00e18a60339ccc23cb2f6ce86aade5cf22f5e9a352053a9cf5cf47c784fcd050");
 
+// The anchor the proof used by the `fulfill` benchmark proves from. `fulfill` binds each
+// update to the header already stored for this slot, so it has to be seeded for the
+// benchmark to reach the code being measured.
+const PROOF_PREV_HEAD: u64 = 14823232;
+const PROOF_PREV_HEADER: [u8; 32] =
+	hex!("13336665133b7e26ea5d56b3d3fc3d46eec523881be65d5fb8dcaf4e478f3bad");
+
 #[benchmarks(where
 [u8; 32]: From << T as frame_system::Config >::AccountId >,
 < T as frame_system::Config >::AccountId: From < [u8; 32] >,
@@ -223,6 +230,7 @@ mod benchmarks {
 		let last_slot = 14823295u64;
 		let current_period = last_slot / slots_per_period;
 		Head::<T>::set(last_slot);
+		Headers::<T>::insert(PROOF_PREV_HEAD, H256(PROOF_PREV_HEADER));
 
 		SyncCommitteeHashes::<T>::set(
 			current_period,

@@ -1,5 +1,6 @@
 use frame_support::{derive_impl, parameter_types, traits::ConstU64, PalletId};
 use frame_system::{native::hosted_header_builder::da, test_utils::TestRandomness};
+use primitive_types::H256;
 use sp_runtime::{
 	traits::{Block as BlockT, IdentityLookup},
 	AccountId32, BuildStorage,
@@ -87,6 +88,38 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	}
 	.assimilate_storage(&mut t)
 	.unwrap();
+	let mut ext = sp_io::TestExternalities::new(t);
+	ext.execute_with(|| System::set_block_number(1));
+	ext
+}
+
+/// Externalities for a chain whose Vector genesis starts mid-history: `head`, that head's
+/// header, and the sync committee hash for its period are all seeded, which is what
+/// `fulfill` needs before it can accept a first update. Genesis requires all three or none
+/// of them, so passing a zero for any one is how the half-configured cases are exercised.
+pub fn new_test_ext_with_genesis_head(
+	head: u64,
+	header: H256,
+	sync_committee_hash: H256,
+	slots_per_period: u64,
+) -> sp_io::TestExternalities {
+	let mut t = RuntimeGenesisConfig::default()
+		.system
+		.build_storage()
+		.expect("Genesis build should work");
+
+	vector_bridge::GenesisConfig::<Test> {
+		whitelisted_domains: vec![2],
+		head,
+		header,
+		sync_committee_hash,
+		slots_per_period,
+		period: head / slots_per_period,
+		..Default::default()
+	}
+	.assimilate_storage(&mut t)
+	.unwrap();
+
 	let mut ext = sp_io::TestExternalities::new(t);
 	ext.execute_with(|| System::set_block_number(1));
 	ext

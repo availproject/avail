@@ -8,7 +8,8 @@ use da_runtime::{
 use frame_system::limits::BlockLength;
 use pallet_vector::constants::{
 	BROADCASTER, BROADCASTER_DOMAIN, FINALITY_THRESHOLD, GENESIS_TIME, GENESIS_VALIDATOR_ROOT,
-	PERIOD, SECONDS_PER_SLOT, SLOTS_PER_PERIOD, SOURCE_CHAIN_ID,
+	PERIOD, SECONDS_PER_SLOT, SLOTS_PER_PERIOD, SOURCE_CHAIN_ID, SP1_HEAD, SP1_HEADER,
+	SP1_SYNC_COMMITTEE_HASH,
 };
 use sc_telemetry::TelemetryEndpoints;
 use serde_json::{json, Value};
@@ -136,10 +137,13 @@ pub fn runtime_genesis_config(
 			"finalityThreshold": FINALITY_THRESHOLD,
 			"genesisTime": GENESIS_TIME,
 			"genesisValidatorRoot": GENESIS_VALIDATOR_ROOT,
+			"head": SP1_HEAD,
+			"header": SP1_HEADER,
 			"period": PERIOD,
 			"secondsPerSlot": SECONDS_PER_SLOT,
 			"slotsPerPeriod": SLOTS_PER_PERIOD,
 			"sourceChainId": SOURCE_CHAIN_ID,
+			"syncCommitteeHash": SP1_SYNC_COMMITTEE_HASH,
 			"whitelistedDomains": vec![2],
 		},
 		"nominationPools": {
