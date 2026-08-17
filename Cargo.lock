@@ -1184,6 +1184,7 @@ dependencies = [
  "sp-timestamp",
  "sp-transaction-pool",
  "sp-transaction-storage-proof",
+ "staging-xcm-builder",
  "substrate-build-script-utils",
  "substrate-frame-rpc-system",
  "substrate-prometheus-endpoint",

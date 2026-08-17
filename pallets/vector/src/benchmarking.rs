@@ -32,7 +32,7 @@ const PROOF_PREV_HEADER: [u8; 32] =
 )]
 mod benchmarks {
 	use super::*;
-	use crate::{Broadcasters, Head, SP1VerificationKey, SyncCommitteeHashes};
+	use crate::{Broadcasters, Head, Headers, SP1VerificationKey, SyncCommitteeHashes};
 	use sp_runtime::traits::AccountIdConversion;
 
 	#[benchmark]
