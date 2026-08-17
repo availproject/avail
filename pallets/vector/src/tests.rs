@@ -1,12 +1,12 @@
 use crate::{
 	mock::{
-		new_test_ext, new_test_ext_with_vector_config, Balances, Bridge, RuntimeEvent,
-		RuntimeOrigin, System, Test,
+		new_test_ext, new_test_ext_with_genesis_head, new_test_ext_with_vector_config, Balances,
+		Bridge, RuntimeEvent, RuntimeOrigin, System, Test,
 	},
 	state::Configuration,
 	storage_utils::MessageStatusEnum,
 	Broadcasters, ConfigurationStorage, Error, Event, ExecutionStateRoots, Head, Headers,
-	MessageStatus, MockEnabled, ProofOutputs, SP1VerificationKey, SourceChainFrozen,
+	MessageStatus, MockEnabled, ProofOutputs, SP1VerificationKey, SourceChainFrozen, SourceChainId,
 	SyncCommitteeHashes, Updater, ValidProof, WhitelistedDomains,
 };
 use alloy_sol_types::SolValue;
@@ -42,11 +42,13 @@ fn genesis_build_sets_light_client_state() {
 	let updater = H256([1u8; 32]);
 	let sync_committee_hash = H256([2u8; 32]);
 	let sp1_verification_key = H256([3u8; 32]);
+	let header = H256([4u8; 32]);
 
 	new_test_ext_with_vector_config(crate::GenesisConfig::<Test> {
 		slots_per_period: 8192,
 		period,
 		head,
+		header,
 		updater,
 		sync_committee_hash,
 		sp1_verification_key,
@@ -55,6 +57,7 @@ fn genesis_build_sets_light_client_state() {
 	})
 	.execute_with(|| {
 		assert_eq!(Head::<Test>::get(), head);
+		assert_eq!(Headers::<Test>::get(head), header);
 		assert_eq!(Updater::<Test>::get(), updater);
 		assert_eq!(
 			SyncCommitteeHashes::<Test>::get(period),
@@ -63,6 +66,13 @@ fn genesis_build_sets_light_client_state() {
 		assert_eq!(SP1VerificationKey::<Test>::get(), sp1_verification_key);
 	});
 }
+// The anchor the fixture in `PROOF_FILE` proves from. `fulfill` binds each update to the
+// header already stored for this slot, so tests exercising the happy path must seed it.
+// Note this sits behind the head those tests set: the anchor is any previously stored
+// header, not necessarily the tip.
+const PROOF_PREV_HEAD: u64 = 14823232;
+const PROOF_PREV_HEADER: [u8; 32] =
+	hex!("13336665133b7e26ea5d56b3d3fc3d46eec523881be65d5fb8dcaf4e478f3bad");
 
 fn get_valid_account_proof() -> ValidProof {
 	BoundedVec::truncate_from(vec![
@@ -892,6 +902,7 @@ fn test_fulfill_successfully() {
 		let last_slot = 14823295u64;
 		let current_period = last_slot / slots_per_period;
 		Head::<Test>::set(last_slot);
+		Headers::<Test>::insert(PROOF_PREV_HEAD, H256(PROOF_PREV_HEADER));
 
 		SyncCommitteeHashes::<Test>::set(
 			current_period,
@@ -951,6 +962,432 @@ fn test_fulfill_successfully() {
 	});
 }
 
+/// Mock accepts state roots with no proof, so it must be unreachable when the bridge is
+/// pointed at Ethereum mainnet -- both when arming it and when using it.
+#[test]
+fn test_mock_is_rejected_on_source_chain_one() {
+	new_test_ext().execute_with(|| {
+		SourceChainId::<Test>::set(1);
+
+		assert_err!(
+			Bridge::enable_mock(RawOrigin::Root.into(), true),
+			Error::<Test>::MockError
+		);
+
+		// Even with the flag already armed, e.g. set before the source chain id changed.
+		MockEnabled::<Test>::set(true);
+		Updater::<Test>::set(H256(TEST_SENDER_VEC));
+		let public_inputs = SP1ProofWithPublicValues::load(PROOF_FILE)
+			.unwrap()
+			.public_values
+			.to_vec();
+
+		assert_err!(
+			Bridge::mock_fulfill(
+				RuntimeOrigin::signed(TEST_SENDER_VEC.into()),
+				BoundedVec::truncate_from(public_inputs),
+			),
+			Error::<Test>::MockError
+		);
+	});
+}
+
+/// `mock_fulfill` deliberately skips the anchor binding so it can still bootstrap a test
+/// chain that has no stored headers at all.
+#[test]
+fn test_mock_fulfill_bootstraps_without_a_stored_anchor() {
+	new_test_ext().execute_with(|| {
+		let public_inputs = SP1ProofWithPublicValues::load(PROOF_FILE)
+			.unwrap()
+			.public_values
+			.to_vec();
+
+		let last_slot = 14823232u64;
+		ConfigurationStorage::<Test>::set(Configuration {
+			slots_per_period: SLOTS_PER_PERIOD,
+			finality_threshold: 342,
+		});
+		Head::<Test>::set(last_slot);
+		SyncCommitteeHashes::<Test>::set(
+			last_slot / SLOTS_PER_PERIOD,
+			H256(PROOF_SYNC_COMMITTEE_HASH),
+		);
+		Updater::<Test>::set(H256(TEST_SENDER_VEC));
+		MockEnabled::<Test>::set(true);
+
+		// No `Headers` entry anywhere -- the state a fresh test chain is in.
+		assert_eq!(Headers::<Test>::get(PROOF_PREV_HEAD), H256::zero());
+
+		assert_ok!(Bridge::mock_fulfill(
+			RuntimeOrigin::signed(TEST_SENDER_VEC.into()),
+			BoundedVec::truncate_from(public_inputs),
+		));
+
+		assert_eq!(Head::<Test>::get(), 14823296);
+	});
+}
+
+/// Everything `fulfill` needs on an empty chain is reachable: anchor state from genesis,
+/// which no extrinsic can write, and all the rest through root extrinsics. No direct
+/// storage writes here -- this is the sequence an operator actually performs.
+#[test]
+fn test_empty_chain_fully_configurable_from_genesis_and_extrinsics() {
+	new_test_ext_with_genesis_head(
+		PROOF_PREV_HEAD,
+		H256(PROOF_PREV_HEADER),
+		H256(PROOF_SYNC_COMMITTEE_HASH),
+		SLOTS_PER_PERIOD,
+	)
+	.execute_with(|| {
+		assert_ok!(Bridge::set_configuration(
+			RawOrigin::Root.into(),
+			Configuration {
+				slots_per_period: SLOTS_PER_PERIOD,
+				finality_threshold: 342,
+			}
+		));
+		assert_ok!(Bridge::set_updater(
+			RawOrigin::Root.into(),
+			H256(TEST_SENDER_VEC)
+		));
+		assert_ok!(Bridge::set_sp1_verification_key(
+			RawOrigin::Root.into(),
+			H256(SP1_VERIFICATION_KEY)
+		));
+
+		let sp1 = SP1ProofWithPublicValues::load(PROOF_FILE).unwrap();
+		assert_ok!(Bridge::fulfill(
+			RuntimeOrigin::signed(TEST_SENDER_VEC.into()),
+			BoundedVec::truncate_from(sp1.bytes()),
+			BoundedVec::truncate_from(sp1.public_values.to_vec()),
+		));
+
+		assert_eq!(Head::<Test>::get(), 14823296);
+	});
+}
+
+/// `fulfill` cannot bootstrap an empty chain the way mock can: its values are proof-bound,
+/// so it cannot present the zero sync committee hash that an unseeded chain would match.
+#[test]
+fn test_fulfill_cannot_bootstrap_an_empty_chain() {
+	new_test_ext().execute_with(|| {
+		let sp1_proof_with_public_values = SP1ProofWithPublicValues::load(PROOF_FILE).unwrap();
+		let proof = sp1_proof_with_public_values.bytes();
+		let public_inputs = sp1_proof_with_public_values.public_values.to_vec();
+
+		// Everything operational is configured; only the chain history is missing.
+		SP1VerificationKey::<Test>::set(H256(SP1_VERIFICATION_KEY));
+		ConfigurationStorage::<Test>::set(Configuration {
+			slots_per_period: SLOTS_PER_PERIOD,
+			finality_threshold: 342,
+		});
+		Updater::<Test>::set(H256(TEST_SENDER_VEC));
+
+		assert_eq!(Head::<Test>::get(), 0);
+		assert_eq!(SyncCommitteeHashes::<Test>::get(0), H256::zero());
+
+		assert_err!(
+			Bridge::fulfill(
+				RuntimeOrigin::signed(TEST_SENDER_VEC.into()),
+				BoundedVec::truncate_from(proof),
+				BoundedVec::truncate_from(public_inputs),
+			),
+			Error::<Test>::SyncCommitteeStartMismatch
+		);
+	});
+}
+
+/// Can mock bootstrap a chain with genuinely nothing in storage -- no head, no headers, no
+/// sync committee hashes?
+#[test]
+fn test_mock_fulfill_from_completely_empty_chain() {
+	new_test_ext().execute_with(|| {
+		use alloy_sol_types::private::{FixedBytes, U256 as AlloyU256};
+
+		assert_eq!(Head::<Test>::get(), 0);
+		assert_eq!(SyncCommitteeHashes::<Test>::get(0), H256::zero());
+
+		ConfigurationStorage::<Test>::set(Configuration {
+			slots_per_period: SLOTS_PER_PERIOD,
+			finality_threshold: 342,
+		});
+		Updater::<Test>::set(H256(TEST_SENDER_VEC));
+		MockEnabled::<Test>::set(true);
+
+		// Mock values are unproven, so they can carry a zero startSyncCommitteeHash, which
+		// matches the empty SyncCommitteeHashes[0] a fresh chain has.
+		let outputs = ProofOutputs {
+			executionStateRoot: FixedBytes([1u8; 32]),
+			newHeader: FixedBytes([2u8; 32]),
+			nextSyncCommitteeHash: FixedBytes([0u8; 32]),
+			newHead: AlloyU256::from(32u64),
+			prevHeader: FixedBytes([0u8; 32]),
+			prevHead: AlloyU256::from(0u64),
+			syncCommitteeHash: FixedBytes([3u8; 32]),
+			startSyncCommitteeHash: FixedBytes([0u8; 32]),
+		};
+
+		assert_ok!(Bridge::mock_fulfill(
+			RuntimeOrigin::signed(TEST_SENDER_VEC.into()),
+			BoundedVec::truncate_from(outputs.abi_encode()),
+		));
+
+		assert_eq!(Head::<Test>::get(), 32);
+		assert_eq!(Headers::<Test>::get(32), H256([2u8; 32]));
+		assert_eq!(ExecutionStateRoots::<Test>::get(32), H256([1u8; 32]));
+	});
+}
+
+/// Sync committee hash for `PROOF_PREV_HEAD`'s period, as the fixture's proof expects it.
+const PROOF_SYNC_COMMITTEE_HASH: [u8; 32] =
+	hex!("f8ee980d80cd1e3e48033ff8bb0a594cca36772a7f3e457513d3ae1bfc74e130");
+const SLOTS_PER_PERIOD: u64 = 8192;
+
+/// Genesis writes the head, its anchor header, and the head period's sync committee hash
+/// together -- the three things `fulfill` reads before it will accept an update.
+#[test]
+fn test_genesis_head_seeds_anchor_and_committee() {
+	new_test_ext_with_genesis_head(
+		PROOF_PREV_HEAD,
+		H256(PROOF_PREV_HEADER),
+		H256(PROOF_SYNC_COMMITTEE_HASH),
+		SLOTS_PER_PERIOD,
+	)
+	.execute_with(|| {
+		assert_eq!(Head::<Test>::get(), PROOF_PREV_HEAD);
+		assert_eq!(
+			Headers::<Test>::get(PROOF_PREV_HEAD),
+			H256(PROOF_PREV_HEADER)
+		);
+		assert_eq!(
+			SyncCommitteeHashes::<Test>::get(PROOF_PREV_HEAD / SLOTS_PER_PERIOD),
+			H256(PROOF_SYNC_COMMITTEE_HASH)
+		);
+	});
+}
+
+/// A chain configured purely through genesis -- no root calls seeding anchor state -- must
+/// accept its first real update. This is the bootstrap path the anchor binding would
+/// otherwise have closed off.
+#[test]
+fn test_genesis_head_bootstraps_first_fulfill() {
+	new_test_ext_with_genesis_head(
+		PROOF_PREV_HEAD,
+		H256(PROOF_PREV_HEADER),
+		H256(PROOF_SYNC_COMMITTEE_HASH),
+		SLOTS_PER_PERIOD,
+	)
+	.execute_with(|| {
+		let sp1_proof_with_public_values = SP1ProofWithPublicValues::load(PROOF_FILE).unwrap();
+		let proof = sp1_proof_with_public_values.bytes();
+		let public_inputs = sp1_proof_with_public_values.public_values.to_vec();
+
+		// Rotatable operational config, as distinct from the historical anchor state that
+		// only genesis can supply.
+		SP1VerificationKey::<Test>::set(H256(SP1_VERIFICATION_KEY));
+		Updater::<Test>::set(H256(TEST_SENDER_VEC));
+
+		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
+		assert_ok!(Bridge::fulfill(
+			origin,
+			BoundedVec::truncate_from(proof),
+			BoundedVec::truncate_from(public_inputs),
+		));
+
+		assert_eq!(Head::<Test>::get(), 14823296);
+	});
+}
+
+/// Genesis must fail loudly rather than produce a chain that looks configured but rejects
+/// every update.
+#[test]
+#[should_panic(expected = "no sync committee hash")]
+fn test_genesis_head_without_sync_committee_hash_panics() {
+	new_test_ext_with_genesis_head(
+		PROOF_PREV_HEAD,
+		H256(PROOF_PREV_HEADER),
+		H256::zero(),
+		SLOTS_PER_PERIOD,
+	);
+}
+
+/// The other half of the same triple: a head with no anchor header would leave `fulfill`
+/// with nothing to bind against.
+#[test]
+#[should_panic(expected = "but no header")]
+fn test_genesis_head_without_header_panics() {
+	new_test_ext_with_genesis_head(
+		PROOF_PREV_HEAD,
+		H256::zero(),
+		H256(PROOF_SYNC_COMMITTEE_HASH),
+		SLOTS_PER_PERIOD,
+	);
+}
+
+/// The inverse half-configuration: anchor state supplied but no head. `head` is what gates
+/// the genesis branch, so without this assertion the anchor is silently dropped and the
+/// chain boots looking configured while rejecting every update. Reachable because chain
+/// specs are JSON patches -- an omitted field defaults to zero instead of failing to parse.
+#[test]
+#[should_panic(expected = "anchor state but no head")]
+fn test_genesis_anchor_without_head_panics() {
+	new_test_ext_with_genesis_head(
+		0,
+		H256(PROOF_PREV_HEADER),
+		H256(PROOF_SYNC_COMMITTEE_HASH),
+		SLOTS_PER_PERIOD,
+	);
+}
+
+/// A chain with none of the three set is the legitimate unconfigured case -- the older
+/// testnet specs predate these fields -- and must still build.
+#[test]
+fn test_genesis_without_any_anchor_state_builds() {
+	new_test_ext_with_genesis_head(0, H256::zero(), H256::zero(), SLOTS_PER_PERIOD).execute_with(
+		|| {
+			assert_eq!(Head::<Test>::get(), 0);
+			assert_eq!(Headers::<Test>::get(0), H256::zero());
+			assert_eq!(SyncCommitteeHashes::<Test>::get(0), H256::zero());
+		},
+	);
+}
+
+/// Slots are `uint256` on the wire and only the circuit bounds them to u64. Narrowing them
+/// must not panic: the conversion runs before proof verification, so the value is still
+/// attacker-supplied at that point (this reproduces with a dummy proof).
+#[test]
+fn test_fulfill_rejects_oversized_slots_without_panicking() {
+	new_test_ext().execute_with(|| {
+		use alloy_sol_types::private::{FixedBytes, U256 as AlloyU256};
+
+		let outputs = |new_head, prev_head| ProofOutputs {
+			executionStateRoot: FixedBytes([0u8; 32]),
+			newHeader: FixedBytes([0u8; 32]),
+			nextSyncCommitteeHash: FixedBytes([0u8; 32]),
+			newHead: new_head,
+			prevHeader: FixedBytes([0u8; 32]),
+			prevHead: prev_head,
+			syncCommitteeHash: FixedBytes([0u8; 32]),
+			startSyncCommitteeHash: FixedBytes([0u8; 32]),
+		};
+
+		Updater::<Test>::set(H256(TEST_SENDER_VEC));
+		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
+
+		let err = Bridge::fulfill(
+			origin.clone(),
+			BoundedVec::truncate_from(vec![0u8; 4]),
+			BoundedVec::truncate_from(outputs(AlloyU256::MAX, AlloyU256::from(0u64)).abi_encode()),
+		);
+		assert_err!(err, Error::<Test>::SlotOutOfRange);
+
+		// `mock_fulfill` narrows `newHead` with no proof verification at all.
+		MockEnabled::<Test>::set(true);
+		let err = Bridge::mock_fulfill(
+			origin,
+			BoundedVec::truncate_from(outputs(AlloyU256::MAX, AlloyU256::MAX).abi_encode()),
+		);
+		assert_err!(err, Error::<Test>::SlotOutOfRange);
+	});
+}
+
+/// A valid proof whose anchor slot holds a header the pallet never accepted must be
+/// rejected. The circuit derives `prevHeader` from a prover-supplied store, so without this
+/// binding an update could extend from an arbitrary root and `execute` would then authorize
+/// messages against it.
+#[test]
+fn test_fulfill_rejects_wrong_previous_header() {
+	new_test_ext().execute_with(|| {
+		let sp1_proof_with_public_values = SP1ProofWithPublicValues::load(PROOF_FILE).unwrap();
+		let proof = sp1_proof_with_public_values.bytes();
+		let public_inputs = sp1_proof_with_public_values.public_values.to_vec();
+
+		SP1VerificationKey::<Test>::set(H256(SP1_VERIFICATION_KEY));
+		let slots_per_period = 8192;
+		let finality_threshold = 342u16;
+		let last_slot = 14823295u64;
+		let current_period = last_slot / slots_per_period;
+		Head::<Test>::set(last_slot);
+
+		// Anchor slot holds a different header than the one the proof commits to.
+		Headers::<Test>::insert(PROOF_PREV_HEAD, H256::repeat_byte(0xab));
+
+		SyncCommitteeHashes::<Test>::set(
+			current_period,
+			H256(hex!(
+				"f8ee980d80cd1e3e48033ff8bb0a594cca36772a7f3e457513d3ae1bfc74e130"
+			)),
+		);
+
+		ConfigurationStorage::<Test>::set(Configuration {
+			slots_per_period,
+			finality_threshold,
+		});
+
+		Updater::<Test>::set(H256(TEST_SENDER_VEC));
+
+		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
+		let err = Bridge::fulfill(
+			origin,
+			BoundedVec::truncate_from(proof),
+			BoundedVec::truncate_from(public_inputs),
+		);
+
+		assert_err!(err, Error::<Test>::PreviousHeaderMismatch);
+
+		// The rejected update must not have advanced the head or stored any root.
+		let new_head = 14823296u64;
+		assert_eq!(Head::<Test>::get(), last_slot);
+		assert_eq!(Headers::<Test>::get(new_head), H256::zero());
+		assert_eq!(ExecutionStateRoots::<Test>::get(new_head), H256::zero());
+	});
+}
+
+/// The same rejection when the anchor slot is empty, i.e. the pallet has no record of the
+/// header the proof starts from. This is the state a chain is in before its first update.
+#[test]
+fn test_fulfill_rejects_unanchored_previous_header() {
+	new_test_ext().execute_with(|| {
+		let sp1_proof_with_public_values = SP1ProofWithPublicValues::load(PROOF_FILE).unwrap();
+		let proof = sp1_proof_with_public_values.bytes();
+		let public_inputs = sp1_proof_with_public_values.public_values.to_vec();
+
+		SP1VerificationKey::<Test>::set(H256(SP1_VERIFICATION_KEY));
+		let slots_per_period = 8192;
+		let finality_threshold = 342u16;
+		let last_slot = 14823295u64;
+		let current_period = last_slot / slots_per_period;
+		Head::<Test>::set(last_slot);
+
+		// Deliberately no `Headers` entry for the anchor slot.
+		assert_eq!(Headers::<Test>::get(PROOF_PREV_HEAD), H256::zero());
+
+		SyncCommitteeHashes::<Test>::set(
+			current_period,
+			H256(hex!(
+				"f8ee980d80cd1e3e48033ff8bb0a594cca36772a7f3e457513d3ae1bfc74e130"
+			)),
+		);
+
+		ConfigurationStorage::<Test>::set(Configuration {
+			slots_per_period,
+			finality_threshold,
+		});
+
+		Updater::<Test>::set(H256(TEST_SENDER_VEC));
+
+		let origin = RuntimeOrigin::signed(TEST_SENDER_VEC.into());
+		let err = Bridge::fulfill(
+			origin,
+			BoundedVec::truncate_from(proof),
+			BoundedVec::truncate_from(public_inputs),
+		);
+
+		assert_err!(err, Error::<Test>::PreviousHeaderMismatch);
+		assert_eq!(Head::<Test>::get(), last_slot);
+	});
+}
+
 #[test]
 fn test_fulfill_successfully_mock_enabled() {
 	new_test_ext().execute_with(|| {
@@ -965,6 +1402,7 @@ fn test_fulfill_successfully_mock_enabled() {
 		let last_slot = 14823294u64;
 		let current_period = last_slot / slots_per_period;
 		Head::<Test>::set(last_slot);
+		Headers::<Test>::insert(PROOF_PREV_HEAD, H256(PROOF_PREV_HEADER));
 		SyncCommitteeHashes::<Test>::set(
 			current_period,
 			H256(hex!(
@@ -1036,7 +1474,7 @@ fn test_mock_fulfill_disabled() {
 			origin.clone(),
 			BoundedVec::truncate_from(public_inputs.clone()),
 		);
-		assert_err!(err, Error::<Test>::MockIsNotEnabled);
+		assert_err!(err, Error::<Test>::MockError);
 	});
 }
 
@@ -1054,6 +1492,7 @@ fn test_fulfill_successfully_sync_committee_not_set() {
 		let last_slot = 14823295u64;
 		let current_period = last_slot / slots_per_period;
 		Head::<Test>::set(last_slot);
+		Headers::<Test>::insert(PROOF_PREV_HEAD, H256(PROOF_PREV_HEADER));
 
 		SyncCommitteeHashes::<Test>::set(
 			current_period,

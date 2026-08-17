@@ -110,6 +110,9 @@ substrate-prometheus-endpoint.workspace = true
 # These dependencies are used for runtime benchmarking
 frame-benchmarking = { workspace = true, default-features = false }
 frame-benchmarking-cli = { workspace = true, default-features = false }
+# `frame-support/runtime-benchmarks` adds required benchmark helpers to traits implemented by
+# xcm-builder. Propagate the matching feature so those implementations remain complete.
+staging-xcm-builder = { workspace = true, default-features = false, optional = true }
 
 [build-dependencies]
 substrate-build-script-utils = { workspace = true, default-features = false }
@@ -130,4 +133,5 @@ runtime-benchmarks = [
 	"da-control/runtime-benchmarks",
 	"da-runtime/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
+	"staging-xcm-builder/runtime-benchmarks",
 ]
