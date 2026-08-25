@@ -1098,12 +1098,20 @@ where
 		let mut expected_prefix = SUCCESSFUL_BRIDGE_MESSAGE_PREFIX.to_vec();
 		expected_prefix.extend_from_slice(&child_number.to_be_bytes());
 		let mut decoded_messages = Vec::new();
-		for (_, value) in data
+		for (key, value) in data
 			.iter()
 			.filter(|(key, _)| key.starts_with(&expected_prefix))
 		{
-			decoded_messages
-				.push(<(Compact<u32>, AddressedMessage)>::decode(&mut value.as_slice()).ok()?);
+			match <(Compact<u32>, AddressedMessage)>::decode(&mut value.as_slice()) {
+				Ok(message) => decoded_messages.push(message),
+				Err(error) => {
+					log::error!(
+						target: LOG_TARGET,
+						"Cannot create successful-message post-inherent: undecodable receipt at authoring key {key:?}: {error}"
+					);
+					return None;
+				},
+			}
 		}
 		let messages = decoded_messages.try_into().ok()?;
 
