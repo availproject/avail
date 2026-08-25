@@ -3,8 +3,8 @@ use sp_runtime::OpaqueExtrinsic;
 
 pub trait HeaderExtensionDataFilter {
 	fn filter(
-		post_inherent_info: PostInherentInfo,
-		opaque: OpaqueExtrinsic,
+		post_inherent_info: &PostInherentInfo,
+		opaque: &OpaqueExtrinsic,
 		block: u32,
 		tx_idx: usize,
 	) -> Option<ExtractedTxData>;
@@ -15,8 +15,8 @@ pub trait HeaderExtensionDataFilter {
 #[cfg(feature = "std")]
 impl HeaderExtensionDataFilter for () {
 	fn filter(
-		_: PostInherentInfo,
-		_: OpaqueExtrinsic,
+		_: &PostInherentInfo,
+		_: &OpaqueExtrinsic,
 		_: u32,
 		_: usize,
 	) -> Option<ExtractedTxData> {
@@ -30,8 +30,8 @@ impl HeaderExtensionDataFilter for () {
 #[cfg(not(feature = "std"))]
 impl HeaderExtensionDataFilter for () {
 	fn filter(
-		_: PostInherentInfo,
-		_: OpaqueExtrinsic,
+		_: &PostInherentInfo,
+		_: &OpaqueExtrinsic,
 		_: u32,
 		_: usize,
 	) -> Option<ExtractedTxData> {

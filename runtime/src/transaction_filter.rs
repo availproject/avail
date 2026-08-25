@@ -1,13 +1,11 @@
-use crate::{opaque_to_unchecked, unchecked_get_caller, AccountId, Runtime, RuntimeCall as Call};
+use crate::{opaque_to_unchecked, Runtime, RuntimeCall as Call};
 use avail_base::header_extension::{
 	BridgedData, ExtractedTxData, HeaderExtensionDataFilter, PostInherentInfo, SubmittedData,
 };
-use avail_core::data_proof::{tx_uid, AddressedMessage};
 use sp_runtime::OpaqueExtrinsic;
 
 use da_control::Call as DACall;
 use pallet_vector::Call as VectorCall;
-use sp_core::H256;
 use sp_std::collections::btree_map::BTreeMap;
 use sp_std::vec::Vec;
 
@@ -15,26 +13,26 @@ use sp_std::vec::Vec;
 /// Bridge messages are only extracted from direct `Vector::send_message` calls.
 impl HeaderExtensionDataFilter for Runtime {
 	fn filter(
-		post_inherent_info: PostInherentInfo,
-		opaque: OpaqueExtrinsic,
-		block: u32,
+		post_inherent_info: &PostInherentInfo,
+		opaque: &OpaqueExtrinsic,
+		_block: u32,
 		tx_index: usize,
 	) -> Option<ExtractedTxData> {
 		let res = opaque_to_unchecked(&opaque);
 		match res {
 			Ok(unchecked_extrinsic) => {
-				let maybe_caller = unchecked_get_caller(&unchecked_extrinsic);
+				let tx_index = u32::try_from(tx_index).ok()?;
+				if let Some(message) = post_inherent_info.successful_bridge_messages.get(&tx_index)
+				{
+					return Some(ExtractedTxData {
+						bridge_data: Some(BridgedData::new(tx_index, message.clone())),
+						..Default::default()
+					});
+				}
 
 				match &unchecked_extrinsic.function {
-					Call::Vector(call) => filter_vector_call(
-						&post_inherent_info.failed,
-						maybe_caller.as_ref(),
-						call,
-						block,
-						tx_index,
-					),
 					Call::DataAvailability(call) => {
-						filter_da_call(call, tx_index, post_inherent_info)
+						filter_da_call(call, tx_index as usize, post_inherent_info)
 					},
 					_ => None,
 				}
@@ -51,18 +49,20 @@ impl HeaderExtensionDataFilter for Runtime {
 	fn get_data_from_post_inherents(opaques: &[OpaqueExtrinsic]) -> PostInherentInfo {
 		let mut failed = Vec::new();
 		let mut eval_proofs = BTreeMap::new();
+		let mut successful_bridge_messages = BTreeMap::new();
 		let len = opaques.len();
 		if len == 0 {
 			return PostInherentInfo::default();
 		}
 
-		// Vector failed transactions
+		// Canonical bridge messages recorded only after successful runtime execution.
 		if let Ok(unchecked_extrinsic) = opaque_to_unchecked(&opaques[len - 1]) {
-			if let Call::Vector(VectorCall::failed_send_message_txs { failed_txs }) =
+			if let Call::Vector(VectorCall::successful_send_messages { messages }) =
 				&unchecked_extrinsic.function
 			{
-				let failed_vector_tx = failed_txs.iter().map(|c| c.0).collect::<Vec<_>>();
-				failed.extend(failed_vector_tx);
+				for (tx_index, message) in messages {
+					successful_bridge_messages.insert(tx_index.0, message.clone());
+				}
 			};
 		};
 
@@ -90,6 +90,7 @@ impl HeaderExtensionDataFilter for Runtime {
 		PostInherentInfo {
 			failed,
 			eval_proofs,
+			successful_bridge_messages,
 		}
 	}
 }
@@ -98,7 +99,7 @@ impl HeaderExtensionDataFilter for Runtime {
 fn filter_da_call(
 	call: &DACall<Runtime>,
 	tx_index: usize,
-	post_inherent_info: PostInherentInfo,
+	post_inherent_info: &PostInherentInfo,
 ) -> Option<ExtractedTxData> {
 	let tx_index = u32::try_from(tx_index).ok()?;
 	if post_inherent_info.failed.contains(&tx_index) {
@@ -143,42 +144,6 @@ fn filter_da_call(
 
 	Some(ExtractedTxData {
 		submitted_data,
-		..Default::default()
-	})
-}
-
-/// Filters and extracts message references from `call`
-fn filter_vector_call(
-	failed_transactions: &[u32],
-	caller: Option<&AccountId>,
-	call: &VectorCall<Runtime>,
-	block: u32,
-	tx_index: usize,
-) -> Option<ExtractedTxData> {
-	let tx_index = u32::try_from(tx_index).ok()?;
-	if failed_transactions.contains(&tx_index) {
-		return None;
-	}
-
-	let VectorCall::send_message {
-		message,
-		to,
-		domain,
-	} = call
-	else {
-		return None;
-	};
-
-	if message.is_empty() {
-		return None;
-	}
-
-	let from: [u8; 32] = *caller?.as_ref();
-	let id = tx_uid(block, tx_index);
-	let msg = AddressedMessage::new(message.clone(), H256(from), *to, 1, *domain, id);
-	let bridge_data = Some(BridgedData::new(tx_index, msg));
-	Some(ExtractedTxData {
-		bridge_data,
 		..Default::default()
 	})
 }

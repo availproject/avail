@@ -6,12 +6,14 @@ use crate::{
 	state::Configuration,
 	storage_utils::MessageStatusEnum,
 	Broadcasters, ConfigurationStorage, Error, Event, ExecutionStateRoots, Head, Headers,
-	MessageStatus, MockEnabled, ProofOutputs, SP1VerificationKey, SourceChainFrozen, SourceChainId,
-	SyncCommitteeHashes, Updater, ValidProof, WhitelistedDomains,
+	LastSuccessfulMessageTx, MessageStatus, MockEnabled, ProofOutputs, SP1VerificationKey,
+	SourceChainFrozen, SourceChainId, SuccessfulBridgeMessages, SuccessfulMessagesThisBlock,
+	SyncCommitteeHashes, Updater, ValidProof, WhitelistedDomains, MAX_SUCCESSFUL_BRIDGE_MESSAGES,
 };
 use alloy_sol_types::SolValue;
 use avail_core::data_proof::Message::FungibleToken;
 use avail_core::data_proof::{tx_uid, AddressedMessage, Message};
+use codec::{Compact, Encode};
 use frame_support::{
 	assert_err, assert_ok,
 	traits::{fungible::Inspect, DefensiveTruncateFrom},
@@ -642,6 +644,10 @@ fn send_message_arbitrary_message_works() {
 		};
 		let ok = Bridge::send_message(origin, message, to, domain);
 		assert_ok!(ok);
+		let recorded = SuccessfulMessagesThisBlock::<Test>::get();
+		assert_eq!(recorded.len(), 1);
+		assert_eq!(recorded[0].0 .0, 0);
+		assert_eq!(recorded[0].1.id, tx_uid(1, 0));
 		System::assert_last_event(RuntimeEvent::Bridge(event));
 	});
 }
@@ -702,6 +708,88 @@ fn send_message_fungible_token_does_not_accept_zero_amount() {
 
 		let err = Bridge::send_message(origin, message, to, domain);
 		assert_err!(err, Error::<Test>::InvalidBridgeInputs);
+		assert!(SuccessfulMessagesThisBlock::<Test>::get().is_empty());
+	});
+}
+
+#[test]
+fn successful_bridge_message_scale_size_budget() {
+	let fungible = AddressedMessage::new(
+		Message::FungibleToken {
+			asset_id: H256::zero(),
+			amount: u128::MAX,
+		},
+		H256::repeat_byte(1),
+		H256::repeat_byte(2),
+		u32::MAX,
+		u32::MAX,
+		u64::MAX,
+	);
+	let messages: SuccessfulBridgeMessages = (0..MAX_SUCCESSFUL_BRIDGE_MESSAGES)
+		.map(|index| (Compact(index), fungible.clone()))
+		.collect::<Vec<_>>()
+		.try_into()
+		.expect("exactly the configured maximum");
+
+	// This is the accumulator value and the dominant payload of the post-inherent.
+	assert_eq!(messages.encoded_size(), 134_938);
+
+	let max_arbitrary = AddressedMessage::new(
+		Message::ArbitraryMessage(BoundedVec::truncate_from(vec![
+			0;
+			avail_core::data_proof::BOUNDED_DATA_MAX_LENGTH
+				as usize
+		])),
+		H256::repeat_byte(1),
+		H256::repeat_byte(2),
+		u32::MAX,
+		u32::MAX,
+		u64::MAX,
+	);
+	assert_eq!((Compact(u32::MAX), max_arbitrary).encoded_size(), 102_493);
+}
+
+#[test]
+fn send_message_checks_accumulator_capacity_before_transfer() {
+	new_test_ext().execute_with(|| {
+		use crate::BalanceOf;
+		use frame_support::traits::Currency;
+
+		let sender = TEST_SENDER_ACCOUNT;
+		Balances::make_free_balance_be(&sender, BalanceOf::<Test>::max_value() / 2);
+		let balance_before = Balances::free_balance(&sender);
+		let existing = AddressedMessage::new(
+			Message::FungibleToken {
+				asset_id: H256::zero(),
+				amount: 1,
+			},
+			H256::zero(),
+			H256::zero(),
+			1,
+			2,
+			0,
+		);
+		let full: SuccessfulBridgeMessages = (0..MAX_SUCCESSFUL_BRIDGE_MESSAGES)
+			.map(|index| (Compact(index), existing.clone()))
+			.collect::<Vec<_>>()
+			.try_into()
+			.expect("exactly the configured maximum");
+		SuccessfulMessagesThisBlock::<Test>::put(full);
+		LastSuccessfulMessageTx::<Test>::kill();
+
+		assert_err!(
+			Bridge::send_message(
+				RuntimeOrigin::signed(sender.clone()),
+				Message::FungibleToken {
+					asset_id: H256::zero(),
+					amount: 100,
+				},
+				H256::repeat_byte(1),
+				2,
+			),
+			Error::<Test>::TooManySuccessfulMessages
+		);
+		assert_eq!(Balances::free_balance(&sender), balance_before);
 	});
 }
 
