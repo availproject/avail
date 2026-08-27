@@ -432,7 +432,7 @@ impl_runtime_apis! {
 			};
 
 
-			matches!(vector_pallet_call, pallet_vector::Call::failed_send_message_txs {failed_txs: _})
+			matches!(vector_pallet_call, pallet_vector::Call::successful_send_messages {messages: _})
 		}
 
 		fn check_if_extrinsic_is_da_post_inherent(uxt: &<Block as BlockT>::Extrinsic) -> bool {

@@ -3,7 +3,7 @@ use crate::extensions::check_batch_transactions::CheckBatchTransactions;
 use crate::{Runtime, SignedExtra, UncheckedExtrinsic};
 
 use avail_base::HeaderExtensionBuilderData;
-use avail_core::data_proof::{BoundedData, Message, TxDataRoots};
+use avail_core::data_proof::{tx_uid, BoundedData, Message, TxDataRoots};
 use da_control::Call as DaCall;
 use frame_system::{
 	CheckEra, CheckGenesis, CheckNonZeroSender, CheckNonce, CheckSpecVersion, CheckTxVersion,
@@ -217,9 +217,46 @@ fn bridge_fungible_msg(asset_id: H256, amount: u128) -> Vec<u8> {
 	signed_extrinsic(function)
 }
 
-fn bridge_failed_send_message_txs(failed_txs: Vec<u32>) -> Vec<u8> {
-	let failed_txs: Vec<Compact<u32>> = failed_txs.into_iter().map(|i| Compact::from(i)).collect();
-	let function = VectorCall::failed_send_message_txs { failed_txs }.into();
+fn bridge_successful_send_messages(
+	block: u32,
+	extrinsics: &[Vec<u8>],
+	successful_indices: &[u32],
+) -> Vec<u8> {
+	let messages = successful_indices
+		.iter()
+		.filter_map(|tx_index| {
+			let opaque = sp_runtime::OpaqueExtrinsic::try_from_encoded_extrinsic(
+				extrinsics.get(*tx_index as usize)?,
+			)
+			.ok()?;
+			let unchecked = crate::opaque_to_unchecked(&opaque).ok()?;
+			let caller = crate::unchecked_get_caller(&unchecked)?;
+			let RuntimeCall::Vector(VectorCall::send_message {
+				message,
+				to,
+				domain,
+			}) = unchecked.function
+			else {
+				return None;
+			};
+
+			let from: [u8; 32] = *caller.as_ref();
+			Some((
+				Compact(*tx_index),
+				AddressedMessage::new(
+					message,
+					H256(from),
+					to,
+					1,
+					domain,
+					tx_uid(block, *tx_index),
+				),
+			))
+		})
+		.collect::<Vec<_>>()
+		.try_into()
+		.expect("test bridge message count is bounded");
+	let function = VectorCall::successful_send_messages { messages }.into();
 	UncheckedExtrinsic::new_bare(function).encode()
 }
 
@@ -240,7 +277,14 @@ fn empty_root() -> H256 {
 #[test_case(&[submit_blob_metadata(hex!("abcd").to_vec()), bridge_msg(hex!("47").to_vec())] => H256(hex!("c925bfccfc86f15523c5b40b2bd6d8a66fc51f3d41176d77be7928cb9e3831a7")); "submitted and bridged")]
 fn data_root_filter(extrinsics: &[Vec<u8>]) -> H256 {
 	new_test_ext().execute_with(|| {
-		HeaderExtensionBuilderData::from_raw_extrinsics::<Runtime>(0, extrinsics).data_root()
+		let mut block_extrinsics = extrinsics.to_vec();
+		let successful_indices = (0..extrinsics.len() as u32).collect::<Vec<_>>();
+		block_extrinsics.push(bridge_successful_send_messages(
+			0,
+			extrinsics,
+			&successful_indices,
+		));
+		HeaderExtensionBuilderData::from_raw_extrinsics::<Runtime>(0, &block_extrinsics).data_root()
 	})
 }
 
@@ -425,11 +469,12 @@ mod bridge_tests {
 	#[test]
 	fn bridge_message_filter_correctly() {
 		new_test_ext().execute_with(|| {
-			let extrinsics = vec![
+			let mut extrinsics = vec![
 				bridge_msg(b"123".to_vec()),
 				bridge_fungible_msg(H256::zero(), 42_000_000_000_000_000_000u128),
 				submit_blob_metadata(hex!("abcd").to_vec()),
 			];
+			extrinsics.push(bridge_successful_send_messages(0, &extrinsics, &[0, 1]));
 			let data = HeaderExtensionBuilderData::from_raw_extrinsics::<Runtime>(0, &extrinsics);
 			let expected = expected_send_arbitrary_data();
 			assert_eq!(data.bridge_messages, expected.bridge_messages);
@@ -441,7 +486,9 @@ mod bridge_tests {
 	#[test]
 	fn bridge_message_is_empty() {
 		new_test_ext().execute_with(|| {
-			let extrinsics: Vec<Vec<u8>> = vec![submit_blob_metadata(hex!("abcd").to_vec())];
+			let mut extrinsics: Vec<Vec<u8>> =
+				vec![submit_blob_metadata(hex!("abcd").to_vec())];
+			extrinsics.push(bridge_successful_send_messages(0, &extrinsics, &[]));
 			let data = HeaderExtensionBuilderData::from_raw_extrinsics::<Runtime>(0, &extrinsics);
 			let expected = HeaderExtensionBuilderData::default();
 			assert_eq!(data.bridge_messages, expected.bridge_messages);
@@ -449,16 +496,16 @@ mod bridge_tests {
 		})
 	}
 
-	// Bridges message that are failed (and hence in bridge_failed_send_message_txs) should not generate bridge messages
+	// Raw bridge calls absent from the canonical successful-execution record generate no leaf.
 	#[test]
-	fn bridge_message_filter_failed_tx_correctly() {
+	fn bridge_message_requires_success_record() {
 		new_test_ext().execute_with(|| {
-			let extrinsics = vec![
+			let mut extrinsics = vec![
 				bridge_msg(b"123".to_vec()),
 				bridge_fungible_msg(H256::zero(), 42_000_000_000_000_000_000u128),
 				submit_blob_metadata(hex!("abcd").to_vec()),
-				bridge_failed_send_message_txs(vec![0, 1]),
 			];
+			extrinsics.push(bridge_successful_send_messages(0, &extrinsics, &[]));
 			let data = HeaderExtensionBuilderData::from_raw_extrinsics::<Runtime>(0, &extrinsics);
 			let expected: HeaderExtensionBuilderData = HeaderExtensionBuilderData::default();
 			assert_eq!(data.bridge_messages, expected.bridge_messages);
@@ -466,25 +513,25 @@ mod bridge_tests {
 		})
 	}
 
-	// Bridges message and roots should be same for same data and ignore failed txs
+	// Roots depend only on the canonical successful execution record.
 	#[test]
 	fn bridge_roots_should_be_same() {
 		new_test_ext().execute_with(|| {
-			let extrinsics_1 = vec![
+			let mut extrinsics_1 = vec![
 				bridge_msg(b"123".to_vec()),
 				bridge_fungible_msg(H256::zero(), 42_000_000_000_000_000_000u128),
 				bridge_fungible_msg(H256::zero(), 42_000_000_000_000_000_000u128),
 				submit_blob_metadata(hex!("abcd").to_vec()),
-				bridge_failed_send_message_txs(vec![1, 2]),
 			];
+			extrinsics_1.push(bridge_successful_send_messages(0, &extrinsics_1, &[0]));
 			let data_1 =
 				HeaderExtensionBuilderData::from_raw_extrinsics::<Runtime>(0, &extrinsics_1);
 
-			let extrinsics_2 = vec![
+			let mut extrinsics_2 = vec![
 				bridge_msg(b"123".to_vec()),
 				submit_blob_metadata(hex!("abcd").to_vec()),
-				bridge_failed_send_message_txs(vec![]),
 			];
+			extrinsics_2.push(bridge_successful_send_messages(0, &extrinsics_2, &[0]));
 			let data_2 =
 				HeaderExtensionBuilderData::from_raw_extrinsics::<Runtime>(0, &extrinsics_2);
 
@@ -497,11 +544,12 @@ mod bridge_tests {
 	#[test]
 	fn check_bridge_balanced_tree() {
 		new_test_ext().execute_with(|| {
-			let extrinsics = vec![
+			let mut extrinsics = vec![
 				bridge_msg(b"123".to_vec()),
 				bridge_msg(b"123".to_vec()),
 				bridge_msg(b"123".to_vec()),
 			];
+			extrinsics.push(bridge_successful_send_messages(0, &extrinsics, &[0, 1, 2]));
 			let data = HeaderExtensionBuilderData::from_raw_extrinsics::<Runtime>(0, &extrinsics);
 			let merkle_proof = data.bridged_proof_of(2).unwrap();
 			let proof = merkle_proof.proof;

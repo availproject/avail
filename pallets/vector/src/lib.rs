@@ -8,7 +8,7 @@ use avail_base::{MemoryTemporaryStorage, ProvidePostInherent};
 use avail_core::data_proof::{tx_uid, AddressedMessage, Message, MessageType};
 use sp1_verifier::{Groth16Verifier, GROTH16_VK_BYTES};
 
-use codec::Compact;
+use codec::{Compact, Decode, Encode};
 use frame_support::{
 	pallet_prelude::*,
 	traits::{Currency, ExistenceRequirement, UnixTime},
@@ -52,7 +52,8 @@ pub type ValidProof = BoundedVec<BoundedVec<u8, ConstU32<2048>>, ConstU32<32>>;
 
 // Avail asset is supported for now
 pub const SUPPORTED_ASSET_ID: H256 = H256::zero();
-pub const FAILED_SEND_MSG_ID: &[u8] = b"vector:failed_send_msg_txs";
+pub const MAX_SUCCESSFUL_BRIDGE_MESSAGES: u32 = 1_000;
+pub const SUCCESSFUL_BRIDGE_MESSAGE_PREFIX: &[u8] = b"vector:successful_bridge_message:";
 pub const LOG_TARGET: &str = "runtime::vector";
 pub type BalanceOf<T> =
 	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -101,8 +102,12 @@ pub mod pallet {
 		DomainNotSupported,
 		/// Inherent call outside of block execution context.
 		BadContext,
-		/// Invalid FailedIndices
-		InvalidFailedIndices,
+		/// The successful-message post-inherent does not match runtime execution.
+		InvalidSuccessfulMessages,
+		/// More than one bridge message was emitted by the same outer extrinsic.
+		DuplicateMessageId,
+		/// The block already contains the maximum supported number of bridge messages.
+		TooManySuccessfulMessages,
 		/// Invalid updater
 		UpdaterMisMatch,
 		/// Cannot get current message id
@@ -207,6 +212,19 @@ pub mod pallet {
 	/// List of permitted domains.
 	#[pallet::storage]
 	pub type WhitelistedDomains<T> = StorageValue<_, BoundedVec<u32, ConstU32<10_000>>, ValueQuery>;
+
+	/// Bridge messages produced by successful execution in the current block.
+	#[pallet::storage]
+	#[pallet::unbounded]
+	pub type SuccessfulMessagesThisBlock<T> = StorageValue<_, SuccessfulBridgeMessages, ValueQuery>;
+
+	pub type SuccessfulBridgeMessages =
+		BoundedVec<(Compact<u32>, AddressedMessage), ConstU32<MAX_SUCCESSFUL_BRIDGE_MESSAGES>>;
+
+	/// Last outer extrinsic that emitted a bridge message. Kept separately so the duplicate check
+	/// does not decode and scan the potentially large canonical-message accumulator.
+	#[pallet::storage]
+	pub type LastSuccessfulMessageTx<T> = StorageValue<_, u32, OptionQuery>;
 
 	/// Genesis validator root, used to check initialization.
 	#[pallet::storage]
@@ -404,13 +422,9 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_initialize(_n: BlockNumberFor<T>) -> Weight {
-			if let Some(failed_txs) =
-				MemoryTemporaryStorage::take::<Vec<Compact<u32>>>(FAILED_SEND_MSG_ID)
-			{
-				log::trace!(target: LOG_TARGET, "Failed Txs cleaned: {failed_txs:?}");
-			}
-
-			Weight::zero()
+			SuccessfulMessagesThisBlock::<T>::kill();
+			LastSuccessfulMessageTx::<T>::kill();
+			T::DbWeight::get().writes(2)
 		}
 	}
 
@@ -543,11 +557,13 @@ pub mod pallet {
 		//	send_message_arbitrary_message_doesnt_accept_asset_id(), send_message_arbitrary_message_doesnt_accept_empty_data()
 		#[pallet::call_index(3)]
 		#[pallet::weight({
-			match message {
+			let base = match message {
 				Message::ArbitraryMessage(ref data) => T::WeightInfo::send_message_arbitrary_message(data.len() as u32),
 				Message::FungibleToken{..} => T::WeightInfo::send_message_fungible_token(),
-			}
+			};
+			base.saturating_add(T::DbWeight::get().reads_writes(2, 2))
 		})]
+		#[frame_support::transactional]
 		pub fn send_message(
 			origin: OriginFor<T>,
 			message: Message,
@@ -555,25 +571,7 @@ pub mod pallet {
 			#[pallet::compact] domain: u32,
 		) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
-
-			let dispatch = Self::do_send_message(who, message, to, domain);
-			if dispatch.is_err() {
-				let _ = MemoryTemporaryStorage::update::<Vec<Compact<u32>>, _>(
-					FAILED_SEND_MSG_ID.to_vec(),
-					|failed| {
-						let tx_idx_result = <frame_system::Pallet<T>>::extrinsic_index();
-						// this should never happen and we can just log warn
-						if tx_idx_result.is_none() {
-							log::warn!(target: LOG_TARGET, "Transaction index is none!");
-						}
-						let tx_idx = tx_idx_result.unwrap_or_default();
-						failed.push(tx_idx.into());
-						log::trace!(target: LOG_TARGET, "Send Message failed txs: {failed:?}");
-					},
-				);
-			}
-
-			dispatch
+			Self::do_send_message(who, message, to, domain)
 		}
 
 		/// set_broadcaster sets the broadcaster address of the message from the origin chain.
@@ -638,22 +636,22 @@ pub mod pallet {
 
 		#[pallet::call_index(11)]
 		#[pallet::weight((
-			T::WeightInfo::failed_tx_index(0u32),
+			T::WeightInfo::successful_send_messages(
+				messages.len() as u32,
+				messages.encoded_size() as u32,
+			).saturating_add(T::DbWeight::get().reads(1)),
 			DispatchClass::Mandatory
 		))]
-		pub fn failed_send_message_txs(
+		pub fn successful_send_messages(
 			origin: OriginFor<T>,
-			failed_txs: Vec<Compact<u32>>,
+			messages: SuccessfulBridgeMessages,
 		) -> DispatchResult {
 			ensure_none(origin)?;
-			let local_failed_txs =
-				MemoryTemporaryStorage::get::<Vec<Compact<u32>>>(FAILED_SEND_MSG_ID)
-					.unwrap_or_default();
+			let local_messages = SuccessfulMessagesThisBlock::<T>::get();
 			ensure!(
-				local_failed_txs == failed_txs,
-				Error::<T>::InvalidFailedIndices
+				local_messages == messages,
+				Error::<T>::InvalidSuccessfulMessages
 			);
-
 			Ok(())
 		}
 
@@ -941,7 +939,10 @@ pub mod pallet {
 		}
 	}
 
-	impl<T: Config> Pallet<T> {
+	impl<T: Config> Pallet<T>
+	where
+		[u8; 32]: From<T::AccountId>,
+	{
 		fn do_send_message(
 			who: T::AccountId,
 			message: Message,
@@ -953,31 +954,69 @@ pub mod pallet {
 				Self::is_domain_valid(domain),
 				Error::<T>::DomainNotSupported
 			);
+			let message_id = Self::fetch_curr_message_id()?;
+			let tx_index = <frame_system::Pallet<T>>::extrinsic_index()
+				.ok_or(Error::<T>::CurrentMessageIdNotFound)?;
+			ensure!(
+				LastSuccessfulMessageTx::<T>::get() != Some(tx_index),
+				Error::<T>::DuplicateMessageId
+			);
+			ensure!(
+				SuccessfulMessagesThisBlock::<T>::decode_len().unwrap_or_default()
+					< MAX_SUCCESSFUL_BRIDGE_MESSAGES as usize,
+				Error::<T>::TooManySuccessfulMessages
+			);
 			// Check MessageType and enforce the rules
 			let message_type = message.r#type();
-			match message {
+			match &message {
 				Message::FungibleToken { asset_id, amount } => {
 					ensure!(
-						SUPPORTED_ASSET_ID == asset_id,
+						SUPPORTED_ASSET_ID == *asset_id,
 						Error::<T>::AssetNotSupported
 					);
 					ensure!(
-						amount.saturated_into::<u128>() > 0,
+						(*amount).saturated_into::<u128>() > 0,
 						Error::<T>::InvalidBridgeInputs
 					);
-					T::Currency::transfer(
-						&who,
-						&Self::account_id(),
-						amount.saturated_into(),
-						ExistenceRequirement::KeepAlive,
-					)?;
 				},
 				Message::ArbitraryMessage(data) => {
 					ensure!(!data.is_empty(), Error::<T>::InvalidBridgeInputs)
 				},
 			};
 
-			let message_id = Self::fetch_curr_message_id()?;
+			let from: [u8; 32] = who.clone().into();
+			let addressed_message = AddressedMessage::new(
+				message,
+				H256(from),
+				to,
+				T::AvailDomain::get(),
+				domain,
+				message_id,
+			);
+			if let Message::FungibleToken { amount, .. } = &addressed_message.message {
+				T::Currency::transfer(
+					&who,
+					&Self::account_id(),
+					(*amount).saturated_into(),
+					ExistenceRequirement::KeepAlive,
+				)?;
+			}
+
+			SuccessfulMessagesThisBlock::<T>::try_append((
+				Compact(tx_index),
+				addressed_message.clone(),
+			))
+			.map_err(|_| Error::<T>::TooManySuccessfulMessages)?;
+			LastSuccessfulMessageTx::<T>::put(tx_index);
+
+			let mut authoring_key = SUCCESSFUL_BRIDGE_MESSAGE_PREFIX.to_vec();
+			let block_number = <frame_system::Pallet<T>>::block_number().saturated_into::<u32>();
+			authoring_key.extend_from_slice(&block_number.to_be_bytes());
+			authoring_key.extend_from_slice(&tx_index.to_be_bytes());
+			let _ = MemoryTemporaryStorage::insert(
+				authoring_key,
+				(Compact(tx_index), addressed_message),
+			);
 
 			Self::deposit_event(Event::MessageSubmitted {
 				from: who,
@@ -1049,24 +1088,45 @@ where
 	type Call = Call<T>;
 	type Error = ();
 
-	fn create_inherent(_: &avail_base::StorageMap) -> Option<Self::Call> {
-		let failed_txs = MemoryTemporaryStorage::get::<Vec<Compact<u32>>>(FAILED_SEND_MSG_ID)
-			.unwrap_or_default();
+	fn create_inherent(data: &avail_base::StorageMap) -> Option<Self::Call> {
+		// This API is currently invoked at the parent hash, while the mirrored receipts were
+		// produced while building its child. Scoping by child number prevents unrelated imports or
+		// stale authoring attempts at other heights from entering this post-inherent.
+		let child_number = <frame_system::Pallet<T>>::block_number()
+			.saturated_into::<u32>()
+			.checked_add(1)?;
+		let mut expected_prefix = SUCCESSFUL_BRIDGE_MESSAGE_PREFIX.to_vec();
+		expected_prefix.extend_from_slice(&child_number.to_be_bytes());
+		let mut decoded_messages = Vec::new();
+		for (key, value) in data
+			.iter()
+			.filter(|(key, _)| key.starts_with(&expected_prefix))
+		{
+			match <(Compact<u32>, AddressedMessage)>::decode(&mut value.as_slice()) {
+				Ok(message) => decoded_messages.push(message),
+				Err(error) => {
+					log::error!(
+						target: LOG_TARGET,
+						"Cannot create successful-message post-inherent: undecodable receipt at authoring key {key:?}: {error}"
+					);
+					return None;
+				},
+			}
+		}
+		let messages = decoded_messages.try_into().ok()?;
 
-		log::trace!(target: LOG_TARGET, "Create post inherent failed vector txs: {failed_txs:?}");
-		Some(Call::failed_send_message_txs { failed_txs })
+		log::trace!(target: LOG_TARGET, "Create post inherent successful bridge messages: {messages:?}");
+		Some(Call::successful_send_messages { messages })
 	}
 
 	fn is_inherent(call: &Self::Call) -> bool {
-		matches!(call, Call::failed_send_message_txs { .. })
+		matches!(call, Call::successful_send_messages { .. })
 	}
 
 	fn check_inherent(call: &Self::Call) -> Result<(), Self::Error> {
-		if let Call::failed_send_message_txs { failed_txs } = call {
-			let local_failed_txs =
-				MemoryTemporaryStorage::get::<Vec<Compact<u32>>>(FAILED_SEND_MSG_ID)
-					.unwrap_or_default();
-			ensure!(&local_failed_txs == failed_txs, ());
+		if let Call::successful_send_messages { messages } = call {
+			let local_messages = SuccessfulMessagesThisBlock::<T>::get();
+			ensure!(&local_messages == messages, ());
 		}
 		Ok(())
 	}

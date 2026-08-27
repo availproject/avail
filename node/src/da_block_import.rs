@@ -62,7 +62,7 @@ where
 		}
 	}
 
-	fn ensure_last_extrinsic_is_failed_send_message_txs(
+	fn ensure_last_extrinsic_is_vector_post_inherent(
 		&self,
 		block: &BlockImportParams<B>,
 	) -> Result<(), ConsensusError> {
@@ -259,7 +259,7 @@ where
 		};
 
 		if !is_own && !skip_sync && !block.with_state() {
-			self.ensure_last_extrinsic_is_failed_send_message_txs(&block)?;
+			self.ensure_last_extrinsic_is_vector_post_inherent(&block)?;
 			self.ensure_valid_header_extension(
 				&block,
 				extracted

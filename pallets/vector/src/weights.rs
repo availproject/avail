@@ -58,7 +58,13 @@ pub trait WeightInfo {
 	fn source_chain_froze() -> Weight;
 	fn execute_fungible_token() -> Weight;
 	fn execute_arbitrary_message(l: u32, ) -> Weight;
-	fn failed_tx_index(_l: u32) -> Weight { Weight::zero() }
+	/// Provisional conservative weight for comparing the bounded canonical receipt list.
+	/// Regenerate this with pallet benchmarks before a production runtime release.
+	fn successful_send_messages(n: u32, bytes: u32) -> Weight {
+		Weight::from_parts(10_000_000, bytes as u64)
+			.saturating_add(Weight::from_parts(50_000, 0).saturating_mul(n as u64))
+			.saturating_add(Weight::from_parts(10_000, 0).saturating_mul(bytes as u64))
+	}
 	fn set_updater() -> Weight;
 	fn set_sp1_verification_key() -> Weight;
 	fn set_sync_committee_hash() -> Weight;

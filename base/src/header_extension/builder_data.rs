@@ -52,6 +52,7 @@ pub struct HeaderExtensionBuilderData {
 pub struct PostInherentInfo {
 	pub eval_proofs: BTreeMap<u32, Vec<u8>>,
 	pub failed: Vec<u32>,
+	pub successful_bridge_messages: BTreeMap<u32, AddressedMessage>,
 }
 
 impl HeaderExtensionBuilderData {
@@ -76,9 +77,7 @@ impl HeaderExtensionBuilderData {
 		let extracted_tx_datas: Vec<ExtractedTxData> = opaques
 			.into_iter()
 			.enumerate()
-			.filter_map(|(idx, opaque)| {
-				F::filter(post_inherent_info.clone(), opaque.clone(), block, idx)
-			})
+			.filter_map(|(idx, opaque)| F::filter(&post_inherent_info, opaque, block, idx))
 			.collect();
 
 		HeaderExtensionBuilderData::from(extracted_tx_datas)
