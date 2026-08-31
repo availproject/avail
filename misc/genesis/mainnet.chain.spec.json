@@ -26,7 +26,7 @@
     "tokenDecimals": 18,
     "tokenSymbol": "AVAIL"
   },
-  "forkBlocks":[[3403664, "0xa735aad6d4b67c6274f42cd42050e87dac901c831c6099e9d1382dc44d985fb4"]],
+  "forkBlocks":[[3403664, "0xc3740fd763e6ef65a83217ceb68840cd361681a49ca03a7f6a6f379ed3a8a561"]],
   "badBlocks": null,
   "lightSyncState": null,
   "codeSubstitutes": {},
