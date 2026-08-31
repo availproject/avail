@@ -43,7 +43,7 @@ jobs:
           overwrite: true
 
   build_binaries:
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.BUILD_RUNNER || 'sp1-builder' }}
     needs: setup_gpg
     strategy:
       matrix:
@@ -63,11 +63,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
-        with:
-          tool-cache: true
-      
       - name: Install podman
         run: sudo apt-get update && sudo apt install podman -y
 
