@@ -8,9 +8,7 @@ RUN apt update -y && \
 
 WORKDIR "/da/src"
 
-# Clone repo
-ARG AVAIL_TAG=v2.3.4.0
-RUN git clone -b $AVAIL_TAG --single-branch https://github.com/availproject/avail.git .
+COPY . .
 
 # This installs Rust and updates Rust to the right version.
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rust_install.sh && chmod u+x rust_install.sh && ./rust_install.sh -y
