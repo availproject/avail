@@ -5,10 +5,13 @@ inputs:
     description: Path of the asset to publish
     required: true
   gpg_private_key:
+    description: GPG private key used to sign the asset
     required: true
   gpg_passphrase:
+    description: Passphrase for the GPG private key
     required: true
   github_token:
+    description: Token used to upload to the release
     required: true
 runs:
   using: composite
