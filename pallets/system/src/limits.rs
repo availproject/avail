@@ -245,6 +245,30 @@ impl BlockLength {
 		}
 	}
 
+	/// Create new `BlockLength` with separate ratios for `Normal` and `Operational`.
+	///
+	/// `Mandatory` retains the full configured block length, as in
+	/// [`BlockLength::max_with_normal_ratio`].
+	pub fn max_with_normal_and_operational_ratio(
+		max: u32,
+		normal: Perbill,
+		operational: Perbill,
+	) -> Self {
+		const_assert!(is_chunk_size_valid(BLOCK_CHUNK_SIZE));
+		let max = PerDispatchClass::new(|class| match class {
+			DispatchClass::Normal => normal * max,
+			DispatchClass::Operational => operational * max,
+			_ => max,
+		});
+
+		Self {
+			cols: MAX_BLOCK_COLUMNS,
+			rows: MAX_BLOCK_ROWS,
+			chunk_size: BLOCK_CHUNK_SIZE,
+			max,
+		}
+	}
+
 	fn max_per_class(
 		rows: BlockLengthRows,
 		cols: BlockLengthColumns,

@@ -304,15 +304,15 @@ impl<T: Config + Send + Sync> sp_std::fmt::Debug for CheckWeight<T> {
 mod tests {
 	use frame_support::{
 		assert_err, assert_ok,
-		dispatch::{DispatchClass, Pays},
+		dispatch::{DispatchClass, GetDispatchInfo, Pays},
 		weights::Weight,
 	};
 	use sp_std::marker::PhantomData;
 
 	use super::*;
 	use crate::{
-		mock::{new_test_ext, System, Test, CALL},
-		AllExtrinsicsLen, BlockWeight,
+		mock::{new_test_ext, RuntimeCall, System, Test, CALL},
+		AllExtrinsicsLen, BlockWeight, Call,
 	};
 
 	fn block_weights() -> crate::limits::BlockWeights {
@@ -334,6 +334,102 @@ mod tests {
 		*<Test as Config>::BlockLength::get()
 			.max
 			.get(DispatchClass::Normal)
+	}
+
+	fn operational_length_limit() -> u32 {
+		*<Test as Config>::BlockLength::get()
+			.max
+			.get(DispatchClass::Operational)
+	}
+
+	#[test]
+	fn block_length_ratios_are_configured() {
+		let block_length = <Test as Config>::BlockLength::get();
+
+		assert_eq!(*block_length.max.get(DispatchClass::Normal), 768);
+		assert_eq!(*block_length.max.get(DispatchClass::Operational), 922);
+		assert_eq!(*block_length.max.get(DispatchClass::Mandatory), 1024);
+	}
+
+	#[test]
+	fn authorized_upgrade_is_rejected_when_its_encoded_length_exceeds_operational_limit() {
+		new_test_ext().execute_with(|| {
+			let call = RuntimeCall::System(Call::apply_authorized_upgrade {
+				code: vec![0; operational_length_limit() as usize],
+			});
+			let info = call.get_dispatch_info();
+			let encoded_len = call.encode().len();
+			let check_weight = CheckWeight::<Test>::new();
+
+			assert_eq!(info.class, DispatchClass::Operational);
+			assert!(encoded_len > operational_length_limit() as usize);
+			assert_eq!(
+				check_weight.validate(&1, &call, &info, encoded_len),
+				Err(InvalidTransaction::ExhaustsResources.into())
+			);
+			assert_eq!(
+				CheckWeight::<Test>::validate_unsigned(&call, &info, encoded_len),
+				Err(InvalidTransaction::ExhaustsResources.into())
+			);
+			assert_eq!(
+				CheckWeight::<Test>::do_pre_dispatch(&info, encoded_len),
+				Err(InvalidTransaction::ExhaustsResources.into())
+			);
+			assert_eq!(System::all_extrinsics_len(), 0);
+		});
+	}
+
+	#[test]
+	fn operational_block_length_boundary_is_enforced() {
+		new_test_ext().execute_with(|| {
+			let info = DispatchInfo {
+				class: DispatchClass::Operational,
+				..Default::default()
+			};
+			let limit = operational_length_limit() as usize;
+
+			assert_ok!(CheckWeight::<Test>::do_validate(&info, limit));
+			assert_err!(
+				CheckWeight::<Test>::do_validate(&info, limit + 1),
+				InvalidTransaction::ExhaustsResources
+			);
+
+			AllExtrinsicsLen::<Test>::kill();
+			assert_ok!(CheckWeight::<Test>::do_pre_dispatch(&info, limit));
+			AllExtrinsicsLen::<Test>::kill();
+			assert_err!(
+				CheckWeight::<Test>::do_pre_dispatch(&info, limit + 1),
+				InvalidTransaction::ExhaustsResources
+			);
+		});
+	}
+
+	#[test]
+	fn operational_limit_leaves_room_for_mandatory_post_inherent() {
+		new_test_ext().execute_with(|| {
+			let operational = DispatchInfo {
+				class: DispatchClass::Operational,
+				..Default::default()
+			};
+			let mandatory = DispatchInfo {
+				class: DispatchClass::Mandatory,
+				..Default::default()
+			};
+			let operational_limit = operational_length_limit() as usize;
+			let mandatory_room = *<Test as Config>::BlockLength::get()
+				.max
+				.get(DispatchClass::Mandatory) as usize
+				- operational_limit;
+
+			assert_ok!(CheckWeight::<Test>::do_pre_dispatch(
+				&operational,
+				operational_limit,
+			));
+			assert_ok!(CheckWeight::<Test>::do_pre_dispatch(
+				&mandatory,
+				mandatory_room,
+			));
+		});
 	}
 
 	#[test]
@@ -589,7 +685,8 @@ mod tests {
 			reset_check_weight(&normal, normal_limit, false);
 			reset_check_weight(&normal, normal_limit + 1, true);
 
-			// Operational ones don't have this limit.
+			let operational_limit = operational_length_limit() as usize;
+			// Operational transactions have a larger, separate length limit.
 			let op = DispatchInfo {
 				weight: Weight::zero(),
 				class: DispatchClass::Operational,
@@ -598,8 +695,8 @@ mod tests {
 			};
 			reset_check_weight(&op, normal_limit, false);
 			reset_check_weight(&op, normal_limit + 100, false);
-			reset_check_weight(&op, 1024, false);
-			reset_check_weight(&op, 1025, true);
+			reset_check_weight(&op, operational_limit, false);
+			reset_check_weight(&op, operational_limit + 1, true);
 		})
 	}
 
