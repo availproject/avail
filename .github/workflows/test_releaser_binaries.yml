@@ -14,14 +14,9 @@ jobs:
   build_binaries:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        include:
-          - command: ENGINE=podman SCRIPT_LOC=./scripts/workflows/releaser_wasm.sh ./scripts/workflows/run.sh
-          - command: ENGINE=podman DISTRO=ubuntu-2204 ZIP=1 ./scripts/binaries/build.sh
-          - command: ENGINE=podman DISTRO=ubuntu-2404 ZIP=1 ./scripts/binaries/build.sh
-          - command: ENGINE=podman DISTRO=fedora-42 ZIP=1 ./scripts/binaries/build.sh
-          - command: ENGINE=podman DISTRO=debian-12 ZIP=1 ./scripts/binaries/build.sh
-          - command: ENGINE=podman DISTRO=arch ZIP=1 ./scripts/binaries/build.sh
+        distro: [ubuntu-2204, ubuntu-2404, debian-12, debian-13]
     steps:
       - uses: actions/checkout@v4
 
@@ -29,15 +24,17 @@ jobs:
         uses: jlumbroso/free-disk-space@main
         with:
           tool-cache: true
-      
-      - name: install podman
-        run: sudo apt-get update && sudo apt install podman -y
+
+      - name: Ensure podman
+        run: command -v podman || (sudo apt-get update && sudo apt-get install -y podman)
 
       - uses: nick-fields/retry@v3
         with:
           timeout_minutes: 60
           max_attempts: 2
-          command: ${{ matrix.command }}
+          command: ENGINE=podman DISTRO=${{ matrix.distro }} ZIP=1 ./scripts/binaries/build.sh
+
+      - run: ls -l output/zips output/da_runtime.compact.compressed.wasm
 
   arm64_ubuntu_2204:
     runs-on: ubuntu-22.04
@@ -58,8 +55,8 @@ jobs:
         shell: bash
         run: |
           curl https://sh.rustup.rs -sSf | sh -s -- -y
-          source "$HOME/.cargo/env" && rustup show 
-          
+          source "$HOME/.cargo/env" && rustup show
+
           rustup target add aarch64-unknown-linux-gnu
           sudo apt-get update && sudo apt-get install -y musl-tools clang gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libc6-dev libc6-dev-arm64-cross
           env  BINDGEN_EXTRA_CLANG_ARGS='--sysroot /usr/aarch64-linux-gnu' CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=/usr/bin/aarch64-linux-gnu-gcc cargo build --release --target=aarch64-unknown-linux-gnu -p avail-node
