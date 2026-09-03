@@ -38,6 +38,7 @@ frame_support::construct_runtime!(
 );
 
 const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
+const OPERATIONAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(90);
 const MAX_BLOCK_WEIGHT: Weight = Weight::from_parts(1024, u64::MAX);
 
 parameter_types! {
@@ -73,7 +74,11 @@ parameter_types! {
 		.avg_block_initialization(Perbill::from_percent(0))
 		.build_or_panic();
 	pub RuntimeBlockLength: limits::BlockLength =
-		limits::BlockLength::max_with_normal_ratio(1024, NORMAL_DISPATCH_RATIO);
+		limits::BlockLength::max_with_normal_and_operational_ratio(
+			1024,
+			NORMAL_DISPATCH_RATIO,
+			OPERATIONAL_DISPATCH_RATIO,
+		);
 }
 
 parameter_types! {

@@ -118,6 +118,7 @@ pub mod system {
 
 	pub const NORMAL_DISPATCH_RATIO_PERBILL: Perbill =
 		Perbill::from_percent(NORMAL_DISPATCH_RATIO as u32);
+	pub const OPERATIONAL_DISPATCH_RATIO_PERBILL: Perbill = Perbill::from_percent(90);
 
 	/// We allow for 2 seconds of compute with a 6 second average block time, with maximum proof size.
 	#[cfg(feature = "fast-runtime")]
@@ -152,6 +153,10 @@ pub mod system {
 	}
 	const_assert!(
 		NORMAL_DISPATCH_RATIO_PERBILL.deconstruct() >= AVERAGE_ON_INITIALIZE_RATIO.deconstruct()
+	);
+	const_assert!(
+		OPERATIONAL_DISPATCH_RATIO_PERBILL.deconstruct()
+			> NORMAL_DISPATCH_RATIO_PERBILL.deconstruct()
 	);
 }
 

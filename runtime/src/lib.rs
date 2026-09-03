@@ -198,19 +198,125 @@ mod benches {
 
 #[cfg(test)]
 mod tests {
+	use codec::Encode;
 	use core::mem::size_of;
 	use std::collections::HashSet;
 
 	use frame_election_provider_support::NposSolution;
-	use frame_support::traits::WhitelistedStorageKeys;
+	use frame_support::{
+		dispatch::{DispatchInfo, GetDispatchInfo},
+		traits::WhitelistedStorageKeys,
+	};
 	use frame_system::offchain::CreateSignedTransaction;
 	use hex_literal::hex;
 	use sp_core::hexdisplay::HexDisplay;
 	use sp_keyring::AccountKeyring::Bob;
-	use sp_runtime::{MultiAddress, UpperOf};
+	use sp_runtime::{
+		traits::SignedExtension, transaction_validity::InvalidTransaction, MultiAddress, UpperOf,
+	};
 	use test_case::test_case;
 
 	use super::*;
+
+	#[test]
+	fn runtime_block_length_ratios_are_configured() {
+		let block_length = impls::RuntimeBlockLength::get();
+
+		assert_eq!(
+			*block_length.max.get(DispatchClass::Normal),
+			85 * 5 * 1024 * 1024 / 100
+		);
+		assert_eq!(
+			*block_length.max.get(DispatchClass::Operational),
+			90 * 5 * 1024 * 1024 / 100
+		);
+		assert_eq!(
+			*block_length.max.get(DispatchClass::Mandatory),
+			5 * 1024 * 1024
+		);
+	}
+
+	#[test]
+	fn oversized_authorized_upgrade_is_rejected_by_length_validation() {
+		sp_io::TestExternalities::default().execute_with(|| {
+			let operational_limit = *impls::RuntimeBlockLength::get()
+				.max
+				.get(DispatchClass::Operational) as usize;
+			let call = RuntimeCall::System(frame_system::Call::apply_authorized_upgrade {
+				code: vec![0; operational_limit],
+			});
+			let info = call.get_dispatch_info();
+			let encoded_len = UncheckedExtrinsic::new_unsigned(call.clone())
+				.encode()
+				.len();
+			let check_weight = frame_system::CheckWeight::<Runtime>::new();
+
+			assert_eq!(info.class, DispatchClass::Operational);
+			assert!(encoded_len > operational_limit);
+			assert_eq!(
+				check_weight.validate(&AccountId::new([0; 32]), &call, &info, encoded_len,),
+				Err(InvalidTransaction::ExhaustsResources.into())
+			);
+			assert_eq!(
+				frame_system::CheckWeight::<Runtime>::validate_unsigned(&call, &info, encoded_len),
+				Err(InvalidTransaction::ExhaustsResources.into())
+			);
+
+			let small_call = RuntimeCall::System(frame_system::Call::apply_authorized_upgrade {
+				code: vec![0; 1],
+			});
+			let small_info = small_call.get_dispatch_info();
+			let small_len = UncheckedExtrinsic::new_unsigned(small_call.clone())
+				.encode()
+				.len();
+			assert!(check_weight
+				.validate(
+					&AccountId::new([0; 32]),
+					&small_call,
+					&small_info,
+					small_len,
+				)
+				.is_ok());
+		});
+	}
+
+	#[test]
+	fn operational_limit_leaves_room_for_vector_post_inherent() {
+		sp_io::TestExternalities::default().execute_with(|| {
+			let block_length = impls::RuntimeBlockLength::get();
+			let operational_limit =
+				*block_length.max.get(DispatchClass::Operational) as usize;
+			let mandatory_limit = *block_length.max.get(DispatchClass::Mandatory) as usize;
+			let post_inherent = <pallet_vector::Pallet<Runtime> as avail_base::ProvidePostInherent>::create_inherent(
+				&Default::default(),
+			)
+			.expect("Vector always provides its post-inherent");
+			let post_inherent = UncheckedExtrinsic::new_unsigned(post_inherent.into());
+			let post_info = post_inherent.get_dispatch_info();
+			let post_len = post_inherent.encode().len();
+			let operational_info = DispatchInfo {
+				class: DispatchClass::Operational,
+				..Default::default()
+			};
+
+			assert_eq!(post_info.class, DispatchClass::Mandatory);
+			assert!(post_len <= mandatory_limit - operational_limit);
+			assert!(
+				frame_system::CheckWeight::<Runtime>::do_pre_dispatch(
+					&operational_info,
+					operational_limit,
+				)
+				.is_ok()
+			);
+			assert!(
+				frame_system::CheckWeight::<Runtime>::do_pre_dispatch(&post_info, post_len).is_ok()
+			);
+			assert_eq!(
+				System::all_extrinsics_len() as usize,
+				operational_limit + post_len
+			);
+		});
+	}
 
 	/// This test was used to detect any missing support of `TryState` needed for `try-runtime`
 	/// feature.
