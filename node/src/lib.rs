@@ -7,4 +7,4 @@ pub mod cli;
 pub mod rpc;
 pub mod service;
 
-pub const NODE_VERSION: &str = "2.3.4";
+pub const NODE_VERSION: &str = "2.4.0";

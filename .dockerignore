@@ -1,7 +1,4 @@
 target
-.git
-.github
-.maintain
-misc
-tests
+output
 ts-interfaces
+node_modules
