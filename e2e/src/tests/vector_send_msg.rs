@@ -132,7 +132,7 @@ async fn check_query_data_proof_rpc(block_hash: H256, leaves: &[Leaf]) -> Result
 		params.push(block_hash)?;
 		let rpc_proof: ProofResponse = client
 			.rpc()
-			.request("kate_queryDataProof", params)
+			.request("kate_queryDataProofV2", params)
 			.await
 			.map_err(|je| RpcError::ClientError(Box::new(je)))?;
 		let bridge_root = rpc_proof.data_proof.roots.bridge_root;
