@@ -42,15 +42,18 @@ jobs:
         run: echo "$HOME/.cargo/bin" >> $GITHUB_PATH
 
       - name: Build node and run benchmarks
+        env:
+          EXTRA_INPUT: ${{ github.event.inputs.extra }}
+          OURPALLETS_INPUT: ${{ github.event.inputs.ourpallets }}
         run: |
-          if [ "${{ github.event.inputs.extra }}" != "0" ]; then
-            EXTRA="EXTRA=${{ github.event.inputs.extra }}"
+          if [ "$EXTRA_INPUT" != "0" ]; then
+            EXTRA="EXTRA=$EXTRA_INPUT"
           else
             EXTRA=""
           fi
 
-          if [ "${{ github.event.inputs.ourpallets }}" != "0" ]; then
-            OUR_PALLETS="OUR_PALLETS=${{ github.event.inputs.ourpallets }}"
+          if [ "$OURPALLETS_INPUT" != "0" ]; then
+            OUR_PALLETS="OUR_PALLETS=$OURPALLETS_INPUT"
           else
             OUR_PALLETS=""
           fi
