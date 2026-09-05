@@ -75,8 +75,8 @@ impl AuthorityKeys {
 	}
 
 	pub fn from_accounts(controller: AccountId, grandpa: GrandpaId) -> Self {
-		let session_keys = session_keys(controller.clone(), grandpa);
 		let stash = controller.clone();
+		let session_keys = session_keys(stash.clone(), grandpa);
 
 		Self {
 			controller,
