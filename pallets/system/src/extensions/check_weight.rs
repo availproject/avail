@@ -337,6 +337,64 @@ mod tests {
 			.get(DispatchClass::Normal)
 	}
 
+	fn operational_length_limit() -> u32 {
+		*<Test as Config>::BlockLength::get()
+			.max
+			.get(DispatchClass::Operational)
+	}
+
+	#[test]
+	fn operational_length_limit_is_enforced() {
+		new_test_ext().execute_with(|| {
+			let operational = DispatchInfo {
+				class: DispatchClass::Operational,
+				..Default::default()
+			};
+			let limit = operational_length_limit() as usize;
+
+			assert_ok!(CheckWeight::<Test>::do_validate(&operational, limit));
+			assert_err!(
+				CheckWeight::<Test>::do_validate(&operational, limit + 1),
+				InvalidTransaction::ExhaustsResources
+			);
+		});
+	}
+
+	#[test]
+	fn operational_limit_leaves_length_for_mandatory_extrinsic() {
+		new_test_ext().execute_with(|| {
+			let operational = DispatchInfo {
+				class: DispatchClass::Operational,
+				..Default::default()
+			};
+			let mandatory = DispatchInfo {
+				class: DispatchClass::Mandatory,
+				..Default::default()
+			};
+			let operational_limit = operational_length_limit() as usize;
+			let mandatory_limit = *<Test as Config>::BlockLength::get()
+				.max
+				.get(DispatchClass::Mandatory) as usize;
+
+			let next =
+				CheckWeight::<Test>::check_block_length(&operational, operational_limit).unwrap();
+			assert_ok!(CheckWeight::<Test>::do_prepare(
+				&operational,
+				operational_limit,
+				next,
+			));
+
+			let mandatory_room = mandatory_limit - operational_limit;
+			let next = CheckWeight::<Test>::check_block_length(&mandatory, mandatory_room).unwrap();
+			assert_ok!(CheckWeight::<Test>::do_prepare(
+				&mandatory,
+				mandatory_room,
+				next,
+			));
+			assert_eq!(System::all_extrinsics_len() as usize, mandatory_limit);
+		});
+	}
+
 	#[test]
 	fn mandatory_extrinsic_doesnt_care_about_limits() {
 		fn check(call: impl FnOnce(&DispatchInfo, usize)) {
