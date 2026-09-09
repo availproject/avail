@@ -114,6 +114,7 @@ where
 
 fn extra() -> SignedExtra {
 	(
+		frame_system::AuthorizeCall::<Runtime>::new(),
 		CheckNonZeroSender::<Runtime>::new(),
 		CheckSpecVersion::<Runtime>::new(),
 		CheckTxVersion::<Runtime>::new(),

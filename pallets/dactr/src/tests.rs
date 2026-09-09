@@ -643,7 +643,7 @@ mod register_blob_offence {
 			let voucher = make_voucher(AccountId32::new([1; 32]), AccountId32::new([1; 32]));
 
 			let res = DataAvailability::register_blob_offence(
-				RawOrigin::None.into(),
+				RawOrigin::Authorized.into(),
 				offence_key.clone(),
 				voucher.clone(),
 			);
@@ -659,7 +659,7 @@ mod register_blob_offence {
 
 			let voucher = make_voucher(AccountId32::new([2; 32]), AccountId32::new([1; 32]));
 			let res = DataAvailability::register_blob_offence(
-				RawOrigin::None.into(),
+				RawOrigin::Authorized.into(),
 				offence_key.clone(),
 				voucher.clone(),
 			);
@@ -677,7 +677,7 @@ mod register_blob_offence {
 	#[test]
 	fn register_blob_offence_errors() {
 		new_test_ext().execute_with(|| {
-			let origin: RuntimeOrigin = RawOrigin::None.into();
+			let origin: RuntimeOrigin = RawOrigin::Authorized.into();
 			let alice_32 = AccountId32::new([1; 32]);
 			let bob_32 = AccountId32::new([2; 32]);
 

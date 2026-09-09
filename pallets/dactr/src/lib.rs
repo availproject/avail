@@ -515,12 +515,14 @@ pub mod pallet {
 
 		#[pallet::call_index(9)]
 		#[pallet::weight(T::WeightInfo::register_blob_offence())]
+		#[pallet::authorize(Self::authorize_register_blob_offence)]
+		#[pallet::weight_of_authorize(T::WeightInfo::register_blob_offence())]
 		pub fn register_blob_offence(
 			origin: OriginFor<T>,
 			offence_key: OffenceKey,
 			voucher: ValidatorVoucher,
 		) -> DispatchResultWithPostInfo {
-			ensure_none(origin)?;
+			frame_system::ensure_authorized(origin)?;
 
 			// Ensure the key is valid based on the kind and params
 			ensure!(offence_key.is_valid(), Error::<T>::InvalidOffenceKey);
@@ -626,35 +628,22 @@ pub mod pallet {
 		}
 	}
 
-	#[pallet::validate_unsigned]
-	impl<T: Config> ValidateUnsigned for Pallet<T> {
-		type Call = Call<T>;
-
-		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
-			// Let blob txs summary pass
-			if matches!(call, Call::submit_blob_txs_summary { .. }) {
-				return Ok(Default::default());
-			}
-
-			// Check extrinsic type
-			let Call::register_blob_offence {
-				offence_key,
-				voucher,
-			} = call
-			else {
-				return InvalidTransaction::Call.into();
-			};
-
+	impl<T: Config> Pallet<T> {
+		fn authorize_register_blob_offence(
+			_source: TransactionSource,
+			offence_key: &OffenceKey,
+			voucher: &ValidatorVoucher,
+		) -> TransactionValidityWithRefund {
 			// Check the key
 			if !offence_key.is_valid() {
-				return InvalidTransaction::BadProof.into();
+				return Err(InvalidTransaction::BadProof.into());
 			}
 
 			// Check given session
 			let provided_session = voucher.session_index;
 			let current_session = T::ValidatorSet::session_index();
 			if provided_session != current_session {
-				return InvalidTransaction::Stale.into();
+				return Err(InvalidTransaction::Stale.into());
 			}
 
 			// Verify that key owner is the correct account id
@@ -663,33 +652,33 @@ pub mod pallet {
 			let Some(key_owner) =
 				T::SessionDataProvider::get_validator_from_key(key_type, key.encode())
 			else {
-				return InvalidTransaction::BadProof.into();
+				return Err(InvalidTransaction::BadProof.into());
 			};
 			let Some(validator) = T::AccountId::decode(&mut &voucher.validator.encode()[..]).ok()
 			else {
-				return InvalidTransaction::BadProof.into();
+				return Err(InvalidTransaction::BadProof.into());
 			};
 
 			if key_owner != validator {
-				return InvalidTransaction::BadProof.into();
+				return Err(InvalidTransaction::BadProof.into());
 			}
 
 			// Check that validator is part of the active set
 			let validators = T::SessionDataProvider::validators();
 			if !validators.contains(&validator) {
-				return InvalidTransaction::BadProof.into();
+				return Err(InvalidTransaction::BadProof.into());
 			}
 
 			// Check that validator has enough balance
 			let free_balance = T::Currency::free_balance(&validator).saturated_into::<u128>();
 			let fee = T::BlobVouchFeeReserve::get();
 			if free_balance < fee {
-				return InvalidTransaction::Payment.into();
+				return Err(InvalidTransaction::Payment.into());
 			}
 
 			// Check the voucher signature
 			if !voucher.verify_signature((offence_key.clone(), current_session).encode()) {
-				return InvalidTransaction::BadProof.into();
+				return Err(InvalidTransaction::BadProof.into());
 			}
 
 			ValidTransaction::with_tag_prefix("BlobOffence")
@@ -697,6 +686,7 @@ pub mod pallet {
 				.and_provides((offence_key, voucher))
 				.propagate(true)
 				.build()
+				.map(|validity| (validity, Weight::zero()))
 		}
 	}
 

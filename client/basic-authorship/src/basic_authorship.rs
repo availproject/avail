@@ -100,8 +100,6 @@ pub struct ProposerFactory<A, C, PR> {
 	/// transactions which exhaust resources, we will conclude that the block is full.
 	soft_deadline_percent: Percent,
 	telemetry: Option<TelemetryHandle>,
-	/// When estimating the block size, should the proof be included?
-	include_proof_in_block_size_estimation: bool,
 	/// Blob store to check what the client already has for blob data
 	blob_database: Arc<dyn StorageApiT>,
 	/// phantom member to pin the `ProofRecording` type.
@@ -129,7 +127,6 @@ impl<A, C> ProposerFactory<A, C, DisableProofRecording> {
 			soft_deadline_percent: DEFAULT_SOFT_DEADLINE_PERCENT,
 			telemetry,
 			client,
-			include_proof_in_block_size_estimation: false,
 			blob_database,
 			_phantom: PhantomData,
 		}
@@ -140,9 +137,6 @@ impl<A, C> ProposerFactory<A, C, EnableProofRecording> {
 	/// Create a new proposer factory with proof recording enabled.
 	///
 	/// Each proposer created by this instance will record a proof while building a block.
-	///
-	/// This will also include the proof into the estimation of the block size. This can be disabled
-	/// by calling [`ProposerFactory::disable_proof_in_block_size_estimation`].
 	pub fn with_proof_recording(
 		spawn_handle: impl SpawnNamed + 'static,
 		client: Arc<C>,
@@ -159,15 +153,9 @@ impl<A, C> ProposerFactory<A, C, EnableProofRecording> {
 			default_block_size_limit: DEFAULT_BLOCK_SIZE_LIMIT,
 			soft_deadline_percent: DEFAULT_SOFT_DEADLINE_PERCENT,
 			telemetry,
-			include_proof_in_block_size_estimation: true,
 			blob_database,
 			_phantom: PhantomData,
 		}
-	}
-
-	/// Disable the proof inclusion when estimating the block size.
-	pub fn disable_proof_in_block_size_estimation(&mut self) {
-		self.include_proof_in_block_size_estimation = false;
 	}
 }
 
@@ -240,7 +228,6 @@ where
 			telemetry: self.telemetry.clone(),
 			blob_database: self.blob_database.clone(),
 			_phantom: PhantomData,
-			include_proof_in_block_size_estimation: self.include_proof_in_block_size_estimation,
 		};
 
 		proposer
@@ -287,7 +274,6 @@ pub struct Proposer<Block: BlockT, C, A: TransactionPool, PR> {
 	now: Box<dyn Fn() -> time::Instant + Send + Sync>,
 	metrics: PrometheusMetrics,
 	default_block_size_limit: usize,
-	include_proof_in_block_size_estimation: bool,
 	soft_deadline_percent: Percent,
 	telemetry: Option<TelemetryHandle>,
 	blob_database: Arc<dyn StorageApiT>,

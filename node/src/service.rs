@@ -141,6 +141,7 @@ pub fn create_extrinsic(
 		.unwrap_or(2) as u64;
 	let tip = 0;
 	let extra = (
+		frame_system::AuthorizeCall::<Runtime>::new(),
 		frame_system::CheckNonZeroSender::<Runtime>::new(),
 		frame_system::CheckSpecVersion::<Runtime>::new(),
 		frame_system::CheckTxVersion::<Runtime>::new(),
@@ -156,6 +157,7 @@ pub fn create_extrinsic(
 		function.clone(),
 		extra.clone(),
 		(
+			(),
 			(),
 			da_runtime::VERSION.spec_version,
 			da_runtime::VERSION.transaction_version,

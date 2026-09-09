@@ -219,7 +219,7 @@ where
 			let mut account_id = None;
 			let mut nonce = None;
 			if let Some((address, _, extended)) = transparent.preamble.to_signed() {
-				nonce = Some(extended.5 .0);
+				nonce = Some(extended.6 .0);
 				if let MultiAddress::Id(id) = address {
 					account_id = Some(id);
 				}

@@ -675,6 +675,7 @@ mod measure_full_block_size {
 				);
 
 				let extra: SignedExtra = (
+					frame_system::AuthorizeCall::<Runtime>::new(),
 					CheckNonZeroSender::<Runtime>::new(),
 					CheckSpecVersion::<Runtime>::new(),
 					CheckTxVersion::<Runtime>::new(),

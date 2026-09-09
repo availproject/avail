@@ -903,6 +903,8 @@ pub mod pallet {
 		/// All origins are allowed.
 		#[pallet::call_index(11)]
 		#[pallet::weight((T::SystemWeightInfo::apply_authorized_upgrade(), DispatchClass::Operational))]
+		#[pallet::authorize(Self::authorize_apply_authorized_upgrade)]
+		#[pallet::weight_of_authorize(T::SystemWeightInfo::apply_authorized_upgrade())]
 		pub fn apply_authorized_upgrade(
 			_: OriginFor<T>,
 			code: Vec<u8>,
@@ -934,6 +936,30 @@ pub mod pallet {
 				// no fee for valid upgrade
 				pays_fee: Pays::No,
 			})
+		}
+	}
+
+	impl<T: Config> Pallet<T> {
+		fn authorize_apply_authorized_upgrade(
+			_source: TransactionSource,
+			code: &Vec<u8>,
+		) -> TransactionValidityWithRefund {
+			let res = Self::validate_code_is_authorized(&code[..])
+				.map_err(|_| InvalidTransaction::Call)?;
+			if !matches!(Self::can_set_code(code, false), CanSetCodeResult::Ok) {
+				return Err(InvalidTransaction::Call.into());
+			}
+
+			Ok((
+				ValidTransaction {
+					priority: u64::MAX,
+					requires: Vec::new(),
+					provides: vec![res.code_hash.encode()],
+					longevity: TransactionLongevity::MAX,
+					propagate: true,
+				},
+				Weight::zero(),
+			))
 		}
 	}
 
@@ -1171,41 +1197,6 @@ pub mod pallet {
 
 			sp_io::storage::set(well_known_keys::EXTRINSIC_INDEX, &0u32.encode());
 			StorageVersion::new(3).put::<Pallet<T>>();
-		}
-	}
-
-	#[pallet::validate_unsigned]
-	impl<T: Config> sp_runtime::traits::ValidateUnsigned for Pallet<T> {
-		type Call = Call<T>;
-		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
-			if let Call::apply_authorized_upgrade { ref code } = call {
-				if let Ok(res) = Self::validate_code_is_authorized(&code[..]) {
-					if Self::can_set_code(&code, false).is_ok() {
-						return Ok(ValidTransaction {
-							priority: u64::max_value(),
-							requires: Vec::new(),
-							provides: vec![res.code_hash.encode()],
-							longevity: TransactionLongevity::max_value(),
-							propagate: true,
-						});
-					}
-				}
-			}
-
-			#[cfg(feature = "experimental")]
-			if let Call::do_task { ref task } = call {
-				if task.is_valid() {
-					return Ok(ValidTransaction {
-						priority: u64::max_value(),
-						requires: Vec::new(),
-						provides: vec![T::Hashing::hash_of(&task.encode()).as_ref().to_vec()],
-						longevity: TransactionLongevity::max_value(),
-						propagate: true,
-					});
-				}
-			}
-
-			Err(InvalidTransaction::Call.into())
 		}
 	}
 }
