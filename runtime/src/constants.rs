@@ -118,7 +118,12 @@ pub mod system {
 
 	pub const NORMAL_DISPATCH_RATIO_PERBILL: Perbill =
 		Perbill::from_percent(NORMAL_DISPATCH_RATIO as u32);
-	pub const OPERATIONAL_DISPATCH_RATIO_PERBILL: Perbill = Perbill::from_percent(90);
+
+	// Length limits are intentionally independent from dispatch weight limits. Blob post-inherents
+	// can occupy most of the encoded block without consuming an equivalent amount of execution
+	// weight, so normal and operational extrinsics must leave sufficient encoded space for them.
+	pub const NORMAL_LENGTH_RATIO_PERBILL: Perbill = Perbill::from_percent(10);
+	pub const OPERATIONAL_LENGTH_RATIO_PERBILL: Perbill = Perbill::from_percent(15);
 
 	/// We allow for 2 seconds of compute with a 6 second average block time, with maximum proof size.
 	#[cfg(feature = "fast-runtime")]
@@ -155,9 +160,9 @@ pub mod system {
 		NORMAL_DISPATCH_RATIO_PERBILL.deconstruct() >= AVERAGE_ON_INITIALIZE_RATIO.deconstruct()
 	);
 	const_assert!(
-		OPERATIONAL_DISPATCH_RATIO_PERBILL.deconstruct()
-			> NORMAL_DISPATCH_RATIO_PERBILL.deconstruct()
+		OPERATIONAL_LENGTH_RATIO_PERBILL.deconstruct() > NORMAL_LENGTH_RATIO_PERBILL.deconstruct()
 	);
+	const_assert!(OPERATIONAL_LENGTH_RATIO_PERBILL.deconstruct() < 1_000_000_000);
 }
 
 pub mod indices {

@@ -877,8 +877,8 @@ parameter_types! {
 	pub RuntimeBlockLength: BlockLength =
 		BlockLength::max_with_normal_and_operational_ratio(
 			128 * 1024 * 1024,
-			constants::system::NORMAL_DISPATCH_RATIO_PERBILL,
-			constants::system::OPERATIONAL_DISPATCH_RATIO_PERBILL,
+			constants::system::NORMAL_LENGTH_RATIO_PERBILL,
+			constants::system::OPERATIONAL_LENGTH_RATIO_PERBILL,
 		);
 }
 

@@ -227,13 +227,16 @@ mod tests {
 
 		assert_eq!(
 			*limits.max.get(DispatchClass::Normal),
-			constants::system::NORMAL_DISPATCH_RATIO_PERBILL * maximum
+			constants::system::NORMAL_LENGTH_RATIO_PERBILL * maximum
 		);
 		assert_eq!(
 			*limits.max.get(DispatchClass::Operational),
-			constants::system::OPERATIONAL_DISPATCH_RATIO_PERBILL * maximum
+			constants::system::OPERATIONAL_LENGTH_RATIO_PERBILL * maximum
 		);
 		assert_eq!(*limits.max.get(DispatchClass::Mandatory), maximum);
+
+		let mandatory_room = maximum - *limits.max.get(DispatchClass::Operational);
+		assert!(mandatory_room > 96 * 1024 * 1024);
 	}
 
 	#[test]
