@@ -202,19 +202,63 @@ mod benches {
 
 #[cfg(test)]
 mod tests {
+	use codec::Encode;
 	use core::mem::size_of;
 	use std::collections::HashSet;
 
 	use frame_election_provider_support::NposSolution;
-	use frame_support::traits::WhitelistedStorageKeys;
+	use frame_support::{
+		dispatch::{DispatchClass, GetDispatchInfo},
+		traits::WhitelistedStorageKeys,
+	};
 	use frame_system::offchain::CreateSignedTransaction;
 	use hex_literal::hex;
 	use sp_core::hexdisplay::HexDisplay;
 	use sp_keyring::Sr25519Keyring::Bob;
-	use sp_runtime::{MultiAddress, UpperOf};
+	use sp_runtime::{transaction_validity::InvalidTransaction, MultiAddress, UpperOf};
 	use test_case::test_case;
 
 	use super::*;
+
+	#[test]
+	fn runtime_block_length_reserves_room_after_operational_extrinsics() {
+		let maximum = 128 * 1024 * 1024;
+		let limits = impls::RuntimeBlockLength::get();
+
+		assert_eq!(
+			*limits.max.get(DispatchClass::Normal),
+			constants::system::NORMAL_LENGTH_RATIO_PERBILL * maximum
+		);
+		assert_eq!(
+			*limits.max.get(DispatchClass::Operational),
+			constants::system::OPERATIONAL_LENGTH_RATIO_PERBILL * maximum
+		);
+		assert_eq!(*limits.max.get(DispatchClass::Mandatory), maximum);
+
+		let mandatory_room = maximum - *limits.max.get(DispatchClass::Operational);
+		assert!(mandatory_room > 96 * 1024 * 1024);
+	}
+
+	#[test]
+	fn oversized_authorized_upgrade_is_rejected_by_operational_length_limit() {
+		sp_io::TestExternalities::default().execute_with(|| {
+			let operational_limit = *impls::RuntimeBlockLength::get()
+				.max
+				.get(DispatchClass::Operational) as usize;
+			let call = RuntimeCall::System(frame_system::Call::apply_authorized_upgrade {
+				code: vec![0; operational_limit],
+			});
+			let info = call.get_dispatch_info();
+			let encoded_len = UncheckedExtrinsic::new_bare(call).encode().len();
+
+			assert_eq!(info.class, DispatchClass::Operational);
+			assert!(encoded_len > operational_limit);
+			assert_eq!(
+				frame_system::CheckWeight::<Runtime>::do_validate(&info, encoded_len),
+				Err(InvalidTransaction::ExhaustsResources.into())
+			);
+		});
+	}
 
 	/// This test was used to detect any missing support of `TryState` needed for `try-runtime`
 	/// feature.

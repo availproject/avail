@@ -5,8 +5,7 @@ use avail_core::{
 	AppId, Keccak256,
 };
 use avail_subxt::{
-	api, api::runtime_types::frame_system::limits::BlockLength, tx, AccountId, AvailClient,
-	RpcParams,
+	api, tx, AccountId, AvailClient, RpcParams,
 };
 use subxt::{backend::BlockRef, error::RpcError, utils::H256, Error};
 use subxt_signer::sr25519::dev;
@@ -170,18 +169,6 @@ async fn vector_send_msg() -> anyhow::Result<()> {
 
 	// 2. Use the bridge proof RPC and double-check it.
 	check_query_data_proof_rpc(block_hash, &indexed_leaves).await?;
-
-	// 3. Test query_block len RPC.
-	let mut params = RpcParams::new();
-	params.push(block_hash)?;
-	let block_len: BlockLength = client.rpc().request("system_blockLength", params).await?;
-	trace!(
-		"Test query_block_length RPC: cols={}, rows={}",
-		block_len.cols.0,
-		block_len.rows.0
-	);
-	assert_eq!(block_len.cols.0, 256);
-	assert_eq!(block_len.rows.0, 256);
 
 	Ok(())
 }

@@ -24,27 +24,21 @@
 //! `frame_system` tracks consumption of each of these resources separately for each
 //! `DispatchClass`. This module contains configuration object for both resources,
 //! which should be passed to `frame_system` configuration when runtime is being set up.
-use core::{fmt::Debug, num::NonZeroU32};
+use core::fmt::Debug;
 
-use avail_core::kate::DATA_CHUNK_SIZE;
-use avail_core::{BlockLengthColumns, BlockLengthRows, BLOCK_CHUNK_SIZE};
-use codec::{Compact, Decode, Encode, EncodeLike, Error, Input, MaxEncodedLen, Output};
+use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{
 	dispatch::{DispatchClass, OneOrMany, PerDispatchClass},
-	ensure,
 	weights::{constants, Weight},
 };
-use scale_info::{build::Fields, Path, Type, TypeInfo};
+use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_runtime::{traits::Bounded, Perbill};
-use sp_std::vec::Vec;
-use static_assertions::const_assert;
-
-pub const MAX_BLOCK_ROWS: BlockLengthRows = BlockLengthRows(4096);
-pub const MAX_BLOCK_COLUMNS: BlockLengthColumns = BlockLengthColumns(1024);
 
 /// Block length limit configuration.
-#[derive(Debug, PartialEq, Clone, MaxEncodedLen, Serialize, Deserialize)]
+#[derive(
+	Debug, PartialEq, Clone, Encode, Decode, MaxEncodedLen, TypeInfo, Serialize, Deserialize,
+)]
 #[serde(rename_all = "camelCase")]
 pub struct BlockLength {
 	/// Maximal total length in bytes for each extrinsic class.
@@ -53,108 +47,6 @@ pub struct BlockLength {
 	/// `MAX(max)`
 	#[serde(with = "per_dispatch_class_serde")]
 	pub max: PerDispatchClass<u32>,
-	pub cols: BlockLengthColumns,
-	pub rows: BlockLengthRows,
-	chunk_size: NonZeroU32,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub enum BlockLengthError {
-	InvalidChunkSize,
-	OverflowBaseMax,
-	OverflowNormalMax,
-}
-
-#[inline]
-const fn is_chunk_size_valid(new_size: NonZeroU32) -> bool {
-	new_size.get() >= DATA_CHUNK_SIZE as u32
-}
-
-impl BlockLength {
-	#[inline]
-	pub fn chunk_size(&self) -> NonZeroU32 {
-		self.chunk_size
-	}
-
-	pub fn set_chunk_size(&mut self, new_size: NonZeroU32) -> Result<(), BlockLengthError> {
-		ensure!(
-			is_chunk_size_valid(new_size),
-			BlockLengthError::InvalidChunkSize
-		);
-
-		self.chunk_size = new_size;
-		Ok(())
-	}
-}
-
-/// Customized `TypeInfo` to support `NonZeroU32` as `Compact<u32>`.
-impl TypeInfo for BlockLength {
-	type Identity = Self;
-
-	fn type_info() -> Type {
-		Type::builder()
-			.path(Path::new("BlockLength", "frame_system::limits"))
-			.type_params(Vec::new())
-			.docs(&["Block length limit configuration."])
-			.composite(
-				Fields::named()
-					.field(|f| {
-						f.ty::<PerDispatchClass<u32>>()
-							.name("max")
-							.type_name("PerDispatchClass<u32>")
-					})
-					.field(|f| {
-						f.ty::<BlockLengthColumns>()
-							.name("cols")
-							.type_name("BlockLengthColumns")
-					})
-					.field(|f| {
-						f.ty::<BlockLengthRows>()
-							.name("rows")
-							.type_name("BlockLengthRows")
-					})
-					.field(|f| f.compact::<u32>().name("chunk_size").type_name("u32")),
-			)
-	}
-}
-
-impl EncodeLike for BlockLength {}
-
-impl Encode for BlockLength {
-	fn encode_to<T: Output + ?Sized>(&self, dest: &mut T) {
-		self.max.encode_to(dest);
-		self.cols.encode_to(dest);
-		self.rows.encode_to(dest);
-		Compact(self.chunk_size.get()).encode_to(dest);
-	}
-}
-
-impl Decode for BlockLength {
-	// NOTE: Decodification ensures that `chunk_size` is valid.
-	fn decode<I: Input>(input: &mut I) -> Result<Self, Error> {
-		let max = <PerDispatchClass<u32>>::decode(input)
-			.map_err(|e| e.chain("Could not decode `BlockLength::max`"))?;
-		let cols = BlockLengthColumns::decode(input)
-			.map_err(|e| e.chain("Could not decode `BlockLength::cols`"))?;
-		let rows = BlockLengthRows::decode(input)
-			.map_err(|e| e.chain("Could not decode `BlockLength::rows`"))?;
-		let chunk_size = <Compact<u32>>::decode(input)
-			.map_err(|e| e.chain("Could not decode `BlockLength::chunk_size`"))?
-			.0;
-		let chunk_size = NonZeroU32::new(chunk_size).ok_or("Zero `BlockLength::chunk_size`")?;
-
-		ensure!(
-			is_chunk_size_valid(chunk_size),
-			Error::from("Invalid `BlockLength::chunk_size`")
-		);
-
-		Ok(BlockLength {
-			max,
-			cols,
-			rows,
-			chunk_size,
-		})
-	}
 }
 
 /// This module adds serialization support to `BlockLength::max` field.
@@ -199,67 +91,36 @@ impl Default for BlockLength {
 impl BlockLength {
 	/// Create new `BlockLength` with `max` for every class.
 	pub fn max(max: u32) -> Self {
-		const_assert!(is_chunk_size_valid(BLOCK_CHUNK_SIZE));
 		Self {
 			max: PerDispatchClass::new(|_| max),
-			cols: MAX_BLOCK_COLUMNS,
-			rows: MAX_BLOCK_ROWS,
-			chunk_size: BLOCK_CHUNK_SIZE,
 		}
-	}
-
-	/// Create new `BlockLength` with `rows*cols*chunk_size` for `Operational` & `Mandatory`
-	/// and `normal * rows*cols*chunk_siz` for `Normal`.
-	pub fn with_normal_ratio(
-		rows: BlockLengthRows,
-		cols: BlockLengthColumns,
-		chunk_size: NonZeroU32,
-		normal: Perbill,
-	) -> Result<Self, BlockLengthError> {
-		debug_assert!(is_chunk_size_valid(chunk_size));
-		let max = Self::max_per_class(rows, cols, chunk_size, normal)?;
-
-		Ok(Self {
-			cols,
-			rows,
-			chunk_size,
-			max,
-		})
 	}
 
 	/// Create new `BlockLength` with `max` for `Operational` & `Mandatory`
 	/// and `normal * max` for `Normal`.
 	pub fn max_with_normal_ratio(max: u32, normal: Perbill) -> Self {
-		const_assert!(is_chunk_size_valid(BLOCK_CHUNK_SIZE));
 		let max = PerDispatchClass::new(|class| match class {
 			DispatchClass::Normal => normal * max,
 			_ => max,
 		});
 
-		Self {
-			cols: MAX_BLOCK_COLUMNS,
-			rows: MAX_BLOCK_ROWS,
-			chunk_size: BLOCK_CHUNK_SIZE,
-			max,
-		}
+		Self { max }
 	}
 
-	fn max_per_class(
-		rows: BlockLengthRows,
-		cols: BlockLengthColumns,
-		chunk_size: NonZeroU32,
+	/// Create new `BlockLength` with separate limits for `Normal` and `Operational`.
+	/// `Mandatory` retains the full configured block length.
+	pub fn max_with_normal_and_operational_ratio(
+		max: u32,
 		normal: Perbill,
-	) -> Result<PerDispatchClass<u32>, BlockLengthError> {
-		let max = cols
-			.0
-			.checked_mul(rows.0)
-			.and_then(|acc| acc.checked_mul(chunk_size.get()))
-			.ok_or(BlockLengthError::OverflowBaseMax)?;
-
-		Ok(PerDispatchClass::new(|class| match class {
+		operational: Perbill,
+	) -> Self {
+		let max = PerDispatchClass::new(|class| match class {
 			DispatchClass::Normal => normal * max,
+			DispatchClass::Operational => operational * max,
 			_ => max,
-		}))
+		});
+
+		Self { max }
 	}
 }
 
@@ -643,6 +504,19 @@ impl BlockWeightsBuilder {
 #[cfg(test)]
 mod tests {
 	use super::*;
+
+	#[test]
+	fn separate_normal_and_operational_length_ratios() {
+		let limits = BlockLength::max_with_normal_and_operational_ratio(
+			1_000,
+			Perbill::from_percent(75),
+			Perbill::from_percent(90),
+		);
+
+		assert_eq!(*limits.max.get(DispatchClass::Normal), 750);
+		assert_eq!(*limits.max.get(DispatchClass::Operational), 900);
+		assert_eq!(*limits.max.get(DispatchClass::Mandatory), 1_000);
+	}
 
 	#[test]
 	fn default_weights_are_valid() {
