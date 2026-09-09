@@ -31,7 +31,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	// macro or if there are any changes to dispatchable functions, such as the number of
 	// parameters or parameter types. If this number is updated, then the spec_version must also
 	// be updated.
-	transaction_version: 1,
+	transaction_version: 2,
 	apis: RUNTIME_API_VERSIONS,
 	system_version: 1,
 };
