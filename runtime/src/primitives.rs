@@ -58,6 +58,7 @@ pub type Seed = [u8; 32];
 ///
 /// [`sign`]: <../../testing/src/keyring.rs.html>
 pub type SignedExtra = (
+	frame_system::AuthorizeCall<Runtime>,
 	frame_system::CheckNonZeroSender<Runtime>,
 	frame_system::CheckSpecVersion<Runtime>,
 	frame_system::CheckTxVersion<Runtime>,
@@ -141,6 +142,7 @@ mod tests {
 
 	fn extra() -> SignedExtra {
 		(
+			frame_system::AuthorizeCall::<Runtime>::new(),
 			CheckNonZeroSender::<Runtime>::new(),
 			CheckSpecVersion::<Runtime>::new(),
 			CheckTxVersion::<Runtime>::new(),

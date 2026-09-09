@@ -990,6 +990,7 @@ where
 			.saturating_sub(1);
 		let era = Era::mortal(period, current_block);
 		let signed_extra: crate::SignedExtra = (
+			frame_system::AuthorizeCall::<Runtime>::new(),
 			frame_system::CheckNonZeroSender::<Runtime>::new(),
 			frame_system::CheckSpecVersion::<Runtime>::new(),
 			frame_system::CheckTxVersion::<Runtime>::new(),

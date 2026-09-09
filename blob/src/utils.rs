@@ -747,7 +747,7 @@ pub fn extract_signer_and_nonce(uxt: &UncheckedExtrinsic) -> Option<(AccountId32
 		_ => return None,
 	};
 
-	let check_nonce = &extra.5;
+	let check_nonce = &extra.6;
 	let nonce = check_nonce.0;
 
 	Some((who, nonce))
