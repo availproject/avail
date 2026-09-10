@@ -295,6 +295,19 @@ mod submit_blob_txs_summary {
 	}
 
 	#[test]
+	fn summary_conversion_rejects_oversized_proof() {
+		let result = crate::BlobTxSummaryRuntime::convert_into(vec![(
+			H256::zero(),
+			0,
+			true,
+			None,
+			Vec::new(),
+			Some(vec![0u8; crate::types::MAX_EVAL_PROOF_SIZE as usize + 1]),
+		)]);
+		assert_eq!(result, Err(crate::SummaryConversionError::ProofTooLong));
+	}
+
+	#[test]
 	fn projection_is_below_the_hard_bound_and_excess_remains_chargeable() {
 		use codec::MaxEncodedLen;
 

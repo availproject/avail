@@ -6,7 +6,7 @@ use crate::{
 use anyhow::{anyhow, Context, Result};
 use base64::Engine;
 use codec::{Decode, Encode};
-use da_control::{BlobRuntimeParameters, Call};
+use da_control::{BlobRuntimeParameters, Call, MAX_BLOB_OWNERS};
 use da_runtime::UncheckedExtrinsic;
 use da_runtime::{apis::BlobApi, RuntimeCall};
 use sc_client_api::{HeaderBackend, StorageKey};
@@ -233,13 +233,15 @@ pub fn get_validator_per_blob_inner(
 	nb_validators: u32,
 ) -> (u32, u32) {
 	if nb_validators <= blob_params.min_blob_holder_count {
-		return (nb_validators, nb_validators);
+		let owners = nb_validators.min(MAX_BLOB_OWNERS);
+		return (owners, owners);
 	}
 
 	let threshold = blob_params
 		.min_blob_holder_percentage
 		.mul_ceil(nb_validators)
 		.max(blob_params.min_blob_holder_count);
+	let threshold = threshold.min(MAX_BLOB_OWNERS);
 
 	let diff = nb_validators.saturating_sub(threshold);
 

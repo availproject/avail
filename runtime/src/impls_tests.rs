@@ -707,7 +707,8 @@ mod measure_full_block_size {
 							None,
 							ownership.clone(),
 							None,
-						)]);
+						)])
+						.unwrap();
 						blob_txs_summary.push(summary.pop().unwrap());
 					},
 					Err(e) => match e {

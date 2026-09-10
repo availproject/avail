@@ -428,7 +428,7 @@ pub mod pallet {
 		#[pallet::call_index(6)]
 		#[pallet::weight((
 			weight_helper::submit_blob_txs_summary::<T>(
-				*nb_blobs,
+				blob_txs_summary.len() as u32,
 				blob_txs_summary.encoded_size() as u32,
 			),
 			DispatchClass::Mandatory
@@ -443,11 +443,13 @@ pub mod pallet {
 			let actual_bytes = blob_txs_summary.encoded_size() as u32;
 			let prepaid_entries = PrepaidBlobSummaryEntryCount::<T>::get();
 			let prepaid_bytes = PrepaidBlobSummaryEncodedBytes::<T>::get();
-			let pending_entries = nb_blobs.saturating_sub(prepaid_entries);
+			let actual_entries = blob_txs_summary.len() as u32;
+			let pending_entries = actual_entries.saturating_sub(prepaid_entries);
 			let pending_bytes = actual_bytes.saturating_sub(prepaid_bytes);
 			let prepaid_weight =
 				T::WeightInfo::submit_blob_txs_summary(prepaid_entries, prepaid_bytes);
-			let actual_weight = T::WeightInfo::submit_blob_txs_summary(nb_blobs, actual_bytes);
+			let actual_weight =
+				T::WeightInfo::submit_blob_txs_summary(actual_entries, actual_bytes);
 			let pending_weight =
 				T::WeightInfo::submit_blob_txs_summary(pending_entries, pending_bytes);
 
@@ -458,7 +460,7 @@ pub mod pallet {
 				prepaid_bytes,
 				prepaid_weight.ref_time(),
 				prepaid_weight.proof_size(),
-				nb_blobs,
+				actual_entries,
 				actual_bytes,
 				actual_weight.ref_time(),
 				actual_weight.proof_size(),

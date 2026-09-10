@@ -96,6 +96,17 @@ pub struct BlobTxSummaryRuntime {
 	pub ownership: BoundedBlobOwnerships,
 	pub eval_proof: Option<BoundedEvalProof>,
 }
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SummaryConversionError {
+	ReasonTooLong,
+	PeerIdTooLong,
+	SignatureTooLong,
+	TooManyOwners,
+	ProofTooLong,
+	TooManySummaries,
+}
+
 impl BlobTxSummaryRuntime {
 	pub fn convert_into(
 		input: Vec<(
@@ -106,44 +117,42 @@ impl BlobTxSummaryRuntime {
 			Vec<(AccountId32, AuthorityId, String, Vec<u8>)>,
 			Option<Vec<u8>>,
 		)>,
-	) -> BoundedBlobTxSummaries {
-		BoundedBlobTxSummaries::try_from(
-			input
-				.into_iter()
-				.map(|(hash, tx_index, success, reason, ownership, eval_proof)| {
-					BlobTxSummaryRuntime {
-						hash,
-						tx_index,
-						success,
-						reason: reason.map(|reason| {
-							BoundedBlobSummaryReason::try_from(reason.into_bytes())
-								.expect("blob summary reason must not exceed 256 bytes")
-						}),
-						ownership: BoundedBlobOwnerships::try_from(
-							ownership
-								.into_iter()
-								.map(|(account, authority, peer_id, signature)| {
-									(
-										account,
-										authority,
-										BoundedEncodedPeerId::try_from(peer_id.into_bytes())
-											.expect("encoded peer ID must not exceed 128 bytes"),
-										BoundedOwnershipSignature::try_from(signature)
-											.expect("ownership signature must not exceed 64 bytes"),
-									)
-								})
-								.collect::<Vec<_>>(),
-						)
-						.expect("blob ownership list must not exceed 1024 entries"),
-						eval_proof: eval_proof.map(|proof| {
-							BoundedEvalProof::try_from(proof)
-								.expect("FRI evaluation proof must not exceed 768 KiB")
-						}),
-					}
+	) -> Result<BoundedBlobTxSummaries, SummaryConversionError> {
+		let summaries = input.into_iter().map(
+			|(hash, tx_index, success, reason, ownership, eval_proof)| -> Result<_, SummaryConversionError> {
+				let ownership = ownership
+					.into_iter()
+					.map(|(account, authority, peer_id, signature)| {
+						Ok((
+							account,
+							authority,
+							BoundedEncodedPeerId::try_from(peer_id.into_bytes())
+								.map_err(|_| SummaryConversionError::PeerIdTooLong)?,
+							BoundedOwnershipSignature::try_from(signature)
+								.map_err(|_| SummaryConversionError::SignatureTooLong)?,
+						))
+					})
+					.collect::<Result<Vec<_>, SummaryConversionError>>()?;
+				Ok(BlobTxSummaryRuntime {
+					hash,
+					tx_index,
+					success,
+					reason: reason
+						.map(|reason| BoundedBlobSummaryReason::try_from(reason.into_bytes()))
+						.transpose()
+						.map_err(|_| SummaryConversionError::ReasonTooLong)?,
+					ownership: BoundedBlobOwnerships::try_from(ownership)
+						.map_err(|_| SummaryConversionError::TooManyOwners)?,
+					eval_proof: eval_proof
+						.map(BoundedEvalProof::try_from)
+						.transpose()
+						.map_err(|_| SummaryConversionError::ProofTooLong)?,
 				})
-				.collect::<Vec<_>>(),
-		)
-		.expect("blob summary must not exceed 128 entries")
+			}
+		);
+		let summaries = summaries.collect::<Result<Vec<_>, _>>()?;
+		BoundedBlobTxSummaries::try_from(summaries)
+			.map_err(|_| SummaryConversionError::TooManySummaries)
 	}
 }
 

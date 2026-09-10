@@ -565,8 +565,13 @@ impl_runtime_apis! {
 				.collect();
 
 		// 2. DA blob summary post-inherent (also unsigned)
-		let blob_txs_summary =
-			da_control::BlobTxSummaryRuntime::convert_into(blob_txs_summary);
+		let blob_txs_summary = match da_control::BlobTxSummaryRuntime::convert_into(blob_txs_summary) {
+			Ok(summary) => summary,
+			Err(error) => {
+				log::error!(target: da_control::LOG_TARGET, "Unable to encode blob summary inherent: {:?}", error);
+				Default::default()
+			},
+		};
 
 		let da_inherent_call: da_control::Call<Runtime> =
 			da_control::Call::submit_blob_txs_summary {
