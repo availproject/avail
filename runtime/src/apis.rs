@@ -457,7 +457,7 @@ impl_runtime_apis! {
 			};
 
 			if let da_control::Call::submit_blob_txs_summary { total_blob_size: _, nb_blobs: _, blob_txs_summary } = da_pallet_call {
-				Some(blob_txs_summary.clone())
+				Some(blob_txs_summary.to_vec())
 			} else {
 				None
 			}

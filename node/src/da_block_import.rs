@@ -293,8 +293,9 @@ where
 					.map(|(a, b, c, d)| OwnershipEntry {
 						address: a.clone(),
 						babe_key: b.clone(),
-						encoded_peer_id: c.clone(),
-						signature: d.clone(),
+						encoded_peer_id: String::from_utf8(c.to_vec())
+							.expect("runtime only accepts UTF-8 peer IDs"),
+						signature: d.to_vec(),
 					})
 					.collect();
 

@@ -22,6 +22,36 @@ use sp_std::vec::Vec;
 pub type AppKeyFor<T> = BoundedVec<u8, <T as Config>::MaxAppKeyLength>;
 pub type AppDataFor<T> = BoundedVec<u8, <T as Config>::MaxAppDataLength>;
 
+/// Maximum encoded FRI evaluation-proof payload carried by one blob summary.
+///
+/// Current measurements peak below 660 KiB for a 32 MiB blob. The additional 108 KiB provides
+/// headroom for encoding and proof-parameter changes without leaving this consensus-critical field
+/// unbounded.
+pub const MAX_EVAL_PROOF_SIZE: u32 = 768 * 1024;
+pub type BoundedEvalProof = BoundedVec<u8, ConstU32<MAX_EVAL_PROOF_SIZE>>;
+pub const MAX_BLOB_SUMMARY_REASON_SIZE: u32 = 256;
+/// Maximum ownership entries accepted in one blob summary.
+///
+/// This is intentionally aligned with the network assumption that the active validator set,
+/// and therefore the owner set for one blob, will not exceed 100 entries. Raising this limit
+/// requires revisiting the summary weight budget and the block-capacity analysis.
+pub const MAX_BLOB_OWNERS: u32 = 100;
+pub const MAX_ENCODED_PEER_ID_SIZE: u32 = 128;
+pub const MAX_OWNERSHIP_SIGNATURE_SIZE: u32 = 64;
+pub const MAX_BLOB_TX_SUMMARIES: u32 = avail_base::MAX_BLOB_TXS_PER_BLOCK as u32;
+
+pub type BoundedBlobSummaryReason = BoundedVec<u8, ConstU32<MAX_BLOB_SUMMARY_REASON_SIZE>>;
+pub type BoundedEncodedPeerId = BoundedVec<u8, ConstU32<MAX_ENCODED_PEER_ID_SIZE>>;
+pub type BoundedOwnershipSignature = BoundedVec<u8, ConstU32<MAX_OWNERSHIP_SIGNATURE_SIZE>>;
+pub type BoundedBlobOwnership = (
+	AccountId32,
+	AuthorityId,
+	BoundedEncodedPeerId,
+	BoundedOwnershipSignature,
+);
+pub type BoundedBlobOwnerships = BoundedVec<BoundedBlobOwnership, ConstU32<MAX_BLOB_OWNERS>>;
+pub type BoundedBlobTxSummaries = BoundedVec<BlobTxSummaryRuntime, ConstU32<MAX_BLOB_TX_SUMMARIES>>;
+
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Clone, Encode, Decode, TypeInfo, PartialEq, Debug, MaxEncodedLen)]
 pub struct AppKeyInfo<Acc: PartialEq> {
@@ -54,14 +84,16 @@ impl<AccountId> SessionDataProvider<AccountId> for () {
 	}
 }
 
-#[derive(Clone, Encode, Decode, DecodeWithMemTracking, TypeInfo, PartialEq, Debug)]
+#[derive(
+	Clone, Encode, Decode, DecodeWithMemTracking, TypeInfo, PartialEq, Debug, MaxEncodedLen,
+)]
 pub struct BlobTxSummaryRuntime {
 	pub hash: H256,
 	pub tx_index: u32,
 	pub success: bool,
-	pub reason: Option<String>,
-	pub ownership: Vec<(AccountId32, AuthorityId, String, Vec<u8>)>,
-	pub eval_proof: Option<Vec<u8>>,
+	pub reason: Option<BoundedBlobSummaryReason>,
+	pub ownership: BoundedBlobOwnerships,
+	pub eval_proof: Option<BoundedEvalProof>,
 }
 impl BlobTxSummaryRuntime {
 	pub fn convert_into(
@@ -73,20 +105,44 @@ impl BlobTxSummaryRuntime {
 			Vec<(AccountId32, AuthorityId, String, Vec<u8>)>,
 			Option<Vec<u8>>,
 		)>,
-	) -> Vec<BlobTxSummaryRuntime> {
-		input
-			.into_iter()
-			.map(
-				|(hash, tx_index, success, reason, ownership, eval_proof)| BlobTxSummaryRuntime {
-					hash,
-					tx_index,
-					success,
-					reason,
-					ownership,
-					eval_proof,
-				},
-			)
-			.collect()
+	) -> BoundedBlobTxSummaries {
+		BoundedBlobTxSummaries::try_from(
+			input
+				.into_iter()
+				.map(|(hash, tx_index, success, reason, ownership, eval_proof)| {
+					BlobTxSummaryRuntime {
+						hash,
+						tx_index,
+						success,
+						reason: reason.map(|reason| {
+							BoundedBlobSummaryReason::try_from(reason.into_bytes())
+								.expect("blob summary reason must not exceed 256 bytes")
+						}),
+						ownership: BoundedBlobOwnerships::try_from(
+							ownership
+								.into_iter()
+								.map(|(account, authority, peer_id, signature)| {
+									(
+										account,
+										authority,
+										BoundedEncodedPeerId::try_from(peer_id.into_bytes())
+											.expect("encoded peer ID must not exceed 128 bytes"),
+										BoundedOwnershipSignature::try_from(signature)
+											.expect("ownership signature must not exceed 64 bytes"),
+									)
+								})
+								.collect::<Vec<_>>(),
+						)
+						.expect("blob ownership list must not exceed 1024 entries"),
+						eval_proof: eval_proof.map(|proof| {
+							BoundedEvalProof::try_from(proof)
+								.expect("FRI evaluation proof must not exceed 768 KiB")
+						}),
+					}
+				})
+				.collect::<Vec<_>>(),
+		)
+		.expect("blob summary must not exceed 128 entries")
 	}
 }
 
@@ -113,10 +169,9 @@ pub struct BlobRuntimeParameters {
 	pub max_transaction_validity: u64,
 	/// The number of time we'll allow trying to fetch internal blob metadata or blob data before letting the transaction go through to get discarded
 	pub max_blob_retry_before_discarding: u16,
-	/// The maximum size of data that can go in a block
-	/// Before this value came from the matrix size as we stored data in the block header but now we store only commitments
-	/// Theoritically with a matrix size of 4096 / 1024 we can store up to 132 mb of commitments which represents a huge block
-	/// Hence we need to bound it with a value
+	/// Reserved for a possible future aggregate blob-data limit.
+	///
+	/// This field is not currently used for block admission, runtime weight calculation, or fee calculation.
 	pub max_block_size: u64,
 	/// The threshold to consider a blob missing accusation valid
 	pub vouch_threshold: u32,

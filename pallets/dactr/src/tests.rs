@@ -145,9 +145,25 @@ mod set_application_key {
 }
 
 mod submit_blob_metadata {
+	use crate::BlobRuntimeParams;
 	use avail_core::AppId;
 
 	use super::*;
+
+	#[test]
+	fn weight_scales_with_blob_size_but_not_aggregate_capacity() {
+		new_test_ext().execute_with(|| {
+			let small = crate::weight_helper::submit_blob_metadata::<Test>(1024);
+			let large = crate::weight_helper::submit_blob_metadata::<Test>(31 * 1024 * 1024);
+
+			BlobRuntimeParams::<Test>::mutate(|params| params.max_block_size = 1);
+			let after_capacity_change =
+				crate::weight_helper::submit_blob_metadata::<Test>(31 * 1024 * 1024);
+
+			assert!(large.ref_time() > small.ref_time());
+			assert_eq!(large, after_capacity_change);
+		});
+	}
 
 	#[test]
 	fn submit_blob_metadata() {
@@ -166,6 +182,10 @@ mod submit_blob_metadata {
 				[0u8; 32],
 				[0u8; 16],
 			));
+			assert_eq!(
+				crate::PrepaidBlobSummaryEncodedBytes::<Test>::get(),
+				crate::weight_helper::projected_summary_size(size)
+			);
 
 			let event = RuntimeEvent::DataAvailability(Event::SubmitBlobMetadataRequest {
 				who: ALICE,
@@ -173,6 +193,26 @@ mod submit_blob_metadata {
 			});
 			System::assert_last_event(event);
 		})
+	}
+
+	#[test]
+	fn rejects_metadata_after_per_block_blob_limit() {
+		new_test_ext().execute_with(|| {
+			crate::PrepaidBlobSummaryEntryCount::<Test>::put(crate::types::MAX_BLOB_TX_SUMMARIES);
+
+			assert_noop!(
+				DataAvailability::submit_blob_metadata(
+					RawOrigin::Signed(ALICE).into(),
+					AppId(1),
+					H256::repeat_byte(1),
+					1,
+					vec![1],
+					[0; 32],
+					[0; 16],
+				),
+				Error::TooManyBlobTransactions
+			);
+		});
 	}
 
 	#[test]
@@ -241,6 +281,57 @@ mod submit_blob_metadata {
 
 mod submit_blob_txs_summary {
 	use super::*;
+	use crate::weights::WeightInfo;
+	use frame_support::traits::Get;
+	use frame_support::weights::RuntimeDbWeight;
+
+	#[test]
+	fn weight_accounts_for_encoded_summary_size() {
+		let small = <() as WeightInfo>::submit_blob_txs_summary(1, 1024);
+		let large = <() as WeightInfo>::submit_blob_txs_summary(1, 96 * 1024 * 1024);
+
+		assert!(large.ref_time() > small.ref_time());
+		assert_eq!(large.proof_size(), small.proof_size());
+	}
+
+	#[test]
+	fn projection_is_below_the_hard_bound_and_excess_remains_chargeable() {
+		use codec::MaxEncodedLen;
+
+		let projected = crate::weight_helper::projected_summary_size(31 * 1024 * 1024);
+		let hard_max = crate::BlobTxSummaryRuntime::max_encoded_len() as u32;
+		assert!(projected < hard_max);
+
+		new_test_ext().execute_with(|| {
+			crate::PrepaidBlobSummaryEntryCount::<Test>::put(1);
+			crate::PrepaidBlobSummaryEncodedBytes::<Test>::put(projected);
+			let projected_weight =
+				crate::weight_helper::submit_blob_txs_summary::<Test>(1, projected);
+			let hard_max_weight =
+				crate::weight_helper::submit_blob_txs_summary::<Test>(1, hard_max);
+			assert!(hard_max_weight.ref_time() > projected_weight.ref_time());
+		});
+	}
+
+	#[test]
+	fn summary_only_charges_work_not_prepaid_by_metadata() {
+		new_test_ext().execute_with(|| {
+			let bytes = crate::weight_helper::projected_summary_size(31 * 1024 * 1024);
+			let unprepaid = crate::weight_helper::submit_blob_txs_summary::<Test>(1, bytes);
+
+			crate::PrepaidBlobSummaryEntryCount::<Test>::put(1);
+			crate::PrepaidBlobSummaryEncodedBytes::<Test>::put(bytes);
+			let prepaid = crate::weight_helper::submit_blob_txs_summary::<Test>(1, bytes);
+			let bookkeeping =
+				<<Test as frame_system::Config>::DbWeight as Get<RuntimeDbWeight>>::get()
+					.reads_writes(4, 2);
+			let expected =
+				<() as WeightInfo>::submit_blob_txs_summary(0, 0).saturating_add(bookkeeping);
+
+			assert_eq!(prepaid, expected);
+			assert!(unprepaid.ref_time() > prepaid.ref_time());
+		});
+	}
 
 	#[test]
 	fn submit_blob_txs_summary() {
@@ -252,15 +343,15 @@ mod submit_blob_txs_summary {
 				tx_index: 0,
 				success: true,
 				reason: None,
-				ownership: Vec::new(),
+				ownership: Vec::new().try_into().unwrap(),
 				eval_proof: None,
 			};
 			let s2 = crate::BlobTxSummaryRuntime {
 				hash: H256::random(),
 				tx_index: 1,
 				success: false,
-				reason: Some("example".into()),
-				ownership: Vec::new(),
+				reason: Some(b"example".to_vec().try_into().unwrap()),
+				ownership: Vec::new().try_into().unwrap(),
 				eval_proof: None,
 			};
 
@@ -271,7 +362,7 @@ mod submit_blob_txs_summary {
 				none,
 				total_blob_size,
 				nb_blobs,
-				vec![s1, s2],
+				vec![s1, s2].try_into().unwrap(),
 			));
 		})
 	}

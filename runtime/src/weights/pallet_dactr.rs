@@ -87,7 +87,7 @@ impl<T: frame_system::Config> da_control::WeightInfo for WeightInfo<T> {
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	/// The range of component `n` is `[1, 1000]`.
-	fn submit_blob_txs_summary(n: u32, ) -> Weight {
+	fn submit_blob_txs_summary(n: u32, bytes: u32) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
@@ -95,6 +95,9 @@ impl<T: frame_system::Config> da_control::WeightInfo for WeightInfo<T> {
 		Weight::from_parts(3_149_162, 0)
 			// Standard Error: 221
 			.saturating_add(Weight::from_parts(75_267, 0).saturating_mul(n.into()))
+			// Provisional conservative SCALE decoding cost. Replace from the dedicated
+			// resource benchmark before production release.
+			.saturating_add(Weight::from_parts(10_000, 0).saturating_mul(bytes.into()))
 	}
 	/// The range of component `s` is `[1, 33554432]`.
 	fn submit_blob_metadata(_s: u32, ) -> Weight {

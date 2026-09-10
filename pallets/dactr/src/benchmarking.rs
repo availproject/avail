@@ -113,27 +113,33 @@ mod benchmarks {
 	}
 
 	#[benchmark]
-	fn submit_blob_txs_summary(n: Linear<1, 1_000>) -> Result<(), BenchmarkError> {
+	fn submit_blob_txs_summary(n: Linear<1, 128>) -> Result<(), BenchmarkError> {
 		let origin = RawOrigin::None;
 
-		let summaries: Vec<crate::BlobTxSummaryRuntime> = (0..n)
+		let summaries: crate::BoundedBlobTxSummaries = (0..n)
 			.map(|i| crate::BlobTxSummaryRuntime {
 				hash: H256::repeat_byte((i + 1) as u8),
 				tx_index: i as u32,
 				success: i % 2 == 0,
 				reason: if i % 3 == 0 {
-					Some("bench".into())
+					Some(b"bench".to_vec().try_into().unwrap())
 				} else {
 					None
 				},
-				ownership: Vec::new(),
-				eval_proof: Some(vec![
-					0u8;
-					1 + ((i as usize) * ((650 * 1024) - 1))
-						/ ((n as usize).saturating_sub(1).max(1))
-				]),
+				ownership: Vec::new().try_into().unwrap(),
+				eval_proof: Some(
+					vec![
+						0u8;
+						1 + ((i as usize) * ((650 * 1024) - 1))
+							/ ((n as usize).saturating_sub(1).max(1))
+					]
+					.try_into()
+					.unwrap(),
+				),
 			})
-			.collect();
+			.collect::<Vec<_>>()
+			.try_into()
+			.unwrap();
 
 		let total_blob_size: u64 = (n as u64) * 1024;
 		let nb_blobs: u32 = n as u32;
