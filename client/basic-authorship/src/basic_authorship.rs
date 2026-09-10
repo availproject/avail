@@ -311,7 +311,8 @@ where
 			"basic-authorship-proposer",
 			None,
 			Box::pin(async move {
-				// leave some time for evaluation and block finalization (33%)
+				// Leave time for post-inherent creation/application, evaluation, and block
+				// finalization (33%). Only ordinary extrinsic selection uses this deadline.
 				let deadline = (self.now)() + max_duration - max_duration / 3;
 				let res = self.propose_with(args, deadline).await;
 				if tx.send(res).is_err() {
@@ -466,23 +467,18 @@ where
 
 		for inherent in post_inherents {
 			match block_builder.push(inherent) {
-				Err(ApplyExtrinsicFailed(Validity(e))) if e.exhausted_resources() => {
-					warn!(
-						target: LOG_TARGET,
-						"⚠️  Dropping non-mandatory post inherent from overweight block."
-					)
-				},
-				Err(ApplyExtrinsicFailed(Validity(e))) if e.was_mandatory() => {
+				Err(ApplyExtrinsicFailed(Validity(e))) => {
 					error!(
-						"❌️ Mandatory post inherent extrinsic returned error. Block cannot be produced."
+						"❌️ Post inherent extrinsic returned validity error. Block cannot be produced."
 					);
 					return Err(ApplyExtrinsicFailed(Validity(e)));
 				},
 				Err(e) => {
-					warn!(
+					error!(
 						target: LOG_TARGET,
-						"❗️ Post inherent extrinsic returned unexpected error: {}. Dropping.", e
+						"❗️ Post inherent extrinsic returned unexpected error: {}. Block cannot be produced.", e
 					);
+					return Err(e);
 				},
 				Ok(_) => {},
 			}
