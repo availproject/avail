@@ -28,6 +28,7 @@ pub type AppDataFor<T> = BoundedVec<u8, <T as Config>::MaxAppDataLength>;
 /// headroom for encoding and proof-parameter changes without leaving this consensus-critical field
 /// unbounded.
 pub const MAX_EVAL_PROOF_SIZE: u32 = 768 * 1024;
+pub const MAX_BLOB_SIZE: u64 = 32 * 1024 * 1024;
 pub type BoundedEvalProof = BoundedVec<u8, ConstU32<MAX_EVAL_PROOF_SIZE>>;
 pub const MAX_BLOB_SUMMARY_REASON_SIZE: u32 = 256;
 /// Maximum ownership entries accepted in one blob summary.
@@ -179,7 +180,7 @@ pub struct BlobRuntimeParameters {
 impl Default for BlobRuntimeParameters {
 	fn default() -> Self {
 		Self {
-			max_blob_size: 31 * 1024 * 1024,
+			max_blob_size: MAX_BLOB_SIZE,
 			min_blob_holder_percentage: Perbill::from_percent(10),
 			min_blob_holder_count: 2,
 			blob_ttl: 120_960,                    // 20sec block -> 28d - 6sec block -> 8.4d

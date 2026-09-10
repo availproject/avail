@@ -495,7 +495,7 @@ pub mod pallet {
 
 			BlobRuntimeParams::<T>::try_mutate(|params| -> Result<(), Error<T>> {
 				if let Some(v) = max_blob_size {
-					ensure!(v <= 31 * 1024 * 1024, Error::<T>::BlobSizeTooLarge);
+					ensure!(v <= types::MAX_BLOB_SIZE, Error::<T>::BlobSizeTooLarge);
 					params.max_blob_size = v;
 				}
 				if let Some(v) = min_blob_holder_percentage {
@@ -799,7 +799,7 @@ pub mod pallet {
 		UnknownAppKey,
 		/// The commitment is empty
 		CommitmentCannotBeEmpty,
-		/// The blob size exceeds the allowed maximum (e.g., > 31 MB).
+		/// The blob size exceeds the allowed maximum (32 MiB).
 		BlobSizeTooLarge,
 		/// The minimum percentage of validators required to hold a blob is invalid (must be > 0).
 		MinBlobHolderPercentageInvalid,

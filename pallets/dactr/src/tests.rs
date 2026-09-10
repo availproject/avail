@@ -154,11 +154,11 @@ mod submit_blob_metadata {
 	fn weight_scales_with_blob_size_but_not_aggregate_capacity() {
 		new_test_ext().execute_with(|| {
 			let small = crate::weight_helper::submit_blob_metadata::<Test>(1024);
-			let large = crate::weight_helper::submit_blob_metadata::<Test>(31 * 1024 * 1024);
+			let large = crate::weight_helper::submit_blob_metadata::<Test>(32 * 1024 * 1024);
 
 			BlobRuntimeParams::<Test>::mutate(|params| params.max_block_size = 1);
 			let after_capacity_change =
-				crate::weight_helper::submit_blob_metadata::<Test>(31 * 1024 * 1024);
+				crate::weight_helper::submit_blob_metadata::<Test>(32 * 1024 * 1024);
 
 			assert!(large.ref_time() > small.ref_time());
 			assert_eq!(large, after_capacity_change);
@@ -298,7 +298,7 @@ mod submit_blob_txs_summary {
 	fn projection_is_below_the_hard_bound_and_excess_remains_chargeable() {
 		use codec::MaxEncodedLen;
 
-		let projected = crate::weight_helper::projected_summary_size(31 * 1024 * 1024);
+		let projected = crate::weight_helper::projected_summary_size(32 * 1024 * 1024);
 		let hard_max = crate::BlobTxSummaryRuntime::max_encoded_len() as u32;
 		assert!(projected < hard_max);
 
@@ -316,7 +316,7 @@ mod submit_blob_txs_summary {
 	#[test]
 	fn summary_only_charges_work_not_prepaid_by_metadata() {
 		new_test_ext().execute_with(|| {
-			let bytes = crate::weight_helper::projected_summary_size(31 * 1024 * 1024);
+			let bytes = crate::weight_helper::projected_summary_size(32 * 1024 * 1024);
 			let unprepaid = crate::weight_helper::submit_blob_txs_summary::<Test>(1, bytes);
 
 			crate::PrepaidBlobSummaryEntryCount::<Test>::put(1);
@@ -465,7 +465,7 @@ mod set_blob_runtime_parameters {
 				let root: RuntimeOrigin = RawOrigin::Root.into();
 				let err = DataAvailability::set_blob_runtime_parameters(
 					root,
-					Some(31 * 1024 * 1024 + 1),
+					Some(32 * 1024 * 1024 + 1),
 					None,
 					None,
 					None,

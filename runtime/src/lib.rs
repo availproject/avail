@@ -255,7 +255,7 @@ mod tests {
 	#[test]
 	fn maximum_blob_metadata_fits_normal_dispatch_budget() {
 		let metadata_weight =
-			da_control::weight_helper::submit_blob_metadata::<Runtime>(31 * 1024 * 1024);
+			da_control::weight_helper::submit_blob_metadata::<Runtime>(32 * 1024 * 1024);
 		let normal_limit = constants::system::RuntimeBlockWeights::get()
 			.get(DispatchClass::Normal)
 			.max_total
@@ -266,15 +266,15 @@ mod tests {
 
 	#[test]
 	fn two_gibibytes_of_maximum_blobs_fit_by_metadata_weight() {
-		let blobs = (2 * 1024 * 1024 * 1024u64).div_ceil(31 * 1024 * 1024);
-		let per_blob = da_control::weight_helper::submit_blob_metadata::<Runtime>(31 * 1024 * 1024);
+		let blobs = (2 * 1024 * 1024 * 1024u64).div_ceil(32 * 1024 * 1024);
+		let per_blob = da_control::weight_helper::submit_blob_metadata::<Runtime>(32 * 1024 * 1024);
 		let aggregate_weight = per_blob.saturating_mul(blobs);
 		let normal_limit = constants::system::RuntimeBlockWeights::get()
 			.get(DispatchClass::Normal)
 			.max_total
 			.expect("normal dispatch limit is configured");
 
-		assert_eq!(blobs, 67);
+		assert_eq!(blobs, 64);
 		assert!(aggregate_weight.all_lte(normal_limit));
 	}
 
