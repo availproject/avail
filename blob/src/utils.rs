@@ -248,9 +248,25 @@ pub fn get_validator_per_blob_inner(
 	// Add up to 10% of the diff, capped
 	let margin = (diff / 10).min(3);
 
-	let nb_validators_per_blob = threshold + margin;
+	let nb_validators_per_blob = threshold.saturating_add(margin).min(MAX_BLOB_OWNERS);
 
 	(nb_validators_per_blob, threshold)
+}
+
+#[cfg(test)]
+mod validator_per_blob_tests {
+	use super::*;
+
+	#[test]
+	fn final_owner_count_is_capped_after_margin() {
+		let mut params = BlobRuntimeParameters::default();
+		params.min_blob_holder_count = MAX_BLOB_OWNERS;
+
+		let (owners, threshold) = get_validator_per_blob_inner(params, 130);
+
+		assert_eq!(threshold, MAX_BLOB_OWNERS);
+		assert_eq!(owners, MAX_BLOB_OWNERS);
+	}
 }
 
 pub fn check_if_wait_next_block<C, Block>(
