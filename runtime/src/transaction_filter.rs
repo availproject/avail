@@ -77,7 +77,7 @@ impl HeaderExtensionDataFilter for Runtime {
 				{
 					for summary in blob_txs_summary {
 						if let Some(proof) = &summary.eval_proof {
-							eval_proofs.insert(summary.tx_index, proof.clone());
+							eval_proofs.insert(summary.tx_index, proof.to_vec());
 						}
 						if !summary.success {
 							failed.push(summary.tx_index);

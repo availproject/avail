@@ -663,6 +663,9 @@ mod measure_full_block_size {
 			let ownership = sample_ownerships();
 
 			loop {
+				if blob_txs_summary.len() == avail_base::MAX_BLOB_TXS_PER_BLOCK {
+					break;
+				}
 				let call = RuntimeCall::DataAvailability(
 					da_control::Call::<Runtime>::submit_blob_metadata {
 						app_id: AppId(1),
@@ -697,14 +700,16 @@ mod measure_full_block_size {
 					Ok(_) => {
 						extrinsics.push(tx);
 						nonce += 1;
-						blob_txs_summary.push(BlobTxSummaryRuntime {
-							hash: H256::zero(),
-							tx_index: nonce,
-							success: true,
-							reason: None,
-							ownership: ownership.clone(),
-							eval_proof: None,
-						});
+						let mut summary = BlobTxSummaryRuntime::convert_into(vec![(
+							H256::zero(),
+							nonce,
+							true,
+							None,
+							ownership.clone(),
+							None,
+						)])
+						.unwrap();
+						blob_txs_summary.push(summary.pop().unwrap());
 					},
 					Err(e) => match e {
 						TransactionValidityError::Invalid(
@@ -722,7 +727,7 @@ mod measure_full_block_size {
 				da_control::Call::<Runtime>::submit_blob_txs_summary {
 					total_blob_size: tx_size * ((nonce + 1) as u64),
 					nb_blobs: (nonce + 1) as u32,
-					blob_txs_summary,
+					blob_txs_summary: blob_txs_summary.try_into().unwrap(),
 				},
 			);
 			let post_inherent_tx = UncheckedExtrinsic::new_bare(post_inherent_call);

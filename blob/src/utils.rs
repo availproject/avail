@@ -6,7 +6,7 @@ use crate::{
 use anyhow::{anyhow, Context, Result};
 use base64::Engine;
 use codec::{Decode, Encode};
-use da_control::{BlobRuntimeParameters, Call};
+use da_control::{BlobRuntimeParameters, Call, MAX_BLOB_OWNERS};
 use da_runtime::UncheckedExtrinsic;
 use da_runtime::{apis::BlobApi, RuntimeCall};
 use sc_client_api::{HeaderBackend, StorageKey};
@@ -233,22 +233,40 @@ pub fn get_validator_per_blob_inner(
 	nb_validators: u32,
 ) -> (u32, u32) {
 	if nb_validators <= blob_params.min_blob_holder_count {
-		return (nb_validators, nb_validators);
+		let owners = nb_validators.min(MAX_BLOB_OWNERS);
+		return (owners, owners);
 	}
 
 	let threshold = blob_params
 		.min_blob_holder_percentage
 		.mul_ceil(nb_validators)
 		.max(blob_params.min_blob_holder_count);
+	let threshold = threshold.min(MAX_BLOB_OWNERS);
 
 	let diff = nb_validators.saturating_sub(threshold);
 
 	// Add up to 10% of the diff, capped
 	let margin = (diff / 10).min(3);
 
-	let nb_validators_per_blob = threshold + margin;
+	let nb_validators_per_blob = threshold.saturating_add(margin).min(MAX_BLOB_OWNERS);
 
 	(nb_validators_per_blob, threshold)
+}
+
+#[cfg(test)]
+mod validator_per_blob_tests {
+	use super::*;
+
+	#[test]
+	fn final_owner_count_is_capped_after_margin() {
+		let mut params = BlobRuntimeParameters::default();
+		params.min_blob_holder_count = MAX_BLOB_OWNERS;
+
+		let (owners, threshold) = get_validator_per_blob_inner(params, 130);
+
+		assert_eq!(threshold, MAX_BLOB_OWNERS);
+		assert_eq!(owners, MAX_BLOB_OWNERS);
+	}
 }
 
 pub fn check_if_wait_next_block<C, Block>(

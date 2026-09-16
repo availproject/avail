@@ -164,6 +164,16 @@ pub mod pallet {
 	#[pallet::getter(fn blob_runtime_parameters)]
 	pub type BlobRuntimeParams<T: Config> = StorageValue<_, BlobRuntimeParameters, ValueQuery>;
 
+	/// Summary bytes prepaid by successful blob metadata calls in the current block.
+	#[pallet::storage]
+	#[pallet::whitelist_storage]
+	pub type PrepaidBlobSummaryEncodedBytes<T: Config> = StorageValue<_, u32, ValueQuery>;
+
+	/// Summary entries prepaid by successful blob metadata calls in the current block.
+	#[pallet::storage]
+	#[pallet::whitelist_storage]
+	pub type PrepaidBlobSummaryEntryCount<T: Config> = StorageValue<_, u32, ValueQuery>;
+
 	#[pallet::type_value]
 	pub fn DefaultFriParamsVersion<T: Config>() -> FriParamsVersion {
 		FriParamsVersion::V0
@@ -194,7 +204,9 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_initialize(_n: BlockNumberFor<T>) -> Weight {
-			let mut weight = Weight::zero();
+			PrepaidBlobSummaryEncodedBytes::<T>::kill();
+			PrepaidBlobSummaryEntryCount::<T>::kill();
+			let mut weight = <T as frame_system::Config>::DbWeight::get().writes(2);
 			let session_index = T::ValidatorSet::session_index();
 			let previous_session_index = LastSeenSession::<T>::get().unwrap_or(0);
 			weight = weight.saturating_add(<T as frame_system::Config>::DbWeight::get().reads(2));
@@ -396,6 +408,17 @@ pub mod pallet {
 			ensure!(size > 0, Error::<T>::DataCannotBeEmpty);
 			ensure!(!commitment.is_empty(), Error::<T>::CommitmentCannotBeEmpty);
 			ensure!(blob_hash != H256::zero(), Error::<T>::DataCannotBeEmpty);
+			ensure!(
+				PrepaidBlobSummaryEntryCount::<T>::get() < types::MAX_BLOB_TX_SUMMARIES,
+				Error::<T>::TooManyBlobTransactions
+			);
+
+			PrepaidBlobSummaryEncodedBytes::<T>::mutate(|bytes| {
+				*bytes = bytes.saturating_add(weight_helper::projected_summary_size(size))
+			});
+			PrepaidBlobSummaryEntryCount::<T>::mutate(|entries| {
+				*entries = entries.saturating_add(1)
+			});
 
 			Self::deposit_event(Event::SubmitBlobMetadataRequest { who, blob_hash });
 
@@ -404,17 +427,53 @@ pub mod pallet {
 
 		#[pallet::call_index(6)]
 		#[pallet::weight((
-			T::WeightInfo::submit_blob_txs_summary(*nb_blobs),
+			weight_helper::submit_blob_txs_summary::<T>(
+				blob_txs_summary.len() as u32,
+				blob_txs_summary.encoded_size() as u32,
+			),
 			DispatchClass::Mandatory
 		))]
 		pub fn submit_blob_txs_summary(
 			origin: OriginFor<T>,
 			_total_blob_size: u64,
 			#[allow(unused_variables)] nb_blobs: u32,
-			_blob_txs_summary: Vec<BlobTxSummaryRuntime>,
+			blob_txs_summary: BoundedBlobTxSummaries,
 		) -> DispatchResult {
 			ensure_none(origin)?;
+			let actual_bytes = blob_txs_summary.encoded_size() as u32;
+			let prepaid_entries = PrepaidBlobSummaryEntryCount::<T>::get();
+			let prepaid_bytes = PrepaidBlobSummaryEncodedBytes::<T>::get();
+			let actual_entries = blob_txs_summary.len() as u32;
+			let pending_entries = actual_entries.saturating_sub(prepaid_entries);
+			let pending_bytes = actual_bytes.saturating_sub(prepaid_bytes);
+			let prepaid_weight =
+				T::WeightInfo::submit_blob_txs_summary(prepaid_entries, prepaid_bytes);
+			let actual_weight =
+				T::WeightInfo::submit_blob_txs_summary(actual_entries, actual_bytes);
+			let pending_weight =
+				T::WeightInfo::submit_blob_txs_summary(pending_entries, pending_bytes);
+
+			log::debug!(
+				target: crate::LOG_TARGET,
+				"Blob summary accounting: prepaid entries={}, bytes={}, weight=({}, {}); actual entries={}, bytes={}, weight=({}, {}); pending entries={}, bytes={}, weight=({}, {})",
+				prepaid_entries,
+				prepaid_bytes,
+				prepaid_weight.ref_time(),
+				prepaid_weight.proof_size(),
+				actual_entries,
+				actual_bytes,
+				actual_weight.ref_time(),
+				actual_weight.proof_size(),
+				pending_entries,
+				pending_bytes,
+				pending_weight.ref_time(),
+				pending_weight.proof_size(),
+			);
+
+			PrepaidBlobSummaryEncodedBytes::<T>::kill();
+			PrepaidBlobSummaryEntryCount::<T>::kill();
 			// All the checks are done client side by validators
+			drop(blob_txs_summary);
 
 			Ok(())
 		}
@@ -438,7 +497,7 @@ pub mod pallet {
 
 			BlobRuntimeParams::<T>::try_mutate(|params| -> Result<(), Error<T>> {
 				if let Some(v) = max_blob_size {
-					ensure!(v <= 31 * 1024 * 1024, Error::<T>::BlobSizeTooLarge);
+					ensure!(v <= types::MAX_BLOB_SIZE, Error::<T>::BlobSizeTooLarge);
 					params.max_blob_size = v;
 				}
 				if let Some(v) = min_blob_holder_percentage {
@@ -742,7 +801,7 @@ pub mod pallet {
 		UnknownAppKey,
 		/// The commitment is empty
 		CommitmentCannotBeEmpty,
-		/// The blob size exceeds the allowed maximum (e.g., > 31 MB).
+		/// The blob size exceeds the allowed maximum (32 MiB).
 		BlobSizeTooLarge,
 		/// The minimum percentage of validators required to hold a blob is invalid (must be > 0).
 		MinBlobHolderPercentageInvalid,
@@ -782,6 +841,8 @@ pub mod pallet {
 		InsufficientBalanceForVouch,
 		/// Invalid AppId
 		InvalidAppId,
+		/// The block already contains the maximum number of blob metadata transactions.
+		TooManyBlobTransactions,
 	}
 
 	#[pallet::genesis_config]
@@ -892,14 +953,14 @@ impl<T: Config> Pallet<T> {
 }
 
 pub mod weight_helper {
-
-	use avail_base::MAX_BLOB_TXS_PER_BLOCK;
-
 	use super::*;
+	use codec::MaxEncodedLen;
 
-	fn estimated_post_inherent_summary_size(blob_size_bytes: u64) -> u64 {
-		// Based on empiric results tuned up a little.
-		match blob_size_bytes {
+	/// Conservative evaluation-proof projection derived from measurements for each blob-size band.
+	/// The 768 KiB bound remains a decoding-safety ceiling, rather than the amount charged to every
+	/// metadata submitter.
+	pub fn projected_eval_proof_size(blob_size: u64) -> u32 {
+		match blob_size {
 			0..=1_048_576 => 340 * 1024,
 			1_048_577..=2_097_152 => 400 * 1024,
 			2_097_153..=4_194_304 => 450 * 1024,
@@ -909,45 +970,34 @@ pub mod weight_helper {
 		}
 	}
 
+	/// Project the complete encoded summary entry: the size-dependent evaluation proof plus the
+	/// worst-case bounded fixed fields (ownerships, reason, hashes and SCALE prefixes).
+	pub fn projected_summary_size(blob_size: u64) -> u32 {
+		let fixed_fields = BlobTxSummaryRuntime::max_encoded_len()
+			.saturating_sub(types::MAX_EVAL_PROOF_SIZE as usize);
+		fixed_fields
+			.saturating_add(projected_eval_proof_size(blob_size) as usize)
+			.saturated_into()
+	}
+
 	/// Weight for `dataAvailability::submit_blob_metadata`.
 	pub fn submit_blob_metadata<T: Config>(data_len: u64) -> Weight {
-		/* Compute regular substrate weight. */
-		let data_len_u32: u32 = data_len.saturated_into();
-		let regular_weight = T::WeightInfo::submit_blob_metadata(data_len_u32);
+		T::WeightInfo::submit_blob_metadata(data_len.saturated_into())
+			.saturating_add(T::WeightInfo::submit_blob_txs_summary(
+				1,
+				projected_summary_size(data_len),
+			))
+			.saturating_add(<T as frame_system::Config>::DbWeight::get().reads_writes(3, 2))
+	}
 
-		/* Compute weight based on size taken compared to the maximum in a block. */
-		// Before we used to compare to the matrix total size, but with new values for blob crate
-		// We could store data up to 128mb worth of commitment which is huge
-		// Hence we use tha maximum allowed in a block
-		let blob_runtime_params = BlobRuntimeParams::<T>::get();
-		let max_total_submission_size = blob_runtime_params.max_block_size;
-
-		// We compute the maximum numbers of scalars in the matrix and multiply with the DA dispatch ratio.
-		let max_da_ratio = DA_DISPATCH_RATIO_PERBILL * max_total_submission_size;
-
-		// We get the current maximum weight in a block and multiply with normal dispatch ratio.
-		let block_weights = <T as frame_system::Config>::BlockWeights::get();
-		let max_weight_normal_ratio: u64 =
-			NORMAL_DISPATCH_RATIO_PERBILL * block_weights.max_block.ref_time();
-
-		// We compute the ratio of data size / max_da_ratio multiply with the maximum weight.
-		let data_ratio = Perbill::from_rational(data_len, max_da_ratio);
-		let ref_time = data_ratio * max_weight_normal_ratio;
-		let da_weight = Weight::from_parts(ref_time, regular_weight.proof_size());
-
-		// Compute weight based on projected post-inherent summary growth.
-		let max_blob_tx_in_block: u64 = MAX_BLOB_TXS_PER_BLOCK.saturated_into();
-		let max_eval_proof_size = estimated_post_inherent_summary_size(31 * 1024 * 1024);
-		let estimated_max_call_size = max_blob_tx_in_block.saturating_mul(max_eval_proof_size); // This is an estimate, to tweak it, we need to answer the question, what max size do we want to allow for the DA Blob post-inherent extrinsic.
-		let projected_post_inherent_size = estimated_post_inherent_summary_size(data_len);
-		let post_inherent_ratio =
-			Perbill::from_rational(projected_post_inherent_size, estimated_max_call_size);
-		let post_inherent_ref_time = post_inherent_ratio * max_weight_normal_ratio;
-		let post_inherent_weight =
-			Weight::from_parts(post_inherent_ref_time, regular_weight.proof_size());
-
-		// Keep the most conservative estimate across the regular dispatch cost, the payload size
-		// itself, and the future DA post-inherent summary footprint.
-		da_weight.max(regular_weight).max(post_inherent_weight)
+	/// Charge only the part of a summary which was not prepaid by successful metadata calls.
+	pub fn submit_blob_txs_summary<T: Config>(entries: u32, bytes: u32) -> Weight {
+		let prepaid_entries = PrepaidBlobSummaryEntryCount::<T>::get();
+		let prepaid_bytes = PrepaidBlobSummaryEncodedBytes::<T>::get();
+		T::WeightInfo::submit_blob_txs_summary(
+			entries.saturating_sub(prepaid_entries),
+			bytes.saturating_sub(prepaid_bytes),
+		)
+		.saturating_add(<T as frame_system::Config>::DbWeight::get().reads_writes(4, 2))
 	}
 }

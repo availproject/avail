@@ -64,10 +64,10 @@ Derives `n` deterministic accounts from the chosen root account, funds them if n
 
 ## File Payloads
 
-Use `--file` to submit a real file as the blob payload. The file is loaded once, trimmed to the 31 MiB maximum if needed, and the first bytes are changed for each submission so every blob is unique.
+Use `--file` to submit a real file as the blob payload. The file is loaded once, trimmed to the 32 MiB maximum if needed, and the first bytes are changed for each submission so every blob is unique.
 
 - `--file` and `--size-mb` are mutually exclusive.
-- If neither is provided, `da-spammer` falls back to a generated `31 MiB` payload.
+- If neither is provided, `da-spammer` falls back to a generated `32 MiB` payload.
 
 ```bash
 ./target/release/da-spammer \

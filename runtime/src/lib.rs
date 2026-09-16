@@ -240,6 +240,45 @@ mod tests {
 	}
 
 	#[test]
+	fn maximum_blob_summary_leaves_mandatory_execution_weight() {
+		let summary_weight = <weights::pallet_dactr::WeightInfo<Runtime> as
+			da_control::WeightInfo>::submit_blob_txs_summary(
+			avail_base::MAX_BLOB_TXS_PER_BLOCK as u32,
+			96 * 1024 * 1024,
+		);
+		let maximum = constants::system::RuntimeBlockWeights::get().max_block;
+
+		assert!(summary_weight.ref_time() < maximum.ref_time());
+		assert!(maximum.ref_time() - summary_weight.ref_time() >= maximum.ref_time() / 3);
+	}
+
+	#[test]
+	fn maximum_blob_metadata_fits_normal_dispatch_budget() {
+		let metadata_weight =
+			da_control::weight_helper::submit_blob_metadata::<Runtime>(32 * 1024 * 1024);
+		let normal_limit = constants::system::RuntimeBlockWeights::get()
+			.get(DispatchClass::Normal)
+			.max_total
+			.expect("normal dispatch limit is configured");
+
+		assert!(metadata_weight.all_lte(normal_limit));
+	}
+
+	#[test]
+	fn two_gibibytes_of_maximum_blobs_fit_by_metadata_weight() {
+		let blobs = (2 * 1024 * 1024 * 1024u64).div_ceil(32 * 1024 * 1024);
+		let per_blob = da_control::weight_helper::submit_blob_metadata::<Runtime>(32 * 1024 * 1024);
+		let aggregate_weight = per_blob.saturating_mul(blobs);
+		let normal_limit = constants::system::RuntimeBlockWeights::get()
+			.get(DispatchClass::Normal)
+			.max_total
+			.expect("normal dispatch limit is configured");
+
+		assert_eq!(blobs, 64);
+		assert!(aggregate_weight.all_lte(normal_limit));
+	}
+
+	#[test]
 	fn oversized_authorized_upgrade_is_rejected_by_operational_length_limit() {
 		sp_io::TestExternalities::default().execute_with(|| {
 			let operational_limit = *impls::RuntimeBlockLength::get()

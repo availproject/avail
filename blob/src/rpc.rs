@@ -545,7 +545,10 @@ where
 				summary
 					.ownership
 					.into_iter()
-					.map(|(_addr, _babe_key, encoded_peer_id, _sig)| encoded_peer_id)
+					.map(|(_addr, _babe_key, encoded_peer_id, _sig)| {
+						String::from_utf8(encoded_peer_id.to_vec())
+							.expect("runtime only accepts UTF-8 peer IDs")
+					})
 					.collect()
 			} else {
 				return Err(internal_err!(

@@ -97,3 +97,7 @@ runtime-benchmarks = []
 # [[bench]]
 # name = "submit_data"
 # harness = false
+
+[[bench]]
+name = "fri_resources"
+harness = false

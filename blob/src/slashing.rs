@@ -53,7 +53,7 @@ fn get_blob_summary_runtime(
 					blob_txs_summary,
 					nb_blobs,
 					total_blob_size,
-				}) => (blob_txs_summary, nb_blobs, total_blob_size),
+				}) => (blob_txs_summary.to_vec(), nb_blobs, total_blob_size),
 				_ => {
 					return Err(anyhow!("Invalid summary extrinsic at {:?}", block_hash));
 				},
@@ -323,7 +323,7 @@ pub async fn check_missing_validators<Pool, Block>(
 					let ok = verify_signed_blob_data(
 						BlobSignatureData {
 							signer: babe_key.encode(),
-							signature: sig.clone(),
+							signature: sig.to_vec(),
 						},
 						payload,
 					)
@@ -354,7 +354,8 @@ pub async fn check_missing_validators<Pool, Block>(
 
 			// We can only act on this error "Not enough validators..."
 			if summary.reason.is_some()
-				&& summary.reason != Some("Not enough validators vouched for this block".into())
+				&& summary.reason.as_ref().map(|reason| reason.as_slice())
+					!= Some(b"Not enough validators vouched for this block".as_slice())
 			{
 				continue;
 			}

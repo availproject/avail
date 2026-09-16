@@ -137,7 +137,7 @@ If you use sybil mode, keep one root account per machine.
 Start simple and keep the runs easy to compare.
 
 1. One machine only, `16 MB`, confirm the command is stable.
-2. One machine only, `31 MB`, confirm large blobs are stable.
+2. One machine only, `32 MB`, confirm large blobs are stable.
 3. Two machines with the same blob size and same flags.
 4. Three machines.
 5. Four machines.
@@ -151,7 +151,7 @@ Recommended blob sizes:
 - `4 MB`
 - `8 MB`
 - `16 MB`
-- `31 MB`
+- `32 MB`
 
 ## What To Watch During The Run
 

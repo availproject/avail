@@ -18,7 +18,7 @@ mod fri_commitment_32_mib {
 
 	#[divan::bench(max_time = 10)]
 	fn fake_data(bencher: Bencher) {
-		let blob_m = vec![1u8; 31 * 1024 * 1024];
+		let blob_m = vec![1u8; 32 * 1024 * 1024];
 		bencher.bench(|| {
 			build_fri_da_commitment(&blob_m, FriParamsVersion::V0);
 		});
