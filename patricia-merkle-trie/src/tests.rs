@@ -53,3 +53,15 @@ fn test_can_verify_eip_1186_proofs() {
 	);
 	assert_eq!(account.nonce, 0x10);
 }
+
+#[test]
+fn decode_plan_rejects_node_with_empty_partial_key() {
+	use crate::node_codec::RlpNodeCodec;
+	use trie_db::NodeCodec;
+
+	// RLP encoding of a 2-item list whose first item is empty. An empty first
+	// item can never be a valid compact-encoded partial key, so decoding must
+	// return an error instead of panicking.
+	let malformed = [0xc2, 0x80, 0x80];
+	assert!(<RlpNodeCodec<KeccakHasher> as NodeCodec>::decode_plan(&malformed).is_err());
+}

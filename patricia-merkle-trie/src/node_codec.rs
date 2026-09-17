@@ -69,6 +69,10 @@ where
 			Prototype::List(2) => {
 				let (rlp, offset) = r.at_with_offset(0)?;
 				let (data, i) = (rlp.data()?, rlp.payload_info()?);
+				if data.is_empty() {
+					// An empty first item is never a valid compact-encoded partial key.
+					return Err(DecoderError::Custom("Rlp is not valid."));
+				}
 				match (
 					NibbleSlicePlan::new(
 						(offset + i.header_len)..(offset + i.header_len + i.value_len),
