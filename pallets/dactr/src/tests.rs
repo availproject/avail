@@ -8,12 +8,81 @@ use crate::config_preludes::{
 };
 use crate::{
 	mock::{new_test_ext, DataAvailability, RuntimeEvent, RuntimeOrigin, System, Test},
-	AppDataFor, AppKeyFor, AppKeyInfoFor, Event, DA_DISPATCH_RATIO_PERBILL,
+	AppDataFor, AppKeyFor, AppKeyInfoFor, Event, SubmitDataWhitelist, DA_DISPATCH_RATIO_PERBILL,
 };
 
 type Error = crate::Error<Test>;
 
 const ALICE: u64 = 1;
+
+mod submit_data_whitelist {
+	use super::*;
+
+	#[test]
+	fn only_root_can_grant_and_revoke_submission_access() {
+		new_test_ext().execute_with(|| {
+			assert!(!DataAvailability::is_submit_data_whitelisted(&ALICE));
+			assert_noop!(
+				DataAvailability::set_submit_data_whitelist(
+					RuntimeOrigin::signed(ALICE),
+					ALICE,
+					true
+				),
+				BadOrigin
+			);
+			assert_ok!(DataAvailability::set_submit_data_whitelist(
+				RuntimeOrigin::root(),
+				ALICE,
+				true
+			));
+			assert!(DataAvailability::is_submit_data_whitelisted(&ALICE));
+			System::assert_last_event(RuntimeEvent::DataAvailability(
+				Event::SubmitDataWhitelistUpdated {
+					account: ALICE,
+					allowed: true,
+				},
+			));
+			assert_ok!(DataAvailability::submit_data(
+				RuntimeOrigin::signed(ALICE),
+				vec![1].try_into().unwrap()
+			));
+			assert_noop!(
+				DataAvailability::submit_data(
+					RuntimeOrigin::signed(2),
+					vec![1].try_into().unwrap()
+				),
+				Error::SubmitDataSignerNotWhitelisted
+			);
+			assert_noop!(
+				DataAvailability::set_submit_data_whitelist(
+					RuntimeOrigin::signed(ALICE),
+					ALICE,
+					false
+				),
+				BadOrigin
+			);
+			assert_ok!(DataAvailability::set_submit_data_whitelist(
+				RuntimeOrigin::root(),
+				ALICE,
+				false
+			));
+			assert!(!DataAvailability::is_submit_data_whitelisted(&ALICE));
+			System::assert_last_event(RuntimeEvent::DataAvailability(
+				Event::SubmitDataWhitelistUpdated {
+					account: ALICE,
+					allowed: false,
+				},
+			));
+			assert_noop!(
+				DataAvailability::submit_data(
+					RuntimeOrigin::signed(ALICE),
+					vec![1].try_into().unwrap()
+				),
+				Error::SubmitDataSignerNotWhitelisted
+			);
+		});
+	}
+}
 
 mod create_application_key {
 	use super::*;
@@ -81,6 +150,7 @@ mod submit_data {
 	#[test]
 	fn submit_data() {
 		new_test_ext().execute_with(|| {
+			SubmitDataWhitelist::<Test>::insert(ALICE, ());
 			let alice: RuntimeOrigin = RawOrigin::Signed(ALICE).into();
 			let max_app_key_length: usize = MaxAppDataLength::get().try_into().unwrap();
 			let data = AppDataFor::<Test>::try_from(vec![b'X'; max_app_key_length]).unwrap();
@@ -99,11 +169,23 @@ mod submit_data {
 	#[test]
 	fn data_cannot_be_empty() {
 		new_test_ext().execute_with(|| {
+			SubmitDataWhitelist::<Test>::insert(ALICE, ());
 			let alice: RuntimeOrigin = RawOrigin::Signed(ALICE).into();
 			let data = AppDataFor::<Test>::try_from(vec![]).unwrap();
 
 			let err = DataAvailability::submit_data(alice, data);
 			assert_noop!(err, Error::DataCannotBeEmpty);
+		})
+	}
+
+	#[test]
+	fn signer_must_be_whitelisted() {
+		new_test_ext().execute_with(|| {
+			let alice: RuntimeOrigin = RawOrigin::Signed(ALICE).into();
+			let data = AppDataFor::<Test>::try_from(vec![b'X']).unwrap();
+
+			let err = DataAvailability::submit_data(alice, data);
+			assert_noop!(err, Error::SubmitDataSignerNotWhitelisted);
 		})
 	}
 

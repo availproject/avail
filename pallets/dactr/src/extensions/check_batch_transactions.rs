@@ -393,6 +393,7 @@ mod tests {
 	use pallet_utility::pallet::Call as UtilityCall;
 	use sp_core::H256;
 	use sp_runtime::transaction_validity::{InvalidTransaction, TransactionValidityError};
+	use sp_runtime::AccountId32;
 	use test_case::test_case;
 
 	use super::*;
@@ -442,11 +443,20 @@ mod tests {
 		))
 	}
 
+	fn alice() -> AccountId32 {
+		let mut account = [0u8; 32];
+		account[0] = 1;
+		AccountId32::new(account)
+	}
+
 	fn validate(call: RuntimeCall) -> TransactionValidity {
 		let extrinsic =
 			AppUncheckedExtrinsic::<u32, RuntimeCall, (), ()>::new_unsigned(call.clone());
 		let len = extrinsic.encoded_size();
-		new_test_ext().execute_with(|| CheckAppId::<Test>::from(AppId(0)).do_validate(&call, len))
+		new_test_ext().execute_with(|| {
+			crate::SubmitDataWhitelist::<Test>::insert(alice(), ());
+			CheckAppId::<Test>::from(AppId(0)).do_validate(&alice(), &call, len)
+		})
 	}
 
 	#[test]

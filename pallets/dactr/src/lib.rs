@@ -150,6 +150,11 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type SubmitDataFeeModifier<T: Config> = StorageValue<_, DispatchFeeModifier, ValueQuery>;
 
+	/// Accounts allowed to submit DA transactions after the hard cutover.
+	#[pallet::storage]
+	pub type SubmitDataWhitelist<T: Config> =
+		StorageMap<_, Blake2_128Concat, T::AccountId, (), OptionQuery>;
+
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Creates an application key if `key` does not exist yet.
@@ -188,6 +193,10 @@ pub mod pallet {
 			data: AppDataFor<T>,
 		) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
+			ensure!(
+				SubmitDataWhitelist::<T>::contains_key(&who),
+				Error::<T>::SubmitDataSignerNotWhitelisted
+			);
 			ensure!(!data.is_empty(), Error::<T>::DataCannotBeEmpty);
 
 			let data_hash = blake2_256(&data);
@@ -300,6 +309,27 @@ pub mod pallet {
 
 			Ok(().into())
 		}
+
+		#[pallet::call_index(5)]
+		#[pallet::weight(<T as frame_system::Config>::DbWeight::get().writes(1))]
+		/// Allow or revoke a DA submitter during the Infinity cut-over.
+		/// The whitelist starts empty on upgrade and is managed by Root governance.
+		pub fn set_submit_data_whitelist(
+			origin: OriginFor<T>,
+			account: T::AccountId,
+			allowed: bool,
+		) -> DispatchResultWithPostInfo {
+			ensure_root(origin)?;
+
+			if allowed {
+				SubmitDataWhitelist::<T>::insert(&account, ());
+			} else {
+				SubmitDataWhitelist::<T>::remove(&account);
+			}
+
+			Self::deposit_event(Event::SubmitDataWhitelistUpdated { account, allowed });
+			Ok(().into())
+		}
 	}
 
 	/// Event for the pallet.
@@ -326,6 +356,10 @@ pub mod pallet {
 		},
 		SubmitDataFeeModifierSet {
 			value: DispatchFeeModifier,
+		},
+		SubmitDataWhitelistUpdated {
+			account: T::AccountId,
+			allowed: bool,
 		},
 	}
 
@@ -354,6 +388,8 @@ pub mod pallet {
 		UnknownAppKey,
 		/// Submit block length proposal was made with values not power of 2
 		NotPowerOfTwo,
+		/// Submit data signer is not whitelisted after the hard cutover.
+		SubmitDataSignerNotWhitelisted,
 	}
 
 	#[pallet::genesis_config]
@@ -391,6 +427,10 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
+	pub fn is_submit_data_whitelisted(who: &T::AccountId) -> bool {
+		SubmitDataWhitelist::<T>::contains_key(who)
+	}
+
 	/// Returns the latest available application ID and increases it.
 	pub fn next_application_id() -> Result<AppId, Error<T>> {
 		NextAppId::<T>::try_mutate(|id| {
@@ -459,7 +499,11 @@ pub mod weight_helper {
 
 		// We return the biggest value between the regular weight and scalar based weight.
 		// I cannot think of a case where regular weight > matrix based weight.
-		scalar_based_weight.max(regular_weight)
+		// The cut-over adds a whitelist lookup in dispatch and in CheckAppId's
+		// pre_dispatch. Account for both reads in addition to the existing weight.
+		scalar_based_weight
+			.max(regular_weight)
+			.saturating_add(<T as frame_system::Config>::DbWeight::get().reads(2))
 	}
 
 	fn compact_len(value: &u32) -> Option<u32> {

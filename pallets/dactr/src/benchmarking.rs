@@ -200,6 +200,7 @@ mod benchmarks {
 	#[benchmark]
 	fn submit_data(i: Linear<1, { T::MaxAppDataLength::get() }>) -> Result<(), BenchmarkError> {
 		let caller = whitelisted_caller::<T::AccountId>();
+		SubmitDataWhitelist::<T>::insert(&caller, ());
 		let origin = RawOrigin::Signed(caller.clone());
 		let data = generate_bounded::<AppDataFor<T>>(i);
 		let data_hash = H256(blake2_256(&data));

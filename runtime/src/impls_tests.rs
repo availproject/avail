@@ -555,7 +555,7 @@ mod tests {
 	}
 
 	#[test]
-	fn test_fees_and_tip_split() {
+	fn cutover_does_not_distribute_fees_or_tips() {
 		new_test_ext().execute_with(|| {
 			let fee =
 				<pallet_balances::Pallet<Test> as frame_support::traits::fungible::Balanced<
@@ -572,10 +572,9 @@ mod tests {
 
 			DealWithFees::on_unbalanceds(vec![fee, tip].into_iter());
 
-			// Author gets 100% of tip and 20% of fee = 22
-			assert_eq!(Balances::free_balance(TEST_ACCOUNT), 22);
-			// Treasury gets 80% of fee = 8
-			assert_eq!(Balances::free_balance(Treasury::account_id()), 8);
+			assert_eq!(Balances::free_balance(TEST_ACCOUNT), 0);
+			assert_eq!(Balances::free_balance(Treasury::account_id()), 0);
+			assert_eq!(Balances::total_issuance(), 0);
 		});
 	}
 
