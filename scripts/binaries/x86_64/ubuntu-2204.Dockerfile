@@ -11,7 +11,7 @@ ADD . ./workdir
 WORKDIR "/workdir"
 
 # This installs the right toolchain
-RUN $HOME/.cargo/bin/rustup show
+RUN $HOME/.cargo/bin/rustup install
 
 # This builds the binary.
 RUN $HOME/.cargo/bin/cargo build --locked --release

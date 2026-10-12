@@ -1,8 +1,8 @@
-# This is the first stage. Here we install all the dependencies that we need in order to build the Ternoa binary.
-FROM registry.hub.docker.com/archlinux/archlinux:latest AS builder
+FROM debian:13-slim AS builder
 
 # This installs all dependencies that we need (besides Rust).
-RUN pacman -Syu --noconfirm git clang curl cmake make protobuf -y
+RUN apt update -y && \
+    apt install --fix-missing build-essential git clang curl libssl-dev llvm libudev-dev make cmake protobuf-compiler -y
 
 # This installs Rust
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rust_install.sh && chmod u+x rust_install.sh && ./rust_install.sh -y
@@ -10,8 +10,8 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > rust_install.sh 
 ADD . ./workdir
 WORKDIR "/workdir"
 
-# This install the right toolchain
-RUN $HOME/.cargo/bin/rustup show
+# This installs the right toolchain
+RUN $HOME/.cargo/bin/rustup install
 
 # This builds the binary.
 RUN $HOME/.cargo/bin/cargo build --locked --release

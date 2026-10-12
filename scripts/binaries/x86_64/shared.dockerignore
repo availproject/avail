@@ -2,14 +2,19 @@
 *
 
 # Allow files and directories
-!/runtime
-!/rpc
-!/patricia-merkle-trie
-!/pallets
-!/node
-!/misc
-!/client
 !/base
+!/blob
+!/client
+!/da-commitment
+!/da-sampling
+!/node
+!/observability
+!/pallets
+!/patricia-merkle-trie
+!/rpc
+!/runtime
+!/misc
+!/utils/try-runtime-cli
 !Cargo.toml
 !Cargo.lock
 !rust-toolchain.toml
