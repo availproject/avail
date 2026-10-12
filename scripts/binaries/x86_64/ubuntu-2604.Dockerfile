@@ -1,4 +1,4 @@
-FROM debian:12.12-slim AS builder
+FROM ubuntu:26.04 AS builder
 
 # This installs all dependencies that we need (besides Rust).
 RUN apt update -y && \
@@ -11,7 +11,7 @@ ADD . ./workdir
 WORKDIR "/workdir"
 
 # This installs the right toolchain
-RUN $HOME/.cargo/bin/rustup show
+RUN $HOME/.cargo/bin/rustup install
 
 # This builds the binary.
 RUN $HOME/.cargo/bin/cargo build --locked --release
