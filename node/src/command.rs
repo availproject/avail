@@ -73,7 +73,7 @@ impl SubstrateCli for Cli {
 			"devnet0" => Box::new(chains::devnet0::chain_spec()?),
 			"mainnet" => Box::new(chains::mainnet::chain_spec()?),
 			"turing" => Box::new(chains::turing::chain_spec()?),
-			"infinity" => Box::new(chains::infinity::chain_spec()?),
+			"infinity.turing" => Box::new(chains::infinity_turing::chain_spec()?),
 			path => Box::new(chains::ChainSpec::from_json_file(
 				std::path::PathBuf::from(path),
 			)?),
