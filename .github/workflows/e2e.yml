@@ -21,17 +21,17 @@ jobs:
         include:
           - command: ENGINE=podman SCRIPT_LOC=./scripts/workflows/e2e.sh ./scripts/workflows/run.sh
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
+        uses: jlumbroso/free-disk-space@36e9a5af4eddb91fc11aec4c6f6f79b3cc0cb523 # main 2026-10-23
         with:
           tool-cache: true
       
       - name: install podman
         run: sudo apt-get update && sudo apt install podman -y
 
-      - uses: nick-fields/retry@v3
+      - uses: nick-fields/retry@ce71cc2ab81d554ebbe88c79ab5975992d79ba08 # v3.0.2
         with:
           timeout_minutes: 60
           max_attempts: 3

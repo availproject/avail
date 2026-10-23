@@ -6,10 +6,10 @@ jobs:
   load:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v7
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
     - name: Copy scripts folder to remote server
-      uses: appleboy/scp-action@v0.1.4
+      uses: appleboy/scp-action@8a92fcdb1eb4ffbf538b2fa286739760aac8a95b # v0.1.4
       with:
         host: ${{ secrets.HOST }}
         username: ${{ secrets.USERNAME }}
@@ -20,7 +20,7 @@ jobs:
         overwrite: true
 
     - name: Run load tests
-      uses: appleboy/ssh-action@master 
+      uses: appleboy/ssh-action@c4f70287fc37c43b14b30b407224bbbc8e8c6327 # master 2026-10-23
       with: 
         host: ${{ secrets.HOST }}
         username: ${{ secrets.USERNAME }}

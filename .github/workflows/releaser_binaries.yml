@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Import GPG key
         id: import_gpg
@@ -33,7 +33,7 @@ jobs:
             gpg --armor --export ${{ steps.import_gpg.outputs.keyid }} > public_key.asc
 
       - name: Publish public key
-        uses: svenstaro/upload-release-action@v2
+        uses: svenstaro/upload-release-action@29e53e917877a24fad85510ded594ab3c9ca12de # 2.11.5
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: public_key.asc
@@ -46,7 +46,7 @@ jobs:
     runs-on: ${{ vars.BUILD_RUNNER || 'sp1-builder' }}
     needs: setup_gpg
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Build runtime wasm
         run: ENGINE=podman DISTRO=ubuntu-2204 CARGO_ARGS="-p da-runtime" ./scripts/binaries/build.sh
@@ -66,9 +66,9 @@ jobs:
       matrix:
         distro: [ubuntu-2204, ubuntu-2404, debian-12, debian-13]
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: nick-fields/retry@v3
+      - uses: nick-fields/retry@ce71cc2ab81d554ebbe88c79ab5975992d79ba08 # v3.0.2
         with:
           timeout_minutes: 60
           max_attempts: 3
@@ -85,15 +85,15 @@ jobs:
     runs-on: ubuntu-22.04
     needs: setup_gpg
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
+        uses: jlumbroso/free-disk-space@36e9a5af4eddb91fc11aec4c6f6f79b3cc0cb523 # main 2026-10-23
         with:
           tool-cache: true
 
       - name: Install Protoc
-        uses: arduino/setup-protoc@v1
+        uses: arduino/setup-protoc@149f6c87b92550901b26acd1632e11c3662e381f # v1 2026-10-23
         with:
           version: '3.x'
 

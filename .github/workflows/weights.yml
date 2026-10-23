@@ -18,7 +18,7 @@ jobs:
   benchmark:
     runs-on: [self-hosted, reference]
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Install deps
         run: |
@@ -27,7 +27,7 @@ jobs:
           sudo apt-get install -y git clang curl libssl-dev protobuf-compiler unzip
 
       - name: Install Protoc
-        uses: arduino/setup-protoc@v1
+        uses: arduino/setup-protoc@149f6c87b92550901b26acd1632e11c3662e381f # v1 2026-10-23
         with:
           version: "3.x"
 
@@ -60,7 +60,7 @@ jobs:
           $EXTRA $OUR_PALLETS ./scripts/run_benchmarks.sh
 
       - name: Upload output as artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: weights-result
           path: ./output/
