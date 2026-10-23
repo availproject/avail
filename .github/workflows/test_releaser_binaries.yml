@@ -18,17 +18,17 @@ jobs:
       matrix:
         distro: [ubuntu-2204, ubuntu-2404, debian-12, debian-13]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
+        uses: jlumbroso/free-disk-space@36e9a5af4eddb91fc11aec4c6f6f79b3cc0cb523 # main 2026-10-23
         with:
           tool-cache: true
 
       - name: Ensure podman
         run: command -v podman || (sudo apt-get update && sudo apt-get install -y podman)
 
-      - uses: nick-fields/retry@v3
+      - uses: nick-fields/retry@ce71cc2ab81d554ebbe88c79ab5975992d79ba08 # v3.0.2
         with:
           timeout_minutes: 60
           max_attempts: 2
@@ -39,15 +39,15 @@ jobs:
   arm64_ubuntu_2204:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
+        uses: jlumbroso/free-disk-space@36e9a5af4eddb91fc11aec4c6f6f79b3cc0cb523 # main 2026-10-23
         with:
           tool-cache: true
 
       - name: Install Protoc
-        uses: arduino/setup-protoc@v1
+        uses: arduino/setup-protoc@149f6c87b92550901b26acd1632e11c3662e381f # v1 2026-10-23
         with:
           version: '3.x'
 

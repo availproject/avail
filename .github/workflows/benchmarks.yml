@@ -20,9 +20,9 @@ jobs:
       SKIP_WASM_BUILD: true
       RUST_BACKTRACE: full
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/cache@v3
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.cache/
@@ -77,7 +77,7 @@ jobs:
           find ./runtime/target/iai -type f
 
       - name: Header Generation Regression Checks on IAI
-        uses: fmiguelgarcia/github-action-benchmark@v1
+        uses: fmiguelgarcia/github-action-benchmark@cc491bd34eb6f76d372b22fcf06a3defeb8b1826 # v1 2026-10-23
         with:
           # What benchmark tool the output.txt came from
           tool: 'rustIai'
@@ -104,9 +104,9 @@ jobs:
       SKIP_WASM_BUILD: true
       RUST_BACKTRACE: full
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/cache@v3
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.cache/
@@ -152,7 +152,7 @@ jobs:
           cargo +1.75.0 bench -p da-runtime --bench header_kate_commitment_cri -- --color never --noplot --output-format bencher | tee ~/.cache/cri/header_gen_bench_cri.txt || true
 
       - name: Header Generation Regression Checks on Criterion 
-        uses: fmiguelgarcia/github-action-benchmark@v1
+        uses: fmiguelgarcia/github-action-benchmark@cc491bd34eb6f76d372b22fcf06a3defeb8b1826 # v1 2026-10-23
         with:
           # What benchmark tool the output.txt came from
           tool: 'cargo'

@@ -17,10 +17,10 @@ jobs:
   avail_unit_tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
+        uses: jlumbroso/free-disk-space@36e9a5af4eddb91fc11aec4c6f6f79b3cc0cb523 # main 2026-10-23
         with:
           tool-cache: true
 
@@ -31,7 +31,7 @@ jobs:
           sudo apt install -y git clang curl libssl-dev protobuf-compiler
 
       # Restore cache from `build`
-      - uses: actions/cache/restore@v3
+      - uses: actions/cache/restore@6f8efc29b200d32929f49075959781ed54ec270c # v3.5.0
         with:
           path: |
             ~/.cache/
