@@ -18,7 +18,7 @@ jobs:
       matrix:
         distro: [ubuntu-2204, ubuntu-2404, debian-12, debian-13]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
@@ -39,7 +39,7 @@ jobs:
   arm64_ubuntu_2204:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main

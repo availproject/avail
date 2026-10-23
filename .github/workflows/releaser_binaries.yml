@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Import GPG key
         id: import_gpg
@@ -46,7 +46,7 @@ jobs:
     runs-on: ${{ vars.BUILD_RUNNER || 'sp1-builder' }}
     needs: setup_gpg
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Build runtime wasm
         run: ENGINE=podman DISTRO=ubuntu-2204 CARGO_ARGS="-p da-runtime" ./scripts/binaries/build.sh
@@ -66,7 +66,7 @@ jobs:
       matrix:
         distro: [ubuntu-2204, ubuntu-2404, debian-12, debian-13]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: nick-fields/retry@v3
         with:
@@ -85,7 +85,7 @@ jobs:
     runs-on: ubuntu-22.04
     needs: setup_gpg
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main

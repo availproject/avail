@@ -20,9 +20,9 @@ jobs:
       SKIP_WASM_BUILD: true
       RUST_BACKTRACE: full
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/cache@v3
+      - uses: actions/cache@v6
         with:
           path: |
             ~/.cache/
@@ -104,9 +104,9 @@ jobs:
       SKIP_WASM_BUILD: true
       RUST_BACKTRACE: full
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/cache@v3
+      - uses: actions/cache@v6
         with:
           path: |
             ~/.cache/

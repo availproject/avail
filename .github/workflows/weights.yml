@@ -18,7 +18,7 @@ jobs:
   benchmark:
     runs-on: [self-hosted, reference]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install deps
         run: |
@@ -60,7 +60,7 @@ jobs:
           $EXTRA $OUR_PALLETS ./scripts/run_benchmarks.sh
 
       - name: Upload output as artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: weights-result
           path: ./output/
