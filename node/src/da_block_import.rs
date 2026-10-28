@@ -258,6 +258,15 @@ where
 			>(block.header.number, &extrinsics))
 		};
 
+		if let Some(extracted) = extracted.as_ref() {
+			ensure!(
+				extracted.data_submissions.iter().all(|submission| {
+					submission.commitment.len() == avail_base::FRI_COMMITMENT_SIZE
+				}),
+				ConsensusError::ClientImport("FRI commitment must be exactly 32 bytes".into())
+			);
+		}
+
 		if !is_own && !skip_sync && !block.with_state() {
 			self.ensure_last_extrinsic_is_vector_post_inherent(&block)?;
 			self.ensure_valid_header_extension(

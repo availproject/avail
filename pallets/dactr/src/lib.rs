@@ -412,7 +412,10 @@ pub mod pallet {
 				PrepaidBlobSummaryEntryCount::<T>::get() < types::MAX_BLOB_TX_SUMMARIES,
 				Error::<T>::TooManyBlobTransactions
 			);
-
+			ensure!(
+				commitment.len() == avail_base::FRI_COMMITMENT_SIZE,
+				Error::<T>::InvalidCommitmentLength
+			);
 			PrepaidBlobSummaryEncodedBytes::<T>::mutate(|bytes| {
 				*bytes = bytes.saturating_add(weight_helper::projected_summary_size(size))
 			});
@@ -843,6 +846,8 @@ pub mod pallet {
 		InvalidAppId,
 		/// The block already contains the maximum number of blob metadata transactions.
 		TooManyBlobTransactions,
+		/// The FRI commitment must be exactly 32 bytes.
+		InvalidCommitmentLength,
 	}
 
 	#[pallet::genesis_config]
