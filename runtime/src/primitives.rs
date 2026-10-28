@@ -162,7 +162,7 @@ mod tests {
 			app_id: avail_core::AppId(2),
 			blob_hash: H256::repeat_byte(1),
 			size: 1,
-			commitment: vec![1],
+			commitment: vec![1; avail_base::FRI_COMMITMENT_SIZE],
 			eval_point_seed: [0; 32],
 			eval_claim: [0; 16],
 		}
@@ -203,7 +203,7 @@ mod tests {
 				app_id: avail_core::AppId(2),
 				blob_hash: H256::repeat_byte(1),
 				size: 1,
-				commitment: vec![1],
+				commitment: vec![1; avail_base::FRI_COMMITMENT_SIZE],
 				eval_point_seed: [0; 32],
 				eval_claim: [0; 16],
 			}

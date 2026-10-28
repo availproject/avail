@@ -30,6 +30,7 @@ use sp_runtime::transaction_validity::InvalidTransaction as TxInvalid;
 use sp_std::{
 	default::Default,
 	fmt::{self, Debug, Formatter},
+	vec,
 	vec::Vec,
 };
 
@@ -126,6 +127,17 @@ where
 		}
 	}
 
+	pub fn get_other_utility_call(&self) -> Option<Vec<&<T as UtilityConfig>::RuntimeCall>> {
+		match self.0.is_sub_type() {
+			Some(UtilityCall::<T>::as_derivative { call, .. })
+			| Some(UtilityCall::<T>::dispatch_as { call, .. })
+			| Some(UtilityCall::<T>::with_weight { call, .. })
+			| Some(UtilityCall::<T>::dispatch_as_fallible { call, .. }) => Some(vec![call]),
+			Some(UtilityCall::<T>::if_else { main, fallback }) => Some(vec![main, fallback]),
+			_ => None,
+		}
+	}
+
 	pub fn get_as_multi_call(&self) -> Option<&<T as MultisigConfig>::RuntimeCall> {
 		match self.0.is_sub_type() {
 			Some(MultisigCall::<T>::as_multi {
@@ -178,11 +190,13 @@ where
 		+ Send
 		+ Sync,
 	<T as MultisigConfig>::RuntimeCall: IsSubType<VectorCall<T>>
+		+ IsSubType<DACall<T>>
 		+ IsSubType<ProxyCall<T>>
 		+ IsSubType<UtilityCall<T>>
 		+ IsSubType<MultisigCall<T>>
 		+ IsSubType<SchedulerCall<T>>,
 	<T as SchedulerConfig>::RuntimeCall: IsSubType<VectorCall<T>>
+		+ IsSubType<DACall<T>>
 		+ IsSubType<ProxyCall<T>>
 		+ IsSubType<UtilityCall<T>>
 		+ IsSubType<MultisigCall<T>>
@@ -200,7 +214,7 @@ where
 		Self(sp_std::marker::PhantomData)
 	}
 
-	/// Forbid DA blob metadata and Vector::send_message inside batch.
+	/// Only allow DA blob metadata and Vector::send_message as direct top-level calls.
 	pub fn do_validate(
 		&self,
 		call: &<T as SystemConfig>::RuntimeCall,
@@ -227,6 +241,11 @@ where
 
 		if let Some(call) = call.get_scheduler_call() {
 			Self::recursive_scheduler_call(call, iterations, false)?;
+			return Ok(ValidTransaction::default());
+		}
+
+		if let Some(calls) = call.get_other_utility_call() {
+			Self::recursive_other_utility_call(calls, iterations, false)?;
 			return Ok(ValidTransaction::default());
 		}
 
@@ -275,6 +294,10 @@ where
 			if let Some(call) = call.get_scheduler_call() {
 				Self::recursive_scheduler_call(call, iteration + 1, true)?;
 			};
+
+			if let Some(calls) = call.get_other_utility_call() {
+				Self::recursive_other_utility_call(calls, iteration + 1, true)?;
+			}
 		}
 
 		Ok(ValidTransaction::default())
@@ -293,6 +316,10 @@ where
 		let call: &<T as SystemConfig>::RuntimeCall = call.into_ref();
 		let call = WrappedCall::<T>(call);
 
+		ensure!(
+			!call.is_da_call(),
+			InvalidTransaction::Custom(UnexpectedSubmitDataCall as u8)
+		);
 		ensure!(
 			!call.is_send_message_call(),
 			InvalidTransaction::Custom(UnexpectedSendMessageCall as u8)
@@ -314,6 +341,57 @@ where
 			return Self::recursive_scheduler_call(call, iteration + 1, inside_batch);
 		};
 
+		if let Some(calls) = call.get_other_utility_call() {
+			return Self::recursive_other_utility_call(calls, iteration + 1, inside_batch);
+		}
+
+		Ok(ValidTransaction::default())
+	}
+
+	fn recursive_other_utility_call(
+		calls: Vec<&<T as UtilityConfig>::RuntimeCall>,
+		iteration: usize,
+		inside_batch: bool,
+	) -> TransactionValidity {
+		use InvalidTransactionCustomId::*;
+		if iteration >= MAX_ITERATIONS {
+			return Err(TxInvalid::Custom(MaxRecursionExceeded as u8).into());
+		}
+
+		for call in calls {
+			let call: &<T as SystemConfig>::RuntimeCall = call.into_ref();
+			let call = WrappedCall::<T>(call);
+
+			ensure!(
+				!call.is_da_call(),
+				InvalidTransaction::Custom(UnexpectedSubmitDataCall as u8)
+			);
+			ensure!(
+				!call.is_send_message_call(),
+				InvalidTransaction::Custom(UnexpectedSendMessageCall as u8)
+			);
+
+			if let Some(call) = call.get_proxy_call() {
+				Self::recursive_proxy_call(call, iteration + 1, inside_batch)?;
+			}
+
+			if let Some(call) = call.get_as_multi_call() {
+				Self::recursive_multisig_call(call, iteration + 1, inside_batch)?;
+			}
+
+			if let Some(calls) = call.get_batch_call() {
+				Self::recursive_batch_call(calls, iteration + 1, inside_batch)?;
+			}
+
+			if let Some(call) = call.get_scheduler_call() {
+				Self::recursive_scheduler_call(call, iteration + 1, inside_batch)?;
+			}
+
+			if let Some(calls) = call.get_other_utility_call() {
+				Self::recursive_other_utility_call(calls, iteration + 1, inside_batch)?;
+			}
+		}
+
 		Ok(ValidTransaction::default())
 	}
 
@@ -325,6 +403,10 @@ where
 		use InvalidTransactionCustomId::*;
 		if iteration >= MAX_ITERATIONS {
 			return Err(TxInvalid::Custom(MaxRecursionExceeded as u8).into());
+		}
+
+		if let Some(DACall::<T>::submit_blob_metadata { .. }) = call.is_sub_type() {
+			return Err(TxInvalid::Custom(UnexpectedSubmitDataCall as u8).into());
 		}
 
 		if let Some(VectorCall::<T>::send_message { .. }) = call.is_sub_type() {
@@ -351,6 +433,19 @@ where
 			| Some(UtilityCall::<T>::batch_all { calls })
 			| Some(UtilityCall::<T>::force_batch { calls }) => {
 				return Self::recursive_batch_call(calls, iteration + 1, inside_batch);
+			},
+			Some(UtilityCall::<T>::as_derivative { call, .. })
+			| Some(UtilityCall::<T>::dispatch_as { call, .. })
+			| Some(UtilityCall::<T>::with_weight { call, .. })
+			| Some(UtilityCall::<T>::dispatch_as_fallible { call, .. }) => {
+				return Self::recursive_other_utility_call(vec![call], iteration + 1, inside_batch);
+			},
+			Some(UtilityCall::<T>::if_else { main, fallback }) => {
+				return Self::recursive_other_utility_call(
+					vec![main, fallback],
+					iteration + 1,
+					inside_batch,
+				);
 			},
 			_ => (),
 		}
@@ -417,6 +512,10 @@ where
 			return Err(TxInvalid::Custom(MaxRecursionExceeded as u8).into());
 		}
 
+		if let Some(DACall::<T>::submit_blob_metadata { .. }) = call.is_sub_type() {
+			return Err(TxInvalid::Custom(UnexpectedSubmitDataCall as u8).into());
+		}
+
 		if let Some(VectorCall::<T>::send_message { .. }) = call.is_sub_type() {
 			return Err(TxInvalid::Custom(UnexpectedSendMessageCall as u8).into());
 		}
@@ -441,6 +540,19 @@ where
 			| Some(UtilityCall::<T>::batch_all { calls })
 			| Some(UtilityCall::<T>::force_batch { calls }) => {
 				return Self::recursive_batch_call(calls, iteration + 1, inside_batch);
+			},
+			Some(UtilityCall::<T>::as_derivative { call, .. })
+			| Some(UtilityCall::<T>::dispatch_as { call, .. })
+			| Some(UtilityCall::<T>::with_weight { call, .. })
+			| Some(UtilityCall::<T>::dispatch_as_fallible { call, .. }) => {
+				return Self::recursive_other_utility_call(vec![call], iteration + 1, inside_batch);
+			},
+			Some(UtilityCall::<T>::if_else { main, fallback }) => {
+				return Self::recursive_other_utility_call(
+					vec![main, fallback],
+					iteration + 1,
+					inside_batch,
+				);
 			},
 			_ => (),
 		}
@@ -555,11 +667,13 @@ where
 		+ Send
 		+ Sync,
 	<T as MultisigConfig>::RuntimeCall: IsSubType<VectorCall<T>>
+		+ IsSubType<DACall<T>>
 		+ IsSubType<ProxyCall<T>>
 		+ IsSubType<UtilityCall<T>>
 		+ IsSubType<MultisigCall<T>>
 		+ IsSubType<SchedulerCall<T>>,
 	<T as SchedulerConfig>::RuntimeCall: IsSubType<VectorCall<T>>
+		+ IsSubType<DACall<T>>
 		+ IsSubType<ProxyCall<T>>
 		+ IsSubType<UtilityCall<T>>
 		+ IsSubType<MultisigCall<T>>
@@ -663,7 +777,7 @@ mod tests {
 			app_id: AppId(1),
 			blob_hash: H256::zero(),
 			size: 0,
-			commitment: Vec::new(),
+			commitment: vec![0; avail_base::FRI_COMMITMENT_SIZE],
 			eval_claim: [0u8; 16],
 			eval_point_seed: [0u8; 32],
 		})
@@ -691,6 +805,41 @@ mod tests {
 
 	fn force_batch_call(calls: Vec<RuntimeCall>) -> RuntimeCall {
 		RuntimeCall::Utility(UtilityCall::force_batch { calls })
+	}
+
+	fn as_derivative_call(call: RuntimeCall) -> RuntimeCall {
+		RuntimeCall::Utility(UtilityCall::as_derivative {
+			index: 0,
+			call: Box::new(call),
+		})
+	}
+
+	fn dispatch_as_call(call: RuntimeCall) -> RuntimeCall {
+		RuntimeCall::Utility(UtilityCall::dispatch_as {
+			as_origin: Box::new(frame_system::RawOrigin::Signed(account(1)).into()),
+			call: Box::new(call),
+		})
+	}
+
+	fn with_weight_call(call: RuntimeCall) -> RuntimeCall {
+		RuntimeCall::Utility(UtilityCall::with_weight {
+			call: Box::new(call),
+			weight: Weight::zero(),
+		})
+	}
+
+	fn dispatch_as_fallible_call(call: RuntimeCall) -> RuntimeCall {
+		RuntimeCall::Utility(UtilityCall::dispatch_as_fallible {
+			as_origin: Box::new(frame_system::RawOrigin::Signed(account(1)).into()),
+			call: Box::new(call),
+		})
+	}
+
+	fn if_else_call(main: RuntimeCall, fallback: RuntimeCall) -> RuntimeCall {
+		RuntimeCall::Utility(UtilityCall::if_else {
+			main: Box::new(main),
+			fallback: Box::new(fallback),
+		})
 	}
 
 	fn proxy_call(call: RuntimeCall) -> RuntimeCall {
@@ -779,12 +928,33 @@ mod tests {
 		validate(force_batch_call(calls))
 	}
 
+	#[test_case(batch_all_call(vec![as_derivative_call(send_message_call())]) => to_invalid_tx(UnexpectedSendMessageCall); "Batch all with as_derivative send_message should be blocked")]
+	#[test_case(dispatch_as_call(submit_blob_metadata_call()) => to_invalid_tx(UnexpectedSubmitDataCall); "dispatch_as blob metadata should be blocked")]
+	#[test_case(with_weight_call(remark_call()) => Ok(ValidTransaction::default()); "with_weight ordinary call should be allowed")]
+	#[test_case(dispatch_as_fallible_call(batch_call(vec![send_message_call()])) => to_invalid_tx(UnexpectedSendMessageCall); "dispatch_as_fallible with batched send_message should be blocked")]
+	#[test_case(if_else_call(submit_blob_metadata_call(), remark_call()) => to_invalid_tx(UnexpectedSubmitDataCall); "if_else main blob metadata should be blocked")]
+	#[test_case(if_else_call(proxy_call(remark_call()), as_derivative_call(send_message_call())) => to_invalid_tx(UnexpectedSendMessageCall); "if_else valid main must not skip a forbidden fallback")]
+	fn test_other_utility_calls(call: RuntimeCall) -> TransactionValidity {
+		validate(call)
+	}
+
 	#[test_case(proxy_call(send_message_call()) =>  to_invalid_tx(UnexpectedSendMessageCall); "Proxy send_message should be blocked" )]
 	#[test_case(proxy_announced_call(send_message_call()) =>  to_invalid_tx(UnexpectedSendMessageCall); "Proxy announced send_message should be blocked" )]
 	#[test_case(multisig_call(send_message_call()) =>  to_invalid_tx(UnexpectedSendMessageCall); "Multisig send_message should be blocked" )]
 	#[test_case(multisig_threshold_1_call(send_message_call()) =>  to_invalid_tx(UnexpectedSendMessageCall); "Multisig threshold 1 send_message should be blocked" )]
 	#[test_case(scheduler_call(send_message_call()) =>  to_invalid_tx(UnexpectedSendMessageCall); "Scheduler send_message should be blocked" )]
 	fn test_wrapped_send_message_is_blocked(call: RuntimeCall) -> TransactionValidity {
+		validate(call)
+	}
+
+	#[test_case(proxy_call(submit_blob_metadata_call()) => to_invalid_tx(UnexpectedSubmitDataCall); "Proxy blob metadata should be blocked")]
+	#[test_case(proxy_announced_call(submit_blob_metadata_call()) => to_invalid_tx(UnexpectedSubmitDataCall); "Proxy announced blob metadata should be blocked")]
+	#[test_case(multisig_call(submit_blob_metadata_call()) => to_invalid_tx(UnexpectedSubmitDataCall); "Multisig blob metadata should be blocked")]
+	#[test_case(multisig_threshold_1_call(submit_blob_metadata_call()) => to_invalid_tx(UnexpectedSubmitDataCall); "Multisig threshold 1 blob metadata should be blocked")]
+	#[test_case(scheduler_call(submit_blob_metadata_call()) => to_invalid_tx(UnexpectedSubmitDataCall); "Scheduled blob metadata should be blocked")]
+	#[test_case(batch_call(vec![proxy_call(submit_blob_metadata_call())]) => to_invalid_tx(UnexpectedSubmitDataCall); "Batch proxy blob metadata should be blocked")]
+	#[test_case(proxy_call(multisig_call(scheduler_call(submit_blob_metadata_call()))) => to_invalid_tx(UnexpectedSubmitDataCall); "Mixed wrappers around blob metadata should be blocked")]
+	fn test_wrapped_blob_metadata_is_blocked(call: RuntimeCall) -> TransactionValidity {
 		validate(call)
 	}
 

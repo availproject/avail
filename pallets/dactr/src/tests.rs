@@ -171,7 +171,7 @@ mod submit_blob_metadata {
 			let alice: RuntimeOrigin = RawOrigin::Signed(ALICE).into();
 			let blob_hash = H256::random();
 			let size: u64 = 1;
-			let commitment = vec![1u8];
+			let commitment = vec![1u8; avail_base::FRI_COMMITMENT_SIZE];
 
 			assert_ok!(DataAvailability::submit_blob_metadata(
 				alice,
@@ -206,7 +206,7 @@ mod submit_blob_metadata {
 					AppId(1),
 					H256::repeat_byte(1),
 					1,
-					vec![1],
+					vec![1; avail_base::FRI_COMMITMENT_SIZE],
 					[0; 32],
 					[0; 16],
 				),
@@ -242,7 +242,7 @@ mod submit_blob_metadata {
 			let alice: RuntimeOrigin = RawOrigin::Signed(ALICE).into();
 			let blob_hash = H256::random();
 			let size: u64 = 0;
-			let commitment = vec![1u8];
+			let commitment = vec![1u8; avail_base::FRI_COMMITMENT_SIZE];
 
 			let err = DataAvailability::submit_blob_metadata(
 				alice,
@@ -263,7 +263,7 @@ mod submit_blob_metadata {
 			let alice: RuntimeOrigin = RawOrigin::Signed(ALICE).into();
 			let blob_hash = H256::zero();
 			let size: u64 = 1;
-			let commitment = vec![1u8];
+			let commitment = vec![1u8; avail_base::FRI_COMMITMENT_SIZE];
 
 			let err = DataAvailability::submit_blob_metadata(
 				alice,

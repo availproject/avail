@@ -8,6 +8,7 @@ use avail_fri::{
 	eval_utils::{derive_evaluation_point, eval_claim_from_bytes},
 	transcript_from_bytes, FriEvalProofBundle, FriParamsVersion,
 };
+use avail_base::FRI_COMMITMENT_SIZE;
 use codec::{Decode, Encode};
 use da_control::Call;
 use da_runtime::RuntimeCall;
@@ -18,7 +19,6 @@ use sp_runtime::transaction_validity::TransactionSource;
 use std::sync::Arc;
 
 const EXTRA_QUERY_DOMAIN_SEP: &[u8] = b"fri-extra-query-v1";
-const FRI_COMMITMENT_SIZE: usize = 32;
 
 /// Shared FRI state derived from blob bytes and params.
 ///
@@ -312,8 +312,6 @@ pub fn validate_fri_proof(
 	eval_claim: &[u8; 16],
 	eval_proof: &[u8],
 ) -> Result<(), String> {
-	const FRI_COMMITMENT_SIZE: usize = 32;
-
 	if expected_commitment.len() != FRI_COMMITMENT_SIZE {
 		return Err(format!(
 			"Fri commitment must be {} bytes, got {}",

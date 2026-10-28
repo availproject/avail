@@ -14,3 +14,6 @@ pub mod testing_env;
 
 /// Maximum number of blob transactions allowed in a single authored block
 pub const MAX_BLOB_TXS_PER_BLOCK: usize = 128;
+
+/// Size in bytes of a FRI blob commitment digest.
+pub const FRI_COMMITMENT_SIZE: usize = 32;

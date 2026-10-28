@@ -28,9 +28,10 @@ pub fn build_extension(
 	let mut blobs: Vec<FriBlobCommitment> = Vec::with_capacity(submitted.len());
 
 	for (idx, s) in submitted.into_iter().enumerate() {
-		if s.commitment.len() != 32 {
+		if s.commitment.len() != avail_base::FRI_COMMITMENT_SIZE {
 			log::error!(
-				"Fri header: expected 32-byte commitment for blob #{idx}, got {} bytes",
+				"Fri header: expected {}-byte commitment for blob #{idx}, got {} bytes",
+				avail_base::FRI_COMMITMENT_SIZE,
 				s.commitment.len()
 			);
 			return HeaderExtension::get_faulty_header(data_root);
