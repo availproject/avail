@@ -153,7 +153,7 @@ fn create_blob_offence(
 ) -> Result<RuntimeCall> {
 	let (public, signature) = sign_data(
 		keystore,
-		(offence_key.clone(), current_session_index).encode(),
+		(offence_key.clone(), current_session_index, &block_author).encode(),
 	)?;
 
 	let voucher = ValidatorVoucher {

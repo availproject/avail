@@ -739,7 +739,9 @@ pub mod pallet {
 			}
 
 			// Check the voucher signature
-			if !voucher.verify_signature((offence_key.clone(), current_session).encode()) {
+			if !voucher.verify_signature(
+				(offence_key.clone(), current_session, &voucher.block_author).encode(),
+			) {
 				return Err(InvalidTransaction::BadProof.into());
 			}
 
@@ -949,7 +951,9 @@ impl<T: Config> Pallet<T> {
 
 		// Check that the offence key is correctly signed
 		ensure!(
-			voucher.verify_signature((offence_key.clone(), current_session).encode()),
+			voucher.verify_signature(
+				(offence_key.clone(), current_session, &voucher.block_author).encode()
+			),
 			Error::<T>::InvalidVoucherSignature
 		);
 
